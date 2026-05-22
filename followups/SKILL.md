@@ -147,7 +147,7 @@ If suggestions exist, ask once:
 If no suggestions exist, just report "Nothing worth flagging this session" and stop.
 
 **Filing:**
-- **GitHub:** Run `gh issue list --repo OWNER/REPO --state all --limit 50` first; skip items whose core idea already appears. File via `gh issue create --repo OWNER/REPO`. Include the provenance line in the body.
+- **GitHub:** Run `gh issue list --repo OWNER/REPO --state all --limit 50` first; skip items whose core idea already appears. File via `gh issue create --repo OWNER/REPO`. Include the provenance line in the body. **Always pass `--body` via HEREDOC** — never inline the body as a quoted string. A newline followed by `#` inside a quoted argument triggers a path-validation security hook. Use: `gh issue create --repo OWNER/REPO --title "..." --body "$(cat <<'EOF'\n## Section\n...\nEOF\n)"`
 - **Followups file:** Append in the standard format with provenance: `- **Title** — description. (Saw this because: ...)`
 
 If the user says "none", write nothing. Do not split items across destinations. Do not infer intent from silence.
