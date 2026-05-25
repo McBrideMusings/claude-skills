@@ -1,6 +1,6 @@
 ---
-name: brainstorm
-description: "One-question-at-a-time design interviews — for new ideas (Shape), existing plans (Grill), or existing codebases (Backfill). Captures resolved vocabulary in docs/CONTEXT.md and offers ADRs in docs/adr/ as decisions crystallise. Triggers: 'brainstorm', 'grill me', 'work with me', 'think this through', 'backfill', 'lay of the land', 'what conventions are in this codebase', 'capture what we already know', 'what vocabulary do we have', or any pushback on starting work."
+name: grill-me
+description: "One-question-at-a-time design interviews — for new ideas (Shape), existing plans (Grill), or existing codebases (Backfill). Captures resolved vocabulary in docs/CONTEXT.md and offers ADRs in docs/adr/ as decisions crystallise. Triggers: 'grill me', 'brainstorm', 'work with me', 'think this through', 'backfill', 'lay of the land', 'what conventions are in this codebase', 'capture what we already know', 'what vocabulary do we have', or any pushback on starting work."
 ---
 
 Walk the decision tree one question at a time until we reach shared understanding. For every question, recommend an answer — never ask open-ended without taking a position.

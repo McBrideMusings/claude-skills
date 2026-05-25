@@ -122,10 +122,13 @@ After `admin.toml` edits: `admin-gen --regenerate . --force-dirty`.
 
 ### Phase 2c: Standard command order
 
-Required order:
+**ALWAYS: `build`, `dev`, `deploy` — in that order. Non-negotiable.**
+
 ```
-build, dev, deploy   |  test, vet, fmt, clean, docs
+build → dev → deploy   |   test, vet, fmt, clean, docs
 ```
+
+The `docker-unraid` archetype bakes this in as its default `order`. Never reorder these three. `deploy` is always last in the lifecycle group — never before `dev`.
 
 Use `group` + `priority` integers per command. Sort by `(group, priority, name)`; spacers between groups are automatic.
 
@@ -150,7 +153,7 @@ Notes:
 - `dev` = run locally (e.g. `go run ./cmd/...`, `npm run dev`).
 - `docs` = serve docs locally with hot reload. **Single command, no sub-targets** (e.g. `run = "npm run docs:dev"`). Skip docs build/preview/deploy unless user explicitly publishes.
 
-Legacy `order = [...]` with `"---"` separator still works but prefer group/priority.
+Legacy `order = [...]` with `"---"` separator still works but prefer group/priority. When using explicit `order`, the first three entries must be `"build", "dev", "deploy"` — always.
 
 ### Phase 3: Env var discovery
 
