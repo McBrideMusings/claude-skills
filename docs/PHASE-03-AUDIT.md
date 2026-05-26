@@ -8,6 +8,7 @@ Both `docs/` and `.vitepress/` exist. Verify alignment, apply mechanical fixes s
 2. Rename `api-surface.md` → `api.md`, update refs.
 3. Collapse `docs/roadmap/` to `docs/roadmap.md` if folder has ≤ 2 files. Skip if 3+ initiative files.
 4. Create missing universal stubs (`index.md`, `PRD.md`, `roadmap.md`, `file-map.md`).
+4a. Convert any `roadmap.md` that uses plain bullets or prose items to GFM checkboxes (`- [ ]` / `- [x]`). Preserve section headings (Now / Next / Later / Deferred) and item text. Items that are clearly shipped get `- [x]`; everything else gets `- [ ]`.
 5. Add `.gitignore` cache/dist entries (`docs/.vitepress/cache`, `docs/.vitepress/dist`).
 6. Install VitePress if missing from devDeps.
 7. Add `docs:dev` script if missing (port 5193 or main app port + 20).

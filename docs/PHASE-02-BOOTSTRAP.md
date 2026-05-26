@@ -32,7 +32,28 @@
 | `guide/` | User-facing surface (web app, CLI tool — not a library) |
 | `development/` | Git repo with >1 contributor, OR CI configured, OR open source (LICENSE + non-private remote) |
 
-**Roadmap shape:** single file with four sections (Now / Next / Later / Deferred). Don't create `docs/roadmap/` folder unless 3+ active long-running tracks; collapse on audit.
+**Roadmap shape:** single file with four sections (Now / Next / Later / Deferred). Every item is a GFM checkbox (`- [ ] item` for incomplete, `- [x] item` for shipped). This is mandatory — not prose bullets, not numbered lists, not bare dashes. Checkboxes let agents and humans scan completion state at a glance.
+
+Example stub:
+
+```md
+# Roadmap
+
+## Now
+- [ ] First active item
+- [ ] Second active item
+
+## Next
+- [ ] Upcoming item
+
+## Later
+- [ ] Future idea
+
+## Deferred
+- [ ] On hold — reason
+```
+
+Don't create `docs/roadmap/` folder unless 3+ active long-running tracks; collapse on audit.
 
 ## `CLAUDE.md` Documentation section template
 
