@@ -129,9 +129,9 @@ Head: <short-sha>
 
 Thanks @<reviewer> — quick rundown:
 
-1. <issue 1 one-line summary> — fixed in <commit-sha-placeholder>. <optional one-sentence note on the approach if non-obvious>
+1. <issue 1 one-line summary> — fixed. <optional one-sentence note on the approach if non-obvious>
 2. <issue 2 one-line summary> — <reply text explaining why no change, or what partial change was made>. (<file>:<line>)
-3. <issue 3 one-line summary> — fixed in <commit-sha-placeholder>.
+3. <issue 3 one-line summary> — fixed. [if multiple commits: "fixed in `<sha>`"]
 ...
 
 ---
@@ -148,11 +148,11 @@ Rules for the consolidated reply:
 - **One numbered item per plan issue.** Numbering must match Phase 07 exactly — if the plan calls something "Issue 3", the reply's item 3 addresses the same thing. No renumbering, no reordering.
 - **Include items with action `address`, `partial`, or `reply`.** Skip items with action `ignore` entirely (they get no acknowledgment); call this out at the bottom of the plan instead.
 - **Leading sentence is the reviewer-friendly summary** (the same one-line summary used in the plan), followed by the per-issue text:
-  - `address` → "fixed in `<commit-sha-placeholder>`" + an optional brief note if the approach is non-obvious (e.g., chose CAS retry over locking).
+  - `address` → "fixed" (single commit) or "fixed in `<sha>`" (multiple commits, fill in the real SHA after committing) + an optional brief note if the approach is non-obvious (e.g., chose CAS retry over locking).
   - `partial` → name what landed and what was deliberately skipped, with a one-line reason for the skip.
   - `reply` → the explanation itself (out of scope, intentional, codebase convention cites file:line, outdated, etc.).
 - **Keep it conversational and short.** Aim for one line per item; two lines max. No headers, no bullet lists inside items — this is one comment a human will read top-to-bottom.
-- **`<commit-sha-placeholder>`** stays as a literal placeholder in the document. The user (or the agent after applying code changes) substitutes real shas before pasting.
+- **Commit SHA handling.** When writing the response document, `<commit-sha-placeholder>` is a temporary marker only. As soon as code changes are committed (after plan approval), the agent MUST update the document: replace every `<commit-sha-placeholder>` with the real short SHA from the `git commit` output. If all `address`/`partial` items land in a single commit, drop the SHA reference entirely — "fixed" or "addressed" is enough; a SHA only adds value when distinguishing between multiple commits. Never leave `<commit-sha-placeholder>` in the final document.
 - **Reference section at the bottom** lists each numbered item's source URL, action, and file:line — so the user can re-verify context but it never gets pasted.
 - **Single-reviewer vs multi-reviewer.** If all unresolved items came from one reviewer, address them by handle in the opener. If multiple reviewers, drop the "@reviewer" greeting and open with "Quick rundown:" — the user can @-mention manually when pasting.
 
