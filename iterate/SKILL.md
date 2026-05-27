@@ -95,7 +95,7 @@ Invoke the `wrap-up` skill via the Skill tool with these overrides:
 - **Phase 3 (docs):** apply mechanical doc updates automatically (file-map.md, CLAUDE.md doc-table additions). For substantive doc updates that would normally prompt for diff confirmation, do NOT prompt — instead append them as follow-up items in Phase 6 with titles like *"Update PRD section X to reflect Y from iter-N"*.
 - **Phase 4 (quality):** run code-simplifier and code-review in parallel. Auto-apply simplifications. Auto-fix any 75+ issues. If a 75+ issue can't be auto-fixed in 1–2 attempts, halt before committing.
 - **Phase 5 (commit + push):** commit with project conventions, push to current branch. Confirm `git status` is clean afterward.
-- **Phase 6 (followups):** run `summarize`, then `followups` in Generate mode. **Auto-file every suggestion that clears the bar defined by the `followups` skill's filing criteria** — do NOT ask *"which to file."* Items that don't clearly clear the bar are skipped silently; they'll resurface next session if still relevant.
+- **Phase 6 (followups):** run `summarize`, then invoke `followups` in **Generate mode, autonomous** (per the autonomous branch in followups' Step 5). It files every suggestion that clears the bar with no ask. **Never run followups' interactive Step 5 ask inside iterate** — a single "which to file?" prompt halts the whole unattended run. Items that don't clearly clear the bar are skipped silently; they'll resurface next session if still relevant.
 
 ---
 

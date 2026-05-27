@@ -138,9 +138,11 @@ Number items with a single sequence across all sections.
 
 Same applies to stale items in this followups file — flag them inline, don't write new "remove old item" entries.
 
-### Step 5: Ask and file
+### Step 5: File
 
-If suggestions exist, ask once:
+**If invoked autonomously (from `/iterate`):** do not ask. File every item that clears the bar (Step 3) to the destination, skipping items whose core idea already appears there. Then report what was filed. The user triages in GitHub / the followups file afterward — never pause the pass to ask which to file. If no items clear the bar, report "Nothing worth flagging this session" and stop.
+
+**Otherwise (interactive):** if suggestions exist, ask once:
 - **McBrideMusings repo:** "Which of these should I file as GitHub issues? (numbers, ranges, 'all', or 'none')"
 - **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, 'all', or 'none')"
 
