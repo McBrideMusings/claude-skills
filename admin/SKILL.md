@@ -43,6 +43,8 @@ device_log_attach(get_ios_log_bundle(cfg, prod=args and args[0] == "--prod"), lo
 
 **Not acceptable:** `import` statements, loops, multiple `run_cmd(...)` calls, >4 logic lines, data construction, multi-step workflows. → migrate to `admin_lib/`.
 
+**`run_cmd` signature:** `run_cmd(cmd, shell=True, capture_log=True, formatter=None, pty=False)`. Use `pty=True` for long-running interactive processes (dev servers). Do NOT invent kwargs — the generated script has a fixed signature.
+
 **Audit severities:**
 - Moderate (4–8 lines or loops/imports): "wrap in admin_lib"
 - Migrate required (>8 lines): "migrate to admin_lib or archetype"
