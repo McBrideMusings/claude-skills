@@ -108,6 +108,7 @@ Generator binary is `~/projects/admin-project-tool/admin-gen` (ignore `~/.admin/
 3. Address any inline-code warnings.
 4. Point at any `echo 'TODO: …'` placeholders from the `simple` fallback.
 5. Apply standard command ordering (Phase 2c) — archetype defaults are usually wrong.
+6. **Populate `[urls]`** — scan the project for URLs and local dev ports, then write a `[urls]` table. Sources to check (in order): `wrangler.toml` (`port =`), `vite.config*.ts` (port defaults/env vars), `.env.example` (any `_URL=` entries), package.json scripts (proxy targets, `--port` flags), and any existing docs or README. Produce entries for every named environment: local dev variants per app, staging/preview, production, and any external community URLs (Reddit subreddit, app store page, etc.).
 
 ### Phase 2b: Regenerate / Audit
 
@@ -117,6 +118,7 @@ admin-gen --audit . --force-dirty
 - Exit 0 clean → nothing to do unless user asked for a change.
 - Exit 2 drift → show diff, ask: regenerate (drops hand-edits) or keep drift.
 - Inline warnings → present + propose migration plan.
+- **`[urls]` present?** If missing or sparse, run the URL scan from Phase 2a step 6 and propose additions.
 
 After `admin.toml` edits: `admin-gen --regenerate . --force-dirty`.
 
