@@ -50,7 +50,7 @@ Apply the **deletion test** to anything you suspect is shallow.
 
 ### Phase 02 — Present Candidates
 
-Write the full list of deepening opportunities to `<root>/tmp/claude/improve-codebase-architecture.md`. Resolve `<root>` via `git rev-parse --show-toplevel 2>/dev/null`; if empty (not in a git repo), fall back to `pwd`. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call. Tell the user the exact path.
+Write the full list of deepening opportunities to `<root>/tmp/claude/improve-codebase-architecture.md`. Resolve `<root>` via `git rev-parse --show-toplevel 2>/dev/null`; if empty (not in a git repo), fall back to `pwd`. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call. Tell the user the exact path — on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean).
 
 For each candidate in the file:
 

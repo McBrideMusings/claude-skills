@@ -167,4 +167,4 @@ Print the full summary to chat so the user can copy-paste it.
 
 ### Phase 08 — Report the File Path
 
-Report a one-line link to the file (e.g. `Written to <repo-root>/tmp/claude/summaries/<repo>/<branch>.md`).
+Report a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Written to <repo-root>/tmp/claude/summaries/<repo>/<branch>.md`

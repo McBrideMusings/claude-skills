@@ -19,7 +19,7 @@ git rev-parse --git-common-dir
 # Step 2: dirname → basename of result gives the repo name
 ```
 
-After writing, tell the user the full path so they can open it. Then ask the Phase 04 questions inline in the conversation — the user should never have to go find information not provided to them.
+After writing, tell the user the full path so they can open it — put the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean). Then ask the Phase 04 questions inline in the conversation — the user should never have to go find information not provided to them.
 
 ## Process
 
@@ -52,7 +52,7 @@ Slice rules:
 
 ### Phase 04 — Quiz the user
 
-Write the full slice breakdown to the proposal file (see "Proposal file" section above), then tell the user the exact path. After that, present a summary table inline in the conversation and ask the questions below — the user should never need to hunt for information not given to them.
+Write the full slice breakdown to the proposal file (see "Proposal file" section above), then tell the user the exact path (on its own line, no trailing punctuation, so it stays Ghostty-clickable). After that, present a summary table inline in the conversation and ask the questions below — the user should never need to hunt for information not given to them.
 
 Per slice show:
 

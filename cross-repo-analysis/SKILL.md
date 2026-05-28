@@ -149,7 +149,7 @@ Findings must be concrete. Bad: "Their error handling is better." Good: "On `loa
 
 ### Phase 07 — Present to the user
 
-Tell the user the report path. Surface the top 1–3 findings inline so they can react without opening the file. Do not dump the whole report into chat.
+Tell the user the report path — put it on its own line with **no trailing punctuation** (so Ghostty ⌘-click opens it cleanly). Then surface the top 1–3 findings inline so they can react without opening the file. Do not dump the whole report into chat.
 
 ## Things to avoid
 

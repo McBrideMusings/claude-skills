@@ -85,6 +85,6 @@ project: <basename of cwd>
 4. If `<repo-root>/tmp/claude/handoffs.md` already exists: overwrite it. Do not ask.
 5. Synthesize the four fields from the current conversation.
 6. Write the file to `<repo-root>/tmp/claude/handoffs.md`.
-7. Confirm: "Handoff written to `<repo-root>/tmp/claude/handoffs.md`."
+7. Confirm with one line ending at the path — **no trailing period or other punctuation** after the path, so Ghostty ⌘-click stays clean: `Handoff written to <repo-root>/tmp/claude/handoffs.md`
 
 Do not print the full handoff content to chat — just confirm the path.

@@ -86,7 +86,7 @@ Keep issues scoring **≥ 75**. Drop the rest.
 
 - Filename: `/Users/pierce/.claude-tmp/claude-review-YYYY-MM-DD-HHMMSS.md` using current local time. No `mkdir` needed — `/Users/pierce/.claude-tmp/` is a persistent directory. No pruning needed; files are tiny.
 - Write the review using the format below.
-- Print the full review body to chat, then follow with a one-line link to the file (e.g. `Review written to /Users/pierce/.claude-tmp/claude-review-2026-05-05-143022.md`).
+- Print the full review body to chat, then follow with a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Review written to /Users/pierce/.claude-tmp/claude-review-2026-05-05-143022.md`
 
 ## File format
 

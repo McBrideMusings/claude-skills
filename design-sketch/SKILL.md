@@ -84,13 +84,13 @@ Use the actual slug, not the placeholder. The seed is a valid empty canvas; the 
 
 **How to communicate the path to the user:**
 
-After writing the stub, print one line in chat with the full absolute path so it's clickable in Ghostty:
+After writing the stub, print one line in chat with the full absolute path so it's clickable in Ghostty. The path MUST be the last token on its line with **no trailing punctuation** (`.`, `,`, `)`, etc.) — Ghostty grabs the contiguous run under the cursor and a trailing character breaks the open:
 
 ```
 Stub: <repo-root>/tmp/claude/design-sketches/2026-05-05-1430-conflict-modal.monojson
 ```
 
-Tell the user they can click that path in Ghostty to open it in Monodraw, draw an alternative, save, and let you know.
+In a follow-up sentence (not on the same line as the path), tell the user they can ⌘-click that path in Ghostty to open it in Monodraw, draw an alternative, save, and let you know.
 
 ## Reading the user's edits
 
