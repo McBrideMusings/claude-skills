@@ -5,6 +5,8 @@ description: "View, add, generate, or act on follow-up items for the current pro
 
 Use when the user mentions "follow-ups" / "followups", asks to generate or surface new follow-ups from the session, or wants to view or act on existing items.
 
+Every prompt this skill makes is a plain chat question. Never use the `AskUserQuestion` tool / structured-question schema — answers here are free-form (item numbers, ranges, "all", "none", "let's start on #2"), the numbered list is already in the message, and the chip-picker UI can't express those replies.
+
 ## Where followups live
 
 `<repo-root>/tmp/claude/followups.md` — one file per repo, inside the project itself (gitignored).
@@ -142,7 +144,7 @@ Same applies to stale items in this followups file — flag them inline, don't w
 
 **If invoked autonomously (from `/iterate`):** do not ask. File every item that clears the bar (Step 3) to the destination, skipping items whose core idea already appears there. Then report what was filed. The user triages in GitHub / the followups file afterward — never pause the pass to ask which to file. If no items clear the bar, report "Nothing worth flagging this session" and stop.
 
-**Otherwise (interactive):** if suggestions exist, ask once:
+**Otherwise (interactive):** if suggestions exist, ask once — as a plain chat question, never via the `AskUserQuestion` tool. The user replies with free-form text (numbers, ranges, "all", "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
 - **McBrideMusings repo:** "Which of these should I file as GitHub issues? (numbers, ranges, 'all', or 'none')"
 - **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, 'all', or 'none')"
 

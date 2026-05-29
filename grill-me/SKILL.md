@@ -19,8 +19,8 @@ The mechanic is the same in all three modes. Only the starting state differs.
 
 ## Rules
 
-- **One question per message.** No batching. If a topic needs more, that's more turns.
-- **Multiple choice when possible.** Easier to answer than open-ended.
+- **One question per message, in plain chat prose.** No batching. If a topic needs more, that's more turns. Never use the `AskUserQuestion` tool / structured-question schema — this is a back-and-forth conversation, not a form. The chip-picker UI batches options, collapses nuance, and kills the follow-up rhythm this skill depends on.
+- **Multiple choice when possible.** Easier to answer than open-ended. Offer the choices as written-out options in the message body (e.g. "A) … B) … — I'd lean A"), not as `AskUserQuestion` options.
 - **Recommend an answer.** Calibrate the user. "I'd lean toward A because X — agree?" beats "What do you think?"
 - **Codebase over questions.** If the answer is in the repo, go read it.
 - **2–3 approaches at real branch points.** When a decision actually has alternatives, lay them out with tradeoffs and your pick.
@@ -32,6 +32,7 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - "What do you think?" with no recommendation.
 - Skipping the process for "simple" projects — that's where unexamined assumptions waste the most time.
 - Bundling questions together to feel efficient.
+- Reaching for the `AskUserQuestion` tool. Every question stays in plain chat — the structured schema breaks the one-at-a-time conversation.
 
 ## Docs awareness
 
