@@ -5,14 +5,28 @@ description: "Check for an existing handoff and offer to resume it, OR write a n
 
 # Handoff
 
-Two modes, picked by **user intent first** — start-of-session vs end-of-session:
+Two modes — Resume (read an existing handoff, suggest next step) vs Write (capture this session into a handoff). Routing has two layers: **explicit intent wins; otherwise route by session context.**
+
+### Layer 1 — explicit intent (always wins)
 
 | Trigger | Mode |
 |---|---|
-| Session start; user says "resume", "pick up", "continue", or skill runs at SessionStart | Resume |
-| User says "handoff", "save context for next time", bare "/handoff", or skill is invoked by `followups` Step 6 | Write |
+| User says "resume", "pick up", "continue", or skill runs at SessionStart | Resume |
+| User says "save context for next time", "write a handoff", or skill is invoked by `followups` Step 6 | Write |
+| Invoked by `iterate` (autonomous caller) | as `iterate` specifies — Resume at start, Write at end |
 
-Bare `/handoff` always routes to Write — overwrite any existing file without asking. File presence does not route to Resume; only explicit resume-intent keywords do.
+### Layer 2 — bare `/handoff` with no explicit keyword and no sibling caller
+
+Route by **whether this session contains substantive work** (a judgment from the conversation so far — has anything worth capturing actually happened, or is this a fresh/just-`/clear`ed context?):
+
+| Session state | Mode |
+|---|---|
+| Substantive work happened this session | **Write** (overwrite any existing file without asking) |
+| Fresh / empty (post-`/clear`, nothing done yet) | **Resume** — read the existing handoff and suggest next steps |
+| Fresh / empty **and** no handoff file exists | say "No handoff found." and stop |
+| Genuinely ambiguous (a few trivial messages, unclear if real work happened) | ask **one line** — "Resume the existing handoff, or write a new one?" — then act on the answer; do not guess |
+
+This layer only governs **interactive bare `/handoff`**. Sibling callers (`followups`, `iterate`) always hit Layer 1, so the contract those skills depend on is unchanged.
 
 ---
 
