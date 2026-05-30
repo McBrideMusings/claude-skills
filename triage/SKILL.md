@@ -7,7 +7,7 @@ description: "Pick the next work item from GitHub issues, prior-session follow-u
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads three sources: GitHub issues, `<repo-root>/tmp/claude/followups.md`, and `<repo-root>/tmp/claude/handoffs.md`.
 
-**Autonomous-caller note:** when invoked by `iterate` (its Phase 01), skip the Phase 08 `AskUserQuestion` wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (top recommendation, or the handoff if one exists). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
+**Autonomous-caller note:** when invoked by `iterate` (its Phase 01), skip the Phase 08 selection wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (top recommendation, or the handoff if one exists). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 
@@ -174,26 +174,34 @@ Why: <one sentence>
 - <critical bug if not in top pick> — <reason>
 ```
 
-**Then call `AskUserQuestion`:**
+**Then ask in plain chat — never via the `AskUserQuestion` tool.** Present the choices as a numbered list in the message body and wait for the user's reply. The structured-question schema is banned here: the user routinely answers with a free-form override ("actually start on #285", "give me a plan first") that a chip picker can't express, and the recommendation context above already frames the list.
 
-- Question: `"Which item should I start on?"`
-- Header: `"Next task"`
-- multiSelect: `false`
-- Options (2–4):
-  1. **If a handoff exists** (`<repo-root>/tmp/claude/handoffs.md`), it is the default top option. Label: `"Resume handoff: <first sentence of the handoff's 'What we were working on' field, truncated to ~60 chars>"`. Description = the handoff's `Immediate next step` field (verbatim, per handoff Contract).
-  2. Top scored recommendation — **named label** like `"SFTP pool hygiene (#297, #295)"` or `"HLS mutex stall (#286)"`. Never bare issue numbers. Description = scope + why. Becomes option 1 if no handoff exists.
-  3. Next-best group / "also worth attention" — same naming.
-  4. (Optional) Third meaningfully-different alternative, or `"Pick something else"` if 3 strong candidates above. Don't add a redundant escape — "Other" is automatic.
+Append this prompt:
 
-Every option needs a named label in plain language; numbers in parens after.
+```
+Which should I start on? Reply with a number, or tell me something else.
+
+1. <option>
+2. <option>
+3. <option>
+```
+
+Build 2–4 numbered options in this order:
+
+1. **If a handoff exists** (`<repo-root>/tmp/claude/handoffs.md`), it is the default top option. `Resume handoff: <first sentence of the handoff's 'What we were working on' field, truncated to ~60 chars>` — then the handoff's `Immediate next step` field (verbatim, per handoff Contract).
+2. Top scored recommendation — **named** like `SFTP pool hygiene (#297, #295)` or `HLS mutex stall (#286)`. Never bare issue numbers. Then scope + why. Becomes option 1 if no handoff exists.
+3. Next-best group / "also worth attention" — same naming.
+4. (Optional) Third meaningfully-different alternative. No need to add a "pick something else" escape — a free-form reply is always open.
+
+Every option gets a named label in plain language; issue numbers in parens after.
 
 **If the user picks the handoff option:** hand control to the `handoff` skill's Resume mode as an interactive caller (per handoff Contract: handoff will confirm before deleting the file on completion). Then implement.
 
-Wait for the selection (or "Other" custom text) before implementing.
+Wait for the reply (a number or a free-form override) before implementing.
 
 ### Phase 09 — Implement
 
-- Treat "Other" custom answer as free-form override; resolve to specific issue numbers first.
+- Treat a free-form reply as an override; resolve it to specific issue numbers first.
 - `gh issue view <N>` for each chosen issue.
 - Explore relevant code areas.
 - If scope has 4+ issues or estimate >4 hours, ask if user wants a plan drafted to `~/.claude/plans/` first.
@@ -203,15 +211,15 @@ For groups, mention all related issue numbers in commit messages (`Relates to #1
 
 ### Phase 10 — Offer Wrap-Up
 
-After Phase 09 produces a working change, don't leave the user dangling — triage is complete, but the session isn't until the work is committed / pushed / tracked. Call `AskUserQuestion`:
+After Phase 09 produces a working change, don't leave the user dangling — triage is complete, but the session isn't until the work is committed / pushed / tracked. Ask in plain chat — never via the `AskUserQuestion` tool — by appending this numbered prompt and waiting for the reply:
 
-- Question: `"Triage's work is done. Wrap up?"`
-- Header: `"Wrap up"`
-- multiSelect: `false`
-- Options:
-  1. **Wrap up now** (Recommended) — invoke the `wrap-up` skill to commit, push, file follow-ups, and update tracking.
-  2. **Keep working** — stay on the current branch to test, iterate, or extend. No commit, no wrap-up.
-  3. **Just commit** — create a commit on the current branch without running the rest of wrap-up. For when the user wants the change captured but isn't ready for the full close-out.
+```
+Triage's work is done. Wrap up? Reply with a number, or tell me something else.
+
+1. Wrap up now (recommended) — invoke the wrap-up skill to commit, push, file follow-ups, and update tracking.
+2. Keep working — stay on the current branch to test, iterate, or extend. No commit, no wrap-up.
+3. Just commit — create a commit on the current branch without running the rest of wrap-up, for when the change should be captured but isn't ready for the full close-out.
+```
 
 Skip this phase entirely when invoked by an autonomous caller (per the Autonomous-caller note above) — those callers run wrap-up themselves and a second invocation would double-commit.
 

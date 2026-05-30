@@ -48,7 +48,7 @@ Sibling skills (`followups`, `triage`, `iterate`) depend on the following. Do no
 1. Run `git rev-parse --show-toplevel` to get `<repo-root>`. If not in a git repo, say "No handoff found." and stop.
 2. Read `<repo-root>/tmp/claude/handoffs.md`. If missing, say "No handoff found." and stop.
 3. If the file is malformed (missing frontmatter or any of the four body fields), surface the parse error, show the raw contents, and ask the user what to do — do not auto-discard.
-4. Surface the key points in chat and ask:
+4. Surface the key points in chat and ask — as a one-line plain-chat question, never via the `AskUserQuestion` tool / structured-question schema:
 
    > "Found a handoff from [date]. It says we were working on [1-sentence summary]. Want to pick up where we left off, or start fresh?"
 

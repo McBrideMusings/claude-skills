@@ -27,7 +27,7 @@ Cross-repo analysis is useless without a focused subsystem. Before fetching or r
 2. **Identify the reference repo(s)** by url or local path. Multiple references are fine.
 3. **Identify the intent**: feature mining, bug hunting, or "find what's smarter generally". Mixed is fine — note it.
 
-If any of these is fuzzy, ask the user. Do not do whole-repo comparisons — they produce noise.
+If any of these is fuzzy, ask the user — as a plain-chat question, never the `AskUserQuestion` tool / structured-question schema. Do not do whole-repo comparisons — they produce noise.
 
 Restate the locked scope back in one sentence before continuing. Example:
 

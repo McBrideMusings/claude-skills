@@ -7,6 +7,8 @@ description: Merge or rebase a branch with origin/main, intelligently choosing s
 
 Bring a branch up to date with `origin/main`. Automatically choose merge vs rebase based on branch complexity, and resolve conflicts.
 
+Every confirmation in this skill (before committing a merge, before force-pushing, on ambiguous conflicts) is a plain-chat question — never use the `AskUserQuestion` tool / structured-question schema. These are in-the-moment yes/no confirms whose context is the surrounding work, not a standalone menu.
+
 ## Input
 
 The user may specify a branch name as an argument. If omitted, use the current branch.

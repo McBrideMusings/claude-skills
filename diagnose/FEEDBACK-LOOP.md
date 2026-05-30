@@ -33,7 +33,7 @@ Goal isn't a clean repro — it's a **higher reproduction rate**. Loop the trigg
 
 ## When you genuinely cannot build a loop
 
-Stop. List what you tried. Ask the user for:
+Stop. List what you tried. Ask the user — in plain chat, never the `AskUserQuestion` tool / structured-question schema — for:
 
 - (a) Environment access,
 - (b) A captured artifact (HAR file, log dump, screen recording with timestamps), or

@@ -13,7 +13,7 @@ Review code changes for bugs, quality issues, CLAUDE.md compliance, and **spec c
 - **Branch changes** (default when working tree clean): review the final-state diff of the current branch vs its base (main / master) — i.e. `git diff <merge-base>...HEAD`. This is *what would land if the branch merged right now*, not a commit-by-commit walkthrough.
 - **Fixed-point** (when argument passed): review HEAD vs the argument — a commit SHA, branch name, tag, `HEAD~N`, `origin/main`, etc.
 
-**Do not offer the user a menu of narrower scopes** ("last 5 commits", "last 10 commits") just because the diff looks large. The point of a branch review is the merged-in surface area — review it. If the diff is genuinely too large to fit in one pass, *say so* and ask whether to slice by path/subdir, not by commit count.
+**Do not offer the user a menu of narrower scopes** ("last 5 commits", "last 10 commits") just because the diff looks large. The point of a branch review is the merged-in surface area — review it. If the diff is genuinely too large to fit in one pass, *say so* and ask whether to slice by path/subdir, not by commit count. Any such ask is a plain-chat question — never the `AskUserQuestion` tool / structured-question schema.
 
 ## Phases
 

@@ -62,7 +62,7 @@ Give the user the run command. They'll drive it themselves. The interesting mome
 
 ### Phase 07 — Capture the Answer
 
-When the prototype has done its job, the answer is the only thing worth keeping. Ask the user, or leave a `NOTES.md` next to the prototype if running AFK.
+When the prototype has done its job, the answer is the only thing worth keeping. Ask the user (as a plain-chat question — never the `AskUserQuestion` tool / structured-question schema), or leave a `NOTES.md` next to the prototype if running AFK.
 
 ## Anti-patterns
 

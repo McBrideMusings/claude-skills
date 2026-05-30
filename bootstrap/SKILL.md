@@ -12,6 +12,8 @@ Walk through the standard project layout. **Create what's missing, migrate what'
 
 **Each phase is offered, not forced.** The user can skip any phase inline ("skip admin", "no docs", "leave the PRD where it is"). If the user opens with "skip docs" / "don't worry about docs", silently skip Phases 04–05.
 
+**Offers and confirmations are plain-chat questions** — never use the `AskUserQuestion` tool / structured-question schema. Phase offers are answered inline in free-form ("skip admin", "yes but leave the PRD"), which the chip-picker UI can't carry.
+
 **Don't commit.** Bootstrap prepares the ground; the user (or `/wrap-up`) commits. Migrations may shuffle git history — let the user review the staged moves before committing.
 
 ## Phases

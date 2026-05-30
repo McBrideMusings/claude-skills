@@ -75,7 +75,7 @@ Filter to threads where `isResolved == false`. Keep `isOutdated` threads but mar
 
 If zero unresolved threads, stop and tell the user: "PR #N has no unresolved review threads."
 
-Also pull top-level PR conversation comments (not tied to a diff line): `gh pr view <pr_number> --json comments`. These don't have a "resolved" state, so include any added after the last review by a non-author reviewer. If unsure whether one is in-scope, ask the user.
+Also pull top-level PR conversation comments (not tied to a diff line): `gh pr view <pr_number> --json comments`. These don't have a "resolved" state, so include any added after the last review by a non-author reviewer. If unsure whether one is in-scope, ask the user — as a plain-chat question, never the `AskUserQuestion` tool / structured-question schema.
 
 ### Phase 04 — Read code context for each thread
 

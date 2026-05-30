@@ -54,6 +54,8 @@ Slice rules:
 
 Write the full slice breakdown to the proposal file (see "Proposal file" section above), then tell the user the exact path (on its own line, no trailing punctuation, so it stays Ghostty-clickable). After that, present a summary table inline in the conversation and ask the questions below — the user should never need to hunt for information not given to them.
 
+Ask every question in this skill as plain chat prose — never via the `AskUserQuestion` tool / structured-question schema. This is an iterative back-and-forth interview (the user answers in free-form text, may push back, and the loop continues until approval); the chip-picker UI can't carry that, and the proposal table is already in the message.
+
 Per slice show:
 
 - **Title** — short descriptive name
