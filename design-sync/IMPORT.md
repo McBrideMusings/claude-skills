@@ -41,7 +41,7 @@ Classify every prototype element into `tmp/claude/design/triage.md`:
 - **Questionable** — fake data implying a backend you don't have; an animation/transition that won't perform; a layout that breaks at real breakpoints; a flow with no real endpoint; something the existing app deliberately does differently.
 - **Can't / shouldn't do.**
 
-**Stop and surface the questionable + can't-do lists to the user. Get answers before writing code.** Don't fake these and don't silently drop them.
+**Stop and surface the questionable + can't-do lists to the user. Get answers before writing code.** Don't fake these and don't silently drop them. Record each decision the user signs off on (drop / reshape / substitute) as an **agreed deviation** — this set, plus any Phase 4 waivers, becomes the reconcile report. The target is an exact match: anything the user did *not* agree to diverge on is a bug to close, not a deviation to log.
 
 ## Phase 3 — Reconcile and implement
 
@@ -59,6 +59,14 @@ For each screen, do not declare it done until it has been diffed:
 4. **Threshold** — spacing/size within 1px, colors exact, font metrics exact. Anything outside → punch-list item → fix → re-diff. Loop until deltas are zero or the user explicitly waives one (record the waiver + reason).
 5. Write the final per-screen delta table + screenshot paths to `tmp/claude/design/verification.md`.
 
+## Phase 5 — Reconcile report (back-sync)
+
+Write `tmp/claude/design/reconcile.md` — the back-sync delta — following [RECONCILE.md](RECONCILE.md). Direction is IMPORT, so the reconcile target is the **prototype**.
+
+- Body = the agreed deviations from Phase 2 plus any Phase 4 waivers, each with prototype value → what we implemented → why agreed → how the prototype should change.
+- "Open (unresolved) differences" must read **none**. If a real delta is neither closed nor agreed, the sync isn't done — go back.
+- Include the standalone paste-back block the user copies into the Claude Design chat to update the prototype.
+
 ## Done
 
-Report: screens matched, deltas closed, items waived (with reasons), and any decisions still owed by the user (carried from Phase 2). Update `manifest.md` to reflect the now-canonical state so the next EXPORT/IMPORT run has an accurate baseline.
+In chat: screens matched, deltas closed, items waived (with reasons), and any decisions still owed by the user (carried from Phase 2). Point the user at `tmp/claude/design/reconcile.md` and say its paste-back block is ready to drop into Claude Design — do not paste it anywhere yourself. Update `manifest.md` to reflect the now-canonical state so the next EXPORT/IMPORT run has an accurate baseline.

@@ -37,12 +37,21 @@ Write `tmp/claude/design/seed-brief.md` **as the opening prompt for the Claude D
 
 There is no automatic sync between the app and Claude Design. The Manifest you just wrote is the **baseline**: after the user designs in Claude Design and exports, a later IMPORT run diffs the new prototype against this baseline to show exactly what changed. Note in the Manifest the app's git SHA / date so the baseline is anchored.
 
+## Phase 5 — Reconcile report (back-sync)
+
+Write `tmp/claude/design/reconcile.md` — the back-sync delta — following [RECONCILE.md](RECONCILE.md). Direction is EXPORT, so the reconcile target is the **code**. The brief and screenshots are the source the new design will be built from; where they intentionally can't capture the live app (a state you omitted, a behaviour a screenshot can't show, a simplification you made for clarity), **raise it with the user, get agreement, and log it here** so the seeded design knows what to honour and a later IMPORT diff stays clean.
+
+- Body = the agreed simplifications, each with live-app behaviour → how it was packaged → why agreed → how to reconcile.
+- "Open (unresolved) differences" must read **none**.
+- Include the standalone paste-back block. If brief and screenshots capture the app faithfully, the report is still written — "fully in sync," empty deviations.
+
 ## Done
 
-Point the user at the three deliverables and the manual steps:
+Point the user at the deliverables and the manual steps:
 
 - `tmp/claude/design/seed-brief.md` — paste as the first Claude Design message
 - `tmp/claude/design/screenshots/` — upload these
 - the subdirectory path(s) to link as the code repository
+- `tmp/claude/design/reconcile.md` — the back-sync delta to keep alongside the seed; do not paste it anywhere yourself
 
 Be explicit that you can't create the Claude Design project yourself — these are the inputs they paste/link at `claude.ai/design`.

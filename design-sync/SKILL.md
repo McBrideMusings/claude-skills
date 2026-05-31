@@ -51,3 +51,4 @@ If the user used native **Handoff to Claude Code** and the prototype code is alr
 - `triage.md` — implementable / questionable / can't-do, with the open questions for the user
 - `verification.md` — (IMPORT only) the final visual + numeric diff per screen
 - `seed-brief.md` + `screenshots/` — (EXPORT only) the package to feed Claude Design
+- `reconcile.md` — (both) the back-sync delta: the agreed deviations, as a paste-ready block the user copies into the opposite end to re-sync. See [RECONCILE.md](RECONCILE.md). The target is zero unagreed differences.
