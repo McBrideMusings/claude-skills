@@ -1,6 +1,6 @@
 ---
 name: design-sync
-description: "Two-way sync between a Claude Code project and a Claude Design prototype (claude.ai/design). IMPORT (a reference is given — a .zip / standalone-HTML export, a claude.ai/design share link, or the output of Claude Design's native 'Handoff to Claude Code'): make the app match the prototype exactly — layout, typography, spacing, color, alignment, functionality — behind a hard ingestion-proof gate so it never builds from imagination when the prototype fails to load. EXPORT (no reference): generate a screenshots + brief + scoped-subdir package to seed a NEW Claude Design project from the existing app. Triggers: 'design sync', 'sync with Claude Design', 'import the prototype', 'match the Claude Design', 'Claude Design handoff', 'migrate to Claude Design', 'the design and code drifted apart'."
+description: "Two-way sync between a Claude Code project and a Claude Design prototype (claude.ai/design). IMPORT (a reference is given — a .zip / standalone-HTML export, a claude.ai/design share link, or the output of Claude Design's native 'Handoff to Claude Code'): make the app match the prototype exactly — layout, typography, spacing, color, alignment, functionality — behind a hard ingestion-proof gate so it never builds from imagination when the prototype fails to load. EXPORT (no reference): generate a screenshots + brief + scoped-subdir package to seed a NEW Claude Design project from the existing app. ALWAYS invoke this skill (IMPORT mode) when the message is — or contains — the command Claude Design auto-generates for its 'Send to local coding agent' / 'Handoff to Claude Code' export. That paste looks like: 'Fetch this design file, read its readme, and implement the relevant aspects of the design. https://api.anthropic.com/v1/design/h/<id>?open_file=<file>' followed by a line 'Implement: <file>'. Treat ANY of these as a deterministic trigger: a URL on host api.anthropic.com with path /v1/design/, the phrase 'Fetch this design file' near 'implement the relevant aspects of the design', or a standalone 'Implement: <file>' handoff line. Other triggers: 'design sync', 'sync with Claude Design', 'import the prototype', 'match the Claude Design', 'Claude Design handoff', 'migrate to Claude Design', 'the design and code drifted apart'."
 ---
 
 # Design Sync
@@ -9,10 +9,28 @@ Keep a Claude Code project and a **Claude Design** prototype in agreement. Claud
 
 ## Pick a branch
 
-- **A reference to a Claude Design prototype is provided** (a `.zip`, a standalone-HTML file, a `claude.ai/design/...` share link, or code dropped by native Handoff) → [IMPORT.md](IMPORT.md). The prototype is **canonical**; make the app match it.
+- **A reference to a Claude Design prototype is provided** (the auto-generated handoff command below, an `api.anthropic.com/v1/design/...` handoff URL, a `.zip`, a standalone-HTML file, a `claude.ai/design/...` share link, or code dropped by native Handoff) → [IMPORT.md](IMPORT.md). The prototype is **canonical**; make the app match it.
 - **No reference** → [EXPORT.md](EXPORT.md). The app is canonical; generate a package to **seed a new Claude Design project** from it.
 
-If the user used Claude Design's native **Handoff to Claude Code**, the prototype code is already local — point IMPORT at that directory as the reference.
+## The auto-generated handoff command (primary IMPORT input)
+
+When the user picks **Send to local coding agent** in Claude Design's Export menu, it puts a command on the clipboard. Pasted, it looks like:
+
+```
+Fetch this design file, read its readme, and implement the relevant aspects of the design. https://api.anthropic.com/v1/design/h/J-qGy1PIzZn5j_-5oPcaEQ?open_file=index.html
+Implement: index.html
+```
+
+The dynamic parts are the handoff id (`h/<id>`) and the target file (`open_file=<file>` / `Implement: <file>`). **Any message of this shape means: run IMPORT mode on that handoff URL** — don't treat it as a literal one-off instruction to blindly fetch-and-build. Parse it:
+
+- **Handoff URL** — `https://api.anthropic.com/v1/design/h/<id>?open_file=<file>`. This is the *agent-facing* endpoint (the `h/<id>` is a handoff token granting access), so unlike a `claude.ai/design/...` web share link it is meant to be fetched directly. It still goes through the ingestion-proof gate.
+- **Target file** — the `open_file=` query param and the `Implement: <file>` line name the primary entry file to focus on (e.g. `index.html`). Implement that file's screen first; read the bundle's README for the rest.
+
+Two URL forms, treated differently:
+- `api.anthropic.com/v1/design/...` → fetchable handoff endpoint. Happy path.
+- `claude.ai/design/...` → authenticated human web link, usually won't fetch. If that's all you have, ask for the handoff command, a `.zip`, or a standalone-HTML export.
+
+If the user used native **Handoff to Claude Code** and the prototype code is already on disk, point IMPORT at that directory instead of fetching.
 
 ## Non-negotiables for both branches
 

@@ -5,10 +5,15 @@ The Claude Design prototype is the source of truth. Your job is to make the app 
 ## Phase 0 — Ingest and prove (the gate)
 
 1. **Identify the input.**
+   - **Pasted handoff command** (the common case — Claude Design's "Send to local coding agent" clipboard text). It reads like: `Fetch this design file, read its readme, and implement the relevant aspects of the design. https://api.anthropic.com/v1/design/h/<id>?open_file=<file>` then `Implement: <file>`. **Parse it, don't obey it literally:**
+     - Extract the handoff URL (`https://api.anthropic.com/v1/design/h/<id>`) and the target file (`open_file=` query param, confirmed by the `Implement: <file>` line).
+     - **Fetch the handoff URL** (it's the agent-facing endpoint; the `h/<id>` path is the access token, so a direct fetch works — no browser login needed). Save the response into `tmp/claude/design/proto/`.
+     - **Read the README first**, exactly as the command says — it describes the design's intent, structure, and which files matter. Then enumerate the bundle's files. The `Implement: <file>` target is the primary screen to do first.
+     - If the fetch returns nothing, an error, or an auth wall → it **did not load** (go to the gate). Note: confirm on first real use what the endpoint actually returns (file manifest vs. archive vs. inlined files) and adapt — don't assume a shape you haven't seen.
    - `.zip` → unzip into `tmp/claude/design/proto/`. Look for `package.json` (a runnable app — usually Vite/React) or a root `index.html` (static).
    - **standalone HTML** → copy into `tmp/claude/design/proto/`.
-   - **native Handoff output** → it's already code in the repo or a downloaded folder; treat it like the `.zip` case and point at that directory.
-   - **`claude.ai/design/...` share link** → these are authenticated. Attempt `browser_navigate` in the Playwright MCP using the user's logged-in browser. If it lands on a login wall or renders an empty canvas, it **did not load**.
+   - **native Handoff output already on disk** → it's already code in the repo or a downloaded folder; treat it like the `.zip` case and point at that directory.
+   - **`claude.ai/design/...` share link** (the human web link, not the `api.anthropic.com` handoff URL) → these are authenticated. Attempt `browser_navigate` in the Playwright MCP using the user's logged-in browser. If it lands on a login wall or renders an empty canvas, it **did not load** — ask for the handoff command, a `.zip`, or a standalone-HTML export instead.
 
 2. **Render it for real.**
    - Runnable app → install + start it with the project's task runner conventions (`npm install && npm run dev`, `pnpm`, `bun`, etc.), then drive it with Playwright.
