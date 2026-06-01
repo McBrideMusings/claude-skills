@@ -85,9 +85,23 @@ Work the chosen item on the current branch following triage's Step 8.
 - If implementation produces no diff after a reasonable attempt (false start, blocked, needs design), halt with a one-line blocker explanation. Do not commit empty changes.
 - If tests fail and the cause isn't trivially fixable in 1–2 attempts, halt with the failure surfaced.
 
+**⛔ MANDATORY TRANSITION — there is NO stopping point between Phase 2 and Phase 3.**
+
+The single most common iterate failure is stopping here: code is written, tests pass, and the run ends with a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion. Green tests are NOT the finish line — wrap-up is.
+
+The moment implementation lands and tests are green (and no halt condition fired), you MUST immediately proceed into Phase 3 by invoking the `wrap-up` skill via the Skill tool. Specifically:
+
+- **Do NOT emit a summary, recap, or "next steps" message and end your turn.** If you catch yourself about to write "Next: commit and push" or any equivalent, that is the signal to invoke `wrap-up` instead — the recap IS the work wrap-up does.
+- **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those are wrap-up's Phases 4–6 and must run *inside* the wrap-up skill invocation. Doing them piecemeal fragments the flow and is exactly what causes the early stop.
+- **The pass is complete ONLY after** the `wrap-up` skill has returned (all six of its phases done) **and** the Post-wrap-up conditional-handoff step below has been evaluated. Until then, you are mid-pass — keep going.
+
+The only legal exits from Phase 2 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `wrap-up` and continue). There is no third option.
+
 ---
 
 ## Phase 3 — Wrap-up (non-interactive overrides)
+
+**This phase is reached by actually calling the `wrap-up` skill via the Skill tool — not by performing wrap-up's steps inline.** Invoke it now. The overrides below are instructions you carry *into* that invocation; they do not replace it. If you find yourself running `git commit`, `code-review`, or `followups` without having invoked `wrap-up`, stop and invoke `wrap-up` first.
 
 Invoke the `wrap-up` skill via the Skill tool with these overrides:
 
