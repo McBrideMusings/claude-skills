@@ -7,6 +7,19 @@ Work through each phase below. Skip any phase that doesn't apply to this project
 
 ---
 
+## ⛔ RUN TO COMPLETION — wrap-up is not done until the work is committed AND pushed
+
+The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 are preparation; Phase 6 is reporting. If you stop before Phase 5, you have left the user's work uncommitted in the working tree — the exact failure wrap-up is meant to prevent. This is the #1 way wrap-up fails, so treat it as non-negotiable:
+
+- **A quality check that finds nothing is a GREEN LIGHT to commit, not a stopping point.** Phase 4 returning `(none)` / "no issues" means proceed *immediately* to Phase 5. It does NOT mean you are finished. A clean review is the single most common false finish line — do not fall for it.
+- **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
+- **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (e.g. a 75+ review issue you cannot auto-fix, a push that fails auth) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
+- **Done means:** `git status` is clean, the branch is pushed, and Phase 6 (summary + followups) has run. Until all three are true, you are mid-wrap-up — keep going.
+
+When invoked by `iterate`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
+
+---
+
 ## When to Use
 
 - The user invokes `/wrap-up` or asks to "wrap up", "close out the session", "end of session", "finalize this work"
@@ -151,6 +164,8 @@ Before committing, run two parallel quality checks on the session's changes:
 4. Apply any simplifications from the code-simplifier agent
 5. Address any issues scored 75+ from the code review — fix them before committing
 6. If either agent found nothing actionable, proceed to Phase 5
+
+**⛔ Do not stop here.** A clean review (no findings, `(none)`, nothing 75+) means the code is ready to commit — it is a green light to proceed to Phase 5, NOT a place to end your turn. The most common wrap-up failure is emitting a recap after a clean Phase 4 and stopping with the work still uncommitted. Both agents must have run (code-review AND code-simplifier — not just one); then move straight into Phase 5 and commit. The pass is not finished until Phase 5 has pushed and Phase 6 has reported.
 
 ---
 
