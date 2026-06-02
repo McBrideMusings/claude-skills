@@ -24,7 +24,7 @@ Implement: index.html
 The dynamic parts are the handoff id (`h/<id>`) and the target file (`open_file=<file>` / `Implement: <file>`). **Any message of this shape means: run IMPORT mode on that handoff URL** — don't treat it as a literal one-off instruction to blindly fetch-and-build. Parse it:
 
 - **Handoff URL** — `https://api.anthropic.com/v1/design/h/<id>?open_file=<file>`. This is the *agent-facing* endpoint (the `h/<id>` is a handoff token granting access), so unlike a `claude.ai/design/...` web share link it is meant to be fetched directly. It still goes through the ingestion-proof gate.
-- **Target file** — the `open_file=` query param and the `Implement: <file>` line name the primary entry file to focus on (e.g. `index.html`). Implement that file's screen first; read the bundle's README for the rest.
+- **Target file** — the `open_file=` query param and the `Implement: <file>` line name the primary entry file to focus on (e.g. `index.html`). Implement that file's screen *first* — but it is the first of many, not the whole job. The README, every chat transcript, and the full import graph of the entry file define the rest of the inventory (see non-negotiable 6). "Focus on" never means "only."
 
 Two URL forms, treated differently:
 - `api.anthropic.com/v1/design/...` → fetchable handoff endpoint. Happy path.
@@ -44,11 +44,18 @@ If the user used native **Handoff to Claude Code** and the prototype code is alr
 
 5. **Tokens are read, not guessed.** Pull exact px/hex/rem values from `getComputedStyle` (and from source — Tailwind config, CSS variables — when the export is code). "Looks about right" is what leaves 20% wrong.
 
+6. **The inventory is conserved end-to-end — artifacts cannot be quietly narrowed.** The gate stops the *crude* failure (building from imagination because the prototype never loaded). The *subtle* failure it does NOT stop on its own, and the one you must actively guard against, is **scope laundering**: you pass the gate, then produce a manifest and a triage that silently cover only the slice you already decided to build. The artifacts then give false assurance *precisely because they exist* — they look like compliance. Defeat it with a conserved inventory:
+   - Phase 0 produces a **master inventory** — every screen, surface, modal, popover, menu, dialog, *and* (for code bundles) every file reachable by following the entry's imports, plus the intent captured in every chat transcript. Interaction-hidden surfaces count: hero screenshots show 1–2 states; the prototype almost always has many more behind clicks.
+   - The manifest and the triage must each be a **superset** of that inventory: every item appears, classified, none absent.
+   - **Count before you build and again before you say "done":** every inventory item must carry an explicit disposition — implement / agreed-deviation / deferred-with-sign-off. An inventory item missing from triage *is* a silently dropped feature. Stop and classify it.
+   - **Never let a scope question pre-filter.** Out-of-scope is a decision the *user* makes against the *full* list — not an omission you make for them. When you ask the user to cut scope, show the complete triage inventory and let them remove items; do not present a menu you have already narrowed (that launders your under-scoping into their "approval"). Every cut is logged as a deferral and carried into reconcile.
+   - **Symptoms you are doing it:** you read the entry file but not its imports; your manifest describes only what's in the attached screenshots; your triage has fewer rows than the inventory has components; you scoped from the most salient image instead of from the bundle. Any one of these means go back.
+
 ## Artifacts (all under `tmp/claude/design/`)
 
 - `INGESTION.md` — proof the ground truth actually loaded (gate)
 - `manifest.md` — the shared design spec (tokens, IA, per-screen layout, functionality)
-- `triage.md` — implementable / questionable / can't-do, with the open questions for the user
+- `triage.md` — every inventory item classified (implementable / questionable / can't-do), a superset of the Phase 0 inventory, with the open questions for the user
 - `verification.md` — (IMPORT only) the final visual + numeric diff per screen
 - `seed-brief.md` + `screenshots/` — (EXPORT only) the package to feed Claude Design
 - `reconcile.md` — (both) the back-sync delta: the agreed deviations, as a paste-ready block the user copies into the opposite end to re-sync. See [RECONCILE.md](RECONCILE.md). The target is zero unagreed differences.
