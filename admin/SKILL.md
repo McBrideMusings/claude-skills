@@ -27,6 +27,8 @@ Generator: `~/projects/admin-project-tool/admin-gen` with modes:
 
 Every `[commands.*]` with `kind = "python"` is inline code. **Last resort, not default.**
 
+**Forwarding CLI args? Use `kind = "shell-passthrough"`, not python.** `[actions.X] kind = "shell-passthrough"; run = "tool"` runs `tool` with the `./admin <cmd> <ARG>...` positional args shlex-quoted and appended, propagating the exit code — the declarative way to wire `./admin foo <path>` to an underlying script. Reach for `kind = "python"` only for real dispatch logic (sub-target routing, config reads), never just to thread args through.
+
 **Acceptable** (≤4 logical lines, dispatch-only):
 - Parse sub-target args
 - Read `_APPLE_CONFIG` / `_SERVER_CONFIG` via `globals().get(...)`
