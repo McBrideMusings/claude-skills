@@ -1,6 +1,14 @@
 # Import — prototype is canonical, make the app match
 
-The Claude Design prototype is the source of truth. Your job is to make the app look and behave **exactly** like it — layout, typography, spacing, color, alignment, and (where sensible) functionality — and to *prove* the match numerically, not by eye. Work the phases in order. Do not skip Phase 0.
+The Claude Design prototype is the source of truth. Your job is to make the app look and behave **exactly** like it — layout, typography, spacing, color, alignment, **and functionality** — and to *prove* the match numerically, not by eye. Work the phases in order. Do not skip Phase 0.
+
+## The prototype's behavior is canonical — build it for real, ALWAYS
+
+A Claude Design prototype is an **interactive UI prototype**. Of course its sorts, filters, buttons, tables, and flows don't actually work — they're visual stubs. **That is expected, and it is NEVER a question.** The prototype shows the intended *outcome*; importing it means implementing that outcome for real against the app's actual data, queries, and backend. The outcome is more important than whatever is implemented right now — when they conflict, the prototype wins.
+
+**The single forbidden question.** Do not ever ask, in any phrasing, "should I wire this up for real, or ship it visual-only / leave it as a stub / defer the query work?" There is exactly one answer and you already have it: **make it work for real, now.** A stubbed chip, a fake-data table, a sort control that doesn't sort, a filter that doesn't filter, a flow whose button does nothing — every one of these is a thing to **build**, not a thing to ask about. Architect, re-architect, rebuild, refactor, gut, rewrite — do whatever the real implementation requires.
+
+This does **not** weaken Phase 2's duty to surface genuine decisions the user owns (a real product conflict, a missing credential, a true platform limit, or a scope cut the user makes against the full inventory). Those still go to the user. "It isn't functional yet" is **not** one of them and never reaches the user as a question.
 
 ## Phase 0 — Ingest and prove (the gate)
 
@@ -41,13 +49,13 @@ From the **running prototype** (never from memory), populate `tmp/claude/design/
 
 Classify **every item from the Phase 0 master inventory** into `tmp/claude/design/triage.md`:
 
-- **Implementable as-is.**
-- **Questionable** — fake data implying a backend you don't have; an animation/transition that won't perform; a layout that breaks at real breakpoints; a flow with no real endpoint; something the existing app deliberately does differently.
-- **Can't / shouldn't do.**
+- **Build it for real** — the default, and where the overwhelming majority lands. Everything the prototype merely *stubs* goes here: sorts that don't sort, filters that don't filter, fake-data tables, controls and flows whose handlers are empty. The prototype implies a backend you don't have yet → you build the backend/query/wiring. None of this is "questionable"; a non-functional prototype control is the normal case, and it is **never** surfaced as a question. Implement it against the app's real data.
+- **Genuine decision the user owns** — narrow, and **not** "it isn't wired yet." Only: the behavior needs a secret / credential / external account that only the user can supply; the prototype's behavior genuinely conflicts with a deliberate product choice in the existing app (a real disagreement, not just "the app hasn't caught up yet" — the prototype wins by default, so flag only true conflicts); or a scope cut the *user* chooses against the full inventory. These go to the user.
+- **Provably can't do** — a demonstrated platform/tool limit, not "this is a lot of work." Effort is never a reason to land here.
 
 **Completeness check — do this literally, before writing any code.** Walk the Phase 0 inventory item by item; each one must land in exactly one bucket above. Triage entries ≥ inventory items. If any inventory item has no row, you have silently dropped a feature — stop and classify it. Out-of-scope is a *classification the user chooses*, never an omission you make for them; an item you think is out of scope still gets a row, marked for the user to confirm.
 
-**Then stop and surface the full triage to the user. Get answers before writing code.** Don't fake anything and don't silently drop anything.
+**Surface the full triage so nothing is silently dropped — but only the "genuine decision the user owns" and "provably can't do" rows are questions that block.** If those two buckets are empty (the common case — everything is build-for-real), there is nothing to ask: proceed and build. Never manufacture a blocking question out of a build-for-real item, and never hold the whole pass hostage to a stub's "should I make this functional?" — that question does not exist here. Don't fake anything and don't silently drop anything.
 
 - **Do not present a pre-narrowed scope menu.** If you ask the user to cut scope (AskUserQuestion or prose), show the **complete** inventory-backed triage and let them remove items. A question like "how much of the toolbar+dock work should I do?" — asked when the inventory also contains bookmarks, settings, SFTP, terminal, etc. — launders your under-scoping into their approval. Frame it as "here is everything in the prototype; what's in scope for this pass?" against the whole list.
 - Record each decision the user signs off on (drop / reshape / substitute / defer) as an **agreed deviation or deferral** — this set, plus any Phase 4 waivers, becomes the reconcile report. Every deferred item stays tracked; it does not vanish.
