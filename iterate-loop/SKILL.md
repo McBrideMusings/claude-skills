@@ -27,9 +27,11 @@ For a single pass, use `/iterate`. This skill exists so continuous mode is disco
 
 ## What this skill does
 
-Invoke the `loop` skill with `/iterate` as the inner command. The `loop` skill handles cadence and re-invocation; `/iterate` handles the actual work and halt logic.
+Invoke the `loop` skill with **`/iterate continuous`** as the inner command. The `loop` skill handles cadence and re-invocation; `/iterate` handles the actual work and halt logic.
 
-In practice this is equivalent to the user typing `/loop /iterate` — this skill exists to make that composition discoverable as `/iterate-loop`.
+The `continuous` token is load-bearing: it tells each `/iterate` pass it is running inside a loop, so the pass files its end-of-session follow-ups **autonomously** instead of pausing to ask which to write up (see `iterate`'s "Pass mode" section). A standalone `/iterate` omits the token and runs that follow-ups step interactively — the one prompt that would otherwise stall a loop, which is exactly why continuous mode suppresses it.
+
+In practice this is equivalent to the user typing `/loop /iterate continuous` — this skill exists to make that composition discoverable as `/iterate-loop`.
 
 ---
 
