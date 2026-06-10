@@ -54,7 +54,7 @@ The whole frame fits one screen.
 
 ### Phase 05 — Make It Runnable in One Command
 
-Add a script to the project's task runner (`admin.toml`, `package.json` scripts, `Makefile`, `justfile`, `pyproject.toml`). User should run `./admin <prototype-name>` or equivalent — never need to remember a path.
+Add a script to the project's task runner (`admin.toml`, `package.json` scripts, `Makefile`, `justfile`, `pyproject.toml`). User should run `admin <prototype-name>` or equivalent — never need to remember a path.
 
 ### Phase 06 — Hand It Over
 

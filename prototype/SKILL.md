@@ -19,7 +19,7 @@ The two branches produce very different artifacts — getting this wrong wastes 
 ## Rules for both branches
 
 1. **Throwaway from day one, clearly marked.** Locate the code close to where it'll actually live (next to the module or page) so context is obvious. Name it so a casual reader can tell it's a prototype, not production.
-2. **One command to run.** Whatever the project's existing task runner uses (`npm run X`, `pnpm X`, `bun X`, `python X`, `./admin X`). The user starts it without thinking.
+2. **One command to run.** Whatever the project's existing task runner uses (`npm run X`, `pnpm X`, `bun X`, `python X`, `admin X`). The user starts it without thinking.
 3. **No persistence by default.** State is in-memory. Persistence is what the prototype is *checking*, not something it depends on. If the question involves a DB, use a scratch file with "PROTOTYPE — wipe me" in the name.
 4. **Skip the polish.** No tests, no error handling beyond what makes it runnable, no abstractions.
 5. **Surface the state.** After every action (logic) or variant switch (UI), render the full relevant state so the user can see what changed.

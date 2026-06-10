@@ -1,33 +1,35 @@
 ---
 name: admin
-description: "Add/edit/audit the project's admin task runner — admin.toml commands, regenerating ./admin, or migrating inline code to admin_lib."
+description: "Add/edit/audit a project's admin task runner — edit admin.toml commands, validate with admin check, or migrate inline code to admin_lib. The tool interprets admin.toml at runtime (no generated ./admin)."
 ---
 
 # /admin — Manifest-Driven Admin Task Runner
 
-Two committed files per project:
+**One committed file per project: `admin.toml`** — a short (~5–25 line) manifest declaring archetypes, URLs, and project commands. It is the source of truth, read live.
 
-- **`admin.toml`** — short (~5–25 line) manifest declaring archetypes, URLs, and project commands. **Source of truth.**
-- **`./admin`** — generated, self-contained Python script. Never hand-edit; regenerate.
+There is **no generated `./admin` script** (ADR-0006). The installed tool interprets `admin.toml` at runtime:
 
-Generator: `~/projects/admin-project-tool/admin-gen` with modes:
-- bootstrap (no args), `--regenerate`, `--audit` (exit 0 clean / 2 drift)
+- Installed entry: `~/.admin/admin`, on PATH as **`admin`**. Run `admin <command>` from anywhere inside a project — it finds `admin.toml` by walking up from `$PWD`.
+- Tool verbs: `admin new` (detect stack → write a starter `admin.toml`), `admin check` (parse + resolve + consistency validation), `admin compile` (build a standalone `./admin` zipapp for a box without the tool installed).
+- Editing `admin.toml` takes effect immediately — there is nothing to regenerate, no artifact to commit, no drift to audit.
+
+Source repo: `~/projects/admin-project-tool/` (CLI `admin-run`, runtime `admin_lib/`, interpreter `admin_lib/interp.py`, generator internals `gen/`).
 
 ## Critical rules
 
-1. **Treat the generator as a black box.** Do NOT read source under `~/projects/admin-project-tool/` or detector/archetype `.py` files unless the user asks you to debug the generator itself. Only read: the project's `admin.toml`, the generated `./admin` (for display/debug), and this skill.
+1. **Treat the tool as a black box.** Do NOT read source under `~/projects/admin-project-tool/` (interpreter, archetype, or detector `.py` files) unless the user asks you to debug the tool itself. Only read: the project's `admin.toml` and this skill.
 
-2. **After any commit+push to admin-project-tool, immediately reinstall:** `bash ~/projects/admin-project-tool/install.sh`. Full sequence for any generator change: **edit → commit → push → install → regen project**. Installing from an unpushed commit embeds a dirty SHA.
+2. **After any commit+push to admin-project-tool, immediately reinstall:** `bash ~/projects/admin-project-tool/install.sh`. Full sequence for any tool change: **edit → commit → push → install**. There is no per-project regeneration step — installing updates the one interpreter every project shares. Installing from an unpushed commit embeds a dirty SHA into `~/.admin/VERSION`.
 
-3. **`admin.toml` is the source of truth.** Hand-edits to `./admin` are drift. `[inline] file = "admin_inline.py"` is itself a migration target — the audit flags it.
+3. **`admin.toml` is the only source of truth.** A project commits just the manifest; there is no `./admin` file to hand-edit or keep in sync. (If a project still has an old committed `./admin`, it's a stale generated artifact — delete it; `admin` runs from PATH.)
 
 ---
 
 ## Inline code policy
 
-Every `[commands.*]` with `kind = "python"` is inline code. **Last resort, not default.**
+Every `[actions.*]` with `kind = "python"` is inline code. **Last resort, not default.**
 
-**Forwarding CLI args? Use `kind = "shell-passthrough"`, not python.** `[actions.X] kind = "shell-passthrough"; run = "tool"` runs `tool` with the `./admin <cmd> <ARG>...` positional args shlex-quoted and appended, propagating the exit code — the declarative way to wire `./admin foo <path>` to an underlying script. Reach for `kind = "python"` only for real dispatch logic (sub-target routing, config reads), never just to thread args through.
+**Forwarding CLI args? Use `kind = "shell-passthrough"`, not python.** `[actions.X] kind = "shell-passthrough"; run = "tool"` runs `tool` with the `admin <cmd> <ARG>...` positional args shlex-quoted and appended, propagating the exit code — the declarative way to wire `admin foo <path>` to an underlying script. Reach for `kind = "python"` only for real dispatch logic (sub-target routing, config reads), never just to thread args through.
 
 **Acceptable** (≤4 logical lines, dispatch-only):
 - Parse sub-target args
@@ -35,24 +37,23 @@ Every `[commands.*]` with `kind = "python"` is inline code. **Last resort, not d
 - Single function call per branch
 
 ```toml
-[commands.logs]
+[actions.logs]
 kind = "python"
 run = '''
 cfg = globals().get("_APPLE_CONFIG") or {}
-device_log_attach(get_ios_log_bundle(cfg, prod=args and args[0] == "--prod"), log_file=LOG_FILE)
+device_log_attach(get_ios_log_bundle(cfg, prod=args and args[0] == "--prod"), log_file=get_log_file())
 '''
 ```
 
+Note: `kind = "python"` bodies run in a namespace that mirrors the old flat bundle — every `admin_lib` symbol and the `_*_CONFIG` dicts are in scope. Read the log path via `get_log_file()` / `get_log_dir()` (not bare `LOG_FILE`/`LOG_DIR`) — under the interpreter those accessors return the live, post-boot value.
+
 **Not acceptable:** `import` statements, loops, multiple `run_cmd(...)` calls, >4 logic lines, data construction, multi-step workflows. → migrate to `admin_lib/`.
 
-**`run_cmd` signature:** `run_cmd(cmd, shell=True, capture_log=True, formatter=None, pty=False)`. Use `pty=True` for long-running interactive processes (dev servers). Do NOT invent kwargs — the generated script has a fixed signature.
+**`run_cmd` signature:** `run_cmd(cmd, shell=True, capture_log=True, formatter=None, pty=False, collect=None)`. Use `pty=True` for long-running interactive processes (dev servers). Do NOT invent kwargs.
 
-**Audit severities:**
-- Moderate (4–8 lines or loops/imports): "wrap in admin_lib"
-- Migrate required (>8 lines): "migrate to admin_lib or archetype"
-- `[inline] file = ...`: always flagged
+**`admin check` reports** the merged command/action/module counts and any resolution errors (unknown kinds, missing actions referenced by steps, unknown guards, commands colliding with reserved verbs `new`/`check`/`compile`). It does NOT score inline-code complexity — apply the inline policy above by judgment when editing.
 
-When flagged, present finding + migration plan to user before proceeding.
+When inline code is too heavy, present finding + migration plan to user before proceeding.
 
 ---
 
@@ -66,65 +67,59 @@ When flagged, present finding + migration plan to user before proceeding.
 | Project-specific one-off | `kind = "shell"` if shell-ish, or ≤4-line dispatch |
 
 Source repo `~/projects/admin-project-tool/`:
-- `admin_lib/` — bundled into `./admin`. Add functions here.
-- `archetypes/` — archetype definitions and command templates.
-- `gen/manifest.py` — new config table keys.
-- `gen/render.py` — emit `_CONFIG` dicts from manifest tables.
+- `admin_lib/` — runtime helpers, imported live by the interpreter. Add functions here.
+- `admin_lib/interp.py` — the interpreter: one closure factory per action kind (`_FACTORIES`). A new kind needs a factory here AND a `KNOWN_KINDS` entry in `gen/fragments.py`.
+- `archetypes/` — archetype definitions and command/action templates.
+- `gen/manifest.py` — new config-table keys + validation.
+- Config tables (`[apple]`, `[server]`, etc.) are injected into `kind="python"` namespaces as `_*_CONFIG` dicts by `admin_lib/interp.py::build_namespace` — no render step.
 
-After changes: `bash install.sh --force`, then regen the project.
+After changes: `bash install.sh` (commit+push first), then `admin check` in the project.
 
 ---
 
 ## Instructions
 
-### Phase 0: Update the generator (always first)
+### Phase 0: Update the tool (when the change needs a tool/archetype edit)
 
 ```bash
 git -C ~/projects/admin-project-tool status
 ```
-If dirty: show user, offer to commit+push first. Do NOT pull over uncommitted changes.
-
-Check branch is `main`. If not, ask before switching.
+If dirty: show user, offer to commit+push first. Do NOT pull over uncommitted changes. Check the branch; if not `main`, ask before switching.
 
 ```bash
 git -C ~/projects/admin-project-tool pull origin main
 bash ~/projects/admin-project-tool/install.sh
 ```
 
-Generator binary is `~/projects/admin-project-tool/admin-gen` (ignore `~/.admin/init-admin`):
-```bash
-~/projects/admin-project-tool/admin-gen --audit      . --force-dirty
-~/projects/admin-project-tool/admin-gen --regenerate . --force-dirty
-~/projects/admin-project-tool/admin-gen              .   # bootstrap
-```
+`install.sh` installs the interpreter to `~/.admin/admin` and puts `~/.admin` on PATH. There is no `admin-gen` and no per-project regeneration — the reinstall is the whole update.
+
+For pure `admin.toml` edits (no tool change), skip Phase 0 entirely — edits take effect on the next `admin` run.
 
 ### Phase 1: Detect state
 
-- Neither `admin.toml` nor `./admin` → bootstrap (Phase 2a)
-- Both exist → audit/regenerate (Phase 2b)
-- Only `./admin` (v1) → bootstrap and warn it'll be overwritten (until `--from-existing` ships)
-- Only `admin.toml` → `--regenerate`
+- No `admin.toml` → bootstrap (Phase 2a): `admin new`.
+- `admin.toml` present → edit + validate (Phase 2b): `admin check`.
+- A stale committed `./admin` present (old generated bundle) → delete it; the project runs from PATH now.
 
 ### Phase 2a: Bootstrap
 
-1. Run `admin-gen .` — detectors pick the archetype. **Don't explore the project yourself to guess.**
+1. Run `admin new` (or `admin new <dir>`) — detectors pick the archetype and write `admin.toml`. **Don't explore the project yourself to guess.**
 2. Show user the generated `admin.toml` and the detector match.
-3. Address any inline-code warnings.
-4. Point at any `echo 'TODO: …'` placeholders from the `simple` fallback.
-5. Apply standard command ordering (Phase 2c) — archetype defaults are usually wrong.
-6. **Populate `[urls]`** — scan the project for URLs and local dev ports, then write a `[urls]` table. Sources to check (in order): `wrangler.toml` (`port =`), `vite.config*.ts` (port defaults/env vars), `.env.example` (any `_URL=` entries), package.json scripts (proxy targets, `--port` flags), and any existing docs or README. Produce entries for every named environment: local dev variants per app, staging/preview, production, and any external community URLs (Reddit subreddit, app store page, etc.).
+3. Point at any `echo 'TODO: …'` placeholders from the `simple` fallback.
+4. Apply standard command ordering (Phase 2c) — archetype defaults are usually wrong.
+5. **Populate `[urls]`** — scan the project for URLs and local dev ports, then write a `[urls]` table. Sources (in order): `wrangler.toml` (`port =`), `vite.config*.ts` (port defaults/env vars), `.env.example` (`_URL=` entries), package.json scripts (proxy targets, `--port`), README/docs. Produce entries for every named environment: local dev variants per app, staging/preview, production, and external community URLs (subreddit, app store page, etc.).
+6. `admin check` to confirm it resolves.
 
-### Phase 2b: Regenerate / Audit
+### Phase 2b: Edit + validate
 
 ```bash
-admin-gen --audit . --force-dirty
+admin check .
 ```
-- Exit 0 clean → nothing to do unless user asked for a change.
-- Exit 2 drift → show diff, ask: regenerate (drops hand-edits) or keep drift.
-- Inline warnings → present + propose migration plan.
-- **`[urls]` present?** If missing or sparse, run the URL scan from Phase 2a step 6 and propose additions.
+- Resolves clean → nothing to do unless the user asked for a change.
+- Resolution error → fix the `admin.toml` (the message names the problem).
+- **`[urls]` present?** If missing or sparse, run the URL scan from Phase 2a step 5 and propose additions.
 
-After `admin.toml` edits: `admin-gen --regenerate . --force-dirty`.
+After any `admin.toml` edit, just re-run `admin check` (no regeneration). Heavy inline code → propose a migration plan per the inline policy.
 
 ### Phase 2c: Standard command order
 
@@ -157,73 +152,66 @@ Group 1 = build/run/ship. Group 2 = quality/housekeeping. Defaults (`group=0, pr
 
 Notes:
 - `dev` = run locally (e.g. `go run ./cmd/...`, `npm run dev`).
-- `docs` = serve docs locally with hot reload. **Single command, no sub-targets** (e.g. `run = "npm run docs:dev"`). Skip docs build/preview/deploy unless user explicitly publishes.
+- `docs` = serve docs locally with hot reload. **Single command, no sub-targets** (e.g. `run = "npm run docs:dev"`). Skip docs build/preview/deploy unless the user explicitly publishes.
 
 Legacy `order = [...]` with `"---"` separator still works but prefer group/priority. When using explicit `order`, the first three entries must be `"build", "dev", "deploy"` — always.
 
 ### Phase 3: Env var discovery
 
-If `admin.toml` uses `${VAR}`, run `./admin env` and tell user which vars to export.
+If `admin.toml` uses `${VAR}`, run `admin env` and tell the user which vars to export.
 
-### Phase 4: Post-generation files
+### Phase 4: Post-bootstrap files
 
-1. **`.gitignore`** — ensure `tmp/` (generator handles this) and `*.local.*` are ignored. Use the glob; don't add literal `CLAUDE.local.md`.
+1. **`.gitignore`** — ensure `tmp/` and `*.local.*` are ignored. Use the glob; don't add literal `CLAUDE.local.md`. (Old generated `./admin` files should be removed, not gitignored.)
 2. **`.claude/skills/read-logs.md`** — create if missing using `references/read-logs-template.md`.
-3. **`CLAUDE.md` (committed)** — if the project has no `CLAUDE.md` at the root, invoke `/init` to bootstrap one before writing the local sibling. This keeps shared project context in the committed file so `CLAUDE.local.md` can stay thin.
-4. **`.claude/CLAUDE.local.md`** — create/update with dev process section (Phase 5). Keep this file thin: admin-specific dev process and machine-specific overrides only. Anything teammates would benefit from belongs in the committed `CLAUDE.md`.
-5. **Project `CLAUDE.md`** — update any `admin.sh` / v1 references to `./admin`; mention `admin.toml` is source of truth.
-6. **Docs site, if present** — `admin.toml` must have single `[commands.docs]` shell command (no sub-targets); project `CLAUDE.md` should have a `## Documentation` section with an update-when table. If anything shaped wrong, invoke `/docs` — that skill owns the docs convention.
+3. **`CLAUDE.md` (committed)** — if the project has no root `CLAUDE.md`, invoke `/init` first.
+4. **`.claude/CLAUDE.local.md`** — create/update with the dev-process section (Phase 5). Keep thin: admin-specific dev process and machine overrides only.
+5. **Project `CLAUDE.md`** — note that `admin.toml` is the source of truth and commands run via `admin <cmd>` (the tool is installed on PATH; nothing is committed but the manifest).
+6. **Docs site, if present** — `admin.toml` must have a single `[commands.docs]` shell command (no sub-targets). If shaped wrong, invoke `/docs`.
 
 **Audit checks:**
-- Committed `CLAUDE.md` exists at project root (if missing, prompt user to run `/init`)
-- `.claude/CLAUDE.local.md` exists (not at project root — old wrong location)
-- `.gitignore` has `*.local.*` (migrate literal `CLAUDE.local.md` entries to glob)
-- Move any root `CLAUDE.local.md` content into `.claude/CLAUDE.local.md`
+- Committed `CLAUDE.md` exists at project root (if missing, prompt `/init`)
+- `.claude/CLAUDE.local.md` exists (not at project root)
+- `.gitignore` has `*.local.*`
+- No stale committed `./admin` (delete if present)
 
 ### Phase 5: Dev process docs in `.claude/CLAUDE.local.md`
 
 **Native hot reload (Vite, HMR, Next, Air):**
 ```markdown
 ## Dev process
-`./admin dev` runs the dev server with hot reload. Check `/tmp/admin-run.pid` before starting — if present, do not start a second instance; edits are picked up automatically.
+`admin dev` runs the dev server with hot reload. Check `/tmp/admin-run.pid` before starting — if present, do not start a second instance; edits are picked up automatically.
 ```
 
 **No hot reload (compiled binaries, restart needed):**
 ```markdown
 ## Dev process
-`./admin dev` uses `/tmp/admin-run.pid` and SIGUSR1 to rebuild without restarting.
+`admin dev` uses `/tmp/admin-run.pid` and SIGUSR1 to rebuild without restarting.
 
 After code changes:
-1. Check `/tmp/admin-run.pid` — if running, `./admin reload` (do NOT kill+restart)
-2. If not running, start with `./admin dev`
+1. Check `/tmp/admin-run.pid` — if running, `admin reload` (do NOT kill+restart)
+2. If not running, start with `admin dev`
 
 Never orphan the process. Never run two simultaneously.
 ```
 
-If `./admin dev` is one-shot (compiles and exits), omit this section.
+If `admin dev` is one-shot (compiles and exits), omit this section.
 
 ### Phase 6: Commit
 
-Ask user to commit `admin.toml` + `./admin` together so `generator_commit` SHA stays coherent.
-
-**Worktree sync:** If this work was done in a git worktree (child branch), copy the updated `admin.toml` and `./admin` to the main worktree as well so they stay in sync. The main worktree won't get these files from a merge until the branch lands, but `./admin` is gitignored in some projects or may be stale in between. After committing in the worktree, copy both files to the main worktree path — for example:
-
-```bash
-cp admin.toml <main-worktree-path>/admin.toml
-cp admin <main-worktree-path>/admin
-```
-
-Ask the user for the main worktree path if it isn't obvious from context (typically the bare checkout root or the path listed by `git worktree list`).
+Commit `admin.toml` alone — there is no `./admin` to commit alongside it, and no `generator_commit` to keep coherent. (Worktree note: since only `admin.toml` is committed and the interpreter is shared, there's nothing extra to copy between worktrees.)
 
 ---
 
 ## Mental model
 
 - **Archetypes are composable mixins.** `archetypes = ["docker-unraid", "apple"]` merges command sets; later archetype wins; manifest `[commands]` wins over all.
-- **Env vars are runtime.** `${VAR}` / `${VAR:-default}` passed through as literals, resolved by `admin_lib.core.resolve_env()` at run time. Never expand at generation.
-- **`generator_commit`** = repo SHA of `admin-project-tool` at last regen. Audit compares SHAs to detect generator drift.
-- **Python 3.11+ required** (stdlib `tomllib`). Generated script has a runtime guard.
-- **Config tables drive archetypes.** `[apple]` / `[server]` tables become `_APPLE_CONFIG` / `_SERVER_CONFIG` dicts. Add keys to configure archetype behavior without inline code.
+- **The interpreter reads `admin.toml` live.** No generation, no bundling, no artifact. `admin compile` is the one exception — it packages the interpreter + `admin_lib` + the manifest into a standalone zipapp via stdlib `zipapp`, for a machine without the tool installed.
+- **Versioning is global.** The installed tool's version (in `~/.admin/VERSION`) runs every project. Update the tool → all projects move together. `admin compile` freezes a project to a known-good copy when you need a pin.
+- **Env vars are runtime.** `${VAR}` / `${VAR:-default}` resolved by `admin_lib.core.resolve_env()` at run time. Never expand when editing the manifest.
+- **Python 3.11+ required** (stdlib `tomllib`).
+- **Config tables drive archetypes.** `[apple]` / `[server]` tables become `_APPLE_CONFIG` / `_SERVER_CONFIG` dicts in `kind="python"` namespaces. Add keys to configure archetype behavior without inline code.
+- **Reserved verbs.** `new`, `check`, `compile` share the `admin <word>` namespace; a manifest may not define a command with one of those names (the CLI errors).
 
 ---
 
@@ -253,7 +241,6 @@ env = { ADMIN_LOCAL = "true" }
 Setup for any `docker-unraid` project:
 1. `.env.example` (committed): `DEPLOY_LOCAL=    # true when on Unraid host`
 2. `.env` on Unraid host (gitignored): `DEPLOY_LOCAL=true`
-3. Regenerate.
 
 Secondary detection: `_is_local_host()` also matches via `hostname -I`. `DEPLOY_LOCAL` is the explicit escape hatch for when IP comparison fails (e.g., container bridge IP).
 
@@ -281,10 +268,10 @@ Rules:
 
 CLI:
 ```
-./admin logs                  # TUI picker
-./admin logs <target>         # follow from end
-./admin logs <target> --env prod
-./admin logs <target> --tail 500 | --all | --no-follow
+admin logs                  # TUI picker
+admin logs <target>         # follow from end
+admin logs <target> --env prod
+admin logs <target> --tail 500 | --all | --no-follow
 ```
 
 Default: follow from end, no history. Handles rotation/truncation via inode/size detection. Remote uses `tail -F`.
@@ -295,13 +282,13 @@ Default: follow from end, no history. Handles rotation/truncation via inode/size
 
 ## Logging system (per-command file output)
 
-Every command tees to `tmp/<cmd>[-<sub>].log` (e.g. `./admin dev ios` → `tmp/dev-ios.log`). Up to 3 prior runs retained as `.log.1`–`.log.3` (`.1` = most recent).
+Every command tees to `tmp/<cmd>[-<sub>].log` (e.g. `admin dev ios` → `tmp/dev-ios.log`). Up to 3 prior runs retained as `.log.1`–`.log.3` (`.1` = most recent).
 
-Every `./admin` has a built-in `logs` command:
+Every project gets a built-in `logs` command:
 ```
-./admin logs                  # picker
-./admin logs dev              # filter "dev"
-./admin logs dev ios          # → tmp/dev-ios.log
+admin logs                  # picker
+admin logs dev              # filter "dev"
+admin logs dev ios          # → tmp/dev-ios.log
 ```
 Args joined with `-` as substring filter on basename.
 
@@ -323,7 +310,7 @@ log = false                    # disable for this command
 ### "Check the logs"
 
 1. Identify the most-recent command (ask or infer).
-2. `Read` `tmp/<cmd>-<subcmd>.log` directly — don't run `./admin logs`.
+2. `Read` `tmp/<cmd>-<subcmd>.log` directly — don't run `admin logs`.
 3. Build problem (didn't launch) → read **top** (first 80 lines).
 4. Runtime bug (launched then failed) → read **bottom** (last 80 lines).
 5. Previous run at `.log.1`.
@@ -352,17 +339,16 @@ The server binds `0.0.0.0` unconditionally — anyone on the tailnet can POST. S
 **Adoption checklist for a new project:**
 1. Add `[log_bridge]` to `admin.toml` with the right `hosts` (and `port_range` if non-default).
 2. Confirm the dev action is `kind = "interactive-shell"` — bridge only wires in there.
-3. Regenerate `./admin`.
-4. Verify `PROBE_HOSTS` in the userscript includes this machine's Tailscale IP.
-5. Run `./admin dev`, open the page, `console.log("hello")` in DevTools, tail the log.
+3. Verify `PROBE_HOSTS` in the userscript includes this machine's Tailscale IP.
+4. Run `admin dev`, open the page, `console.log("hello")` in DevTools, tail the log.
 
 Discovery files live at `/tmp/admin-project-tool/<pid>.json`; stale ones (dead PIDs) are swept on each start.
 
 ---
 
-## v1 projects (no `admin.toml`)
+## Standalone copy (`admin compile`)
 
-A v1 `./admin` is a bundled single file with `# @bundled` header but no manifest. Don't hand-audit — regenerate from scratch (overwrites) until `--from-existing` ships.
+For a machine or container without the tool installed, `admin compile` writes a self-contained `./admin` zipapp at the project root that embeds the interpreter + `admin_lib` + the resolved manifest. Run it directly as `./admin <cmd>` there. It's also how you pin a project to a known-good tool version. This is the only thing that produces an `./admin` file — normal projects don't have one.
 
 ---
 

@@ -18,7 +18,7 @@ Boot the dev server briefly to confirm the wiring works.
 
 2. **If project deploys docs**, also run `npm run docs:build` and confirm it exits clean.
 
-3. **If `admin.toml` is wired**, run `./admin docs` briefly and confirm VitePress + HMR boot.
+3. **If `admin.toml` is wired**, run `admin docs` briefly and confirm VitePress + HMR boot.
 
 Failures here usually point at one of the gotchas in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) — `.mts` rename, `{{ }}` template syntax, missing `layout: home`.
 

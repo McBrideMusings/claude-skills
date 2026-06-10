@@ -24,7 +24,7 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 |---|---|
 | [PHASE-01-STATE-DETECTION.md](PHASE-01-STATE-DETECTION.md) | Probe non-standard locations, build the audit table |
 | [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md) | `CLAUDE.md` (root) + `.claude/CLAUDE.local.md` |
-| [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md) | `admin.toml` + `./admin` (delegates to `/admin`) |
+| [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md) | `admin.toml` (delegates to `/admin`) |
 | [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (delegates to `/docs`) |
 | [PHASE-05-DOCS-ARTIFACTS.md](PHASE-05-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`, `docs/PRD.md`, `docs/ROADMAP.md` |
 | [PHASE-06-ISSUE-TRACKER.md](PHASE-06-ISSUE-TRACKER.md) | `gh auth status` + GitHub remote check, record fallback if needed |

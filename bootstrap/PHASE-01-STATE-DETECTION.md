@@ -8,7 +8,7 @@ For each piece of the standard layout, classify into one of: `missing`, `standar
 |---|---|
 | `CLAUDE.md` (root) | `AGENTS.md`, `.claude/CLAUDE.md` |
 | `.claude/CLAUDE.local.md` | `CLAUDE.local.md` (root), `.claude.local.md` |
-| `admin.toml` + `./admin` | (admin skill handles detection — Makefile, justfile, package.json scripts as substitutes) |
+| `admin.toml` | (admin skill handles detection — Makefile, justfile, package.json scripts as substitutes; a bare `./admin` with no `admin.toml` is a stale artifact) |
 | `docs/` + `.vitepress/config.mts` | bare `docs/` (no VitePress), `documentation/`, `wiki/` |
 | `docs/CONTEXT.md` | `CONTEXT.md` (root), `GLOSSARY.md`, `docs/glossary.md`, `docs/terms.md`, per-context `src/*/CONTEXT.md` without a map |
 | `docs/adr/` | `adr/`, `decisions/`, `docs/decisions/`, `docs/adrs/`, `architecture/decisions/` |

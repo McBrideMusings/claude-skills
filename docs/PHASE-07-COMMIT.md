@@ -8,7 +8,7 @@ Commit everything the docs skill touched together so the history is one coherent
 - `package.json` (added `docs:dev` script, devDep)
 - `CLAUDE.md` (Documentation section)
 - `.gitignore` (cache/dist entries)
-- `admin.toml` and the generated `./admin` (if wired)
+- `admin.toml` (if wired)
 
 ## Commit
 

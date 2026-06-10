@@ -3,12 +3,12 @@ Template body for `.claude/skills/read-logs.md`. Copy verbatim when the file is 
 ```markdown
 ---
 name: read-logs
-description: Read runtime logs from the last ./admin dev or other command. Use when the user says they ran the app and something didn't work, or when you need to check what happened during the last run.
+description: Read runtime logs from the last admin dev or other command. Use when the user says they ran the app and something didn't work, or when you need to check what happened during the last run.
 ---
 
 # Read Logs
 
-Admin commands write to `tmp/<route>.log` (e.g. `./admin dev ios` → `tmp/dev-ios.log`). Previous runs: `.log.1`, `.log.2`, `.log.3`.
+Admin commands write to `tmp/<route>.log` (e.g. `admin dev ios` → `tmp/dev-ios.log`). Previous runs: `.log.1`, `.log.2`, `.log.3`.
 
 ## Strategy
 
@@ -21,5 +21,5 @@ Admin commands write to `tmp/<route>.log` (e.g. `./admin dev ios` → `tmp/dev-i
 
 - Read full log upfront if large
 - Ask user to paste logs — just read the file
-- Run `./admin logs` — use Read directly
+- Run `admin logs` — use Read directly
 ```

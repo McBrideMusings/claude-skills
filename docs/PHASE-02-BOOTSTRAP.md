@@ -13,7 +13,7 @@
 5. **Wire `package.json`:** `"docs:dev": "vitepress dev docs --port 5193"` (or main app port + 20).
 
    Don't add `docs:build` / `docs:preview` unless project deploys docs. Heuristic: workflows mention Pages / Netlify / Vercel / `vitepress build`, or `gh-pages` / `docs-deploy` script in package.json.
-6. **Wire `admin.toml`** if present. See the `[commands.docs]` shape at the bottom of this file. Regenerate with `~/.admin/init-admin --regenerate . --force-dirty`.
+6. **Wire `admin.toml`** if present. See the `[commands.docs]` shape at the bottom of this file. The change takes effect immediately — the `admin` tool interprets `admin.toml` at runtime, so there's nothing to regenerate. Validate with `admin check`.
 7. **Update `CLAUDE.md`** Documentation section (template below).
 8. **Append to `.gitignore`** if missing:
 
@@ -62,7 +62,7 @@ Drop table rows for files that don't exist.
 ```md
 ## Documentation
 
-This project has a VitePress docs site under `docs/`. Run `./admin docs` (or `npm run docs:dev`) to read it on `http://localhost:5193`.
+This project has a VitePress docs site under `docs/`. Run `admin docs` (or `npm run docs:dev`) to read it on `http://localhost:5193`.
 
 Keep these in sync as you work:
 
