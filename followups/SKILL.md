@@ -83,7 +83,10 @@ Check local remotes only:
 git remote -v
 ```
 
-Scan output for a `github.com[:/]OWNER/REPO` remote. If one exists, that `OWNER/REPO` is the destination — prefer the remote named `origin`, then `mine`, then the first GitHub match. No `gh` API calls needed for the check.
+Scan output for `github.com[:/]OWNER/REPO` remotes:
+
+- **One GitHub remote** → that `OWNER/REPO` is the destination. No `gh` API call needed.
+- **Multiple GitHub remotes** (e.g. a personal fork *and* a read-only upstream you don't own) → file to the repo the user **owns**, never the upstream. Resolve the authenticated login once with `gh api user --jq .login`, then pick the remote whose `OWNER` matches it. The remote's *name* (`origin` vs `mine`) is irrelevant — `origin` is often the upstream you don't own. If none of the owners match the user (all org/third-party repos), fall back to the remote named `origin`, then `mine`, then the first GitHub match.
 
 If no GitHub remote matches, destination is `<repo-root>/tmp/claude/followups.md`.
 
