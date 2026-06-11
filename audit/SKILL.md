@@ -5,7 +5,7 @@ description: Review uncommitted changes or branch changes against base branch (o
 
 # Audit
 
-Review code changes for bugs, quality issues, CLAUDE.md compliance, and **spec compliance**. Runs five parallel sub-agents and reports axis-tagged findings.
+Review code changes for bugs, quality issues, CLAUDE.md compliance, **architecture fit**, and **spec compliance**. Runs parallel sub-agents across six review axes and reports axis-tagged findings.
 
 ## Modes
 
@@ -65,6 +65,15 @@ One message, all sub-agents in parallel. **Every sub-agent that emits issues mus
 
 - **Standards / Code comments and contracts (Sonnet)** — read code comments in modified files. Flag changes that violate documented contracts, TODOs that should be addressed, or stale comments left in.
 
+- **Architecture fit (Sonnet)** — evaluate whether the *diff* sits correctly in the existing structure. This is a read-only surface check on the change, not a full architecture review — for a dedicated deepening pass, the `improve-codebase-architecture` skill is the heavier tool, and this agent's brief should point the reader there when a finding clearly warrants it. Use the architecture vocabulary from `improve-codebase-architecture` (module, interface, depth, seam — not "component/service/boundary"), and judge the change on these five lenses:
+  - **Fit** — does the change respect existing module/layer responsibilities, or introduce cross-layer coupling (e.g. routing domain logic through the UI layer)?
+  - **Abstraction level** — are new interfaces/types at the right level of generality, or do they leak implementation detail / over-generalize for one caller?
+  - **Pattern consistency** — does it follow the patterns already in use here (how errors are represented, how state is held, how side effects are isolated), or invent a one-off?
+  - **Structural scalability** — is there a *structural* (not algorithmic) decision that becomes painful at 10× the code/load?
+  - **Ownership clarity** — is it obvious which module owns each new piece of logic, or is responsibility ambiguous?
+
+  Architecture findings are **always design calls — never style nits**, and are in scope even when the file they concern wasn't directly modified (a layer violation introduced by a single new import is still a layer violation). Tag each `[architecture/<severity>]`. Surface them separately from bug findings.
+
 - **Spec compliance (Sonnet)** — read the spec located in Phase 03, then read the diff. Report findings in three sub-categories, quoting the spec line for each, and tag each finding with its sub-category so Phase 07 can route them:
   1. **Missing or partial** (`spec/missing-partial`) — requirements the spec asked for that aren't implemented or are only partly done. Also surface explicit `TODO` / `FIXME` / `XXX` markers left in the diff that point at unfinished spec work.
   2. **Scope creep** (`spec/scope-creep`) — behaviour in the diff that wasn't asked for.
@@ -76,7 +85,7 @@ One message, all sub-agents in parallel. **Every sub-agent that emits issues mus
 
 ### Phase 05 — Score Every Issue
 
-For each issue from any of the five review agents, launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
+For each issue from any of the six review agents, launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
 
 ### Phase 06 — Filter
 
@@ -134,6 +143,12 @@ Plain-English description of what the change does and why. 3–6 sentences. Writ
 ### Contracts (1)
 1. ...
 
+### Architecture (1)
+1. **[architecture/medium]** New `OrderController` reaches into the persistence module directly instead of going through the `OrderRepository` seam every other caller uses.
+   - **File:** `src/api/order_controller.py:48`
+   - **Why:** Every other write path crosses the `OrderRepository` interface, which owns transaction boundaries and invariant checks. This new import binds the API layer straight to the storage implementation, so the controller now carries persistence concerns the rest of the layer doesn't — a layer-fit violation that spreads ownership of "how orders are written" across two modules.
+   - **Fix:** Route the write through `OrderRepository.save(order)` like the sibling handlers. If the repository lacks the needed method, add it there so the seam stays the single place order-write logic lives. (Design call — confirm before acting; a dedicated pass is `improve-codebase-architecture`.)
+
 ## No issues found
 (if all scored below 75; on a draft PR, this means no issues *and* no expected gaps surfaced)
 ```
@@ -172,6 +187,7 @@ Every issue is tagged `[<axis>/<severity>]`. Axis values:
 - `standards` — from the CLAUDE.md compliance agent
 - `history` — from the Historical context agent
 - `contracts` — from the Code comments and contracts agent
+- `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit.
 
 Severity: `low` / `medium` / `high` derived from the confidence score (75–84 medium, 85–94 high, 95+ high with leading emphasis).
 

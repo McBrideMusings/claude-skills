@@ -153,19 +153,21 @@ If `docs/` doesn't exist or doesn't follow the standard layout, skip this sectio
 
 ## Phase 4: Code quality check
 
-Before committing, run two parallel quality checks on the session's changes:
+Before committing, run three parallel quality checks on the session's changes:
 
-1. **Launch both in parallel using the Agent tool** (two agents in a single message):
+1. **Launch all three in parallel using the Agent tool** (in a single message):
    - A **code-simplifier agent** (subagent_type: "code-simplifier") to simplify and refine changed code
    - A **code-review agent** (subagent_type: "general-purpose") — invoke the `code-review` skill using the Skill tool to review uncommitted changes for bugs and CLAUDE.md compliance
+   - An **architecture-fit agent** (subagent_type: "general-purpose") — judge whether the change sits correctly in the existing structure, on five lenses: **Fit** (respects module/layer responsibilities, no cross-layer coupling), **Abstraction level** (new interfaces at the right generality), **Pattern consistency** (follows how errors/state/side-effects are already handled here), **Structural scalability** (no structural decision that bites at 10×), **Ownership clarity** (obvious which module owns each new piece). Use the `improve-codebase-architecture` vocabulary (module, interface, depth, seam). This is a light surface check on the diff — point to `improve-codebase-architecture` for a deep pass.
 
 2. **Fallback if a subagent type isn't registered:** if the Agent tool reports the subagent type is unavailable, invoke the equivalent skill inline via the Skill tool instead (e.g., run the `code-review` skill directly in this context) and continue.
-3. Wait for both agents to complete
+3. Wait for all three agents to complete
 4. Apply any simplifications from the code-simplifier agent
 5. Address any issues scored 75+ from the code review — fix them before committing
-6. If either agent found nothing actionable, proceed to Phase 5
+6. **Architecture findings are surfaced, never auto-fixed.** Architecture findings are design calls — wrap-up runs unattended (often inside `iterate`) and must not silently restructure the codebase to satisfy one. **Do NOT apply them.** Collect them and carry them into Phase 6, where each becomes a follow-up item titled `Architecture: <one-line finding>`. The only exception is a finding that is *also* a 75+ correctness bug from the code-review agent — that's fixed as a bug under step 5, not deferred.
+7. If all three agents found nothing actionable, proceed to Phase 5
 
-**⛔ Do not stop here.** A clean review (no findings, `(none)`, nothing 75+) means the code is ready to commit — it is a green light to proceed to Phase 5, NOT a place to end your turn. The most common wrap-up failure is emitting a recap after a clean Phase 4 and stopping with the work still uncommitted. Both agents must have run (code-review AND code-simplifier — not just one); then move straight into Phase 5 and commit. The pass is not finished until Phase 5 has pushed and Phase 6 has reported.
+**⛔ Do not stop here.** A clean review (no findings, `(none)`, nothing 75+) means the code is ready to commit — it is a green light to proceed to Phase 5, NOT a place to end your turn. The most common wrap-up failure is emitting a recap after a clean Phase 4 and stopping with the work still uncommitted. All three agents must have run (code-review, code-simplifier, AND architecture-fit — not just one); then move straight into Phase 5 and commit. Architecture findings being open is NOT a blocker — they are surfaced as follow-ups in Phase 6, not fixed here. The pass is not finished until Phase 5 has pushed and Phase 6 has reported.
 
 ---
 
@@ -188,3 +190,5 @@ Give a brief summary of:
 - What tracking/docs were updated
 
 Then invoke the `summarize` skill using the Skill tool to generate a unified summary of branch changes and session work. After the summary is printed, invoke the `followups` skill using the Skill tool in Generate mode to surface new items from this session and file the selected ones.
+
+**Include the architecture findings from Phase 4 (step 6) as follow-up candidates** — one item each, titled `Architecture: <finding>`, with the file and the one-line tradeoff so a later session (or `improve-codebase-architecture`) can pick them up. These are surfaced, not fixed; filing them is how they avoid being lost without wrap-up overstepping into design decisions.
