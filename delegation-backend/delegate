@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# delegate — cross-vendor delegation resolver.
+#
+# Resolves a non-interactive coding agent from $CLAUDE_DELEGATE_AGENT and runs it.
+# The skills (dual-audit, delegated-iterate) call only these three verbs and never
+# name a specific vendor:
+#
+#   delegate agent                       print the resolved agent (codex|reasonix), or fail
+#   delegate check                       is the resolved agent authed & reachable? (exit 0/1)
+#   delegate exec <prompt-file> <outfile>  run the agent non-interactively with the prompt;
+#                                          output to <outfile>, in a visible Terminal.app window
+#
+# Selection: $CLAUDE_DELEGATE_AGENT, set per-profile in settings.local.json
+# (reasonix on personal, codex on work). A repo can override it in its own
+# .claude/settings.local.json. Unset/unknown is a hard error — never guess a vendor.
+set -eu
+
+KNOWN="codex reasonix"
+
+resolve_agent() {
+  local a="${CLAUDE_DELEGATE_AGENT:-}"
+  if [ -z "$a" ]; then
+    echo "delegate: no delegate configured — set CLAUDE_DELEGATE_AGENT (codex|reasonix) in settings.local.json" >&2
+    return 1
+  fi
+  case " $KNOWN " in
+    *" $a "*) printf '%s\n' "$a" ;;
+    *) echo "delegate: unknown agent '$a' (expected one of: $KNOWN)" >&2; return 1 ;;
+  esac
+}
+
+cmd_agent() { resolve_agent; }
+
+cmd_check() {
+  local a out; a="$(resolve_agent)" || return 1
+  case "$a" in
+    codex)
+      out="$(codex login status 2>&1 || true)"
+      if printf '%s' "$out" | grep -qi "logged in"; then
+        echo "delegate: codex ready"
+      else
+        echo "delegate: codex not authenticated — run 'codex login'" >&2; return 1
+      fi
+      ;;
+    reasonix)
+      out="$(reasonix doctor 2>&1 || true)"
+      if printf '%s' "$out" | grep -q "key:present"; then
+        echo "delegate: reasonix ready"
+      else
+        echo "delegate: reasonix not authenticated — set DEEPSEEK_API_KEY, then run 'reasonix setup'" >&2; return 1
+      fi
+      ;;
+  esac
+}
+
+cmd_exec() {
+  local a; a="$(resolve_agent)" || return 1
+  local promptfile="${1:-}" outfile="${2:-}"
+  if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
+    echo "usage: delegate exec <prompt-file> <outfile>" >&2; return 2
+  fi
+  [ -f "$promptfile" ] || { echo "delegate: prompt file not found: $promptfile" >&2; return 1; }
+
+  local runner
+  case "$a" in
+    codex)    runner="codex exec" ;;   # non-interactive; prompt on stdin
+    reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
+  esac
+
+  : > "$outfile"
+  # The real command runs in a temp script so the AppleScript string stays trivial
+  # (just "bash /tmp/xxx") and we never fight do-script quoting.
+  local cmdfile; cmdfile="$(mktemp -t delegate-run.XXXXXX)"
+  {
+    printf 'cd %q\n' "$PWD"
+    printf 'cat %q | %s > %q 2>&1\n' "$promptfile" "$runner" "$outfile"
+    printf 'printf "\\n__DELEGATE_DONE__\\n" >> %q\n' "$outfile"
+  } > "$cmdfile"
+
+  local win
+  win="$(osascript <<OSA
+tell application "Terminal"
+  activate
+  do script "bash $cmdfile"
+  delay 1
+  id of front window
+end tell
+OSA
+)"
+
+  # Block until the agent finishes (skills run this verb in the background, so the
+  # harness notifies on exit). Sentinel in the output file is the source of truth.
+  local i=0
+  while ! grep -q "__DELEGATE_DONE__" "$outfile" 2>/dev/null; do
+    sleep 3; i=$((i + 1))
+    if [ "$i" -ge 800 ]; then
+      echo "delegate: timed out (~40m) waiting for $a — leaving the window open for inspection" >&2
+      rm -f "$cmdfile"; return 1
+    fi
+  done
+
+  osascript -e "tell application \"Terminal\" to close (every window whose id is $win) saving no" >/dev/null 2>&1 || true
+  grep -v "__DELEGATE_DONE__" "$outfile" > "$outfile.tmp" 2>/dev/null && mv "$outfile.tmp" "$outfile" || true
+  rm -f "$cmdfile"
+  echo "delegate: $a finished → $outfile"
+}
+
+case "${1:-}" in
+  agent) cmd_agent ;;
+  check) cmd_check ;;
+  exec)  shift; cmd_exec "$@" ;;
+  *) echo "usage: delegate {agent|check|exec <prompt-file> <outfile>}" >&2; exit 2 ;;
+esac
