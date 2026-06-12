@@ -5,7 +5,14 @@ description: "Capture follow-up items — quick 'add a followup' captures and se
 
 Use when the user asks to add a follow-up ("remember to …", "file as a followup") or to generate/surface new follow-ups from the session (also invoked by `/wrap-up`). To **browse, pick, or start** an existing item, that's `triage` — a follow-up is just another tracked item triage reads. This skill only **creates** items.
 
-Every prompt this skill makes is a plain chat question. Never use the `AskUserQuestion` tool / structured-question schema — answers here are free-form (item numbers, ranges, "all", "none"), the numbered list is already in the message, and the chip-picker UI can't express those replies.
+> ### HARD RULE — never use `AskUserQuestion` / the chip-picker selector
+>
+> **Every prompt this skill makes is a plain chat question typed into the message body. NEVER call the `AskUserQuestion` tool, and NEVER render a selector / multi-select / chip-picker UI of any kind — not for "which to file", not for anything.** This is not a stylistic preference; the chip-picker is *wrong here* and breaks the skill:
+> - Answers are free-form — item **numbers, ranges, "all", "none"** — which the fixed-option chip schema literally cannot express.
+> - The numbered candidate list already lives in the chat message above the question, so a picker just duplicates it.
+> - A selector turns "which should I file?" into a list of pre-checked actions, which reads as *intent to act* — exactly the misfire that files issues the user never asked for.
+>
+> If you are about to reach for `AskUserQuestion` anywhere in this skill: stop. Write the list as plain markdown, then ask the question as one plain sentence and wait for a free-form reply.
 
 ## Where followups live
 
@@ -135,7 +142,7 @@ Same applies to stale items in this followups file — flag them inline, don't w
 
 ### Step 5: File
 
-**Default — interactive** (a standalone `/iterate`, a manual `/wrap-up`, or a direct `/followups`): if suggestions exist, ask once — as a plain chat question, never via the `AskUserQuestion` tool. The user replies with free-form text (numbers, ranges, "all", "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
+**Default — interactive** (a standalone `/iterate`, a manual `/wrap-up`, or a direct `/followups`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, "all", "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
 - **GitHub repo:** "Which of these should I file as GitHub issues? (numbers, ranges, 'all', or 'none')"
 - **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, 'all', or 'none')"
 
