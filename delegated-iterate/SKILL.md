@@ -17,11 +17,11 @@ Same as `/iterate` (one tracked item, walk-away, minimize prompts). Use *this* v
 
 ## Prerequisites
 
-- Everything `/iterate` needs, plus the cross-vendor backend — read [../delegation-backend/SKILL.md](../delegation-backend/SKILL.md) for the `delegate` resolver and Terminal.app transport. The skill never names a vendor; `delegate` resolves it from `CLAUDE_DELEGATE_AGENT`.
+- Everything `/iterate` needs, plus the cross-vendor backend — read [../delegate/SKILL.md](../delegate/SKILL.md) for the `delegate` resolver and Terminal.app transport. The skill never names a vendor; `delegate` resolves it from `CLAUDE_DELEGATE_AGENT`.
 - **Gate the gate:** before the review step, run `delegate check`. If it fails (no delegate configured, not authenticated, Terminal automation not permitted), **halt and tell the user** — do not silently degrade to a plain `/iterate`, because the independent gate is the reason they chose this skill.
 
 ```bash
-D="$HOME/.claude/skills/delegation-backend/delegate"
+D="$HOME/.claude/skills/delegate/delegate"
 "$D" check || { echo "Delegate unavailable — halting (the review gate is the point of /delegated-iterate)"; halt; }
 ```
 
@@ -37,7 +37,7 @@ If a halt condition fires during implement (no diff, unfixable test failure), ha
 ### Phase 2.5 — Independent review gate (the insertion)
 
 1. **Scope.** Compute the diff range for the work this pass produced: `git diff <merge-base>..HEAD` for committed work, or `git diff HEAD` plus untracked files if implementation hasn't committed yet.
-2. **Kick off the delegate.** Derive the slug (backend doc). Write the review prompt to a temp file and run `delegate exec` in the **background**, output to `/tmp/<slug>-delegate.md`. The prompt must include:
+2. **Kick off the delegate.** **Always go through the `delegate exec` router — NEVER call any vendor binary directly.** The router is the whole point. Calling the underlying agent yourself runs it headless: no Terminal window for the user to watch, no in-sandbox network, no output file — silently defeating the gate. The only correct invocation is the `"$D" exec` form below; no exceptions, not even "just this once." Derive the slug (backend doc). Write the review prompt to a temp file and run `delegate exec` in the **background**, output to `/tmp/<slug>-delegate.md`. The prompt must include:
    - The exact diff command and base.
    - "The check/test suite is already green — focus on **correctness, security holes, regressions**, not re-running tests."
    - A push to **enumerate every call site of any dangerous capability the diff touches** (every parse of client input, every privileged call), rather than trusting that the changed routes are the only ones — that is where false confidence lives.
@@ -80,6 +80,7 @@ Iteration N complete: <summary>. Branch ahead by M commits. Delegate gate: MERGE
 
 ## Notes
 
+- **NEVER bypass the router.** The delegate runs only via `delegate exec` — never a vendor binary called directly. Direct calls run headless: no Terminal window the user can watch, no in-sandbox network, no output file. The router is the whole point.
 - The delegate is the **reviewer**, not the implementer — Claude owns every code change, including the fixes for the delegate's findings. Don't re-task the delegate to write code.
 - One tracked item per pass, at most one commit (wrap-up's), exactly like `/iterate`.
 - Continuous mode is `/loop /delegated-iterate continuous`; this skill never invokes itself.

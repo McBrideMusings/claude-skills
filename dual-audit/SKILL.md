@@ -11,11 +11,11 @@ description: "Run the audit review, then add an independent second-opinion revie
 
 ## Prerequisites
 
-- The delegate runs through the cross-vendor backend — read [../delegation-backend/SKILL.md](../delegation-backend/SKILL.md) for the `delegate` resolver and the Terminal.app transport. The skill never names a vendor; `delegate` resolves it from `CLAUDE_DELEGATE_AGENT`.
+- The delegate runs through the cross-vendor backend — read [../delegate/SKILL.md](../delegate/SKILL.md) for the `delegate` resolver and the Terminal.app transport. The skill never names a vendor; `delegate` resolves it from `CLAUDE_DELEGATE_AGENT`.
 - **Gate first:** run `delegate check`. If it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain `audit`** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
 ```bash
-D="$HOME/.claude/skills/delegation-backend/delegate"
+D="$HOME/.claude/skills/delegate/delegate"
 "$D" check || { echo "Delegate unavailable — running plain audit only"; }
 ```
 
@@ -25,6 +25,8 @@ D="$HOME/.claude/skills/delegation-backend/delegate"
 Invoke the `audit` skill via the Skill tool. Let it determine the review scope (uncommitted / branch-vs-base / fixed-point), locate CLAUDE.md and the spec, and produce its axis-tagged findings. Capture **the exact diff command audit used** — the delegate must review the identical scope.
 
 ### 2. Kick off the independent delegate review
+**Always go through the `delegate exec` router — NEVER call any vendor binary directly.** The router is the whole point. Calling the underlying agent yourself runs it headless: no Terminal window for the user to watch, no in-sandbox network, no output file — silently defeating the skill. The only correct invocation is the `"$D" exec` form below. No exceptions, not even "just this once."
+
 Derive the slug (see the backend doc). Write the review prompt to a temp file, then run `delegate exec` in the **background** (the Bash tool's background mode), output to `/tmp/<slug>-delegate.md`:
 
 ```bash
@@ -47,7 +49,7 @@ Substitute the **literal** diff command audit used (`gh pr diff`, the merge-safe
 Because `delegate exec` runs in the background, the harness notifies you when it finishes; then read `/tmp/<slug>-delegate.md`. The delegate's output includes its own chrome (a progress line, a token/cost footer) around the findings — extract the substance, ignore the chrome.
 
 ### 4. Reconcile
-Merge the delegate's findings with audit's into one set, deduped by file+line+claim. Tag each finding's **source**: `audit`, `delegate`, or `both`. "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch this skill exists for — weight it accordingly, don't discount it for being single-source.
+Merge the delegate's findings with audit's into one set, deduped by file+line+claim. Tag each finding's **source** with the tool that actually found it: `audit` for Claude's own findings, the **resolved delegate name** for the delegate's, or `both` when both flagged it. Get the delegate name at runtime — run `delegate agent`, which prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, not `[delegate]`). The skill never *presumes* which tool that is; it learns it from `delegate agent` after the run. "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch this skill exists for — weight it accordingly, don't discount it for being single-source.
 
 ### 5. Triage (read-only)
 Classify each finding, but **surface — never fix**:
@@ -63,7 +65,7 @@ Classify each finding, but **surface — never fix**:
 If the user wants a finding dug into deeper, write a follow-up prompt referencing the prior round and that finding, and run `delegate exec` again to the same `/tmp/<slug>-delegate.md`. Stop after at most a couple of rounds or when the delegate returns nothing new.
 
 ### 7. Report
-Produce a single consolidated report in `audit`'s file format and location, with two additions: a **Source** tag (`audit` / `delegate` / `both`) on each finding, and the delegate's findings folded into the matching axis sections (its architecture findings into `### Architecture`, its bug findings into `### Bugs`, etc.). Print the body, then the file path as the last token on its line with no trailing punctuation.
+Produce a single consolidated report in `audit`'s file format and location, with two additions: a **Source** tag on each finding — `audit`, the resolved delegate name from `delegate agent` (e.g. `[codex]` / `[reasonix]`), or `both` — and the delegate's findings folded into the matching axis sections (its architecture findings into `### Architecture`, its bug findings into `### Bugs`, etc.). The source tag carries the **real tool name**, never the literal word `delegate`; the report's job is to make plain where each finding came from. Print the body, then the file path as the last token on its line with no trailing punctuation.
 
 Do **not** commit, fix, or open a PR — this is a review.
 
@@ -73,5 +75,6 @@ Do **not** commit, fix, or open a PR — this is a review.
 - **Discounting delegate-only findings.** The single-source cross-vendor catch is the whole reason to run this — don't bury it because Claude's own agents didn't independently surface it.
 - **Dismissing architecture findings as out-of-scope.** A layer violation from one new import is in scope regardless of diff size.
 - **Expanding scope.** If the delegate wants to refactor adjacent code that wasn't in the diff, dismiss it as out-of-scope unless the user authorizes a wider review.
-- **Naming a vendor in the skill.** Always go through `delegate`; the resolver picks codex vs reasonix from the environment.
+- **Presuming a vendor in the instructions.** Don't hardcode or assume which tool runs — always go through `delegate`, which picks the agent from the environment. (This is about the *instructions*. The *final report* is the opposite: it must tag each finding with the **real** resolved tool name from `delegate agent`, e.g. `[codex]` — never the generic word `delegate`.)
+- **Bypassing the router.** NEVER run a vendor binary directly — only ever `delegate exec`. Direct calls run headless: no Terminal window the user can watch, no in-sandbox network, no output file. The router is the whole point.
 - **Substituting a Claude subagent for the delegate.** Same-family review gives correlated blind spots — defeats the purpose. If the delegate is unavailable, fall back to plain `audit` and say so, don't fake the second opinion with another Claude.

@@ -63,7 +63,7 @@ cmd_exec() {
 
   local runner
   case "$a" in
-    codex)    runner="codex exec" ;;   # non-interactive; prompt on stdin
+    codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
     reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
   esac
 

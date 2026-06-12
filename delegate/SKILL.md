@@ -1,11 +1,17 @@
 ---
-name: delegation-backend
-description: "Reference for the cross-vendor delegation backend used by the dual-audit and delegated-iterate skills: the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, auth health-gating, and the Terminal.app transport. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). NOT for delegating to another Claude model — use the Agent tool for that."
+name: delegate
+description: "Reference for the cross-vendor `delegate` skill used by the dual-audit and delegated-iterate skills: the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, auth health-gating, and the Terminal.app transport. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). NOT for delegating to another Claude model — use the Agent tool for that."
 ---
 
 # Delegation backend
 
 How the delegation skills (`dual-audit`, `delegated-iterate`) hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window.
+
+> ## ⛔ NEVER bypass the router — this is non-negotiable
+>
+> The delegate **always** runs through the `delegate exec` script. **NEVER** call a vendor binary directly — not from a Bash tool call, not "just this once," not because it seems quicker, not for any reason. The router is the whole point: it is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the delegate's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-delegate.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct.
+>
+> Calling a vendor binary directly runs it **headless in the background with no window** — silently defeating every one of those guarantees. The only correct invocation is `"$HOME/.claude/skills/delegate/delegate" exec <prompt-file> <outfile>`. No exceptions. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `delegate`.)
 
 > The smoke test showed `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.
 
@@ -23,7 +29,7 @@ Two layers, kept separate on purpose:
 Call it by absolute path so it works from either profile (the `skills/` dir is the same real directory for both):
 
 ```
-$HOME/.claude/skills/delegation-backend/delegate <verb>
+$HOME/.claude/skills/delegate/delegate <verb>
 ```
 
 ```
@@ -47,7 +53,7 @@ The review prompt, the verdict format (e.g. `MERGEABLE / BLOCK`), and any follow
 ### Calling pattern from a skill
 
 ```bash
-D="$HOME/.claude/skills/delegation-backend/delegate"
+D="$HOME/.claude/skills/delegate/delegate"
 "$D" check || { echo "Cannot delegate — see message above"; halt; }   # hard gate
 # write the prompt (review instructions + the diff command to run) to a temp file
 prompt="$(mktemp -t delegate-prompt.XXXXXX)"
