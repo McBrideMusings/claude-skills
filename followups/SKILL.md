@@ -73,22 +73,17 @@ Orient yourself:
 
 ### Step 2: Determine destination
 
-Decide where items will be filed — GitHub issues or this followups file.
-
-If the repo has a GitHub remote, GitHub issues are the destination — regardless of who owns the repo. If it has no GitHub remote (or isn't a git repo), the followups file is the destination.
-
-Check local remotes only:
+**GitHub issues whenever the repo has a GitHub remote — owned or not.** The followups file is only a fallback for when there's no GitHub remote (or it isn't a git repo). That is the *single* reason to use the file.
 
 ```
 git remote -v
 ```
 
-Scan output for `github.com[:/]OWNER/REPO` remotes:
+Scan for a `github.com[:/]OWNER/REPO` remote:
 
-- **One GitHub remote** → that `OWNER/REPO` is the destination. No `gh` API call needed.
-- **Multiple GitHub remotes** (e.g. a personal fork *and* a read-only upstream you don't own) → file to the repo the user **owns**, never the upstream. Resolve the authenticated login once with `gh api user --jq .login`, then pick the remote whose `OWNER` matches it. The remote's *name* (`origin` vs `mine`) is irrelevant — `origin` is often the upstream you don't own. If none of the owners match the user (all org/third-party repos), fall back to the remote named `origin`, then `mine`, then the first GitHub match.
-
-If no GitHub remote matches, destination is `<repo-root>/tmp/claude/followups.md`.
+- **One GitHub remote** → that `OWNER/REPO` is the destination.
+- **Several** (e.g. your fork plus a read-only upstream) → prefer the one you own: resolve your login once with `gh api user --jq .login` and pick the remote whose `OWNER` matches; if none match you, use the remote named `origin`.
+- **None** → `<repo-root>/tmp/claude/followups.md`.
 
 ### Step 3: Compile suggestions
 

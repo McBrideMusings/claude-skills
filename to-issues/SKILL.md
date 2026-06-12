@@ -100,9 +100,9 @@ Publish in **dependency order** (blockers first) so "Blocked by" can reference r
 
 Per slice:
 
-- **GitHub:** `gh issue create --title "<title>" --body "<body>" --label agent-ready --milestone "<milestone name>"`
-  - `--label agent-ready` only for AFK slices (HITL slices get no agent-ready label).
+- **GitHub:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
   - `--milestone` only when the slice belongs to a milestone group (omit otherwise). The milestone name must match a title from Phase 05.
+  - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
 
 Do NOT close or modify any parent issue.
 

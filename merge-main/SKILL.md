@@ -7,7 +7,7 @@ description: Merge or rebase a branch with origin/main, intelligently choosing s
 
 Bring a branch up to date with `origin/main`. Automatically choose merge vs rebase based on branch complexity, and resolve conflicts.
 
-Every confirmation in this skill (before committing a merge, before force-pushing, on ambiguous conflicts) is a plain-chat question — never use the `AskUserQuestion` tool / structured-question schema. These are in-the-moment yes/no confirms whose context is the surrounding work, not a standalone menu.
+Every confirmation in this skill (before committing a merge, on ambiguous conflicts) is a plain-chat question — never use the `AskUserQuestion` tool / structured-question schema. These are in-the-moment yes/no confirms whose context is the surrounding work, not a standalone menu.
 
 ## Input
 
@@ -114,9 +114,9 @@ When conflicts are detected:
 After the merge/rebase is complete, push the branch:
 
 - For **merge**: `git push origin <branch-name>`
-- For **rebase**: `git push origin <branch-name> --force-with-lease` (rebase rewrites history, so force is required — but use `--force-with-lease` for safety)
+- For **rebase**: `git push origin <branch-name> --force-with-lease` (rebase rewrites history, so force is required — `--force-with-lease` refuses if someone else has pushed in the meantime).
 
-Ask the user before force-pushing on rebase.
+No confirmation needed before this push: it only ever targets your own feature branch (never `main` — Phase 01 stops on `main`), and `--force-with-lease` is the safety net.
 
 ## Conflict resolution principles
 
