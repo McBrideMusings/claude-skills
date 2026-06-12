@@ -106,19 +106,19 @@ What `delegate exec` does under the hood:
    cd <repo>
    cat <prompt-file> | { codex exec | reasonix run } 2>&1 | tee <outfile>
    printf "\n__DELEGATE_DONE__\n" >> <outfile>
-   # then: print "press any key to close", wait for one keypress,
-   #       delete itself ($0), and close its own window (matched by tty)
+   # then: print a "done" line, delete itself ($0), and exit — leaving the window
+   #       open at an idle shell (it does NOT close itself; see step 4 for why)
    ```
    Both `codex exec` and `reasonix run` read the prompt from **stdin** and run non-interactively (no approval prompts to babysit — the reason exec mode is used instead of an interactive session).
 2. Spawns it with `osascript … do script …`. **Cold-start guard:** if Terminal wasn't already running, launching it opens a blank default window — so the resolver checks `application "Terminal" is running` first and, when it had to launch, runs the script **in that default window** (`do script … in window 1`) instead of letting `do script` spawn a *second* one. When Terminal was already running, a plain `do script` opens a fresh window so it never hijacks one of the user's. Either way: exactly one delegate window, never an orphaned blank.
 3. Polls `<outfile>` for the `__DELEGATE_DONE__` sentinel (the source of truth; `busy` is a weaker secondary signal). The window is visible the whole time — output is `tee`'d to it, so you watch the agent work live.
-4. On the sentinel: strips the sentinel line from `<outfile>` and **returns** — it does **not** close the window. The window stays open showing the full output plus a dim "press any key to close" prompt; on your keypress the script deletes itself and closes its own window (found by matching its `tty`). So the result reaches the caller immediately while the window lingers for you to read at your own pace. On timeout: leaves the window open and exits nonzero.
+4. On the sentinel: strips the sentinel line from `<outfile>` and **returns**. The window is left open at its idle login shell showing the full output — the resolver never closes it, and neither does the script. **The user dismisses it themselves** (Cmd-W / red button). This is deliberate: closing a window *from inside* while a process (`bash`/`osascript`) is still live makes Terminal pop its "terminate running processes?" dialog, whereas a window sitting at an idle login shell closes with no prompt — same as any other terminal window. So the result reaches the caller immediately and the window lingers, promptlessly closable, for you to read at your own pace. On timeout: same — window left open, exits nonzero.
 
 ### Cautions
 
 - **`history`/`contents` expose whatever is on that pane — including secrets** another command may have printed. The resolver redirects agent output to a file rather than scraping the pane, but if you ever read a pane directly, summarize and flag rather than echoing.
 - **First osascript control of Terminal triggers a one-time macOS Automation (TCC) prompt.** It must be granted once; it can't be granted from a script. If `osascript` returns `-1743` / "Not authorized to send Apple events", surface that — the user approves it in System Settings → Privacy & Security → Automation.
-- The window is an outward-facing side effect. The resolver owns the **spawn** (and the cold-start single-window guard); the **close** is the window's own — triggered by your keypress, not by the resolver — so a finished delegate window lingers until you dismiss it.
+- The window is an outward-facing side effect. The resolver owns the **spawn** (and the cold-start single-window guard); it never closes the window — **the user does, by hand**. A finished delegate window is deliberately left at an idle login shell so it closes without Terminal's "terminate running processes?" prompt.
 
 ### Adding a third agent
 

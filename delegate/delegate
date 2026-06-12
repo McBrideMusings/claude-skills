@@ -87,28 +87,20 @@ cmd_exec() {
 
   # The real command runs in a temp script so the AppleScript string stays trivial
   # (just "bash /tmp/xxx") and we never fight do-script quoting. After the agent
-  # finishes, the script itself prints a close prompt, waits for any key, then closes
-  # ITS OWN window (matched by its tty) and deletes itself via $0 — the resolver has
-  # already handed back the result by then, so it can't be the one to close it.
+  # finishes, the script prints a "done" line, deletes itself ($0), and exits — leaving
+  # the window open at its idle login shell. We deliberately do NOT close the window from
+  # inside: closing a window that still has a live process (bash/osascript) makes Terminal
+  # pop its "terminate running processes?" dialog. Letting bash exit means only the login
+  # shell remains, so the user closes the window (Cmd-W / red button) with no prompt —
+  # same as any other idle terminal window.
   local cmdfile; cmdfile="$(mktemp -t delegate-run.XXXXXX)"
   {
     printf 'cd %q\n' "$PWD"
     printf 'cat %q | %s 2>&1 | tee %q\n' "$promptfile" "$runner" "$outfile"
     printf 'printf "\\n__DELEGATE_DONE__\\n" >> %q\n' "$outfile"
     cat <<'CLOSER'
-printf "\n\033[2m──── delegate finished — press any key to close this window ────\033[0m\n"
-read -rsn 1
+printf "\n\033[2m──── delegate finished — close this window when done ────\033[0m\n"
 rm -f "$0"
-mytty="$(tty)"
-osascript <<APPLE >/dev/null 2>&1
-tell application "Terminal"
-  repeat with w in windows
-    try
-      if tty of selected tab of w is "$mytty" then close w saving no
-    end try
-  end repeat
-end tell
-APPLE
 CLOSER
   } > "$cmdfile"
 
@@ -148,11 +140,11 @@ OSA
     fi
   done
 
-  # Output ready: strip the sentinel and return. The window is NOT closed here — it
-  # stays open showing the output + a "press any key to close" prompt and closes itself
-  # when you dismiss it (see the CLOSER block above); its temp script self-deletes via $0.
+  # Output ready: strip the sentinel and return. The window is left open at its idle
+  # shell showing the full output; the user closes it themselves (no terminate prompt,
+  # since only the login shell remains). The temp script already self-deleted via $0.
   grep -v "__DELEGATE_DONE__" "$outfile" > "$outfile.tmp" 2>/dev/null && mv "$outfile.tmp" "$outfile" || true
-  echo "delegate: $a finished → $outfile (window stays open until you press a key)"
+  echo "delegate: $a finished → $outfile (window left open — close it when done)"
 }
 
 case "${1:-}" in
