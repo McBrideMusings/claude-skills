@@ -40,7 +40,7 @@ PR author == my login → **mine**. No PR → fall back to the branch name: mine
 | **not mine, no PR** | review → document | review → document |
 
 - **Offer to fix** ⟺ the branch is mine (or it's my owned-repo working tree): hand to `iterate` (plain or `iterate delegate`).
-- **Offer to post** ⟺ the branch has an open PR **not** authored by me: one consolidated PR comment.
+- **Offer to post** ⟺ the branch has an open PR **not** authored by me: a formal review verdict (Approve / Request changes / Comment) carrying one consolidated report body — or a plain comment — proposed and confirmed, never auto-submitted.
 - Both offers are gated on an explicit yes in the moment — never automatic (global "never send / act on my behalf" rule). See **End of pass**.
 
 Everything except Queue mode is a single-target review: continue into the review core below against that target. **Queue mode** wraps the core, running it once per selected PR.
@@ -185,7 +185,7 @@ Present a table — one row per PR — with these columns: **#** (as a markdown 
 1. `gh pr checkout <number>` — on failure, report the error, skip this PR, continue. Never force anything.
 2. Read context: `gh pr view <number> --json title,body,comments,reviews` — feeds the Spec axis and avoids re-flagging what other reviewers already raised.
 3. Run the review core (and dual flavor if chosen) against the PR's diff vs its base (usually `origin/main`). Let it finish before the next PR.
-4. Run the **post offer** for this PR (it's a teammate PR → offer one consolidated comment, explicit yes). Capture report path + headline verdict.
+4. Run the **post offer** for this PR (it's a teammate PR → propose a review verdict or plain comment, explicit yes). Capture report path + the verdict you posted (or "not posted").
 
 **Complete.** Return to the recorded branch (`git checkout <original-branch>`). Summarize one row per PR — number, title, verdict, blocking-finding count, report path, posted (y/n). Never parallelize checkouts or reviews.
 
@@ -197,14 +197,23 @@ After the report is written, **always print**:
 
 Then run **exactly one** offer, per the Phase 00 routing — never both, never automatic:
 
-**Offer to post** — when the branch has an open PR **not** authored by me (a teammate's PR, via Queue mode or a direct checkout). Ask plainly whether to post the findings. On an explicit **yes in that message**, post as **one consolidated PR comment** — the report body (summary line + axis-grouped findings):
+**Offer to post** — when the branch has an open PR **not** authored by me (a teammate's PR, via Queue mode or a direct checkout). On a PR you didn't author GitHub lets you submit a **formal review verdict**, not just a conversation comment — and it records that verdict as your review decision (Request changes even gates the merge). So the post offer **always proposes a verdict as part of it**, never a bare comment. (Self-authored PRs can't get a verdict — GitHub blocks self-approve/-request-changes — which is why this lives only on the teammate-PR path.)
+
+**Recommend the verdict from the findings:**
+- A **merge-blocking** finding survived — a `high`-severity bug/spec/contract issue, or one the summary line calls out as blocking → recommend **Request changes** (`gh pr review --request-changes`). This gates the merge.
+- **No issues survived** (and on a draft, no expected-gap entries either) → **Approve** (`gh pr review --approve`) is available.
+- **Issues exist but none are merge-blocking** → recommend a neutral **Comment** review (`gh pr review --comment`) — findings on record without gating the merge.
+
+**Propose, then confirm — never auto-submit.** State the recommended verdict, the exact body that will be posted (the report: summary line + axis-grouped findings), and that the user can pick a different verdict or decline. A verdict review — Request changes especially — is an outward action that changes the PR's merge state, so it is held to the same **explicit-yes-in-this-message** gate as any send (global "never send / act on my behalf" rule). Prior or implied consent does not count.
+
+On an explicit **yes in that message**, submit the confirmed verdict as one consolidated review (`--request-changes`, `--approve`, or `--comment`):
 ```
-gh pr comment <number> --body "$(cat <<'EOF'
+gh pr review <number> --request-changes --body "$(cat <<'EOF'
 <report body>
 EOF
 )"
 ```
-Default to NOT posting. Prior or implied consent does not count — only an explicit yes in the current message (global "never send on my behalf" rule). If the user prefers, hand them the comment text to paste instead.
+If the user wants to weigh in **without** a verdict, post the report as a plain conversation comment instead (`gh pr comment <number> --body …`); if they'd rather post by hand, give them the body to paste. Default to NOT posting anything.
 
 **Offer to fix** — when the branch is mine (or my owned-repo working tree). There's nowhere to post my own review; offer a fix pass instead, presenting both flows so the user picks:
 - **`iterate`** — Claude fixes the findings itself.
