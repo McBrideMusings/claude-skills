@@ -86,24 +86,56 @@ cmd_exec() {
   fi
 
   # The real command runs in a temp script so the AppleScript string stays trivial
-  # (just "bash /tmp/xxx") and we never fight do-script quoting.
+  # (just "bash /tmp/xxx") and we never fight do-script quoting. After the agent
+  # finishes, the script itself prints a close prompt, waits for any key, then closes
+  # ITS OWN window (matched by its tty) and deletes itself via $0 — the resolver has
+  # already handed back the result by then, so it can't be the one to close it.
   local cmdfile; cmdfile="$(mktemp -t delegate-run.XXXXXX)"
   {
     printf 'cd %q\n' "$PWD"
     printf 'cat %q | %s 2>&1 | tee %q\n' "$promptfile" "$runner" "$outfile"
     printf 'printf "\\n__DELEGATE_DONE__\\n" >> %q\n' "$outfile"
+    cat <<'CLOSER'
+printf "\n\033[2m──── delegate finished — press any key to close this window ────\033[0m\n"
+read -rsn 1
+rm -f "$0"
+mytty="$(tty)"
+osascript <<APPLE >/dev/null 2>&1
+tell application "Terminal"
+  repeat with w in windows
+    try
+      if tty of selected tab of w is "$mytty" then close w saving no
+    end try
+  end repeat
+end tell
+APPLE
+CLOSER
   } > "$cmdfile"
 
-  local win
-  win="$(osascript <<OSA
+  # Spawn the window. Cold-start guard: if Terminal was NOT already running, launching
+  # it opens a blank default window — so run our script IN that window instead of
+  # letting `do script` spawn a second one (which would orphan the blank one). If
+  # Terminal WAS running, a plain `do script` opens a fresh window so we never hijack
+  # one of the user's existing windows.
+  osascript >/dev/null 2>&1 <<OSA
+set wasRunning to application "Terminal" is running
 tell application "Terminal"
   activate
-  do script "bash $cmdfile"
-  delay 1
-  id of front window
+  if wasRunning then
+    do script "bash $cmdfile"
+  else
+    repeat 50 times
+      if (count of windows) > 0 then exit repeat
+      delay 0.1
+    end repeat
+    if (count of windows) > 0 then
+      do script "bash $cmdfile" in window 1
+    else
+      do script "bash $cmdfile"
+    end if
+  end if
 end tell
 OSA
-)"
 
   # Block until the agent finishes (skills run this verb in the background, so the
   # harness notifies on exit). Sentinel in the output file is the source of truth.
@@ -112,14 +144,15 @@ OSA
     sleep 3; i=$((i + 1))
     if [ "$i" -ge 800 ]; then
       echo "delegate: timed out (~40m) waiting for $a — leaving the window open for inspection" >&2
-      rm -f "$cmdfile"; return 1
+      return 1
     fi
   done
 
-  osascript -e "tell application \"Terminal\" to close (every window whose id is $win) saving no" >/dev/null 2>&1 || true
+  # Output ready: strip the sentinel and return. The window is NOT closed here — it
+  # stays open showing the output + a "press any key to close" prompt and closes itself
+  # when you dismiss it (see the CLOSER block above); its temp script self-deletes via $0.
   grep -v "__DELEGATE_DONE__" "$outfile" > "$outfile.tmp" 2>/dev/null && mv "$outfile.tmp" "$outfile" || true
-  rm -f "$cmdfile"
-  echo "delegate: $a finished → $outfile"
+  echo "delegate: $a finished → $outfile (window stays open until you press a key)"
 }
 
 case "${1:-}" in
