@@ -73,10 +73,10 @@ Iterate runs on whichever branch is currently checked out — including `main`/`
 
 ## Pass mode — standalone vs continuous
 
-One pass behaves slightly differently depending on whether it runs alone or inside a continuous loop. The difference is the **end-of-pass follow-ups step only** — everything else (triage, implement, commit, push, tracking) is autonomous either way.
+One pass behaves slightly differently depending on whether it runs alone or inside a continuous loop. The difference is the **end-of-pass follow-ups and PR steps** — everything else (triage, implement, commit, push, tracking) is autonomous either way.
 
 - **Continuous** — this pass is one iteration of an `/iterate-loop` (or a raw `/loop /iterate`). The signal: your invocation ARGUMENTS contain the token `continuous` (injected by `/iterate-loop`). In continuous mode the pass must not stop for any prompt, so the Phase 6 follow-ups step files **autonomously** with no ask.
-- **Standalone** — a single `/iterate` with no `continuous` token. The pass is still autonomous through commit + push, but the Phase 6 follow-ups step is **interactive**: it surfaces the candidate follow-ups and asks the user which to write up (the one sanctioned prompt in a standalone pass). This is the only place a standalone pass pauses for the user.
+- **Standalone** — a single `/iterate` with no `continuous` token. The pass is still autonomous through commit + push, but Phase 6 becomes interactive: the follow-up step **halts so the user reviews what the work uncovered** and chooses fix-now / file / skip, and on a **collaborative (work) repo** the pass then ends with wrap-up's **PR confirmation**. These are the sanctioned pauses in a standalone pass; on a repo you own there is no PR step (you push and you're done).
 
 Resolve the mode once, here, and carry it into the Phase 3 wrap-up override below.
 
@@ -140,9 +140,9 @@ Invoke the `wrap-up` skill via the Skill tool with these overrides:
 - **Phase 3 (docs):** apply mechanical doc updates automatically (file-map.md, CLAUDE.md doc-table additions). For substantive doc updates that would normally prompt for diff confirmation, do NOT prompt — instead append them as follow-up items in Phase 6 with titles like *"Update PRD section X to reflect Y from iter-N"*.
 - **Phase 4 (quality):** run code-simplifier and code-review in parallel. Auto-apply simplifications. Auto-fix any 75+ issues. If a 75+ issue can't be auto-fixed in 1–2 attempts, halt before committing.
 - **Phase 5 (commit + push):** commit with project conventions, push to current branch. Confirm `git status` is clean afterward.
-- **Phase 6 (followups):** run `summarize`, then invoke `followups` in **Generate mode**, passing the pass mode resolved above:
-  - **Continuous pass** — run followups **autonomous** (per the autonomous branch in followups' Step 5). It files every suggestion that clears the bar with no ask. **Never run followups' interactive ask in a continuous pass** — a single "which to file?" prompt halts the whole loop. Items that don't clearly clear the bar are skipped silently; they'll resurface next session if still relevant.
-  - **Standalone pass** — run followups **interactive** (its default Step 5 branch): surface the candidate follow-ups and ask the user which to write up. This is the deliberate one prompt a standalone `/iterate` is allowed to make; do not suppress it. (Destination — GitHub issues vs the followups file — is followups' own call per its Step 2.)
+- **Phase 6 (follow-ups → summary → PR):** wrap-up resolves follow-ups **first**, then summarizes, then runs PR disposition. Carry the resolved pass mode in:
+  - **Continuous pass** — follow-ups filed **autonomously** (followups' autonomous Step 5 branch): no fix-now, no review halt. **Never run followups' interactive ask in a continuous pass** — a single "which to file?" prompt halts the whole loop. Items that don't clearly clear the bar are skipped silently; they resurface next session. Then summary. **PR step is skipped** — a loop can't publish.
+  - **Standalone pass** — the follow-up step is **interactive**: surface what the work uncovered and let the user review and choose fix-now / file / skip per item (the deliberate pause a standalone `/iterate` is allowed; do not suppress it). Then summary. Then **wrap-up's PR disposition runs** — on a collaborative (work) repo it offers to open the PR or comment the summary; on a repo you own it skips. This is how a standalone iterate on a work repo lands at a reviewable PR. (Destination of filed items — GitHub issues vs the followups file — is followups' own call per its Step 2.)
 
 ---
 

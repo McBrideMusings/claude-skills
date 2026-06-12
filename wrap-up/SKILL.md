@@ -199,7 +199,7 @@ Invoke the `followups` skill using the Skill tool in Generate mode to surface ca
 
 **⛔ Do not proceed to Step B until every candidate is fixed-and-committed, documented, or skipped, and `git status` is clean.** A fix-now item left uncommitted strands work — the exact failure Phase 5 guards against, now reachable again here.
 
-**Mode note:** under `iterate` / continuous (non-interactive) there is no "fix now" branch — follow-ups are filed autonomously per the pass mode and the loop never pauses to fix. Fix-now is an interactive-wrap-up choice only.
+**Mode note (driven by pass mode, not by who invoked wrap-up):** an **interactive** pass — a manual `/wrap-up` or a **standalone** `/iterate` — halts here so the user reviews what this session's work uncovered and chooses fix-now / file / skip per item. A **continuous / non-interactive** pass (a `/loop`) has no fix-now and no halt: follow-ups are filed autonomously per the pass mode and the loop never pauses.
 
 ### Step B — Summarize
 
@@ -227,4 +227,4 @@ Reuse the Phase 2 ownership check (`gh repo view --json owner --jq .owner.login`
     ```
   - On a no, hand the user the summary text to paste themselves.
 
-**Skip Step C entirely when invoked by `iterate`.** Creating or commenting on a PR is an outward-facing publish that needs an explicit yes in the moment; an autonomous loop can't give one. Iterate just pushes the branch and leaves the PR to a later interactive wrap-up.
+**When Step C runs (driven by ownership + pass mode, not by who invoked wrap-up):** run it on a **collaborative repo** in an **interactive** pass — a manual `/wrap-up` or a **standalone** `/iterate` can both give the in-the-moment yes that publishing requires, so a standalone iterate on a work repo ends with this PR confirmation. **Skip it** on an **owned repo** (no PRs there — the branch is already pushed) or in a **continuous / non-interactive** pass (a `/loop` can't give an explicit yes; just push and leave the PR to a later interactive wrap-up).
