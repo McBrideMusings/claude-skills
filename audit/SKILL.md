@@ -175,11 +175,11 @@ When Phase 00 routes here, review the PR review queue one PR at a time: triage �
 
 **Triage.** Find open PRs that involve me and lack my review:
 ```
-gh pr list --search "involves:@me -author:@me -reviewed-by:@me" --state open --json number,title,author,createdAt,additions,deletions,reviewRequests,url --limit 30
+gh pr list --search "involves:@me -author:@me -reviewed-by:@me" --state open --json number,title,author,createdAt,additions,deletions,reviewRequests,url,body --limit 30
 ```
-Present a table — number, title, author, age, +/- size, review-requested vs merely mentioned. Order: review-requested first, then oldest first. Empty → "review queue is clear" and stop. (`-reviewed-by:@me` only excludes PRs with a *submitted* review; comment-only participation still shows. Mention the gap only if a result looks off.)
+Present a table — one row per PR — with these columns: **#** (as a markdown link to the PR `url`), **what it does** (a one-sentence plain-language description derived from the PR `body` — what the change actually accomplishes, not a restatement of the title; titles often say too little), **author**, **age**, **+/- size**, and review-requested vs merely mentioned. Order: review-requested first, then oldest first. Always print the clickable URL — never make the user go hunting for the link. Empty → "review queue is clear" and stop. (`-reviewed-by:@me` only excludes PRs with a *submitted* review; comment-only participation still shows. Mention the gap only if a result looks off.)
 
-**Select.** AskUserQuestion (standalone menu — appropriate here): which PRs (multi-select), and flavor (`audit` vs `audit dual`) applied to all selected PRs this run.
+**Select.** Ask in **plain chat text** which PRs to review (any subset, e.g. "all", "1016 and 1018", or a list of numbers) and which flavor (`audit` vs `audit dual`) to apply to all selected PRs this run. **Do not use the `AskUserQuestion` tool here** — its 5-option cap silently truncates longer queues and an "all" option reads as inconsistent when the visible choices don't cover every PR. Plain text has no such cap and lets the user pick freely.
 
 **Review loop (strictly sequential, one PR at a time):**
 1. `gh pr checkout <number>` — on failure, report the error, skip this PR, continue. Never force anything.
