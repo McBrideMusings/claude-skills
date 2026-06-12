@@ -1,11 +1,11 @@
 ---
 name: followups
-description: "View, add, generate, or act on follow-up items for the current project."
+description: "Capture follow-up items — quick 'add a followup' captures and session-end generation (also invoked by /wrap-up) — filing them as GitHub issues, or to a local file when there's no GitHub remote. Browsing, picking, or working an existing follow-up is `triage`, not this skill."
 ---
 
-Use when the user mentions "follow-ups" / "followups", asks to generate or surface new follow-ups from the session, or wants to view or act on existing items.
+Use when the user asks to add a follow-up ("remember to …", "file as a followup") or to generate/surface new follow-ups from the session (also invoked by `/wrap-up`). To **browse, pick, or start** an existing item, that's `triage` — a follow-up is just another tracked item triage reads. This skill only **creates** items.
 
-Every prompt this skill makes is a plain chat question. Never use the `AskUserQuestion` tool / structured-question schema — answers here are free-form (item numbers, ranges, "all", "none", "let's start on #2"), the numbered list is already in the message, and the chip-picker UI can't express those replies.
+Every prompt this skill makes is a plain chat question. Never use the `AskUserQuestion` tool / structured-question schema — answers here are free-form (item numbers, ranges, "all", "none"), the numbered list is already in the message, and the chip-picker UI can't express those replies.
 
 ## Where followups live
 
@@ -29,21 +29,17 @@ Append-only for new items. Existing items are only moved to a `## Resolved` sect
 
 ## Modes
 
-Pick the mode from the invocation:
+This skill **captures** follow-ups — it creates tracked items. *Browsing, picking, and starting* a follow-up is `triage`'s job (a follow-up is just another tracked item triage reads across GitHub issues, the local followups file, and the handoff). So this skill has three modes, all about creating or tidying items:
 
 | Invocation | Mode |
 |---|---|
-| "show / list / view my followups", "what followups do I have" | View |
 | "add a followup: …", "remember to …", "file as a followup" | Add |
-| "let's work on a followup", "pick a followup", "act on followups" | Act |
 | Invoked by `/wrap-up`, or "generate followups from this session" | Generate |
-| "clean up resolved", "move resolved followups" | Cleanup |
+| "clean up resolved", "move resolved followups" | Cleanup (local-file only) |
 
-If ambiguous, default to View.
+**"show / list my followups", "what followups do I have", "let's work on a followup", "pick a followup"** → that is **`triage`**, not this skill. Hand off to it; don't list or start items here.
 
-### View
-
-Read the file and display or summarize its contents. If it doesn't exist, say so.
+If ambiguous, assume **Add** (capture) — unless the user clearly wants to see or choose something, in which case route to `triage`.
 
 ### Add
 
@@ -52,13 +48,9 @@ First resolve the destination with the **same rule as Generate** (see Step 2 und
 - **GitHub repo** → file it as an issue. Dedup first against `gh issue list --repo OWNER/REPO --state all --limit 50` (skip if the core idea already appears), then `gh issue create --repo OWNER/REPO` with the body via HEREDOC (never an inline quoted `--body`), including a provenance line. Same mechanics as Generate's Step 5 GitHub branch.
 - **No GitHub remote** → append a new dated section to the followups file with the current branch and timestamp, skipping items whose title or core idea already appears.
 
-### Act
+### Cleanup (only when explicitly asked; local-file only)
 
-Present the list of existing items and help the user prioritize or start on whichever they choose.
-
-### Cleanup (only when explicitly asked)
-
-Move completed items to a `## Resolved` section at the bottom — never delete.
+Relevant only when there's no GitHub remote and items live in `followups.md`: move completed items to a `## Resolved` section at the bottom — never delete. On a GitHub repo there's nothing to clean here — follow-ups are issues, and closing them is `/wrap-up`'s job.
 
 ---
 
