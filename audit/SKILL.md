@@ -1,11 +1,49 @@
 ---
 name: audit
-description: Review uncommitted changes or branch changes against base branch (or an arbitrary fixed point). Two-axis review across Standards (bugs, CLAUDE.md compliance, history, contracts) and Spec (does the code do what the originating issue/PRD asked for?).
+description: "The single entry point for reviewing code. Runs a six-axis review and routes by context: on a repo you own it just reviews + documents; on a collaborative repo it triages the PR queue (on main), reviews your own branch, or reviews a teammate's PR and offers to post. `audit dual` adds an independent cross-vendor delegate second opinion, reconciled into one report. Triggers: 'audit', 'review this', 'review my changes', 'review my code', 'review prs', 'pr review queue', 'triage my review queue', 'what PRs need my review', 'dual audit', 'audit with codex', 'second-opinion review'."
 ---
 
 # Audit
 
-Review code changes for bugs, quality issues, CLAUDE.md compliance, **architecture fit**, and **spec compliance**. Runs parallel sub-agents across six review axes and reports axis-tagged findings.
+Review code changes for bugs, quality issues, CLAUDE.md compliance, **architecture fit**, and **spec compliance**. Runs parallel sub-agents across six review axes and reports axis-tagged findings. `audit` is the **single entry point** for review — it routes by context (your working tree, a branch, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
+
+## Flavors — solo vs dual
+
+- **`audit`** (default) — Claude reviews on its own.
+- **`audit dual`** — Claude reviews, *and* an independent cross-vendor delegate reviews the same diff; the two are reconciled into one source-tagged report. The delegate catches what a same-model self-review misses (concurrency, lifecycle, edge cases) and gives a second architecture read. The token `dual` anywhere in the arguments turns it on. See **Dual flavor** below.
+
+## Phase 00 — Route by context
+
+Audit's workflow is set by two ownership checks. Resolve both first, then pick the workflow; everything else (the review core, dual flavor, offers) hangs off this.
+
+**1. Do I own the repo?**
+```
+gh repo view --json owner --jq .owner.login
+gh api user --jq .login
+```
+Owner == my login → **owned (solo) repo**: I work alone here and never open PRs, so there is no queue and nothing to post to. Audit reviews + documents, then offers to fix.
+Owner != my login (or no GitHub remote) → **collaborative repo**: the PR world applies (queue, posting, teammate reviews).
+
+**2. Is this branch/PR mine?** (collaborative repos only)
+```
+gh pr view --json author,number,url --jq .author.login
+```
+PR author == my login → **mine**. No PR → fall back to the branch name: mine if it starts with `pierce` (case-insensitive, `/` or `-` separator); else check commit authorship (`git log -1 --format=%ae` == my git email). Still ambiguous → **ask in plain chat, never guess**.
+
+### Routing table
+
+| | **Repo I own** (solo) | **Repo I don't own** (collaborative) |
+|---|---|---|
+| **on `main`** | review working tree → document → offer fix | **Queue mode**: triage open PRs → review each → offer to post |
+| **my branch / my PR** | review → document → offer fix | review → document → offer fix (no post) |
+| **teammate's PR branch** | n/a | review → document → offer to **post** |
+| **not mine, no PR** | review → document | review → document |
+
+- **Offer to fix** ⟺ the branch is mine (or it's my owned-repo working tree): hand to `iterate` (plain or `iterate delegate`).
+- **Offer to post** ⟺ the branch has an open PR **not** authored by me: one consolidated PR comment.
+- Both offers are gated on an explicit yes in the moment — never automatic (global "never send / act on my behalf" rule). See **End of pass**.
+
+Everything except Queue mode is a single-target review: continue into the review core below against that target. **Queue mode** wraps the core, running it once per selected PR.
 
 ## Modes
 
@@ -15,7 +53,9 @@ Review code changes for bugs, quality issues, CLAUDE.md compliance, **architectu
 
 **Do not offer the user a menu of narrower scopes** ("last 5 commits", "last 10 commits") just because the diff looks large. The point of a branch review is the merged-in surface area — review it. If the diff is genuinely too large to fit in one pass, *say so* and ask whether to slice by path/subdir, not by commit count. Any such ask is a plain-chat question — never the `AskUserQuestion` tool / structured-question schema.
 
-## Phases
+## Review core (Phases 01–07)
+
+These phases are the review itself — what runs against a single target (your working tree, your branch, or one PR). Queue mode runs them once per PR; the dual flavor extends them with a second reviewer; the offers come after.
 
 ### Phase 01 — Determine What to Review
 
@@ -72,7 +112,7 @@ One message, all sub-agents in parallel. **Every sub-agent that emits issues mus
   - **Structural scalability** — is there a *structural* (not algorithmic) decision that becomes painful at 10× the code/load?
   - **Ownership clarity** — is it obvious which module owns each new piece of logic, or is responsibility ambiguous?
 
-  Architecture findings are **always design calls — never style nits**, and are in scope even when the file they concern wasn't directly modified (a layer violation introduced by a single new import is still a layer violation). Tag each `[architecture/<severity>]`. Surface them separately from bug findings.
+  Architecture findings are **always design calls — never style nits**, and are in scope even when the file they concern wasn't directly modified (a layer violation introduced by a single new import is still a layer violation). Tag each `[architecture · <severity>]` (see "Axis tags"). Surface them separately from bug findings.
 
 - **Spec compliance (Sonnet)** — read the spec located in Phase 03, then read the diff. Report findings in three sub-categories, quoting the spec line for each, and tag each finding with its sub-category so Phase 07 can route them:
   1. **Missing or partial** (`spec/missing-partial`) — requirements the spec asked for that aren't implemented or are only partly done. Also surface explicit `TODO` / `FIXME` / `XXX` markers left in the diff that point at unfinished spec work.
@@ -97,60 +137,151 @@ Keep issues scoring **≥ 75**. Drop the rest.
 - Write the review using the format below.
 - Print the full review body to chat, then follow with a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Review written to /Users/pierce/.claude-tmp/claude-review-2026-05-05-143022.md`
 
+## Dual flavor (`audit dual`)
+
+When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor delegate on the **same** diff, then reconcile.
+
+**Always go through the `delegate` router — never call a vendor binary directly.** Read [../delegate/SKILL.md](../delegate/SKILL.md) for the resolver and Terminal.app transport. **Gate first:** run `delegate check`; if it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo audit** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
+
+```bash
+D="$HOME/.claude/skills/delegate/delegate"
+"$D" check || { echo "Delegate unavailable — running solo audit only"; }
+```
+
+1. Write the review prompt to a temp file — review instructions + the **literal** diff command the core used (`gh pr diff`, the merge-safe diff, or `git diff HEAD`). Let the delegate run that command itself; don't paste a huge diff into the prompt.
+2. Run `"$D" exec "$prompt" "/tmp/<slug>-delegate.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
+3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the tool that found it: `audit` for Claude's own, the **resolved delegate name** for the delegate's, or `both` when both flagged it. Get the delegate name at runtime — `delegate agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[delegate]`). The skill never *presumes* which tool that is; it learns it from `delegate agent` after the run. "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
+4. Fold the delegate's findings into the matching axis sections of the report (its architecture findings into Architecture, its bug findings into Bugs, etc.) and carry the source tag through to the file format below. Dual is still **read-only** — it reviews, never edits.
+
+```bash
+prompt="$(mktemp -t audit-dual.XXXXXX)"
+cat > "$prompt" <<'PROMPT'
+Review the changes produced by this exact diff command: <diff-cmd>
+Enforce the project conventions in CLAUDE.md / AGENTS.md / .claude/rules/*.
+Report two dimensions separately:
+  CODE: correctness, types, nil-safety, concurrency, lifecycle, edge cases, error handling, dead code.
+  ARCHITECTURE: fit, abstraction level, pattern consistency, structural scalability, ownership clarity —
+    always design calls, never style nits.
+Output prioritized findings (Critical / Important / Minor), terse, no praise.
+PROMPT
+"$D" exec "$prompt" "/tmp/<slug>-delegate.md"      # run this call in the background
+```
+
+## Queue mode (collaborative repo, on `main`)
+
+When Phase 00 routes here, review the PR review queue one PR at a time: triage → select → checkout → review → report. Read-only with respect to GitHub except the explicit-yes post offer at the end of each PR.
+
+**Preflight.** Must be a git repo with a GitHub remote and a **clean working tree** (checking out PR branches needs it). If dirty, **stop** and say what's dirty; never stash or discard on the user's behalf. Record the current branch — the workflow returns here at the end.
+
+**Triage.** Find open PRs that involve me and lack my review:
+```
+gh pr list --search "involves:@me -author:@me -reviewed-by:@me" --state open --json number,title,author,createdAt,additions,deletions,reviewRequests,url --limit 30
+```
+Present a table — number, title, author, age, +/- size, review-requested vs merely mentioned. Order: review-requested first, then oldest first. Empty → "review queue is clear" and stop. (`-reviewed-by:@me` only excludes PRs with a *submitted* review; comment-only participation still shows. Mention the gap only if a result looks off.)
+
+**Select.** AskUserQuestion (standalone menu — appropriate here): which PRs (multi-select), and flavor (`audit` vs `audit dual`) applied to all selected PRs this run.
+
+**Review loop (strictly sequential, one PR at a time):**
+1. `gh pr checkout <number>` — on failure, report the error, skip this PR, continue. Never force anything.
+2. Read context: `gh pr view <number> --json title,body,comments,reviews` — feeds the Spec axis and avoids re-flagging what other reviewers already raised.
+3. Run the review core (and dual flavor if chosen) against the PR's diff vs its base (usually `origin/main`). Let it finish before the next PR.
+4. Run the **post offer** for this PR (it's a teammate PR → offer one consolidated comment, explicit yes). Capture report path + headline verdict.
+
+**Complete.** Return to the recorded branch (`git checkout <original-branch>`). Summarize one row per PR — number, title, verdict, blocking-finding count, report path, posted (y/n). Never parallelize checkouts or reviews.
+
+## End of pass — offers & output
+
+After the report is written, **always print**:
+- the **PR URL** if one exists (`gh pr view --json url --jq .url`),
+- the **report file path** as the last token on its line, no trailing punctuation.
+
+Then run **exactly one** offer, per the Phase 00 routing — never both, never automatic:
+
+**Offer to post** — when the branch has an open PR **not** authored by me (a teammate's PR, via Queue mode or a direct checkout). Ask plainly whether to post the findings. On an explicit **yes in that message**, post as **one consolidated PR comment** — the report body (summary line + axis-grouped findings):
+```
+gh pr comment <number> --body "$(cat <<'EOF'
+<report body>
+EOF
+)"
+```
+Default to NOT posting. Prior or implied consent does not count — only an explicit yes in the current message (global "never send on my behalf" rule). If the user prefers, hand them the comment text to paste instead.
+
+**Offer to fix** — when the branch is mine (or my owned-repo working tree). There's nowhere to post my own review; offer a fix pass instead, presenting both flows so the user picks:
+- **`iterate`** — Claude fixes the findings itself.
+- **`iterate delegate`** — Claude orchestrates; a cheaper model implements the fixes; Claude validates.
+
+Hand the report path to the chosen flow. Don't start it without a yes.
+
+**Neither** — a branch that isn't mine with no open PR (nothing to post to, not my code to fix): just the printed report + path. No offer.
+
 ## File format
 
+The report **opens with a single high-level summary sentence** — no `# Audit` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones matter (call out the blocking/high ones by their number), and which ones don't. Everything after it is the issue list, grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
+
 ```
-# Audit
-
-Reviewed: [uncommitted changes | N commits on branch-name vs main | HEAD vs <fixed-point>]
-PR: [#123 (draft) https://github.com/org/repo/pull/123  — only when a PR exists]
-Spec: [path/URL to spec, or "none — Spec axis skipped"]
-Date: YYYY-MM-DD HH:MM:SS
-
-## What this changes
-
-Plain-English description of what the change does and why. 3–6 sentences. Written for someone unfamiliar with this part of the codebase. Group related areas together. Define technical terms inline.
+Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord button in prod; the other five (bugs, architecture, contracts) are worth folding in but none merge-blocking.
 
 ## Outstanding work (draft PR)
-(only emitted when IS_DRAFT=true and the Spec agent produced `spec/missing-partial` entries; lists expected gaps rather than issues. Use the "draft PR" entry style — Gap, not Why/Fix. No severity tag, no score-based filtering.)
+(only when IS_DRAFT=true and the Spec agent produced `spec/missing-partial` entries — expected gaps, not issues. Draft entry style: Gap, not Why/Fix. No severity, not counted in the Issues total. Omit this whole section when not a draft.)
 
-1. **[spec/missing-partial]** Headline — same writing rules as issue headlines: full sentence, concrete identifiers in backticks.
+1. **[spec/missing-partial]** Headline — full sentence, concrete identifiers in backticks.
    - **File:** `path/to/file.ext:LINE` (or `— (not yet implemented)` if the gap is the absence of a file/function)
    - **Spec:** "exact quote of the spec line that asked for it"
-   - **Gap:** What's missing or only partly done, written as a status note for the author rather than a fix proposal. One or two sentences.
+   - **Gap:** What's missing or only partly done, as a status note for the author rather than a fix proposal.
 
-## Issues (N found)
+## Issues (6 found)
 
-(Flat ordered list when N is roughly ≤4; once findings start to feel hard to scan — usually around N ≥ 5 — group by axis as below. Judge per review: a tight cluster of 5 closely-related bug findings is fine flat; 5 findings spanning four different axes is easier to read grouped. Within each grouped section, sort high → medium → low severity. Section counts in the headers.)
+### Spec (1)
 
-### Bugs (4)
-1. **[bug/high]** Wrapper created a dangling `/root/.claude.json` symlink if USB was unmounted or the plugin's `CONFIG_DIR` was missing.
-   - **File:** `source/usr/local/bin/claude:33-34`
-   - **Why:** `mkdir -p`, `touch`, and `ln -s` were all silenced with `2>/dev/null` and unchecked. If `/boot/config/plugins/claude-code/claude-config/` did not exist (USB transiently unmounted, plugin removed mid-session), `touch` would fail and `ln -s` would still create the symlink pointing at a missing file. The previous step had already deleted any real file at `$LINK`, so the user's config was silently gone with no error message — and the next claude invocation would crash on the broken link.
-   - **Fix:** Add an early `[ -d "$CONFIG_DIR" ] || return 0` guard, plus a post-`touch` `[ -f "$USB_TARGET" ] || return 0` check before the `ln -s`. Wrapper then leaves the link alone when USB is gone and lets claude surface its own error.
-2. ...
+1. **[spec/wrong-impl · high]** Full-sentence headline that names the actual failure, the condition under which it bites, and where — concrete identifiers in backticks.
+   - **File:** `apps/cloudflare/wrangler.toml:471` (other sites listed in parens)
+   - **Spec:** "exact quote of the spec line" (Spec axis only)
+   - **Why:** The causation chain — the sequence of operations that goes wrong, the silent-failure mode, the surrounding state that makes it bite, and why the diff makes it worse than before. Real symbols from the code in backticks.
+   - **Fix:** Concrete minimal remediation; name the guard / signature change / removed line in backticks; state the post-condition so the reader can sanity-check it against the failure mode.
 
-### Spec (2)
-(On a draft PR, this section contains only `spec/scope-creep` and `spec/wrong-impl` — `spec/missing-partial` lives under "Outstanding work" above.)
-1. **[spec/wrong-impl]** ...
+### Bugs (2)
 
-### Standards (1)
-1. ...
+2. **[bug · medium]** Headline …
+   - **File:** `path:LINE`
+   - **Why:** …
+   - **Fix:** …
 
-### History (1)
-1. ...
+3. **[bug · low]** Headline …
+   - **File:** `path:LINE`
+   - **Why:** …
+   - **Fix:** …
+
+### Architecture (2)
+
+4. **[architecture · medium]** Headline naming the layer/abstraction/ownership problem …
+   - **File:** `src/api/order_controller.py:48`
+   - **Why:** … a layer-fit violation that spreads ownership of "how orders are written" across two modules.
+   - **Fix (design call):** Route the write through the existing seam … (architecture/design findings use **Fix (design call):**; a dedicated pass is `improve-codebase-architecture`.)
+
+5. **[architecture · medium]** Headline …
+   - **File:** `path:LINE`
+   - **Why:** …
+   - **Fix (design call):** …
 
 ### Contracts (1)
-1. ...
 
-### Architecture (1)
-1. **[architecture/medium]** New `OrderController` reaches into the persistence module directly instead of going through the `OrderRepository` seam every other caller uses.
-   - **File:** `src/api/order_controller.py:48`
-   - **Why:** Every other write path crosses the `OrderRepository` interface, which owns transaction boundaries and invariant checks. This new import binds the API layer straight to the storage implementation, so the controller now carries persistence concerns the rest of the layer doesn't — a layer-fit violation that spreads ownership of "how orders are written" across two modules.
-   - **Fix:** Route the write through `OrderRepository.save(order)` like the sibling handlers. If the repository lacks the needed method, add it there so the seam stays the single place order-write logic lives. (Design call — confirm before acting; a dedicated pass is `improve-codebase-architecture`.)
+6. **[contracts · low]** Headline …
+   - **File:** `path:LINE`
+   - **Why:** …
+   - **Fix:** …
+```
+
+### Layout rules
+
+- **The top line is the summary sentence.** Nothing — no header, no metadata — sits above it.
+- **`## Issues (N found)`** — N is the total across all axes. Draft "Outstanding work" gaps are *not* counted in N.
+- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Standards`, `History`, `Contracts`, `Architecture`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
+- **Numbering is continuous across sections** — 1…N down the whole report, never restarting at 1 per axis. (Above: Spec is 1, Bugs are 2–3, Architecture are 4–5, Contracts is 6.)
+- **Small lists may stay flat.** When N is small (≈≤4) and the findings cluster in one or two axes, a single flat ordered list with no `### Axis` headers is fine. Numbering is 1…N either way.
+- **Never include a "Dismissed", "Considered and dismissed", or "Dismissed during reconciliation" section** — in any form. Findings that don't survive scoring are simply absent. The report is the surviving issues and nothing else.
 
 ## No issues found
-(if all scored below 75; on a draft PR, this means no issues *and* no expected gaps surfaced)
+(if all scored below 75; on a draft PR, this means no issues *and* no expected gaps surfaced — emit the summary sentence saying so, then this header.)
 ```
 
 ### Writing style for issue entries
@@ -174,13 +305,9 @@ Draft PRs use a deliberately softer entry shape for `spec/missing-partial` findi
 - **No severity tag.** `spec/missing-partial` on a draft is reported as-is — the score still filters out spurious gap-claims via the Phase 06 cutoff, but the surfaced entries aren't graded high/medium/low.
 - **Bugs in draft code are still bugs.** This softening applies *only* to the missing/partial sub-category of the Spec axis. A null-deref in code that *was* written, even on a draft PR, is a `bug/high` and reported normally. Same for scope creep and wrong implementation on Spec — wrong code is wrong regardless of draft status.
 
-### Grouping when the issue list is long
-
-When the issue list grows past roughly 5 entries — and especially when those entries span multiple axes — replace the flat ordered list with one ordered list per axis under an H3 header (`### Bugs (N)`, `### Spec (N)`, etc.). Show only axes that have entries; omit empty sections rather than printing "### History (0)". Within each section, order by severity (`high` → `medium` → `low`), then by file path as a tiebreaker. The threshold is soft: 5 closely-related bug findings can stay flat if grouping would produce one section with everything in it; 5 findings across four axes should always be grouped. Judge per review — readability is the goal, not the count.
-
 ### Axis tags
 
-Every issue is tagged `[<axis>/<severity>]`. Axis values:
+Every issue is tagged `[<axis>(/<subtype>) · <severity>]` — axis (with an optional `/subtype`) and severity, joined by a middle dot with a space either side: `[bug · medium]`, `[architecture · medium]`, `[spec/wrong-impl · high]`, `[contracts · low]`. Axis values:
 
 - `spec` — from the Spec agent (missing requirement, scope creep, wrong implementation)
 - `bug` — from the Bug scan agent
@@ -189,6 +316,6 @@ Every issue is tagged `[<axis>/<severity>]`. Axis values:
 - `contracts` — from the Code comments and contracts agent
 - `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit.
 
-Severity: `low` / `medium` / `high` derived from the confidence score (75–84 medium, 85–94 high, 95+ high with leading emphasis).
+Severity: `low` / `medium` / `high`, derived from the confidence score (75–84 → `low`/`medium`, 85–94 → `medium`/`high`, 95+ → `high`), weighted by impact. No leading emphasis, emoji, or badge — the tag carries it.
 
 A change can pass one axis and fail another. Reporting axis-tagged stops one axis from masking the other — e.g. "Standards pass, Spec fail" is a real category of finding.

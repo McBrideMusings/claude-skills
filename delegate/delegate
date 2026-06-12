@@ -2,8 +2,8 @@
 # delegate — cross-vendor delegation resolver.
 #
 # Resolves a non-interactive coding agent from $CLAUDE_DELEGATE_AGENT and runs it.
-# The skills (dual-audit, delegated-iterate) call only these three verbs and never
-# name a specific vendor:
+# The delegate flavors (audit dual, iterate delegate) call only these three verbs
+# and never name a specific vendor:
 #
 #   delegate agent                       print the resolved agent (codex|reasonix), or fail
 #   delegate check                       is the resolved agent authed & reachable? (exit 0/1)

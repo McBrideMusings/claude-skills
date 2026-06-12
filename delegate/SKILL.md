@@ -1,11 +1,11 @@
 ---
 name: delegate
-description: "Reference for the cross-vendor `delegate` skill used by the dual-audit and delegated-iterate skills: the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, auth health-gating, and the Terminal.app transport. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). NOT for delegating to another Claude model — use the Agent tool for that."
+description: "Reference for the cross-vendor `delegate` skill used by `audit dual` (delegate reviews) and `iterate delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, auth health-gating, and the Terminal.app transport. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
 ---
 
 # Delegation backend
 
-How the delegation skills (`dual-audit`, `delegated-iterate`) hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window.
+How the delegate flavors — `audit dual` (the delegate **reviews** the same diff) and `iterate delegate` (the delegate **implements** Claude's plan) — hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
 
 > ## ⛔ NEVER bypass the router — this is non-negotiable
 >
@@ -20,7 +20,7 @@ Two layers, kept separate on purpose:
 1. **The `delegate` resolver** (`delegate` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind three verbs.
 2. **The Terminal.app transport** — how `delegate exec` spawns and watches the agent. Skills never touch this; only the resolver does.
 
-> **This is for cross-vendor delegation only** (Claude → Codex/DeepSeek). To delegate to *another Claude* (e.g. a cheap Sonnet/Haiku implementer following a plan), don't use any of this — use the Agent tool with a model override and a tight brief. Same-family delegation needs no script and no terminal.
+> **This router is the cross-vendor path** (Claude → Codex/DeepSeek). Delegating to *another Claude* (e.g. a cheap Sonnet/Haiku implementer following a plan) is a **peer option, not forbidden** — it just doesn't go through this script: use the Agent tool with a model override and a tight brief (no terminal, no resolver). `iterate delegate` offers both as the implementer choice — cross-vendor via this router, or a cheaper Claude via the Agent tool. Pick the router when you want a non-Claude tool and a watchable window; pick the Agent tool when you want the cheapest, tightest plan-follower.
 
 ---
 

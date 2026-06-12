@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: "Autonomous single-pass work on one tracked item: triage → implement → wrap-up (commits, pushes, files follow-ups). Use when the user wants to walk away while one item gets worked end-to-end without supervision. Triggers: \"iterate\", \"/iterate\", \"do a pass\", \"walk away and work an item\", \"auto-commit the next followup\". For continuous walk-away mode, use /loop /iterate."
+description: "Autonomous single-pass work on one tracked item: triage → implement → wrap-up (commits, pushes, files follow-ups). Use when the user wants to walk away while one item gets worked end-to-end without supervision. `iterate delegate` keeps Claude as orchestrator + validator and hands the implementation to a cheaper model. Triggers: \"iterate\", \"/iterate\", \"do a pass\", \"walk away and work an item\", \"auto-commit the next followup\", \"delegated iterate\", \"iterate with a delegate\", \"delegate the implementation\". For continuous walk-away mode, use /loop /iterate."
 ---
 
 # /iterate — Single-pass autonomous iteration
@@ -8,6 +8,11 @@ description: "Autonomous single-pass work on one tracked item: triage → implem
 Compose `triage` → work → `wrap-up` into one autonomous pass. The user is walking away, not watching — minimize prompts, halt cleanly when something needs human judgment.
 
 For continuous walk-away mode, use `/iterate-loop` (sibling skill) — equivalent to `/loop /iterate`.
+
+## Flavors — solo vs delegate
+
+- **`iterate`** (default) — Claude does everything itself: triage → implement → wrap-up.
+- **`iterate delegate`** — Claude stays the **orchestrator and validator**; the **implementation** (where most of the token cost lives) is handed to a cheaper model. The token `delegate` anywhere in the arguments turns it on; it flows through `/loop /iterate delegate` the same way `continuous` does, and is independent of the standalone/continuous mode. Everything outside the implement step — pre-flight, triage, wrap-up, halt conditions, output — is identical to solo. The delegate flavor **replaces Phase 2** (see below); the delegate is the *implementer*, never a reviewer.
 
 ---
 
@@ -110,6 +115,21 @@ The only legal exits from Phase 2 are: a halt condition fired (surface it and st
 
 ---
 
+## Phase 2 (delegate flavor) — orchestrate, delegate the implementation, validate
+
+When the `delegate` token is present, Phase 2 is **not** Claude writing the code. Claude plans, hands the implementation to a cheaper model, and validates the result. Claude never hands off the plan-making or the validation — only the typing. Everything else (the ⛔ mandatory transition into Phase 3, halt conditions) is unchanged.
+
+1. **Plan (Claude).** From triage's chosen item, write a concrete implementation plan: the files to touch, the changes, and the acceptance check (which tests/commands must pass). This is the expensive thinking — it stays with Claude.
+2. **Pick the implementer (ask in-flow).** `AskUserQuestion` — two options, chosen per run:
+   - **Cross-vendor delegate** — Codex/Reasonix via the `delegate` router, implementing in a watchable Terminal.app window. **Always go through `delegate exec` — never call a vendor binary directly.** Read [../delegate/SKILL.md](../delegate/SKILL.md). Gate with `delegate check` first; if it fails, surface it and offer to fall back to the Claude sub-agent or to solo `iterate`. (In a **continuous** pass, don't prompt for the implementer — default to the last choice, or to the cross-vendor delegate; never stall the loop on a menu.)
+   - **Cheaper Claude sub-agent** — a Haiku/Sonnet implementer via the **Agent tool** with a model override and the plan as a tight brief. Cheapest and the best plan-follower; no Terminal.
+3. **Implement.** Hand the plan to the chosen implementer; it writes the code against the plan. Brief either implementer the same way: *implement this plan exactly, do not exceed its scope, run the project's checks when done.* For the router that's the `delegate exec` prompt; for the Agent tool it's the sub-agent prompt with the cheap model.
+4. **Validate (Claude).** Run audit's review core over the implementer's diff in **plain mode** — review this diff, no routing, no offers, no posting — plus the project's test/check suite. This judgment is Claude's, never delegated.
+5. **Loop.** Feed concrete fixes back to the implementer (or fix trivial things itself) and re-validate, until the diff passes review + checks or a stop condition fires: max 3 implement→validate rounds, or two consecutive check failures, → **halt and surface**. A diff that won't pass after 3 rounds is a halt, not a "commit anyway".
+6. On a clean validate, take the ⛔ mandatory transition into Phase 3 wrap-up, exactly as solo.
+
+---
+
 ## Phase 3 — Wrap-up (non-interactive overrides)
 
 **This phase is reached by actually calling the `wrap-up` skill via the Skill tool — not by performing wrap-up's steps inline.** Invoke it now. The overrides below are instructions you carry *into* that invocation; they do not replace it. If you find yourself running `git commit`, `code-review`, or `followups` without having invoked `wrap-up`, stop and invoke `wrap-up` first.
@@ -179,6 +199,7 @@ The pass stops and surfaces to the user when any of these fire:
 - Implementation produced no diff
 - Tests fail and the cause isn't trivially fixable in 1–2 attempts
 - code-review surfaced a 75+ issue that auto-fix didn't resolve
+- (delegate flavor) the delegate's diff won't pass review + checks after 3 implement→validate rounds, or `delegate check` failed and no fallback implementer was accepted
 - After this pass, branch reaches the 5-commit threshold (next pre-flight will block)
 
 When `/loop /iterate` hits a halt, the loop ends — the user reviews and decides whether to resume.
