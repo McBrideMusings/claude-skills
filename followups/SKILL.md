@@ -47,7 +47,10 @@ Read the file and display or summarize its contents. If it doesn't exist, say so
 
 ### Add
 
-Append a new dated section with the current branch and timestamp. Read the file first and skip items whose title or core idea already appears — no duplicates.
+First resolve the destination with the **same rule as Generate** (see Step 2 under Generate): **a GitHub remote → the item is a GitHub issue; no GitHub remote → the local file.** A quick "remember to …" on a GitHub repo becomes an issue, not a file entry.
+
+- **GitHub repo** → file it as an issue. Dedup first against `gh issue list --repo OWNER/REPO --state all --limit 50` (skip if the core idea already appears), then `gh issue create --repo OWNER/REPO` with the body via HEREDOC (never an inline quoted `--body`), including a provenance line. Same mechanics as Generate's Step 5 GitHub branch.
+- **No GitHub remote** → append a new dated section to the followups file with the current branch and timestamp, skipping items whose title or core idea already appears.
 
 ### Act
 
