@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking (GitHub issues, followups), update docs, run code quality checks (review + simplify), commit, push, then summarize and generate follow-ups. Triggers: user invokes '/wrap-up', 'wrap up', 'close out the session', 'end of session', 'finalize this work'. Also invoked by iterate as Phase 3."
+description: "Close out the current session: assess changes, update tracking (GitHub issues, followups), update docs, run code quality checks (review + simplify), commit, push, then resolve follow-ups (fix now, file, or skip), summarize, and — on a collaborative repo — offer to open the PR or comment the summary. Triggers: user invokes '/wrap-up', 'wrap up', 'close out the session', 'end of session', 'finalize this work'. Also invoked by iterate as Phase 3."
 ---
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
@@ -9,12 +9,12 @@ Work through each phase below. Skip any phase that doesn't apply to this project
 
 ## ⛔ RUN TO COMPLETION — wrap-up is not done until the work is committed AND pushed
 
-The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 are preparation; Phase 6 is reporting. If you stop before Phase 5, you have left the user's work uncommitted in the working tree — the exact failure wrap-up is meant to prevent. This is the #1 way wrap-up fails, so treat it as non-negotiable:
+The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 are preparation; Phase 6 resolves follow-ups (which may add commits when one is fixed now) and reports. If you stop before Phase 5, you have left the user's work uncommitted in the working tree — the exact failure wrap-up is meant to prevent. This is the #1 way wrap-up fails, so treat it as non-negotiable:
 
 - **A quality check that finds nothing is a GREEN LIGHT to commit, not a stopping point.** Phase 4 returning `(none)` / "no issues" means proceed *immediately* to Phase 5. It does NOT mean you are finished. A clean review is the single most common false finish line — do not fall for it.
 - **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (e.g. a 75+ review issue you cannot auto-fix, a push that fails auth) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
-- **Done means:** `git status` is clean, the branch is pushed, and Phase 6 (summary + followups) has run. Until all three are true, you are mid-wrap-up — keep going.
+- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), and Phase 6 (follow-ups → summary → PR disposition) has run. Until all are true, you are mid-wrap-up — keep going.
 
 When invoked by `iterate`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
 
@@ -183,12 +183,48 @@ Before committing, run three parallel quality checks on the session's changes:
 
 ---
 
-## Phase 6: Session summary and follow-ups
+## Phase 6: Follow-ups → summary → PR
 
-Give a brief summary of:
-- What was accomplished this session
-- What tracking/docs were updated
+Three steps, strictly in this order. Each finishes before the next — the follow-up step can create new changes, so it must fully settle before the summary can honestly describe the branch's final state.
 
-Then invoke the `summarize` skill using the Skill tool to generate a unified summary of branch changes and session work. After the summary is printed, invoke the `followups` skill using the Skill tool in Generate mode to surface new items from this session and file the selected ones.
+Open with a brief recap: what was accomplished this session, and what tracking/docs were updated (including any issues resolved in Phase 2).
 
-**Include the architecture findings from Phase 4 (step 6) as follow-up candidates** — one item each, titled `Architecture: <finding>`, with the file and the one-line tradeoff so a later session (or `improve-codebase-architecture`) can pick them up. These are surfaced, not fixed; filing them is how they avoid being lost without wrap-up overstepping into design decisions.
+### Step A — Resolve follow-ups (must fully settle before summarizing)
+
+Invoke the `followups` skill using the Skill tool in Generate mode to surface candidate follow-ups from this session — **including the Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with the file and one-line tradeoff so a later session or `improve-codebase-architecture` can pick them up). Take every candidate to a terminal state. Three dispositions:
+
+- **Fix now** — the user opts to fix the item this session instead of deferring it. This creates new changes: implement the fix, verify it (run the relevant tests/checks), then **commit and push it**, with a quality check proportional to the change (a one-line fix doesn't need the full Phase 4 trio; a substantive one does). The fix is now part of this branch and shows up in the summary.
+- **Document** — file it as a new GitHub issue (followups routes owned vs collaborative per its own rules) or a `followups.md` entry. Capture the new issue numbers/URLs to feed Step B.
+- **Skip** — drop it.
+
+**⛔ Do not proceed to Step B until every candidate is fixed-and-committed, documented, or skipped, and `git status` is clean.** A fix-now item left uncommitted strands work — the exact failure Phase 5 guards against, now reachable again here.
+
+**Mode note:** under `iterate` / continuous (non-interactive) there is no "fix now" branch — follow-ups are filed autonomously per the pass mode and the loop never pauses to fix. Fix-now is an interactive-wrap-up choice only.
+
+### Step B — Summarize
+
+Invoke the `summarize` skill using the Skill tool to generate the unified summary of the branch's changes and session work. Because Step A settled first, this summary folds in **both** any fixes applied just now and the new issues spawned this session (e.g. "follow-on issues filed: #N…").
+
+### Step C — PR disposition (collaborative repos only; interactive only)
+
+Reuse the Phase 2 ownership check (`gh repo view --json owner --jq .owner.login` vs `gh api user --jq .login`):
+
+- **Repo I own (solo)** — I don't use PRs here; the branch is already pushed. Print the summary and stop. No PR offer.
+- **Repo I don't own (collaborative)** — offer (never automatic; only on an explicit yes in the current message — global "never publish on my behalf" rule):
+  - **No PR on the branch yet** → offer to **create the PR** with the summary as its body:
+    ```
+    gh pr create --title "<one-line>" --body "$(cat <<'EOF'
+    <summary body>
+    EOF
+    )"
+    ```
+  - **PR already exists** → offer to **post the summary as a PR comment** (non-destructive — do not overwrite the existing description, which may already hold the user's own text):
+    ```
+    gh pr comment <number> --body "$(cat <<'EOF'
+    <summary body>
+    EOF
+    )"
+    ```
+  - On a no, hand the user the summary text to paste themselves.
+
+**Skip Step C entirely when invoked by `iterate`.** Creating or commenting on a PR is an outward-facing publish that needs an explicit yes in the moment; an autonomous loop can't give one. Iterate just pushes the branch and leaves the PR to a later interactive wrap-up.
