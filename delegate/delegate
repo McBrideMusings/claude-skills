@@ -7,8 +7,11 @@
 #
 #   delegate agent                       print the resolved agent (codex|reasonix), or fail
 #   delegate check                       is the resolved agent authed & reachable? (exit 0/1)
-#   delegate exec <prompt-file> <outfile>  run the agent non-interactively with the prompt;
-#                                          output to <outfile>, in a visible Terminal.app window
+#   delegate exec [--headless] <prompt-file> <outfile>
+#                                          run the agent non-interactively with the prompt; output to <outfile>.
+#                                          default: in a visible Terminal.app window you can watch.
+#                                          --headless: no window — run as a plain subprocess (backend-only,
+#                                          for cron / SSH / no-GUI where AppleScript can't open a window).
 #
 # Selection: $CLAUDE_DELEGATE_AGENT, set per-profile in settings.local.json
 # (reasonix on personal, codex on work). A repo can override it in its own
@@ -55,9 +58,11 @@ cmd_check() {
 
 cmd_exec() {
   local a; a="$(resolve_agent)" || return 1
+  local headless=0
+  if [ "${1:-}" = "--headless" ]; then headless=1; shift; fi
   local promptfile="${1:-}" outfile="${2:-}"
   if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
-    echo "usage: delegate exec <prompt-file> <outfile>" >&2; return 2
+    echo "usage: delegate exec [--headless] <prompt-file> <outfile>" >&2; return 2
   fi
   [ -f "$promptfile" ] || { echo "delegate: prompt file not found: $promptfile" >&2; return 1; }
 
@@ -68,6 +73,18 @@ cmd_exec() {
   esac
 
   : > "$outfile"
+
+  # Backend-only path: no window, no AppleScript. Run the agent as a plain subprocess
+  # in the current dir, output straight to the file. For cron / SSH / any context with no
+  # GUI session to open a Terminal window in. The windowed path below stays the default —
+  # this is opt-in via --headless. No sentinel needed: the call is synchronous, so it
+  # returns exactly when the agent exits.
+  if [ "$headless" -eq 1 ]; then
+    cat "$promptfile" | $runner > "$outfile" 2>&1 || true
+    echo "delegate: $a finished (headless) → $outfile"
+    return 0
+  fi
+
   # The real command runs in a temp script so the AppleScript string stays trivial
   # (just "bash /tmp/xxx") and we never fight do-script quoting.
   local cmdfile; cmdfile="$(mktemp -t delegate-run.XXXXXX)"
@@ -109,5 +126,5 @@ case "${1:-}" in
   agent) cmd_agent ;;
   check) cmd_check ;;
   exec)  shift; cmd_exec "$@" ;;
-  *) echo "usage: delegate {agent|check|exec <prompt-file> <outfile>}" >&2; exit 2 ;;
+  *) echo "usage: delegate {agent|check|exec [--headless] <prompt-file> <outfile>}" >&2; exit 2 ;;
 esac

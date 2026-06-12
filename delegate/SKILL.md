@@ -11,7 +11,7 @@ How the delegate flavors — `audit dual` (the delegate **reviews** the same dif
 >
 > The delegate **always** runs through the `delegate exec` script. **NEVER** call a vendor binary directly — not from a Bash tool call, not "just this once," not because it seems quicker, not for any reason. The router is the whole point: it is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the delegate's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-delegate.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct.
 >
-> Calling a vendor binary directly runs it **headless in the background with no window** — silently defeating every one of those guarantees. The only correct invocation is `"$HOME/.claude/skills/delegate/delegate" exec <prompt-file> <outfile>`. No exceptions. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `delegate`.)
+> Calling a vendor binary directly runs it **headless in the background with no window** — silently defeating every one of those guarantees. The only correct invocation is `"$HOME/.claude/skills/delegate/delegate" exec [--headless] <prompt-file> <outfile>` — windowed (default) or `--headless`, both go **through the router** (the ban is on calling the vendor binary yourself, not on running without a window; `--headless` is the router's own no-GUI mode for cron/SSH). No exceptions. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `delegate`.)
 
 > The smoke test showed `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.
 
@@ -41,11 +41,17 @@ delegate check
     → is the resolved agent authenticated & reachable? exit 0 = ready, nonzero + message.
     → this IS the health gate — run it first; halt the skill on nonzero.
 
-delegate exec <prompt-file> <outfile>
+delegate exec [--headless] <prompt-file> <outfile>
     → run the resolved agent non-interactively with the prompt in <prompt-file>;
-      its output lands in <outfile>. Runs in a visible Terminal.app window you can watch,
-      blocks until the agent finishes, then returns. There is no "review" verb — a review
-      is just an exec whose prompt asks for a review.
+      its output lands in <outfile>. Default: runs in a visible Terminal.app window you
+      can watch, blocks until the agent finishes, then returns. There is no "review" verb —
+      a review is just an exec whose prompt asks for a review.
+    → --headless: skip the window. Runs the agent as a plain subprocess, output straight to
+      <outfile>, no AppleScript. Same prompt/outfile contract — the window is the only
+      difference. Use it where there's no GUI session to open a window in (cron, SSH,
+      scheduled agents): the windowed default needs Terminal.app plus the one-time macOS
+      Automation grant, which a headless run can't satisfy. The visible window stays the
+      default for interactive use; nothing asks you to choose.
 ```
 
 The review prompt, the verdict format (e.g. `MERGEABLE / BLOCK`), and any follow-up rounds live in the **skills**, not here. The resolver doesn't know or care what the prompt is about.
