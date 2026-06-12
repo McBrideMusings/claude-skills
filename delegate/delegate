@@ -73,7 +73,7 @@ cmd_exec() {
   local cmdfile; cmdfile="$(mktemp -t delegate-run.XXXXXX)"
   {
     printf 'cd %q\n' "$PWD"
-    printf 'cat %q | %s > %q 2>&1\n' "$promptfile" "$runner" "$outfile"
+    printf 'cat %q | %s 2>&1 | tee %q\n' "$promptfile" "$runner" "$outfile"
     printf 'printf "\\n__DELEGATE_DONE__\\n" >> %q\n' "$outfile"
   } > "$cmdfile"
 

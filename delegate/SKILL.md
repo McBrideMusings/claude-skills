@@ -98,7 +98,7 @@ What `delegate exec` does under the hood:
 1. Writes the real command to a temp script, so the AppleScript stays trivially `do script "bash /tmp/xxx"` (no do-script quoting fights). That script is:
    ```
    cd <repo>
-   cat <prompt-file> | { codex exec | reasonix run } > <outfile> 2>&1
+   cat <prompt-file> | { codex exec | reasonix run } 2>&1 | tee <outfile>
    printf "\n__DELEGATE_DONE__\n" >> <outfile>
    ```
    Both `codex exec` and `reasonix run` read the prompt from **stdin** and run non-interactively (no approval prompts to babysit — the reason exec mode is used instead of an interactive session).
