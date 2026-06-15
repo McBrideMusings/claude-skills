@@ -7,14 +7,14 @@ Work through each phase below. Skip any phase that doesn't apply to this project
 
 ---
 
-## ⛔ RUN TO COMPLETION — wrap-up is not done until the work is committed AND pushed
+## ⛔ RUN TO COMPLETION — wrap-up is not done until the work is committed, pushed, AND (on owned repos) merged
 
 The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 are preparation; Phase 6 resolves follow-ups (which may add commits when one is fixed now) and reports. If you stop before Phase 5, you have left the user's work uncommitted in the working tree — the exact failure wrap-up is meant to prevent. This is the #1 way wrap-up fails, so treat it as non-negotiable:
 
 - **A quality check that finds nothing is a GREEN LIGHT to commit, not a stopping point.** Phase 4 returning `(none)` / "no issues" means proceed *immediately* to Phase 5. It does NOT mean you are finished. A clean review is the single most common false finish line — do not fall for it.
 - **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (e.g. a 75+ review issue you cannot auto-fix, a push that fails auth) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
-- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), and Phase 6 (follow-ups → summary → PR disposition) has run. Until all are true, you are mid-wrap-up — keep going.
+- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 (follow-ups → summary → merge/PR) has run, and — **on a repo you own** — the feature branch has been **merged into the default branch and the workspace is back on a clean default branch** (the merged branch deleted). Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. (Collaborative repos stop at "pushed + PR offered" — merging there is the reviewer's call.) Until all are true, you are mid-wrap-up — keep going.
 
 When invoked by `iterate`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
 
@@ -179,7 +179,7 @@ Before committing, run three parallel quality checks on the session's changes:
    - Do NOT use conventional-commit prefixes (`feat:`, `fix:`, etc.) — global rule
 2. Confirm the final state: `git status` should be clean
 3. Push to origin if a remote exists: `git push origin $(git branch --show-current)`. For a first push on a new branch, use `git push -u origin $(git branch --show-current)` to set upstream (matching the branch's own name — never to `main`).
-4. If working on a feature branch: mention whether it's ready to merge (but don't merge without being asked)
+4. Do NOT merge here — the merge is the final step (Phase 6 Step C), after follow-ups and the summary settle. Leave the feature branch pushed; Step C merges it on an owned repo (or opens the PR on a collaborative one).
 
 ---
 
@@ -205,12 +205,23 @@ Invoke the `followups` skill using the Skill tool in Generate mode to surface ca
 
 Invoke the `summarize` skill using the Skill tool to generate the unified summary of the branch's changes and session work. Because Step A settled first, this summary folds in **both** any fixes applied just now and the new issues spawned this session (e.g. "follow-on issues filed: #N…").
 
-### Step C — PR disposition (collaborative repos only; interactive only)
+### Step C — Merge (owned repos) / PR disposition (collaborative repos)
 
 Reuse the Phase 2 ownership check (`gh repo view --json owner --jq .owner.login` vs `gh api user --jq .login`):
 
-- **Repo I own (solo)** — I don't use PRs here; the branch is already pushed. Print the summary and stop. No PR offer.
-- **Repo I don't own (collaborative)** — offer (never automatic; only on an explicit yes in the current message — global "never publish on my behalf" rule):
+- **Repo I own (solo) — merge it, then leave the workspace clean.** Invoking `/wrap-up` authorizes the merge, exactly as it authorizes commit and push — no separate confirmation. The goal is work left **merged on the default branch**, never stranded on a feature branch. If the current branch already *is* the default branch, skip this (nothing to merge). Otherwise, with a remote present:
+  1. Pre-check: `git status` is clean (Phase 5) and Phase 4 was clean-or-fixed. **Never merge a branch with known-failing work** — if a 75+ issue is unresolved, that's the blocker; stop instead.
+  2. Capture the feature branch name and the default branch (usually `main`).
+  3. Bring the default branch current: `git -C <repo> checkout main`, then `git -C <repo> pull --ff-only origin main`.
+  4. Merge: `git -C <repo> merge --no-ff <feature> -m "Merge <feature>"` (`--no-ff` keeps the feature as one grouped, revertable unit in history; plain message, no AI attribution).
+  5. **On conflict:** `git -C <repo> merge --abort`, `git -C <repo> checkout <feature>`, and STOP — surface the conflict to the user. A merge conflict is a genuine blocker; never force or silently hand-resolve.
+  6. Push: `git -C <repo> push origin main`.
+  7. Delete the merged branch — local `git -C <repo> branch -d <feature>` (`-d`, not `-D`: it refuses if the branch isn't fully merged, a safety net) and remote `git -C <repo> push origin --delete <feature>`.
+  8. End state: on `main`, `git status` clean, feature branch gone. Report the merge (and deletion) in the summary.
+
+  No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push. Bash rules still apply: `git -C <abs-path> …` (never `cd … && git`), never `@{u}`/`{…}` refspecs, run inner commands first instead of `$(…)` with a non-allowlisted binary.
+
+- **Repo I don't own (collaborative) — never auto-merge.** Merging is the reviewer's call through the PR. Offer (never automatic; only on an explicit yes in the current message — global "never publish on my behalf" rule):
   - **No PR on the branch yet** → offer to **create the PR** with the summary as its body:
     ```
     gh pr create --title "<one-line>" --body "$(cat <<'EOF'
@@ -227,4 +238,6 @@ Reuse the Phase 2 ownership check (`gh repo view --json owner --jq .owner.login`
     ```
   - On a no, hand the user the summary text to paste themselves.
 
-**When Step C runs (driven by ownership + pass mode, not by who invoked wrap-up):** run it on a **collaborative repo** in an **interactive** pass — a manual `/wrap-up` or a **standalone** `/iterate` can both give the in-the-moment yes that publishing requires, so a standalone iterate on a work repo ends with this PR confirmation. **Skip it** on an **owned repo** (no PRs there — the branch is already pushed) or in a **continuous / non-interactive** pass (a `/loop` can't give an explicit yes; just push and leave the PR to a later interactive wrap-up).
+**When Step C runs (driven by ownership + pass mode, not by who invoked wrap-up):**
+- **Owned repo — the merge runs in BOTH interactive and continuous passes.** A solo merge needs no human input, so a `/loop` iterate merges each finished item into the default branch just as a manual `/wrap-up` does. The act of invoking wrap-up (or iterate) is the authorization. The only thing that stops it is a real blocker (unresolved 75+ issue, merge conflict, dirty tree).
+- **Collaborative repo — never auto-merge, in any mode.** The **PR offer** runs only in an **interactive** pass (a manual `/wrap-up` or a **standalone** `/iterate` can give the in-the-moment yes publishing requires). In a **continuous / non-interactive** pass (`/loop`), skip the offer — leave the branch pushed for a later interactive wrap-up.
