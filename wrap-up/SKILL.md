@@ -201,6 +201,8 @@ Invoke the `followups` skill using the Skill tool in Generate mode to surface ca
 
 **Mode note (driven by pass mode, not by who invoked wrap-up):** an **interactive** pass — a manual `/wrap-up` or a **standalone** `/iterate` — halts here so the user reviews what this session's work uncovered and chooses fix-now / file / skip per item. A **continuous / non-interactive** pass (a `/loop`) has no fix-now and no halt: follow-ups are filed autonomously per the pass mode and the loop never pauses.
 
+**Presentation — interactive passes (required).** Surface the candidates **one at a time**, each as its own `AskUserQuestion` round: N follow-ups means N separate rounds, never a single batched list and never a free-text "tell me what to do with these." Each round covers exactly one item and offers the three dispositions as options — **Fix now / File as issue / Skip** — with the recommended disposition first. In the question body, **quote the exact slice of the diff, code, or PR the finding refers to** as a Markdown block-quote (`> …`, prefixed with its `file:line`) so the user sees precisely what the item is about without hunting for it. Work the rounds in a stable order and carry each to its terminal state before opening the next. A **continuous / non-interactive** pass (`/loop`) skips the widget entirely — no halt, file autonomously.
+
 ### Step B — Summarize
 
 Invoke the `summarize` skill using the Skill tool to generate the unified summary of the branch's changes and session work. Because Step A settled first, this summary folds in **both** any fixes applied just now and the new issues spawned this session (e.g. "follow-on issues filed: #N…").
@@ -221,7 +223,7 @@ Reuse the Phase 2 ownership check (`gh repo view --json owner --jq .owner.login`
 
   No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push. Bash rules still apply: `git -C <abs-path> …` (never `cd … && git`), never `@{u}`/`{…}` refspecs, run inner commands first instead of `$(…)` with a non-allowlisted binary.
 
-- **Repo I don't own (collaborative) — never auto-merge.** Merging is the reviewer's call through the PR. Offer (never automatic; only on an explicit yes in the current message — global "never publish on my behalf" rule):
+- **Repo I don't own (collaborative) — never auto-merge.** Merging is the reviewer's call through the PR. Offer (never automatic; only on an explicit yes in the current message — global "never publish on my behalf" rule). Present this offer as **one final `AskUserQuestion` round**, after every per-item follow-up round has settled — the applicable publish action first (Create PR / Post as comment), then a decline option that hands back the summary text to paste:
   - **No PR on the branch yet** → offer to **create the PR** with the summary as its body:
     ```
     gh pr create --title "<one-line>" --body "$(cat <<'EOF'
