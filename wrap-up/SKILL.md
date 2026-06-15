@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking (GitHub issues, followups), update docs, run code quality checks (review + simplify), commit, push, then resolve follow-ups (fix now, file, or skip), summarize, and — on a collaborative repo — offer to open the PR or comment the summary. Triggers: user invokes '/wrap-up', 'wrap up', 'close out the session', 'end of session', 'finalize this work'. Also invoked by iterate as Phase 3."
+description: "Close out the current session: assess changes, update tracking (GitHub issues, followups), update docs, run code quality checks (review + simplify), commit, push, then resolve follow-ups (fix now, file, or skip), summarize, and — on a collaborative repo — offer to open the PR (setting reviewers, assignees, and labels) or comment the summary. Triggers: user invokes '/wrap-up', 'wrap up', 'close out the session', 'end of session', 'finalize this work'. Also invoked by iterate as Phase 3."
 ---
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
@@ -228,9 +228,15 @@ Reuse the Phase 2 ownership check (`gh repo view --json owner --jq .owner.login`
   No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push. Bash rules still apply: `git -C <abs-path> …` (never `cd … && git`), never `@{u}`/`{…}` refspecs, run inner commands first instead of `$(…)` with a non-allowlisted binary.
 
 - **Repo I don't own (collaborative) — never auto-merge.** Merging is the reviewer's call through the PR. Offer (never automatic; only on an explicit yes in the current message — global "never publish on my behalf" rule). Present this offer as **one final `AskUserQuestion` round**, after every per-item follow-up round has settled — the applicable publish action first (Create PR / Post as comment), then a decline option that hands back the summary text to paste:
-  - **No PR on the branch yet** → offer to **create the PR** with the summary as its body:
+  - **No PR on the branch yet** → offer to **create the PR** with the summary as its body. First resolve reviewers, assignees, and labels — all best-effort: any failure here falls back to title + body + `--assignee @me` and never blocks the PR.
+    - **Assignees** — default `--assignee @me`. If the branch has more than one commit author (distinct values from `git -C <repo> log --format=%ae origin/main..HEAD`), map each: a GitHub noreply email (`<id>+<handle>@users.noreply.github.com`) gives the handle directly; anyone who doesn't map stays `@me`.
+    - **Reviewers** — candidates are whoever touched the files this branch changed: `git -C <repo> diff --name-only origin/main..HEAD` for the files, then `git -C <repo> log` over those paths for who last touched and most often touches them. Map each git identity → GitHub handle via the **`## Reviewers` section of `.claude/CLAUDE.local.md`** (lines of `Name <email> → @handle — optional note`; Read the file, don't `cat`). Noreply emails map themselves; the rest come from that section. Drop yourself.
+      - **If that section (or the file) doesn't exist, offer once to seed it** — scrape contributors with `git -C <repo> shortlog -sne HEAD`, write a `## Reviewers` list naming each one with the handle filled in where the email exposes it and left blank otherwise, and tell the user exactly who was added so they can fix handles, add/remove people, or annotate in plain text. Confirm `.claude/CLAUDE.local.md` is gitignored (add it if not) before writing — handles are account names, never commit them. If the user declines, skip reviewers this PR.
+    - **Labels** — use only labels that **already exist on the repo** (`gh label list --json name,description`) or are documented in context; suggest the ones that fit the summary. **Never offer to create labels.** If the repo has no labels and the user didn't ask for any, skip labels silently — no prompt.
+    - **Confirm before finalizing** — carry the proposed reviewers and labels as pre-checked multiSelect questions inside the *same* final `AskUserQuestion` round as the Create-PR choice (omit a sub-question whose set is empty). The user approves or edits them there — this is the gate; nothing is assigned without it. Write any reviewer correction back into the `## Reviewers` section so it isn't re-asked.
+    - Then create the PR in one call, including only the flags that resolved to something, and list the final reviewers + assignees in the reported summary:
     ```
-    gh pr create --title "<one-line>" --body "$(cat <<'EOF'
+    gh pr create --title "<one-line>" --assignee @me --reviewer <handle> --label <name> --body "$(cat <<'EOF'
     <summary body>
     EOF
     )"
