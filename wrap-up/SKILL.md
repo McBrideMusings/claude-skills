@@ -201,7 +201,11 @@ Invoke the `followups` skill using the Skill tool in Generate mode to surface ca
 
 **Mode note (driven by pass mode, not by who invoked wrap-up):** an **interactive** pass — a manual `/wrap-up` or a **standalone** `/iterate` — halts here so the user reviews what this session's work uncovered and chooses fix-now / file / skip per item. A **continuous / non-interactive** pass (a `/loop`) has no fix-now and no halt: follow-ups are filed autonomously per the pass mode and the loop never pauses.
 
-**Presentation — interactive passes (required).** Surface the candidates **one at a time**, each as its own `AskUserQuestion` round: N follow-ups means N separate rounds, never a single batched list and never a free-text "tell me what to do with these." Each round covers exactly one item and offers the three dispositions as options — **Fix now / File as issue / Skip** — with the recommended disposition first. In the question body, **quote the exact slice of the diff, code, or PR the finding refers to** as a Markdown block-quote (`> …`, prefixed with its `file:line`) so the user sees precisely what the item is about without hunting for it. Work the rounds in a stable order and carry each to its terminal state before opening the next. A **continuous / non-interactive** pass (`/loop`) skips the widget entirely — no halt, file autonomously.
+**Presentation — interactive passes (required).** Surface the candidates **one at a time**, each as its own `AskUserQuestion` round: N follow-ups means N separate rounds, never a single batched list and never a free-text "tell me what to do with these." The split is strict:
+- **Chat message (before the widget):** describe the one item this round is about, and **quote the exact slice of the diff, code, or PR the finding refers to** as a Markdown block-quote (`> …`, prefixed with its `file:line`) so the user sees precisely what it is without hunting for it. This is where all the issue detail lives.
+- **The `AskUserQuestion` widget itself:** carries **only the disposition choice** — **Fix now / File as issue / Skip**, recommended option first. Do **not** put the finding text, the quoted slice, or any explanation inside the question or its options; the widget is purely "what do we do with it."
+
+Work the rounds in a stable order and carry each to its terminal state before opening the next. A **continuous / non-interactive** pass (`/loop`) skips the widget entirely — no halt, file autonomously.
 
 ### Step B — Summarize
 
