@@ -1,6 +1,6 @@
 # Phase 05 — Populate PRD (Content Synthesis)
 
-Synthesize the content of `docs/PRD.md` from the current conversation context. **Do NOT interview the user.** Different problem from `brainstorm` — that's where interviews happen.
+Synthesize the content of `docs/PRD.md` from the current conversation context. **Do NOT interview the user.** Different problem from `grill-me` — that's where interviews happen.
 
 ## When this phase runs
 
@@ -11,7 +11,7 @@ Synthesize the content of `docs/PRD.md` from the current conversation context. *
 
 ## Stance
 
-Synthesize **from conversation context.** If context is thin: tell the user *"Not enough context to synthesize. Run `/brainstorm` first, then come back."* Don't start a new interview from inside `docs`.
+Synthesize **from conversation context.** If context is thin: tell the user *"Not enough context to synthesize. Run `/grill-me` first, then come back."* Don't start a new interview from inside `docs`.
 
 Read `docs/CONTEXT.md` for vocabulary if present; use those terms throughout. Respect ADRs in `docs/adr/` that touch the scope.
 

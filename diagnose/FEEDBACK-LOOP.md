@@ -15,7 +15,7 @@ A fast, deterministic, agent-runnable pass / fail signal turns the bug into a se
 7. **Property / fuzz loop.** For "sometimes wrong output" bugs, run 1000 random inputs.
 8. **Bisection harness.** If the bug appeared between two known states, automate "boot at state X, check, repeat" so `git bisect run` works.
 9. **Differential loop.** Same input through old-vs-new (or two configs); diff outputs.
-10. **HITL bash script.** Last resort — drive a human with a structured script that captures output back to you.
+10. **HITL bash script.** Last resort — drive a human with a structured script that captures output back to you. Copy [scripts/hitl-loop.template.sh](scripts/hitl-loop.template.sh), edit the `step` / `capture` calls, and run it; the captured `KEY=VALUE` output feeds back to you.
 
 ## Iterate on the loop itself
 

@@ -1,6 +1,6 @@
 # Phase 07 — Summary + Backfill Offer
 
-Report results, optionally offer a backfill brainstorm, **don't** commit.
+Report results, optionally offer a Backfill grill-me session, **don't** commit.
 
 ## Result table
 
@@ -27,11 +27,11 @@ Note deferred decisions:
 - *"PRD migrated but format differs from standard — run `/docs` for restructuring offer."*
 - *"Run `/admin` to wrap Makefile as admin.toml."*
 
-## Offer Backfill brainstorm
+## Offer Backfill grill-me
 
 If the audit found existing artifacts being migrated (this wasn't a greenfield bootstrap) **and** the project has substantive code already, offer:
 
-> *"This project already has code and was migrating existing docs. Want to run `/brainstorm` in Backfill mode to retroactively capture vocabulary and decisions from the existing codebase? It'll walk through what's in the code, surface divergent terms, and ask you to confirm / reject — populating `docs/CONTEXT.md` and `docs/adr/` as you go."*
+> *"This project already has code and was migrating existing docs. Want to run `/grill-me` in Backfill mode to retroactively capture vocabulary and decisions from the existing codebase? It'll walk through what's in the code, surface divergent terms, and ask you to confirm / reject — populating `docs/CONTEXT.md` and `docs/adr/` as you go."*
 
 **Don't offer when:**
 
@@ -39,7 +39,7 @@ If the audit found existing artifacts being migrated (this wasn't a greenfield b
 - The user opened with "skip docs" / "don't worry about docs".
 - The migrations already populated `docs/CONTEXT.md` and ADRs from existing files.
 
-The user can accept (parent invokes `/brainstorm` — brainstorm picks Backfill mode automatically because the codebase exists), or defer.
+The user can accept (parent invokes `/grill-me` — grill-me picks Backfill mode automatically because the codebase exists), or defer.
 
 ## Don't commit
 

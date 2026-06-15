@@ -12,7 +12,7 @@ Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own cre
 - **Non-standard at `GLOSSARY.md` / `docs/glossary.md` / `docs/terms.md`**:
   1. Confirm: *"Found `GLOSSARY.md` — looks like project vocabulary. Rename + move to `docs/CONTEXT.md`?"* (Default: yes.)
   2. Move and update internal references.
-  3. If the file's format doesn't match `~/.claude/skills/brainstorm/CONTEXT-FORMAT.md` (no `## Language`, `## Relationships`, etc.), leave the content but add standard headings around it. Don't reformat the user's existing entries.
+  3. If the file's format doesn't match `~/.claude/skills/grill-me/CONTEXT-FORMAT.md` (no `## Language`, `## Relationships`, etc.), leave the content but add standard headings around it. Don't reformat the user's existing entries.
 - **Per-context files at `src/*/CONTEXT.md` without a CONTEXT-MAP.md**: multi-context bounded-context pattern. Don't migrate — offer to create `docs/CONTEXT-MAP.md` listing them.
 
 ### Empty-glossary template
@@ -26,7 +26,7 @@ Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own cre
 
 ### Domain
 
-{Project-specific terms get added here as they resolve, by `brainstorm` and `improve-codebase-architecture`.}
+{Project-specific terms get added here as they resolve, by `grill-me` and `improve-codebase-architecture`.}
 
 ### Architecture
 
@@ -43,7 +43,7 @@ Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own cre
 
 ## docs/adr/
 
-- **Missing** → `mkdir -p docs/adr && touch docs/adr/.gitkeep`. No seed ADRs — `brainstorm` and `improve-codebase-architecture` create them lazily when their three-conditions test passes.
+- **Missing** → `mkdir -p docs/adr && touch docs/adr/.gitkeep`. No seed ADRs — `grill-me` and `improve-codebase-architecture` create them lazily when their three-conditions test passes.
 - **Standard** → no-op.
 - **Non-standard at `adr/` / `decisions/` / `docs/decisions/` / `docs/adrs/` / `architecture/decisions/`:**
   1. Confirm the directory holds ADR-shaped files (markdown with date / number / title pattern).

@@ -1,13 +1,41 @@
 ---
-name: explainer
-description: "Generate a fully self-contained, visually-rich HTML explainer document you open in a browser to understand a topic — diagrams, infographics, semantic color, annotated code. Primary use: explain your OWN code (grounded with file:line tags, never invented); also explains world-knowledge concepts. The heavyweight artifact cousin of zoom-out. Triggers: 'explain this', 'explainer', 'make me an explainer', 'explain how X works', 'visual explainer', 'walk me through X', '/explainer'."
+name: explain
+description: "Explain something so the user gets it — a subsystem in this codebase, or a world-knowledge concept. Default is a plain-language explanation in chat; escalates to a self-contained visual HTML explainer (inline diagrams, infographics, annotated code) when the topic is structurally visual or dense, or when the user asks. Explaining OWN code is grounded with file:line tags, never invented. Triggers: 'explain this', 'explain how X works', 'walk me through X', 'eli5 X', 'explainer', 'make me an explainer', 'visual explainer', '/explain'."
 ---
 
-# explainer
+# explain
 
-Produce **one hermetic `.html` file** that explains something — a subsystem in this codebase, or a world-knowledge concept — using designed visuals (inline SVG diagrams, semantic color, infographics, annotated code) so the user can open it in a browser and *get it*.
+Explain something so the user *gets it* — a subsystem in this repo, or a world-knowledge concept. Two tiers: a plain chat explanation by default, a designed hermetic HTML artifact when the topic earns it.
 
-This is the heavyweight, artifact-producing cousin of `zoom-out`. `zoom-out` is a quick text map in chat; `explainer` is a standalone document you keep open while you work.
+## Tier 1 — explain in chat (default)
+
+Most of the time, just explain it well in the conversation. No file. Hold every explanation to:
+
+- **Ground it, don't guess.** Pull from what you've actually read (B-mode: real files) or from high-trust sources (A-mode), not parametric vibes. Cite as you go — `file:line` for code, a named source for world knowledge. If a specific fact is shaky, say so rather than invent it.
+- **One thing, low load.** Explain the single thing asked, scoped tight. Difficulty is the enemy of understanding — it eats the working memory the user needs to follow you. Strip everything not required to get *this* across.
+- **Calibrate to the listener.** Infer what they already know from the conversation and meet them just past it. An `eli5` gets an analogy anchor; a senior asking about a race condition gets the mechanism. Don't over- or under-shoot.
+- **Point to one primary source** to go deeper — the single most high-trust file, doc, paper, or talk on the topic. One good pointer beats five.
+- **Invite follow-ups.** You're their explainer; the conversation continues. End open.
+
+For B-mode (this repo), the grounding rule is the same hard rule as Tier 2: every concrete code claim is backed by a file you actually opened — cite `file:line`. Never describe a mechanism you haven't read.
+
+After the chat explanation, if a diagram or visual structure would genuinely add something, offer the escalation in one line: *"Want this as a visual HTML explainer?"* — don't assume it.
+
+## When to escalate to the HTML artifact (Tier 2)
+
+Escalate when **any** of these holds:
+
+- **The user asks** — "make me an explainer", "as HTML", "visual", "diagram this", "/explainer".
+- **The topic is structurally visual** — a multi-step flow, an architecture with several interacting modules, a comparison matrix, a timeline, layered "go deeper" concept reveals. A diagram carries what prose can't.
+- **It's dense enough to keep open** — the user will want to return to it while they work, not scroll back through chat.
+
+Stay in chat for a definition, a single mechanism, a "why does X happen" — anything a few sentences resolve. When unsure, default to chat and *offer* the upgrade.
+
+> `explain` (chat tier) overlaps `zoom-out`, but they answer different questions: `zoom-out` maps *where you are* in unfamiliar code (relevant modules + callers); `explain` makes you *understand how X works*. Reach for `zoom-out` when lost, `explain` when curious.
+
+---
+
+The rest of this skill is the **Tier 2** artifact: produce **one hermetic `.html` file** that explains something using designed visuals (inline SVG diagrams, semantic color, infographics, annotated code) so the user can open it in a browser and *get it*.
 
 ## Two sources, one spine
 
@@ -43,7 +71,7 @@ Explore as far as needed to actually understand — read the real files, follow 
 
 ### 3. Infer the knobs
 
-From the prompt, infer **archetype · depth · audience** (e.g. `explainer eli5 how the statusline auth works` → Concept, shallow, beginner). Don't interview — generate with the inferred defaults. The refine loop (step 6) is the escape hatch.
+From the prompt, infer **archetype · depth · audience** (e.g. `explain eli5 how the statusline auth works` → Concept, shallow, beginner). Don't interview — generate with the inferred defaults. The refine loop (step 6) is the escape hatch.
 
 ### 4. Render
 
@@ -74,7 +102,7 @@ Don't auto-keep; wait for the user to ask.
 
 ## When NOT to use
 
-- The user wants a quick in-chat orientation, not a document → use `zoom-out`.
+- The user wants a quick map of *where they are* in unfamiliar code → use `zoom-out`.
 - The user wants the code *changed*, audited, or debugged → that's `audit` / `diagnose`, not an explainer.
 - A one-line answer suffices → just answer in chat.
 

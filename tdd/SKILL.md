@@ -36,10 +36,14 @@ Before writing any code:
 
 - [ ] Confirm with the user what interface changes are needed
 - [ ] Confirm with the user which **behaviors** to test (not implementation steps)
+- [ ] Design the interface for testability (see `MOCKING.md` and `improve-codebase-architecture`)
 - [ ] Look for deep-module opportunities (small interface, deep implementation — see `improve-codebase-architecture`)
-- [ ] Get user approval on the behavior list
+- [ ] List the behaviors to test, in priority order
+- [ ] Get user approval on the plan
 
-You can't test everything. Force a priority order on the behaviors before writing the first test.
+Ask: *"What should the public interface look like? Which behaviors are most important to test?"*
+
+You can't test everything. Confirm with the user exactly which behaviors matter most — focus on critical paths and complex logic, not every possible edge case.
 
 ### Phase 02 — Tracer Bullet
 
@@ -74,6 +78,8 @@ After all tests pass:
 
 - [ ] Extract duplication
 - [ ] Deepen modules (move complexity behind simple interfaces)
+- [ ] Apply SOLID principles where natural
+- [ ] Consider what the new code reveals about the existing code
 - [ ] Run tests after each refactor step
 
 **Never refactor while RED.** Get to GREEN first.

@@ -28,7 +28,7 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (delegates to `/docs`) |
 | [PHASE-05-DOCS-ARTIFACTS.md](PHASE-05-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`, `docs/PRD.md`, `docs/ROADMAP.md` |
 | [PHASE-06-ISSUE-TRACKER.md](PHASE-06-ISSUE-TRACKER.md) | `gh auth status` + GitHub remote check, record fallback if needed |
-| [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/brainstorm` Backfill on existing-codebase audits |
+| [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/grill-me` Backfill on existing-codebase audits |
 
 ## Multi-project usage
 

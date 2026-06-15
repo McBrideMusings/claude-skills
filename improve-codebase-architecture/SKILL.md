@@ -11,7 +11,7 @@ Surface architectural friction and propose **deepening opportunities** — refac
 
 Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component", "service", "API", or "boundary."
 
-These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../brainstorm/CONTEXT-FORMAT.md](../brainstorm/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
+These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../grill-me/CONTEXT-FORMAT.md](../grill-me/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
 
 - **Module** — anything with an interface and an implementation (function, class, package, slice). Scale-agnostic.
   _Avoid_: unit, component, service.
@@ -48,22 +48,32 @@ Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't
 
 Apply the **deletion test** to anything you suspect is shallow.
 
-### Phase 02 — Present Candidates
+### Phase 02 — Present Candidates as a Hermetic HTML Report
 
-Write the full list of deepening opportunities to `<root>/tmp/claude/improve-codebase-architecture.md`. Resolve `<root>` via `git rev-parse --show-toplevel 2>/dev/null`; if empty (not in a git repo), fall back to `pwd`. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call. Tell the user the exact path — on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean).
+Render the candidates as a single self-contained HTML file — **the diagrams carry the weight, the prose is sparse.** Same hermetic rules as the `explain` skill: zero network, no CDN, inline CSS + hand-authored inline SVG, system fonts, light/dark via `prefers-color-scheme`. **Reuse `explain`'s design system** ([../explain/DESIGN-SYSTEM.md](../explain/DESIGN-SYSTEM.md)) — semantic-color tokens and the `.diagram` / `.compare` / `.callout` / `.legend` component vocabulary — so the report is a member of the same visual family. Do **not** reach for Tailwind, Mermaid, or any CDN; a stray report must render offline, forever.
 
-For each candidate in the file:
+Write to `<root>/tmp/claude/architecture-review-<slug>.html`. Resolve `<root>` via `git rev-parse --show-toplevel 2>/dev/null`; if empty (not in a git repo), fall back to `pwd`. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call. Open it (`open <path>` on macOS) and emit the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean).
 
-- **Files** — which files/modules are involved
-- **Problem** — why the current architecture is causing friction
-- **Solution** — plain English description of what would change
-- **Benefits** — in terms of locality, leverage, and how tests would improve
+See [HTML-REPORT.md](HTML-REPORT.md) for the scaffold, the before/after diagram patterns, and the card layout. Each candidate is one card:
+
+- **Title** — names the deepening (e.g. "Collapse the Order intake pipeline").
+- **Recommendation strength** — a badge: `Strong` (happy/green), `Worth exploring` (caution/amber), `Speculative` (muted).
+- **Files** — monospaced list of the modules involved.
+- **Before / After diagram** — the centrepiece. Hand-authored inline SVG showing the shallowness and the deepening, side by side.
+- **Problem** — one sentence: what hurts.
+- **Solution** — one sentence: what changes.
+- **Wins** — bullets in glossary terms (locality / leverage), ≤6 words each.
+- **ADR callout** (if applicable) — one line in a `.callout--warn` box.
 
 **Use `docs/CONTEXT.md` vocabulary for the domain** (e.g. "the Order intake module", not "the FooBarHandler" or "the Order service") **and the architecture terms above** consistently.
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface when the friction is real enough to warrant revisiting. Mark clearly: *"contradicts ADR-0007 — but worth reopening because…"*. Don't list every theoretical refactor an ADR forbids.
 
-After writing the file, present a brief inline summary (candidate number, title, one-sentence problem) so the user doesn't have to open the file to react. Then ask: "Which of these would you like to explore?"
+End the report with a **Top recommendation** section — which candidate to tackle first and why, anchor-linked to its card.
+
+`tmp/claude/` is age-pruned with the rest of the account-wide tmp policy; don't keep the report unless the user asks.
+
+After writing the file, present a brief inline summary (candidate number, title, recommendation strength, one-sentence problem) so the user doesn't have to open the file to react. Then ask: "Which of these would you like to explore?"
 
 ### Phase 03 — Grilling Loop
 
@@ -71,7 +81,7 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 Side effects happen inline as decisions crystallize:
 
-- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term right there. Format per [../brainstorm/CONTEXT-FORMAT.md](../brainstorm/CONTEXT-FORMAT.md).
+- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term right there. Format per [../grill-me/CONTEXT-FORMAT.md](../grill-me/CONTEXT-FORMAT.md).
 - **Sharpening a fuzzy term?** Update `docs/CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR: *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [../brainstorm/ADR-FORMAT.md](../brainstorm/ADR-FORMAT.md).
+- **User rejects the candidate with a load-bearing reason?** Offer an ADR: *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [../grill-me/ADR-FORMAT.md](../grill-me/ADR-FORMAT.md).
 - **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).

@@ -25,6 +25,7 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - **Codebase over questions.** If the answer is in the repo, go read it.
 - **2–3 approaches at real branch points.** When a decision actually has alternatives, lay them out with tradeoffs and your pick.
 - **Scope check early.** If the ask describes multiple independent subsystems, flag it before drilling in. Decompose first, grill the first piece.
+- **Stress-test with concrete scenarios.** When a domain relationship is in play, invent a specific edge-case scenario and push for a precise answer about the boundary — *"if a Shipment is cancelled after its Invoice is generated, does the Invoice still exist?"* Vague agreement collapses fast against a concrete case; that collapse is the point.
 
 ## Anti-patterns
 
@@ -48,6 +49,8 @@ At session start, check for these in the current repo:
 ### Live glossary maintenance
 
 As terms resolve during the conversation, **update `docs/CONTEXT.md` inline** — don't batch. Format per [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
+
+**Keep `docs/CONTEXT.md` a glossary and nothing else.** It must stay totally devoid of implementation details — it is not a spec, not a scratchpad, not a home for implementation decisions. Resolved vocabulary only; decisions go to ADRs, plans go to plan files.
 
 Capture both:
 
