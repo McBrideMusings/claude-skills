@@ -1,6 +1,6 @@
 ---
 name: explain
-description: "Explain something so the user gets it — a subsystem in this codebase, or a world-knowledge concept. Default is a plain-language explanation in chat; escalates to a self-contained visual HTML explainer (inline diagrams, infographics, annotated code) when the topic is structurally visual or dense, or when the user asks. Explaining OWN code is grounded with file:line tags, never invented. Triggers: 'explain this', 'explain how X works', 'walk me through X', 'eli5 X', 'explainer', 'make me an explainer', 'visual explainer', '/explain'."
+description: "Explain something so the user gets it — a subsystem in this codebase, or a world-knowledge concept. Default is a plain-language explanation in chat; escalates to a self-contained visual HTML explainer (inline diagrams, infographics, annotated code) when the topic is structurally visual or dense, or when the user asks. Explaining OWN code is grounded with file:line tags, never invented. Triggers: 'explain this', 'explain how X works', 'walk me through X', 'eli5 X', 'make me an explainer', 'visual explainer', '/explain'."
 ---
 
 # explain
@@ -25,7 +25,7 @@ After the chat explanation, if a diagram or visual structure would genuinely add
 
 Escalate when **any** of these holds:
 
-- **The user asks** — "make me an explainer", "as HTML", "visual", "diagram this", "/explainer".
+- **The user asks** — "make me an explainer", "as HTML", "visual", "diagram this".
 - **The topic is structurally visual** — a multi-step flow, an architecture with several interacting modules, a comparison matrix, a timeline, layered "go deeper" concept reveals. A diagram carries what prose can't.
 - **It's dense enough to keep open** — the user will want to return to it while they work, not scroll back through chat.
 
