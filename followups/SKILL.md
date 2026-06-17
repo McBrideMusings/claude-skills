@@ -7,6 +7,8 @@ Use when the user asks to add a follow-up ("remember to …", "file as a followu
 
 > ### HARD RULE — never use `AskUserQuestion` / the chip-picker selector
 >
+> **Scope:** this governs *this skill's own filing prompt* — the standalone "which of these should I file?" question in Step 5, where answers are free-form and filing is the only action. When `wrap-up` invokes this skill it runs **Generate mode only** (Steps 1–4); `wrap-up` Step A then owns the per-item **Fix now / File / Skip** picker, which legitimately uses `AskUserQuestion` and is *not* governed by this rule.
+>
 > **Every prompt this skill makes is a plain chat question typed into the message body. NEVER call the `AskUserQuestion` tool, and NEVER render a selector / multi-select / chip-picker UI of any kind — not for "which to file", not for anything.** This is not a stylistic preference; the chip-picker is *wrong here* and breaks the skill:
 > - Answers are free-form — item **numbers, ranges, "all", "none"** — which the fixed-option chip schema literally cannot express.
 > - The numbered candidate list already lives in the chat message above the question, so a picker just duplicates it.
@@ -89,7 +91,7 @@ Scan for a `github.com[:/]OWNER/REPO` remote:
 
 ### Step 3: Compile suggestions
 
-**Zero items is a valid result.** Don't pad. Most sessions produce 0–2 items. More than 3 should make you suspicious.
+**Zero items is a valid result.** Don't pad — but there's no cap either: no item count is inherently "too many," and a high count is not a reason to trim. The only gate is the quality bar below; every item that clears it ships, however many that is.
 
 Surface things the user **wouldn't catch from glancing at the diff** — that's the entire value here.
 
