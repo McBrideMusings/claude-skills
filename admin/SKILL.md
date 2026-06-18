@@ -352,16 +352,18 @@ port_range = [9988, 9999]                        # optional; defaults to [9988, 
 
 The server binds `0.0.0.0` unconditionally — anyone on the tailnet can POST. Single-user tailnet / dev tool; intentional.
 
-**Userscript:** `tampermonkey/log-bridge.user.js` in the admin-project-tool repo. Install via Tampermonkey. Edit the top-of-file constants:
+**Userscript:** `tampermonkey/log-bridge.user.js` in the admin-project-tool repo — one project-agnostic script, no per-project URLs in it. Install once via Tampermonkey. Edit the top-of-file constants only for your own machines:
 - `PROBE_HOSTS` — your machine's Tailscale IPs (always include `127.0.0.1`)
 - `PROBE_PORTS` — union of all port ranges across your machines
-- `HOSTNAME_PREFILTER` — coarse guard; probing only fires on matching page hostnames
+
+Which pages forward is decided at runtime, not by editing the script: `localhost`/`127.0.0.1`/`0.0.0.0` are always watched, and any other host is opt-in via a single Tampermonkey menu command — **"Log bridge: watch `<host>`"** (a host-labelled toggle that saves an auto-derived glob to `GM` storage). The per-project prod hostname lives only in that project's `admin.toml` `[log_bridge].hosts` (advertised via `/health`), which stays the authoritative final match. Each forwarded entry carries the page `host` (not the full URL — keeps auth tokens out of the log); the listener prints one `client connected: <host> (<browser>)` banner per host.
 
 **Adoption checklist for a new project:**
 1. Add `[log_bridge]` to `admin.toml` with the right `hosts` (and `port_range` if non-default).
 2. Confirm the dev action is `kind = "interactive-shell"` — bridge only wires in there.
 3. Verify `PROBE_HOSTS` in the userscript includes this machine's Tailscale IP.
-4. Run `admin dev`, open the page, `console.log("hello")` in DevTools, tail the log.
+4. Run `admin dev`. For `localhost` it just works; for a prod host, open the page once and click the **"Log bridge: watch `<host>`"** menu command, then reload.
+5. `console.log("hello")` in the page, tail the log.
 
 Discovery files live at `/tmp/admin-project-tool/<pid>.json`; stale ones (dead PIDs) are swept on each start.
 
