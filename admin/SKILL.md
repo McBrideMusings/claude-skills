@@ -51,6 +51,27 @@ Note: `kind = "python"` bodies run in a namespace that mirrors the old flat bund
 
 **`run_cmd` signature:** `run_cmd(cmd, shell=True, capture_log=True, formatter=None, pty=False, collect=None)`. Use `pty=True` for long-running interactive processes (dev servers). Do NOT invent kwargs.
 
+### Fixing the collapsing/elided dev-output box (`pty=True` → `interactive-shell`)
+
+If a user complains that `admin dev <target>` shows a collapsing/aligned live output box — lines prefixed with `│`, a `[N lines elided]` marker, a `└─ Running...` footer — while a sibling dev target (e.g. `admin dev cf`) does NOT, the cause is **`pty = true`** on the offending action. The pseudo-TTY makes the wrapped process (`concurrently`, vite, wrangler, etc.) switch into its TTY redraw-and-collapse rendering. Actions declared `kind = "interactive-shell"` run on a plain pipe (non-TTY), so the child streams raw line-by-line and never collapses.
+
+**This is an `admin.toml`-only fix.** Do NOT investigate the interpreter, `run_cmd`, the consumer's dev harness, or `concurrently` — and do NOT explain it as the Claude Code background-task panel. Just compare the broken sub-target against the working siblings in the same `[actions.dev]` block and make it match: replace inline `run = "…"` + `pty = true` with `action = "dev-<name>"`, and add a top-level `[actions.dev-<name>]` of `kind = "interactive-shell"` carrying the same `run` (no `pty`). Then `admin check`.
+
+```toml
+# before — collapses output
+[actions.dev.local]
+run = "bun run dev:local"
+pty = true
+
+# after — streams raw, matches `dev.cf` / `dev.devvit`
+[actions.dev.local]
+action = "dev-local"
+
+[actions.dev-local]
+kind = "interactive-shell"
+run  = "bun run dev:local"
+```
+
 **`admin check` reports** the merged command/action/module counts and any resolution errors (unknown kinds, missing actions referenced by steps, unknown guards, commands colliding with reserved verbs `new`/`check`/`compile`). It does NOT score inline-code complexity — apply the inline policy above by judgment when editing.
 
 When inline code is too heavy, present finding + migration plan to user before proceeding.
