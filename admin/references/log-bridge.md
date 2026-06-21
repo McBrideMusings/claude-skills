@@ -217,11 +217,13 @@ subsystem** from the bridge:
   `start_log_bridge`, opens no port, and collects no browser logs.
 - `admin logs docker` streams `docker logs -f`. Same — no bridge.
 
-So today, **only an `interactive-shell` dev action intermingles client logs.**
-Making `admin logs plugin`/`docker` start the bridge (open the port, route the
-incoming `[client]` lines through `LineRenderer` so they interleave with the
-docker/plugin stream) is a deliberate feature to be built — it is not current
-behavior. Don't imply it works until that wiring exists.
+The `[logs]` **file-tailer subsystem** never starts the bridge. But a `[commands.logs]`
+*command* whose step routes to an `interactive-shell` **action** does — the bridge
+attaches to any interactive-shell action, whatever it's named. So a `logs` target
+that runs `ssh <host> docker logs -f` (or parks on `tail -f /dev/null`) as an
+interactive-shell action hosts the bridge and intermingles `[client]` lines with
+that stream. That is the basis of the wiring patterns in §14. The thing that does
+**not** exist is the `[logs]` *tailer* itself growing bridge support.
 
 ## 12. Behavioral contracts (from the tests)
 
@@ -252,7 +254,95 @@ Work top to bottom; the first failing row is almost always it.
 Quick manual probe of a running listener (from the admin machine):
 `curl -s localhost:<port>/health` → should return the `hosts`/`project`/`pid` JSON.
 
-## 14. Things people get wrong (the short list)
+## 14. Standard wiring patterns (bootstrap)
+
+Two patterns cover almost every project. SKILL.md's "Bootstrap" section chooses
+between them without interrogating the user. Both source the prod host from `.env`
+(`${LOG_BRIDGE_HOSTS}`) so no real host lands in the committed manifest, and both
+scope the localhost path with `ADMIN_LOG_BRIDGE_HOSTS` so dev and prod never
+cross-contaminate (§7). The difference is whether **server logs and client console
+share one stream**.
+
+### Pattern A — intermingled (DEFAULT: you own the server/container)
+
+The bridge-hosting process **is** the server / log stream, so server stdout and
+browser console interleave in one file. Dev and prod are separate paths. No inline
+Python — per-command `env` sets the localhost scope declaratively.
+
+```toml
+[log_bridge]
+hosts = ["${LOG_BRIDGE_HOSTS:-localhost}"]   # prod host from .env; localhost is auto-watched
+
+[commands.dev]
+desc  = "Dev server — server + browser console intermingled (tmp/dev.log)"
+steps = ["dev-run"]
+env   = { ADMIN_LOG_BRIDGE_HOSTS = "localhost" }   # scope this bridge to the localhost page
+
+[actions.dev-run]
+kind = "interactive-shell"        # interactive-shell => bridge attaches
+run  = "docker compose up"        # or your local dev server; its stdout shares the log file
+
+[commands.logs]
+desc  = "Logs: prod (container logs + browser console intermingled)"
+steps = ["logs-prod"]
+
+[actions.logs-prod]
+kind = "interactive-shell"        # interactive-shell => bridge attaches; inherits global hosts (prod)
+run  = "ssh ${DEPLOY_HOST} 'docker logs -f --tail 200 <container>'"
+```
+
+- `admin dev` → local server stdout + the `localhost` page's console in `tmp/dev.log`.
+- `admin logs prod` → remote container logs + the prod page's console in `tmp/logs-prod.log`.
+- `${DEPLOY_HOST}` is expanded by the shell from `.env` at run time (no `resolve_env` needed for a `run` string).
+
+### Pattern B — isolated per-host (web component inside a third-party container)
+
+Use only for a plugin/extension/embed running inside an app's container you don't
+control (e.g. stash-reels in someone else's Stash). You can't make "your server" an
+admin process, so the bridge listeners are standalone parks (client console only),
+split by host, and the third-party container's server logs are a separate target.
+
+```toml
+[log_bridge]
+hosts = ["${LOG_BRIDGE_HOSTS:-localhost}"]
+
+[commands.logs]
+desc  = "Logs: <app> | <app>-test | server"
+steps = ["logs-dispatch"]
+
+[actions.logs-dispatch]
+kind = "python"
+run = '''
+target = args[0].lower() if args else "<app>"
+set_log_context("logs", target)
+if target == "<app>":                         # live client → tmp/logs-<app>.log (inherits prod host)
+    run_command("logs-bridge"); return
+if target == "<app>-test":                    # localhost client → tmp/logs-<app>-test.log
+    os.environ["ADMIN_LOG_BRIDGE_HOSTS"] = "localhost"
+    run_command("logs-bridge"); return
+if target == "server":                        # third-party container logs (no bridge)
+    host = (os.environ.get("DEPLOY_HOST") or "").split(":", 1)[0]
+    sys.exit(run_cmd("ssh " + host + " 'docker logs -f --tail 200 <container>'"))
+err("unknown logs target: " + target); sys.exit(1)
+'''
+
+[actions.logs-bridge]
+kind = "interactive-shell"        # park: keeps the bridge alive; host scope set by the caller
+run  = "tail -f /dev/null"
+```
+
+Dev (`admin dev <app>-test`) follows the same idea: a Python dispatch does the
+prep, sets `os.environ["ADMIN_LOG_BRIDGE_HOSTS"] = "localhost"`, then
+`run_command`s an `interactive-shell` watch action so the dev session itself hosts
+a localhost-scoped bridge.
+
+### Choosing without asking
+
+Pattern **B** iff the project builds something that installs into a third-party
+runtime — a plugin manifest / `pluginId`, or a deploy that copies into another
+app's plugins dir. Everything else → Pattern **A**.
+
+## 15. Things people get wrong (the short list)
 
 - "The bridge runs on the prod server." No — it runs where `admin` runs.
 - "`hosts` is where the listener lives." No — it's the page allow-list.

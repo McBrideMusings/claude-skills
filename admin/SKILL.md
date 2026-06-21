@@ -372,6 +372,55 @@ Which pages forward is decided at runtime, not by editing the script: `localhost
 4. Run `admin dev`. For `localhost` it just works; for a prod host, open the page once and click the **"Log bridge: watch `<host>`"** menu command, then reload.
 5. `console.log("hello")` in the page, tail the log.
 
+### Bootstrap — "just set up the bridge"
+
+Trigger: "set up the bridge", "just set up the bridge", "wire up the log bridge".
+**Do not interrogate.** Infer everything from the repo; ask **at most one** question,
+and only when a gate below is genuinely unresolvable. Never ask how the user wants
+the streams laid out — default to intermingled. Full copy-paste snippets:
+`references/log-bridge.md` §14.
+
+1. **Gate — is there a browser-accessible GUI?** The bridge only captures a
+   *browser page's* `console.*`. Infer yes from: a frontend build/dev server
+   (vite / next / astro / rollup / webpack / CRA), a `dev`/`start` script that
+   serves HTTP, an `index.html` that gets served, or a `docker-compose` service
+   publishing an HTTP UI port. Infer **no** for: pure CLI, pure library, a
+   backend API with no served UI, or a mobile-only app (no browser → no bridge).
+   If a repo has both (e.g. an iOS app *and* a web plugin), the bridge applies to
+   the web side only. No GUI → tell the user the bridge doesn't apply and why,
+   then stop. Only ask if you truly can't tell whether a GUI is served.
+
+2. **Discover the dev + prod paths (scan, don't ask).** Dev URL/port from the
+   vite/wrangler/rollup dev port, a published `docker-compose` port, or a
+   `localhost` `*_URL` in `.env` → this is `localhost` (always auto-watched).
+   Prod host from a `*_URL` / `*_HOST` / the deploy-target host in `.env` → goes
+   in `[log_bridge].hosts`, sourced as `${LOG_BRIDGE_HOSTS}` so no real host
+   lands in the committed manifest.
+
+3. **Pick the pattern (no question — use this heuristic):**
+   - **Intermingled (DEFAULT).** You own the server/container, so server logs and
+     browser console belong in one stream, with separate dev & prod paths. Dev =
+     the existing `interactive-shell` dev action (local server / `compose up`
+     attached); the bridge auto-attaches scoped to `localhost`. Prod = an
+     `interactive-shell` `logs` target running `ssh <host> docker logs -f
+     <container>`; the bridge attaches scoped to the prod host, so the prod
+     container's server logs and that page's console interleave. → reference §14
+     Pattern A.
+   - **Isolated per-host.** Pick this **only** when the web component runs *inside
+     a third-party app's container you don't control* — a plugin/extension/embed
+     (a plugin manifest, "deploy = copy into someone else's plugins dir", e.g.
+     stash-reels). You can't tail "your" container, so keep prod-client and
+     dev-client in separate streams via per-listener `ADMIN_LOG_BRIDGE_HOSTS`
+     (one `logs <app>` scoped to the prod host, one `logs <app>-test` scoped to
+     `localhost`); the third-party container's server logs stay a separate
+     `docker logs` target. → reference §14 Pattern B.
+
+4. **Always finish with:** `[log_bridge] hosts = ["${LOG_BRIDGE_HOSTS:-localhost}"]`;
+   add `LOG_BRIDGE_HOSTS=` to `.env.example` and the real host to `.env`; confirm
+   the userscript's `PROBE_HOSTS` includes this machine's tailnet IP; tell the
+   user the one-time **"Log bridge: watch `<host>`"** menu opt-in is needed for
+   the prod page (localhost needs none); `admin check`.
+
 Discovery files live at `/tmp/admin-project-tool/<pid>.json`; stale ones (dead PIDs) are swept on each start.
 
 ---
