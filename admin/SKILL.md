@@ -340,6 +340,13 @@ log = false                    # disable for this command
 
 ## Browser console → log file bridge (`[log_bridge]`)
 
+> **Full mechanism, topology, and the complete "nothing is showing up"
+> troubleshooting matrix: `references/log-bridge.md`.** Read that before
+> explaining the bridge or debugging why it's silent — it answers where the
+> listener runs (the admin machine, NOT the prod server), what `hosts` means
+> (the browser-page allow-list, not the listener location), and why `admin logs`
+> does not pick it up. The section below is just the adoption summary.
+
 Forwards browser `console.*` calls into the same log file the admin process writes. Only fires for `kind = "interactive-shell"` actions.
 
 ```toml
