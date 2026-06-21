@@ -1,11 +1,11 @@
 ---
 name: audit
-description: "The single entry point for reviewing code. Runs a six-axis review and routes by context: on a repo you own it just reviews + documents; on a collaborative repo it triages the PR queue (on main), reviews your own branch, or reviews a teammate's PR and offers to post. `audit dual` adds an independent cross-vendor delegate second opinion, reconciled into one report. Triggers: 'audit', 'review this', 'review my changes', 'review my code', 'review prs', 'pr review queue', 'triage my review queue', 'what PRs need my review', 'dual audit', 'audit with codex', 'second-opinion review'."
+description: "The single entry point for reviewing code. Runs an eight-axis review and routes by context: on a repo you own it just reviews + documents; on a collaborative repo it triages the PR queue (on main), reviews your own branch, or reviews a teammate's PR and offers to post. `audit dual` adds an independent cross-vendor delegate second opinion, reconciled into one report. Triggers: 'audit', 'review this', 'review my changes', 'review my code', 'review prs', 'pr review queue', 'triage my review queue', 'what PRs need my review', 'dual audit', 'audit with codex', 'second-opinion review'."
 ---
 
 # Audit
 
-Review code changes for bugs, quality issues, CLAUDE.md compliance, **architecture fit**, and **spec compliance**. Runs parallel sub-agents across six review axes and reports axis-tagged findings. `audit` is the **single entry point** for review — it routes by context (your working tree, a branch, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
+Review code changes for bugs, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs. Runs parallel sub-agents across eight review axes and reports axis-tagged findings. `audit` is the **single entry point** for review — it routes by context (your working tree, a branch, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
 
 ## Flavors — solo vs dual
 
@@ -91,41 +91,37 @@ gh pr view --json isDraft,number,title,url 2>/dev/null
 
 Pass `IS_DRAFT` and the PR URL into Phase 04 so the Spec sub-agent can split its output correctly.
 
-### Phase 04 — Launch Parallel Sub-Agents
+### Phase 04 — Launch Parallel Lens Sub-Agents
 
-One message, all sub-agents in parallel. **Every sub-agent that emits issues must follow the "Writing style for issue entries" rules below** — full-sentence headline naming the specific failure, backtick-quoted code/path identifiers in **Why**, a causation chain (not a one-liner restatement of the headline), and a concrete **Fix** unless none is obvious without further investigation. Briefs in the Bug / Standards / History / Contracts / Spec agents must each forward these rules verbatim so findings arrive at Phase 05 already in the target shape.
+One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/) — **all of them run by default**. For each lens file, launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers in **Why**, a causation chain, and a concrete **Fix** unless none is obvious without investigation).
+
+Scored lenses — each its own file in `axes/`:
+
+- [`axes/standards.md`](axes/standards.md) — CLAUDE.md compliance
+- [`axes/bug.md`](axes/bug.md) — bug scan
+- [`axes/history.md`](axes/history.md) — historical context (reads `git blame`)
+- [`axes/contracts.md`](axes/contracts.md) — code comments & contracts
+- [`axes/architecture.md`](axes/architecture.md) — architecture fit
+- [`axes/spec.md`](axes/spec.md) — spec compliance (consumes the Phase 03 spec source + `IS_DRAFT`)
+- [`axes/negative-space.md`](axes/negative-space.md) — unmet obligations the diff itself creates
+- [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs (**gated** — most diffs skip it; emits *flags* verified in Phase 04b, not findings)
+
+Plus one always-on, **non-scored** sub-agent that does not live in `axes/` (it produces narrative, not scored issues, and is never opted out):
 
 - **Summary (Sonnet)** — plain-English description of what the changes do, 3–6 sentences, group related changes, define jargon inline. Produces the "What this changes" section.
 
-- **Standards / CLAUDE.md compliance (Sonnet)** — audit changes against the located CLAUDE.md files. Only flag violations of specific, stated rules. **Skip anything tooling enforces** (ESLint / Prettier / tsc / Biome — your linter already catches it).
+### Phase 04b — Verify best-practice flags against live docs
 
-- **Standards / Bug scan (Sonnet)** — read the diff for logic errors, off-by-ones, null/nil issues, race conditions, resource leaks. Ignore style and nitpicks. Distinguish hard bugs from judgement calls.
+The **best-practice** lens produces *flags*, not findings — it has no doc access. Run this phase only when that lens ran (it's gated) and returned at least one flag; otherwise skip straight to Phase 05. For each flag:
 
-- **Standards / Historical context (Sonnet)** — read `git blame` and recent history of modified files. Flag changes that contradict established patterns or revert previous fixes.
-
-- **Standards / Code comments and contracts (Sonnet)** — read code comments in modified files. Flag changes that violate documented contracts, TODOs that should be addressed, or stale comments left in.
-
-- **Architecture fit (Sonnet)** — evaluate whether the *diff* sits correctly in the existing structure. This is a read-only surface check on the change, not a full architecture review — for a dedicated deepening pass, the `improve-codebase-architecture` skill is the heavier tool, and this agent's brief should point the reader there when a finding clearly warrants it. Use the architecture vocabulary from `improve-codebase-architecture` (module, interface, depth, seam — not "component/service/boundary"), and judge the change on these five lenses:
-  - **Fit** — does the change respect existing module/layer responsibilities, or introduce cross-layer coupling (e.g. routing domain logic through the UI layer)?
-  - **Abstraction level** — are new interfaces/types at the right level of generality, or do they leak implementation detail / over-generalize for one caller?
-  - **Pattern consistency** — does it follow the patterns already in use here (how errors are represented, how state is held, how side effects are isolated), or invent a one-off?
-  - **Structural scalability** — is there a *structural* (not algorithmic) decision that becomes painful at 10× the code/load?
-  - **Ownership clarity** — is it obvious which module owns each new piece of logic, or is responsibility ambiguous?
-
-  Architecture findings are **always design calls — never style nits**, and are in scope even when the file they concern wasn't directly modified (a layer violation introduced by a single new import is still a layer violation). Tag each `[architecture · <severity>]` (see "Axis tags"). Surface them separately from bug findings.
-
-- **Spec compliance (Sonnet)** — read the spec located in Phase 03, then read the diff. Report findings in three sub-categories, quoting the spec line for each, and tag each finding with its sub-category so Phase 07 can route them:
-  1. **Missing or partial** (`spec/missing-partial`) — requirements the spec asked for that aren't implemented or are only partly done. Also surface explicit `TODO` / `FIXME` / `XXX` markers left in the diff that point at unfinished spec work.
-  2. **Scope creep** (`spec/scope-creep`) — behaviour in the diff that wasn't asked for.
-  3. **Wrong implementation** (`spec/wrong-impl`) — requirements that look implemented but the implementation is wrong (wrong return type, missed edge case, opposite default, etc.).
-
-  **Draft PR handling.** If `IS_DRAFT=true`, prefix the "Missing or partial" section header with `(draft PR — expected gaps)` and write those entries with **Gap** instead of **Why** / **Fix** (see "Writing style for entries on draft PRs" below). `scope-creep` and `wrong-impl` are still issues even on a draft — wrong code is wrong regardless of completeness, and unrequested behaviour is worth flagging before the author marks the PR ready.
-
-  If no spec was found / user opted out, output: `No spec available — skipped.` and exit. Don't manufacture spec content.
+- Load WebSearch / WebFetch via ToolSearch if not already available, then fetch the **current** official docs for the dependency/API in question — prefer the canonical source (the project's own docs site or upstream repo, not a blog).
+- A flag survives only if (a) the diff's usage actually deviates from what current docs recommend, **and** (b) the deviation carries a concrete cost (deprecation, security, perf, correctness). **Cite the source URL inline and mark confidence.**
+- Drop any flag that is idiom-only, that current docs actually endorse, or that you cannot corroborate against a real source — an unverified flag is not a finding (the "no phantom authority" rule).
+- Surviving flags become `best-practice` findings carrying their citation + confidence, and flow into Phase 05 scoring like any other issue.
 
 ### Phase 05 — Score Every Issue
 
-For each issue from any of the six review agents, launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
+For each issue from any of the eight scored lenses (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
 
 ### Phase 06 — Filter
 
@@ -284,7 +280,7 @@ Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord b
 
 - **The top line is the summary sentence.** Nothing — no header, no metadata — sits above it.
 - **`## Issues (N found)`** — N is the total across all axes. Draft "Outstanding work" gaps are *not* counted in N.
-- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Standards`, `History`, `Contracts`, `Architecture`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
+- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Best-practice`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
 - **Numbering is continuous across sections** — 1…N down the whole report, never restarting at 1 per axis. (Above: Spec is 1, Bugs are 2–3, Architecture are 4–5, Contracts is 6.)
 - **Small lists may stay flat.** When N is small (≈≤4) and the findings cluster in one or two axes, a single flat ordered list with no `### Axis` headers is fine. Numbering is 1…N either way.
 - **Never include a "Dismissed", "Considered and dismissed", or "Dismissed during reconciliation" section** — in any form. Findings that don't survive scoring are simply absent. The report is the surviving issues and nothing else.
@@ -324,6 +320,8 @@ Every issue is tagged `[<axis>(/<subtype>) · <severity>]` — axis (with an opt
 - `history` — from the Historical context agent
 - `contracts` — from the Code comments and contracts agent
 - `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit.
+- `negative-space` — from the Negative-space lens (an unmet obligation the diff creates: un-updated caller, unhandled failure path, missing test/validation/observability, unflagged breaking change or migration). Always a design call — surface, never auto-fix; bounded to obligations the diff itself creates. Use **Fix (design call):** framing.
+- `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.
 
 Severity: `low` / `medium` / `high`, derived from the confidence score (75–84 → `low`/`medium`, 85–94 → `medium`/`high`, 95+ → `high`), weighted by impact. No leading emphasis, emoji, or badge — the tag carries it.
 

@@ -11,6 +11,8 @@ These are the rules the Haiku scoring sub-agents apply when deciding whether a f
 - **Intentional functionality changes** related to the broader change being made
 - **Pedantic nitpicks** a senior engineer wouldn't flag
 - **For Spec issues only:** out-of-scope behaviour explicitly allowed by the spec (e.g. spec says "implementer's choice"); or behaviour the spec doesn't address either way
+- **For Negative-space issues only:** the "missing tests / missing docs / missing validation" rule above is **suspended** — but *only* for obligations the diff **itself** creates (a caller the change left un-updated, an error path the change introduces but leaves unhandled, a new branch the diff adds with no test, input the diff newly accepts but doesn't validate). A generic "this module could use more tests" not tied to something the diff changed is still a false positive. A negative-space finding already covered by a quoted Spec line scores **0** (duplicate — it belongs to Spec).
+- **For Best-practice issues only:** real **only if** Claude verified it against current official docs *with a citation* (Phase 04b) **and** the deviation carries a concrete cost (deprecation, security, perf, correctness). An unverified flag, an idiom/style difference, or a deviation current docs actually endorse scores **0**. A verified, costly, cited deviation scores ≥ 75.
 
 ## Scoring scale
 
