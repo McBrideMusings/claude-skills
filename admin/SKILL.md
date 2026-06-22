@@ -236,6 +236,33 @@ Commit `admin.toml` alone — there is no `./admin` to commit alongside it, and 
 
 ---
 
+## Apple app icons (macOS/iOS) — two gotchas that waste hours
+
+All Apple icons go through the tool's one generator (`admin_lib.icons.generate_icons`,
+configured by `[apple.icons]` + the apple archetype's `icons` command, or the
+dev-loop banner swap). **Never write a per-project icon script.** Full detail:
+admin-project-tool `docs/adr/0007-apple-icon-rendering.md`. The two things that
+bite, every time:
+
+1. **Alpha channel → the icon renders INSET/shrunken in the Dock. Opaque RGB (no
+   alpha) → FULL-BLEED.** macOS insets any icon whose PNG has *any* sub-255 alpha
+   (anti-aliased edges, soft shadow, a transparent margin); a fully-opaque,
+   no-alpha icon renders edge-to-edge. It's invisible in a viewer — check
+   `Image.open(p).mode` (`RGB`=good, `RGBA`=suspect) / min alpha. The generator
+   ALWAYS flattens to RGB; a DEV banner's anti-aliasing is the classic trap.
+   You cannot have a transparent macOS "margin" (≈824-in-1024) AND full-bleed —
+   the margin is alpha<255. iOS is full-bleed too (system masks the shape).
+
+2. **The Dock hover tooltip = the `.app` FILENAME, not `CFBundleName`.** To name a
+   dev variant "Macterm Dev" in the Dock, you must rename the `.app` file —
+   set `[apple] mac_dev_product_name = "<Name> Dev"` (the dev loop renames the
+   built app → `<Name> Dev.app`, patches `CFBundleDisplayName`, re-signs to keep
+   TCC). `CFBundleName`/`CFBundleDisplayName` only drive the menu bar / some
+   surfaces; in-app strings (window title, welcome screen) should read
+   `Bundle.main`'s `CFBundleDisplayName` so the variant labels itself everywhere.
+
+---
+
 ## Per-command env injection
 
 Any `[commands.X]` can declare an `env` table. Values support `${VAR:-default}`.
