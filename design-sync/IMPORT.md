@@ -68,17 +68,27 @@ The target is an exact match for everything in scope: anything the user did *not
 
 - Map each prototype screen to the existing app's routes/components.
 - Reuse the app's existing component library and design-system tokens **where they already encode the prototype's values**. Where they don't, add/adjust tokens to match the prototype exactly — the prototype wins on values, but reuse the app's structure.
-- Implement screen by screen against the Manifest. Only touch UI code in scope (respect the user's "don't touch unrelated code" rule).
+- Implement **every surface in the inventory** against the Manifest, not just the ones the user's bullets named (those are a floor, not the scope — non-negotiable 6). The whole prototype is the scope.
+- **"Don't touch unrelated code" ≠ "skip prototype surfaces you didn't pick."** In a design-sync the prototype *defines* what is related: any surface the prototype shows is in scope. The rule forbids refactoring things the prototype is silent on — it does **not** license deferring an Inspector, a modal, or a rail just because it wasn't in your headline list. Do not use it to launder under-scoping.
+- **Prototype beats project conventions on rendered output** (non-negotiable 8). If a CLAUDE.md rule or house style says one thing and the prototype renders another, match the prototype and flag the convention as a deviation for the user — never silently apply the convention over the design.
+- **Removing a superseded element is part of the change** (non-negotiable 9). When you add a control the prototype uses in place of an old one, delete the old one in the same pass; don't leave both. Likewise drop app-only surfaces the updated prototype removed (an extra column, a modal, a chip) — confirm with the user, then remove.
 
-## Phase 4 — Verify: visual AND numeric
+## Phase 4 — Verify: the diff gate (HARD — symmetric to Phase 0)
 
-For each screen, do not declare it done until it has been diffed:
+This is a **gate, not a step.** Phase 0 won't let you build without proving the *prototype* loaded; Phase 4 won't let you finish without proving the *app matches it*. `tsc`, unit tests, and a clean build are **not** verification — they cannot see a wrong icon, an oversized pill, an extra chip, a stuck drag, or a misplaced section, which is exactly the bug class this skill exists to close. "It compiles" is never a verification row.
 
-1. Render **both** the prototype and the app at the same viewport(s).
-2. **Visual** — screenshot both, present side-by-side for the user.
+**You must walk the Phase 0 master inventory item by item.** Every surface gets a row in `tmp/claude/design/verification.md`; a surface with no row means the sync is unfinished — go back. For each:
+
+1. Render **both** the prototype and the app at the same viewport(s) — including interaction-reached states (paused, hover, each mode of a toggle, each modal/popover, the drag *in progress and released*).
+2. **Visual** — capture both, present side-by-side for the user.
 3. **Numeric** — extract computed `padding`, `margin`, `gap`, `font-size`, `line-height`, `color`, `background`, `border-radius`, and key element box sizes for matching elements from both DOMs. Build a delta table.
-4. **Threshold** — spacing/size within 1px, colors exact, font metrics exact. Anything outside → punch-list item → fix → re-diff. Loop until deltas are zero or the user explicitly waives one (record the waiver + reason).
-5. Write the final per-screen delta table + screenshot paths to `tmp/claude/design/verification.md`.
+4. **Behavior** — exercise every interactive thing you built or changed: cycle the toggle through all states, start AND release the drag, open AND dismiss the modal, confirm a superseded control was removed (Phase 3 / non-negotiable 9). A control that compiles but traps the user is a fail.
+5. **Threshold** — spacing/size within 1px, colors exact, font metrics exact, behavior matches. Anything outside → punch-list item → fix → re-diff. Loop until deltas are zero or the **user** explicitly waives one (record the waiver + reason).
+6. Write the per-surface verdict table + capture paths to `tmp/claude/design/verification.md`.
+
+**If you cannot render the app at all, STOP and report it as a BLOCK** — exactly like a failed prototype fetch in Phase 0. Do not substitute "verified via build/tests." Surface that the diff couldn't run and why.
+
+**When the project forbids you from viewing the running app** (check CLAUDE.md + memories — some repos bar the agent from opening/screenshotting the deployed app): you do not get to skip the gate. Reroute it — (a) produce the **numeric** proof yourself (computed-style / DOM extraction that returns values, never a screenshot), and (b) hand the **user** an explicit per-surface visual checklist and get their confirmation surface-by-surface before any item is marked matched. The visual pass moves to the user; the obligation to verify every surface does not move.
 
 ## Phase 5 — Reconcile report (back-sync)
 
@@ -90,6 +100,6 @@ Write `tmp/claude/design/reconcile.md` — the back-sync delta — following [RE
 
 ## Done
 
-**Reconcile the claim against the Phase 0 inventory before you write a word of summary.** Every inventory item must be in one of three terminal states: implemented-and-verified, agreed deviation, or signed-off deferral. Any item with no disposition is an **open difference** — the sync is not done; go back. Report coverage honestly as "N of M inventory surfaces" — never write "screens matched / deltas closed" in a way that implies the whole prototype is done when only a subset was in scope. Scoping down is fine; *describing a subset as the whole* is the failure.
+**Reconcile the claim against the Phase 0 inventory before you write a word of summary.** Every inventory item must be in one of three terminal states: implemented-**and-diff-gated** (verified per Phase 4, not merely compiled), agreed deviation, or user-signed-off deferral. "Implemented" without a Phase 4 verification row is NOT a terminal state — it is an open difference. Any item with no disposition is an open difference — the sync is not done; go back. Report coverage honestly as "N of M inventory surfaces diff-gated" — never write "matched / synced / done" off the back of a clean build (non-negotiable 7). Scoping down is the user's call against the full list; *describing a subset as the whole*, or a compile as a match, is the failure.
 
 In chat: surfaces matched, deltas closed, items deferred/waived (with reasons), and any decisions still owed by the user (carried from Phase 2). Point the user at `tmp/claude/design/reconcile.md` and say its paste-back block is ready to drop into Claude Design — do not paste it anywhere yourself. Update `manifest.md` to reflect the now-canonical state so the next EXPORT/IMPORT run has an accurate baseline.
