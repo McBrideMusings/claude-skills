@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: "Reference for the cross-vendor `delegate` skill used by `audit dual` (delegate reviews) and `iterate delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, auth health-gating, and the Terminal.app transport. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
+description: "Reference for the cross-vendor `delegate` skill used by `audit dual` (delegate reviews) and `iterate delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
 ---
 
 # Delegation backend
@@ -18,7 +18,7 @@ How the delegate flavors — `audit dual` (the delegate **reviews** the same dif
 Two layers, kept separate on purpose:
 
 1. **The `delegate` resolver** (`delegate` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind three verbs.
-2. **The Terminal.app transport** — how `delegate exec` spawns and watches the agent. Skills never touch this; only the resolver does.
+2. **The transport** — the visible Terminal.app window the agent runs in. This is **not** delegate's code: it's the separate `terminal` skill, which delegate's `exec` verb calls. Skills never touch either layer directly except through the three verbs.
 
 > **This router is the cross-vendor path** (Claude → Codex/DeepSeek). Delegating to *another Claude* (e.g. a cheap Sonnet/Haiku implementer following a plan) is a **peer option, not forbidden** — it just doesn't go through this script: use the Agent tool with a model override and a tight brief (no terminal, no resolver). `iterate delegate` offers both as the implementer choice — cross-vendor via this router, or a cheaper Claude via the Agent tool. Pick the router when you want a non-Claude tool and a watchable window; pick the Agent tool when you want the cheapest, tightest plan-follower.
 
@@ -95,30 +95,17 @@ Both are **API-billed**, not subscription — driving them programmatically/non-
 
 ---
 
-## The Terminal.app transport (resolver internals)
+## The transport — owned by the `terminal` skill
 
-Only `delegate exec` uses this; skills never do. Terminal.app is the one supported transport right now because it can both **drive** and **read** a pane through a stable scripting interface — `do script` to run, `history`/`contents` to read, `busy` to detect activity. (Ghostty can spawn and type but exposes no contents property, so it can't return output; MacTerm/Poker Native aren't wired up here.)
+`delegate exec` does **not** spawn or watch the window itself. It builds the vendor payload (`cat <prompt-file> | <runner>`) and hands it to the `terminal` skill's one-shot verb:
 
-What `delegate exec` does under the hood:
+```
+"$HOME/.claude/skills/terminal/terminal" run [--headless] <payload-file> <outfile>
+```
 
-1. Writes the real command to a temp script, so the AppleScript stays trivially `do script "bash /tmp/xxx"` (no do-script quoting fights). That script is:
-   ```
-   cd <repo>
-   cat <prompt-file> | { codex exec | reasonix run } 2>&1 | tee <outfile>
-   printf "\n__DELEGATE_DONE__\n" >> <outfile>
-   # then: print a "done" line, delete itself ($0), and exit — leaving the window
-   #       open at an idle shell (it does NOT close itself; see step 4 for why)
-   ```
-   Both `codex exec` and `reasonix run` read the prompt from **stdin** and run non-interactively (no approval prompts to babysit — the reason exec mode is used instead of an interactive session).
-2. Spawns it with `osascript … do script …`. **Cold-start guard:** if Terminal wasn't already running, launching it opens a blank default window — so the resolver checks `application "Terminal" is running` first and, when it had to launch, runs the script **in that default window** (`do script … in window 1`) instead of letting `do script` spawn a *second* one. When Terminal was already running, a plain `do script` opens a fresh window so it never hijacks one of the user's. Either way: exactly one delegate window, never an orphaned blank.
-3. Polls `<outfile>` for the `__DELEGATE_DONE__` sentinel (the source of truth; `busy` is a weaker secondary signal). The window is visible the whole time — output is `tee`'d to it, so you watch the agent work live.
-4. On the sentinel: strips the sentinel line from `<outfile>` and **returns**. The window is left open at its idle login shell showing the full output — the resolver never closes it, and neither does the script. **The user dismisses it themselves** (Cmd-W / red button). This is deliberate: closing a window *from inside* while a process (`bash`/`osascript`) is still live makes Terminal pop its "terminate running processes?" dialog, whereas a window sitting at an idle login shell closes with no prompt — same as any other terminal window. So the result reaches the caller immediately and the window lingers, promptlessly closable, for you to read at your own pace. On timeout: same — window left open, exits nonzero.
+That skill owns the whole Terminal.app transport — the visible window, the cold-start single-window guard, the `__TERMINAL_DONE__` sentinel and polling, and the window-left-open-at-an-idle-shell behavior. `--headless` passes straight through for cron/SSH where there's no GUI to open a window in. The division of labor: **`delegate` decides *which vendor command* runs; `terminal` runs it in a watchable pane.**
 
-### Cautions
-
-- **`history`/`contents` expose whatever is on that pane — including secrets** another command may have printed. The resolver redirects agent output to a file rather than scraping the pane, but if you ever read a pane directly, summarize and flag rather than echoing.
-- **First osascript control of Terminal triggers a one-time macOS Automation (TCC) prompt.** It must be granted once; it can't be granted from a script. If `osascript` returns `-1743` / "Not authorized to send Apple events", surface that — the user approves it in System Settings → Privacy & Security → Automation.
-- The window is an outward-facing side effect. The resolver owns the **spawn** (and the cold-start single-window guard); it never closes the window — **the user does, by hand**. A finished delegate window is deliberately left at an idle login shell so it closes without Terminal's "terminate running processes?" prompt.
+For the transport internals, the TCC/Automation grant, the secrets-on-a-pane caution, and the session mode (a persistent pane you can send commands to over time), read the `terminal` skill — `skills/terminal/SKILL.md` and its `one-shot.md` / `session.md` reference files.
 
 ### Adding a third agent
 

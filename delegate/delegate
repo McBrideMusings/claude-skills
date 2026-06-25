@@ -72,79 +72,26 @@ cmd_exec() {
     reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
   esac
 
-  : > "$outfile"
+  # delegate owns *which vendor command runs*; the `terminal` skill owns the transport
+  # (the visible Terminal.app window, the sentinel/polling, the cold-start guard, the
+  # window-left-open behavior). Write the vendor invocation as a one-shot payload and
+  # hand it to `terminal run`. --headless passes straight through for cron/SSH.
+  local terminal="$HOME/.claude/skills/terminal/terminal"
+  local payload; payload="$(mktemp -t delegate-payload.XXXXXX)"
+  printf 'cat %q | %s\n' "$promptfile" "$runner" > "$payload"
 
-  # Backend-only path: no window, no AppleScript. Run the agent as a plain subprocess
-  # in the current dir, output straight to the file. For cron / SSH / any context with no
-  # GUI session to open a Terminal window in. The windowed path below stays the default —
-  # this is opt-in via --headless. No sentinel needed: the call is synchronous, so it
-  # returns exactly when the agent exits.
+  local rc=0
   if [ "$headless" -eq 1 ]; then
-    cat "$promptfile" | $runner > "$outfile" 2>&1 || true
-    echo "delegate: $a finished (headless) → $outfile"
-    return 0
+    "$terminal" run --headless "$payload" "$outfile" || rc=$?
+  else
+    "$terminal" run "$payload" "$outfile" || rc=$?
   fi
 
-  # The real command runs in a temp script so the AppleScript string stays trivial
-  # (just "bash /tmp/xxx") and we never fight do-script quoting. After the agent
-  # finishes, the script prints a "done" line, deletes itself ($0), and exits — leaving
-  # the window open at its idle login shell. We deliberately do NOT close the window from
-  # inside: closing a window that still has a live process (bash/osascript) makes Terminal
-  # pop its "terminate running processes?" dialog. Letting bash exit means only the login
-  # shell remains, so the user closes the window (Cmd-W / red button) with no prompt —
-  # same as any other idle terminal window.
-  local cmdfile; cmdfile="$(mktemp -t delegate-run.XXXXXX)"
-  {
-    printf 'cd %q\n' "$PWD"
-    printf 'cat %q | %s 2>&1 | tee %q\n' "$promptfile" "$runner" "$outfile"
-    printf 'printf "\\n__DELEGATE_DONE__\\n" >> %q\n' "$outfile"
-    cat <<'CLOSER'
-printf "\n\033[2m──── delegate finished — close this window when done ────\033[0m\n"
-rm -f "$0"
-CLOSER
-  } > "$cmdfile"
-
-  # Spawn the window. Cold-start guard: if Terminal was NOT already running, launching
-  # it opens a blank default window — so run our script IN that window instead of
-  # letting `do script` spawn a second one (which would orphan the blank one). If
-  # Terminal WAS running, a plain `do script` opens a fresh window so we never hijack
-  # one of the user's existing windows.
-  osascript >/dev/null 2>&1 <<OSA
-set wasRunning to application "Terminal" is running
-tell application "Terminal"
-  activate
-  if wasRunning then
-    do script "bash $cmdfile"
-  else
-    repeat 50 times
-      if (count of windows) > 0 then exit repeat
-      delay 0.1
-    end repeat
-    if (count of windows) > 0 then
-      do script "bash $cmdfile" in window 1
-    else
-      do script "bash $cmdfile"
-    end if
-  end if
-end tell
-OSA
-
-  # Block until the agent finishes (skills run this verb in the background, so the
-  # harness notifies on exit). Sentinel in the output file is the source of truth.
-  local i=0
-  while ! grep -q "__DELEGATE_DONE__" "$outfile" 2>/dev/null; do
-    sleep 3; i=$((i + 1))
-    if [ "$i" -ge 800 ]; then
-      echo "delegate: timed out (~40m) waiting for $a — leaving the window open for inspection" >&2
-      return 1
-    fi
-  done
-
-  # Output ready: strip the sentinel and return. The window is left open at its idle
-  # shell showing the full output; the user closes it themselves (no terminate prompt,
-  # since only the login shell remains). The temp script already self-deleted via $0.
-  grep -v "__DELEGATE_DONE__" "$outfile" > "$outfile.tmp" 2>/dev/null && mv "$outfile.tmp" "$outfile" || true
-  echo "delegate: $a finished → $outfile (window left open — close it when done)"
+  rm -f "$payload"
+  if [ "$rc" -eq 0 ]; then
+    echo "delegate: $a finished → $outfile"
+  fi
+  return "$rc"
 }
 
 case "${1:-}" in

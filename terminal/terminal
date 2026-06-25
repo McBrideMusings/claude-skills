@@ -1,0 +1,290 @@
+#!/usr/bin/env bash
+# terminal — drive a visible Terminal.app window on the desktop.
+#
+# Two modes, one transport (Terminal.app via AppleScript — the only macOS terminal
+# that can both DRIVE a pane and READ its output back through a stable scripting
+# interface: `do script` to run, `contents`/`history` to read, `tty`/`busy` to track).
+#
+#   ONE-SHOT — spawn a window, run one command, wait for it, read its output:
+#     terminal run [--headless] <cmd-file> <outfile>
+#         run the shell in <cmd-file> in a visible Terminal.app window; its output is
+#         tee'd to the window AND to <outfile>. Blocks until the command finishes
+#         (sentinel in <outfile> is the source of truth), strips the sentinel, returns.
+#         The window is left open at an idle login shell for you to read; close it
+#         yourself (Cmd-W). --headless: no window, run as a plain subprocess (cron/SSH).
+#
+#   SESSION — open a persistent pane, send it commands over time, read it, close it:
+#     terminal open  <id>                       spawn a persistent window, register it as <id>
+#     terminal send  <id> <cmd-file> <outfile>  run <cmd-file> in that pane, wait, capture to <outfile>
+#     terminal read  <id> [outfile]             dump the pane's scrollback (stdout, or to [outfile])
+#     terminal close <id>                        close the pane and forget <id>
+#
+# A session is tracked by the pane's tty, stored in /tmp/terminal-session-<id>. The
+# pane persists across `send` calls until you `close` it (or close the window by hand).
+#
+# delegate's transport sits on top of this: `delegate exec` writes a cmd-file
+# (cat <prompt> | <vendor>) and calls `terminal run`. terminal owns the window;
+# delegate owns which vendor command runs in it.
+set -eu
+
+SENTINEL="__TERMINAL_DONE__"
+STATE_PREFIX="/tmp/terminal-session-"
+
+# ---- helpers ---------------------------------------------------------------
+
+# Sanitize a session id to a safe filename fragment (alnum, dash, underscore).
+sanitize_id() {
+  printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '_'
+}
+
+state_file() { printf '%s%s' "$STATE_PREFIX" "$(sanitize_id "$1")"; }
+
+# Read the tty for a session id, or fail.
+session_tty() {
+  local f; f="$(state_file "$1")"
+  [ -f "$f" ] || { echo "terminal: no open session '$1' (state file $f not found)" >&2; return 1; }
+  cat "$f"
+}
+
+# Poll <outfile> for the done sentinel, then strip it. Times out at ~40m.
+wait_for_sentinel() {
+  local outfile="$1" i=0
+  while ! grep -q "$SENTINEL" "$outfile" 2>/dev/null; do
+    sleep 3; i=$((i + 1))
+    if [ "$i" -ge 800 ]; then
+      echo "terminal: timed out (~40m) waiting for command — leaving the window open for inspection" >&2
+      return 1
+    fi
+  done
+  grep -v "$SENTINEL" "$outfile" > "$outfile.tmp" 2>/dev/null && mv "$outfile.tmp" "$outfile" || true
+}
+
+# ---- one-shot --------------------------------------------------------------
+
+cmd_run() {
+  local headless=0
+  if [ "${1:-}" = "--headless" ]; then headless=1; shift; fi
+  local cmdfile="${1:-}" outfile="${2:-}"
+  if [ -z "$cmdfile" ] || [ -z "$outfile" ]; then
+    echo "usage: terminal run [--headless] <cmd-file> <outfile>" >&2; return 2
+  fi
+  [ -f "$cmdfile" ] || { echo "terminal: cmd file not found: $cmdfile" >&2; return 1; }
+
+  : > "$outfile"
+
+  # Backend-only path: no window, no AppleScript. Run the payload as a plain subprocess
+  # in the current dir, output straight to the file. For cron / SSH / any context with no
+  # GUI session to open a Terminal window in. Synchronous, so no sentinel is needed.
+  if [ "$headless" -eq 1 ]; then
+    ( cd "$PWD" && bash "$cmdfile" ) > "$outfile" 2>&1 || true
+    echo "terminal: finished (headless) → $outfile"
+    return 0
+  fi
+
+  # The wrapper runs in a temp script so the AppleScript string stays trivial
+  # (just "bash /tmp/xxx") and we never fight do-script quoting. After the payload
+  # finishes, the wrapper prints a "done" line, deletes itself ($0), and exits — leaving
+  # the window open at its idle login shell. We deliberately do NOT close the window from
+  # inside: closing a window that still has a live process makes Terminal pop its
+  # "terminate running processes?" dialog. Letting bash exit leaves only the login shell,
+  # so the user closes the window (Cmd-W / red button) with no prompt.
+  local wrapper; wrapper="$(mktemp -t terminal-run.XXXXXX)"
+  {
+    printf 'cd %q\n' "$PWD"
+    printf 'bash %q 2>&1 | tee %q\n' "$cmdfile" "$outfile"
+    printf 'printf "\\n%s\\n" >> %q\n' "$SENTINEL" "$outfile"
+    cat <<'CLOSER'
+printf "\n\033[2m──── command finished — close this window when done ────\033[0m\n"
+rm -f "$0"
+CLOSER
+  } > "$wrapper"
+
+  spawn_window "bash $wrapper"
+
+  wait_for_sentinel "$outfile" || return 1
+  echo "terminal: finished → $outfile (window left open — close it when done)"
+}
+
+# Spawn a NEW window running <shell-cmd>. Cold-start guard: if Terminal was NOT already
+# running, launching it opens a blank default window — so run our command IN that window
+# instead of letting `do script` spawn a second one (which would orphan the blank). If
+# Terminal WAS running, a plain `do script` opens a fresh window so we never hijack one of
+# the user's existing windows.
+spawn_window() {
+  local shellcmd="$1"
+  osascript >/dev/null 2>&1 <<OSA
+set wasRunning to application "Terminal" is running
+tell application "Terminal"
+  activate
+  if wasRunning then
+    do script "$shellcmd"
+  else
+    repeat 50 times
+      if (count of windows) > 0 then exit repeat
+      delay 0.1
+    end repeat
+    if (count of windows) > 0 then
+      do script "$shellcmd" in window 1
+    else
+      do script "$shellcmd"
+    end if
+  end if
+end tell
+OSA
+}
+
+# ---- session ---------------------------------------------------------------
+
+cmd_open() {
+  local id="${1:-}"
+  [ -n "$id" ] || { echo "usage: terminal open <id>" >&2; return 2; }
+  local f; f="$(state_file "$id")"
+  if [ -f "$f" ]; then
+    echo "terminal: session '$id' already open (tty $(cat "$f")) — close it first or pick another id" >&2
+    return 1
+  fi
+
+  # Spawn a persistent pane at the caller's dir and capture its tty as a stable handle.
+  # Same cold-start guard as spawn_window, but here we need the tab back to read its tty,
+  # so the AppleScript is inline rather than via spawn_window.
+  local tty
+  tty="$(osascript 2>/dev/null <<OSA
+set wasRunning to application "Terminal" is running
+tell application "Terminal"
+  activate
+  if wasRunning then
+    set t to do script "cd $(printf '%q' "$PWD"); clear"
+  else
+    repeat 50 times
+      if (count of windows) > 0 then exit repeat
+      delay 0.1
+    end repeat
+    if (count of windows) > 0 then
+      set t to do script "cd $(printf '%q' "$PWD"); clear" in window 1
+    else
+      set t to do script "cd $(printf '%q' "$PWD"); clear"
+    end if
+  end if
+  return tty of t
+end tell
+OSA
+)"
+  if [ -z "$tty" ]; then
+    echo "terminal: failed to open a pane (is the macOS Automation grant in place? see SKILL.md)" >&2
+    return 1
+  fi
+  printf '%s' "$tty" > "$f"
+  echo "terminal: session '$id' open (tty $tty)"
+}
+
+cmd_send() {
+  local id="${1:-}" cmdfile="${2:-}" outfile="${3:-}"
+  if [ -z "$id" ] || [ -z "$cmdfile" ] || [ -z "$outfile" ]; then
+    echo "usage: terminal send <id> <cmd-file> <outfile>" >&2; return 2
+  fi
+  [ -f "$cmdfile" ] || { echo "terminal: cmd file not found: $cmdfile" >&2; return 1; }
+  local tty; tty="$(session_tty "$id")" || return 1
+
+  : > "$outfile"
+
+  # Wrap the payload so output is visible in the pane (tee) AND captured to <outfile>,
+  # then append the sentinel. We send "bash <wrapper>" into the existing tab matched by
+  # tty. The wrapper self-deletes so the pane is left clean for the next send.
+  local wrapper; wrapper="$(mktemp -t terminal-send.XXXXXX)"
+  {
+    printf 'bash %q 2>&1 | tee %q\n' "$cmdfile" "$outfile"
+    printf 'printf "\\n%s\\n" >> %q\n' "$SENTINEL" "$outfile"
+    printf 'rm -f %q\n' "$wrapper"
+  } > "$wrapper"
+
+  osascript >/dev/null 2>&1 <<OSA
+tell application "Terminal"
+  set sent to false
+  repeat with w in windows
+    repeat with tb in tabs of w
+      if (tty of tb) is "$tty" then
+        do script "bash $wrapper" in tb
+        set sent to true
+        exit repeat
+      end if
+    end repeat
+    if sent then exit repeat
+  end repeat
+end tell
+OSA
+
+  wait_for_sentinel "$outfile" || return 1
+  echo "terminal: send to '$id' finished → $outfile"
+}
+
+cmd_read() {
+  local id="${1:-}" outfile="${2:-}"
+  [ -n "$id" ] || { echo "usage: terminal read <id> [outfile]" >&2; return 2; }
+  local tty; tty="$(session_tty "$id")" || return 1
+
+  # Dump the pane's full scrollback. `history` is the whole buffer; fall back is contents
+  # (just the visible region) but history is what we want for capture.
+  local dump
+  dump="$(osascript 2>/dev/null <<OSA
+tell application "Terminal"
+  repeat with w in windows
+    repeat with tb in tabs of w
+      if (tty of tb) is "$tty" then return history of tb
+    end repeat
+  end repeat
+  return ""
+end tell
+OSA
+)"
+  if [ -n "$outfile" ]; then
+    printf '%s' "$dump" > "$outfile"
+    echo "terminal: read '$id' → $outfile"
+  else
+    printf '%s\n' "$dump"
+  fi
+}
+
+cmd_close() {
+  local id="${1:-}"
+  [ -n "$id" ] || { echo "usage: terminal close <id>" >&2; return 2; }
+  local f; f="$(state_file "$id")"
+  local tty; tty="$(session_tty "$id")" || return 1
+
+  # Close the window holding this tab. An idle login-shell pane closes with no prompt;
+  # if a command is still running, Terminal pops its "terminate running processes?" dialog
+  # — so we exit the shell first, which leaves nothing to terminate, then close.
+  osascript >/dev/null 2>&1 <<OSA
+tell application "Terminal"
+  repeat with w in windows
+    repeat with tb in tabs of w
+      if (tty of tb) is "$tty" then
+        try
+          do script "exit" in tb
+        end try
+        delay 0.3
+        try
+          close w
+        end try
+        exit repeat
+      end if
+    end repeat
+  end repeat
+end tell
+OSA
+  rm -f "$f"
+  echo "terminal: session '$id' closed"
+}
+
+# ---- dispatch --------------------------------------------------------------
+
+case "${1:-}" in
+  run)   shift; cmd_run   "$@" ;;
+  open)  shift; cmd_open  "$@" ;;
+  send)  shift; cmd_send  "$@" ;;
+  read)  shift; cmd_read  "$@" ;;
+  close) shift; cmd_close "$@" ;;
+  *)
+    echo "usage: terminal {run [--headless] <cmd-file> <outfile> | open <id> | send <id> <cmd-file> <outfile> | read <id> [outfile] | close <id>}" >&2
+    exit 2
+    ;;
+esac
