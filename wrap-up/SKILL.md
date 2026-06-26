@@ -191,7 +191,7 @@ Open with a brief recap: what was accomplished this session, and what tracking/d
 
 ### Step A — Resolve follow-ups (must fully settle before summarizing)
 
-Invoke the `followups` skill using the Skill tool in Generate mode to surface candidate follow-ups from this session — **including the Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with the file and one-line tradeoff so a later session or `improve-codebase-architecture` can pick them up). Every candidate ends in one of three dispositions. **Ask one prompt per candidate — one item → one `AskUserQuestion` → one call — recording each disposition, then act on them in grouped batches** (the batching is the *act* pass only, never the asking) — see **Presentation** below. **Never collapse the candidates into a single combined question** (e.g. one multi-select "which follow-ups should I file as issues, unchecked = skip"); that batched form is the exact anti-pattern this avoids. The three:
+Invoke the `followups` skill using the Skill tool in Generate mode to surface candidate follow-ups from this session — **including the Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with the file and one-line tradeoff so a later session or `improve-codebase-architecture` can pick them up). Every candidate ends in one of three dispositions. **Present every candidate together as one numbered markdown list, then ask one plain-text question that collects all dispositions at once** — see **Presentation** below. The user replies in free-text, assigning a disposition per item. The three:
 
 - **Fix now** — the user opts to fix the item this session instead of deferring it. This creates new changes: implement the fix, verify it (run the relevant tests/checks), then **commit and push it**, with a quality check proportional to the change (a one-line fix doesn't need the full Phase 4 trio; a substantive one does). The fix is now part of this branch and shows up in the summary.
 - **Document** — file it as a new GitHub issue (followups routes owned vs collaborative per its own rules) or a `followups.md` entry. Capture the new issue numbers/URLs to feed Step B.
@@ -201,21 +201,26 @@ Invoke the `followups` skill using the Skill tool in Generate mode to surface ca
 
 **Mode note (driven by pass mode, not by who invoked wrap-up):** an **interactive** pass — a manual `/wrap-up` or a **standalone** `/iterate` — halts here so the user reviews what this session's work uncovered and chooses fix-now / file / skip per item. A **continuous / non-interactive** pass (a `/loop`) has no fix-now and no halt: follow-ups are filed autonomously per the pass mode and the loop never pauses.
 
-**Presentation — interactive passes (required). Two phases: collect every disposition first, then act in one batch.**
+**Presentation — interactive passes (required). Show every candidate at once, take one free-text reply, then act in one batch.**
 
-*Collect pass — walk the candidates one at a time, in a stable order.* For each item the split is strict:
-- **Chat message (before the widget):** describe the one item this round is about, and **quote the exact slice of the diff, code, or PR the finding refers to** as a Markdown block-quote (`> …`, prefixed with its `file:line`) so the user sees precisely what it is without hunting for it. This is where all the detail lives.
-- **The `AskUserQuestion` widget:** a **single call carrying exactly one question** — **Fix now / File as issue / Skip**, recommended option first. Never put more than one question in a call and never fold several follow-ups into one call: multiple questions render as a tab-through stepper, the exact thing this avoids. One item → one question → one call, then the next. There is **no cap** on how many rounds. Put no finding text or explanation inside the widget — it is purely "what do we do with it."
-  - ❌ **Banned form — never do this:** a single `AskUserQuestion` listing every follow-up as a multi-select ("Which follow-ups should I file as issues on <repo>? Unchecked = skip"). It strips the per-item Fix-now option, hides each finding's detail, and is exactly the batched question this avoids. If you have N candidates, you make N separate one-question calls — no exceptions, no "for efficiency."
+> **HARD RULE — never use `AskUserQuestion` / a chip-picker / a multi-select for follow-up dispositions.** All candidates are presented together as plain markdown and the user answers all of them in a single free-text reply. The widget is wrong here: it forces one-item-at-a-time stepping, caps how many items you can present, and can't express a per-item three-way choice across many items in one answer. If you are about to reach for `AskUserQuestion` for follow-up dispositions: stop, and write the list + question as plain chat text instead.
 
-**Record each choice and act on nothing during the collect pass.**
+*Present pass — emit one message containing every candidate.* Render the candidates as a single numbered markdown list, in a stable order. For each item: its title, the one-line finding, and **the exact slice of the diff, code, or PR it refers to** as a Markdown block-quote (`> …`, prefixed with its `file:line`) so the user sees precisely what it is without hunting for it. All the detail lives in this list.
+
+*Ask pass — one plain-text question under the list.* Ask the user to assign a disposition to each item in a single free-text reply, e.g.:
+
+> For each, tell me what to do — **fix now / file / skip**. Reply free-text by number, e.g. `fix 2, file 1 3, skip 4` (or "file all", "skip rest"). Anything you don't mention I'll **skip**.
+
+Parse the reply into per-item dispositions. **Unmentioned items default to skip.** Re-ask only if the reply is genuinely unparseable; don't fall back to a widget.
+
+**Record each choice and act on nothing until the whole reply is parsed.**
 
 *Act pass — only after every disposition is recorded.* Execute by group:
 1. **Fix now** — apply all fix-now items and verify them, then **commit and push**, so everything the user chose to fix is in the repo before the rest of wrap-up proceeds. Quality check proportional to each change (a one-liner doesn't need the full Phase 4 trio; a substantive fix does).
 2. **File as issue** — batch-file every issue item together (sequential `gh issue create`, or `followups.md` appends on a non-GitHub repo), capturing the new numbers/URLs to feed Step B.
 3. **Skip** — drop, no action.
 
-A **continuous / non-interactive** pass (`/loop`) skips the widget entirely — no halt, file autonomously.
+A **continuous / non-interactive** pass (`/loop`) skips the question entirely — no halt, file autonomously.
 
 ### Step B — Summarize
 
