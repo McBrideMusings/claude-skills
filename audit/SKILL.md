@@ -195,10 +195,11 @@ Then run **exactly one** offer, per the Phase 00 routing — never both, never a
 
 **Offer to post** — when the branch has an open PR **not** authored by me (a teammate's PR, via Queue mode or a direct checkout). On a PR you didn't author GitHub lets you submit a **formal review verdict**, not just a conversation comment — and it records that verdict as your review decision (Request changes even gates the merge). So the post offer **always proposes a verdict as part of it**, never a bare comment. (Self-authored PRs can't get a verdict — GitHub blocks self-approve/-request-changes — which is why this lives only on the teammate-PR path.)
 
-**Recommend the verdict from the findings:**
-- A **merge-blocking** finding survived — a `high`-severity bug/spec/contract issue, or one the summary line calls out as blocking → recommend **Request changes** (`gh pr review --request-changes`). This gates the merge.
-- **No issues survived** (and on a draft, no expected-gap entries either) → **Approve** (`gh pr review --approve`) is available.
-- **Issues exist but none are merge-blocking** → recommend a neutral **Comment** review (`gh pr review --comment`) — findings on record without gating the merge.
+**Recommend the verdict — block on broken behavior, not on severity.** What separates blocking from non-blocking is *what the finding is about*, never how confident or how large it is:
+
+- **Blocking → Request changes** (`gh pr review --request-changes`; gates the merge). Any finding that the diff makes behavior *wrong*: a new bug, or existing behavior this diff breaks (a regression). **New or newly-broken behavior is always blocking** — a `low`-confidence regression still blocks, because the question is "does this ship something broken," not "how sure am I" or "how big is it." This is axis-independent: a `spec/wrong-impl`, a `contracts` violation that breaks a caller, a `negative-space` un-updated caller, or a `standards` correctness breach each block exactly as a `bug` does, because each is broken behavior the diff introduces. If even one such finding survived → Request changes.
+- **Non-blocking → Comment** (`gh pr review --comment`; findings on record, no merge gate). Everything where behavior is *correct* but the code could be more elegant, more efficient, better-organized, or better-documented. These are improvements, not breakage — record them, never gate on them. Pure-quality `architecture`, `best-practice`, and most `contracts`/`standards` findings live here. (A pre-existing bug the diff merely sits near, but does not introduce or worsen, is a non-blocking note — blocking is reserved for behavior *this diff* breaks.)
+- **Approve** (`gh pr review --approve`) — only when nothing survived (and on a draft, no expected-gap entries either).
 
 **Propose, then confirm — never auto-submit.** State the recommended verdict, the exact body that will be posted (the report: summary line + axis-grouped findings), and that the user can pick a different verdict or decline. A verdict review — Request changes especially — is an outward action that changes the PR's merge state, so it is held to the same **explicit-yes-in-this-message** gate as any send (global "never send / act on my behalf" rule). Prior or implied consent does not count.
 
@@ -221,10 +222,10 @@ Hand the report path to the chosen flow. Don't start it without a yes.
 
 ## File format
 
-The report **opens with a single high-level summary sentence** — no `# Audit` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones matter (call out the blocking/high ones by their number), and which ones don't. Everything after it is the issue list, grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
+The report **opens with a single high-level summary sentence** — no `# Audit` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Everything after it is the issue list, grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
 
 ```
-Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord button in prod; the other five (bugs, architecture, contracts) are worth folding in but none merge-blocking.
+Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord button in prod; the other five (architecture, contracts, best-practice) are non-blocking quality notes worth folding in but break nothing.
 
 ## Outstanding work (draft PR)
 (only when IS_DRAFT=true and the Spec agent produced `spec/missing-partial` entries — expected gaps, not issues. Draft entry style: Gap, not Why/Fix. No severity, not counted in the Issues total. Omit this whole section when not a draft.)
@@ -324,5 +325,7 @@ Every issue is tagged `[<axis>(/<subtype>) · <severity>]` — axis (with an opt
 - `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.
 
 Severity: `low` / `medium` / `high`, derived from the confidence score (75–84 → `low`/`medium`, 85–94 → `medium`/`high`, 95+ → `high`), weighted by impact. No leading emphasis, emoji, or badge — the tag carries it.
+
+**Severity is not blocking.** The `low`/`medium`/`high` tag measures confidence-weighted impact; whether a finding *blocks* is a separate, binary question answered only by the verdict rule above — does the diff ship new or newly-broken behavior. A `low`-severity regression blocks; a `high`-severity "this would be cleaner" does not. Carry the severity tag for the reader, but decide the verdict on the broken-behavior test, never on the severity word.
 
 A change can pass one axis and fail another. Reporting axis-tagged stops one axis from masking the other — e.g. "Standards pass, Spec fail" is a real category of finding.
