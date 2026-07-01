@@ -64,6 +64,8 @@ These phases are the review itself — what runs against a single target (your w
 - Else if working tree is clean: find the base branch (`main` / `master`), compute `git merge-base HEAD origin/main`, then diff and log against that.
 - If no changes anywhere: say so and stop.
 
+**Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched eight parallel sub-agents.
+
 ### Phase 02 — Find CLAUDE.md Context
 
 Use a Haiku agent to locate the root `CLAUDE.md` and any `CLAUDE.md` files in directories whose files were changed.
@@ -93,7 +95,7 @@ Pass `IS_DRAFT` and the PR URL into Phase 04 so the Spec sub-agent can split its
 
 ### Phase 04 — Launch Parallel Lens Sub-Agents
 
-One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/) — **all of them run by default**. For each lens file, launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers in **Why**, a causation chain, and a concrete **Fix** unless none is obvious without investigation).
+One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/) — **all of them run by default**. For each lens file, launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers in **Why**, a causation chain, and a concrete **Fix** unless none is obvious without investigation). Cap each sub-agent's response at **under 400 words** — forward that cap as part of the brief.
 
 Scored lenses — each its own file in `axes/`:
 

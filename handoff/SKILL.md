@@ -62,6 +62,8 @@ Sibling skills (`followups`, `triage`, `iterate`) depend on the following. Do no
 
 ## Write mode
 
+If the user passed arguments (e.g. `/handoff working on the auth refactor next`), treat them as a description of what the next session will focus on and tailor the fields — especially **Immediate next step** and **Suggested next skills** — accordingly.
+
 Capture four required fields and one optional fifth.
 
 **Don't duplicate content already captured in other artifacts** — PRDs, plans, ADRs, issues, commits, diffs. Reference them by path or URL. Capture only the **invisible context** that isn't in the code or those artifacts (e.g. "we ruled out approach A because the JWT lib doesn't expose a refresh hook").

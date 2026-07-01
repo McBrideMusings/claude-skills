@@ -29,7 +29,7 @@ What should happen after this slice is complete. Be specific about edge cases an
 - `functionName()` — what it currently returns vs what it should return
 - Config shape — any new configuration options needed
 
-Reference **types, function signatures, and behavioral contracts**. Do NOT reference file paths or line numbers — they go stale.
+Reference **types, function signatures, and behavioral contracts**. Do NOT reference file paths or line numbers — they go stale. Exception: a prototype-produced snippet (state machine, reducer, schema, type shape) that encodes a decision more precisely than prose. Trim to the decision-rich parts and note briefly that it came from a prototype.
 
 ## Acceptance criteria
 

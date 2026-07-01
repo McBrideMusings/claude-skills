@@ -45,6 +45,8 @@ Ask: *"What should the public interface look like? Which behaviors are most impo
 
 You can't test everything. Confirm with the user exactly which behaviors matter most — focus on critical paths and complex logic, not every possible edge case.
 
+**Seam gate.** A **seam** is the public boundary a test observes behavior at, without reaching inside. Write down the seams under test and confirm them with the user before writing any test — no test is written at an unconfirmed seam. This is the mechanism that makes "confirm which behaviors to test" above a hard gate rather than a checklist formality.
+
 ### Phase 02 — Tracer Bullet
 
 Write ONE test that confirms ONE thing end-to-end.
@@ -72,17 +74,9 @@ Rules:
 - Don't anticipate future tests
 - Keep tests focused on observable behavior
 
-### Phase 04 — Refactor
+### Refactoring is not part of this loop
 
-After all tests pass:
-
-- [ ] Extract duplication
-- [ ] Deepen modules (move complexity behind simple interfaces)
-- [ ] Apply SOLID principles where natural
-- [ ] Consider what the new code reveals about the existing code
-- [ ] Run tests after each refactor step
-
-**Never refactor while RED.** Get to GREEN first.
+Once every planned behavior is green, hand off to `/simplify` for reuse/simplification/efficiency cleanup rather than refactoring inline here — that keeps the red→green cycle from drifting into quality work with its own separate concerns. **Never refactor while RED** regardless — get to GREEN first, then hand off.
 
 ## Mocking
 

@@ -31,6 +31,8 @@ Work from whatever is in the conversation. If the user passes an issue reference
 
 Use `docs/CONTEXT.md` vocabulary for issue titles and descriptions. Respect ADRs in `docs/adr/` for the area you're touching.
 
+Look for prefactoring opportunities — changes that make the upcoming implementation easier without changing behavior. "Make the change easy, then make the easy change." Note any found; they belong in the "Out of scope" or a preceding slice, not folded silently into the target slice.
+
 ### Phase 03 — Draft vertical slices
 
 Break the plan into **tracer-bullet** issues. Each slice cuts through ALL layers end-to-end (schema + API + UI + tests). **NOT** a horizontal slice of one layer.

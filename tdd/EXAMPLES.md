@@ -35,6 +35,23 @@ test("createUser makes user retrievable", async () => {
 });
 ```
 
+## Tautological tests
+
+```ts
+// BAD — recomputes the expected value the same way the code does
+test("add sums two numbers", () => {
+  const a = 2, b = 3;
+  expect(add(a, b)).toBe(a + b); // passes by construction, can't disagree with the code
+});
+
+// GOOD — expected value comes from an independent source of truth
+test("add sums two numbers", () => {
+  expect(add(2, 3)).toBe(5);
+});
+```
+
+A tautological test derives its expected value the same way the implementation computes it — a hand-derived snapshot, a constant asserted equal to itself, or `a + b` standing in for what `add(a, b)` should return. It passes by construction and can never catch a real bug. Expected values must come from an independent source: a known-good literal, a worked example, the spec.
+
 ## Red flags
 
 - Mocking internal collaborators
@@ -42,3 +59,4 @@ test("createUser makes user retrievable", async () => {
 - Test name describes HOW not WHAT
 - Test breaks when you refactor without behavior change
 - Verifying through external means (raw SQL) instead of the public interface
+- Expected value computed the same way the code computes it (tautological)

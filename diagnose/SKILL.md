@@ -15,7 +15,7 @@ When exploring, use `docs/CONTEXT.md` vocabulary for the modules involved. Check
 
 Full guidance — the 10 ways to construct a loop, iteration tips, non-deterministic-bug handling, the "I can't build a loop" escape — lives in [FEEDBACK-LOOP.md](FEEDBACK-LOOP.md). Read it when starting Phase 01.
 
-Do not proceed to Phase 02 until you have a loop you believe in.
+**Completion gate:** name a command you have already run at least once — paste the invocation and its output. If you catch yourself reading code to build a theory before this command exists, stop. Do not proceed to Phase 02 without it.
 
 ## Phase 02 — Reproduce
 
@@ -24,6 +24,8 @@ Run the loop. Confirm:
 - [ ] The loop produces **the failure the user described** — not a different one nearby. Wrong bug = wrong fix.
 - [ ] Reproducible across runs (or at a high enough rate for non-deterministic bugs).
 - [ ] Exact symptom captured (error message, wrong output, slow timing).
+
+**Minimise.** Shrink the repro to the smallest scenario that still reproduces — cut inputs, callers, and config one at a time until everything remaining is load-bearing. This narrows the hypothesis space before Phase 03 and gives Phase 05 a correct seam to test against.
 
 ## Phase 03 — Hypothesise
 

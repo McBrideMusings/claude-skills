@@ -46,6 +46,8 @@ No file paths or code snippets — they go stale. Exception: a prototype-produce
 - Which modules to test
 - Prior art for similar tests in this codebase, if any
 
+After synthesizing this section, sketch the **seams** — the public boundaries the feature will be tested at, ideally just one — and confirm them with the user in a single question before finalizing the PRD: *"Planning to test this at [seam(s)] — does that match what you had in mind?"* One targeted confirmation, not an interview.
+
 ## Out of Scope
 {What this PRD deliberately doesn't cover.}
 

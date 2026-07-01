@@ -156,6 +156,13 @@ Parent consumes the sub-agent's JSON. From the `top` array:
 
 Surface up to two "also worth attention" items: the next-highest group from `top`, and any `priority:critical` items from `critical_outside_top`.
 
+**Out-of-scope + redundancy check.** Before presenting, check the top pick and "also worth attention" items:
+
+- **Prior rejection** — if `<repo-root>/.out-of-scope/` exists, read its files and check for a concept match (not just keyword) against each candidate. See [OUT-OF-SCOPE.md](OUT-OF-SCOPE.md) for the format and what to do on a match.
+- **Redundancy** — a quick codebase check for whether the top pick's behavior already exists. If it's already implemented, drop it, note why, and promote the next candidate.
+
+Do this only for the items about to be presented, not the full issue list — it's a final check on the recommendation, not a bulk pre-filter.
+
 ### Phase 08 — Present
 
 ```
@@ -199,10 +206,13 @@ Every option gets a named label in plain language; issue numbers in parens after
 
 Wait for the reply (a number or a free-form override) before implementing.
 
+If the user rejects a presented candidate with a durable reason ("no, we decided against that because X") rather than just picking something else, offer to record it in `.out-of-scope/` per [OUT-OF-SCOPE.md](OUT-OF-SCOPE.md).
+
 ### Phase 09 — Implement
 
 - Treat a free-form reply as an override; resolve it to specific issue numbers first.
 - `gh issue view <N>` for each chosen issue.
+- **Verify the claim** (bug issues only). Before exploring further, reproduce the bug from the reporter's steps. Report what happened: confirmed (with the code path it hits), failed to reproduce, or insufficient detail to try. A confirmed repro makes the rest of the implementation much more reliable; on failed/insufficient, stop and check with the user before proceeding rather than implementing a fix for an unconfirmed bug.
 - Explore relevant code areas.
 - If scope has 4+ issues or estimate >4 hours, ask if user wants a plan drafted to `~/.claude/plans/` first.
 - Otherwise implement directly.

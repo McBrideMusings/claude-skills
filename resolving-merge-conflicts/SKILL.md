@@ -1,9 +1,9 @@
 ---
-name: merge-main
+name: resolving-merge-conflicts
 description: Merge or rebase a branch with origin/main, intelligently choosing strategy based on branch complexity and resolving any conflicts.
 ---
 
-# Merge Main
+# Resolving Merge Conflicts
 
 Bring a branch up to date with `origin/main`. Automatically choose merge vs rebase based on branch complexity, and resolve conflicts.
 
@@ -75,6 +75,7 @@ When conflicts are detected:
    - What does the **branch** side intend? (Read the branch's version between `<<<<<<<` and `=======`)
    - What does **main** side intend? (Read main's version between `=======` and `>>>>>>>`)
    - What is the surrounding context — does one side's change depend on the other?
+   - **Research intent, not just the diff.** Check the commit messages that introduced each side (`git log -p <commit>` or `git blame`), and — where relevant — the originating PR or issue. Understanding *why* a change was made resolves more conflicts correctly than comparing the two hunks alone.
 
 4. **Present a conflict resolution plan to the user.** Format:
 
@@ -108,6 +109,7 @@ When conflicts are detected:
 
 - Run `git diff --check` to confirm no conflict markers remain
 - Run `git log --oneline -5` to show the result
+- Discover and run the project's automated checks — typically typecheck, then tests, then format/lint. Fix anything the merge broke before moving on.
 
 ### Phase 07 — Push
 
@@ -120,6 +122,7 @@ No confirmation needed before this push: it only ever targets your own feature b
 
 ## Conflict resolution principles
 
+- **Always resolve; never `--abort`.** Once a merge/rebase is in progress, see it through to a resolved, committed state. Don't invent new behavior to force a resolution — where intents are genuinely incompatible, pick the one matching the branch's stated goal and note the trade-off, but never bail out with `--abort` and leave the branch unmerged.
 - **Additive changes on both sides**: Keep both additions. If main added lines and the branch added different lines nearby, include all of them in logical order.
 - **Same code modified differently**: If main refactored a function and the branch also changed it, prefer main's structural changes and re-apply the branch's behavioral intent on top.
 - **Deleted on one side, modified on the other**: If main deleted code that the branch modified, the branch's intent probably still matters — ask the user.
