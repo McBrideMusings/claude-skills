@@ -1,9 +1,9 @@
 ---
-name: resolving-merge-conflicts
+name: resolve-conflicts
 description: Merge or rebase a branch with origin/main, intelligently choosing strategy based on branch complexity and resolving any conflicts.
 ---
 
-# Resolving Merge Conflicts
+# Resolve Conflicts
 
 Bring a branch up to date with `origin/main`. Automatically choose merge vs rebase based on branch complexity, and resolve conflicts.
 

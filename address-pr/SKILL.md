@@ -22,7 +22,7 @@ Before touching GitHub, prove the local state is safe to act on. Stop and tell t
 1. **Clean working tree**: `git status --porcelain` must be empty. If not, abort with the list of dirty files and tell the user to stash, commit, or discard.
 2. **Resolve the target branch**: argument or current branch. If different from `HEAD`, `git checkout <branch>` (only after step 1 passed).
 3. **Branch has a remote**: `git rev-parse --abbrev-ref --symbolic-full-name @{u}` must succeed. If the branch has no upstream, abort — the PR review flow needs a remote.
-4. **Branch matches origin**: `git fetch origin <branch>`, then compare `git rev-parse HEAD` vs `git rev-parse origin/<branch>`. They must be equal. If local is behind, ahead, or diverged, abort and tell the user (suggest `resolving-merge-conflicts` or a push, but don't run them).
+4. **Branch matches origin**: `git fetch origin <branch>`, then compare `git rev-parse HEAD` vs `git rev-parse origin/<branch>`. They must be equal. If local is behind, ahead, or diverged, abort and tell the user (suggest `resolve-conflicts` or a push, but don't run them).
 5. **GitHub CLI auth**: `gh auth status` must succeed. If not, abort.
 
 Only after all five pass, continue.
