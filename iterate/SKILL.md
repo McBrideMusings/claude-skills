@@ -12,7 +12,7 @@ One pass on one tracked item: resolve what to work on → implement → wrap-up.
 ## Flavors — solo vs delegate
 
 - **`iterate`** (default) — Claude does everything itself: resolve → implement → wrap-up.
-- **`iterate delegate`** — Claude stays the **orchestrator and validator**; the **implementation** (where most of the token cost lives) is handed to a cheaper model. The token `delegate` anywhere in the arguments turns it on; it flows through `/iterate-loop … delegate` the same way `continuous` does, and is independent of the standalone/continuous mode. Everything outside the implement step — pre-flight, item resolution, wrap-up, halt conditions, output — is identical to solo. The delegate flavor **replaces Phase 2** (see below); the delegate is the *implementer*, never a reviewer.
+- **`iterate delegate`** — Claude stays the **orchestrator and validator**; the **implementation** (where most of the token cost lives) is handed to a cheaper model. The token `delegate` anywhere in the arguments turns it on; it flows through `/iterate-loop … delegate` the same way `continuous` does, and is independent of the standalone/continuous mode. Everything outside the implement step — pre-flight, item resolution, wrap-up, halt conditions, output — is identical to solo. The delegate flavor **replaces Phase 1** (see below); the delegate is the *implementer*, never a reviewer.
 
 ---
 
@@ -73,7 +73,7 @@ One pass behaves slightly differently depending on whether it runs alone or insi
 - **Continuous** — this pass is one iteration of `/iterate-loop`. The signal: your invocation ARGUMENTS contain the token `continuous` (injected by `/iterate-loop`). A continuous pass must never stop for a prompt, so item-resolution falls straight through to **non-interactive triage** and the Phase 6 follow-ups step files **autonomously**.
 - **Standalone** — a bare `/iterate` with no `continuous` token. Still autonomous through commit + push + land, but two points are allowed to involve the user: if item-resolution finds no context it runs **interactive triage** (recommend + ask which one), and the Phase 6 follow-ups step **halts** so the user reviews what the work uncovered and chooses fix-now / file / skip. These are the only sanctioned pauses in a standalone pass.
 
-Resolve the mode once, here, and carry it into item-resolution (Phase 0) and the Phase 3 wrap-up override below.
+Resolve the mode once, here, and carry it into item-resolution (Phase 0) and the Phase 2 wrap-up override below.
 
 ---
 
@@ -86,39 +86,39 @@ iterate discovers **one** item to work, in this order. Stop at the first that re
 3. **Triage.** Only if neither above resolves, invoke the `triage` skill via the Skill tool to discover the item — with these overrides:
    - **Standalone pass:** run triage **interactively** — let it recommend and ask the user which one item to work. Work exactly the one they pick, then this pass is done.
    - **Continuous pass:** run triage **non-interactively** — skip the "wait for user confirmation" step at triage Step 7 and proceed with the top recommendation. (`/iterate-loop` supplies the fresh backlog each iteration; a single continuous pass still works exactly one item.)
-   - **Skip triage's Step 9 (offer wrap-up).** iterate runs wrap-up itself in Phase 3; don't let triage invoke it or it will double-commit.
+   - **Skip triage's Step 9 (offer wrap-up).** iterate runs wrap-up itself in Phase 2; don't let triage invoke it or it will double-commit.
    - **Refuse untracked items.** The item must be an existing GitHub issue, an entry in `<repo-root>/tmp/claude/followups.md`, or an outstanding handoff at `<repo-root>/tmp/claude/handoffs.md`. If triage's top pick is a fresh idea, a "while we're here" cleanup, or an invented refactor, halt and surface it for the user to file or reject. Never invent feature work autonomously.
-   - **Handoff as top pick:** invoke `handoff` Resume mode to extract the "Immediate next step" and session context, then proceed with that as the work item. Delete the handoff file as part of Phase 3 wrap-up once fulfilled (no prompt).
+   - **Handoff as top pick:** invoke `handoff` Resume mode to extract the "Immediate next step" and session context, then proceed with that as the work item. Delete the handoff file as part of Phase 2 wrap-up once fulfilled (no prompt).
    - **Empty queue:** if triage finds nothing actionable, print *"Nothing to iterate on."* and stop.
 
-Whichever branch resolved it, iterate now has exactly **one** item. Proceed to Phase 2.
+Whichever branch resolved it, iterate now has exactly **one** item. Proceed to Phase 1.
 
 ---
 
-## Phase 2 — Implement
+## Phase 1 — Implement
 
 Work the resolved item on the current branch (following triage's Step 8 for the mechanics of a code change).
 
 - If implementation produces no diff after a reasonable attempt (false start, blocked, needs design), halt with a one-line blocker explanation. Do not commit empty changes.
 - If tests fail and the cause isn't trivially fixable in 1–2 attempts, halt with the failure surfaced.
 
-**⛔ MANDATORY TRANSITION — there is NO stopping point between Phase 2 and Phase 3.**
+**⛔ MANDATORY TRANSITION — there is NO stopping point between Phase 1 and Phase 2.**
 
 The single most common iterate failure is stopping here: code is written, tests pass, and the run ends with a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion. Green tests are NOT the finish line — wrap-up is.
 
-The moment implementation lands and tests are green (and no halt condition fired), you MUST immediately proceed into Phase 3 by invoking the `wrap-up` skill via the Skill tool. Specifically:
+The moment implementation lands and tests are green (and no halt condition fired), you MUST immediately proceed into Phase 2 by invoking the `wrap-up` skill via the Skill tool. Specifically:
 
 - **Do NOT emit a summary, recap, or "next steps" message and end your turn.** If you catch yourself about to write "Next: commit and push" or any equivalent, that is the signal to invoke `wrap-up` instead — the recap IS the work wrap-up does.
 - **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those are wrap-up's phases and must run *inside* the wrap-up skill invocation.
 - **The pass is complete ONLY after** the `wrap-up` skill has returned **and** the Post-wrap-up conditional-handoff step below has been evaluated. Until then, you are mid-pass — keep going.
 
-The only legal exits from Phase 2 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `wrap-up` and continue). There is no third option.
+The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `wrap-up` and continue). There is no third option.
 
 ---
 
-## Phase 2 (delegate flavor) — orchestrate, delegate the implementation, validate
+## Phase 1 (delegate flavor) — orchestrate, delegate the implementation, validate
 
-When the `delegate` token is present, Phase 2 is **not** Claude writing the code. Claude plans, hands the implementation to a cheaper model, and validates the result. Claude never hands off the plan-making or the validation — only the typing. Everything else (the ⛔ mandatory transition into Phase 3, halt conditions) is unchanged.
+When the `delegate` token is present, Phase 1 is **not** Claude writing the code. Claude plans, hands the implementation to a cheaper model, and validates the result. Claude never hands off the plan-making or the validation — only the typing. Everything else (the ⛔ mandatory transition into Phase 2, halt conditions) is unchanged.
 
 1. **Plan (Claude).** From the resolved item, write a concrete implementation plan: the files to touch, the changes, and the acceptance check (which tests/commands must pass). This is the expensive thinking — it stays with Claude.
 2. **Pick the implementer (ask in-flow).** `AskUserQuestion` — two options, chosen per run:
@@ -127,11 +127,11 @@ When the `delegate` token is present, Phase 2 is **not** Claude writing the code
 3. **Implement.** Hand the plan to the chosen implementer; it writes the code against the plan. Brief either implementer the same way: *implement this plan exactly, do not exceed its scope, run the project's checks when done.*
 4. **Validate (Claude).** Run audit's review core over the implementer's diff in **plain mode** — review this diff, no routing, no offers, no posting — plus the project's test/check suite. This judgment is Claude's, never delegated.
 5. **Loop.** Feed concrete fixes back to the implementer (or fix trivial things itself) and re-validate, until the diff passes review + checks or a stop condition fires: max 3 implement→validate rounds, or two consecutive check failures → **halt and surface**. A diff that won't pass after 3 rounds is a halt, not a "commit anyway".
-6. On a clean validate, take the ⛔ mandatory transition into Phase 3 wrap-up, exactly as solo.
+6. On a clean validate, take the ⛔ mandatory transition into Phase 2 wrap-up, exactly as solo.
 
 ---
 
-## Phase 3 — Wrap-up (non-interactive overrides)
+## Phase 2 — Wrap-up (non-interactive overrides)
 
 **This phase is reached by actually calling the `wrap-up` skill via the Skill tool — not by performing wrap-up's steps inline.** Invoke it now. The overrides below are instructions you carry *into* that invocation; they do not replace it. If you find yourself running `git commit`, `code-review`, or `followups` without having invoked `wrap-up`, stop and invoke `wrap-up` first.
 
