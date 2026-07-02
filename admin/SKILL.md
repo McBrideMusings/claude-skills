@@ -236,30 +236,31 @@ Commit `admin.toml` alone — there is no `./admin` to commit alongside it, and 
 
 ---
 
-## Apple app icons (macOS/iOS) — two gotchas that waste hours
+## Archetype-specific docs (load on demand)
 
-All Apple icons go through the tool's one generator (`admin_lib.icons.generate_icons`,
-configured by `[apple.icons]` + the apple archetype's `icons` command, or the
-dev-loop banner swap). **Never write a per-project icon script.** Full detail:
-admin-project-tool `docs/adr/0007-apple-icon-rendering.md`. The two things that
-bite, every time:
+Archetype-specific gotchas live in **`skills/admin/archetypes/<name>.md`**, NOT in
+this file — so only the relevant ones apply to a given project. When you start
+work, read the doc for **each archetype in the project's `admin.toml`**
+(`archetypes = [...]`):
 
-1. **Alpha channel → the icon renders INSET/shrunken in the Dock. Opaque RGB (no
-   alpha) → FULL-BLEED.** macOS insets any icon whose PNG has *any* sub-255 alpha
-   (anti-aliased edges, soft shadow, a transparent margin); a fully-opaque,
-   no-alpha icon renders edge-to-edge. It's invisible in a viewer — check
-   `Image.open(p).mode` (`RGB`=good, `RGBA`=suspect) / min alpha. The generator
-   ALWAYS flattens to RGB; a DEV banner's anti-aliasing is the classic trap.
-   You cannot have a transparent macOS "margin" (≈824-in-1024) AND full-bleed —
-   the margin is alpha<255. iOS is full-bleed too (system masks the shape).
+| Archetype | Doc | Highlights |
+| --- | --- | --- |
+| `apple` | `archetypes/apple.md` | app-icon **alpha → inset** gotcha; Dock name = `.app` filename (rename); `[apple.icons]` |
+| `rust-tauri` | `archetypes/rust-tauri.md` | macOS bundle inherits the apple icon-alpha rule |
+| `docker-unraid` | `archetypes/docker-unraid.md` | `DEPLOY_LOCAL`→`ADMIN_LOCAL`; lifecycle order |
+| `unraid-plugin` | `archetypes/unraid-plugin.md` | `DEPLOY_LOCAL`→`ADMIN_LOCAL` |
+| `cloudflare-workers` | `archetypes/cloudflare-workers.md` | dev streaming (`interactive-shell`); cwd-relative wrangler |
+| `hugo` | `archetypes/hugo.md` | static site |
+| `rust` | `archetypes/rust.md` | cargo |
+| `go-cli` | `archetypes/go-cli.md` | go toolchain |
+| `firefox-extension` | `archetypes/firefox-extension.md` | webextension / `.xpi` |
+| `stash-plugin` | `archetypes/stash-plugin.md` | stash plugin |
+| `forge-engine` | `archetypes/forge-engine.md` | — |
+| `simple` | `archetypes/simple.md` | generic shell, no specifics |
 
-2. **The Dock hover tooltip = the `.app` FILENAME, not `CFBundleName`.** To name a
-   dev variant "Macterm Dev" in the Dock, you must rename the `.app` file —
-   set `[apple] mac_dev_product_name = "<Name> Dev"` (the dev loop renames the
-   built app → `<Name> Dev.app`, patches `CFBundleDisplayName`, re-signs to keep
-   TCC). `CFBundleName`/`CFBundleDisplayName` only drive the menu bar / some
-   surfaces; in-app strings (window title, welcome screen) should read
-   `Bundle.main`'s `CFBundleDisplayName` so the variant labels itself everywhere.
+Discovered a new archetype-specific gotcha? Add it to that archetype's file
+(create it if missing) — **never inline here**, so it doesn't load for every
+project.
 
 ---
 
@@ -332,13 +333,7 @@ Default: follow from end, no history. Handles rotation/truncation via inode/size
 
 Every command tees to `tmp/<cmd>[-<sub>].log` (e.g. `admin dev ios` → `tmp/dev-ios.log`). Up to 3 prior runs retained as `.log.1`–`.log.3` (`.1` = most recent).
 
-Every project gets a built-in `logs` command:
-```
-admin logs                  # picker
-admin logs dev              # filter "dev"
-admin logs dev ios          # → tmp/dev-ios.log
-```
-Args joined with `-` as substring filter on basename.
+There is **no auto-injected `logs` picker.** A `logs` command exists only when a project asks for one — either a `[logs]` file-tail section (above) or a `[commands.logs]` the project declares (e.g. a runtime log stream). To read a command's tee'd output, open `tmp/<cmd>.log` directly (see "Check the logs" below). `logs` is freed up for a project to bind to its actual runtime (a server/app log stream), not the tmp/*.log dump.
 
 Configure in `admin.toml`:
 ```toml
