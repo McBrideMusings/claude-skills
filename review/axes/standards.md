@@ -1,6 +1,6 @@
 # Standards / CLAUDE.md compliance lens
 
-Audit the changes against the `CLAUDE.md` files located in Phase 02. Only flag violations of **specific, stated rules**. **Skip anything tooling enforces** (ESLint / Prettier / tsc / Biome — your linter already catches it).
+Review the changes against the `CLAUDE.md` files located in Phase 02. Only flag violations of **specific, stated rules**. **Skip anything tooling enforces** (ESLint / Prettier / tsc / Biome — your linter already catches it).
 
 On top of whatever CLAUDE.md documents, this axis always carries the **smell baseline** below — a fixed set of Fowler code smells (_Refactoring_, ch. 3) that applies even when a repo documents nothing. Two rules bind it:
 

@@ -103,7 +103,7 @@ Don't auto-keep; wait for the user to ask.
 ## When NOT to use
 
 - The user wants a quick map of *where they are* in unfamiliar code → use `zoom-out`.
-- The user wants the code *changed*, audited, or debugged → that's `audit` / `diagnose`, not an explainer.
+- The user wants the code *changed*, reviewed, or debugged → that's `review` / `diagnose`, not an explainer.
 - A one-line answer suffices → just answer in chat.
 
 ## Reference files

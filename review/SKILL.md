@@ -1,27 +1,27 @@
 ---
-name: audit
-description: "The single entry point for reviewing code. Runs an eight-axis review and routes by context: on a repo you own it just reviews + documents; on a collaborative repo it triages the PR queue (on main), reviews your own branch, or reviews a teammate's PR and offers to post. `audit dual` adds an independent cross-vendor delegate second opinion, reconciled into one report. Triggers: 'audit', 'review this', 'review my changes', 'review my code', 'review prs', 'pr review queue', 'triage my review queue', 'what PRs need my review', 'dual audit', 'audit with codex', 'second-opinion review'."
+name: review
+description: "The single entry point for reviewing code. Runs an eight-axis review and routes by context: on a repo you own it just reviews + documents; on a collaborative repo it triages the PR queue (on main), reviews your own branch, or reviews a teammate's PR and offers to post. `review dual` adds an independent cross-vendor delegate second opinion, reconciled into one report. Triggers: 'review', 'review this', 'review my changes', 'review my code', 'review prs', 'pr review queue', 'triage my review queue', 'what PRs need my review', 'dual review', 'review with codex', 'second-opinion review'."
 ---
 
-# Audit
+# Review
 
-Review code changes for bugs, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs. Runs parallel sub-agents across eight review axes and reports axis-tagged findings. `audit` is the **single entry point** for review — it routes by context (your working tree, a branch, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
+Review code changes for bugs, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs. Runs parallel sub-agents across eight review axes and reports axis-tagged findings. `review` is the **single entry point** for review — it routes by context (your working tree, a branch, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
 
 ## Flavors — solo vs dual
 
-- **`audit`** (default) — Claude reviews on its own.
-- **`audit dual`** — Claude reviews, *and* an independent cross-vendor delegate reviews the same diff; the two are reconciled into one source-tagged report. The delegate catches what a same-model self-review misses (concurrency, lifecycle, edge cases) and gives a second architecture read. The token `dual` anywhere in the arguments turns it on. See **Dual flavor** below.
+- **`review`** (default) — Claude reviews on its own.
+- **`review dual`** — Claude reviews, *and* an independent cross-vendor delegate reviews the same diff; the two are reconciled into one source-tagged report. The delegate catches what a same-model self-review misses (concurrency, lifecycle, edge cases) and gives a second architecture read. The token `dual` anywhere in the arguments turns it on. See **Dual flavor** below.
 
 ## Phase 00 — Route by context
 
-Audit's workflow is set by two ownership checks. Resolve both first, then pick the workflow; everything else (the review core, dual flavor, offers) hangs off this.
+Review's workflow is set by two ownership checks. Resolve both first, then pick the workflow; everything else (the review core, dual flavor, offers) hangs off this.
 
 **1. Do I own the repo?**
 ```
 gh repo view --json owner --jq .owner.login
 gh api user --jq .login
 ```
-Owner == my login → **owned (solo) repo**: I work alone here and never open PRs, so there is no queue and nothing to post to. Audit reviews + documents, then offers to fix.
+Owner == my login → **owned (solo) repo**: I work alone here and never open PRs, so there is no queue and nothing to post to. It reviews + documents, then offers to fix.
 Owner != my login (or no GitHub remote) → **collaborative repo**: the PR world applies (queue, posting, teammate reviews).
 
 **2. Is this branch/PR mine?** (collaborative repos only)
@@ -59,7 +59,7 @@ These phases are the review itself — what runs against a single target (your w
 
 ### Phase 01 — Determine What to Review
 
-- If invoked with an argument (e.g. `audit HEAD~3`, `audit v1.2.3`, `audit feature-branch`), use it as the fixed point. Diff is `git diff <fixed-point>...HEAD` (three-dot — comparison against merge-base). Commit list: `git log <fixed-point>..HEAD --oneline`.
+- If invoked with an argument (e.g. `review HEAD~3`, `review v1.2.3`, `review feature-branch`), use it as the fixed point. Diff is `git diff <fixed-point>...HEAD` (three-dot — comparison against merge-base). Commit list: `git log <fixed-point>..HEAD --oneline`.
 - Else if there are uncommitted changes (unstaged or staged): review those via `git status` + `git diff`.
 - Else if working tree is clean: find the base branch (`main` / `master`), compute `git merge-base HEAD origin/main`, then diff and log against that.
 - If no changes anywhere: say so and stop.
@@ -135,24 +135,24 @@ Keep issues scoring **≥ 75**. Drop the rest.
 - Write the review using the format below.
 - Print the full review body to chat, then follow with a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Review written to /Users/pierce/.claude-tmp/claude-review-2026-05-05-143022.md`
 
-## Dual flavor (`audit dual`)
+## Dual flavor (`review dual`)
 
 When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor delegate on the **same** diff, then reconcile.
 
-**Always go through the `delegate` router — never call a vendor binary directly.** Read [../delegate/SKILL.md](../delegate/SKILL.md) for the resolver and Terminal.app transport. **Gate first:** run `delegate check`; if it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo audit** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
+**Always go through the `delegate` router — never call a vendor binary directly.** Read [../delegate/SKILL.md](../delegate/SKILL.md) for the resolver and Terminal.app transport. **Gate first:** run `delegate check`; if it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
 ```bash
 D="$HOME/.claude/skills/delegate/delegate"
-"$D" check || { echo "Delegate unavailable — running solo audit only"; }
+"$D" check || { echo "Delegate unavailable — running solo review only"; }
 ```
 
 1. Write the review prompt to a temp file — review instructions + the **literal** diff command the core used (`gh pr diff`, the merge-safe diff, or `git diff HEAD`). Let the delegate run that command itself; don't paste a huge diff into the prompt.
 2. Run `"$D" exec "$prompt" "/tmp/<slug>-delegate.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
-3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the tool that found it: `audit` for Claude's own, the **resolved delegate name** for the delegate's, or `both` when both flagged it. Get the delegate name at runtime — `delegate agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[delegate]`). The skill never *presumes* which tool that is; it learns it from `delegate agent` after the run. "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
+3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the tool that found it: `review` for Claude's own, the **resolved delegate name** for the delegate's, or `both` when both flagged it. Get the delegate name at runtime — `delegate agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[delegate]`). The skill never *presumes* which tool that is; it learns it from `delegate agent` after the run. "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
 4. Fold the delegate's findings into the matching axis sections of the report (its architecture findings into Architecture, its bug findings into Bugs, etc.) and carry the source tag through to the file format below. Dual is still **read-only** — it reviews, never edits.
 
 ```bash
-prompt="$(mktemp -t audit-dual.XXXXXX)"
+prompt="$(mktemp -t review-dual.XXXXXX)"
 cat > "$prompt" <<'PROMPT'
 Review the changes produced by this exact diff command: <diff-cmd>
 Enforce the project conventions in CLAUDE.md / AGENTS.md / .claude/rules/*.
@@ -177,7 +177,7 @@ gh pr list --search "involves:@me -author:@me -reviewed-by:@me" --state open --j
 ```
 Present a table — one row per PR — with these columns: **#** (as a markdown link to the PR `url`), **what it does** (a one-sentence plain-language description derived from the PR `body` — what the change actually accomplishes, not a restatement of the title; titles often say too little), **author**, **age**, **+/- size**, and review-requested vs merely mentioned. Order: review-requested first, then oldest first. Always print the clickable URL — never make the user go hunting for the link. Empty → "review queue is clear" and stop. (`-reviewed-by:@me` only excludes PRs with a *submitted* review; comment-only participation still shows. Mention the gap only if a result looks off.)
 
-**Select.** Ask in **plain chat text** which PRs to review (any subset, e.g. "all", "1016 and 1018", or a list of numbers) and which flavor (`audit` vs `audit dual`) to apply to all selected PRs this run. **Do not use the `AskUserQuestion` tool here** — its 5-option cap silently truncates longer queues and an "all" option reads as inconsistent when the visible choices don't cover every PR. Plain text has no such cap and lets the user pick freely.
+**Select.** Ask in **plain chat text** which PRs to review (any subset, e.g. "all", "1016 and 1018", or a list of numbers) and which flavor (`review` vs `review dual`) to apply to all selected PRs this run. **Do not use the `AskUserQuestion` tool here** — its 5-option cap silently truncates longer queues and an "all" option reads as inconsistent when the visible choices don't cover every PR. Plain text has no such cap and lets the user pick freely.
 
 **Review loop (strictly sequential, one PR at a time):**
 1. `gh pr checkout <number>` — on failure, report the error, skip this PR, continue. Never force anything.
@@ -224,7 +224,7 @@ Hand the report path to the chosen flow. Don't start it without a yes.
 
 ## File format
 
-The report **opens with a single high-level summary sentence** — no `# Audit` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Everything after it is the issue list, grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
+The report **opens with a single high-level summary sentence** — no `# Review` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Everything after it is the issue list, grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
 
 ```
 Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord button in prod; the other five (architecture, contracts, best-practice) are non-blocking quality notes worth folding in but break nothing.

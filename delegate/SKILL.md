@@ -1,11 +1,11 @@
 ---
 name: delegate
-description: "Reference for the cross-vendor `delegate` skill used by `audit dual` (delegate reviews) and `iterate delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
+description: "Reference for the cross-vendor `delegate` skill used by `review dual` (delegate reviews) and `iterate delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
 ---
 
 # Delegation backend
 
-How the delegate flavors — `audit dual` (the delegate **reviews** the same diff) and `iterate delegate` (the delegate **implements** Claude's plan) — hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
+How the delegate flavors — `review dual` (the delegate **reviews** the same diff) and `iterate delegate` (the delegate **implements** Claude's plan) — hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
 
 > ## ⛔ NEVER bypass the router — this is non-negotiable
 >
