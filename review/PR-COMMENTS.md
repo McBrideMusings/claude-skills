@@ -1,6 +1,6 @@
 # Review — PR comments branch
 
-Auto-entered from [SKILL.md](SKILL.md) Phase 00 when the current branch has an **open PR that is mine** (author or assignee) carrying **≥1 unresolved review thread**. Work through the reviewers' unresolved comments point-by-point: fetch → score → plan → (on approval) apply code fixes + write a local reply doc. Mutually exclusive with the self-review core — when there are unresolved threads, this branch runs *instead of* [REVIEW-CORE.md](REVIEW-CORE.md).
+Auto-entered from [SKILL.md](SKILL.md) Phase 00 when the current branch has an **open PR that is mine** (author or assignee) carrying **unaddressed reviewer feedback in any shape** — an unresolved inline thread, a formal review whose substance sits in the review **body** (zero inline threads), or a plain conversation comment with nothing pushed since (see SKILL.md step 3's *commits-pushed-after* heuristic). Work through every feedback point one by one: fetch → score → plan → (on approval) apply code fixes + write a local reply doc. Mutually exclusive with the self-review core — this branch runs *instead of* [REVIEW-CORE.md](REVIEW-CORE.md). **Never gate on inline-thread count alone** — a body-only review has zero threads and is the exact case that silently slipped through before.
 
 **Never posts to GitHub.** All reviewer replies are written to a local response document the user copy-pastes; thread resolution is the user's to do.
 
@@ -19,9 +19,11 @@ Before touching GitHub, prove the local state is safe to act on. Stop and tell t
 - If the PR is `CLOSED` or `MERGED`, abort with the state. (Draft is fine — proceed.)
 - Capture `pr_number`, `pr_url`, `head_sha`, `base`. Print the PR title and URL so the user sees what is being triaged.
 
-## Phase 03 — Fetch unresolved review threads
+## Phase 03 — Fetch unaddressed feedback (all three shapes)
 
-Use GraphQL — the JSON fields on `gh pr view` don't expose thread resolution state.
+Reviewer feedback is not just inline threads. Fetch and triage **all three** shapes — a review with inline comments, a review whose whole substance is in the **body** (zero inline threads), and a plain **conversation comment** the reviewer never attached to a line. Missing the last two is exactly how a PR with a wall of feedback gets blind-self-reviewed. A "feedback item" from any source is triaged the same way in Phase 05.
+
+**(a) Inline review threads** — GraphQL, because the JSON fields on `gh pr view` don't expose thread resolution state.
 
 ```
 gh api graphql -F owner=<owner> -F repo=<repo> -F number=<pr_number> -f query='
@@ -58,15 +60,26 @@ query($owner:String!, $repo:String!, $number:Int!) {
 
 Filter to threads where `isResolved == false`. Keep `isOutdated` threads but mark them — they often deserve a "reply" rather than a code change.
 
-If zero unresolved threads survive, the branch should not have routed here — fall back to [REVIEW-CORE.md](REVIEW-CORE.md) (self-review) instead.
+**(b) Formal review bodies** — a reviewer can put every finding in the review body with **no inline threads at all** (e.g. one "multi-agent review" block listing W1…W9). These carry no per-item resolution state, so you can't filter them by `isResolved`; instead split the body into individual feedback items yourself.
 
-Also pull top-level PR conversation comments (not tied to a diff line): `gh pr view <pr_number> --json comments`. These don't have a "resolved" state, so include any added after the last review by a non-author reviewer. If unsure whether one is in-scope, ask the user — as a plain-chat question, never the `AskUserQuestion` tool / structured-question schema.
+```
+me=$(gh api user --jq .login)
+gh pr view <pr_number> --json reviews --jq "[.reviews[]|select(.author.login!=\"$me\" and (.body|length>0))|{author:.author.login,state:.state,submittedAt:.submittedAt,body:.body}]"
+```
 
-## Phase 04 — Read code context for each thread
+Read each non-author review body in full and enumerate its findings as separate items. A review with `state` `COMMENTED` counts exactly as much as `CHANGES_REQUESTED` — the reviewer's words are the feedback, not the button they clicked.
 
-For each unresolved thread, read the file at `path` around the commented line(s). Pull ±20 lines so the analysis can judge the comment in context. Use the local checkout — Phase 01 already proved it matches `origin/<branch>`.
+**(c) Top-level conversation comments** (not tied to a diff line): `gh pr view <pr_number> --json comments`. No "resolved" state, so treat each non-author comment as a feedback item. If unsure whether one is in-scope, ask the user — as a plain-chat question, never the `AskUserQuestion` tool / structured-question schema.
 
-If the thread is `isOutdated`, note it — the code at that line may have moved or changed since. Still read what's there now.
+**Guard — don't bounce a body-only review back to self-review.** Fall back to [REVIEW-CORE.md](REVIEW-CORE.md) **only** when **all three** sources are empty of non-author feedback (no unresolved thread, no non-author review body, no non-author comment). Zero *inline threads* alone is **not** grounds to fall back — that was the old bug. If (b) or (c) has content, stay here and triage it.
+
+**Reconcile mode — check each item against current HEAD.** When commits were pushed *after* the feedback landed (the ambiguous case from SKILL.md step 3), some items may already be fixed. For every feedback item, read the **current** code (Phase 04) before scoring: an item resolved by a post-feedback commit is classified `reply: already addressed in <sha>` (cite the commit and the current code), not re-implemented. Never assume "commits since ⇒ all handled" — verify each point; partial fixes are common.
+
+## Phase 04 — Read code context for each feedback item
+
+For each feedback item (inline thread, review-body finding, or conversation comment), read the current code it concerns. For an inline thread that's the file at `path` around the commented line(s), ±20 lines. For a body/comment finding that names a file/symbol, locate it (Grep/Glob) and read the current state. Use the local checkout — Phase 01 already proved it matches `origin/<branch>`.
+
+If an inline thread is `isOutdated`, note it — the code at that line may have moved or changed since. Still read what's there now. In **reconcile mode** (commits pushed after the feedback), reading current HEAD is how you catch items a later commit already fixed — those become `reply: already addressed in <sha>`.
 
 ## Phase 05 — Score and classify every thread
 
@@ -194,7 +207,7 @@ If the user rejects or edits, re-score the affected threads, regenerate the resp
 - **No GitHub writes, ever.** No `gh pr comment`, no `gh pr review`, no `gh api` mutations, no thread resolution. Read-only against GitHub for the entire branch.
 - **No code edits before plan approval.** Edits happen after the user approves the plan — and only for `address` / `partial` items.
 - **All replies go to the response document as one consolidated comment.** The user copy-pastes it as a single PR-level comment. Never offer to post for them, and never split into per-thread drafts unless the user explicitly asks.
-- **Don't manufacture threads.** If the GraphQL response is empty, fall back to the self-review core — never invent a comment to triage.
+- **Don't manufacture feedback.** Fall back to the self-review core only when **all three** sources (inline threads, non-author review bodies, non-author conversation comments) are empty — never invent an item to triage. Zero inline threads alone is not emptiness if a review body or comment carries findings.
 - **Cite the comment URL** for each thread in both the plan and the response document.
 - **Outdated ≠ ignore.** Outdated threads frequently still need a one-line reply so the reviewer knows you saw it — those get a `reply` action with a draft.
 - **Score on evidence.** Defend each score by quoting the comment or pointing at the file. Avoid scoring on vibes.

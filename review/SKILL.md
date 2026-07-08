@@ -32,23 +32,41 @@ gh pr view --json author,assignees,number,url,state
 ```
 Mine if the PR `author.login == my login` **or** my login is in `assignees[].login`. No PR → fall back to the branch name: mine if it starts with `pierce` (case-insensitive, `/` or `-` separator); else check commit authorship (`git log -1 --format=%ae` == my git email). Still ambiguous → **ask in plain chat, never guess**.
 
-**3. My-PR sub-branch — comments or self-review?** When the branch is mine *and* has an open PR, check for unresolved reviewer feedback before reviewing:
+**3. My-PR sub-branch — comments or self-review?** When the branch is mine *and* has an open PR, check for **unaddressed reviewer feedback** before reviewing. Reviewer feedback arrives in **three** shapes and you must check **all three** — a formal review with inline comments, a formal review whose whole substance sits in the review **body** (zero inline threads), or a plain conversation comment where the reviewer never clicked "Request changes" at all. A gate that only counts inline `reviewThreads` **silently misses the last two** and wrongly self-reviews a PR that has a wall of unaddressed feedback sitting on it. Never route on thread count alone.
+
+Gather every feedback source from **non-authors** (exclude your own login), then decide with the *commits-pushed-after* heuristic:
+
 ```
-gh api graphql -F owner=<owner> -F repo=<repo> -F number=<n> -f query='query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved}}}}}'
+me=$(gh api user --jq .login)
+# a) inline review threads + resolution state
+gh api graphql -F owner=<owner> -F repo=<repo> -F number=<n> -f query='query($owner:String!,$repo:String!,$number:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved comments(first:1){nodes{author{login} createdAt}}}}}}}'
+# b) formal reviews — ANY state (CHANGES_REQUESTED, COMMENTED, APPROVED), body + timestamp
+gh pr view <n> --json reviews --jq "[.reviews[]|select(.author.login!=\"$me\" and (.body|length>0))|{author:.author.login,state:.state,submittedAt:.submittedAt}]"
+# c) top-level conversation comments (never carry a resolved state)
+gh pr view <n> --json comments --jq "[.comments[]|select(.author.login!=\"$me\")|{author:.author.login,createdAt:.createdAt}]"
+# newest branch commit time (what "pushed after" is measured against)
+gh pr view <n> --json commits --jq "[.commits[].committedDate]|max"
 ```
-- **≥1 unresolved thread** → auto-enter the comment branch: run [PR-COMMENTS.md](PR-COMMENTS.md). (Reviewers gave feedback; work through it point-by-point before anything else.)
-- **Zero unresolved threads** (or no PR at all) → run the self-review core [REVIEW-CORE.md](REVIEW-CORE.md). After it writes the report, **if the report has uncertain findings** (see REVIEW-CORE.md "Uncertain findings → grill-me hand-off"), offer a `grill-me` pass to resolve them one question at a time. Then the fix offer below.
+
+Let `latest_feedback` = the newest timestamp across: any **unresolved** inline thread, any non-author review body (b), and any non-author conversation comment (c). Let `latest_commit` = the newest commit date on the branch. Then:
+
+- **Any unresolved inline thread** → **comment branch** ([PR-COMMENTS.md](PR-COMMENTS.md)). (The classic signal — still valid.)
+- **Else if there is non-author review/comment feedback (b or c) and `latest_commit <= latest_feedback`** — i.e. **nothing was pushed after the feedback** → the feedback is almost certainly **unaddressed** → **comment branch**. This is the case a thread-count gate misses: a body-only review or a bare comment with no commits since.
+- **Else if there is non-author feedback but commits *were* pushed after it** (`latest_commit > latest_feedback`) → **ambiguous** — the author may have addressed some, all, or none of it. Do **not** blind-self-review and bury it. Enter the comment branch anyway, but in *reconcile mode*: read each feedback point and check it against **current** HEAD (it may already be fixed by a post-feedback commit — classify those as `reply: already addressed in <sha>`). Reading feedback is cheap; skipping it is the expensive mistake.
+- **Else (no non-author feedback at all)** → run the self-review core [REVIEW-CORE.md](REVIEW-CORE.md). After it writes the report, **if the report has uncertain findings** (see REVIEW-CORE.md "Uncertain findings → grill-me hand-off"), offer a `grill-me` pass to resolve them one question at a time. Then the fix offer below.
+
+The `latest_commit <= latest_feedback` test is the load-bearing heuristic: **if nothing changed on the PR since the feedback landed, the underlying issues have not been dealt with** — regardless of whether the reviewer used the formal "Request changes" button or just typed a comment. Timestamps are ISO-8601, so a string compare orders them correctly; when they're within a few seconds or a commit's authored-vs-pushed time is unclear, treat it as the ambiguous (reconcile-mode) case rather than assuming addressed.
 
 ### Routing table
 
 | | **Repo I own** (solo) | **Repo I don't own** (collaborative) |
 |---|---|---|
 | **on `main`** | review working tree → document → offer fix | **Queue mode**: triage open PRs → review each → offer to post |
-| **my branch / my PR** | review → document → offer fix | **has unresolved review comments** → comment branch (PR-COMMENTS.md); **else** → self-review → grill-me if uncertain → offer fix (no post) |
+| **my branch / my PR** | review → document → offer fix | **has unaddressed reviewer feedback** (any of: unresolved thread / body-only review / bare comment with no commits pushed since) → comment branch (PR-COMMENTS.md); **else** → self-review → grill-me if uncertain → offer fix (no post) |
 | **teammate's PR branch** | n/a | review → document → offer to **post** |
 | **not mine, no PR** | review → document | review → document |
 
-- **Comment branch** ⟺ the branch is mine *and* its open PR has ≥1 unresolved review thread: run PR-COMMENTS.md instead of the self-review core (mutually exclusive).
+- **Comment branch** ⟺ the branch is mine *and* its open PR carries unaddressed reviewer feedback in **any** shape — an unresolved inline thread, a formal review whose substance is in the body, or a plain conversation comment with no commit pushed since (see step 3's *commits-pushed-after* heuristic). Run PR-COMMENTS.md instead of the self-review core (mutually exclusive). Do not gate this on inline-thread count alone.
 - **Offer to fix** ⟺ the branch is mine (or it's my owned-repo working tree): hand to `iterate` (plain or `iterate delegate`).
 - **Offer to post** ⟺ the branch has an open PR **not** authored by me: a formal review verdict (Approve / Request changes / Comment) carrying one consolidated report body — or a plain comment — proposed and confirmed, never auto-submitted.
 - All offers are gated on an explicit yes in the moment — never automatic (global "never send / act on my behalf" rule). See **End of pass**.
