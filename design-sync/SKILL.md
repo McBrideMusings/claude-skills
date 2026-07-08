@@ -68,7 +68,9 @@ If the user used native **Handoff to Claude Code** and the prototype code is alr
 
 9. **Verify the consequences and interactions of your own edits.** A new control that supersedes an existing one means **removing the superseded element is part of the same change** (add "when clip ends" → remove the now-redundant "auto-advance" toggle). Anything interactive you build — a drag, a toggle, a modal, a cycle button — must be *exercised* in the render diff, not just type-checked; a control that compiles but traps the user (a drag with no release, a modal that shouldn't exist) is a failure the diff gate must catch.
 
-## Artifacts (all under `tmp/claude/design/`)
+## Artifacts (all under the repo-root `tmp/claude/design/`)
+
+> **⛔ THE `tmp/claude/design/` PREFIX IS ABSOLUTE FROM THE REPO ROOT — NEVER CWD-RELATIVE.** Every `tmp/claude/design/…` path in this skill and its sub-docs (IMPORT.md, EXPORT.md, RECONCILE.md) is shorthand for `<repo-root>/tmp/claude/design/…`. The Bash tool's working directory is NOT guaranteed to be the repo root — an earlier `cd` may have left it in a subdirectory. Resolve the root ONCE, in its own Bash call — `git rev-parse --show-toplevel` (if it errors/empty, use the absolute `pwd`) — capture the absolute result, and prefix EVERY read/write/`mkdir`/unzip/screenshot path with it. A bare `tmp/…` passed to Bash (not starting with `/`) is a bug: it lands the artifact under whatever subdir the shell is in, so a later phase looking under the real root won't find it and the ingestion/diff gates silently operate on the wrong tree.
 
 - `INGESTION.md` — proof the ground truth actually loaded (gate)
 - `manifest.md` — the shared design spec (tokens, IA, per-screen layout, functionality)

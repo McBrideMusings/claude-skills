@@ -11,7 +11,7 @@ Break a plan into independently-grabbable issues using **vertical slices** (trac
 
 ## Proposal file
 
-Draft slices to `<root>/tmp/claude/to-issues.md`. Resolve `<root>` via `git rev-parse --show-toplevel 2>/dev/null`; if empty (not in a git repo), fall back to `pwd`. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call.
+Draft slices to `<root>/tmp/claude/to-issues.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `<root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call.
 
 ```bash
 # Step 1

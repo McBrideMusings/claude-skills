@@ -77,7 +77,7 @@ From the prompt, infer **archetype · depth · audience** (e.g. `explain eli5 ho
 
 Clone `assets/scaffold.html` and fill it. The scaffold already wires the hermetic structure, the semantic-color tokens, `prefers-color-scheme` light/dark, and the component classes. Assemble from the component kit (`DESIGN-SYSTEM.md`) and the archetype skeleton (`ARCHETYPES.md`). Hand-author every diagram as inline SVG/CSS. Tag every B-mode code claim with `file:line`.
 
-Write to **`<repo>/tmp/claude/explainers/<slug>.html`** (or `./tmp/claude/explainers/` if not in a repo). `<slug>` is a kebab-case topic slug.
+Write to **`<repo>/tmp/claude/explainers/<slug>.html`**, where `<repo>` is the ABSOLUTE repo root. **Never write to a cwd-relative `tmp/…`.** Resolve `<repo>` in its own Bash call — `git rev-parse --show-toplevel` (if it errors/empty, use the absolute output of `pwd`) — and pass the absolute `<repo>/tmp/claude/explainers/…` to `mkdir`/`Write`/`open`. The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `tmp/claude/explainers/…` would land the file under whatever subdir the shell is in, so the `open <path>` you print won't match where it landed. If the path doesn't start with `/`, it's the bug. `<slug>` is a kebab-case topic slug.
 
 ### 5. Open it
 

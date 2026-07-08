@@ -70,9 +70,15 @@ Write an empty Monodraw canvas to `<repo-root>/tmp/claude/design-sketches/<YYYY-
 
 **Example path:** `<repo-root>/tmp/claude/design-sketches/2026-05-05-1430-conflict-modal.monojson`
 
-**Resolving `<repo-root>`:** run `git rev-parse --show-toplevel 2>/dev/null` as a separate Bash call. If empty (not in a git repo), fall back to `pwd` — stubs land at `./tmp/claude/design-sketches/` relative to CWD.
+> **⛔ RESOLVE `<repo-root>` TO AN ABSOLUTE PATH — NEVER A CWD-RELATIVE `tmp/…`.** The Bash tool's working directory is NOT guaranteed to be the repo root — an earlier `cd` may have left it in a subdirectory (`apps/foo`, `packages/bar`). A bare `tmp/claude/design-sketches/…` therefore drops the stub under whatever subdir the shell happens to be in, NOT the repo root, and the user won't find it where you told them.
+>
+> Resolve it in ITS OWN Bash call and reuse the absolute result verbatim:
+> ```bash
+> git rev-parse --show-toplevel   # → the absolute repo root; if it errors/empty (not a git repo), use the absolute output of `pwd` instead
+> ```
+> Every `mkdir`, `cp`, `Write`, and printed path below MUST be the absolute `<repo-root>/tmp/claude/design-sketches/…` from that result. If a path you're about to pass to Bash does not begin with `/`, STOP — it's the bug.
 
-**How to create the stub:**
+**How to create the stub:** (substitute the absolute `<repo-root>` you resolved above — every path here is absolute, none is relative to the current directory)
 
 ```bash
 mkdir -p <repo-root>/tmp/claude/design-sketches

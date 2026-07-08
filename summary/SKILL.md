@@ -84,7 +84,7 @@ Determine the output path and whether this invocation is branch-scoped or timest
 
 Run these via Bash tool (as separate calls — never nest `$(...)`). **NEVER prefix these with `cd /path &&`** — that triggers an "untrusted hooks" permission prompt. If you're not already in the project directory, use `git -C /absolute/path <subcommand>` instead:
 
-1. `git rev-parse --show-toplevel 2>/dev/null` → `<repo-root>`. If empty, not in a git repo → **timestamped mode**, and use `pwd` as `<repo-root>` (summaries land at `./tmp/claude/summaries/` relative to CWD). All summary paths are relative to this.
+1. `git rev-parse --show-toplevel 2>/dev/null` → the ABSOLUTE `<repo-root>`. If empty, not in a git repo → **timestamped mode**, and use the absolute output of `pwd` as `<repo-root>`. **`<repo-root>` MUST be absolute — every summary path is `<repo-root>/tmp/claude/…`, NEVER a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `tmp/claude/summaries/…` would land the file under whatever subdir the shell is in, not the repo root. If a path you pass to Bash doesn't start with `/`, it's the bug.
 2. `git branch --show-current` → current branch name. If empty (detached HEAD), **timestamped mode**.
 3. `git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null` → e.g. `origin/main`. Strip the `origin/` prefix to get the base branch name. If empty, fall back to `main`.
 

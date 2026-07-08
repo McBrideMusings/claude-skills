@@ -95,7 +95,7 @@ project: <basename of cwd>
 
 ### Write procedure
 
-1. Run `git rev-parse --show-toplevel` to get `<repo-root>`. If not in a git repo, use `pwd`.
+1. Run `git rev-parse --show-toplevel` in its own Bash call to get the ABSOLUTE `<repo-root>`. If not in a git repo, use the absolute output of `pwd`. **`<repo-root>` MUST be absolute — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `tmp/claude/handoffs.md` would land the file under whatever subdir the shell is in, so the read side (which resolves the real root) won't find it. Every `mkdir`/`Write`/path in the steps below MUST be the absolute `<repo-root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug.
 2. Ensure `tmp/` is in `<repo-root>/.gitignore` (Read the file; if absent, Edit to add `tmp/` on its own line).
 3. Run `mkdir -p <repo-root>/tmp/claude` as a separate Bash call.
 4. If `<repo-root>/tmp/claude/handoffs.md` already exists: overwrite it. Do not ask.

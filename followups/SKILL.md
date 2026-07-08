@@ -20,7 +20,7 @@ Use when the user asks to add a follow-up ("remember to …", "file as a followu
 
 `<repo-root>/tmp/claude/followups.md` — one file per repo, inside the project itself (gitignored).
 
-Resolve the path in **one Bash call** — `git rev-parse --show-toplevel 2>/dev/null` — then append `/tmp/claude/followups.md`. If that returns empty (not in a git repo), fall back to `pwd` — the file lands at `./tmp/claude/followups.md` relative to the current directory. Never nest `$(...)`.
+**The path is ABSOLUTE from the repo root — never a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/followups.md` would land the file under whatever subdir the shell is in — a different, wrong location a later session won't find. Resolve the root in **one Bash call** — `git rev-parse --show-toplevel` — and capture the absolute result; append `/tmp/claude/followups.md`. If that errors/empty (not a git repo), use the absolute output of `pwd` as the root. Never nest `$(...)`. Every `mkdir`/`Write`/path MUST be the absolute `<root>/tmp/claude/followups.md`; if it doesn't start with `/`, it's the bug.
 
 Before writing: ensure `tmp/` is in the root `.gitignore` (Read it; if `tmp/` is absent, Edit to add `tmp/` on its own line). Then `mkdir -p <root>/tmp/claude` as a separate Bash call.
 
