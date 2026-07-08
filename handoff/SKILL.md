@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Check for an existing handoff and offer to resume it, OR write a new handoff at the end of a session. Triggers: 'handoff', 'resume', 'pick up where we left off', 'save context for next time', start-of-session check, end-of-session save. Does NOT trigger on 'wrap up' or 'wrap-up' — those invoke /summarize."
+description: "Check for an existing handoff and offer to resume it, OR write a new handoff at the end of a session. Triggers: 'handoff', 'resume', 'pick up where we left off', 'save context for next time', start-of-session check, end-of-session save. Does NOT trigger on 'wrap up' or 'wrap-up' — those invoke /summary."
 ---
 
 # Handoff

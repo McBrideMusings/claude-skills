@@ -1,9 +1,9 @@
 ---
-name: summarize
-description: "This skill should be used when the user asks to summarize the current session or branch, says 'summarize', 'summarize the branch', 'summarize the session', wants a summary of what was built, or needs a draft for a PR description."
+name: summary
+description: "This skill should be used when the user asks to summarize the current session or branch, says 'summary', 'summarize', 'summarize the branch', 'summarize the session', wants a summary of what was built, or needs a draft for a PR description."
 ---
 
-# Summarize
+# Summary
 
 Generate a concise, pasteable summary of what was built and decided this session. Combines two sources:
 

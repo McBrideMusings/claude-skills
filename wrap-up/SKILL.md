@@ -193,7 +193,7 @@ Parse the reply into per-item dispositions; **unmentioned items default to skip.
 
 ### Step B — Summarize
 
-Invoke the `summarize` skill to generate the unified summary of the branch's changes and session work. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session.
+Invoke the `summary` skill to generate the unified summary of the branch's changes and session work. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session.
 
 ### Step C — Land the branch (merge on owned, PR on collaborative)
 
