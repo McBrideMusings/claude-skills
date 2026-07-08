@@ -132,13 +132,13 @@ Apply mechanical doc updates (file-map.md, CLAUDE.md doc-table additions) automa
 
 ## Phase 4: Quality checks
 
-Run code-review, code-simplifier, and an architecture-fit check (in parallel where possible).
+Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md](../review/REVIEW-CORE.md)) over the session diff — plus code-simplifier (in parallel where possible). This is the same eight-axis engine `review` runs on a teammate's PR, turned on our own work: architecture-fit is one of its axes, so it no longer needs a separate check.
 
-1. If a subagent type isn't registered, invoke the equivalent skill inline via the Skill tool and continue.
-2. Wait for all to complete.
+1. Run REVIEW-CORE.md against the session diff (uncommitted or branch-vs-base, per its Modes). If code-simplifier isn't a registered subagent type, invoke the equivalent skill inline via the Skill tool and continue.
+2. Wait for both to complete.
 3. Apply simplifications from code-simplifier.
-4. Fix any issues scored 75+ from code-review before committing.
-5. **Architecture findings are surfaced, never auto-fixed** — they're design calls, and wrap-up often runs unattended. Collect them and carry each into Phase 6 as a follow-up titled `Architecture: <finding>`. The only exception: a finding that is *also* a 75+ correctness bug is fixed under step 4.
+4. Fix any issues scored 75+ from the review core before committing.
+5. **Architecture findings are surfaced, never auto-fixed** — they're design calls, and wrap-up often runs unattended. Collect them (the review core's `architecture` and `negative-space` axes) and carry each into Phase 6 as a follow-up titled `Architecture: <finding>`. The only exception: a finding that is *also* a 75+ correctness bug is fixed under step 4.
 6. If all found nothing actionable, proceed to Phase 5.
 
 **⛔ Do not stop here.** A clean review is a green light to Phase 5, NOT a place to end your turn. Architecture findings being open is not a blocker — they become follow-ups in Phase 6.
