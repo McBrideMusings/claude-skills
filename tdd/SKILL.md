@@ -47,6 +47,8 @@ You can't test everything. Confirm with the user exactly which behaviors matter 
 
 **Seam gate.** A **seam** is the public boundary a test observes behavior at, without reaching inside. Write down the seams under test and confirm them with the user before writing any test — no test is written at an unconfirmed seam. This is the mechanism that makes "confirm which behaviors to test" above a hard gate rather than a checklist formality.
 
+**Platform axis.** Detect the platform via [`../_platforms/_detect.md`](../_platforms/_detect.md). If `../_platforms/<platform>/testing.md` exists, read it for the framework, harness location, and idioms for this stack before writing the tracer bullet — it names which seam to prefer (e.g. a view-model over a slow UI test) and which tooling to invoke. No axis → use the project's existing test setup.
+
 ### Phase 02 — Tracer Bullet
 
 Write ONE test that confirms ONE thing end-to-end.

@@ -53,6 +53,8 @@ Tool preference:
 
 **Perf branch.** For perf regressions, logs are usually wrong. Establish a baseline (timing harness, `performance.now()`, profiler, query plan), then bisect. Measure first, fix second.
 
+**Platform axis.** Detect the platform via [`../_platforms/_detect.md`](../_platforms/_detect.md). If `../_platforms/<platform>/diagnose.md` exists, read it for what to instrument and how to read it on this stack (e.g. SwiftUI `_printChanges`, view-identity vs re-evaluation). On the perf branch, also read `../_platforms/<platform>/profiling.md` for the profiler catalog — the same file the `profiling` skill uses. No axis for the platform → instrument with the stack's native tools as usual.
+
 ## Phase 05 — Fix + Regression Test
 
 Write the regression test **before the fix** — but only if there's a **correct seam**.
