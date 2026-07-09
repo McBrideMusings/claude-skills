@@ -151,6 +151,16 @@ Findings must be concrete. Bad: "Their error handling is better." Good: "On `loa
 
 Tell the user the report path — put it on its own line with **no trailing punctuation** (so Ghostty ⌘-click opens it cleanly). Then print the full contents of the report into chat, verbatim, immediately after. Do not summarize, truncate, or hold anything back for the user to go read separately — the file is a saved copy, not a substitute for showing the work.
 
+### Phase 08 — Break the findings into actionable items (grill-me session)
+
+Always follow the report with a grill-me-style interview (the `grill-me` skill's mechanic: one question per message, in plain chat, recommending an answer each time — never the `AskUserQuestion` tool). A cross-repo report is dense; stepping through it piece by piece is what turns it into discrete, actionable work items instead of a document that gets read once and shelved.
+
+1. **Map findings against existing tracking first — codebase over questions.** Before asking anything, check the repo's existing plans: open GitHub issues (`gh issue list`), plan files, roadmap docs. Bucket every actionable finding as either **already planned** (an existing issue/plan covers it — candidate for an augmentation comment citing the reference's pattern) or **unplanned** (candidate for a new issue). Show the user this mapping as context before the first question.
+2. **Grill only the contested routings, one per message.** Skip findings whose disposition is obvious (a clear bug with no existing issue → new issue; an existing issue that already anticipates the fix → small augment). For each genuinely contested item — where does it live, augment vs new, which mechanism, what scope — offer 2-3 lettered options with a recommendation and wait for the user's answer. Never answer your own question or roll forward on an assumed answer.
+3. **End with a confirmed slate.** Summarize the final list — new issues with one-line scopes, augmentation comments per existing issue — and get an explicit yes before creating anything. Issue bodies match the repo's existing issue conventions and cite the reference's file:line pattern sources; augmentation comments name the concrete code both sides.
+
+If the user declines the session ("just the report"), stop after Phase 07 — the interview is the default, not a gate.
+
 ## Things to avoid
 
 - **Whole-repo comparisons.** Always scope to a subsystem first. If the user resists scoping, push back once and explain why.
