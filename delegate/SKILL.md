@@ -1,11 +1,11 @@
 ---
 name: delegate
-description: "Reference for the cross-vendor `delegate` skill used by `review dual` (delegate reviews) and `iterate delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
+description: "Reference for the cross-vendor `delegate` skill used by `review dual` (delegate reviews) and `implement delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
 ---
 
 # Delegation backend
 
-How the delegate flavors — `review dual` (the delegate **reviews** the same diff) and `iterate delegate` (the delegate **implements** Claude's plan) — hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
+How the delegate flavors — `review dual` (the delegate **reviews** the same diff) and `implement delegate` (the delegate **implements** Claude's plan) — hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
 
 > ## ⛔ NEVER bypass the router — this is non-negotiable
 >
@@ -20,7 +20,7 @@ Two layers, kept separate on purpose:
 1. **The `delegate` resolver** (`delegate` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind three verbs.
 2. **The transport** — the visible Terminal.app window the agent runs in. This is **not** delegate's code: it's the separate `terminal` skill, which delegate's `exec` verb calls. Skills never touch either layer directly except through the three verbs.
 
-> **This router is the cross-vendor path** (Claude → Codex/DeepSeek). Delegating to *another Claude* (e.g. a cheap Sonnet/Haiku implementer following a plan) is a **peer option, not forbidden** — it just doesn't go through this script: use the Agent tool with a model override and a tight brief (no terminal, no resolver). `iterate delegate` offers both as the implementer choice — cross-vendor via this router, or a cheaper Claude via the Agent tool. Pick the router when you want a non-Claude tool and a watchable window; pick the Agent tool when you want the cheapest, tightest plan-follower.
+> **This router is the cross-vendor path** (Claude → Codex/DeepSeek). Delegating to *another Claude* (e.g. a cheap Sonnet/Haiku implementer following a plan) is a **peer option, not forbidden** — it just doesn't go through this script: use the Agent tool with a model override and a tight brief (no terminal, no resolver). `implement delegate` offers both as the implementer choice — cross-vendor via this router, or a cheaper Claude via the Agent tool. Pick the router when you want a non-Claude tool and a watchable window; pick the Agent tool when you want the cheapest, tightest plan-follower.
 
 ---
 

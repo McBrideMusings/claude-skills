@@ -1,6 +1,6 @@
 # Issue Body Template
 
-Use this for every slice published by `to-issues`. It doubles as a durable spec for AFK agents — file paths and line numbers go stale; types and behavior contracts don't.
+Use this for every slice published by `to-tickets`. It doubles as a durable spec for AFK agents — file paths and line numbers go stale; types and behavior contracts don't.
 
 ```md
 ## Parent

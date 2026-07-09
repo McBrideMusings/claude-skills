@@ -69,7 +69,7 @@ The `latest_commit <= latest_feedback` test is the load-bearing heuristic: **if 
 | **not mine, no PR** | review → document | review → document |
 
 - **Comment branch** ⟺ the branch is mine *and* its open PR carries unaddressed reviewer feedback in **any** shape — an unresolved inline thread, a formal review whose substance is in the body, or a plain conversation comment with no commit pushed since (see step 3's *commits-pushed-after* heuristic). Run PR-COMMENTS.md instead of the self-review core (mutually exclusive). Do not gate this on inline-thread count alone.
-- **Offer to fix** ⟺ there's a branch checked out to fix on. On **my own code** (my branch or my owned-repo working tree): hand to `iterate` (plain or `iterate delegate`). On a **teammate's PR branch** I have checked out: apply only the small, `low`/`medium`, behavior-preserving findings directly, commit as me, and push to the PR's own branch — even though I don't own it; hand the rest back via the post offer.
+- **Offer to fix** ⟺ there's a branch checked out to fix on. On **my own code** (my branch or my owned-repo working tree): hand to `implement` (plain or `implement delegate`). On a **teammate's PR branch** I have checked out: apply only the small, `low`/`medium`, behavior-preserving findings directly, commit as me, and push to the PR's own branch — even though I don't own it; hand the rest back via the post offer.
 - **Offer to post** ⟺ the branch has an open PR **not** authored by me: for the findings **not** being fixed directly, a formal review verdict (Approve / Request changes / Comment) carrying one consolidated report body — or a plain comment — proposed and confirmed, never auto-submitted.
 - All offers are gated on an explicit yes in the moment — never automatic (global "never send / act on my behalf" rule). See **End of pass**.
 
@@ -151,7 +151,7 @@ Split on "is this small, safe, and intent-neutral," **not** on the blocking verd
 
 **Fixing on the branch — mechanics + gate.** Pushing commits to someone else's PR branch is an outward action on their work, so it's held to the same **explicit-yes-in-this-message** gate as any send, and to the CLAUDE.md push-confirmation rule.
 - Preflight: the PR branch must be checked out with a clean working tree. State exactly which findings you'll commit and confirm before touching the branch.
-- Apply the selected fixes (hand the finding subset to `iterate` / `iterate delegate`, or edit directly for one-liners), run the project's checks, then `git push origin <headRefName>` — never to `main`, never `--force`. Pre-flight the no-attribution rule on the commit message.
+- Apply the selected fixes (hand the finding subset to `implement` / `implement delegate`, or edit directly for one-liners), run the project's checks, then `git push origin <headRefName>` — never to `main`, never `--force`. Pre-flight the no-attribution rule on the commit message.
 - Caveat: this needs push access to the PR's head branch. Same-org branches accept the push; a fork from an outside contributor only accepts it if "allow maintainer edits" is on. If the push is rejected, say so and fall that finding back to the post bucket.
 
 **Posting the rest — recommend the verdict, block on broken behavior, not on severity.** For the findings going back to the author (not fixed on the branch), propose one consolidated review verdict. On a PR you didn't author GitHub records that verdict as your review decision (Request changes even gates the merge), so the post offer **always proposes a verdict**, never a bare comment. (Self-authored PRs can't get a verdict — GitHub blocks self-approve/-request-changes — which is why this lives only on the teammate-PR path.) What separates blocking from non-blocking is *what the finding is about*, never how confident or how large it is:
@@ -176,8 +176,8 @@ EOF
 If the user wants to weigh in **without** a verdict, post the report as a plain conversation comment instead (`gh pr comment <number> --body …`); if they'd rather post by hand, give them the body to paste. Default to NOT posting anything.
 
 **Offer to fix (my own code)** — when the branch is mine (or my owned-repo working tree). There's nowhere to post my own review; offer a fix pass instead, presenting both flows so the user picks:
-- **`iterate`** — Claude fixes the findings itself.
-- **`iterate delegate`** — Claude orchestrates; a cheaper model implements the fixes; Claude validates.
+- **`implement`** — Claude fixes the findings itself.
+- **`implement delegate`** — Claude orchestrates; a cheaper model implements the fixes; Claude validates.
 
 Hand the report path to the chosen flow. Don't start it without a yes.
 

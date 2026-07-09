@@ -7,7 +7,7 @@ description: "Pick the next work item from GitHub issues, prior-session follow-u
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads three sources: GitHub issues, `<repo-root>/tmp/claude/followups.md`, and `<repo-root>/tmp/claude/handoffs.md`.
 
-**Autonomous-caller note:** when invoked by `iterate` (its Phase 01), skip the Phase 08 selection wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (top recommendation, or the handoff if one exists). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
+**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (top recommendation, or the handoff if one exists). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 
@@ -103,7 +103,7 @@ Three buckets: **early** (MVP not done), **mature** (shipped, has users), **uncl
 
 **Conflicts:** prefer roadmap (planned > filed). Note the conflict in summary.
 
-**`unclear` rule (load-bearing for autonomous callers):** if no roadmap exists AND no single issue-tracker fallback signal fires unambiguously, set `unclear` and apply no tilt. Don't guess — `iterate` and other autonomous callers depend on deterministic phase output.
+**`unclear` rule (load-bearing for autonomous callers):** if no roadmap exists AND no single issue-tracker fallback signal fires unambiguously, set `unclear` and apply no tilt. Don't guess — `implement` and other autonomous callers depend on deterministic phase output.
 
 ### Phase 05 — Group Related Issues (sub-agent brief)
 

@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking (GitHub issues, followups), update docs, run code quality checks (review + simplify), commit, push, then resolve follow-ups (fix now / file / skip), summarize, and land the branch — merge on a repo you own, PR on a collaborative one. Triggers: '/wrap-up', 'wrap up', 'close out the session', 'end of session', 'finalize this work'. Also invoked by iterate as its final phase."
+description: "Close out the current session: assess changes, update tracking (GitHub issues, followups), update docs, run code quality checks (review + simplify), commit, push, then resolve follow-ups (fix now / file / skip), summarize, and land the branch — merge on a repo you own, PR on a collaborative one. Triggers: '/wrap-up', 'wrap up', 'close out the session', 'end of session', 'finalize this work'. Also invoked by implement as its final phase."
 ---
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
@@ -16,7 +16,7 @@ The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 a
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (a 75+ review issue you cannot auto-fix, a failed push, a merge conflict) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
 - **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run, and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
 
-When invoked by `iterate`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
+When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
 
 ---
 
@@ -26,8 +26,8 @@ Wrap-up runs in one of two postures, and getting this wrong is how an unattended
 
 > **Assume INTERACTIVE (standalone) unless you can point to an explicit `continuous` token in this invocation's arguments.** Autonomy is opt-in and must be *proven*, never inferred. If you are not certain this is a continuous pass — if the token isn't unambiguously present — you are in an interactive pass, and every step that could act on the user's behalf **halts for their disposition**. Ambiguity resolves to "ask the human," always.
 
-- **Interactive pass** (default; a manual `/wrap-up`, or a **standalone** `/iterate`): the Phase 6 follow-up step **halts** so the user reviews what the session uncovered and chooses fix-now / file / skip per item.
-- **Continuous pass** (only when the `continuous` token is present, injected by `/iterate-loop`): the follow-up step files **autonomously** with no prompt, so the loop never stalls.
+- **Interactive pass** (default; a manual `/wrap-up`, or a **standalone** `/implement`): the Phase 6 follow-up step **halts** so the user reviews what the session uncovered and chooses fix-now / file / skip per item.
+- **Continuous pass** (only when the `continuous` token is present, injected by `/iterate`): the follow-up step files **autonomously** with no prompt, so the loop never stalls.
 
 This gate governs Phase 6 Step A (follow-ups) below. Resolve the posture once, here.
 
@@ -38,7 +38,7 @@ This gate governs Phase 6 Step A (follow-ups) below. Resolve the posture once, h
 - The user invokes `/wrap-up` or asks to "wrap up", "close out the session", "finalize this work"
 - A coherent session of work is complete and ready to be committed, tracked, and summarized
 - The working tree is in a state intended to be committed (not mid-debug, not exploratory scratch)
-- Invoked by `iterate` as its final phase
+- Invoked by `implement` as its final phase
 
 ## When NOT to Use
 
@@ -53,7 +53,7 @@ Invoking this skill grants explicit authority to auto-commit and auto-push. The 
 
 ## ⛔ BASH COMMAND RULES — READ THIS BEFORE WRITING ANY SHELL COMMAND
 
-When invoked by `iterate`, wrap-up runs unattended. A single permission prompt kills the autonomous run. These rules have no exceptions.
+When invoked by `implement`, wrap-up runs unattended. A single permission prompt kills the autonomous run. These rules have no exceptions.
 
 **HARD BANS — these will ALWAYS trigger a permission prompt and MUST NEVER appear:**
 
@@ -98,7 +98,7 @@ Check for and update ANY of these tracking mechanisms that exist. Do not create 
 - Close issues with `gh issue close NUMBER --comment "reason"` (use a summary of what shipped for completed; name the reversal for obsoleted).
 - Close milestones (when 0 open issues remain): `gh api repos/{owner}/{repo}/milestones/NUMBER -X PATCH -f state=closed`
 - **Always** check milestones after closing issues — if a milestone has 0 open issues, close it immediately.
-- Under `iterate`'s overrides this is automatic (no confirmation).
+- Under `implement`'s overrides this is automatic (no confirmation).
 
 **Collaborative repos — report only, never close:**
 - Do NOT call `gh issue close` or the milestone close API — issue lifecycle there belongs to someone else (a PM or the repo owner triages).
@@ -126,7 +126,7 @@ Check for and update ANY of these tracking mechanisms that exist. Do not create 
 
 ## Phase 3: Update docs
 
-Apply mechanical doc updates (file-map.md, CLAUDE.md doc-table additions) automatically. For substantive doc updates that would normally prompt for diff confirmation under `iterate`, do NOT prompt — append them as Phase 6 follow-up items instead.
+Apply mechanical doc updates (file-map.md, CLAUDE.md doc-table additions) automatically. For substantive doc updates that would normally prompt for diff confirmation under `implement`, do NOT prompt — append them as Phase 6 follow-up items instead.
 
 ---
 
@@ -199,7 +199,7 @@ Invoke the `summary` skill to generate the unified summary of the branch's chang
 
 Reuse the Phase 2 ownership verdict.
 
-**Repo I own (solo) — merge it, then leave the workspace clean.** Invoking wrap-up (or iterate) authorizes the merge, exactly as it authorizes commit and push — the merge runs in **both** interactive and continuous passes (a solo merge needs no human input). If the current branch already *is* the default branch, skip (nothing to merge). Otherwise, with a remote:
+**Repo I own (solo) — merge it, then leave the workspace clean.** Invoking wrap-up (or implement) authorizes the merge, exactly as it authorizes commit and push — the merge runs in **both** interactive and continuous passes (a solo merge needs no human input). If the current branch already *is* the default branch, skip (nothing to merge). Otherwise, with a remote:
 1. Pre-check: `git status` clean and Phase 4 clean-or-fixed. **Never merge known-failing work** — an unresolved 75+ issue is the blocker; stop instead.
 2. Capture the feature branch and the default branch (usually `main`).
 3. Bring default current: `git -C <repo> checkout main`, `git -C <repo> pull --ff-only origin main`.
@@ -213,6 +213,6 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 
 **Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never call `gh issue close` here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
 - **Interactive pass** → **offer** the PR (only on an explicit yes in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines). If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
-- **Continuous pass authorized by `/iterate-loop`** → **create the PR autonomously.** Starting an `/iterate-loop` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the loop's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
+- **Continuous pass authorized by `/iterate`** → **create the PR autonomously.** Starting an `/iterate` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the loop's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
 
-  > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy `/iterate-loop`'s "PR on collaborative repos" contract. A raw `/loop /iterate continuous` that did **not** come through `/iterate-loop` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the loop authorized publishing, treat the pass as interactive and offer rather than create.
+  > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy `/iterate`'s "PR on collaborative repos" contract. A raw `/loop /implement continuous` that did **not** come through `/iterate` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the loop authorized publishing, treat the pass as interactive and offer rather than create.

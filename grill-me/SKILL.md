@@ -26,6 +26,7 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - **2–3 approaches at real branch points.** When a decision actually has alternatives, lay them out with tradeoffs and your pick.
 - **Scope check early.** If the ask describes multiple independent subsystems, flag it before drilling in. Decompose first, grill the first piece.
 - **Stress-test with concrete scenarios.** When a domain relationship is in play, invent a specific edge-case scenario and push for a precise answer about the boundary — *"if a Shipment is cancelled after its Invoice is generated, does the Invoice still exist?"* Vague agreement collapses fast against a concrete case; that collapse is the point.
+- **Never answer your own questions.** This is a live interview — every question waits for *the human*. Recommend an answer ("I'd lean A because X"), but never supply their decision yourself, never roll forward on an answer you imagined they'd give, and never fire the next question as if the last were settled when it wasn't. If the human goes quiet, stop and wait. An agent that answers its own questions has quietly turned the interview into a monologue and defeated the whole point — this is the single failure that breaks a grilling.
 
 ## Anti-patterns
 
@@ -34,6 +35,7 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - Skipping the process for "simple" projects — that's where unexamined assumptions waste the most time.
 - Bundling questions together to feel efficient.
 - Reaching for the `AskUserQuestion` tool. Every question stays in plain chat — the structured schema breaks the one-at-a-time conversation.
+- Answering your own question — supplying the human's side of the interview, or advancing on an assumed answer, instead of waiting for their reply.
 
 ## Docs awareness
 

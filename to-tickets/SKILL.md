@@ -1,17 +1,17 @@
 ---
-name: to-issues
-description: "Break a plan, spec, or PRD into independently-grabbable GitHub issues using vertical-slice tracer bullets. Classifies each slice as HITL (needs human input) or AFK (iterate can run it). Triggers: 'to issues', 'break this into issues', 'convert this plan to issues', 'split this into work items', 'make tickets from this', 'decompose this plan', 'slice this up into issues'."
+name: to-tickets
+description: "Break a plan, spec, or PRD into independently-grabbable tickets using vertical-slice tracer bullets, published to GitHub as issues. Classifies each slice as HITL (needs human input) or AFK (implement can run it). Triggers: 'to tickets', 'break this into tickets', 'convert this plan to tickets', 'split this into work items', 'make tickets from this', 'decompose this plan', 'slice this up into tickets'."
 ---
 
-# To Issues
+# To Tickets
 
-Break a plan into independently-grabbable issues using **vertical slices** (tracer bullets). Issues become inputs to `iterate` / `iterate-loop`.
+Break a plan into independently-grabbable tickets using **vertical slices** (tracer bullets). Tickets become inputs to `implement` / `iterate`.
 
 **Issue tracker:** default to GitHub via the `gh` CLI. If no GitHub remote exists (`git remote -v | grep github` finds nothing), tell the user and ask them how they want to track issues before proceeding.
 
 ## Proposal file
 
-Draft slices to `<root>/tmp/claude/to-issues.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `<root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call.
+Draft slices to `<root>/tmp/claude/to-tickets.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `<root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call.
 
 ```bash
 # Step 1
@@ -29,20 +29,20 @@ Work from whatever is in the conversation. If the user passes an issue reference
 
 ### Phase 02 — Explore the codebase (if needed)
 
-Use `docs/CONTEXT.md` vocabulary for issue titles and descriptions. Respect ADRs in `docs/adr/` for the area you're touching.
+Use `docs/CONTEXT.md` vocabulary for ticket titles and descriptions. Respect ADRs in `docs/adr/` for the area you're touching.
 
 Look for prefactoring opportunities — changes that make the upcoming implementation easier without changing behavior. "Make the change easy, then make the easy change." Note any found; they belong in the "Out of scope" or a preceding slice, not folded silently into the target slice.
 
 ### Phase 03 — Draft vertical slices
 
-Break the plan into **tracer-bullet** issues. Each slice cuts through ALL layers end-to-end (schema + API + UI + tests). **NOT** a horizontal slice of one layer.
+Break the plan into **tracer-bullet** tickets. Each slice cuts through ALL layers end-to-end (schema + API + UI + tests). **NOT** a horizontal slice of one layer.
 
 If the source plan implies milestone boundaries (e.g. "MVP vs Post-MVP", explicit phases, or a separate roadmap doc), group slices under `## Milestone: <name>` headings in the proposal file. Phase 05 reads these headings to create real GitHub milestones.
 
 Classify each:
 
 - **HITL** — Human In The Loop. Needs architectural decision, design review, or judgment call.
-- **AFK** — Away From Keyboard. Can be implemented and merged autonomously by `iterate`.
+- **AFK** — Away From Keyboard. Can be implemented and merged autonomously by `implement`.
 
 Prefer AFK over HITL where possible.
 
@@ -51,6 +51,16 @@ Slice rules:
 - Each slice delivers a narrow but COMPLETE path through every layer it touches
 - A completed slice is demoable or verifiable on its own
 - Prefer many thin slices over a few thick ones
+
+### Wide refactors — the exception to vertical slicing
+
+A **wide refactor** is one mechanical change — rename a column, retype a shared symbol — whose **blast radius** fans across the whole codebase: a single edit breaks thousands of call sites at once, so no vertical slice can land green. Don't force it into a tracer bullet — sequence it as **expand–contract**, one ticket per stage:
+
+1. **Expand.** Add the new form beside the old so nothing breaks yet. One ticket; it blocks every stage below.
+2. **Migrate.** Move call sites onto the new form in batches sized by blast radius (per package, per directory). Each batch is its own ticket, blocked by the expand — CI stays green batch to batch because the old form still exists.
+3. **Contract.** Delete the old form once no caller remains. One ticket, blocked by every migrate batch.
+
+If even a single batch can't stay green alone, keep the sequence but let the batches share one integration branch that all block a final integrate-and-verify ticket — green is promised only there. Mark the whole sequence AFK unless a batch needs a judgment call.
 
 ### Phase 04 — Quiz the user
 
@@ -98,7 +108,7 @@ Skip this phase entirely if the proposal has no milestone groupings.
 
 ### Phase 06 — Publish
 
-Publish in **dependency order** (blockers first) so "Blocked by" can reference real issue IDs. Use the body template from [ISSUE-TEMPLATE.md](ISSUE-TEMPLATE.md).
+Publish in **dependency order** (blockers first) so "Blocked by" can reference real issue IDs. Use the body template from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md).
 
 Per slice:
 

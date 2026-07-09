@@ -144,11 +144,11 @@ Same applies to stale items in this followups file — flag them inline, don't w
 
 ### Step 5: File
 
-**Default — interactive** (a standalone `/iterate`, a manual `/wrap-up`, or a direct `/followups`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, "all", "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
+**Default — interactive** (a standalone `/implement`, a manual `/wrap-up`, or a direct `/followups`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, "all", "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
 - **GitHub repo:** "Which of these should I file as GitHub issues? (numbers, ranges, 'all', or 'none')"
 - **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, 'all', or 'none')"
 
-**Autonomous — only when the caller explicitly signals continuous / no-ask mode** (a `/iterate-loop` pass, i.e. `/iterate continuous`): do not ask. File every item that clears the bar (Step 3) to the destination, skipping items whose core idea already appears there. Then report what was filed. The user triages in GitHub / the followups file afterward — never pause a continuous loop to ask which to file. If no items clear the bar, report "Nothing worth flagging this session" and stop.
+**Autonomous — only when the caller explicitly signals continuous / no-ask mode** (a `/iterate` pass, i.e. `/implement continuous`): do not ask. File every item that clears the bar (Step 3) to the destination, skipping items whose core idea already appears there. Then report what was filed. The user triages in GitHub / the followups file afterward — never pause a continuous loop to ask which to file. If no items clear the bar, report "Nothing worth flagging this session" and stop.
 
 If no suggestions exist, just report "Nothing worth flagging this session" and stop.
 
@@ -162,4 +162,4 @@ If the user says "none", write nothing. Do not split items across destinations. 
 
 ### Scope: this skill stops at filing
 
-Do not prompt to pin a handoff and do not write `<cwd>/.claude/handoff.local.md`. Handoffs are the caller's responsibility: `iterate` writes one conditionally at the end of an autonomous pass; manual `/wrap-up` writes none. If a user wants a handoff in a manual session, they invoke `/handoff` directly.
+Do not prompt to pin a handoff and do not write `<cwd>/.claude/handoff.local.md`. Handoffs are the caller's responsibility: `implement` writes one conditionally at the end of an autonomous pass; manual `/wrap-up` writes none. If a user wants a handoff in a manual session, they invoke `/handoff` directly.

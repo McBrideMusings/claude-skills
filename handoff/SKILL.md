@@ -13,7 +13,7 @@ Two modes — Resume (read an existing handoff, suggest next step) vs Write (cap
 |---|---|
 | User says "resume", "pick up", "continue", or skill runs at SessionStart | Resume |
 | User says "save context for next time", "write a handoff", or skill is invoked by `followups` Step 6 | Write |
-| Invoked by `iterate` (autonomous caller) | as `iterate` specifies — Resume at start, Write at end |
+| Invoked by `implement` (autonomous caller) | as `implement` specifies — Resume at start, Write at end |
 
 ### Layer 2 — bare `/handoff` with no explicit keyword and no sibling caller
 
@@ -26,19 +26,19 @@ Route by **whether this session contains substantive work** (a judgment from the
 | Fresh / empty **and** no handoff file exists | say "No handoff found." and stop |
 | Genuinely ambiguous (a few trivial messages, unclear if real work happened) | ask **one line** — "Resume the existing handoff, or write a new one?" — then act on the answer; do not guess |
 
-This layer only governs **interactive bare `/handoff`**. Sibling callers (`followups`, `iterate`) always hit Layer 1, so the contract those skills depend on is unchanged.
+This layer only governs **interactive bare `/handoff`**. Sibling callers (`followups`, `implement`) always hit Layer 1, so the contract those skills depend on is unchanged.
 
 ---
 
 ## Contract (load-bearing for sibling skills)
 
-Sibling skills (`followups`, `triage`, `iterate`) depend on the following. Do not change without updating those skills.
+Sibling skills (`followups`, `triage`, `implement`) depend on the following. Do not change without updating those skills.
 
 - **Path:** `<repo-root>/tmp/claude/handoffs.md` (single-slot; one handoff per repo, `<repo-root>` = `git rev-parse --show-toplevel`)
 - **Frontmatter keys:** `created` (format `YYYY-MM-DD HH:MM`), `project`
 - **Body field names (verbatim):** `What we were working on`, `Key decisions`, `Discoveries`, `Immediate next step`, plus optional `Suggested next skills`
 - **Forward compatibility:** sibling skills must tolerate (or ignore) body fields beyond the four required ones. Don't blow up on unknown fields — they may be additions.
-- **Deletion handshake:** delete on resume completion. Interactive callers confirm first; autonomous callers (`iterate`) delete without prompting once the work the handoff points at is fulfilled.
+- **Deletion handshake:** delete on resume completion. Interactive callers confirm first; autonomous callers (`implement`) delete without prompting once the work the handoff points at is fulfilled.
 - **Overwrite handshake:** always overwrite without prompting — the user invoked the command, that's confirmation enough.
 
 ---
@@ -55,7 +55,7 @@ Sibling skills (`followups`, `triage`, `iterate`) depend on the following. Do no
 5. Wait for the answer:
    - **Yes / continue** → summarize the "Immediate next step" field, then:
      - Interactive caller: confirm before deleting the file.
-     - Autonomous caller (`iterate`): proceed without prompting; delete after the pointed-at work is committed.
+     - Autonomous caller (`implement`): proceed without prompting; delete after the pointed-at work is committed.
    - **No / start fresh** → ask whether to overwrite with a new handoff (proceed to Write mode below) or discard.
 
 ---

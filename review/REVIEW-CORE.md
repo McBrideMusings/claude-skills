@@ -5,7 +5,7 @@ The review engine — what runs against a **single target** (a working tree, a b
 - **`review` self-review / teammate PR** — writes the report, then offers a fix pass or a post (see [SKILL.md](SKILL.md) End-of-pass).
 - **`review` queue mode** — runs this once per selected PR.
 - **`wrap-up` Phase 4** — runs this over the session diff, then auto-fixes 75+ findings and routes architecture findings to follow-ups.
-- **`iterate` validate** — runs this in plain mode over the implementer's diff, no offers, no posting.
+- **`implement` validate** — runs this in plain mode over the implementer's diff, no offers, no posting.
 
 ## Modes
 
