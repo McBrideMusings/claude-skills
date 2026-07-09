@@ -50,6 +50,8 @@ gh project item-list <N> --owner <owner> --format json --limit 100
 
 On auth/repo-not-found errors: report and stop.
 
+**Exclude wayfinder tickets.** Drop any issue carrying a `wayfinder:*` label (the map or its child tickets) from the candidate set — they're a separate planning surface owned by `wayfinder`, not implementable backlog. `implement` discovers through this skill, so this filter covers it too.
+
 **Docs** (if in local repo): read `docs/PRD.md` (what the project is) and `docs/roadmap.md` (Now / Next / Later / Deferred). If neither default path exists, glob `**/PRD.md` and `**/roadmap.md` once before giving up. Use whichever exist; if both, use both as project-phase inputs.
 
 **Followups file** — if `<repo-root>/tmp/claude/followups.md` exists, read its unresolved items. Treat each unresolved item as a singleton candidate that enters Phase 06 scoring alongside GitHub issues (no labels, project-phase tilt applied as if bug/feature). Classify as `bug` if the item names a defect, regression, broken behavior, or starts with "fix"; otherwise classify as `feature`. Items already in the `## Resolved` section are ignored.
