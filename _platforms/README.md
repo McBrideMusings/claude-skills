@@ -34,7 +34,12 @@ adding a directory; add an engine column by adding that filename across the plat
 | `diagnose` | `<p>/diagnose.md`, `<p>/profiling.md` (perf) | Phase 04 (Instrument) |
 | `profiling` | `<p>/profiling.md` | after platform detect |
 | `tdd` | `<p>/testing.md` | Phase 01/02 (write the failing test) |
-| `verify` | `<p>/testing.md` | when driving the change (wiring pending — see followups) |
+| project `verify` | `<p>/testing.md` | when a repo's own `.claude/skills/verify/` drives the change |
+
+The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
+store directly. The testing axis reaches verification two ways instead: `tdd` reads it when writing
+tests, and a **project-local** `verify` skill (which built-in `verify` bootstraps per repo) can read
+`_platforms/<p>/testing.md` for stack-specific drive/harness knowledge.
 
 ## Attribution
 
