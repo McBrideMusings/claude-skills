@@ -75,6 +75,16 @@ Offer to create an ADR only when **all three** are true:
 
 Skip otherwise. See [ADR-FORMAT.md](ADR-FORMAT.md) for the template and qualifiers.
 
+## Domain design lenses
+
+If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with
+its lenses. Detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md); if
+`../_domains/<domain>/design.md` exists (today: `game`), pull it in. For a game that's MDA (do the
+mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the
+ambiguous decision?"). Apply them exactly like everything else here — name the structure, surface
+tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; the design axis carries
+that same hard rule. No design axis for the domain → skip silently.
+
 ## Terminal state
 
 Shared understanding is the goal, not an artifact. Stop when there are no unresolved branches.

@@ -37,6 +37,11 @@ The whole map at low resolution, loaded once per session. Open tickets are **not
 
 <domain; skills every session should consult; standing preferences for this effort>
 
+<!-- If the effort is in a domain with a design axis (detect via ../_domains/_detect.md — today: `game`,
+     with ../_domains/game/design.md), point Notes at it so every session's grilling tickets consult
+     the domain's design lenses (for `game`: MDA + toy/puzzle/contest/game). Structure + tradeoffs
+     only — never a fun-verdict. -->
+
 ## Decisions so far
 
 <!-- the index — one line per closed ticket: enough to judge relevance, then open the link for the detail -->

@@ -25,14 +25,22 @@ _domains/
     diagnose.md         <- domain-specific "what to watch" at diagnose's instrument phase
     profiling.md        <- domain performance gate (defers raw numbers to the platform profiler)
     testing.md          <- domain test discipline, read by `tdd`/`verify`
+    design.md           <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
 ```
 
 ## Who reads what
 
-Same engine set as `_platforms/`. Each engine, after loading the platform axis, checks the domain
-marker and — if present — loads `_domains/<domain>/<engine>.md` and applies it on top.
+The four code engines (`review`/`diagnose`/`profiling`/`testing`) work like `_platforms/`: after
+loading the platform axis, each checks the domain marker and — if present — loads
+`_domains/<domain>/<engine>.md` and applies it on top.
+
+The store **also feeds planning skills**, not just engines. A `design.md` cell holds design-time
+critique lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `wayfinder`, and
+`game-dev`'s design phase read it optionally when the domain is in scope. Design cells name structure
+and tradeoffs — they never deliver a fun/good verdict.
 
 ## Current state
 
-`game/` — all four cells, seeded from majidmanzarpour/threejs-game-skills. Add domains as new kinds
-of software appear; the `game-builder` orchestrator (planned) sets the `game` marker on scaffold.
+`game/` — all four engine cells + a `design.md` planning cell, seeded from
+majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to-end game builds over
+this store and sets the `game` marker on scaffold. Add domains as new kinds of software appear.
