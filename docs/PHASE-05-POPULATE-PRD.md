@@ -1,66 +1,18 @@
-# Phase 05 — Populate PRD (Content Synthesis)
+# Phase 05 — Populate PRD (delegates to /to-spec)
 
-Synthesize the content of `docs/PRD.md` from the current conversation context. **Do NOT interview the user.** Different problem from `grill-me` — that's where interviews happen.
+**Spec/PRD content generation is owned by `/to-spec`, not this skill.** `docs` is the librarian — it creates the `docs/PRD.md` stub during bootstrap and places it in the VitePress site, but it does not synthesize the content.
 
 ## When this phase runs
 
-- User invokes with content phrasing: "write the PRD", "draft the PRD", "fill out the PRD", "populate PRD.md", "PRD from context".
-- Phase 02 finishes and the PRD.md it just stubbed is empty — offer to populate now.
-- Phase 03 detects PRD.md exists but is empty / stub-only — offer to populate.
-- Phase 04 finishes migration with an empty PRD — offer to populate.
+- Phase 02 finishes and the PRD.md it just stubbed is empty.
+- Phase 03 detects PRD.md exists but is empty / stub-only.
+- Phase 04 finishes migration with an empty PRD.
+- The user asks to write/populate the PRD from inside a `docs` run.
 
-## Stance
+## What to do
 
-Synthesize **from conversation context.** If context is thin: tell the user *"Not enough context to synthesize. Run `/grill-me` first, then come back."* Don't start a new interview from inside `docs`.
+Don't synthesize here. Hand off:
 
-Read `docs/CONTEXT.md` for vocabulary if present; use those terms throughout. Respect ADRs in `docs/adr/` that touch the scope.
+> *"The PRD stub is in place at `docs/PRD.md`. To fill it from the conversation, run `/to-spec` — it's the spec generator and writes straight to `docs/PRD.md`."*
 
-## Template
-
-Each section is required. Leave a one-line `TBD — open question` placeholder if context truly doesn't cover that section.
-
-```md
-# {Project} PRD
-
-## Problem Statement
-{The problem from the user's perspective. One paragraph.}
-
-## Solution
-{The solution from the user's perspective. One paragraph.}
-
-## User Stories
-1. As <actor>, I want <feature>, so that <benefit>
-2. ...
-
-(Numbered. Extensive — cover every aspect of the feature. Use the format above; don't paraphrase.)
-
-## Implementation Decisions
-- Modules built/modified (use `docs/CONTEXT.md` vocabulary)
-- Interfaces affected
-- Schema changes, API contracts, architectural decisions
-
-No file paths or code snippets — they go stale. Exception: a prototype-produced snippet (state machine, reducer, schema, type shape) that encodes a decision more precisely than prose. Trim to the decision-rich parts.
-
-## Testing Decisions
-- What makes a good test here (behavior through public interface, not implementation details — see `/tdd`)
-- Which modules to test
-- Prior art for similar tests in this codebase, if any
-
-After synthesizing this section, sketch the **seams** — the public boundaries the feature will be tested at, ideally just one — and confirm them with the user in a single question before finalizing the PRD: *"Planning to test this at [seam(s)] — does that match what you had in mind?"* One targeted confirmation, not an interview.
-
-## Out of Scope
-{What this PRD deliberately doesn't cover.}
-
-## Further Notes
-{Anything else load-bearing for someone reading this cold.}
-```
-
-## If PRD.md already has content
-
-If `docs/PRD.md` already has substantive content (more than a stub), ask before overwriting:
-
-- **(a)** Overwrite with the synthesized version.
-- **(b)** Append a new section to the existing PRD.
-- **(c)** Write to `docs/PRD-{slug}.md` for a feature-scoped PRD.
-
-Don't auto-create a parent issue. Optionally at the end: *"Want me to create a parent issue linking to this PRD?"* — but only offer once and don't insist.
+Name the step and stop; don't auto-invoke `/to-spec`. If the user is mid-`docs`-run and clearly wants the content now, invoking `/to-spec` on their say-so is fine — but the generation logic, template, seams-confirmation, and existing-content handling all live in `/to-spec`, never duplicated here.

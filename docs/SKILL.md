@@ -1,6 +1,6 @@
 ---
 name: docs
-description: "Bootstrap, audit, or migrate a VitePress docs site (PRD/roadmap/file-map layout). Also synthesizes `docs/PRD.md` content from conversation context. Wires into admin runner and CLAUDE.md. Triggers include: 'bootstrap docs', 'audit docs', 'migrate docs', 'write the PRD', 'draft the PRD', 'fill out the PRD', 'populate PRD.md', 'PRD from context'."
+description: "Bootstrap, audit, or migrate a VitePress docs site (PRD/roadmap/file-map layout), and keep it as the project's docs librarian — placing the artifacts other skills generate (specs from /to-spec, ADRs from /grill-me) into the site. Wires into admin runner and CLAUDE.md. Does NOT generate spec/PRD content itself — that's /to-spec. Triggers include: 'bootstrap docs', 'audit docs', 'migrate docs', 'wire up the docs site', 'set up VitePress'."
 user_invocable: true
 ---
 
@@ -39,7 +39,7 @@ The skill is one ordered workflow. Read [PHASE-01-STATE-DETECTION.md](PHASE-01-S
 | [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) | No `docs/` exists (greenfield) |
 | [PHASE-03-AUDIT.md](PHASE-03-AUDIT.md) | `docs/` + `.vitepress/` both exist (aligned setup) |
 | [PHASE-04-MIGRATE.md](PHASE-04-MIGRATE.md) | `docs/` exists, no `.vitepress/` (plain markdown to migrate) |
-| [PHASE-05-POPULATE-PRD.md](PHASE-05-POPULATE-PRD.md) | User asks to write/draft/populate the PRD, or PRD.md exists but is stub-only |
+| [PHASE-05-POPULATE-PRD.md](PHASE-05-POPULATE-PRD.md) | PRD.md needs populating — this phase now **delegates to `/to-spec`** (docs no longer synthesizes PRD content) |
 | [PHASE-06-VERIFY.md](PHASE-06-VERIFY.md) | After Phase 02 / 03 / 04 — boot the dev server briefly |
 | [PHASE-07-COMMIT.md](PHASE-07-COMMIT.md) | Final phase — stage and commit |
 
