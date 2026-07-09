@@ -52,11 +52,12 @@ applies-to:
 This builds a reverse map — "which decisions constrain this file?" — that ripgrep can't answer. Query it with the shared script (no index, scans `docs/adr/*.md` live):
 
 ```
-python3 ~/.claude/tools/docs-refs.py src/checkout/timeout.py   # ADRs governing a path
+python3 ~/.claude/tools/docs-refs.py src/checkout/timeout.py   # ADRs + terms governing a path
 python3 ~/.claude/tools/docs-refs.py                           # full map
+python3 ~/.claude/tools/docs-refs.py --validate               # flag globs matching no tracked files
 ```
 
-Projects wired by `bootstrap` expose the same thing as `admin docs-refs <path>`.
+The same tool also reads `_applies-to_` markers on `docs/CONTEXT.md` terms (format: `CONTEXT-FORMAT.md`). `--validate` exits non-zero when any `applies-to` glob points at deleted/moved paths. Projects wired by `bootstrap` expose these as `admin docs-refs <path>` and `admin docs-validate`.
 
 Add `applies-to` only when the ADR is genuinely path-scoped. A repo-wide decision ("we use a monorepo") stays unscoped — leave the frontmatter off.
 

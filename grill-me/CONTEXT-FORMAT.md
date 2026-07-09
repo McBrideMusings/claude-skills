@@ -70,6 +70,21 @@ A module is **deep** when a lot of behaviour sits behind a small interface (high
 - **Group terms under subheadings** when natural clusters emerge. The Domain / Architecture split is the default; further sub-clusters fine when there are many terms.
 - **Write an example dialogue.** A short conversation that demonstrates how the terms interact naturally and clarifies boundaries between related concepts.
 
+## Linking a term to code (`_applies-to_`)
+
+Optional, opt-in per term. When a term names a concept that lives in specific parts of the tree, add an `_applies-to_` marker line — sibling to the `_Avoid_` line — with glob(s):
+
+```md
+**Channel**:
+A stream of ordered events for one topic.
+_Avoid_: Topic, feed
+_applies-to_: src/channels/**, "**/*.channel.ts"
+```
+
+This feeds the same reverse map as ADR `applies-to` frontmatter, so `docs-refs src/channels/bus.py` surfaces both the governing ADRs and the governing terms. The lookup is `~/.claude/tools/docs-refs.py` (scans `docs/adr/*.md` and every `CONTEXT.md` live — no index).
+
+Most terms stay unscoped. Add `_applies-to_` only when a term maps cleanly to code; don't force a glob onto an abstract domain word.
+
 ## Single vs multi-context repos
 
 **Single context (most repos):** one `docs/CONTEXT.md`.
