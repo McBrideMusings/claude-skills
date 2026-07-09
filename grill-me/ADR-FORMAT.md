@@ -26,6 +26,40 @@ Only when they add genuine value. Most ADRs won't need them.
 
 Scan `docs/adr/` for the highest existing number; increment by one.
 
+## Linking an ADR to code (`applies-to`)
+
+Optional. When an ADR governs specific parts of the tree, declare the paths in frontmatter as glob(s):
+
+```md
+---
+applies-to: ["src/checkout/**", "src/index/**"]
+---
+# Local-first index
+
+We index locally so the wiki works offline and reviews in Git.
+```
+
+Block-list form also works:
+
+```md
+---
+applies-to:
+  - src/checkout/**
+  - "**/*.sql"
+---
+```
+
+This builds a reverse map — "which decisions constrain this file?" — that ripgrep can't answer. Query it with the shared script (no index, scans `docs/adr/*.md` live):
+
+```
+python3 ~/.claude/tools/docs-refs.py src/checkout/timeout.py   # ADRs governing a path
+python3 ~/.claude/tools/docs-refs.py                           # full map
+```
+
+Projects wired by `bootstrap` expose the same thing as `admin docs-refs <path>`.
+
+Add `applies-to` only when the ADR is genuinely path-scoped. A repo-wide decision ("we use a monorepo") stays unscoped — leave the frontmatter off.
+
 ## When to offer an ADR
 
 All three must be true:

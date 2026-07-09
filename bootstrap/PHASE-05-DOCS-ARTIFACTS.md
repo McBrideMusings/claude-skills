@@ -51,6 +51,25 @@ Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own cre
   3. Check filenames against the `NNNN-slug.md` convention. If a file is `001-foo.md`, propose renaming to `0001-foo.md` to match four-digit standard. Don't force; offer.
   4. Update internal cross-references (`docs/adr/0001-foo.md` mentions in CLAUDE.md, READMEs, other ADRs).
 
+### `docs-refs` reverse map (offer)
+
+ADRs can declare `applies-to` frontmatter globs so a source path maps back to the decisions that govern it (format: `~/.claude/skills/grill-me/ADR-FORMAT.md`). The lookup is the shared script `~/.claude/tools/docs-refs.py` — no index, scans `docs/adr/*.md` live.
+
+If the project has an `admin.toml`, offer to wire the shell convenience command (agents can call the script directly regardless):
+
+```toml
+[commands.docs-refs]
+desc = "ADRs governing a source path"
+steps = ["docs-refs"]
+group = 2
+
+[actions.docs-refs]
+kind = "shell-passthrough"
+run = "python3 ~/.claude/tools/docs-refs.py"
+```
+
+Then `admin check`. `admin docs-refs src/checkout/` lists the governing ADRs; `admin docs-refs` dumps the full map. Don't add `applies-to` to existing ADRs proactively — it's opt-in per decision when one is genuinely path-scoped.
+
 ## docs/PRD.md
 
 - **Missing** → write the thin stub below. Offer to populate via `/docs` Phase 05 if there's substantive conversation context.
