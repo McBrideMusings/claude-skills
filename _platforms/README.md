@@ -43,6 +43,10 @@ tests, and a **project-local** `verify` skill (which built-in `verify` bootstrap
 
 ## Attribution
 
-The `apple/` column is adapted from [MengTo/Skills](https://github.com/MengTo/Skills)
-(`swiftui-pro` by Paul Hudson, `swiftui-debugging`, `performance-profiling`) — see that repo's
-LICENSE. `apple/profiling/*.md` are copied verbatim from its `performance-profiling/references/`.
+Adapted from [MengTo/Skills](https://github.com/MengTo/Skills) — see that repo's LICENSE:
+- `apple/` — `swiftui-pro` (Paul Hudson), `swiftui-debugging`, `performance-profiling`.
+  `apple/profiling/*.md` copied verbatim from its `performance-profiling/references/`.
+- `web/profiling.md` (+ `web/profiling/browser-profiling.md`) — `optimize-web-animations`.
+
+Columns are filled as real work in a stack appears, not pre-built. Current state: `apple` has all
+four cells; `web` has `profiling` + `testing` (review/diagnose backfill when needed).
