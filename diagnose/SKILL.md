@@ -55,6 +55,8 @@ Tool preference:
 
 **Platform axis.** Detect the platform via [`../_platforms/_detect.md`](../_platforms/_detect.md). If `../_platforms/<platform>/diagnose.md` exists, read it for what to instrument and how to read it on this stack (e.g. SwiftUI `_printChanges`, view-identity vs re-evaluation). On the perf branch, also read `../_platforms/<platform>/profiling.md` for the profiler catalog — the same file the `profiling` skill uses. No axis for the platform → instrument with the stack's native tools as usual.
 
+**Domain axis.** Also detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md). If `../_domains/<domain>/diagnose.md` exists (e.g. `game`), read it **on top of** the platform axis for mode-specific failure modes — nondeterministic update order, input latency, collision/physics glitches, state-machine bugs. Overlay, not replacement: apply both.
+
 ## Phase 05 — Fix + Regression Test
 
 Write the regression test **before the fix** — but only if there's a **correct seam**.

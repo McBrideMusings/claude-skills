@@ -18,6 +18,10 @@ the platform axis: detect the platform via `_platforms/_detect.md`, then read
 `_platforms/<platform>/profiling.md` if it exists. With no axis, run the loop with whatever profiler
 the stack provides.
 
+If a **domain** is in scope too (detect via `_domains/_detect.md` — e.g. a `game`), read
+`_domains/<domain>/profiling.md` **on top of** the platform axis. The domain file sets the target the
+work must hit (e.g. a 16.6 ms game frame budget); the platform profiler supplies the raw numbers.
+
 ## Phase 01 — Pick the metric and the workload
 
 - Name the resource that matters (main-thread time? peak memory? cold-launch ms? energy?). One at a

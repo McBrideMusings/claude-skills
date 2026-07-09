@@ -49,4 +49,11 @@ Adapted from [MengTo/Skills](https://github.com/MengTo/Skills) — see that repo
 - `web/profiling.md` (+ `web/profiling/browser-profiling.md`) — `optimize-web-animations`.
 
 Columns are filled as real work in a stack appears, not pre-built. Current state: `apple` has all
-four cells; `web` has `profiling` + `testing` (review/diagnose backfill when needed).
+four cells; `web` has `profiling` + `testing`; `threejs` has all four cells (WebGL stack only —
+game knowledge lives in the domain store). review/diagnose backfill for `web` when needed.
+
+## Domain overlay
+
+A parallel store, [`../_domains/`](../_domains/README.md), holds **domain × engine** knowledge — a
+*mode* of development (e.g. `game`) rather than a stack. Engines read the platform axis first, then
+layer the domain axis on top when a domain marker is in scope. See `_domains/_detect.md`.

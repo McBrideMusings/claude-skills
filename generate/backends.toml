@@ -1,0 +1,46 @@
+# generate engine — backend preference per asset-type.
+#
+# The `generate` engine walks each list in order, health-gates every candidate
+# (is its key present? is the local comfy ComfyUI instance reachable with a
+# working GPU?), and uses the FIRST that passes — falling through to the next,
+# or reporting "no working backend" if none do. It never fabricates output.
+#
+# Edit an order to change which backend generate prefers for that asset kind.
+# comfy is the local/free option; the rest are paid cloud services.
+
+[image]
+backends = ["comfy", "gemini"]
+
+[texture]
+backends = ["comfy", "gemini"]
+
+[model]
+backends = ["tripo"]
+
+[music]
+backends = ["comfy", "elevenlabs"]
+
+[sfx]
+backends = ["comfy", "elevenlabs"]
+
+[dialogue]
+backends = ["elevenlabs"]
+
+# --- provider registry: how the engine health-gates each backend ---
+
+[providers.comfy]
+kind = "local"
+health = "comfy ComfyUI plugin reachable AND a working local GPU"
+driver = "comfy plugin generate_image / generate_audio MCP tools"
+
+[providers.gemini]
+kind = "cloud"
+env = "GEMINI_API_KEY or GOOGLE_API_KEY"
+
+[providers.tripo]
+kind = "cloud"
+env = "TRIPO_API_KEY"
+
+[providers.elevenlabs]
+kind = "cloud"
+env = "ELEVENLABS_API_KEY"

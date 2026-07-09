@@ -86,6 +86,8 @@ Plus one always-on, **non-scored** sub-agent that does not live in `axes/` (it p
 
 Plus one **conditional platform lens.** Detect the platform of the files in scope using [`../_platforms/_detect.md`](../_platforms/_detect.md). If `../_platforms/<platform>/review.md` exists, launch one additional Sonnet sub-agent with that file's content as its brief (plus the same forwarded writing-style rules + `IS_DRAFT` + diff scope). It emits scored, axis-tagged findings like any other lens — its axis tag is the platform name (e.g. `apple`). If no such file exists, skip it silently. This is how platform-specific review knowledge (SwiftUI idioms, etc.) enters review without living inside this skill or bloating every non-matching diff.
 
+Plus one **conditional domain lens**, the same mechanism one level up. Detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md); if `../_domains/<domain>/review.md` exists (e.g. `game`), launch another Sonnet sub-agent with it as brief, layered **on top of** the platform lens — its axis tag is the domain name (e.g. `game`). Skip silently if absent. This carries mode-specific review knowledge (game-feel, readability scorecard) into review the same way, without coupling it to any one platform.
+
 ### Phase 04b — Verify best-practice flags against live docs
 
 The **best-practice** lens produces *flags*, not findings — it has no doc access. Run this phase only when that lens ran (it's gated) and returned at least one flag; otherwise skip straight to Phase 05. For each flag:
@@ -212,6 +214,7 @@ Every issue is tagged `[<axis>(/<subtype>) · <severity>]` — axis (with an opt
 - `negative-space` — from the Negative-space lens (an unmet obligation the diff creates: un-updated caller, unhandled failure path, missing test/validation/observability, unflagged breaking change or migration). Always a design call — surface, never auto-fix; bounded to obligations the diff itself creates. Use **Fix (design call):** framing.
 - `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.
 - `<platform>` (e.g. `apple`) — from the conditional platform lens (Phase 04), when the diff's platform has a `_platforms/<platform>/review.md`. Platform-idiom findings with a concrete cost (deprecation, correctness, accessibility, perf). Scored like any other axis; group under a `### <Platform>` section.
+- `<domain>` (e.g. `game`) — from the conditional domain lens (Phase 04), when a domain marker is in scope and `_domains/<domain>/review.md` exists. Mode-specific findings (game-feel, readability, difficulty) with a concrete cost. Scored like any other axis; group under a `### <Domain>` section.
 
 Severity: `low` / `medium` / `high`, derived from the confidence score (75–84 → `low`/`medium`, 85–94 → `medium`/`high`, 95+ → `high`), weighted by impact. No leading emphasis, emoji, or badge — the tag carries it.
 
