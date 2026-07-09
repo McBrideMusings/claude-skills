@@ -1,6 +1,6 @@
 ---
-name: grounded-research
-description: "Citation-based research: quote sources, admit uncertainty. Use for lookups, fact-checks, factual questions. Not for code, brainstorming, or opinion."
+name: research
+description: "Citation-based research: quote sources, admit uncertainty, cite every claim. Use for lookups, fact-checks, factual questions — 'research X', 'look this up', 'is it true that'. Not for code, brainstorming, or opinion."
 user_invocable: true
 ---
 

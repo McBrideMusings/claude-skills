@@ -12,6 +12,7 @@ The review engine — what runs against a **single target** (a working tree, a b
 - **Uncommitted changes** (default when working tree dirty): review unstaged + staged.
 - **Branch changes** (default when working tree clean): review the final-state diff of the current branch vs its base (main / master) — i.e. `git diff <merge-base>...HEAD`. This is *what would land if the branch merged right now*, not a commit-by-commit walkthrough.
 - **Fixed-point** (when argument passed): review HEAD vs the argument — a commit SHA, branch name, tag, `HEAD~N`, `origin/main`, etc.
+- **Repo mode** (explicit `review repo`, or offered when there's no diff to review): review the **whole codebase** as it stands on the current branch — not a diff. Heavy by design: gating is off, so *every* lens (including `security` and `best-practice`) runs across the full tree. Always confirm before starting — see Phase 01r.
 
 **Do not offer the user a menu of narrower scopes** ("last 5 commits", "last 10 commits") just because the diff looks large. The point of a branch review is the merged-in surface area — review it. If the diff is genuinely too large to fit in one pass, *say so* and ask whether to slice by path/subdir, not by commit count. Any such ask is a plain-chat question — never the `AskUserQuestion` tool / structured-question schema.
 
@@ -19,12 +20,22 @@ The review engine — what runs against a **single target** (a working tree, a b
 
 ### Phase 01 — Determine What to Review
 
-- If invoked with an argument (e.g. `review HEAD~3`, `review v1.2.3`, `review feature-branch`), use it as the fixed point. Diff is `git diff <fixed-point>...HEAD` (three-dot — comparison against merge-base). Commit list: `git log <fixed-point>..HEAD --oneline`.
+- If invoked as **`review repo`** (the literal `repo` token as the argument), skip all diff logic and go to **Phase 01r — Repo mode** below. Do not treat `repo` as a fixed point.
+- If invoked with any other argument (e.g. `review HEAD~3`, `review v1.2.3`, `review feature-branch`), use it as the fixed point. Diff is `git diff <fixed-point>...HEAD` (three-dot — comparison against merge-base). Commit list: `git log <fixed-point>..HEAD --oneline`.
 - Else if there are uncommitted changes (unstaged or staged): review those via `git status` + `git diff`.
 - Else if working tree is clean: find the base branch (`main` / `master`), compute `git merge-base HEAD origin/main`, then diff and log against that.
-- If no changes anywhere: say so and stop.
+- If no changes anywhere (clean tree, up to date with base — nothing to diff): **offer Repo mode instead of stopping.** Ask in plain chat — *"Nothing to review as a diff — run a full-repo review? It's heavy: every axis across the whole tree."* On an explicit yes, go to **Phase 01r**; otherwise say there's nothing to review and stop. **Never auto-run the full scan** — it always waits on a yes.
 
-**Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched eight parallel sub-agents.
+**Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched nine parallel sub-agents.
+
+### Phase 01r — Repo mode
+
+Reached only via explicit `review repo` or an accepted offer above. The target is the **whole codebase on the current branch**, reviewed as it stands — there is no diff.
+
+- **Scope** = all tracked files: `git ls-files`. If the tree is large enough that one pass can't hold it, **don't silently sample** — say so and offer to scope by path/subdir (`review repo <path>`), per the no-narrower-menu rule's "genuinely too large" carve-out. A path argument after `repo` narrows scope to that subtree.
+- **Gating is off.** Every scored lens runs, including the normally-gated `security` and `best-practice` lenses — forward "repo mode: gating disabled, review the code as it stands (not a diff)" into each Phase 04 sub-agent so they read whole files rather than hunting for changed lines. `best-practice` still routes its flags through Phase 04b verification.
+- **History/blame lens** still works (it reads `git blame`/`log` on the files in scope). The **Spec** lens has no single diff to check against — point it at the repo's PRD/spec from Phase 03 and let it report drift, or skip if there's no spec.
+- Everything downstream (Phase 05 scoring, Phase 06 filter, Phase 07 report) is unchanged. Expect a larger report; the ≥75 filter still applies.
 
 ### Phase 02 — Find CLAUDE.md Context
 
@@ -61,6 +72,7 @@ Scored lenses — each its own file in `axes/`:
 
 - [`axes/standards.md`](axes/standards.md) — CLAUDE.md compliance
 - [`axes/bug.md`](axes/bug.md) — bug scan
+- [`axes/security.md`](axes/security.md) — security vulnerabilities (**gated** — runs only when the diff touches security-relevant surface: auth, crypto, input parsing, query construction, shell/subprocess, deserialization, file I/O, network/SSRF, or dependency changes; **always on in repo mode**)
 - [`axes/history.md`](axes/history.md) — historical context (reads `git blame`)
 - [`axes/contracts.md`](axes/contracts.md) — code comments & contracts
 - [`axes/architecture.md`](axes/architecture.md) — architecture fit
@@ -85,7 +97,7 @@ The **best-practice** lens produces *flags*, not findings — it has no doc acce
 
 ### Phase 05 — Score Every Issue
 
-For each issue from any of the eight scored lenses (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
+For each issue from any of the nine scored lenses (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
 
 ### Phase 06 — Filter
 
@@ -158,7 +170,7 @@ Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord b
 
 - **The top line is the summary sentence.** Nothing — no header, no metadata — sits above it.
 - **`## Issues (N found)`** — N is the total across all axes. Draft "Outstanding work" gaps are *not* counted in N.
-- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Best-practice`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
+- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Security`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Best-practice`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
 - **Numbering is continuous across sections** — 1…N down the whole report, never restarting at 1 per axis. (Above: Spec is 1, Bugs are 2–3, Architecture are 4–5, Contracts is 6.)
 - **Small lists may stay flat.** When N is small (≈≤4) and the findings cluster in one or two axes, a single flat ordered list with no `### Axis` headers is fine. Numbering is 1…N either way.
 - **Never include a "Dismissed", "Considered and dismissed", or "Dismissed during reconciliation" section** — in any form. Findings that don't survive scoring are simply absent. The report is the surviving issues and nothing else.
