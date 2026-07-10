@@ -95,29 +95,29 @@ Default to the smallest sketch that lets the user say yes/no. Six labelled frame
 
 ### Output 02 — Sibling .monojson Stub on Disk
 
-Write an empty Monodraw canvas to `<repo-root>/tmp/claude/design-sketches/<YYYY-MM-DD>-<HHMM>-<slug>.monojson` and print the path in chat so the user can click it in Ghostty to open Monodraw.
+Write an empty Monodraw canvas to `<repo-root>/tmp/claude/sketches/<YYYY-MM-DD>-<HHMM>-<slug>.monojson` and print the path in chat so the user can click it in Ghostty to open Monodraw.
 
 **Slug rules:**
 - kebab-case
 - max 40 characters
 - describes the design topic, not the file purpose (e.g. `conflict-modal-action-column`, not `sketch-1`)
 
-**Example path:** `<repo-root>/tmp/claude/design-sketches/2026-05-05-1430-conflict-modal.monojson`
+**Example path:** `<repo-root>/tmp/claude/sketches/2026-05-05-1430-conflict-modal.monojson`
 
-> **⛔ RESOLVE `<repo-root>` TO AN ABSOLUTE PATH — NEVER A CWD-RELATIVE `tmp/…`.** The Bash tool's working directory is NOT guaranteed to be the repo root — an earlier `cd` may have left it in a subdirectory (`apps/foo`, `packages/bar`). A bare `tmp/claude/design-sketches/…` therefore drops the stub under whatever subdir the shell happens to be in, NOT the repo root, and the user won't find it where you told them.
+> **⛔ RESOLVE `<repo-root>` TO AN ABSOLUTE PATH — NEVER A CWD-RELATIVE `tmp/…`.** The Bash tool's working directory is NOT guaranteed to be the repo root — an earlier `cd` may have left it in a subdirectory (`apps/foo`, `packages/bar`). A bare `tmp/claude/sketches/…` therefore drops the stub under whatever subdir the shell happens to be in, NOT the repo root, and the user won't find it where you told them.
 >
 > Resolve it in ITS OWN Bash call and reuse the absolute result verbatim:
 > ```bash
 > git rev-parse --show-toplevel   # → the absolute repo root; if it errors/empty (not a git repo), use the absolute output of `pwd` instead
 > ```
-> Every `mkdir`, `cp`, `Write`, and printed path below MUST be the absolute `<repo-root>/tmp/claude/design-sketches/…` from that result. If a path you're about to pass to Bash does not begin with `/`, STOP — it's the bug.
+> Every `mkdir`, `cp`, `Write`, and printed path below MUST be the absolute `<repo-root>/tmp/claude/sketches/…` from that result. If a path you're about to pass to Bash does not begin with `/`, STOP — it's the bug.
 
 **How to create the stub:** (substitute the absolute `<repo-root>` you resolved above — every path here is absolute, none is relative to the current directory)
 
 ```bash
-mkdir -p <repo-root>/tmp/claude/design-sketches
+mkdir -p <repo-root>/tmp/claude/sketches
 cp ~/.claude/skills/design/seed.monojson \
-   <repo-root>/tmp/claude/design-sketches/$(date +%Y-%m-%d-%H%M)-<slug>.monojson
+   <repo-root>/tmp/claude/sketches/$(date +%Y-%m-%d-%H%M)-<slug>.monojson
 ```
 
 Use the actual slug, not the placeholder. The seed is a valid empty canvas; the user draws into it.
@@ -127,7 +127,7 @@ Use the actual slug, not the placeholder. The seed is a valid empty canvas; the 
 After writing the stub, print one line in chat with the full absolute path so it's clickable in Ghostty. The path MUST be the last token on its line with **no trailing punctuation** (`.`, `,`, `)`, etc.) — Ghostty grabs the contiguous run under the cursor and a trailing character breaks the open:
 
 ```
-Stub: <repo-root>/tmp/claude/design-sketches/2026-05-05-1430-conflict-modal.monojson
+Stub: <repo-root>/tmp/claude/sketches/2026-05-05-1430-conflict-modal.monojson
 ```
 
 In a follow-up sentence (not on the same line as the path), tell the user they can ⌘-click that path in Ghostty to open it in Monodraw, draw an alternative, save, and let you know.
@@ -150,20 +150,20 @@ The `.monojson` stub does NOT go into the plan — only the ASCII rendering. Ref
 
 Before writing each new stub, prune the directory:
 
-1. List `<repo-root>/tmp/claude/design-sketches/*.monojson`
+1. List `<repo-root>/tmp/claude/sketches/*.monojson`
 2. Delete any file whose `<YYYY-MM-DD>` prefix is more than 30 days before today
 3. If the directory still has more than 50 `.monojson` files, delete oldest until 50 remain (sort by filename, which is chronologically ordered)
 
 A single `find` invocation handles the date-based prune:
 
 ```bash
-find <repo-root>/tmp/claude/design-sketches -name "*.monojson" -mtime +30 -delete
+find <repo-root>/tmp/claude/sketches -name "*.monojson" -mtime +30 -delete
 ```
 
 For the count cap, list and trim:
 
 ```bash
-ls -1t <repo-root>/tmp/claude/design-sketches/*.monojson 2>/dev/null | tail -n +51 | xargs rm -f
+ls -1t <repo-root>/tmp/claude/sketches/*.monojson 2>/dev/null | tail -n +51 | xargs rm -f
 ```
 
 Run both before writing the new stub. Don't announce the cleanup unless something unusual happened.
