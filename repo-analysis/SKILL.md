@@ -1,11 +1,13 @@
 ---
-name: cross-repo-analysis
-description: Compare a specific subsystem in the user's repo against one or more reference repos (open source projects, similar tools, alternative implementations) to find smarter approaches, likely bugs revealed by the diff, and features worth porting. Use whenever the user points at another project as a reference and asks what they do differently, says "their X is better than ours", asks if a feature is worth porting, troubleshoots a flaky feature and references another project that implements it cleanly, asks "what do they do that we don't", or wants to mine techniques from prior art. Filters differences of UX, interface, and project scope so suggestions stay portable. Also use when the user pastes a github url alongside a question about their own code's behavior.
+name: repo-analysis
+description: Compare a subsystem in the user's repo against one or more reference repos (open source projects, similar tools, alternative implementations) to find smarter approaches, likely bugs revealed by the diff, and features worth porting. Use whenever the user points at another project as a reference and asks what they do differently, says "their X is better than ours", asks if a feature is worth porting, troubleshoots a flaky feature and references another project that implements it cleanly, asks "what do they do that we don't", or wants to mine techniques from prior art. Also harvests whole skills when the reference is a skills repo (a repo of SKILL.md files, following Anthropic's skill structure, little or no code) — "mine their skills", "harvest skills from X", "what skills should I take from this repo", "compare their skills to mine" — cataloguing their skills against yours and deciding what to copy, merge, or fold in as an axis. Filters differences of UX, interface, and project scope so suggestions stay portable. Also use when the user pastes a github url alongside a question about their own code's behavior.
 ---
 
-# Cross-Repo Analysis
+# Repo Analysis
 
 Compare a focused subsystem in the user's repo against one or more reference repos. Surface implementation differences that are worth acting on. Filter out differences that are about scope, UX, or project intent.
+
+**Two modes, one spine.** The default is **code mode** — the workflow below, comparing a code subsystem to a reference and porting implementation techniques. When the reference is a **skills repo** (a repo of `SKILL.md` files following Anthropic's skill structure, little or no code) the unit of harvest is a whole skill, not a technique — run **skills mode** instead (see "Skills mode" below). Detect it automatically: if the reference's payload is SKILL.md-structured skills rather than application code, it's skills mode. The user can also say so explicitly ("harvest their skills"). Everything after scope — acquire, sub-agent-per-reference, report, grill-me — is shared; skills mode only swaps the scope rule, the mapping, the buckets, and the terminal action.
 
 ## The core principle: implementation, not intent
 
@@ -40,15 +42,15 @@ For each reference:
 - If it's a URL, shallow clone to a scratch directory:
 
   ```bash
-  mkdir -p <repo-root>/tmp/claude/cross-repo-analysis
-  git clone --depth 1 <url> <repo-root>/tmp/claude/cross-repo-analysis/<name>
+  mkdir -p <repo-root>/tmp/claude/repo-analysis
+  git clone --depth 1 <url> <repo-root>/tmp/claude/repo-analysis/<name>
   ```
 - If it's a local path, use it directly. Don't copy.
 - For repos larger than ~500MB where only one subsystem matters, sparse-checkout:
 
   ```bash
-  git clone --depth 1 --filter=blob:none --sparse <url> <repo-root>/tmp/claude/cross-repo-analysis/<name>
-  git -C <repo-root>/tmp/claude/cross-repo-analysis/<name> sparse-checkout set <subdir>
+  git clone --depth 1 --filter=blob:none --sparse <url> <repo-root>/tmp/claude/repo-analysis/<name>
+  git -C <repo-root>/tmp/claude/repo-analysis/<name> sparse-checkout set <subdir>
   ```
 
 ### Phase 03 — Map subsystems
@@ -109,7 +111,7 @@ If a finding doesn't clearly fit one bucket, say so. Let the user decide.
 
 ### Phase 06 — Produce the report
 
-Write to `<root>/tmp/claude/cross-repo-analysis-<ref-name>.md`, where `<ref-name>` is a short slug naming the reference repo(s) — e.g. `cross-repo-analysis-cmux.md`, or `cross-repo-analysis-hlsjs-shaka.md` for multiple references. Never write to a bare `cross-repo-analysis.md`: each analysis gets its own file, so a later run against a different reference (or subsystem) never overwrites an earlier report. If the exact target filename already exists (a re-run against the same reference), overwrite it — same analysis, refreshed. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the report under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path below MUST be the absolute `<root>/tmp/claude/…` — if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` before writing. ALWAYS use this exact structure:
+Write to `<root>/tmp/claude/repo-analysis-<ref-name>.md`, where `<ref-name>` is a short slug naming the reference repo(s) — e.g. `repo-analysis-cmux.md`, or `repo-analysis-hlsjs-shaka.md` for multiple references. Never write to a bare `repo-analysis.md`: each analysis gets its own file, so a later run against a different reference (or subsystem) never overwrites an earlier report. If the exact target filename already exists (a re-run against the same reference), overwrite it — same analysis, refreshed. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the report under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path below MUST be the absolute `<root>/tmp/claude/…` — if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` before writing. ALWAYS use this exact structure:
 
 ```markdown
 # Cross-Repo Analysis: [user's subsystem] vs [reference(s)]
@@ -160,6 +162,30 @@ Always follow the report with a grill-me-style interview (the `grill-me` skill's
 3. **End with a confirmed slate.** Summarize the final list — new issues with one-line scopes, augmentation comments per existing issue — and get an explicit yes before creating anything. Issue bodies match the repo's existing issue conventions and cite the reference's file:line pattern sources; augmentation comments name the concrete code both sides.
 
 If the user declines the session ("just the report"), stop after Phase 07 — the interview is the default, not a gate.
+
+## Skills mode
+
+When the reference is a skills repo, the harvest unit is a whole **skill**, not a technique. Same spine — acquire, sub-agent-per-reference, report, grill-me — with four phase overrides.
+
+**Detect it:** the reference's payload is `SKILL.md`-structured skills (Anthropic's skill layout — a `skills/` tree of folders each holding a `SKILL.md` with `name`/`description` frontmatter), little or no application code. Auto-switch to skills mode, or take the user's explicit "harvest their skills".
+
+**Phase 01 scope — whole-catalog is fine here.** Code mode refuses whole-repo comparisons because diffing two codebases file-by-file is noise. Skills are the opposite: each is a coarse, self-describing unit with a `name` and `description`, so cataloguing all of theirs is cheap and high-signal. Scan the whole skills catalog. Narrow to a domain only when the repo is large (dozens of skills) and the user named an area. Still restate the locked scope in one sentence.
+
+**Phase 03 mapping — their skill → mine-or-gap.** For each of their skills, find your analog by capability, not name (their `to-prd` ↔ your `to-spec`). Each lands as **overlap** (you have one doing the same job — a comparison target) or **gap** (you have nothing — a copy/fold candidate). Read their `SKILL.md` descriptions first; open bodies only for skills that overlap or look worth taking.
+
+**Phase 05 buckets — incorporation decisions, not bug/feature.** Each of their skills goes in exactly one:
+
+- **Copy whole** — a gap, self-contained, fits your workflow. Take the skill as-is, adapting frontmatter and paths to your conventions.
+- **Merge into mine** — overlaps one of yours and does part of it better. Port the better part into your existing skill; do not add a second skill (that would be an alias by another name).
+- **Fold as axis** — their skill is one context of a process an engine of yours already runs (a platform, a domain, an asset type). Drop it into the matching `_axis/` directory as a new file, not a new skill. This is the **axis split**; mechanics live in `writing-skills`. (`_generate/` was folded in from `majidmanzarpour/threejs-game-skills` this way.)
+- **I have better** — you already do it as well or better. Note it, take nothing.
+- **Reject** — doesn't fit your workflow, or is scope/tooling-specific to their setup. One line each.
+
+Apply the portability filter as in code mode: "if I took this, would it fight what my skills are trying to be?" If yes, reject.
+
+**Phase 08 terminal — incorporate, don't file issues.** The grill-me session walks the report skill by skill; on a yes it writes into the skills repo — copy-whole creates the new skill folder, merge edits the existing skill, fold-as-axis adds the `_axis/` file and updates that engine's `README.md`. Confirm the full slate before writing anything, then make the edits. (Where code mode ends by filing GitHub issues, skills mode ends by changing the skills repo.)
+
+**Report** — same file target and structure as Phase 06, with the buckets above swapped in for the code-mode buckets.
 
 ## Things to avoid
 

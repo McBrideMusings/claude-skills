@@ -1,6 +1,6 @@
-# Cross-Repo Analysis — Examples
+# Repo Analysis — Examples
 
-Concrete examples of what a useful finding looks like vs what gets rejected.
+Concrete examples of what a useful finding looks like vs what gets rejected. Examples 1–3 are code mode; Example 4 is skills mode.
 
 ## Example 1 — Bug hunting
 
@@ -39,3 +39,25 @@ Locked scope: ours `app/middleware/rate_limit.py` vs envoy `source/common/common
 **Useful finding:**
 
 > Envoy refills the bucket lazily based on elapsed wall-time at consume-time (`token_bucket_impl.cc:54`). We refill on a fixed-interval timer (`rate_limit.py:71`). Under burst load between ticks, our bucket reports stale fill state, so allowed = max instead of allowed = max - bursts_in_window. Lazy refill is straightforward to port despite the language difference.
+
+## Example 4 — Skills harvest (skills mode)
+
+> **User:** "Harvest mattpocock's skills repo — what should I take?"
+
+Reference is SKILL.md-structured, no app code → skills mode. Whole-catalog scan (not a subsystem). Mapping their skills to the user's by capability:
+
+**Copy whole:**
+
+> Their `domain-modeling` skill is a gap — nothing in the user's catalog does it. Self-contained, no repo-specific tooling. Copy the folder, adapt the frontmatter to the user's `name`/`description` conventions.
+
+**Merge into mine:**
+
+> Their `to-prd` overlaps the user's `to-spec`, but their "one open question per section, flagged inline" step is sharper than the user's batch-at-end questions. Port that step into `to-spec`; do not add a second skill.
+
+**Fold as axis:**
+
+> `majidmanzarpour/threejs-game-skills` carries a per-asset-type generation skill per type. The user's `generate` engine already runs that process — fold each type in as a file under `_generate/` (the axis split), not as new skills. (This is how `_generate/` was built.)
+
+**Rejected:**
+
+> Their `setup-matt-pocock-skills` bootstraps *their* repo layout on a new machine — tooling-specific to their setup, no analog worth porting.

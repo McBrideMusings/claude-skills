@@ -1,6 +1,6 @@
 # Glossary — Building Great Skills
 
-The domain model for what makes a skill great. A skill exists to wrangle determinism out of a stochastic system; the root virtue is **Predictability**, and every term below is a lever on it. This is the disclosed reference for [`writing-great-skills`](SKILL.md).
+The domain model for what makes a skill great. A skill exists to wrangle determinism out of a stochastic system; the root virtue is **Predictability**, and every term below is a lever on it. This is the disclosed reference for [`writing-skills`](SKILL.md).
 
 The terms are grouped by axis: **Invocation** (how a skill is reached), **Information Hierarchy** (how its content is arranged), **Steering** (how the agent's runtime behaviour is shaped), and **Pruning** (how it is kept lean). Each **failure mode** lives beside the lever that cures it, tagged _failure mode_.
 
@@ -60,9 +60,15 @@ _Avoid_: dispatcher, menu, registry, index, router procedure
 
 ### Granularity
 
-How finely you divide skills. Finer division spends one of the two loads: more **model-invoked** skills spend **context load** (more descriptions crowding the window and competing for attention); more **user-invoked** skills spend **cognitive load** (more for the human to remember and reach for). Two cuts guide the division. By **invocation**, split off a model-invoked skill where you have a distinct **leading word** to trigger it — a trigger word you actually use in your prompts. By **sequence**, split a run of **steps** where a step's **post-completion steps** need hiding, since isolating it in its own context clears what follows. Beware the reverse: merging sequences exposes each step's post-completion steps to what follows, inviting premature completion.
+How finely you divide skills. Finer division spends one of the two loads: more **model-invoked** skills spend **context load** (more descriptions crowding the window and competing for attention); more **user-invoked** skills spend **cognitive load** (more for the human to remember and reach for). Three cuts guide the division. By **invocation**, split off a model-invoked skill where you have a distinct **leading word** to trigger it — a trigger word you actually use in your prompts. By **sequence**, split a run of **steps** where a step's **post-completion steps** need hiding, since isolating it in its own context clears what follows. Beware the reverse: merging sequences exposes each step's post-completion steps to what follows, inviting premature completion. By **axis** (the **axis split**), keep one skill and split its knowledge into per-context files instead — spends neither load.
 
 _Avoid_: chunking, modularity
+
+### Axis Split
+
+The third **granularity** cut: keep ONE skill and split its **reference** — not the skill — into per-context files an engine loads at run time. The root **steps** stay a single verb that holds the process once; each run it reads exactly the one axis file its context selects (`generate` reading `_generate/model.md` for a model request). The files sit in a sibling `_axis/` directory (`_generate/`, `_platforms/`, `_domains/`) whose leading `_` and missing **description**/**SKILL.md** keep it from registering as a skill — so it is **external reference** the engine dispatches over, not a **router skill** (which points a human at whole skills). Unlike the **invocation** and **sequence** cuts it spends neither load: no new description, no new name. It pays **indirection** instead — process and per-context knowledge in different files — so it earns its place only when the contexts are numerous or growing enough that inlining them would **sprawl** the root. Adding a context is dropping a file into `_axis/`; a skill mined from another repo is **folded in** the same way.
+
+_Avoid_: engine split, dispatch split, plugin split, matrix
 
 ## Information Hierarchy
 

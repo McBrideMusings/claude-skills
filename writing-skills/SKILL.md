@@ -1,5 +1,5 @@
 ---
-name: writing-great-skills
+name: writing-skills
 description: Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable.
 disable-model-invocation: true
 ---
@@ -45,10 +45,11 @@ Where the ladder decides _how far down_ a piece sits, **co-location** decides _w
 
 ## When to split
 
-**Granularity** is how finely you divide skills, and each cut spends one of the two loads, so split only when the cut earns it. Two cuts:
+**Granularity** is how finely you divide skills, and the first two cuts each spend one of the two loads, so split only when the cut earns it. Three cuts:
 
 - **By invocation** — split off a **model-invoked** skill when you have a distinct **leading word** that should trigger it on its own, or another skill must reach it. You pay **context load** for the new always-loaded **description**, so that independent reach has to be worth it.
 - **By sequence** — split a run of **steps** when the steps still ahead (a step's **post-completion steps**) tempt the agent to rush the one in front of it (**premature completion**). Keeping them out of view encourages the agent to do more **legwork** on the current task.
+- **By axis** — the **axis split**. Keep ONE skill and split its _knowledge_, not the skill, into per-context files an engine reads at run time. The root **SKILL.md** stays a verb (`generate`, and the split platform/domain engines): it holds the how-to once and, per run, loads exactly the one axis file the context selects. The files live in a sibling `_axis/` directory (`_generate/`, `_platforms/`, `_domains/`) whose leading `_` and absent `SKILL.md` keep it from registering as its own skill. Reach for it when a skill does the same _process_ across many contexts (asset types, target platforms, knowledge domains) and only the reference differs per context — one engine, N thin axis files, each a `README.md`-documented set the engine dispatches over. Spends neither load: no new **description** (still one skill) and nothing for the human to remember (still one name). The cost it pays is indirection — the how-to and the per-context knowledge sit in different files — so it earns its place only when the contexts are numerous or growing enough that inlining them all would **sprawl** the root. Adding a context is then dropping one file into `_axis/`, which is also how a mined skill gets **folded in** (see `repo-analysis`).
 
 ## Pruning
 
