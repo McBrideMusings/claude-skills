@@ -81,9 +81,10 @@ Resolve the mode once, here, and carry it into item-resolution (Phase 0) and the
 
 implement discovers **one** item to work, in this order. Stop at the first that resolves:
 
-1. **Explicit argument.** If the arguments contain a bare issue number (e.g. `/implement 1118`) or an issue reference, that issue **is** the work item. Confirm it exists (`gh issue view <n> --json number,title,state`); if it's closed or missing, halt and say so. Skip triage entirely — the user named the target.
-2. **Branch-name context.** Otherwise, inspect the current branch name for an embedded issue number (e.g. `fix/1118-login`, `1118-foo`, `issue-1118`). If one is present and matches an open GitHub issue, that issue is the work item. Skip triage.
-3. **Triage.** Only if neither above resolves, invoke the `triage` skill via the Skill tool to discover the item — with these overrides:
+1. **Explicit item text (passed by `/iterate`).** If the arguments contain an `item:"…"` token, that text **is** the work item — a local followup or papercut that has no issue number. An optional `source:"…"` token records where it came from (e.g. `followups.md`, `papercuts.md`, a `file:line`). Skip triage entirely; the caller already chose the item. This branch exists so `/iterate` can freeze a scoped queue of local items and feed them one at a time. **Still run the Phase 0.5 AFK-ability gate on the text** — a vague local item must fail the gate and be handled per pass mode, exactly like a triage pick, never guessed.
+2. **Explicit argument.** If the arguments contain a bare issue number (e.g. `/implement 1118`) or an issue reference, that issue **is** the work item. Confirm it exists (`gh issue view <n> --json number,title,state`); if it's closed or missing, halt and say so. Skip triage entirely — the user named the target.
+3. **Branch-name context.** Otherwise, inspect the current branch name for an embedded issue number (e.g. `fix/1118-login`, `1118-foo`, `issue-1118`). If one is present and matches an open GitHub issue, that issue is the work item. Skip triage.
+4. **Triage.** Only if none of the above resolve, invoke the `triage` skill via the Skill tool to discover the item — with these overrides:
    - **Standalone pass:** run triage **interactively** — let it recommend and ask the user which one item to work. Work exactly the one they pick, then this pass is done.
    - **Continuous pass:** run triage **non-interactively** — skip the "wait for user confirmation" step at triage Step 7 and proceed with the top recommendation. (`/iterate` supplies the fresh backlog each iteration; a single continuous pass still works exactly one item.)
    - **Skip triage's Step 9 (offer wrap-up).** implement runs wrap-up itself in Phase 2; don't let triage invoke it or it will double-commit.
@@ -97,7 +98,7 @@ Whichever branch resolved it, implement now has exactly **one** item. Proceed to
 
 ## Phase 0.5 — AFK-ability self-assessment (the gate)
 
-Before writing any code, judge whether the resolved item is actually walk-away work. implement is built to run unwatched with minimal prompts, and it assumes the item is objective enough to finish without a human judgment call. That assumption is untested until this gate tests it. Run this on **every** resolved item — a named issue (`implement 1118`), a branch-context match, or a triage pick — because any of them can be underspecified.
+Before writing any code, judge whether the resolved item is actually walk-away work. implement is built to run unwatched with minimal prompts, and it assumes the item is objective enough to finish without a human judgment call. That assumption is untested until this gate tests it. Run this on **every** resolved item — a named issue (`implement 1118`), an `item:"…"` local item from `/iterate`, a branch-context match, or a triage pick — because any of them can be underspecified.
 
 Judge the item on two tests:
 
