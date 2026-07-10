@@ -12,6 +12,7 @@ Explain something so the user *gets it* — a subsystem in this repo, or a world
 Most of the time, just explain it well in the conversation. No file. Hold every explanation to:
 
 - **Ground it, don't guess.** Pull from what you've actually read (B-mode: real files) or from high-trust sources (A-mode), not parametric vibes. Cite as you go — `file:line` for code, a named source for world knowledge. If a specific fact is shaky, say so rather than invent it.
+- **Check the shared knowledge stores.** If the topic maps to a platform (`_platforms/<p>/`) or a mode of development (`_domains/<d>/`) this account already carries curated knowledge for — an Apple/web/three.js stack, game or UI design — read the relevant cell (e.g. `_domains/ui/design.md`, `_platforms/apple/review.md`) and use it as grounding context before explaining. Prefer it over parametric memory; it's the account's vetted take.
 - **One thing, low load.** Explain the single thing asked, scoped tight. Difficulty is the enemy of understanding — it eats the working memory the user needs to follow you. Strip everything not required to get *this* across.
 - **Calibrate to the listener.** Infer what they already know from the conversation and meet them just past it. An `eli5` gets an analogy anchor; a senior asking about a race condition gets the mechanism. Don't over- or under-shoot.
 - **Point to one primary source** to go deeper — the single most high-trust file, doc, paper, or talk on the topic. One good pointer beats five.
@@ -67,7 +68,7 @@ When unsure, default to **Process** for "how does X work" and **Architecture** f
 
 ### 2. Gather (B-mode)
 
-Explore as far as needed to actually understand — read the real files, follow the callers, use `docs/CONTEXT.md` vocabulary if it exists. Quality of the explainer is capped by how well you understood the code. Do not start rendering until the mechanism is clear and every claim you plan to make is backed by a file you've read. A-mode: synthesize from knowledge; if a specific fact is shaky, flag it rather than invent it.
+Explore as far as needed to actually understand — read the real files, follow the callers, use `docs/CONTEXT.md` vocabulary if it exists. Quality of the explainer is capped by how well you understood the code. Do not start rendering until the mechanism is clear and every claim you plan to make is backed by a file you've read. A-mode: synthesize from knowledge; if a specific fact is shaky, flag it rather than invent it. If the topic maps to a `_platforms/<p>/` or `_domains/<d>/` cell (see the store-consult bullet in Tier 1), read it too.
 
 ### 3. Infer the knobs
 

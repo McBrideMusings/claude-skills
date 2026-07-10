@@ -1,28 +1,62 @@
 ---
-name: design-sketch
-description: "ASCII art UI sketches + .monojson Monodraw stub. Use for any UI/layout decision or layout code changes (flexbox, grid, modals, dialogs). Triggers: \"sketch this\", \"design this\", \"lay this out\", \"/design-sketch\"."
+name: design
+description: "Design-time front door for UI/interface work — the planning orchestrator over the `_domains/ui/` knowledge store. Its lowest-fidelity mode is an ASCII layout sketch (+ .monojson Monodraw stub), the first thing to reach for on any layout decision; broader questions layer in the UI critique lenses (motion purpose, frequency, fluid-interaction, typography, Apple's principles) and the reverse motion-term glossary. Use for any UI/layout decision or layout code change (flexbox, grid, modals, dialogs), or when deciding whether/how something should animate, or naming a motion effect. Triggers: \"sketch this\", \"design this\", \"lay this out\", \"what's it called when…\" (motion term), \"/design\"."
 ---
 
-# design-sketch
+# design
 
-The default medium for UI design discussions in this account. Use ASCII art in chat to communicate layout decisions; emit a sibling empty Monodraw stub on disk so the user can draw an alternative visually if the ASCII proposal isn't quite right.
+The design-time front door for interface work. Parallel to `game-dev` (which orchestrates over
+`_domains/game/`), this skill orchestrates over the **`_domains/ui/`** knowledge store — it does the
+*planning and sketching*, and leans on the store for critique lenses and motion vocabulary. It does
+**not** review, test, or verify code — those are the engines (`review`, `tdd`, `verify`, `diagnose`),
+which gain UI competence on their own by reading `_domains/ui/` and `_platforms/{web,apple}/` when the
+`ui` domain is in scope. Don't reimplement them here.
 
-## When to Use
+## The one hard rule — never judge feel
 
-- The user describes a UI change, layout, modal, panel, dialog, form, or component
-- A plan file is being written and design decisions came up in conversation
-- The user explicitly says "sketch this", "design this", "lay this out", or invokes `/design-sketch`
-- A code change is touching layout-relevant code (CSS grid, flexbox, modal markup, dialog components)
+Design work is where the temptation to call something "clean", "intuitive", "usable", or "feels right"
+is strongest. Do not. Name a layout's or a motion's **structure** and its concrete tradeoffs, and let
+the user decide — this mirrors the contract in `_domains/ui/design.md` and the global subjective-ban.
 
-## When NOT to Use
+## Modes
 
-- The work is pure logic, backend, or data — no UI surface
-- A bug fix that doesn't change layout
-- Documentation of non-visual things (APIs, data models, etc.)
+- **`sketch` (default, lowest fidelity, first reach)** — an ASCII layout in chat + an empty `.monojson`
+  stub on disk. The fastest way to get a layout in front of the user and a yes/no back. Reach for it
+  first on any layout question. Procedure below.
+- **Design lenses** — when the decision is *should this animate*, *how should this gesture feel*, *which
+  principle does this serve* (motion/interaction/craft, not pure layout): load `_domains/ui/design.md`
+  and apply its lenses (frequency, motion purpose, fluid-interaction, typography, Apple's eight
+  principles, cohesion). Set the `ui` domain marker (`_domains/_detect.md`) when a repo's work is
+  UI-centric, so the engines pick up the UI cells too.
+- **Naming a motion effect** — the user describes an effect loosely and wants the term ("the bouncy
+  thing when a popover opens"): answer from `_domains/ui/vocabulary.md`. Lead with the term; add a
+  competing alternate only if one genuinely applies. Naming, not building.
+
+## When NOT to use
+
+- Pure logic, backend, or data work — no UI surface.
+- A bug fix that doesn't change layout or motion.
+- Reviewing or testing UI *code* — that's the `review` / `tdd` / `verify` engines (they read the UI
+  cells themselves). This skill is the design-time decision, not the code pass.
+
+---
+
+# `sketch` mode
+
+The default medium for UI design discussions in this account. Use ASCII art in chat to communicate
+layout decisions; emit a sibling empty Monodraw stub on disk so the user can draw an alternative
+visually if the ASCII proposal isn't quite right.
+
+## When to reach for sketch
+
+- The user describes a UI change, layout, modal, panel, dialog, form, or component.
+- A plan file is being written and design decisions came up in conversation.
+- The user says "sketch this", "design this", "lay this out", or invokes `/design`.
+- A code change is touching layout-relevant code (CSS grid, flexbox, modal markup, dialog components).
 
 ## What to produce
 
-Every invocation produces **both**:
+Every sketch produces **both**:
 
 ### Output 01 — ASCII Sketch in Chat
 
@@ -41,7 +75,7 @@ Render the *part being decided*, not the whole app. A modal redesign shows the m
 
 ### Stay on layout — don't drift into implementation
 
-This skill is for layout decisions. It is NOT for implementation planning. After the sketch:
+Sketch mode is for layout decisions. It is NOT for implementation planning. After the sketch:
 
 - Do NOT explain how the change would be wired up (data flow, state machines, which function produces which value, what `Re-detect` should now do, etc.).
 - Do NOT enumerate visual-vocabulary tables, design-token catalogs, or row-priority lists *unless the user asked for that artifact specifically*. A sketch that needs a legend to be understood is a sketch that's trying to decide too much at once.
@@ -82,7 +116,7 @@ Write an empty Monodraw canvas to `<repo-root>/tmp/claude/design-sketches/<YYYY-
 
 ```bash
 mkdir -p <repo-root>/tmp/claude/design-sketches
-cp ~/.claude/skills/design-sketch/seed.monojson \
+cp ~/.claude/skills/design/seed.monojson \
    <repo-root>/tmp/claude/design-sketches/$(date +%Y-%m-%d-%H%M)-<slug>.monojson
 ```
 

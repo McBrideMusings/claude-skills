@@ -43,4 +43,10 @@ and tradeoffs — they never deliver a fun/good verdict.
 
 `game/` — all four engine cells + a `design.md` planning cell, seeded from
 majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to-end game builds over
-this store and sets the `game` marker on scaffold. Add domains as new kinds of software appear.
+this store and sets the `game` marker on scaffold.
+
+`ui/` — `design.md` (planning-time critique lenses) + `review.md` (motion/craft lens for the `review`
+engine) + `vocabulary.md` (a reference — the reverse motion-term glossary, read by `design` and
+`explain`, not an engine cell). Seeded from emilkowalski/skills. The `design` skill is the planning
+orchestrator over this store; the implementation-level values live in `_platforms/web/review.md` and
+`_platforms/apple/review.md`. Add domains as new kinds of software appear.

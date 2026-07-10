@@ -36,6 +36,19 @@ Adapted from MengTo/Skills `swiftui-pro` (Paul Hudson, MIT).
 - `ForEach` over unstable ids (`UUID()`, indices) → stable model identifiers.
 - Eager `VStack`/`HStack` in a `ScrollView` for large collections → `List` / `Lazy*` containers.
 
+**Motion / fluid interaction (Apple *Designing Fluid Interfaces*)**
+- Fixed-duration `.easeInOut`/`.linear` on a user-touchable element → a spring
+  (`.spring(duration:bounce:)`), which is interruptible and velocity-aware by construction.
+- Spring authored in raw physics (`stiffness`/`damping`/`mass`) where the designer-parameter form
+  `.spring(duration:bounce:)` is clearer — prefer it unless there's a reason for the physics triplet.
+- Bounce on motion that carried no momentum (a menu that just faded in) → `bounce: 0` (critically
+  damped) by default; reserve overshoot for gesture-driven motion (a flick, a drag release).
+- A drag that snaps to the nearest point from the *release* position instead of projecting momentum
+  forward → project the resting point from release velocity, then snap to the nearest target.
+- Feedback deferred to gesture end / touch-up instead of firing on touch-down and continuously through
+  the gesture.
+- `withAnimation` wrapping work that isn't the state change (side effects, expensive recompute).
+
 **Accessibility (Apple HIG)**
 - Icon-only `Button { Image(systemName:) }` → `Button("Label", systemImage:)` so VoiceOver reads it.
 - Missing Dynamic Type support (hardcoded font sizes that don't scale).

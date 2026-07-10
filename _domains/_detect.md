@@ -14,7 +14,8 @@ Resolve in order, stop at the first that answers:
    the marker, zero classification cost.
 3. **No marker → classify ONCE, then persist.** Read `README.md` + `CLAUDE.md`/`docs/CONTEXT.md`
    prose and infer the domain from plain language ("player", "levels", "score" → `game`). Write the
-   result to `.claude/domain` so this never runs again. If confidence is low, ask the user one
+   result to `.claude/domain` so this never runs again (prose like "player", "levels", "score" →
+   `game`; "component", "layout", "animation", "design system" → `ui`). If confidence is low, ask one
    plain-chat question before writing. Do **not** re-classify a repo that already has a marker.
 4. **No `_domains/<x>/` fits → offer to author a stub.** If classification lands on a domain with no
    store dir yet — or nothing fits — proactively offer to scaffold

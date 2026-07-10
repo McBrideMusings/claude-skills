@@ -48,9 +48,13 @@ Adapted from [MengTo/Skills](https://github.com/MengTo/Skills) — see that repo
   `apple/profiling/*.md` copied verbatim from its `performance-profiling/references/`.
 - `web/profiling.md` (+ `web/profiling/browser-profiling.md`) — `optimize-web-animations`.
 
+- `web/review.md` and `apple/review.md`'s motion block — emilkowalski/skills (`emil-design-eng`,
+  `apple-design`, `review-animations`). The platform-agnostic design principles behind them live in
+  `_domains/ui/`.
+
 Columns are filled as real work in a stack appears, not pre-built. Current state: `apple` has all
-four cells; `web` has `profiling` + `testing`; `threejs` has all four cells (WebGL stack only —
-game knowledge lives in the domain store). review/diagnose backfill for `web` when needed.
+four cells; `web` has `profiling` + `testing` + `review`; `threejs` has all four cells (WebGL stack
+only — game knowledge lives in the domain store). `web/diagnose` backfills when needed.
 
 ## Domain overlay
 
