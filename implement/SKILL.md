@@ -91,7 +91,31 @@ implement discovers **one** item to work, in this order. Stop at the first that 
    - **Handoff as top pick:** invoke `handoff` Resume mode to extract the "Immediate next step" and session context, then proceed with that as the work item. Delete the handoff file as part of Phase 2 wrap-up once fulfilled (no prompt).
    - **Empty queue:** if triage finds nothing actionable, print *"Nothing to iterate on."* and stop.
 
-Whichever branch resolved it, implement now has exactly **one** item. Proceed to Phase 1.
+Whichever branch resolved it, implement now has exactly **one** item. Proceed to Phase 0.5.
+
+---
+
+## Phase 0.5 — AFK-ability self-assessment (the gate)
+
+Before writing any code, judge whether the resolved item is actually walk-away work. implement is built to run unwatched with minimal prompts, and it assumes the item is objective enough to finish without a human judgment call. That assumption is untested until this gate tests it. Run this on **every** resolved item — a named issue (`implement 1118`), a branch-context match, or a triage pick — because any of them can be underspecified.
+
+Judge the item on two tests:
+
+1. **Plan test.** Can I state a concrete plan *right now* — the files to touch, the changes to make, and an objective acceptance check (which tests/commands prove it done)? If I can't name the files or can't name a check that would prove completion, I don't understand the problem well enough to work it unwatched.
+2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product, or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity I would have to *invent* an answer to in order to proceed? If yes, it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
+
+**Pass both → proceed to Phase 1.** (In the delegate flavor, the plan test *is* Phase 1-delegate step 1 — Claude writing the plan. The gate sits before the delegate branch: if Claude cannot write the plan, do not hand anything off.)
+
+**Fail either test → act by pass mode:**
+
+- **Standalone pass — resolve with the user, routed by which test failed:**
+  - **Plan test failed** (missing facts, unclear scope, don't-know-the-files): invoke `ask-questions-if-underspecified` via the Skill tool — targeted clarifying questions to fill the gaps.
+  - **Objectivity test failed** (a qualitative / product / design call the user owns): invoke `grill-me` via the Skill tool — the design interview that surfaces and records the decision.
+  - After the interview resolves, **re-run this gate once.** If it now passes, proceed to Phase 1. If it still fails, **halt** and surface the specific residual uncertainty — do not loop the interview a second time, and do not proceed anyway.
+
+- **Continuous pass — cannot prompt.** Do **not** attempt the item. File a follow-up (via the `followups` skill) titled `needs human input: <item> — <what's ambiguous>`, with a one-line note on which test failed and why, then **halt the iteration** and hand control back to `/iterate`. Never guess-and-commit an item that failed the gate.
+
+Only an item that passes both tests reaches Phase 1.
 
 ---
 
@@ -193,6 +217,7 @@ The pass stops and surfaces to the user when any of these fire:
 - An explicit-argument issue is closed or missing
 - Triage found nothing actionable (empty queue)
 - Triage's top pick is not an already-tracked item
+- Phase 0.5 gate failed and the interview couldn't resolve it (standalone), or the gate failed at all (continuous → filed follow-up + halt)
 - Implementation produced no diff
 - Tests fail and the cause isn't trivially fixable in 1–2 attempts
 - code-review surfaced a 75+ issue that auto-fix didn't resolve
