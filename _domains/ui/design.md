@@ -9,16 +9,18 @@ Sources: **Emil Kowalski's design engineering** (animations.dev) — Sonner/Vaul
 ***Principles of Great Design***. These are platform-agnostic design ideas; the CSS/SwiftUI that
 *implements* them lives in `_platforms/web/` and `_platforms/apple/`, not here.
 
-## The one hard rule — describe structure, never judge feel
+## The one rule — judge craft, always anchor to a concrete reason
 
-This cell names a design's *structure* and its concrete tradeoffs so **the human** decides. It must
-**never** claim something is fun, beautiful, usable, intuitive, "feels good/right", or "works better",
-and never rank options by any such quality. The source material is full of felt-quality language
-("feels responsive", "feels sluggish") — every instance is converted here to **what the thing
-objectively does + when the user perceives it**. Allowed: "`ease-in` delays visible movement to the
-end of the curve, and entry is the moment the user watches most — so the motion is perceived later."
-Banned: "`ease-in` feels bad." If a lens tempts a feel-verdict, restate it as a mechanism + a tradeoff
-and stop.
+Design craft is the carved exception to the global subjective-ban (see `~/.claude/CLAUDE.md`). This
+cell MAY rank designs and call craft quality: a layout is stronger, a palette is off, a motion is
+decoration, an interface reads as AI-slop. **The catch: every verdict is anchored to a concrete
+reason** — a named principle from these lenses, a specific slop tell from `slop.md`, or a measured
+value (contrast ratio, tracking, duration, a spacing value off the scale). Allowed: "`ease-in` delays
+visible movement to the end of the curve, and entry is the moment the user watches most — so it reads
+as sluggish; use `ease-out`." Also allowed: "Option B is stronger — its hierarchy uses size + weight +
+space together where A leans on size alone." Not allowed: a bare "B feels better" with no reason. The
+line that still holds: this covers *interface craft*, never whether a game is fun. If a lens tempts a
+verdict, give the verdict **and** its concrete reason — don't stop at the mechanism.
 
 ## Lens 1 — should this animate at all? (frequency)
 
@@ -73,10 +75,59 @@ decision serves or violates — structurally, never as a quality verdict.
 ## Lens 5 — typography discipline
 
 - **Tracking is size-specific.** Large display text wants negative tracking; small text wants slightly
-  positive. A single `letter-spacing` for all sizes is wrong somewhere.
-- **Leading tracks size inversely** — tight on headings, looser on body.
-- **Hierarchy = weight + size + leading as a set**, not size alone.
-- **Scale layout *with* text** (relative units) so a larger user text-size doesn't break it.
+  positive. A single `letter-spacing` for all sizes is wrong somewhere. Display floor: `≥ -0.04em`;
+  tighter and letters touch. All-caps/eyebrows want `+0.05–0.12em`.
+- **Leading tracks size inversely** — tight on headings (1.1–1.2), looser on body (1.5–1.7).
+- **Hierarchy = weight + size + leading as a set**, not size alone. Few sizes, more contrast: a 5-step
+  scale (caption/secondary/body/subhead/heading) on a committed ratio (1.25 / 1.333 / 1.5). Steps 14/15/16
+  are muddy hierarchy.
+- **Measure**: cap body at 45–75ch (`max-width: 65ch`). Body ≥16px, always `rem` not `px`.
+- **Sizing strategy by register**: fixed `rem` scale for app/dense UI (spatial predictability); fluid
+  `clamp()` for marketing/display headings only, bounded `max ≤ ~2.5×min`; hero ceiling ~6rem.
+- **Pair on a contrast axis** (serif+sans, geometric+humanist) or one family in weights — never two
+  near-identical sans. Don't reflex to Inter/Roboto/Open Sans when personality matters.
+- **Scale layout *with* text** (relative units) so a larger user text-size doesn't break it. `text-wrap:
+  balance` on h1–h3, `pretty` on long prose. Never `user-scalable=no`.
+
+## Lens 7 — layout & space (space is the primary tool)
+
+- **Spacing comes from a scale, never arbitrary.** Prefer a 4pt base (4/8/12/16/24/32/48/64/96); 8pt is
+  too coarse. Arbitrary padding/margins are the tell.
+- **Rhythm = contrast**: tight grouping between siblings (8–12px), generous separation between sections
+  (48–96px). Equal spacing everywhere = no hierarchy. Vary it.
+- **Squint test**: blurred, can you still name primary / secondary / groupings? If not, hierarchy is weak.
+- **Hierarchy dimensions** (combine 2–3, don't lean on one):
+
+  | Tool | Strong | Weak |
+  | --- | --- | --- |
+  | Size | ≥3:1 | <2:1 |
+  | Weight | Bold vs Regular | Medium vs Regular |
+  | Colour | High contrast | Similar tones |
+  | Space | Surrounded by whitespace | Crowded |
+
+- **Flex for 1D, Grid for 2D** — don't default to Grid where `flex-wrap` fits. Container queries for
+  components, viewport queries for pages. Semantic z-index scale (dropdown→sticky→modal→toast→tooltip),
+  never 999/9999.
+- **Cards are the lazy answer** — use only when content is truly distinct/actionable; never nest cards.
+  Identical icon+heading+text card grids repeated are slop (see `slop.md`).
+- **Touch targets ≥44×44px** even when the glyph is smaller (expand hit area with padding/pseudo-element).
+
+## Lens 8 — colour strategy
+
+- **Pick a strategy before colours**, on a commitment axis: **Restrained** (tinted neutrals + one accent
+  ≤10%; product default) → **Committed** (one saturated colour 30–60% of surface) → **Full palette** (3–4
+  named roles) → **Drenched** (surface *is* the colour). Register drives the pick.
+- **OKLCH, not HSL** (perceptually uniform). Reduce chroma as lightness approaches black/white.
+- **Tinted neutrals**: pure gray is dead — add 0.005–0.015 chroma toward *this brand's* hue. Don't
+  default-tint warm/cool; that's the cross-project monoculture.
+- **60-30-10 by visual weight** (not pixel count): 60 neutral/surface, 30 secondary, 10 accent. Accent
+  works *because* it's rare.
+- **Semantic-first in product**: accent = primary action / selection / state, never decoration; a colour
+  means the same thing on every screen. WCAG: body ≥4.5:1, large/UI ≥3:1; never colour as the only signal.
+- **Dark mode ≠ inverted light**: depth from surface lightness (lighter = higher), not shadow; desaturate
+  accents; drop body weight a notch. Redefine only the semantic token layer.
+- **Alpha is a design smell** — heavy rgba/hsla usually means an incomplete palette; define explicit
+  overlay colours. (Anti-slop colour tells — cream/sand bg, purple-blue gradients — live in `slop.md`.)
 
 ## Lens 6 — cohesion
 
@@ -93,7 +144,10 @@ a legitimate option to put on the table.
 2. For touch/drag surfaces, check the fluid-interaction properties (Lens 3) are present or name which
    are missing.
 3. Name which of the eight principles (Lens 4) a decision serves or fights.
-4. Present findings as facts + tradeoffs. The human judges what's good; this cell never does.
+4. Run the surface against `slop.md` and the layout/type/colour lenses (7/8/5).
+5. Present ranked findings: each is a verdict **plus its concrete reason** (principle, slop tell, or
+   measured value) **plus a fix**. Recommend the stronger option and say why. The user still owns the
+   final call, but you no longer stop at "here are the tradeoffs" — you say which is better craft.
 
 ## Where the concrete values live
 
@@ -103,5 +157,5 @@ The reverse glossary of motion terms is `vocabulary.md` in this directory.
 
 ## Room for more lenses
 
-Add cells as they earn their place. Same rule on every lens added: structure and tradeoffs, never a
-feel-verdict.
+Add cells as they earn their place. Same rule on every lens added: a verdict is fine, but it always
+carries its concrete reason — a named principle, a slop tell, or a measured value.

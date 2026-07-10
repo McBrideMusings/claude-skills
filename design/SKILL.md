@@ -5,18 +5,25 @@ description: "Design-time front door for UI/interface work — the planning orch
 
 # design
 
-The design-time front door for interface work. Parallel to `game-dev` (which orchestrates over
-`_domains/game/`), this skill orchestrates over the **`_domains/ui/`** knowledge store — it does the
-*planning and sketching*, and leans on the store for critique lenses and motion vocabulary. It does
-**not** review, test, or verify code — those are the engines (`review`, `tdd`, `verify`, `diagnose`),
-which gain UI competence on their own by reading `_domains/ui/` and `_platforms/{web,apple}/` when the
-`ui` domain is in scope. Don't reimplement them here.
+The front door for interface work — **pre-code and post-code**. Parallel to `game-dev` (which
+orchestrates over `_domains/game/`), this skill orchestrates over the **`_domains/ui/`** knowledge
+store: it does the *planning and sketching* (pre-code) **and the design-craft critique/audit** of an
+interface that already exists (post-code), leaning on the store for the discipline lenses, the slop
+catalog, and motion vocabulary. It does **not** own code *correctness*, tests, or verification — those
+are the engines (`review`, `tdd`, `verify`, `diagnose`), which gain UI competence by reading
+`_domains/ui/` and `_platforms/{web,apple}/` when the `ui` domain is in scope. The split: design judges
+whether the interface is *good craft*; the engines judge whether the code is *correct*. Don't
+reimplement the engines here.
 
-## The one hard rule — never judge feel
+## The one rule — judge craft, always name the reason
 
-Design work is where the temptation to call something "clean", "intuitive", "usable", or "feels right"
-is strongest. Do not. Name a layout's or a motion's **structure** and its concrete tradeoffs, and let
-the user decide — this mirrors the contract in `_domains/ui/design.md` and the global subjective-ban.
+Design is the one place the global subjective-ban is *lifted* (see the design-craft exception in
+`~/.claude/CLAUDE.md`). Here you MAY say a layout is stronger, a palette is off, a motion is
+decoration, or an interface reads as AI-slop — and rank options. The catch: **every verdict is anchored
+to a concrete reason** — a named principle, a specific slop tell from `_domains/ui/slop.md`, or a
+measured value (contrast ratio, tracking, duration, spacing off the scale). Never a bare "feels right".
+The line that still holds: this covers *craft quality of an interface*, not whether a game is fun.
+Same contract as `_domains/ui/design.md`.
 
 ## Modes
 
@@ -24,10 +31,15 @@ the user decide — this mirrors the contract in `_domains/ui/design.md` and the
   stub on disk. The fastest way to get a layout in front of the user and a yes/no back. Reach for it
   first on any layout question. Procedure below.
 - **Design lenses** — when the decision is *should this animate*, *how should this gesture feel*, *which
-  principle does this serve* (motion/interaction/craft, not pure layout): load `_domains/ui/design.md`
-  and apply its lenses (frequency, motion purpose, fluid-interaction, typography, Apple's eight
+  principle does this serve*, *is the spacing/type/colour right*: load `_domains/ui/design.md` and apply
+  its lenses (frequency, motion purpose, fluid-interaction, layout, typography, colour, Apple's eight
   principles, cohesion). Set the `ui` domain marker (`_domains/_detect.md`) when a repo's work is
   UI-centric, so the engines pick up the UI cells too.
+- **`critique` / `audit` (post-code)** — an interface already exists and the question is "is this good?"
+  / "what's weak?" Apply the `_domains/ui/design.md` lenses **and** run the `_domains/ui/slop.md` catalog
+  against the surface. Return ranked findings, each with its concrete reason (named principle, slop tell,
+  or measured value) and a proposed fix. This is craft-quality judgement — now allowed. It is *not* code
+  correctness or a11y/perf testing; that's the `review` / `verify` engines reading the same cells.
 - **Naming a motion effect** — the user describes an effect loosely and wants the term ("the bouncy
   thing when a popover opens"): answer from `_domains/ui/vocabulary.md`. Lead with the term; add a
   competing alternate only if one genuinely applies. Naming, not building.

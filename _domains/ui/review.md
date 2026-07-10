@@ -10,6 +10,11 @@ the framework-specific fixes come from the platform cell — `_platforms/web/rev
 `_platforms/apple/review.md` (SwiftUI) — which the engine loads alongside this one. Flag the principle
 here; cite the concrete value from the platform cell.
 
+Also load **`slop.md`** in the same pass and run its catalog against the changed surface: the absolute
+bans, the colour/type tells, and the model-specific defects are objective match-and-refuse checks (a
+side-stripe border, gradient text, an over-rounded card, an image-on-hover). Report a hit like any other
+finding — `file:line`, the named tell, the **Why**, the **Fix** — never as "looks generic".
+
 Substantive bar from Emil Kowalski (animations.dev) and Apple's *Designing Fluid Interfaces*.
 
 ## What to flag (each carries a concrete cost, not a taste call)

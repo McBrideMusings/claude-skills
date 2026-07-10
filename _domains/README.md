@@ -46,7 +46,9 @@ majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to
 this store and sets the `game` marker on scaffold.
 
 `ui/` — `design.md` (planning-time critique lenses) + `review.md` (motion/craft lens for the `review`
-engine) + `vocabulary.md` (a reference — the reverse motion-term glossary, read by `design` and
-`explain`, not an engine cell). Seeded from emilkowalski/skills. The `design` skill is the planning
+engine) + `slop.md` (objective AI-slop banned-patterns catalog, read by `design` critique mode and the
+`review`/`verify` engines; harvested from pbakaus/impeccable) + `vocabulary.md` (a reference — the
+reverse motion-term glossary, read by `design` and `explain`, not an engine cell). Seeded from
+emilkowalski/skills. The `design` skill is the planning
 orchestrator over this store; the implementation-level values live in `_platforms/web/review.md` and
 `_platforms/apple/review.md`. Add domains as new kinds of software appear.
