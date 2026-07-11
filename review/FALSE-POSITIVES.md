@@ -2,6 +2,8 @@
 
 These are the rules the Haiku scoring sub-agents apply when deciding whether a flagged issue is real or noise. Pass this content to each scoring sub-agent verbatim.
 
+**Vet the citation first.** Lens sub-agents over-report and mis-cite. Before scoring any finding above **0**, open the cited `file:line` and confirm the code the finding describes is actually there. A finding you cannot confirm at its cited location is not scorable — see "Mis-attributed evidence" below.
+
 ## What counts as a false positive
 
 - **Pre-existing issues** not introduced by these changes
@@ -10,6 +12,7 @@ These are the rules the Haiku scoring sub-agents apply when deciding whether a f
 - **Issues on lines the user didn't modify** — out of scope for this review
 - **Intentional functionality changes** related to the broader change being made
 - **Pedantic nitpicks** a senior engineer wouldn't flag
+- **Mis-attributed evidence** — the cited `file:line` doesn't actually contain what the finding claims (wrong file, wrong line, or the quoted symbol isn't there). The finding may gesture at a real pattern, but a wrong citation makes it un-actionable and it re-surfaces mis-aimed next run. Score **0**.
 - **For Spec issues only:** out-of-scope behaviour explicitly allowed by the spec (e.g. spec says "implementer's choice"); or behaviour the spec doesn't address either way
 - **For Negative-space issues only:** the "missing tests / missing docs / missing validation" rule above is **suspended** — but *only* for obligations the diff **itself** creates (a caller the change left un-updated, an error path the change introduces but leaves unhandled, a new branch the diff adds with no test, input the diff newly accepts but doesn't validate). A generic "this module could use more tests" not tied to something the diff changed is still a false positive. A negative-space finding already covered by a quoted Spec line scores **0** (duplicate — it belongs to Spec).
 - **For Best-practice issues only:** real **only if** Claude verified it against current official docs *with a citation* (Phase 04b) **and** the deviation carries a concrete cost (deprecation, security, perf, correctness). An unverified flag, an idiom/style difference, or a deviation current docs actually endorse scores **0**. A verified, costly, cited deviation scores ≥ 75.

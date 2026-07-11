@@ -88,6 +88,8 @@ Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't
 
 Apply the **deletion test** to anything you suspect is shallow.
 
+**Grounding rule — every candidate must cite evidence from this codebase.** A deepening you propose has to point at real modules, real friction you hit while exploring, real callers that bounce between small pieces — named files, named seams. A suggestion that could apply to *any* project in this language ("add a service layer", "introduce dependency injection", "split into smaller modules") with nothing anchoring it to code you actually read is slop — drop it, don't pad the card list with it. If you can't name the modules and the friction, you don't have a candidate yet.
+
 ### Phase 02 — Present Candidates as a Hermetic HTML Report
 
 Render the candidates as a single self-contained HTML file — **the diagrams carry the weight, the prose is sparse.** Same hermetic rules as the `explain` skill: zero network, no CDN, inline CSS + hand-authored inline SVG, system fonts, light/dark via `prefers-color-scheme`. **Reuse `explain`'s design system** ([../explain/DESIGN-SYSTEM.md](../explain/DESIGN-SYSTEM.md)) — semantic-color tokens and the `.diagram` / `.compare` / `.callout` / `.legend` component vocabulary — so the report is a member of the same visual family. Do **not** reach for Tailwind, Mermaid, or any CDN; a stray report must render offline, forever.
