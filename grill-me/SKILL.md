@@ -86,6 +86,23 @@ them exactly like everything else here — name the structure, surface
 tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; the design axis carries
 that same hard rule. No design axis for the domain → skip silently.
 
+## Product-design elicitation discipline
+
+When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and
+butter of Shape and Backfill — pull the matching `product-design` cell for the discipline that keeps the
+questions honest, then interrogate with it:
+
+- **User needs / job stories** → [`../_domains/product/user-needs.md`](../_domains/product/user-needs.md):
+  need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark
+  confidence (observed/inferred/assumed).
+- **Domain terminology** → [`../_domains/product/domain.md`](../_domains/product/domain.md): record
+  synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/
+  instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
+
+These are the same disciplines the `product-design` orchestrator uses; grill-me reads the cells rather
+than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding),
+route to `product-design`.
+
 ## Terminal state
 
 Shared understanding is the goal, not an artifact. Stop when there are no unresolved branches.

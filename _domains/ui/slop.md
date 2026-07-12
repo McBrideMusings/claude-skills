@@ -1,8 +1,9 @@
 # UI slop catalog
 
-Read by **planning** (`design` critique/audit mode) and the **engines** (`review`, `verify`) when the
+Read by **planning** (`ui-design` critique/audit mode) and the **engines** (`review`, `verify`) when the
 domain is `ui`. Objective banned-patterns and AI tells — the part that fixes "every AI frontend looks
-the same." Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0). Unlike the lenses, almost none
+the same." Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0) and Taste Skill
+(`Leonxlnx/taste-skill`, MIT). Unlike the lenses, almost none
 of this is a judgement call: it's match-and-refuse.
 
 **The slop test.** If someone could look at the interface and say "AI made that" without doubt, it
@@ -29,6 +30,67 @@ plus the rewrite, not as "feels generic".
   tablet/mobile. Test heading copy at every breakpoint; reduce clamp max or rewrite. The viewport is part
   of the design.
 
+## Structure & layout tells (Taste Skill)
+
+Structural giveaways beyond the absolute bans. Harvested from `Leonxlnx/taste-skill` SKILL.md.
+
+- **Left-text / right-image hero.** The single most overused AI landing-page pattern (headline + copy +
+  CTA on the left, product shot/illustration on the right). Rework: full-bleed type, centred, asymmetric
+  offset, or lead with the artifact — anything but the 50/50 split.
+- **Anti-nested-box.** Cards inside cards inside cards; a giant rounded wrapper section around everything.
+  Depth via space and hairlines, not concentric containers. (Related: "cards are the lazy answer" in the
+  layout lens.)
+- **Div-based fake product UI.** Fake task lists, terminals, dashboards, chat threads built from styled
+  `<div>`s to look like a real app screenshot. The general form of the Codex ghost-card. Ship a real
+  screenshot or nothing.
+- **Bento dead cells.** A bento/masonry grid with empty middle or trailing cells because N items ≠ N grid
+  slots. Size the grid to the content; `grid-flow-dense` only when it genuinely fills.
+- **Zigzag fatigue.** A third consecutive image+text split alternating side to side. Break the rhythm by
+  the third. Also: more than one marquee/ticker per page.
+- **Logo-wall with category labels.** A trusted-by logo strip with a caption under each ("Stripe ·
+  payments", "Vercel · hosting"). The labels are filler; logos alone, or drop the wall.
+- **Full row borders on spec tables.** `border-t` + `border-b` on *every* row of a long comparison/spec
+  table. One divider style, sparingly; zebra or nothing.
+- **Split-header.** A big left headline paired with a small floating top-right explainer paragraph in a
+  section header. Reads as template scaffolding.
+- **Decorative image furniture.** Pills/tags overlaid on images (`Plate · Brand`); `01 / 4` pagination on
+  bento tiles; vertical 90°-rotated agency text; crosshair / hairline decoration grids over a photo. None
+  carries information.
+- **Filled-track comparison bars.** Progress/score bars used as decorative comparison visuals on a landing
+  page (not real data). A prominent bar is fine only when it shows real data.
+- **`<br>`-broken + italicized headlines** as a default "design move" — manual line breaks plus italics to
+  fake editorial rhythm. Let type wrap; earn emphasis with weight.
+
+## Copywriting / marketing-slop tells (Taste Skill)
+
+The text *content* an AI reaches for. Match-and-rewrite the same way. Harvested from
+`Leonxlnx/taste-skill` SKILL.md §4/§9.
+
+- **Em-dash / en-dash as a visible separator.** `—` / `–` used as a decorative separator in UI copy,
+  labels, or nav (Taste's "#1 stylistic tell"). Use real punctuation or a real divider element.
+- **Middle-dot `·` overuse.** `foo · bar · baz` as the default separator everywhere. Ration to ~1 per
+  line; prefer layout (spacing, columns) over inline dot-chains.
+- **Version labels in the hero.** `V0.6`, `BETA`, `ALPHA`, `INVITE-ONLY PREVIEW` as an eyebrow/badge on a
+  marketing hero. Fake maturity signalling.
+- **"Quietly …" social proof.** "Quietly in use at", "Quietly trusted by" headers. Manufactured
+  understatement.
+- **Performative-craftsman labels.** "From the field", "Field notes", "Currently on the bench", "On our
+  desks" — artisanal cosplay for a software product.
+- **Locale / time / weather strips.** "Lisbon 14:23 · 18°C", "working with founders in three timezones" —
+  decorative ambient data that says nothing.
+- **Generic step labels.** "Stage 1 / 2 / 3", "Phase 01 / 02", "Pass One / Two / Three" on a process that
+  isn't genuinely a numbered sequence. (Cf. numbered section markers in the absolute bans.)
+- **Fake photo credits.** "Field study no. 12 · Ines Caetano", "Frame XII · 35mm" captioning stock or
+  generated imagery to fake a photographer.
+- **Version footers on marketing pages.** `v1.4.2`, `Build 0048`, "last sync 4s ago · main" in a footer
+  of a *marketing* page (not an app). Fake liveness.
+- **Scroll cues.** "Scroll", "↓ scroll", "Scroll to explore", a bouncing mouse-wheel icon. Users know how
+  to scroll.
+- **Duplicate CTA intent.** "Get in touch" + "Let's talk" + "Start a project" all on one page — three
+  buttons, one action. One primary CTA, repeated verbatim if repeated at all.
+- **Fake-precise invented specs.** `92%`, `4.1×`, `5.8 mm`, `13.4 lb` — oddly specific numbers faking
+  engineering precision (distinct from the fake-round `99.99%`). If the number isn't real, don't print it.
+
 ## Colour & type tells (strong default-reflexes to refuse)
 
 - **Cream / sand / beige body bg** — the warm-neutral band (OKLCH L 0.84–0.97, C < 0.06, hue 40–100).
@@ -42,6 +104,15 @@ plus the rewrite, not as "feels generic".
   feels that way" is the cross-project monoculture. Tint toward *this* brand's hue or stay chroma 0.
 - **Muted gray body text on tinted near-white** — the single biggest "hard to read" cause; fails 4.5:1.
   Light gray "for elegance" is a tell. Bump toward ink.
+- **The complete premium-consumer palette** (Taste Skill §4.2) — the cream/sand/beige bg tell above rarely
+  travels alone; it pairs with brass/clay/oxblood/ochre accents (`#b08947` `#b6553a` `#9a2436`) and an
+  espresso near-black text (`#1a1714`). The full set = "expensive artisanal brand" reflex. Refuse the
+  combination, not just the background.
+- **LLM-default display serifs** (Taste Skill §4.1) — `Fraunces` and `Instrument Serif` are the two
+  reflex display serifs. Banned as *defaults*; pick a serif for a reason, not because it's the one that
+  came to mind.
+- **Custom mouse cursors and neon / outer glows** (Taste Skill §9.A) — a bespoke cursor or a `box-shadow`
+  neon glow as decoration. Both read as amateur-flashy; the OS cursor and a defined shadow ≤8px.
 
 ## Model-specific defects (refuse-and-rewrite)
 

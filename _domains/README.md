@@ -46,9 +46,16 @@ majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to
 this store and sets the `game` marker on scaffold.
 
 `ui/` — `design.md` (planning-time critique lenses) + `review.md` (motion/craft lens for the `review`
-engine) + `slop.md` (objective AI-slop banned-patterns catalog, read by `design` critique mode and the
-`review`/`verify` engines; harvested from pbakaus/impeccable) + `vocabulary.md` (a reference — the
-reverse motion-term glossary, read by `design` and `explain`, not an engine cell). Seeded from
-emilkowalski/skills. The `design` skill is the planning
+engine) + `slop.md` (objective AI-slop banned-patterns catalog, read by `ui-design` critique mode and the
+`review`/`verify` engines; harvested from pbakaus/impeccable + Leonxlnx/taste-skill) + `vocabulary.md` (a reference — the
+reverse motion-term glossary, read by `ui-design` and `explain`, not an engine cell). Seeded from
+emilkowalski/skills. The `ui-design` skill is the planning
 orchestrator over this store; the implementation-level values live in `_platforms/web/review.md` and
 `_platforms/apple/review.md`. Add domains as new kinds of software appear.
+
+`product/` — the six problem-space and solution-space design layers *beneath* the surface:
+`observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
+`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `product-design` orchestrator
+conducts the layer work over this store; `interaction-flow.md` hands its breadboard off to the
+`ui-design` sketch mode, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
+Add domains as new kinds of software appear.

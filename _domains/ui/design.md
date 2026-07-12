@@ -1,6 +1,6 @@
 # UI design axis
 
-Read by **planning** skills (`design`, `grill-me`, `wayfinder`) when the domain is `ui`. Design-time
+Read by **planning** skills (`ui-design`, `grill-me`, `wayfinder`) when the domain is `ui`. Design-time
 critique lenses for interactive interfaces — not a code engine. Loaded on top of whatever the planning
 skill already does, the same way the engines layer platform + domain.
 
@@ -87,7 +87,9 @@ decision serves or violates — structurally, never as a quality verdict.
 - **Pair on a contrast axis** (serif+sans, geometric+humanist) or one family in weights — never two
   near-identical sans. Don't reflex to Inter/Roboto/Open Sans when personality matters.
 - **Scale layout *with* text** (relative units) so a larger user text-size doesn't break it. `text-wrap:
-  balance` on h1–h3, `pretty` on long prose. Never `user-scalable=no`.
+  balance` on h1–h3, `pretty` on long prose (also kills orphaned last words). Never `user-scalable=no`.
+- **`font-variant-numeric: tabular-nums`** on any column of figures (tables, prices, metrics, timers) so
+  digits align vertically and don't jitter as values change. (Taste Skill.)
 
 ## Lens 7 — layout & space (space is the primary tool)
 
@@ -111,6 +113,15 @@ decision serves or violates — structurally, never as a quality verdict.
 - **Cards are the lazy answer** — use only when content is truly distinct/actionable; never nest cards.
   Identical icon+heading+text card grids repeated are slop (see `slop.md`).
 - **Touch targets ≥44×44px** even when the glyph is smaller (expand hit area with padding/pseudo-element).
+- **Concentric radii** (Taste Skill) — a rounded element nested in another rounded element must have
+  `inner radius = outer radius − padding` or the corners aren't truly concentric and read as sloppy:
+  `border-radius: calc(2rem - 0.375rem)` on the inner when the outer is `2rem` and the gap is `0.375rem`.
+- **Hairline dividers** — a 1px separator is cleaner as `display: grid; gap: 1px` over a contrasting
+  background than as per-child borders (which double up and misalign at corners). (Taste Skill.)
+- **Cross-element alignment is an audit axis** (Taste Skill redesign checks): across a row of cards, CTAs
+  must share a baseline (bottom-align them, don't let copy length float them); in pricing columns,
+  feature lists must start at the same Y; where the maths looks aligned but the eye disagrees, nudge 1–2px
+  **optically**, not mathematically.
 
 ## Lens 8 — colour strategy
 

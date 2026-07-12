@@ -1,9 +1,9 @@
 ---
-name: design
-description: "Front door for UI/interface work, pre-code and post-code — the orchestrator over the `_domains/ui/` knowledge store. Its lowest-fidelity mode is an ASCII layout sketch (+ .monojson Monodraw stub), the first thing to reach for on any layout decision; broader questions layer in the UI craft lenses (layout/space, typography, colour, motion purpose, frequency, fluid-interaction, cohesion, Apple's principles), the AI-slop catalog, and the reverse motion-term glossary. Also does post-code critique/audit of an existing interface: rank what's weak and why, each verdict anchored to a concrete reason. Use for any UI/layout/type/colour decision or layout code change (flexbox, grid, modals, dialogs), for judging whether a design is good craft, whether/how something should animate, or naming a motion effect. Triggers: \"sketch this\", \"design this\", \"lay this out\", \"is this any good\", \"critique/audit this design\", \"make this better\", \"what's it called when…\" (motion term), \"/design\"."
+name: ui-design
+description: "Front door for UI/interface work, pre-code and post-code — the orchestrator over the `_domains/ui/` knowledge store. Its lowest-fidelity mode is an ASCII layout sketch (+ .monojson Monodraw stub), the first thing to reach for on any layout decision; broader questions layer in the UI craft lenses (layout/space, typography, colour, motion purpose, frequency, fluid-interaction, cohesion, Apple's principles), the AI-slop catalog, and the reverse motion-term glossary. Also does post-code critique/audit of an existing interface: rank what's weak and why, each verdict anchored to a concrete reason. Use for any UI/layout/type/colour decision or layout code change (flexbox, grid, modals, dialogs), for judging whether a design is good craft, whether/how something should animate, or naming a motion effect. Triggers: \"sketch this\", \"design this\", \"lay this out\", \"is this any good\", \"critique/audit this design\", \"make this better\", \"what's it called when…\" (motion term), \"/ui-design\". This is the SURFACE layer (visual craft); the earlier design layers — user needs, domain, conceptual model, product strategy, interaction structure — are the `product-design` skill."
 ---
 
-# design
+# ui-design
 
 The front door for interface work — **pre-code and post-code**. Parallel to `game-dev` (which
 orchestrates over `_domains/game/`), this skill orchestrates over the **`_domains/ui/`** knowledge
@@ -36,10 +36,13 @@ Same contract as `_domains/ui/design.md`.
   principles, cohesion). Set the `ui` domain marker (`_domains/_detect.md`) when a repo's work is
   UI-centric, so the engines pick up the UI cells too.
 - **`critique` / `audit` (post-code)** — an interface already exists and the question is "is this good?"
-  / "what's weak?" Apply the `_domains/ui/design.md` lenses **and** run the `_domains/ui/slop.md` catalog
-  against the surface. Return ranked findings, each with its concrete reason (named principle, slop tell,
-  or measured value) and a proposed fix. This is craft-quality judgement — now allowed. It is *not* code
-  correctness or a11y/perf testing; that's the `review` / `verify` engines reading the same cells.
+  / "what's weak?" Apply the `_domains/ui/design.md` lenses, run the `_domains/ui/slop.md` catalog, **and**
+  run the `_domains/ui/fidelity.md` structural pass (does the surface honour the decisions in the layers
+  below — vocabulary, object consistency, breadboard completeness, error recovery, accessibility). Return
+  ranked findings, each with its concrete reason (named principle, slop tell, measured value, or fidelity
+  discipline) and a proposed fix; tag each finding surface-fix or deeper-layer (route deeper ones to
+  `product-design`). This is craft-quality judgement — now allowed. It is *not* code correctness or
+  a11y/perf testing; that's the `review` / `verify` engines reading the same cells.
 - **Naming a motion effect** — the user describes an effect loosely and wants the term ("the bouncy
   thing when a popover opens"): answer from `_domains/ui/vocabulary.md`. Lead with the term; add a
   competing alternate only if one genuinely applies. Naming, not building.
@@ -63,7 +66,7 @@ visually if the ASCII proposal isn't quite right.
 
 - The user describes a UI change, layout, modal, panel, dialog, form, or component.
 - A plan file is being written and design decisions came up in conversation.
-- The user says "sketch this", "design this", "lay this out", or invokes `/design`.
+- The user says "sketch this", "design this", "lay this out", or invokes `/ui-design`.
 - A code change is touching layout-relevant code (CSS grid, flexbox, modal markup, dialog components).
 
 ## What to produce
@@ -128,7 +131,7 @@ Write an empty Monodraw canvas to `<repo-root>/tmp/claude/sketches/<YYYY-MM-DD>-
 
 ```bash
 mkdir -p <repo-root>/tmp/claude/sketches
-cp ~/.claude/skills/design/seed.monojson \
+cp ~/.claude/skills/ui-design/seed.monojson \
    <repo-root>/tmp/claude/sketches/$(date +%Y-%m-%d-%H%M)-<slug>.monojson
 ```
 
