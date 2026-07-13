@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Surface architectural friction and propose deepening opportunities — refactors that turn shallow modules into deep ones. Aim: testability and AI-navigability. Triggers: 'improve architecture', 'audit the architecture', 'find refactor opportunities', 'what's shallow here', 'do an arch review', 'where can we deepen', 'look for deep module opportunities'."
+description: "Architecture review that surfaces friction and proposes deepening opportunities — refactors that turn shallow modules into deep ones. Aim: testability and AI-navigability. Triggers: 'improve architecture', 'audit the architecture', 'find refactor opportunities', 'what's shallow here', 'where can we deepen'."
 ---
 
 # Improve Codebase Architecture
@@ -14,7 +14,7 @@ Use these terms exactly in every suggestion. Consistent language is the point �
 These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../grill-me/CONTEXT-FORMAT.md](../grill-me/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
 
 - **Module** — anything with an interface and an implementation (function, class, package, slice). Scale-agnostic.
-  _Avoid_: unit, component, service.
+  _Avoid_: unit, component, service, layer, wrapper.
 - **Interface** — everything a caller must know to use the module correctly: type signature, invariants, ordering, error modes, required config, perf characteristics.
   _Avoid_: API, signature (those refer only to the type-level surface).
 - **Implementation** — what's inside a module.
@@ -32,13 +32,9 @@ These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongsi
 - **The interface is the test surface.** Callers and tests cross the same seam. If you want to test *past* the interface, the module is probably the wrong shape.
 - **One adapter = hypothetical seam. Two adapters = real seam.** Don't introduce a seam unless something actually varies across it.
 
-## Relationships
-
-A **Module** has exactly one **Interface** — the surface it presents to callers and tests. **Depth** is a property of a Module, measured against its Interface. A **Seam** is where a Module's Interface lives. An **Adapter** sits at a Seam and satisfies the Interface. Depth produces **Leverage** for callers and **Locality** for maintainers.
-
 ## Designing for testability
 
-Good interfaces make testing natural:
+Good interfaces make testing natural — use this as a lens while exploring to recognise testable vs untestable shape, not as advice to emit unanchored (Phase 01's grounding rule still binds every candidate):
 
 1. **Accept dependencies, don't create them.**
 
@@ -70,7 +66,6 @@ Good interfaces make testing natural:
 
 - **Depth as ratio of implementation-lines to interface-lines** (Ousterhout): rewards padding the implementation. Depth-as-leverage is used instead.
 - **"Interface" as the TypeScript `interface` keyword or a class's public methods**: too narrow — interface here includes every fact a caller must know.
-- **"Boundary"**: overloaded with DDD's bounded context. Say **seam** or **interface**.
 
 ## Phases
 
@@ -92,11 +87,11 @@ Apply the **deletion test** to anything you suspect is shallow.
 
 ### Phase 02 — Present Candidates as a Hermetic HTML Report
 
-Render the candidates as a single self-contained HTML file — **the diagrams carry the weight, the prose is sparse.** Same hermetic rules as the `explain` skill: zero network, no CDN, inline CSS + hand-authored inline SVG, system fonts, light/dark via `prefers-color-scheme`. **Reuse `explain`'s design system** ([../explain/DESIGN-SYSTEM.md](../explain/DESIGN-SYSTEM.md)) — semantic-color tokens and the `.diagram` / `.compare` / `.callout` / `.legend` component vocabulary — so the report is a member of the same visual family. Do **not** reach for Tailwind, Mermaid, or any CDN; a stray report must render offline, forever.
+Render the candidates as a single self-contained HTML file — **the diagrams carry the weight, the prose is sparse.**
 
 Write to `<root>/tmp/claude/architecture-review-<slug>.html`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the file under whatever subdir the shell is in and the `open <path>` you print won't match. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/`open`/path MUST be the absolute `<root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call. Open it (`open <path>` on macOS) and emit the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean).
 
-See [HTML-REPORT.md](HTML-REPORT.md) for the scaffold, the before/after diagram patterns, and the card layout. Each candidate is one card:
+See [HTML-REPORT.md](HTML-REPORT.md) for the hermetic constraints, the `explain` design-system reuse, the scaffold, the before/after diagram patterns, and the card layout. Each candidate is one card:
 
 - **Title** — names the deepening (e.g. "Collapse the Order intake pipeline").
 - **Recommendation strength** — a badge: `Strong` (happy/green), `Worth exploring` (caution/amber), `Speculative` (muted).

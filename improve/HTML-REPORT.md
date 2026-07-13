@@ -83,11 +83,7 @@ One larger card: candidate name, one sentence on why, an anchor link to its card
 
 ## Tone
 
-Plain English, concise — but the architectural nouns and verbs come straight from the Vocabulary section of [SKILL.md](SKILL.md). Concision is not an excuse to drift.
-
-**Use exactly:** module, interface, implementation, depth, deep, shallow, seam, adapter, leverage, locality.
-
-**Never substitute:** component, service, unit (for module) · API, signature (for interface) · boundary (for seam) · layer, wrapper (for module, when you mean module).
+Plain English, concise — but the architectural nouns and verbs come straight from the Vocabulary section of [SKILL.md](SKILL.md), never their `_Avoid_` substitutes. Concision is not an excuse to drift.
 
 **Wins bullets** name the gain in glossary terms — *"locality: bugs concentrate in one module"*, *"leverage: one interface, N call sites"*, *"interface shrinks; implementation absorbs the wrappers"*. Don't write *"easier to maintain"* or *"cleaner code"* — those aren't in the glossary and don't earn their place.
 
