@@ -22,9 +22,9 @@ When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands t
 
 ## Pass mode — default to interactive; go autonomous only on a proven `continuous` token
 
-Wrap-up runs in one of two postures, and getting this wrong is how an unattended run either stalls (interactive prompt inside a loop) or, far worse, **acts autonomously when a human should have been in the loop** (files/skips follow-ups, or lands a branch, without the review the user wanted). To make the dangerous direction impossible by default:
+Wrap-up runs in one of two postures, and getting this wrong either stalls an unattended run (interactive prompt inside a loop) or — far worse — **acts autonomously when a human should have been in the loop** (files/skips follow-ups, or lands a branch, without the review the user wanted). The safe default makes that second direction impossible:
 
-> **Assume INTERACTIVE (standalone) unless you can point to an explicit `continuous` token in this invocation's arguments.** Autonomy is opt-in and must be *proven*, never inferred. If you are not certain this is a continuous pass — if the token isn't unambiguously present — you are in an interactive pass, and every step that could act on the user's behalf **halts for their disposition**. Ambiguity resolves to "ask the human," always.
+> **Assume INTERACTIVE (standalone) unless you can point to an explicit `continuous` token in this invocation's arguments.** Autonomy is opt-in and must be *proven*, never inferred — if the token isn't unambiguously present, you are in an interactive pass, and every step that could act on the user's behalf **halts for their disposition**. Ambiguity resolves to "ask the human," always.
 
 - **Interactive pass** (default; a manual `/wrap-up`, or a **standalone** `/implement`): the Phase 6 follow-up step **halts** so the user reviews what the session uncovered and chooses fix-now / file / skip per item.
 - **Continuous pass** (only when the `continuous` token is present, injected by `/iterate`): the follow-up step files **autonomously** with no prompt, so the loop never stalls.
