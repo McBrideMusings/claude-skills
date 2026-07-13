@@ -9,7 +9,7 @@ Papercuts are small frictions logged **in the moment** — a tool call that miss
 
 ## The writer — always route through the CLI
 
-Every write goes through `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/tools/papercut` so entries stay uniformly formatted (`<iso-utc> - <model> - <git-user>` header, blank line, message). Never hand-edit or append to the log file directly. The script resolves the repo root itself and writes to `<repo-root>/tmp/claude/papercuts.md`.
+Every write goes through `"$HOME/.claude/tools/papercut"` so entries stay uniformly formatted (`<iso-utc> - <model> - <git-user>` header, blank line, message). Call it by that literal path even from the work profile — the tool lives in the personal profile only (`tools/` isn't symlinked into `~/.claude-work`), and the script resolves the repo root itself via git, so the path is correct regardless of `CLAUDE_CONFIG_DIR`. Never hand-edit or append to the log file directly; it writes to `<repo-root>/tmp/claude/papercuts.md`.
 
 ```
 papercut [-m MODEL] "message"   # MODEL = the model that hit the friction
@@ -49,4 +49,4 @@ Read `<repo-root>/tmp/claude/papercuts.md` and work it, don't just print it:
 
 ## Proactive logging (agents, in the moment)
 
-Outside this skill, the `CLAUDE.md` rule tells the agent to log papercuts as they happen with `"$HOME/.claude/tools/papercut" -m <model> "…"`. This skill is the human-facing surface and the review/triage brain; the bare CLI call is the fast in-the-moment path. Both are the same tool — the skill just adds mining and triage on top.
+Outside this skill, the `CLAUDE.md` rule tells the agent to log papercuts as they happen with `"$HOME/.claude/tools/papercut" -m <model> "…"` — the fast in-the-moment path. This skill is the human-facing surface and the review/triage brain on top of that same CLI.
