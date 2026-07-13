@@ -1,5 +1,5 @@
 ---
-name: improve-codebase-architecture
+name: improve
 description: "Surface architectural friction and propose deepening opportunities — refactors that turn shallow modules into deep ones. Aim: testability and AI-navigability. Triggers: 'improve architecture', 'audit the architecture', 'find refactor opportunities', 'what's shallow here', 'do an arch review', 'where can we deepen', 'look for deep module opportunities'."
 ---
 

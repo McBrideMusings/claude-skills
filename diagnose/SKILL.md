@@ -83,4 +83,4 @@ Required before done:
 - [ ] Throwaway prototypes deleted or moved to a clearly-marked debug location
 - [ ] The winning hypothesis is stated in the commit / PR message — so the next debugger learns
 
-**Then ask: what would have prevented this bug?** If the answer is architectural (no good test seam, tangled callers, hidden coupling), hand off to `/improve-codebase-architecture` with specifics. Make the recommendation **after** the fix — you have more information now than when you started.
+**Then ask: what would have prevented this bug?** If the answer is architectural (no good test seam, tangled callers, hidden coupling), hand off to `/improve` with specifics. Make the recommendation **after** the fix — you have more information now than when you started.

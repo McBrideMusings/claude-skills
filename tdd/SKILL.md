@@ -36,8 +36,8 @@ Before writing any code:
 
 - [ ] Confirm with the user what interface changes are needed
 - [ ] Confirm with the user which **behaviors** to test (not implementation steps)
-- [ ] Design the interface for testability (see `MOCKING.md` and `improve-codebase-architecture`)
-- [ ] Look for deep-module opportunities (small interface, deep implementation — see `improve-codebase-architecture`)
+- [ ] Design the interface for testability (see `MOCKING.md` and `improve`)
+- [ ] Look for deep-module opportunities (small interface, deep implementation — see `improve`)
 - [ ] List the behaviors to test, in priority order
 - [ ] Get user approval on the plan
 

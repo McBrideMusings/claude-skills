@@ -26,11 +26,11 @@ Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own cre
 
 ### Domain
 
-{Project-specific terms get added here as they resolve, by `grill-me` and `improve-codebase-architecture`.}
+{Project-specific terms get added here as they resolve, by `grill-me` and `improve`.}
 
 ### Architecture
 
-{Seeded on first run of `improve-codebase-architecture`. Don't seed up front.}
+{Seeded on first run of `improve`. Don't seed up front.}
 
 ## Relationships
 
@@ -43,7 +43,7 @@ Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own cre
 
 ## docs/adr/
 
-- **Missing** → `mkdir -p docs/adr && touch docs/adr/.gitkeep`. No seed ADRs — `grill-me` and `improve-codebase-architecture` create them lazily when their three-conditions test passes.
+- **Missing** → `mkdir -p docs/adr && touch docs/adr/.gitkeep`. No seed ADRs — `grill-me` and `improve` create them lazily when their three-conditions test passes.
 - **Standard** → no-op.
 - **Non-standard at `adr/` / `decisions/` / `docs/decisions/` / `docs/adrs/` / `architecture/decisions/`:**
   1. Confirm the directory holds ADR-shaped files (markdown with date / number / title pattern).

@@ -160,7 +160,7 @@ Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord b
 4. **[architecture · medium]** Headline naming the layer/abstraction/ownership problem …
    - **File:** `src/api/order_controller.py:48`
    - **Why:** … a layer-fit violation that spreads ownership of "how orders are written" across two modules.
-   - **Fix (design call):** Route the write through the existing seam … (architecture/design findings use **Fix (design call):**; a dedicated pass is `improve-codebase-architecture`.)
+   - **Fix (design call):** Route the write through the existing seam … (architecture/design findings use **Fix (design call):**; a dedicated pass is `improve`.)
 
 5. **[architecture · medium]** Headline …
    - **File:** `path:LINE`

@@ -1,6 +1,6 @@
 # CONTEXT.md Format
 
-`docs/CONTEXT.md` is the single source of truth for **all project vocabulary** — domain terms (Order, Customer, Channel) AND architectural terms (Module, Seam, Adapter, Depth, Leverage, Locality). Other skills (`improve-codebase-architecture`, `diagnose`, `tdd`) read from it.
+`docs/CONTEXT.md` is the single source of truth for **all project vocabulary** — domain terms (Order, Customer, Channel) AND architectural terms (Module, Seam, Adapter, Depth, Leverage, Locality). Other skills (`improve`, `diagnose`, `tdd`) read from it.
 
 Create lazily — only when the first term is resolved. If the file doesn't exist when needed, create `docs/CONTEXT.md` then.
 
@@ -66,7 +66,7 @@ A module is **deep** when a lot of behaviour sits behind a small interface (high
 - **Flag conflicts explicitly.** If a term is used ambiguously, call it out in "Flagged ambiguities" with a clear resolution.
 - **Keep definitions tight.** One sentence max. Define what it IS, not what it does.
 - **Show relationships.** Bold term names, express cardinality where obvious.
-- **Only include terms specific to this project's context.** General programming concepts (timeouts, error types, utility patterns) don't belong even if the project uses them extensively. The exception is the architectural vocabulary section, which is seeded by `improve-codebase-architecture` to keep arch terms consistent across audits.
+- **Only include terms specific to this project's context.** General programming concepts (timeouts, error types, utility patterns) don't belong even if the project uses them extensively. The exception is the architectural vocabulary section, which is seeded by `improve` to keep arch terms consistent across audits.
 - **Group terms under subheadings** when natural clusters emerge. The Domain / Architecture split is the default; further sub-clusters fine when there are many terms.
 - **Write an example dialogue.** A short conversation that demonstrates how the terms interact naturally and clarifies boundaries between related concepts.
 

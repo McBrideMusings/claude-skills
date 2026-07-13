@@ -57,7 +57,7 @@ As terms resolve during the conversation, **update `docs/CONTEXT.md` inline** �
 Capture both:
 
 - **Domain terms** (Order, Customer, Channel, etc.) — concepts unique to this project
-- **Architectural terms** (Module, Seam, Adapter, Depth) — when introduced by `improve-codebase-architecture` or surfacing naturally in the conversation
+- **Architectural terms** (Module, Seam, Adapter, Depth) — when introduced by `improve` or surfacing naturally in the conversation
 
 If the user uses a term that conflicts with the existing glossary, call it out: *"Your glossary defines 'cancellation' as X, but you seem to mean Y — which is it?"*
 
