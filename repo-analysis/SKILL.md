@@ -1,15 +1,17 @@
 ---
 name: repo-analysis
-description: Compare a subsystem in the user's repo against one or more reference repos (open source projects, similar tools, alternative implementations) to find smarter approaches, likely bugs revealed by the diff, and features worth porting. Use whenever the user points at another project as a reference and asks what they do differently, says "their X is better than ours", asks if a feature is worth porting, troubleshoots a flaky feature and references another project that implements it cleanly, asks "what do they do that we don't", or wants to mine techniques from prior art. Also harvests a capability the user's repo doesn't have at all — "harvest their X", "bring feature A in from this repo", "figure out how they do X and plan how we'd build it", "turn this reference into docs and issues" — producing a committed analysis doc plus a dependency-ordered issue slate instead of a comparison. Also harvests whole skills when the reference is a skills repo (a repo of SKILL.md files, following Anthropic's skill structure, little or no code) — "mine their skills", "harvest skills from X", "what skills should I take from this repo", "compare their skills to mine" — cataloguing their skills against yours and deciding what to copy, merge, or fold in as an axis. Filters differences of UX, interface, and project scope so suggestions stay portable. Also use when the user pastes a github url alongside a question about their own code's behavior.
+description: Compare a subsystem in the user's repo against one or more reference repos (open source projects, similar tools, alternative implementations) to find smarter approaches, likely bugs revealed by the diff, and features worth porting. Use whenever the user points at another project as a reference and asks what they do differently, says "their X is better than ours", asks if a feature is worth porting, troubleshoots a flaky feature and references another project that implements it cleanly, asks "what do they do that we don't", or wants to mine techniques from prior art. Also harvests a capability the user's repo doesn't have at all ("harvest their X") — producing a committed analysis doc plus a dependency-ordered issue slate instead of a comparison. Also harvests whole skills when the reference is a skills repo (a repo of SKILL.md files, following Anthropic's skill structure, little or no code) ("mine their skills") — cataloguing their skills against yours and deciding what to copy, merge, or fold in as an axis. Filters differences of UX, interface, and project scope so suggestions stay portable. Also use when the user pastes a github url alongside a question about their own code's behavior.
 ---
 
 # Repo Analysis
 
 Compare a focused subsystem in the user's repo against one or more reference repos. Surface implementation differences that are worth acting on. Filter out differences that are about scope, UX, or project intent.
 
-**Three modes, one spine.** The default is **code mode** — the workflow below, comparing a code subsystem to a reference and porting implementation techniques. When the reference is a **skills repo** (a repo of `SKILL.md` files following Anthropic's skill structure, little or no code) the unit of harvest is a whole skill, not a technique — run **skills mode** (see "Skills mode" below). When the capability doesn't exist in the user's repo at all — nothing on our side to compare — run **harvest mode** (see "Harvest mode" below): understand the reference, translate it onto the user's architecture, leave a committed analysis doc + issue slate.
+**Three modes, one spine.** The default is **code mode** — the workflow below, comparing a code subsystem to a reference and porting implementation techniques. When the reference is a **skills repo** (a repo of `SKILL.md` files following Anthropic's skill structure, little or no code) the unit of harvest is a whole skill, not a technique — run **skills mode** ([skills-mode.md](skills-mode.md)). When the capability doesn't exist in the user's repo at all — nothing on our side to compare — run **harvest mode** ([harvest-mode.md](harvest-mode.md)): understand the reference, translate it onto the user's architecture, leave a committed analysis doc + issue slate.
 
 **Mode detection is contextual, never verb-based** — "harvest" legitimately triggers two different modes, so dispatch on the payload and the analog, not the word: reference payload is SKILL.md-structured skills → skills mode; payload is code and the user's repo HAS an implementation of the thing → code mode; payload is code and the user's repo has NO implementation of it → harvest mode. If you can't tell whether an ours-side analog exists, check the user's repo before asking. Everything after scope — acquire, sub-agent-per-reference, report, terminal action — is shared; the non-default modes only swap the scope rule, the mapping, the buckets, and the terminal action.
+
+**Interview convention (all modes).** Every question to the user — scope clarification and the closing grill-me — is plain chat, one question per message, recommending an answer each time; never the `AskUserQuestion` tool / structured-question schema.
 
 ## The core principle: implementation, not intent
 
@@ -31,7 +33,7 @@ Cross-repo analysis is useless without a focused subsystem. Before fetching or r
 2. **Identify the reference repo(s)** by url or local path. Multiple references are fine.
 3. **Identify the intent**: feature mining, bug hunting, or "find what's smarter generally". Mixed is fine — note it.
 
-If any of these is fuzzy, ask the user — as a plain-chat question, never the `AskUserQuestion` tool / structured-question schema. Do not do whole-repo comparisons — they produce noise.
+If any of these is fuzzy, ask the user (interview convention above).
 
 Restate the locked scope back in one sentence before continuing. Example:
 
@@ -113,7 +115,7 @@ If a finding doesn't clearly fit one bucket, say so. Let the user decide.
 
 ### Phase 06 — Produce the report
 
-Write to `<root>/tmp/claude/repo-analysis-<ref-name>.md`, where `<ref-name>` is a short slug naming the reference repo(s) — e.g. `repo-analysis-cmux.md`, or `repo-analysis-hlsjs-shaka.md` for multiple references. Never write to a bare `repo-analysis.md`: each analysis gets its own file, so a later run against a different reference (or subsystem) never overwrites an earlier report. If the exact target filename already exists (a re-run against the same reference), overwrite it — same analysis, refreshed. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the report under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path below MUST be the absolute `<root>/tmp/claude/…` — if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` before writing. ALWAYS use this exact structure:
+Write to `<root>/tmp/claude/repo-analysis-<ref-name>.md`, where `<ref-name>` is a short slug naming the reference repo(s) — e.g. `repo-analysis-cmux.md`, or `repo-analysis-hlsjs-shaka.md` for multiple references. Never write to a bare `repo-analysis.md`: each analysis gets its own file, so a later run against a different reference never overwrites an earlier report. If the exact target filename already exists (a re-run against the same reference), overwrite it. Resolve `<root>` to an absolute path via `git rev-parse --show-toplevel` in its own Bash call (fallback: absolute `pwd` if not a git repo) — every `mkdir`/`Write` path must start with `/` or it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent), then `mkdir -p <root>/tmp/claude` before writing. ALWAYS use this exact structure:
 
 ```markdown
 # Cross-Repo Analysis: [user's subsystem] vs [reference(s)]
@@ -157,55 +159,13 @@ Tell the user the report path — put it on its own line with **no trailing punc
 
 ### Phase 08 — Break the findings into actionable items (grill-me session)
 
-Always follow the report with a grill-me-style interview (the `grill-me` skill's mechanic: one question per message, in plain chat, recommending an answer each time — never the `AskUserQuestion` tool). A cross-repo report is dense; stepping through it piece by piece is what turns it into discrete, actionable work items instead of a document that gets read once and shelved.
+Always follow the report with a `grill-me`-style interview (that skill's mechanic; interview convention above). A cross-repo report is dense; stepping through it piece by piece turns it into discrete, actionable work items instead of a document read once and shelved.
 
 1. **Map findings against existing tracking first — codebase over questions.** Before asking anything, check the repo's existing plans: open GitHub issues (`gh issue list`), plan files, roadmap docs. Bucket every actionable finding as either **already planned** (an existing issue/plan covers it — candidate for an augmentation comment citing the reference's pattern) or **unplanned** (candidate for a new issue). Show the user this mapping as context before the first question.
 2. **Grill only the contested routings, one per message.** Skip findings whose disposition is obvious (a clear bug with no existing issue → new issue; an existing issue that already anticipates the fix → small augment). For each genuinely contested item — where does it live, augment vs new, which mechanism, what scope — offer 2-3 lettered options with a recommendation and wait for the user's answer. Never answer your own question or roll forward on an assumed answer.
 3. **End with a confirmed slate.** Summarize the final list — new issues with one-line scopes, augmentation comments per existing issue — and get an explicit yes before creating anything. Issue bodies match the repo's existing issue conventions and cite the reference's file:line pattern sources; augmentation comments name the concrete code both sides.
 
 If the user declines the session ("just the report"), stop after Phase 07 — the interview is the default, not a gate.
-
-## Skills mode
-
-When the reference is a skills repo, the harvest unit is a whole **skill**, not a technique. Same spine — acquire, sub-agent-per-reference, report, grill-me — with four phase overrides.
-
-**Detect it:** the reference's payload is `SKILL.md`-structured skills (Anthropic's skill layout — a `skills/` tree of folders each holding a `SKILL.md` with `name`/`description` frontmatter), little or no application code. Auto-switch to skills mode, or take the user's explicit "harvest their skills".
-
-**Phase 01 scope — whole-catalog is fine here.** Code mode refuses whole-repo comparisons because diffing two codebases file-by-file is noise. Skills are the opposite: each is a coarse, self-describing unit with a `name` and `description`, so cataloguing all of theirs is cheap and high-signal. Scan the whole skills catalog. Narrow to a domain only when the repo is large (dozens of skills) and the user named an area. Still restate the locked scope in one sentence.
-
-**Phase 03 mapping — their skill → mine-or-gap.** For each of their skills, find your analog by capability, not name (their `to-prd` ↔ your `to-spec`). Each lands as **overlap** (you have one doing the same job — a comparison target) or **gap** (you have nothing — a copy/fold candidate). Read their `SKILL.md` descriptions first; open bodies only for skills that overlap or look worth taking.
-
-**Phase 05 buckets — incorporation decisions, not bug/feature.** Each of their skills goes in exactly one:
-
-- **Copy whole** — a gap, self-contained, fits your workflow. Take the skill as-is, adapting frontmatter and paths to your conventions.
-- **Merge into mine** — overlaps one of yours and does part of it better. Port the better part into your existing skill; do not add a second skill (that would be an alias by another name).
-- **Fold as axis** — their skill is one context of a process an engine of yours already runs (a platform, a domain, an asset type). Drop it into the matching `_axis/` directory as a new file, not a new skill. This is the **axis split**; mechanics live in `writing-skills`. (`_generate/` was folded in from `majidmanzarpour/threejs-game-skills` this way.)
-- **I have better** — you already do it as well or better. Note it, take nothing.
-- **Reject** — doesn't fit your workflow, or is scope/tooling-specific to their setup. One line each.
-
-Apply the portability filter as in code mode: "if I took this, would it fight what my skills are trying to be?" If yes, reject.
-
-**Phase 08 terminal — incorporate, don't file issues.** The grill-me session walks the report skill by skill; on a yes it writes into the skills repo — copy-whole creates the new skill folder, merge edits the existing skill, fold-as-axis adds the `_axis/` file and updates that engine's `README.md`. Confirm the full slate before writing anything, then make the edits. (Where code mode ends by filing GitHub issues, skills mode ends by changing the skills repo.)
-
-**Report** — same file target and structure as Phase 06, with the buckets above swapped in for the code-mode buckets.
-
-## Harvest mode
-
-When the capability is absent from the user's repo, the job flips from comparison to acquisition: understand how the reference implements it, translate it onto the user's architecture, and leave behind planning artifacts a future implementation session can execute from. Same spine — scope, acquire, sub-agent-per-reference, portability filter — with five phase overrides.
-
-**Phase 01 scope — lock the capability and its landing zone, not an ours-side subsystem.** There is no user subsystem to name. Instead lock: (1) the capability being brought in, (2) the reference(s), (3) where it would land in the user's architecture — which existing system stays authoritative and which invariants constrain the new piece. Read the user's repo for (3) before reading the reference; the landing zone shapes what's worth extracting. Restate in one sentence: "Harvesting <ref>'s surface-crawling vine generation into our voxel game as a rendering layer; the voxel sim stays authoritative."
-
-**Phase 04 depth — read to reimplementation level.** Comparison can skim for differences; harvest can't. Sub-agents read the reference until each technique is explainable well enough to rebuild from the writeup alone: the algorithm, key constants, data shapes, and — highest value of all — recorded why-decisions and abandoned approaches (a README or comment saying "we tried X, it failed because Y" saves the user from re-walking that dead end).
-
-**Phase 05 — translation map instead of diff buckets.** Build a technique-by-technique map: their mechanism → our equivalent. The load-bearing rows are the **divergences** — places where the reference's assumptions don't hold in the user's architecture (e.g. reference generates once up front; user's system mutates continuously, so generation must be incremental). Divergences dictate the design; straight ports are just labor. Each technique lands in one bucket:
-
-- **Adopt** — ports near-verbatim; name the target module.
-- **Adapt** — a divergence forces a redesign; name the divergence and the reshaped approach.
-- **Reject** — fails the Filezilla rule or doesn't serve what the user's repo is trying to be. One line each.
-
-**Phase 06 — committed analysis doc, not a tmp report.** The deliverable is a permanent reference-analysis doc in the user's docs tree (e.g. `docs/research/<ref-slug>-analysis.md`), following the repo's docs conventions: what the reference is (with source links), how it works technique by technique, then the translation map. Keep implementation sequencing OUT of the doc — that's the issues' job — so the doc stays true even as the plan shifts. Wire the doc into the repo's docs surface per its conventions (sidebar/nav, file map, a roadmap pointer once issues exist).
-
-**Phase 08 terminal — dependency-ordered issue slate.** Draft one issue per subsystem of the incoming capability, ordered by dependency (`Depends on #N`), each with context citing the doc's sections, concrete scope, and acceptance criteria; plus one backlog-capture issue for techniques noticed but deliberately unscheduled, so they aren't lost. Show the user the drafted slate and get an explicit yes before filing — grill-me only for genuinely contested routing, as in code mode.
 
 ## Things to avoid
 
