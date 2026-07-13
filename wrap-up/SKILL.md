@@ -51,19 +51,9 @@ Invoking this skill grants explicit authority to auto-commit and auto-push. The 
 
 ---
 
-## ⛔ BASH COMMAND RULES — READ THIS BEFORE WRITING ANY SHELL COMMAND
+## ⛔ BASH COMMAND RULES
 
-When invoked by `implement`, wrap-up runs unattended. A single permission prompt kills the autonomous run. These rules have no exceptions.
-
-**HARD BANS — these will ALWAYS trigger a permission prompt and MUST NEVER appear:**
-
-1. **`@{u}`, `@{upstream}`, `@{push}`, or ANY `{...}` git refspec.** Use `origin/$(git branch --show-current)` or `origin/main` instead.
-2. **Compound commands where ANY sub-command is not allowlisted.** `&&`, `||`, `;` chaining is only safe when EVERY piece individually passes the allowlist. When in doubt, run commands separately.
-3. **`$(...)` subshell expansion** where the inner command is not allowlisted. Run the inner command first, capture the result, use it in a second call.
-4. **`#` comments inside Bash tool calls.** They trigger approval prompts.
-5. **Newlines inside a single Bash tool call** to separate commands.
-6. **`cd /path && git <cmd>`.** Triggers an "untrusted hooks" prompt. Use `git -C /absolute/path <cmd>` instead.
-7. **`cat <file> || echo "not found"` existence-check compounds.** Use the Read tool to check/read files.
+When invoked by `implement`, wrap-up runs unattended and a single permission prompt kills the autonomous run. Same hard bans as `implement` — never use `@{u}`/`@{upstream}`/`{…}` refspecs (use `origin/main` or `origin/$(git branch --show-current)`), never chain non-allowlisted sub-commands with `&&`/`;`, never `$(...)` a non-allowlisted inner command, no `#` comments or newlines inside a Bash call, never `cd … && git` (use `git -C <abs-path> …`), and never `cat <file> || echo` existence-checks (use the Read tool). See `implement`'s BASH COMMAND RULES for the full list — they apply here verbatim.
 
 ---
 

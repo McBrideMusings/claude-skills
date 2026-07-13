@@ -50,6 +50,8 @@ These rules exist because implement is a walk-away tool. A single permission pro
 
 6. **`cd /path && git <cmd>` to run git in a different directory.** This triggers an "untrusted hooks" prompt. Use `git -C /absolute/path <cmd>` instead — same effect, no compound, no prompt.
 
+7. **`cat <file> || echo "not found"` existence-check compounds.** Use the Read tool to check/read files.
+
 If you find yourself contorting a command to avoid a prompt, STOP. The right fix is adding the pattern to the allowlist, not clever reformatting. Halt and surface the issue instead.
 
 ---
@@ -124,17 +126,15 @@ Only an item that passes both tests reaches Phase 1.
 
 Work the resolved item on the current branch (following triage's Step 8 for the mechanics of a code change).
 
-- If implementation produces no diff after a reasonable attempt (false start, blocked, needs design), halt with a one-line blocker explanation. Do not commit empty changes.
+- If implementation produces no diff after 1–2 attempts (false start, blocked, needs design), halt with a one-line blocker explanation. Do not commit empty changes.
 - If tests fail and the cause isn't trivially fixable in 1–2 attempts, halt with the failure surfaced.
 
 **⛔ MANDATORY TRANSITION — there is NO stopping point between Phase 1 and Phase 2.**
 
-The single most common implement failure is stopping here: code is written, tests pass, and the run ends with a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion. Green tests are NOT the finish line — wrap-up is.
+The single most common implement failure is stopping here: code written, tests green, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line, wrap-up is. The moment implementation lands green with no halt fired, invoke the `wrap-up` skill via the Skill tool. Specifically:
 
-The moment implementation lands and tests are green (and no halt condition fired), you MUST immediately proceed into Phase 2 by invoking the `wrap-up` skill via the Skill tool. Specifically:
-
-- **Do NOT emit a summary, recap, or "next steps" message and end your turn.** If you catch yourself about to write "Next: commit and push" or any equivalent, that is the signal to invoke `wrap-up` instead — the recap IS the work wrap-up does.
-- **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those are wrap-up's phases and must run *inside* the wrap-up skill invocation.
+- **Do NOT emit a summary, recap, or "next steps" message and end your turn.** Catching yourself about to write "Next: commit and push" IS the signal to invoke `wrap-up` instead — the recap is the work wrap-up does.
+- **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those run *inside* the wrap-up invocation.
 - **The pass is complete ONLY after** the `wrap-up` skill has returned **and** the Post-wrap-up conditional-handoff step below has been evaluated. Until then, you are mid-pass — keep going.
 
 The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `wrap-up` and continue). There is no third option.
