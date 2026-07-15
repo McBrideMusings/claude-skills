@@ -23,6 +23,8 @@ Source repo: `~/projects/admin-project-tool/` (CLI `admin-run`, runtime `admin_l
 
 3. **`admin.toml` is the only source of truth.** A project commits just the manifest; there is no `./admin` file to hand-edit or keep in sync. (If a project still has an old committed `./admin`, it's a stale generated artifact — delete it; `admin` runs from PATH.)
 
+4. **Act, don't ask, for standard setup.** Creating or editing `admin.toml`, wiring standard commands (build/dev/deploy/test/docs), populating `[urls]`, or writing a thin passthrough to an existing runner (Makefile/justfile/npm) is routine — just do it and validate with `admin check`. No "shall I create it?", no "want me to wire X?", no "commit?" prompts. The ONLY thing that stops for a decision is a genuine design fork: heavy inline code that should migrate to `admin_lib` (present finding + migration plan first), or a tool/archetype change (Phase 0 commit+push+install). `admin.toml` is globally gitignored, so its edits are never a commit question anyway.
+
 ---
 
 ## Inline code policy
