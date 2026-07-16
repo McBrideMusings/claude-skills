@@ -4,6 +4,8 @@ Auto-entered from [SKILL.md](SKILL.md) Phase 00 when the current branch has an *
 
 **Never posts to GitHub.** All reviewer replies are written to a local response document the user copy-pastes; thread resolution is the user's to do.
 
+**RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, regardless of which skill entered the review. Full statement in [SKILL.md](SKILL.md) RULE 0 — it binds here identically.
+
 ## Phase 01 — Pre-flight (mandatory; abort if any check fails)
 
 Before touching GitHub, prove the local state is safe to act on. Stop and tell the user if any check fails — do not auto-fix.

@@ -1,6 +1,6 @@
 ---
 name: review
-description: "The single entry point for reviewing code. Runs a nine-axis review (including a gated security lens) and routes by context: on a repo you own it just reviews + documents; on a collaborative repo it triages the PR queue (on main), reviews your own branch, or reviews a teammate's PR and offers, per finding, to fix small low/medium issues directly on the branch or post the higher-severity ones back to the author. On your own open PR it branches: unresolved review comments → work through them point-by-point; none → self-review the branch and offer grill-me on any uncertainty. `review dual` adds an independent cross-vendor delegate second opinion, reconciled into one report; `review repo` reviews the whole codebase on the current branch (no diff — every axis, heavy, always confirms first). Triggers: 'review', 'review this', 'review my changes', 'review my code', 'review prs', 'pr review queue', 'triage my review queue', 'what PRs need my review', 'dual review', 'review with codex', 'second-opinion review', 'review repo', 'review the whole repo', 'full repo review', 'whole-codebase review', 'security review', 'review for security', 'address PR comments', 'address review comments', 'work through PR feedback', 'handle reviewer comments', 'respond to PR review', 'triage PR feedback', 'unresolved PR comments', 'go through PR comments', 'PR review responses'."
+description: "The single entry point for reviewing code. Runs a nine-axis review (including a gated security lens) and routes by context: on a repo you own it just reviews + documents; on a collaborative repo it triages the PR queue (on main), reviews your own branch, or reviews a teammate's PR and offers, per finding, to fix small low/medium issues directly on the branch or post the higher-severity ones back to the author. On your own open PR it branches: unresolved review comments → work through them point-by-point; none → self-review the branch and offer grill-me on any uncertainty. `review dual` adds an independent cross-vendor delegate second opinion, reconciled into one report; `review repo` reviews the whole codebase on the current branch (no diff — every axis, heavy, always confirms first). Triggers: 'review', 'review this', 'review my changes', 'review my code', 'review prs', 'pr review queue', 'triage my review queue', 'what PRs need my review', 'dual review', 'review with codex', 'second-opinion review', 'review repo', 'review the whole repo', 'full repo review', 'whole-codebase review', 'security review', 'review for security', 'address PR comments', 'address review comments', 'work through PR feedback', 'handle reviewer comments', 'respond to PR review', 'triage PR feedback', 'unresolved PR comments', 'go through PR comments', 'PR review responses'. Never uses the AskUserQuestion selector at any point in a pass — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Review
@@ -8,6 +8,18 @@ description: "The single entry point for reviewing code. Runs a nine-axis review
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs. `review` is the **single entry point** for review — it routes by context (your working tree, a branch, one PR, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
 
 The review engine itself — the nine-axis dispatch, scoring, and report format — lives in [REVIEW-CORE.md](REVIEW-CORE.md). This file is the router: it resolves ownership, picks a branch, then hands off to REVIEW-CORE.md (self-review) or [PR-COMMENTS.md](PR-COMMENTS.md) (address my PR's unresolved comments). Load the branch file only once you've routed to it — that keeps context small.
+
+## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a review
+
+**Every question this skill asks the user — without a single exception — is plain chat text answered by a typed keyword. The `AskUserQuestion` tool (the arrow-key option selector) is never called at any point in a review pass.**
+
+This is a hard, non-negotiable ban with the same standing as the no-AI-attribution rule. It holds regardless of how the review was entered — typed `/review`, routed here from `implement`, `iterate`, `wrap-up`, or any other skill. A caller's habits do not unlock the tool; a review pass is a no-selector zone from the moment this file loads until the pass ends, **including the sub-files it hands off to** ([REVIEW-CORE.md](REVIEW-CORE.md), [PR-COMMENTS.md](PR-COMMENTS.md)) and any subagent spawned during the pass.
+
+It covers **every** decision point, not just the ones spelled out below. Non-exhaustive: end-of-pass finding disposition, which PRs to review from the queue, review flavor, review scope, verdict choice, whether to run grill-me, whether to fix on the branch, whether to write the summary doc, and any ambiguity that needs the user to settle it.
+
+**Do this instead.** Print the options as plain chat text — numbered or keyworded, as many as actually exist — and say what to type. Keywords are good (`fix`, `post`, `approve`, `skip`, `all`, `1016 and 1018`); the point is that the answer is *typed*, not picked from a menu widget. On more than one finding, list each with its own line so the user can answer per finding (`1 fix, 2 post, 3 skip`).
+
+**Self-check before every question in a review.** If you are about to open a selector, stop — that is this rule firing. Rewrite the question as chat text and send that instead.
 
 ## Flavors — solo vs dual
 
@@ -75,6 +87,22 @@ The `latest_commit <= latest_feedback` test is the load-bearing heuristic: **if 
 
 Everything except Queue mode and the comment branch is a single-target self-review: continue into [REVIEW-CORE.md](REVIEW-CORE.md) against that target. **Queue mode** wraps the core, running it once per selected PR.
 
+## Phase 00.5 — Explain the PR before reviewing it
+
+**Whenever the review target is a PR — mine or a teammate's, every time, no exceptions — explain what it does before you review it.** Run the [summary](../summary/SKILL.md) skill against the PR's branch, then present the result **in chat**. Do this *before* the findings, so the user reads what the change is and then reads the review of it.
+
+**Assume the reader has never seen this code.** Plain language, no insider terms, no repo shorthand — name the actual thing that changed and the actual behavior that was wrong. "The payout code paid the winner twice when two players went all-in on the same hand; this makes it pay once" beats "fixes double-settlement in the all-in path".
+
+Two things go in the chat explanation:
+1. **What the PR changed** — the summary skill's header + change list, in the reader's-never-seen-it language above.
+2. **The issue it was fixing** — what was broken before, and what breaks for a person using it. Pull the issue via `gh pr view <n> --json body` and any `Resolves #N` / `Fixes #N` reference (`gh issue view <n> --json title,body`). If the PR links no issue, say what the commits and diff show it was fixing.
+
+**Skip the issue half for a new feature.** A PR that adds something that didn't exist has no bug behind it — say what it adds and move on. Don't invent a fixed issue to fill the slot.
+
+**This is chat-only — it never enters the PR.** It's the user's orientation, not review output: it does not go in the report file, the review verdict body, or any posted comment. What gets posted is only the findings (see End of pass).
+
+**Skipping the summary document.** The summary skill writes a file to `<repo-root>/tmp/claude/summaries/…`. On a teammate's PR that file is usually noise. Default: run the skill for its analysis, present it in chat, and **skip the file write** — say "summary not written to disk" in one clause. Write the file when the user asks for it, or when the PR is mine and I'll want the text for the PR description; then print its absolute path as the last token on its line. If the user says `skip summary` at any point, drop this phase entirely and go straight to the review.
+
 ## Dual flavor (`review dual`)
 
 When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor delegate on the **same** diff, then reconcile. (Dual applies to the self-review core, not the comment branch.)
@@ -134,6 +162,17 @@ After the report is written, **always print**:
 - the **report file path** as the last token on its line, no trailing punctuation.
 
 Then run the offer(s) for this routing, per Phase 00 — never automatic. On my own code it's a single fix offer; on a **teammate's PR** it's a combined **fix-then-post** offer where the user decides, per finding, whether to fix it on the branch, post it back to the author, or drop it. The self-review path may also add grill-me first.
+
+**Every offer here is plain chat text — RULE 0 applies hardest at this exact point.** The end-of-pass disposition is where the selector gets reached for most often, and it is banned here like everywhere else. Print one line per finding with its keyword options and let the user type the answer:
+
+```
+1. [low · best-practice] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip`
+2. [high · bug] <one-line finding> — `fix` · `post` (recommended — changes intended behavior) · `skip`
+
+Type a disposition per finding, e.g. `1 fix, 2 post`.
+```
+
+Lead each line with the recommended keyword's rationale in a clause, not a paragraph. Never render this as an option menu.
 
 **Offer grill-me** — only on the self-review path, and only when the report carries uncertain findings (per REVIEW-CORE.md's hand-off rule). Offer a `grill-me` pass that interrogates those findings one question at a time to settle intent. This is an *addition* to the fix offer below, not a replacement — run it first when it applies, then continue to the fix offer.
 

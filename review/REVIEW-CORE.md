@@ -7,6 +7,8 @@ The review engine — what runs against a **single target** (a working tree, a b
 - **`wrap-up` Phase 4** — runs this over the session diff, then auto-fixes 75+ findings and routes architecture findings to follow-ups.
 - **`implement` validate** — runs this in plain mode over the implementer's diff, no offers, no posting.
 
+**RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, no matter which caller above entered the review. Full statement in [SKILL.md](SKILL.md) RULE 0 — it binds here identically.
+
 ## Modes
 
 - **Uncommitted changes** (default when working tree dirty): review unstaged + staged.
