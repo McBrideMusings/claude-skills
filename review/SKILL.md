@@ -150,8 +150,9 @@ Present a table — one row per PR — with these columns: **#** (as a markdown 
 **Review loop (strictly sequential, one PR at a time):**
 1. `gh pr checkout <number>` — on failure, report the error, skip this PR, continue. Never force anything.
 2. Read context: `gh pr view <number> --json title,body,comments,reviews` — feeds the Spec axis and avoids re-flagging what other reviewers already raised.
-3. Run the review core (and dual flavor if chosen) against the PR's diff vs its base (usually `origin/main`). Let it finish before the next PR.
-4. Run the **fix-and-post offer** for this PR (it's a teammate PR → propose which findings to fix on the branch vs hand back via verdict/comment, explicit yes for each action). Capture report path, what was pushed (commit + branch), and the verdict you posted (or "not posted").
+3. **Run Phase 00.5 for this PR** — explain what it changed and the issue it fixed, in chat, before its findings. Per-PR, every PR in the queue; the triage table's one-liner does **not** stand in for it. `skip summary` from the user drops it for the rest of the run.
+4. Run the review core (and dual flavor if chosen) against the PR's diff vs its base (usually `origin/main`). Let it finish before the next PR.
+5. Run the **fix-and-post offer** for this PR (it's a teammate PR → propose which findings to fix on the branch vs hand back via verdict/comment, explicit yes for each action). Capture report path, what was pushed (commit + branch), and the verdict you posted (or "not posted").
 
 **Complete.** Return to the recorded branch (`git checkout <original-branch>`). Summarize one row per PR — number, title, verdict, blocking-finding count, report path, posted (y/n). Never parallelize checkouts or reviews.
 
