@@ -114,6 +114,8 @@ For each issue from any of the nine scored lenses (best-practice issues only aft
 
 Keep issues scoring **≥ 75**. Drop the rest.
 
+**When review ran inline** (small diff, no Phase 05 fan-out), *you* are the scorer — apply [FALSE-POSITIVES.md](FALSE-POSITIVES.md) to each candidate yourself; skipping the fan-out does **not** skip the gate. The catch that leaks a non-finding through: writing a finding down and then telling the user to skip it. If your own disposition for a finding is "skip" / "FYI" / "non-blocking nit" / "not worth posting," it scored <75 — drop it before it reaches the report or the chat, don't surface it with a skip recommendation attached. A confirmed-correct, author-documented trade-off with no better alternative is a **0** (see the "Deliberate trade-offs" false-positive bullet), not a low-severity FYI.
+
 ### Phase 07 — Write the Report
 
 - Filename: `/Users/pierce/.claude-tmp/claude-review-YYYY-MM-DD-HHMMSS.md` using current local time. No `mkdir` needed — `/Users/pierce/.claude-tmp/` is a persistent directory. No pruning needed; files are tiny.
