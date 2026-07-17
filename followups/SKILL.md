@@ -38,7 +38,7 @@ Append-only for new items. Existing items are only moved to a `## Resolved` sect
 
 ## Modes
 
-This skill **captures** follow-ups — it creates tracked items. *Browsing, picking, and starting* a follow-up is `triage`'s job (a follow-up is just another tracked item triage reads across GitHub issues, the local followups file, and the handoff). So this skill has three modes, all about creating or tidying items:
+This skill **captures** follow-ups — it creates tracked items. *Browsing, picking, and starting* a follow-up is `triage`'s job (a follow-up is just another tracked item triage reads across GitHub issues and the local followups file). So this skill has three modes, all about creating or tidying items:
 
 | Invocation | Mode |
 |---|---|
@@ -162,4 +162,4 @@ If the user says "none", write nothing. Do not split items across destinations. 
 
 ### Scope: this skill stops at filing
 
-Do not prompt to pin a handoff and do not write `<cwd>/.claude/handoff.local.md`. Handoffs are the caller's responsibility: `implement` writes one conditionally at the end of an autonomous pass; manual `/wrap-up` writes none. If a user wants a handoff in a manual session, they invoke `/handoff` directly.
+Do not write a handoff. Handoffs are a separate, user-invoked concern: if a user wants one, they invoke `/handoff` directly. No skill writes handoffs on the user's behalf.

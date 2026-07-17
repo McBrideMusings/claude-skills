@@ -90,8 +90,7 @@ implement discovers **one** item to work, in this order. Stop at the first that 
    - **Standalone pass:** run triage **interactively** — let it recommend and ask the user which one item to work. Work exactly the one they pick, then this pass is done.
    - **Continuous pass:** run triage **non-interactively** — skip the "wait for user confirmation" step at triage Step 7 and proceed with the top recommendation. (`/iterate` supplies the fresh backlog each iteration; a single continuous pass still works exactly one item.)
    - **Skip triage's Step 9 (offer wrap-up).** implement runs wrap-up itself in Phase 2; don't let triage invoke it or it will double-commit.
-   - **Refuse untracked items.** The item must be an existing GitHub issue, an entry in `<repo-root>/tmp/claude/followups.md`, or an outstanding handoff at `<repo-root>/tmp/claude/handoffs.md`. If triage's top pick is a fresh idea, a "while we're here" cleanup, or an invented refactor, halt and surface it for the user to file or reject. Never invent feature work autonomously.
-   - **Handoff as top pick:** invoke `handoff` Resume mode to extract the "Immediate next step" and session context, then proceed with that as the work item. Delete the handoff file as part of Phase 2 wrap-up once fulfilled (no prompt).
+   - **Refuse untracked items.** The item must be an existing GitHub issue or an entry in `<repo-root>/tmp/claude/followups.md`. If triage's top pick is a fresh idea, a "while we're here" cleanup, or an invented refactor, halt and surface it for the user to file or reject. Never invent feature work autonomously.
    - **Empty queue:** if triage finds nothing actionable, print *"Nothing to iterate on."* and stop.
 
 Whichever branch resolved it, implement now has exactly **one** item. Proceed to Phase 0.5.
@@ -135,7 +134,7 @@ The single most common implement failure is stopping here: code written, tests g
 
 - **Do NOT emit a summary, recap, or "next steps" message and end your turn.** Catching yourself about to write "Next: commit and push" IS the signal to invoke `wrap-up` instead — the recap is the work wrap-up does.
 - **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those run *inside* the wrap-up invocation.
-- **The pass is complete ONLY after** the `wrap-up` skill has returned **and** the Post-wrap-up conditional-handoff step below has been evaluated. Until then, you are mid-pass — keep going.
+- **The pass is complete ONLY after** the `wrap-up` skill has returned. Until then, you are mid-pass — keep going.
 
 The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `wrap-up` and continue). There is no third option.
 
@@ -168,27 +167,6 @@ Invoke the `wrap-up` skill via the Skill tool with these overrides:
 - **Quality:** run code-simplifier and code-review. Auto-apply simplifications. Auto-fix any 75+ issues. If a 75+ issue can't be auto-fixed in 1–2 attempts, halt before committing.
 - **Commit + push + land:** commit with project conventions, push, and land per wrap-up's own ownership rules (merge on an owned repo; PR on a collaborative one). wrap-up owns the merge/PR choreography — implement does not duplicate it.
 - **Follow-ups:** in a **standalone** pass the follow-up step is **interactive** (surface findings, user chooses fix-now / file / skip). In a **continuous** pass it files **autonomously** with no prompt. This is driven entirely by the mode token you passed above.
-
----
-
-## Post-wrap-up — Conditional handoff write
-
-After `wrap-up` returns, decide whether this pass uncovered something hot enough that the *next* pass benefits from this session's context as scaffolding for its first action.
-
-**Default: write no handoff.** A handoff is reserved for cases where context is load-bearing — not "here's the next backlog item." Routine polish, clean passes, and items already captured as followups do not justify one.
-
-Write a handoff only when at least one clearly applies:
-
-- **Regression introduced** — this pass broke something and the fix didn't fully land.
-- **Partial fix** — implementation started but couldn't complete. The next pass needs the resume point.
-- **Adjacent bug discovered** — a bug found next to the worked item, where the territory this session loaded makes the next fix materially cheaper than rediscovering it cold.
-- **New high-priority issue surfaced mid-work** that wasn't visible before and shouldn't wait behind the normal backlog.
-
-If none clearly apply, write nothing and end the pass.
-
-**When a handoff IS warranted:** invoke the `handoff` skill in Write mode (no prompt — autonomous). The "Immediate next step" must name the hot item concretely. The handoff skill owns the format, path, and field definitions.
-
-This step runs only inside `implement`. Manual `/wrap-up` and direct `/followups` never write a handoff.
 
 ---
 

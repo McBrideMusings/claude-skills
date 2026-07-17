@@ -1,13 +1,13 @@
 ---
 name: triage
-description: "Pick the next work item from GitHub issues, prior-session follow-ups, or an outstanding handoff. Assesses project phase (early vs mature) and recommends one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', 'pick next issue', start-of-session planning."
+description: "Pick the next work item from GitHub issues or prior-session follow-ups. Assesses project phase (early vs mature) and recommends one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', 'pick next issue', start-of-session planning."
 ---
 
 # Triage
 
-Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads three sources: GitHub issues, `<repo-root>/tmp/claude/followups.md`, and `<repo-root>/tmp/claude/handoffs.md`.
+Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads two sources: GitHub issues and `<repo-root>/tmp/claude/followups.md`.
 
-**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (top recommendation, or the handoff if one exists). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
+**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (the top recommendation). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 
@@ -27,7 +27,7 @@ User may pass a GitHub URL:
 | `github.com/owner/repo/issues` or `github.com/owner/repo` | All open issues |
 | `github.com/orgs/owner/projects/N` | Project board items |
 
-**No URL** → default to current repo (`gh repo view --json nameWithOwner -q .nameWithOwner`). Also check `<repo-root>/tmp/claude/followups.md` for prior-session items and `<repo-root>/tmp/claude/handoffs.md` for an outstanding handoff. If detection fails, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
+**No URL** → default to current repo (`gh repo view --json nameWithOwner -q .nameWithOwner`). Also check `<repo-root>/tmp/claude/followups.md` for prior-session items. If detection fails, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
 
 ## Phases
 
@@ -55,8 +55,6 @@ On auth/repo-not-found errors: report and stop.
 **Docs** (if in local repo): read `docs/PRD.md` (what the project is) and `docs/roadmap.md` (Now / Next / Later / Deferred). If neither default path exists, glob `**/PRD.md` and `**/roadmap.md` once before giving up. Use whichever exist; if both, use both as project-phase inputs.
 
 **Followups file** — if `<repo-root>/tmp/claude/followups.md` exists, read its unresolved items. Treat each unresolved item as a singleton candidate that enters Phase 06 scoring alongside GitHub issues (no labels, project-phase tilt applied as if bug/feature). Classify as `bug` if the item names a defect, regression, broken behavior, or starts with "fix"; otherwise classify as `feature`. Items already in the `## Resolved` section are ignored.
-
-**Handoff** — if `<repo-root>/tmp/claude/handoffs.md` exists, hold it for Phase 08 (it becomes the default top option, not a scored item).
 
 ### Phase 03 — Off-load Analysis to a Haiku Sub-Agent
 
@@ -197,14 +195,11 @@ Which should I start on? Reply with a number, or tell me something else.
 
 Build 2–4 numbered options in this order:
 
-1. **If a handoff exists** (`<repo-root>/tmp/claude/handoffs.md`), it is the default top option. `Resume handoff: <first sentence of the handoff's 'What we were working on' field, truncated to ~60 chars>` — then the handoff's `Immediate next step` field (verbatim, per handoff Contract).
-2. Top scored recommendation — **named** like `SFTP pool hygiene (#297, #295)` or `HLS mutex stall (#286)`. Never bare issue numbers. Then scope + why. Becomes option 1 if no handoff exists.
-3. Next-best group / "also worth attention" — same naming.
-4. (Optional) Third meaningfully-different alternative. No need to add a "pick something else" escape — a free-form reply is always open.
+1. Top scored recommendation — **named** like `SFTP pool hygiene (#297, #295)` or `HLS mutex stall (#286)`. Never bare issue numbers. Then scope + why.
+2. Next-best group / "also worth attention" — same naming.
+3. (Optional) Third meaningfully-different alternative. No need to add a "pick something else" escape — a free-form reply is always open.
 
 Every option gets a named label in plain language; issue numbers in parens after.
-
-**If the user picks the handoff option:** hand control to the `handoff` skill's Resume mode as an interactive caller (per handoff Contract: handoff will confirm before deleting the file on completion). Then implement.
 
 Wait for the reply (a number or a free-form override) before implementing.
 

@@ -1,72 +1,23 @@
 ---
 name: handoff
-description: "Check for an existing handoff and offer to resume it, OR write a new handoff at the end of a session. Triggers: 'handoff', 'resume', 'pick up where we left off', 'save context for next time', start-of-session check, end-of-session save. Does NOT trigger on 'wrap up' or 'wrap-up' — those invoke /summary."
+description: "Write a handoff document capturing the current session so a fresh agent (or future you) can pick up the work. Write-only — it produces a doc, it does not read one back. Triggers: 'handoff', 'write a handoff', 'save context for next time', 'capture this session'. Does NOT trigger on 'wrap up' or 'wrap-up' — those invoke /summary."
 ---
 
 # Handoff
 
-Two modes — Resume (read an existing handoff, suggest next step) vs Write (capture this session into a handoff). Routing has two layers: **explicit intent wins; otherwise route by session context.**
+Write a handoff document that captures the invisible context of the current session so a fresh agent — or you, later — can continue the work without re-reading the whole conversation.
 
-### Layer 1 — explicit intent (always wins)
+**Write-only.** This skill produces a document; it does not read one back, resume from one, or manage a single canonical slot. Every invocation writes a new timestamped file. To use a handoff, open the file. Nothing auto-fires it, and no other skill depends on it.
 
-| Trigger | Mode |
-|---|---|
-| User says "resume", "pick up", "continue", or skill runs at SessionStart | Resume |
-| User says "save context for next time", "write a handoff", or skill is invoked by `followups` Step 6 | Write |
-| Invoked by `implement` (autonomous caller) | as `implement` specifies — Resume at start, Write at end |
+If the user passed arguments (e.g. `/handoff working on the auth refactor next`), treat them as a description of what the next session will focus on — tailor the fields (especially **Immediate next step** and **Suggested next skills**) accordingly, and use them for the filename slug.
 
-### Layer 2 — bare `/handoff` with no explicit keyword and no sibling caller
+## What to capture
 
-Route by **whether this session contains substantive work** (a judgment from the conversation so far — has anything worth capturing actually happened, or is this a fresh/just-`/clear`ed context?):
+**Don't duplicate content already in other artifacts** — PRDs, plans, ADRs, issues, commits, diffs. Reference them by path or URL. Capture only the **invisible context** that isn't in the code or those artifacts (e.g. "we ruled out approach A because the JWT lib doesn't expose a refresh hook").
 
-| Session state | Mode |
-|---|---|
-| Substantive work happened this session | **Write** (overwrite any existing file without asking) |
-| Fresh / empty (post-`/clear`, nothing done yet) | **Resume** — read the existing handoff and suggest next steps |
-| Fresh / empty **and** no handoff file exists | say "No handoff found." and stop |
-| Genuinely ambiguous (a few trivial messages, unclear if real work happened) | ask **one line** — "Resume the existing handoff, or write a new one?" — then act on the answer; do not guess |
+Redact anything sensitive — API keys, passwords, hostnames, personally identifying info. Never write those into the file.
 
-This layer only governs **interactive bare `/handoff`**. Sibling callers (`followups`, `implement`) always hit Layer 1, so the contract those skills depend on is unchanged.
-
----
-
-## Contract (load-bearing for sibling skills)
-
-Sibling skills (`followups`, `triage`, `implement`) depend on the following. Do not change without updating those skills.
-
-- **Path:** `<repo-root>/tmp/claude/handoffs.md` (single-slot; one handoff per repo, `<repo-root>` = `git rev-parse --show-toplevel`)
-- **Frontmatter keys:** `created` (format `YYYY-MM-DD HH:MM`), `project`
-- **Body field names (verbatim):** `What we were working on`, `Key decisions`, `Discoveries`, `Immediate next step`, plus optional `Suggested next skills`
-- **Forward compatibility:** sibling skills must tolerate (or ignore) body fields beyond the four required ones. Don't blow up on unknown fields — they may be additions.
-- **Deletion handshake:** delete on resume completion. Interactive callers confirm first; autonomous callers (`implement`) delete without prompting once the work the handoff points at is fulfilled.
-- **Overwrite handshake:** always overwrite without prompting — the user invoked the command, that's confirmation enough.
-
----
-
-## Resume mode
-
-1. Run `git rev-parse --show-toplevel` to get `<repo-root>`. If not in a git repo, say "No handoff found." and stop.
-2. Read `<repo-root>/tmp/claude/handoffs.md`. If missing, say "No handoff found." and stop.
-3. If the file is malformed (missing frontmatter or any of the four body fields), surface the parse error, show the raw contents, and ask the user what to do — do not auto-discard.
-4. Surface the key points in chat and ask — as a one-line plain-chat question, never via the `AskUserQuestion` tool / structured-question schema:
-
-   > "Found a handoff from [date]. It says we were working on [1-sentence summary]. Want to pick up where we left off, or start fresh?"
-
-5. Wait for the answer:
-   - **Yes / continue** → summarize the "Immediate next step" field, then:
-     - Interactive caller: confirm before deleting the file.
-     - Autonomous caller (`implement`): proceed without prompting; delete after the pointed-at work is committed.
-   - **No / start fresh** → ask whether to overwrite with a new handoff (proceed to Write mode below) or discard.
-
----
-
-## Write mode
-
-If the user passed arguments (e.g. `/handoff working on the auth refactor next`), treat them as a description of what the next session will focus on and tailor the fields — especially **Immediate next step** and **Suggested next skills** — accordingly.
-
-Capture four required fields and one optional fifth.
-
-**Don't duplicate content already captured in other artifacts** — PRDs, plans, ADRs, issues, commits, diffs. Reference them by path or URL. Capture only the **invisible context** that isn't in the code or those artifacts (e.g. "we ruled out approach A because the JWT lib doesn't expose a refresh hook").
+Capture four required fields and one optional fifth:
 
 1. **What we were working on** — 1–2 sentences. The specific task or problem, not just the feature name.
 2. **Key decisions** — what choices were made and *why*. Especially alternatives ruled out.
@@ -74,12 +25,12 @@ Capture four required fields and one optional fifth.
 4. **Immediate next step** — the exact thing to do first when resuming. Specific enough to act on without re-reading the conversation. Include open blockers/questions here if they shape the next step.
 5. **Suggested next skills** *(optional)* — 0–2 skills the next session is likely to invoke, inferred from the Immediate next step. e.g. *"/tdd, /diagnose"*. Omit the field entirely when no clear match.
 
-### File format
+## File format
 
 ```markdown
 ---
 created: YYYY-MM-DD HH:MM
-project: <basename of cwd>
+project: <basename of repo root>
 ---
 
 **What we were working on:** <1–2 sentences>
@@ -93,14 +44,18 @@ project: <basename of cwd>
 **Suggested next skills:** </tdd, /diagnose>   ← omit this line entirely if no clear match
 ```
 
-### Write procedure
+## Write procedure
 
-1. Run `git rev-parse --show-toplevel` in its own Bash call to get the ABSOLUTE `<repo-root>`. If not in a git repo, use the absolute output of `pwd`. **`<repo-root>` MUST be absolute — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `tmp/claude/handoffs.md` would land the file under whatever subdir the shell is in, so the read side (which resolves the real root) won't find it. Every `mkdir`/`Write`/path in the steps below MUST be the absolute `<repo-root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug.
+1. Run `git rev-parse --show-toplevel` in its own Bash call to get the ABSOLUTE `<repo-root>`. If not in a git repo, use the absolute output of `pwd`. **`<repo-root>` MUST be absolute — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `tmp/claude/handoffs/…` would land the file under whatever subdir the shell is in. Every `mkdir`/`Write`/path below MUST be the absolute `<repo-root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug.
 2. Ensure `tmp/` is in `<repo-root>/.gitignore` (Read the file; if absent, Edit to add `tmp/` on its own line).
-3. Run `mkdir -p <repo-root>/tmp/claude` as a separate Bash call.
-4. If `<repo-root>/tmp/claude/handoffs.md` already exists: overwrite it. Do not ask.
-5. Synthesize the four fields from the current conversation.
-6. Write the file to `<repo-root>/tmp/claude/handoffs.md`.
-7. Confirm with one line ending at the path — **no trailing period or other punctuation** after the path, so Ghostty ⌘-click stays clean: `Handoff written to <repo-root>/tmp/claude/handoffs.md`
+3. Run `mkdir -p <repo-root>/tmp/claude/handoffs` as a separate Bash call.
+4. Build the filename: `<repo-root>/tmp/claude/handoffs/YYYY-MM-DD-HHMM.md`. If the user passed arguments, append a short kebab slug derived from them: `YYYY-MM-DD-HHMM-<slug>.md` (e.g. `2026-07-17-1432-auth-refactor.md`). Never overwrite an existing file — every handoff is a new file. In the unlikely case the exact minute-stamped name already exists, append `-2`, `-3`, … until unused.
+5. Synthesize the four (or five) fields from the current conversation.
+6. Write the file.
+7. Confirm with one line ending at the path — **no trailing period or other punctuation** after the path, so Ghostty ⌘-click stays clean: `Handoff written to <repo-root>/tmp/claude/handoffs/2026-07-17-1432.md`
 
 Do not print the full handoff content to chat — just confirm the path.
+
+## Pruning
+
+`<repo-root>/tmp/claude/handoffs/` accumulates one file per invocation. Follow the shared tmp-file age-pruning policy: when writing a new handoff, delete handoff files older than 30 days from the same directory.
