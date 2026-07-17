@@ -64,6 +64,8 @@ This table is the single most load-bearing Rojo fact:
 | `foo/init.meta.json` | properties for the folder-backed instance |
 | `foo.model.json` | a JSON-defined instance/model |
 
+> **Gotcha — never put `init.server.luau`/`init.client.luau` at a folder that maps directly to a *service*.** `init.*.luau` turns the *folder instance itself* into a Script/LocalScript. That works for a normal sub-folder, but a folder mapped to `ServerScriptService`/`StarterPlayerScripts` (etc.) can't become a Script — the service already exists — so Rojo creates a **rogue duplicate** Script named after the service, sibling to the real one, and your bootstrap never runs. **Bootstraps must be child scripts:** `src/server/Main.server.luau` → `ServerScriptService.Main` (a real Script), not `src/server/init.server.luau`.
+
 ## Minimal solo layout
 
 ```
@@ -77,9 +79,9 @@ MyGame/
 ├── .gitignore
 ├── src/
 │   ├── server/
-│   │   └── init.server.luau     # server bootstrap
+│   │   └── Main.server.luau     # server bootstrap → ServerScriptService.Main (a child Script)
 │   ├── client/
-│   │   └── init.client.luau     # client bootstrap
+│   │   └── Main.client.luau     # client bootstrap → StarterPlayerScripts.Main (a child LocalScript)
 │   └── shared/                  # ModuleScripts used by both
 └── tests/
     └── run.luau                 # Lune headless runner
