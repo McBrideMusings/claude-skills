@@ -221,4 +221,14 @@ If the user wants to weigh in **without** a verdict, post the report as a plain 
 
 Hand the report path to the chosen flow. Don't start it without a yes.
 
+**Offer to arm auto-merge (my own open PR)** — only on the self-review path when the target is **my own open PR** and the pass came out clean: no blocking/serious finding survived, **or** every finding was just fixed. Gate on the repo actually allowing it:
+```
+gh api repos/<owner>/<repo> --jq '.allow_auto_merge'
+```
+`true` → print one plain-text line: `Repo allows auto-merge — arm it so GitHub merges on approval? \`arm\` / \`skip\``. On an explicit `arm` in that message (outward action → same explicit-yes gate as any send), run:
+```
+gh pr merge <n> --squash --delete-branch --auto
+```
+`false`, no open PR, or serious findings still open → **say nothing, no offer**. Never touches repo settings; only the per-PR button, only where GitHub already offers it.
+
 **Neither** — a branch that isn't mine with no open PR (nothing to post to, not my code to fix): just the printed report + path. No offer.
