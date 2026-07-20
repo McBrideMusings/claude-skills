@@ -30,6 +30,45 @@ The review engine — what runs against a **single target** (a working tree, a b
 
 **Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched nine parallel sub-agents.
 
+### Phase 01a — Confirm the checkout is at the branch head
+
+**Mandatory whenever the target is a branch or a PR — never skipped, never assumed.** Run this before computing any diff and before launching a single sub-agent.
+
+A checkout is not proof of currency. A worktree left over from an earlier session, a branch the author force-pushed or rebased since you last fetched, a PR head that moved after you were assigned — each leaves a local `HEAD` that looks perfectly healthy while pointing at code that no longer exists upstream. Every lens then reviews the stale tree and reports findings about lines the author already changed. That failure is **silent and total**: the report reads normally, the file:line citations resolve locally, and nothing in the output hints that the whole pass is void. It is worse than no review, because it hands back confident findings that are wrong.
+
+Skip only for the **uncommitted changes** mode (the target is the working tree, so there is no remote to be behind) or when the repo has no remote at all. In every other mode, verify:
+
+```
+branch=$(git branch --show-current)
+git fetch origin "$branch"
+git rev-list --left-right --count HEAD...FETCH_HEAD
+```
+
+Both counts must be `0`. **When a PR is the target, the authoritative head is the PR's own head commit, not just `origin/<branch>`** — compare against it directly:
+
+```
+gh pr view <n> --json headRefOid --jq .headRefOid
+git rev-parse HEAD
+```
+
+**If HEAD is not the head — stop. Do not review, do not launch Phase 04, do not report partial findings.** Print:
+
+- local `HEAD` sha and the authoritative head sha,
+- the ahead/behind counts,
+- the commits you are missing — `git log --oneline HEAD..FETCH_HEAD` — because a commit titled like a fix for the last review is the single most load-bearing thing the user needs to see,
+- whether the local commits that are "ahead" are genuinely local work or pre-rebase duplicates of remote commits (compare messages) — this decides whether moving is lossy.
+
+Then offer, as **plain chat text with typed keywords** (RULE 0 — no selector), the ways to move the worktree onto the real head, each with what it costs:
+
+```
+`reset` — git reset --hard origin/<branch> (discards local commits; say which, and whether their content survives on the remote)
+`detach` — git checkout <head-sha> (branch ref untouched, fully reversible; use when local commits must survive)
+```
+
+Moving the user's worktree is a git state change on their checkout, so it waits on an **explicit yes in that message** — never move it unilaterally. On a clean pass through this phase, say nothing and continue; the check is only worth words when it fails.
+
+**Never work around a stale checkout by reviewing the remote diff alone** (`gh pr diff` into a prompt, a raw `git diff` against `FETCH_HEAD`) while the working tree still holds old files. The lenses read files, not just the diff — a diff-only patch leaves every sub-agent reading the stale tree, which is the exact failure this phase exists to prevent.
+
 ### Phase 01r — Repo mode
 
 Reached only via explicit `review repo` or an accepted offer above. The target is the **whole codebase on the current branch**, reviewed as it stands — there is no diff.
