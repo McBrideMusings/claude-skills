@@ -1,6 +1,6 @@
 ---
 name: terminal
-description: "Drive a visible Terminal.app window on the macOS desktop from Claude — spawn a window the user can watch, run commands in it, and read its output back. Two modes: ONE-SHOT (spawn → run one command → wait → read; this is the transport `delegate` sits on) and SESSION (open a persistent pane, send it commands over time, read it, close it). Use when asked to run something in a real terminal window the user can see, drive a long-running terminal, send commands to a desktop terminal, or watch a process live. The transport is Terminal.app via AppleScript — the only macOS terminal that can both drive a pane and read its output back. For driving OTHER existing Ghostty panes inside the user's Macterm setup, that's the `macterm` skill instead."
+description: "Drive a visible Terminal.app window on the macOS desktop from Claude — spawn a window the user can watch, run commands in it, and read its output back. Two modes: ONE-SHOT (spawn → run one command → wait → read; this is the transport `delegate` sits on) and SESSION (open a persistent pane, send it commands over time, read it, close it). Use when asked to run something in a real terminal window the user can see, drive a long-running terminal, send commands to a desktop terminal, or watch a process live. The transport is Terminal.app via AppleScript — the only macOS terminal that can both drive a pane and read its output back."
 ---
 
 # terminal — drive a visible Terminal.app window
@@ -32,7 +32,7 @@ terminal close <id>                              # session
 
 ## Why Terminal.app
 
-It's the one supported transport because it can both **drive** and **read** a pane through a scripting interface — `do script` to run, `history`/`contents` to read, `tty` to address a specific pane, `busy` to detect activity. Ghostty can spawn and type but exposes no contents property, so it can't return output; that's why this skill (and `delegate` under it) uses Terminal.app rather than the user's everyday Ghostty terminal. Driving *existing* Ghostty panes is the separate `macterm` skill.
+It's the one supported transport because it can both **drive** and **read** a pane through a scripting interface — `do script` to run, `history`/`contents` to read, `tty` to address a specific pane, `busy` to detect activity. Ghostty can spawn and type but exposes no contents property, so it can't return output; that's why this skill (and `delegate` under it) uses Terminal.app rather than the user's everyday Ghostty terminal.
 
 ## Cautions (apply to both modes)
 
