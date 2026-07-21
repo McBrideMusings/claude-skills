@@ -3,3 +3,6 @@
 # Installed and updated by tldraw offline (Develop -> Install Agent Skills).
 # Theirs to change, not ours to track.
 tldraw-offline/
+
+# Installed via `npx skills add ogulcancelik/herdr` — third-party skill (symlink into ~/.agents), theirs to update, not ours to track.
+herdr

@@ -53,12 +53,12 @@ A dev variant's name comes from different sources per surface:
 
 | Surface | Source |
 | --- | --- |
-| Dock hover tooltip / Finder | the **`.app` filename** (`Macterm.app` → "Macterm") |
+| Dock hover tooltip / Finder | the **`.app` filename** (`MyApp.app` → "MyApp") |
 | Menu-bar app menu | `CFBundleName` |
 | Some Finder/system surfaces | `CFBundleDisplayName` |
 | In-app strings (window title, welcome screen) | hardcoded unless they read `Bundle.main`'s `CFBundleDisplayName` |
 
-So setting `CFBundleName`/`CFBundleDisplayName` to "Macterm Dev" fixes the menu
+So setting `CFBundleName`/`CFBundleDisplayName` to "MyApp Dev" fixes the menu
 bar but NOT the Dock tooltip. To rename the dev variant in the Dock you must
 rename the `.app` file → set `[apple] mac_dev_product_name = "<Name> Dev"`. The
 dev loop's `dev_macos_postprocess` renames the built app → `<Name> Dev.app`,
