@@ -15,6 +15,7 @@ Every write goes through `"$HOME/.claude/tools/papercut"` so entries stay unifor
 papercut -m "MODEL" "message"   # MODEL = the model that hit the friction
 papercut --human "message"      # author field = human (the user reported it)
 papercut --repo DIR "message"   # log against DIR instead of the current directory
+papercut --path                 # print the resolved log path; writes nothing
 ```
 
 Always quote the model id — one carrying a bracket (`claude-opus-4-8[1m]`) is a glob to zsh, and a bare one dies with `no matches found` before the tool runs.
@@ -50,9 +51,18 @@ User-triggered only — **never run this unprompted.** Reads the current session
 
 ## Mode C — triage / analyze (bare `/papercut`)
 
-Read `<repo-root>/tmp/claude/papercuts.md` and work it, don't just print it:
+Get the log path from the tool — `"$HOME/.claude/tools/papercut" --path` — and read exactly what it prints. Never assemble the path yourself and never go looking for the file.
 
-1. If the file is missing or empty, say so and stop.
+The log always belongs to the MAIN checkout, so from inside a linked worktree it lives **outside the tree you are working in**. Two consequences, both of which have already bitten:
+
+- A relative `tmp/claude/papercuts.md` resolves to the worktree, where the file does not exist.
+- Hunting for it (`find`, `ls`, a speculative `cd`) drags the shell's working directory into the main checkout, and every later edit in the session silently lands on the wrong branch.
+
+So: read it at the absolute path `--path` printed, and do not `cd` anywhere to do it. `--path` exits 4 when there is no log yet.
+
+Work the log, don't just print it:
+
+1. If `--path` exits non-zero, or the file is empty, say so and stop.
 2. **Sweep out anything already fixed first.** For each entry, check whether the friction still bites — the fix may have landed in any session since. Delete every entry that no longer does, and say which went and why. Do this before clustering: a dead entry distorts a cluster into looking like a repeat offender when the repo has already moved on. If checking an entry is genuinely more work than the triage itself, keep it and say you couldn't verify it — never guess it away.
 3. Cluster the surviving entries by theme (shell/quoting, test cwd, CI/YAML, missing helper, stale cache, etc.). Surface the repeat offenders — the frictions that show up more than once are where sanding pays off.
 3. For each cluster, state the concrete objective difference / cause and, where there is one, the fix (a helper task, an allowlist entry, a doc line, a lint step). Do not rank by ROI and do not judge severity subjectively — lay out what each is and what fixing it costs, and let the user decide.
