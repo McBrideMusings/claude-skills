@@ -171,6 +171,8 @@ Passing tests are not evidence the item works — they prove CI runs. Before wra
 
 Write it on **every** verdict, `SKIP` included. A missing file is not a pass — it is indistinguishable from a pass that never ran, which is exactly what a reader must never have to guess.
 
+**A verdict describes one tree, and touching the code voids it.** `commit` is what makes that checkable. If you change anything after `verify` returns — fixing a finding, a last tidy-up, a review nit — the verdict no longer describes what you are about to land: **re-run `verify` and rewrite the file.** Never hand forward a verdict whose `commit` is behind the branch head. Observed: a worker verified `PASS`, committed one more change, and shipped it unverified under the earlier verdict.
+
 **2. Gate on it.**
 
 - `PASS` or `SKIP` → continue into Phase 2.

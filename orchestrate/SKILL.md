@@ -90,11 +90,14 @@ Add a long `/loop` heartbeat (1200–1800s) as a backstop for a dead Monitor or 
 |---|---|
 | `working` | leave alone |
 | `blocked` | escalate to the human; never auto-close |
-| `done`/`idle`, verdict `PASS` or `SKIP` | land it (step 6) |
+| `done`/`idle`, verdict `PASS`/`SKIP` **and** `commit` == branch head | land it (step 6) |
+| `done`/`idle`, verdict `PASS`/`SKIP` but `commit` **behind** the head | **stale** — escalate; the tip commits shipped unverified |
 | `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing | escalate — it stopped without finishing |
 | `unknown` | escalate; it does not prove completion |
 
 The verdict is a file, not the pane's chat: `<worktree>/tmp/claude/verify/<item>.json`, written by `/implement`'s Phase 1.5. **A pane going quiet is liveness, not completion** — a worker that gave up, failed, or stopped to ask lands in the same idle state. Never tear down on pane state alone.
+
+**Check the verdict's `commit` against the branch head** (`git -C <worktree> rev-parse HEAD`) before trusting a `PASS`. A verdict describes one tree; commits made after it are unverified. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
 
 ### 6. Land it
 
