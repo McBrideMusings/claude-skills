@@ -44,6 +44,8 @@ Read dependencies per issue, in this order:
 
 **Absence is not permission.** If native reports zero blockers *and* the body carries a `Blocked by:` line, the two disagree — surface it and dispatch nothing. If neither source yields a graph and more than one candidate exists, make the human confirm the order before dispatching. Treating "no graph found" as "nothing is blocked" fans work out onto unbuilt foundations, which is the failure this skill exists to prevent.
 
+**Ready is not workable.** A frontier issue carrying an unresolved decision (`Type: HITL`, missing acceptance criteria, "decide whether"/"TBD" language) will only block its worker mid-run — invoke the `iron-out` skill on the scope before dispatching, so ambiguity is cleared before the fan-out instead of answered across N panes during it.
+
 **Completion criterion:** every candidate issue is classified ready or blocked, with the blocker named.
 
 ### 2. Size the swarm
