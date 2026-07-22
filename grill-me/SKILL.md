@@ -26,6 +26,7 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - **2–3 approaches at real branch points.** When a decision actually has alternatives, lay them out with tradeoffs and your pick.
 - **Scope check early.** If the ask describes multiple independent subsystems, flag it before drilling in. Decompose first, grill the first piece.
 - **Stress-test with concrete scenarios.** When a domain relationship is in play, invent a specific edge-case scenario and push for a precise answer about the boundary — *"if a Shipment is cancelled after its Invoice is generated, does the Invoice still exist?"* Vague agreement collapses fast against a concrete case; that collapse is the point.
+- **Locate before you ask.** Before any question about where something should live or when it should run, name the concrete places in the actual system — file paths in the repo, the named table in the named database file, the specific process at the specific moment ("the daemon, at the point it generates a schedule"). Then write each option as what physically happens: which file gets edited, what value gets written where, which process computes it, when. An option phrased as a bare noun with no location ("the score attaches to the item", "it lives on the model", "column vs. context") is unanswerable and reads as evasion — the human cannot picture it, so they cannot judge it. If you can't write the options in located form, you haven't read enough code to ask yet. Go read it.
 - **Never answer your own questions.** This is a live interview — every question waits for *the human*. Recommend an answer ("I'd lean A because X"), but never supply their decision yourself, never roll forward on an answer you imagined they'd give, and never fire the next question as if the last were settled when it wasn't. If the human goes quiet, stop and wait. An agent that answers its own questions has quietly turned the interview into a monologue and defeated the whole point — this is the single failure that breaks a grilling.
 
 ## Anti-patterns
@@ -36,6 +37,7 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - Bundling questions together to feel efficient.
 - Reaching for the `AskUserQuestion` tool. Every question stays in plain chat — the structured schema breaks the one-at-a-time conversation.
 - Answering your own question — supplying the human's side of the interview, or advancing on an assumed answer, instead of waiting for their reply.
+- Offering options made of ungrounded nouns — "attaches to X", "lives on Y", "column or context" — with no file, no table, no process, no moment. The human has to reverse-engineer the architecture out of your abstractions before they can even parse the choice.
 
 ## Docs awareness
 
