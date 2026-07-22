@@ -1,6 +1,6 @@
 ---
 name: generate
-description: "Single front door for generating game/app assets — 3D models, images, textures, music, sound effects, and dialogue/voice — picking a backend (local ComfyUI, or cloud Tripo/Gemini/ElevenLabs) per asset type from a health-gated preference list. Use for 'generate a model/image/texture/sfx/music/voice line', 'make a game asset', 'text-to-3D', 'image-to-3D', 'need a sound effect', 'generate a texture', 'concept art', 'TTS/voiceover'. The engine holds the how-to once; each asset type's backends, prompts, and output format live in the _generate/ axis."
+description: "Single front door for generating game/app assets — 3D models, images, video clips, textures, music, sound effects, and dialogue/voice — picking a backend (local ComfyUI, or cloud Tripo/Gemini/ElevenLabs) per asset type from a health-gated preference list. Use for 'generate a model/image/video/texture/sfx/music/voice line', 'make a game asset', 'text-to-3D', 'image-to-3D', 'text-to-video', 'image-to-video', 'animate this image', 'generate a clip with sound', 'need a sound effect', 'generate a texture', 'concept art', 'TTS/voiceover'. The engine holds the how-to once; each asset type's backends, prompts, and output format live in the _generate/ axis."
 ---
 
 # Generate

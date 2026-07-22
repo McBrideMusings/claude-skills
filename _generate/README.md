@@ -1,7 +1,7 @@
 # `_generate/` — asset-type axis for the `generate` engine
 
 Not a skill. A set of per-asset-type knowledge files the `generate` engine reads at run time,
-one file per requested asset type (`model`, `image`, `texture`, `music`, `sfx`, `dialogue`).
+one file per requested asset type (`model`, `image`, `video`, `texture`, `music`, `sfx`, `dialogue`).
 The leading `_` and the absence of any `SKILL.md` keep this directory from registering as a skill.
 
 `generate` is the single front door for all asset generation. For each asset type it walks an

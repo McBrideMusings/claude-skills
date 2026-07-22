@@ -14,6 +14,9 @@ backends = ["comfy", "gemini"]
 [texture]
 backends = ["comfy", "gemini"]
 
+[video]
+backends = ["comfy"]
+
 [model]
 backends = ["tripo"]
 
