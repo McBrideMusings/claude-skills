@@ -93,3 +93,8 @@ The tab is **mode-first**: a Text → Video / Image → Video radio drives the m
 appears under I2V), the start-image field, and the step default. Mode and model family are
 independent axes — folding them into one dropdown produces a model × mode cartesian product. A
 prompt is required in **both** modes; the start image is what selects I2V.
+
+Width / height / **duration in seconds** are exposed and **snapped onto the selected model's legal
+grid** (dims ÷32 for LTX, ÷16 for Wan; frames `8n+1` / `4n+1`), because the grids and the native fps
+both differ per model — asking for frames directly would leak that. A live readout shows what will
+actually render. Clamped to 1280 px / 10 s, since cost climbs superlinearly.
