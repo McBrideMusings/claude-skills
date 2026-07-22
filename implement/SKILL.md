@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous single-pass work on one tracked item: resolve the item (argument → branch name → triage) → implement → wrap-up (commit, push, land, file follow-ups). One pass, one item, then stop. `implement <issue>` works that issue directly; bare `implement` discovers one. `implement delegate` keeps Claude as orchestrator + validator and hands the implementation to a cheaper model. Triggers: \"implement\", \"/implement\", \"implement 1118\", \"do a pass\", \"walk away and work an item\", \"delegated implement\". For continuous walk-away mode across many items, use /iterate."
+description: "Autonomous single-pass work on one tracked item: resolve the item (argument → branch name → triage) → implement → verify at the surface → wrap-up (commit, push, land, file follow-ups). One pass, one item, then stop. `implement <issue>` works that issue directly; bare `implement` discovers one. `implement delegate` keeps Claude as orchestrator + validator and hands the implementation to a cheaper model. Triggers: \"implement\", \"/implement\", \"implement 1118\", \"do a pass\", \"walk away and work an item\", \"delegated implement\". For continuous walk-away mode across many items, use /iterate."
 ---
 
 # /implement — Single-pass autonomous iteration
@@ -128,15 +128,15 @@ Work the resolved item on the current branch (following triage's Step 8 for the 
 - If implementation produces no diff after 1–2 attempts (false start, blocked, needs design), halt with a one-line blocker explanation. Do not commit empty changes.
 - If tests fail and the cause isn't trivially fixable in 1–2 attempts, halt with the failure surfaced.
 
-**⛔ MANDATORY TRANSITION — there is NO stopping point between Phase 1 and Phase 2.**
+**⛔ MANDATORY TRANSITION — there is NO stopping point between Phase 1, Phase 1.5, and Phase 2.**
 
-The single most common implement failure is stopping here: code written, tests green, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line, wrap-up is. The moment implementation lands green with no halt fired, invoke the `wrap-up` skill via the Skill tool. Specifically:
+The single most common implement failure is stopping here: code written, tests green, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line; a *verified*, wrapped-up pass is. The moment implementation lands green with no halt fired, invoke the `verify` skill (Phase 1.5), then `wrap-up`. Specifically:
 
 - **Do NOT emit a summary, recap, or "next steps" message and end your turn.** Catching yourself about to write "Next: commit and push" IS the signal to invoke `wrap-up` instead — the recap is the work wrap-up does.
 - **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those run *inside* the wrap-up invocation.
 - **The pass is complete ONLY after** the `wrap-up` skill has returned. Until then, you are mid-pass — keep going.
 
-The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `wrap-up` and continue). There is no third option.
+The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `verify` and continue). There is no third option.
 
 ---
 
@@ -151,7 +151,32 @@ When the `delegate` token is present, Phase 1 is **not** Claude writing the code
 3. **Implement.** Hand the plan to the chosen implementer; it writes the code against the plan. Brief either implementer the same way: *implement this plan exactly, do not exceed its scope, run the project's checks when done.*
 4. **Validate (Claude).** Run the `review` skill's core ([../review/REVIEW-CORE.md](../review/REVIEW-CORE.md)) over the implementer's diff in **plain mode** — review this diff, no routing, no offers, no posting — plus the project's test/check suite. This judgment is Claude's, never delegated.
 5. **Loop.** Feed concrete fixes back to the implementer (or fix trivial things itself) and re-validate, until the diff passes review + checks or a stop condition fires: max 3 implement→validate rounds, or two consecutive check failures → **halt and surface**. A diff that won't pass after 3 rounds is a halt, not a "commit anyway".
-6. On a clean validate, take the ⛔ mandatory transition into Phase 2 wrap-up, exactly as solo.
+6. On a clean validate, take the ⛔ mandatory transition into Phase 1.5, exactly as solo.
+
+---
+
+## Phase 1.5 — Verify
+
+Passing tests are not evidence the item works — they prove CI runs. Before wrap-up, prove it at its **surface**: invoke the `verify` skill via the Skill tool, scoped to this pass's diff.
+
+`verify` owns what verification means and how to get a handle on the app; do not restate or re-derive its method here. This phase adds exactly two things on top of it.
+
+**1. Persist the verdict.** `verify` reports inline in chat, which nothing outside this session can read — and when the pass runs in a pane, that transcript is often unrecoverable. Write the verdict to `<repo-root>/tmp/claude/verify/<item>.json`, taking `<repo-root>` from `git rev-parse --show-toplevel` in its own call:
+
+```json
+{"item": "<issue number or followup text>", "verdict": "PASS|FAIL|BLOCKED|SKIP",
+ "surface": "<what you drove>", "findings": ["…"],
+ "branch": "<current branch>", "commit": "<HEAD sha>"}
+```
+
+Write it on **every** verdict, `SKIP` included. A missing file is not a pass — it is indistinguishable from a pass that never ran, which is exactly what a reader must never have to guess.
+
+**2. Gate on it.**
+
+- `PASS` or `SKIP` → continue into Phase 2.
+- `FAIL` or `BLOCKED` → **halt before wrap-up.** Nothing commits, pushes, or lands. Surface the verdict with the evidence `verify` captured; in a **continuous** pass, file a follow-up and hand control back to `/iterate`.
+
+`verify` admits no partial pass and resolves doubt as `FAIL`. Do not soften a `FAIL` into a follow-up and proceed — a failed verification is a halt, not a note.
 
 ---
 
@@ -199,6 +224,7 @@ The pass stops and surfaces to the user when any of these fire:
 - Phase 0.5 gate failed and the interview couldn't resolve it (standalone), or the gate failed at all (continuous → filed follow-up + halt)
 - Implementation produced no diff
 - Tests fail and the cause isn't trivially fixable in 1–2 attempts
+- Phase 1.5 verification returned `FAIL` or `BLOCKED`
 - code-review surfaced a 75+ issue that auto-fix didn't resolve
 - (delegate flavor) the delegate's diff won't pass review + checks after 3 implement→validate rounds
 
