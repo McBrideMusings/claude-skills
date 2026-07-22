@@ -1,11 +1,11 @@
 ---
 name: delegate
-description: "Reference for the cross-vendor `delegate` skill used by `review dual` (delegate reviews) and `implement delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending cross-vendor delegation (Claude orchestrating Codex or Reasonix/DeepSeek). The router runs ANY delegated work — review OR implementation."
+description: "Reference for the `delegate` skill used by `review dual` (delegate reviews) and `implement delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. Vendors: Codex, Reasonix/DeepSeek, or another Claude (Claude-to-Claude handoff via CLAUDE_DELEGATE_AGENT=claude). The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending delegation. The router runs ANY delegated work — review OR implementation."
 ---
 
 # Delegation backend
 
-How the delegate flavors — `review dual` (the delegate **reviews** the same diff) and `implement delegate` (the delegate **implements** Claude's plan) — hand work to a second, **non-Claude** coding agent — Codex or Reasonix/DeepSeek — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
+How the delegate flavors — `review dual` (the delegate **reviews** the same diff) and `implement delegate` (the delegate **implements** Claude's plan) — hand work to a second coding agent — Codex, Reasonix/DeepSeek, or **another Claude** — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
 
 > ## ⛔ NEVER bypass the router — this is non-negotiable
 >
@@ -20,7 +20,13 @@ Two layers, kept separate on purpose:
 1. **The `delegate` resolver** (`delegate` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind three verbs.
 2. **The transport** — the visible Terminal.app window the agent runs in. This is **not** delegate's code: it's the separate `terminal` skill, which delegate's `exec` verb calls. Skills never touch either layer directly except through the three verbs.
 
-> **This router is the cross-vendor path** (Claude → Codex/DeepSeek). Delegating to *another Claude* (e.g. a cheap Sonnet/Haiku implementer following a plan) is a **peer option, not forbidden** — it just doesn't go through this script: use the Agent tool with a model override and a tight brief (no terminal, no resolver). `implement delegate` offers both as the implementer choice — cross-vendor via this router, or a cheaper Claude via the Agent tool. Pick the router when you want a non-Claude tool and a watchable window; pick the Agent tool when you want the cheapest, tightest plan-follower.
+> **Three ways to hand work to a second agent — pick by what you want to watch and bill:**
+>
+> 1. **This router** (`CLAUDE_DELEGATE_AGENT=codex|reasonix|claude`) — a separate agent process in a watchable Terminal.app window (or `--headless`), output to a file. Cross-vendor AND Claude-to-Claude: `claude` runs `claude -p` non-interactively, model picked by `CLAUDE_DELEGATE_MODEL` (e.g. a cheap Sonnet/Haiku implementer, or Opus for heavy work).
+> 2. **The Agent tool** with a model override — an in-session Claude subagent, no window, no resolver. Cheapest and tightest for a plan-follower that needs no independent terminal.
+> 3. **A Herdr pane** (when running inside Herdr — `HERDR_ENV=1`) — an *interactive* Claude the user can take over: `herdr pane split` + `herdr agent start … --kind claude -- --model <model>` + `herdr agent prompt`. See the `herdr` skill. Pick this when the delegate should outlive the orchestrating session or the user wants to talk to it directly.
+>
+> `implement delegate` offers the router and the Agent tool as its implementer choices; the Herdr path is for sessions already inside Herdr.
 
 ---
 
@@ -34,7 +40,7 @@ $HOME/.claude/skills/delegate/delegate <verb>
 
 ```
 delegate agent
-    → prints the resolved agent: "codex" | "reasonix"
+    → prints the resolved agent: "codex" | "reasonix" | "claude"
     → exits nonzero if unset/unknown. Skills use it only to label output.
 
 delegate check
@@ -78,11 +84,20 @@ Run `delegate exec` with the Bash tool's **background** mode: the agent can take
 
 ## Selecting the vendor
 
-`delegate` resolves the agent from **`$CLAUDE_DELEGATE_AGENT`** (`codex` | `reasonix`):
+`delegate` resolves the agent from **`$CLAUDE_DELEGATE_AGENT`** (`codex` | `reasonix` | `claude`):
 
 - Set it per-profile in **`settings.local.json`**'s `env` block — the only per-profile spot, since `settings.json` is symlinked/shared. Personal → `reasonix`, work → `codex`. It's gitignored and holds only the agent *name*, never a key.
 - A single repo can override it in its own `.claude/settings.local.json`; Claude Code's settings merge gives project scope precedence over user scope, so the override is free.
 - **Unset or unknown is a hard error** — `delegate` never guesses a vendor (guessing means the wrong billing account). The error from `delegate check`/`agent` is the first line of the health gate.
+
+### The `claude` vendor (Claude-to-Claude)
+
+Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. Two optional env knobs, set alongside `CLAUDE_DELEGATE_AGENT`:
+
+- **`CLAUDE_DELEGATE_MODEL`** — the delegate's model (`sonnet`, `haiku`, `opus`, or a full model id). Unset → the CLI's default. This is the point of the vendor: a cheap plan-follower or a heavyweight, chosen per profile or per repo.
+- **`CLAUDE_DELEGATE_PERMISSION_MODE`** — defaults to `acceptEdits`: file edits auto-approved, every other tool follows the user's own permission rules, and in print mode a denied tool call fails that call rather than prompting. If a delegated task needs more (e.g. free rein on git/test commands), the user sets a broader mode here themselves — the script never hardcodes one.
+
+The delegate is a full Claude Code session: it reads the repo's CLAUDE.md, skills, and settings from whatever profile `CLAUDE_CONFIG_DIR` routing gives the spawned shell (the Terminal window inherits the cwd, so profile routing behaves exactly as if the user opened a terminal there).
 
 ### Where credentials live (never embedded)
 
@@ -90,8 +105,9 @@ The resolver only ever *checks* auth — it never sees a key.
 
 - **Codex** — logged in via an OpenAI **API key** stored in `~/.codex` (`codex login`). `delegate check` runs `codex login status` (note: it prints to **stderr**) and looks for "logged in".
 - **Reasonix** — reads `DEEPSEEK_API_KEY` from the environment, referenced by `reasonix.toml`'s `api_key_env`. `delegate check` runs `reasonix doctor` and looks for `key:present`.
+- **Claude** — the normal Claude Code login (`claude auth login`). `delegate check` runs `claude auth status` and looks for `"loggedIn": true`.
 
-Both are **API-billed**, not subscription — driving them programmatically/non-interactively is ordinary API use.
+Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in Claude account (subscription or API, per the login) — same account the orchestrating session uses under that profile.
 
 ---
 
@@ -107,6 +123,6 @@ That skill owns the whole Terminal.app transport — the visible window, the col
 
 For the transport internals, the TCC/Automation grant, the secrets-on-a-pane caution, and the session mode (a persistent pane you can send commands to over time), read the `terminal` skill — `skills/terminal/SKILL.md` and its `one-shot.md` / `session.md` reference files.
 
-### Adding a third agent
+### Adding another agent
 
 Edit one place — the `case "$a"` blocks in `delegate` (its `KNOWN` list, the `check` command, and the `runner` string). Skills and this doc don't change.

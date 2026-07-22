@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# delegate — cross-vendor delegation resolver.
+# delegate — delegation resolver (cross-vendor or Claude-to-Claude).
 #
 # Resolves a non-interactive coding agent from $CLAUDE_DELEGATE_AGENT and runs it.
 # The delegate flavors (review dual, implement delegate) call only these three verbs
 # and never name a specific vendor:
 #
-#   delegate agent                       print the resolved agent (codex|reasonix), or fail
+#   delegate agent                       print the resolved agent (codex|reasonix|claude), or fail
 #   delegate check                       is the resolved agent authed & reachable? (exit 0/1)
 #   delegate exec [--headless] <prompt-file> <outfile>
 #                                          run the agent non-interactively with the prompt; output to <outfile>.
@@ -14,16 +14,22 @@
 #                                          for cron / SSH / no-GUI where AppleScript can't open a window).
 #
 # Selection: $CLAUDE_DELEGATE_AGENT, set per-profile in settings.local.json
-# (reasonix on personal, codex on work). A repo can override it in its own
-# .claude/settings.local.json. Unset/unknown is a hard error — never guess a vendor.
+# (reasonix on personal, codex on work; claude for Claude-to-Claude). A repo can
+# override it in its own .claude/settings.local.json. Unset/unknown is a hard
+# error — never guess a vendor.
+# claude extras (both optional): $CLAUDE_DELEGATE_MODEL picks the delegate's
+# model (e.g. sonnet, haiku, opus); unset uses the CLI's default.
+# $CLAUDE_DELEGATE_PERMISSION_MODE sets the delegate's permission mode
+# (default acceptEdits — edits auto-approved, other tools follow the user's
+# own permission rules; a denied tool call fails that call, it never prompts).
 set -eu
 
-KNOWN="codex reasonix"
+KNOWN="codex reasonix claude"
 
 resolve_agent() {
   local a="${CLAUDE_DELEGATE_AGENT:-}"
   if [ -z "$a" ]; then
-    echo "delegate: no delegate configured — set CLAUDE_DELEGATE_AGENT (codex|reasonix) in settings.local.json" >&2
+    echo "delegate: no delegate configured — set CLAUDE_DELEGATE_AGENT (codex|reasonix|claude) in settings.local.json" >&2
     return 1
   fi
   case " $KNOWN " in
@@ -53,6 +59,14 @@ cmd_check() {
         echo "delegate: reasonix not authenticated — set DEEPSEEK_API_KEY, then run 'reasonix setup'" >&2; return 1
       fi
       ;;
+    claude)
+      out="$(claude auth status 2>&1 || true)"
+      if printf '%s' "$out" | grep -q '"loggedIn": *true'; then
+        echo "delegate: claude ready"
+      else
+        echo "delegate: claude not authenticated — run 'claude auth login'" >&2; return 1
+      fi
+      ;;
   esac
 }
 
@@ -70,6 +84,7 @@ cmd_exec() {
   case "$a" in
     codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
     reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
+    claude)   runner="claude -p --permission-mode ${CLAUDE_DELEGATE_PERMISSION_MODE:-acceptEdits}${CLAUDE_DELEGATE_MODEL:+ --model $CLAUDE_DELEGATE_MODEL}" ;; # print mode; prompt on stdin; edits auto-approved, other tools per the user's own allowlist rules
   esac
 
   # delegate owns *which vendor command runs*; the `terminal` skill owns the transport
