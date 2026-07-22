@@ -1,0 +1,110 @@
+{
+  "1": { "class_type": "LoadImage", "inputs": { "image": "photo_brick.jpg", "upload": "image" } },
+  "2": {
+    "class_type": "SquareMaker",
+    "inputs": {
+      "image": ["1", 0],
+      "method": "crop",
+      "square_size": "shortest_edge",
+      "custom_size": 1024,
+      "crop_position": "center",
+      "scaling_method": "lanczos"
+    }
+  },
+  "3": {
+    "class_type": "TextureEqualizer",
+    "inputs": {
+      "image": ["2", 0],
+      "radius": 250.0,
+      "strength": 0.5,
+      "preserve_color": true,
+      "method": "soft_light"
+    }
+  },
+  "4": {
+    "class_type": "SeamlessTiling",
+    "inputs": { "image": ["3", 0], "method": "offset", "blend_width": 0.1 }
+  },
+  "5": {
+    "class_type": "TextureScaler",
+    "inputs": { "image": ["4", 0], "scale_factor": 1.6, "method": "lanczos" }
+  },
+  "6": {
+    "class_type": "QFXPBRGenerator",
+    "inputs": {
+      "image": ["5", 0],
+      "texture_name": "brick_photo",
+      "seamless_mode": "off",
+      "normal_strength": 1.0,
+      "normal_invert_y": false,
+      "roughness_min": 0.0,
+      "roughness_max": 1.0,
+      "metallic_min": 0.0,
+      "metallic_max": 1.0,
+      "metallic_threshold": 0.15,
+      "ao_blur": 2,
+      "ao_strength": 1.0,
+      "save_textures": false
+    }
+  },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 0], "filename_prefix": "local-genai/texture/photo2pbr/basecolor" }
+  },
+  "11": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 1], "filename_prefix": "local-genai/texture/photo2pbr/normal-OpenGL" }
+  },
+  "12": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 2], "filename_prefix": "local-genai/texture/photo2pbr/roughness" }
+  },
+  "13": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 3], "filename_prefix": "local-genai/texture/photo2pbr/height" }
+  },
+  "14": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 4], "filename_prefix": "local-genai/texture/photo2pbr/ao" }
+  },
+  "15": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 5], "filename_prefix": "local-genai/texture/photo2pbr/metallic" }
+  },
+  "16": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 6], "filename_prefix": "local-genai/texture/photo2pbr/orm" }
+  },
+  "17": {
+    "class_type": "NormalConverter",
+    "inputs": { "normal": ["6", 1], "conversion": "OpenGL_to_DirectX" }
+  },
+  "18": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["17", 0], "filename_prefix": "local-genai/texture/photo2pbr/normal-DirectX" }
+  },
+  "19": {
+    "class_type": "TextureTiler",
+    "inputs": { "image": ["6", 0], "tile_x": 4, "tile_y": 4, "scale_to_input": true }
+  },
+  "20": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["19", 0], "filename_prefix": "local-genai/texture/photo2pbr/tile4x4" }
+  },
+  "21": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["2", 0], "filename_prefix": "local-genai/texture/photo2pbr/00-source-square" }
+  },
+  "22": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["3", 0], "filename_prefix": "local-genai/texture/photo2pbr/01-equalized" }
+  },
+  "23": {
+    "class_type": "TextureTiler",
+    "inputs": { "image": ["2", 0], "tile_x": 4, "tile_y": 4, "scale_to_input": true }
+  },
+  "24": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["23", 0], "filename_prefix": "local-genai/texture/photo2pbr/tile4x4-raw-photo" }
+  }
+}

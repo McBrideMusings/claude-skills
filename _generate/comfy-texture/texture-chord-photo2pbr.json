@@ -1,0 +1,71 @@
+{
+  "1": { "class_type": "LoadImage", "inputs": { "image": "photo_brick.jpg", "upload": "image" } },
+  "2": {
+    "class_type": "SquareMaker",
+    "inputs": {
+      "image": ["1", 0],
+      "method": "crop",
+      "square_size": "shortest_edge",
+      "custom_size": 1024,
+      "crop_position": "center",
+      "scaling_method": "lanczos"
+    }
+  },
+  "3": {
+    "class_type": "TextureEqualizer",
+    "inputs": {
+      "image": ["2", 0],
+      "radius": 250.0,
+      "strength": 0.5,
+      "preserve_color": true,
+      "method": "soft_light"
+    }
+  },
+  "4": {
+    "class_type": "ImageScale",
+    "inputs": { "image": ["3", 0], "upscale_method": "lanczos", "width": 1024, "height": 1024, "crop": "disabled" }
+  },
+  "5": {
+    "class_type": "SeamlessTiling",
+    "inputs": { "image": ["4", 0], "method": "offset", "blend_width": 0.06 }
+  },
+  "6": { "class_type": "ChordLoadModel", "inputs": { "ckpt_name": "chord_v1.safetensors" } },
+  "7": {
+    "class_type": "ChordMaterialEstimation",
+    "inputs": { "chord_model": ["6", 0], "image": ["5", 0] }
+  },
+  "8": { "class_type": "ChordNormalToHeight", "inputs": { "normal": ["7", 1] } },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["7", 0], "filename_prefix": "local-genai/texture/chord-photo/basecolor" }
+  },
+  "11": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["7", 1], "filename_prefix": "local-genai/texture/chord-photo/normal" }
+  },
+  "12": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["7", 2], "filename_prefix": "local-genai/texture/chord-photo/roughness" }
+  },
+  "13": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["7", 3], "filename_prefix": "local-genai/texture/chord-photo/metalness" }
+  },
+  "14": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["8", 0], "filename_prefix": "local-genai/texture/chord-photo/height" }
+  },
+  "15": {
+    "class_type": "NormalFormatValidator",
+    "inputs": { "normal_map": ["7", 1] }
+  },
+  "16": { "class_type": "PreviewAny", "inputs": { "source": ["15", 1] } },
+  "17": {
+    "class_type": "TextureTiler",
+    "inputs": { "image": ["7", 0], "tile_x": 4, "tile_y": 4, "scale_to_input": true }
+  },
+  "18": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["17", 0], "filename_prefix": "local-genai/texture/chord-photo/tile4x4" }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": { "ckpt_name": "SDXL 1.0/base model/sdXL_v10VAEFix.safetensors" }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": ["1", 1],
+      "text": "weathered oak planks, fine grain, small knots, shallow cracks, seamless tiling, orthographic top-down, flat even lighting"
+    }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": ["1", 1],
+      "text": "shadows, cast shadow, dramatic lighting, vignette, perspective, depth of field, blur, glare, highlight, watermark, text, border, frame"
+    }
+  },
+  "4": {
+    "class_type": "EmptyLatentImage",
+    "inputs": { "width": 1024, "height": 1024, "batch_size": 1 }
+  },
+  "6": {
+    "class_type": "TileableKSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "tiling": true,
+      "positive": ["2", 0],
+      "negative": ["3", 0],
+      "latent_image": ["4", 0],
+      "seed": 42,
+      "steps": 30,
+      "cfg": 6.5,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 1
+    }
+  },
+  "7": {
+    "class_type": "TileableVAEDecode",
+    "inputs": { "samples": ["6", 0], "vae": ["1", 2], "tiling": true }
+  },
+  "8": { "class_type": "ChordLoadModel", "inputs": { "ckpt_name": "chord_v1.safetensors" } },
+  "9": {
+    "class_type": "ChordMaterialEstimation",
+    "inputs": { "chord_model": ["8", 0], "image": ["7", 0] }
+  },
+  "10": { "class_type": "ChordNormalToHeight", "inputs": { "normal": ["9", 1] } },
+  "20": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 0], "filename_prefix": "local-genai/texture/chord-sdxl/basecolor" }
+  },
+  "21": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 1], "filename_prefix": "local-genai/texture/chord-sdxl/normal" }
+  },
+  "22": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 2], "filename_prefix": "local-genai/texture/chord-sdxl/roughness" }
+  },
+  "23": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 3], "filename_prefix": "local-genai/texture/chord-sdxl/metalness" }
+  },
+  "24": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["10", 0], "filename_prefix": "local-genai/texture/chord-sdxl/height" }
+  },
+  "25": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["7", 0], "filename_prefix": "local-genai/texture/chord-sdxl/raw-tileable" }
+  },
+  "26": {
+    "class_type": "TextureTiler",
+    "inputs": { "image": ["9", 0], "tile_x": 4, "tile_y": 4, "scale_to_input": true }
+  },
+  "27": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["26", 0], "filename_prefix": "local-genai/texture/chord-sdxl/tile4x4" }
+  },
+  "28": { "class_type": "NormalFormatValidator", "inputs": { "normal_map": ["9", 1] } },
+  "29": { "class_type": "PreviewAny", "inputs": { "source": ["28", 1] } }
+}

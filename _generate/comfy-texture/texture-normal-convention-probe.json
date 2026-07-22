@@ -1,0 +1,75 @@
+{
+  "1": { "class_type": "LoadImage", "inputs": { "image": "dome_test.png", "upload": "image" } },
+  "2": {
+    "class_type": "QFXPBRGenerator",
+    "inputs": {
+      "image": ["1", 0],
+      "texture_name": "dome_invY_true",
+      "seamless_mode": "off",
+      "normal_strength": 1.0,
+      "normal_invert_y": true,
+      "roughness_min": 0.0,
+      "roughness_max": 1.0,
+      "metallic_min": 0.0,
+      "metallic_max": 1.0,
+      "metallic_threshold": 0.15,
+      "ao_blur": 2,
+      "ao_strength": 1.0,
+      "save_textures": false
+    }
+  },
+  "3": {
+    "class_type": "QFXPBRGenerator",
+    "inputs": {
+      "image": ["1", 0],
+      "texture_name": "dome_invY_false",
+      "seamless_mode": "off",
+      "normal_strength": 1.0,
+      "normal_invert_y": false,
+      "roughness_min": 0.0,
+      "roughness_max": 1.0,
+      "metallic_min": 0.0,
+      "metallic_max": 1.0,
+      "metallic_threshold": 0.15,
+      "ao_blur": 2,
+      "ao_strength": 1.0,
+      "save_textures": false
+    }
+  },
+  "4": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["2", 1], "filename_prefix": "local-genai/texture/probe/qfx-normal-invY-true" }
+  },
+  "5": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["3", 1], "filename_prefix": "local-genai/texture/probe/qfx-normal-invY-false" }
+  },
+  "6": { "class_type": "NormalFormatValidator", "inputs": { "normal_map": ["2", 1] } },
+  "7": { "class_type": "PreviewAny", "inputs": { "source": ["6", 1] } },
+  "8": { "class_type": "NormalFormatValidator", "inputs": { "normal_map": ["3", 1] } },
+  "9": { "class_type": "PreviewAny", "inputs": { "source": ["8", 1] } },
+  "10": {
+    "class_type": "NormalConverter",
+    "inputs": { "normal": ["2", 1], "conversion": "OpenGL_to_DirectX" }
+  },
+  "11": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["10", 0], "filename_prefix": "local-genai/texture/probe/qfx-normal-converted-to-DX" }
+  },
+  "12": {
+    "class_type": "HeightToNormal",
+    "inputs": { "height": ["1", 0], "method": "sobel", "strength": 1.0, "output_format": "OpenGL", "blur_radius": 0.0 }
+  },
+  "13": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["12", 0], "filename_prefix": "local-genai/texture/probe/ta-h2n-opengl" }
+  },
+  "14": {
+    "class_type": "HeightToNormal",
+    "inputs": { "height": ["1", 0], "method": "sobel", "strength": 1.0, "output_format": "DirectX", "blur_radius": 0.0 }
+  },
+  "15": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 0], "filename_prefix": "local-genai/texture/probe/ta-h2n-directx" }
+  }
+}

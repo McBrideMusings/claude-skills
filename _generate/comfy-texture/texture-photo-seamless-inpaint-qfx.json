@@ -1,0 +1,139 @@
+{
+  "1": { "class_type": "LoadImage", "inputs": { "image": "photo_brick.jpg", "upload": "image" } },
+  "2": {
+    "class_type": "SquareMaker",
+    "inputs": {
+      "image": ["1", 0],
+      "method": "crop",
+      "square_size": "shortest_edge",
+      "custom_size": 1024,
+      "crop_position": "center",
+      "scaling_method": "lanczos"
+    }
+  },
+  "3": {
+    "class_type": "TextureEqualizer",
+    "inputs": {
+      "image": ["2", 0],
+      "radius": 250.0,
+      "strength": 0.5,
+      "preserve_color": true,
+      "method": "soft_light"
+    }
+  },
+  "4": {
+    "class_type": "ImageScale",
+    "inputs": { "image": ["3", 0], "upscale_method": "lanczos", "width": 1024, "height": 1024, "crop": "disabled" }
+  },
+  "5": {
+    "class_type": "SeamlessTiling",
+    "inputs": { "image": ["4", 0], "method": "offset", "blend_width": 0.06 }
+  },
+  "6": { "class_type": "ImageToMask", "inputs": { "image": ["5", 1], "channel": "red" } },
+  "7": { "class_type": "GrowMask", "inputs": { "mask": ["6", 0], "expand": 6, "tapered_corners": true } },
+  "8": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": { "ckpt_name": "SDXL 1.0/base model/sdXL_v10VAEFix.safetensors" }
+  },
+  "9": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": ["8", 1],
+      "text": "old red brick wall, pale mortar joints, rough clay bricks, photographic, flat even lighting, orthographic top-down"
+    }
+  },
+  "10": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "clip": ["8", 1], "text": "shadow, blur, vignette, text, watermark, perspective" }
+  },
+  "11": {
+    "class_type": "VAEEncodeForInpaint",
+    "inputs": { "pixels": ["5", 0], "vae": ["8", 2], "mask": ["7", 0], "grow_mask_by": 8 }
+  },
+  "12": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["8", 0],
+      "positive": ["9", 0],
+      "negative": ["10", 0],
+      "latent_image": ["11", 0],
+      "seed": 7,
+      "steps": 25,
+      "cfg": 6.0,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 1.0
+    }
+  },
+  "13": { "class_type": "VAEDecode", "inputs": { "samples": ["12", 0], "vae": ["8", 2] } },
+  "14": {
+    "class_type": "QFXPBRGenerator",
+    "inputs": {
+      "image": ["13", 0],
+      "texture_name": "brick_seamless",
+      "seamless_mode": "off",
+      "normal_strength": 1.0,
+      "normal_invert_y": false,
+      "roughness_min": 0.15,
+      "roughness_max": 0.95,
+      "metallic_min": 0.0,
+      "metallic_max": 0.0,
+      "metallic_threshold": 0.15,
+      "ao_blur": 2,
+      "ao_strength": 1.0,
+      "save_textures": false
+    }
+  },
+  "20": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 0], "filename_prefix": "local-genai/texture/photo-seamless/basecolor" }
+  },
+  "21": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 1], "filename_prefix": "local-genai/texture/photo-seamless/normal-OpenGL" }
+  },
+  "22": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 2], "filename_prefix": "local-genai/texture/photo-seamless/roughness" }
+  },
+  "23": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 3], "filename_prefix": "local-genai/texture/photo-seamless/height" }
+  },
+  "24": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 4], "filename_prefix": "local-genai/texture/photo-seamless/ao" }
+  },
+  "25": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 6], "filename_prefix": "local-genai/texture/photo-seamless/orm" }
+  },
+  "26": {
+    "class_type": "TextureTiler",
+    "inputs": { "image": ["14", 0], "tile_x": 4, "tile_y": 4, "scale_to_input": true }
+  },
+  "27": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["26", 0], "filename_prefix": "local-genai/texture/photo-seamless/tile4x4" }
+  },
+  "28": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["5", 1], "filename_prefix": "local-genai/texture/photo-seamless/seam-mask" }
+  },
+  "29": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["5", 0], "filename_prefix": "local-genai/texture/photo-seamless/offset-before-inpaint" }
+  },
+  "30": {
+    "class_type": "NormalConverter",
+    "inputs": { "normal": ["14", 1], "conversion": "OpenGL_to_DirectX" }
+  },
+  "31": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["30", 0], "filename_prefix": "local-genai/texture/photo-seamless/normal-DirectX" }
+  },
+  "32": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["14", 5], "filename_prefix": "local-genai/texture/photo-seamless/metallic" }
+  }
+}

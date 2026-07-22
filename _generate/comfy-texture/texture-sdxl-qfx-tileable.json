@@ -1,0 +1,106 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": { "ckpt_name": "SDXL 1.0/base model/sdXL_v10VAEFix.safetensors" }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": ["1", 1],
+      "text": "weathered oak planks, fine grain, small knots, shallow cracks, seamless tiling, orthographic top-down, flat even lighting"
+    }
+  },
+  "3": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": ["1", 1],
+      "text": "shadows, cast shadow, dramatic lighting, vignette, perspective, depth of field, blur, glare, highlight, watermark, text, border, frame"
+    }
+  },
+  "4": {
+    "class_type": "EmptyLatentImage",
+    "inputs": { "width": 1024, "height": 1024, "batch_size": 1 }
+  },
+  "5": {
+    "class_type": "TileableKSampler",
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["2", 0],
+      "negative": ["3", 0],
+      "latent_image": ["4", 0],
+      "seed": 42,
+      "steps": 30,
+      "cfg": 6.5,
+      "sampler_name": "dpmpp_2m",
+      "scheduler": "karras",
+      "denoise": 1,
+      "tiling": true
+    }
+  },
+  "6": {
+    "class_type": "TileableVAEDecode",
+    "inputs": { "samples": ["5", 0], "vae": ["1", 2], "tiling": true }
+  },
+  "9": {
+    "class_type": "QFXPBRGenerator",
+    "inputs": {
+      "image": ["6", 0],
+      "texture_name": "oak_planks",
+      "seamless_mode": "off",
+      "normal_strength": 1.0,
+      "normal_invert_y": false,
+      "roughness_min": 0.0,
+      "roughness_max": 1.0,
+      "metallic_min": 0.0,
+      "metallic_max": 1.0,
+      "metallic_threshold": 0.15,
+      "ao_blur": 2,
+      "ao_strength": 1.0,
+      "save_textures": false
+    }
+  },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 0], "filename_prefix": "local-genai/texture/sdxl-tile/basecolor" }
+  },
+  "11": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 1], "filename_prefix": "local-genai/texture/sdxl-tile/normal-OpenGL" }
+  },
+  "12": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 2], "filename_prefix": "local-genai/texture/sdxl-tile/roughness" }
+  },
+  "13": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 3], "filename_prefix": "local-genai/texture/sdxl-tile/displacement" }
+  },
+  "14": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 4], "filename_prefix": "local-genai/texture/sdxl-tile/ao" }
+  },
+  "15": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["9", 5], "filename_prefix": "local-genai/texture/sdxl-tile/metallic" }
+  },
+  "16": {
+    "class_type": "TextureTiler",
+    "inputs": { "image": ["9", 0], "tile_x": 4, "tile_y": 4, "scale_to_input": true }
+  },
+  "17": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["16", 0], "filename_prefix": "local-genai/texture/sdxl-tile/tile4x4" }
+  },
+  "18": {
+    "class_type": "NormalConverter",
+    "inputs": { "normal": ["9", 1], "conversion": "OpenGL_to_DirectX" }
+  },
+  "19": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["18", 0], "filename_prefix": "local-genai/texture/sdxl-tile/normal-DirectX" }
+  },
+  "21": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["6", 0], "filename_prefix": "local-genai/texture/sdxl-tile/raw-tileable" }
+  }
+}
