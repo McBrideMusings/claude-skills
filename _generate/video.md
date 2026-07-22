@@ -88,3 +88,8 @@ distilled `lora-384`, a Foley/V2A audio LoRA). This is why one workflow per base
 Exposed as the **Video** tab of the `local-genai` web app (container `local-genai-ui`, port 7860 on
 Tower), LTX-2.3 selected by default. Module `apps/video.py`; see
 `~/Projects/unraid/local-genai/CLAUDE.md` for the add-a-domain recipe and deploy command.
+
+The tab is **mode-first**: a Text → Video / Image → Video radio drives the model list (Wan 2.1 only
+appears under I2V), the start-image field, and the step default. Mode and model family are
+independent axes — folding them into one dropdown produces a model × mode cartesian product. A
+prompt is required in **both** modes; the start image is what selects I2V.
