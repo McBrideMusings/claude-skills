@@ -13,11 +13,17 @@ archetype` after the tool is reinstalled — change it to `"docker"`.
 
 | Sub-target | What goes to the host |
 | --- | --- |
-| `image` (default, and bare `admin deploy`) | rebuild the image, recreate the container |
+| `image` | rebuild the image, recreate the container |
 | `files` | rsync the `[deploy]` mirror directory — config, appdata, assets |
 | `all` | `files` first, then `image` |
 
 `--dry-run` and `--force` work on all three.
+
+Bare `admin deploy` **asks** which one, via the same `pick_target` menu
+`admin logs` uses — but only when the project declares a `[deploy]` table. With
+no mirror directory there is only one thing it could deploy, so it goes straight
+to the image. Non-TTY (a script, a hook) also skips the menu and deploys the
+image rather than hanging on a prompt.
 
 **The container does NOT have to exist first, as long as `[docker_run]` is
 declared.** With that table, deploy renders `docker run` from it and creates the
