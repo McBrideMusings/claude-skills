@@ -20,11 +20,13 @@ papercut --path                 # print the resolved log path; writes nothing
 
 Always quote the model id — one carrying a bracket (`claude-opus-4-8[1m]`) is a glob to zsh, and a bare one dies with `no matches found` before the tool runs.
 
-## A fixed papercut is ALWAYS deleted
+## A fixed or filed papercut is ALWAYS deleted
 
-The log is a list of frictions that are still there. The moment one is fixed — by you, in this session or any other — **delete its entry**, in the same turn as the fix. This is not optional and not a tidy-up to defer: an entry that no longer bites is worse than noise, because the whole point of the log is showing where the repo still needs sanding, and a reader can't tell a live friction from a dead one without re-testing every line. Half a log of already-fixed entries is a log nobody trusts.
+The log is the list of frictions that are **untracked**. An entry leaves it the moment it stops being untracked — either because it got fixed, or because it became tracked work somewhere else. Both deletions happen in the same turn as the event, without being asked. This is not optional and not a tidy-up to defer: an entry that no longer bites, or that already has an issue, is worse than noise, because a reader can't tell it from a live untracked friction without re-testing every line and re-searching the issue tracker. Half a log of dead entries is a log nobody trusts.
 
-Delete only against a fix that actually landed in the code. Documenting a workaround, or fixing one of three things an entry describes, is not fixed — either finish it or edit the entry down to the part that still bites. If an entry is really a lesson rather than a friction ("never do X in this file"), its home is a comment where X lives, not the log; move it and delete it here.
+**Fixed — the fix landed in the code.** Documenting a workaround, or fixing one of three things an entry describes, is not fixed — either finish it or edit the entry down to the part that still bites. If an entry is really a lesson rather than a friction ("never do X in this file"), its home is a comment where X lives, not the log; move it and delete it here.
+
+**Filed — the entry became a GitHub issue or a follow-up.** File it, then delete the entry, and give the issue URL in the same breath so the trail is visible. The friction is still real and still unfixed — that's exactly what the issue now records, in the place work actually gets picked up from. Keeping a copy in the log buys nothing and costs a duplicate that will drift out of sync with the issue. One friction, one home. Partial promotion follows the same rule as a partial fix: if the issue covers only part of an entry, edit the entry down to the part that isn't filed rather than deleting it whole.
 
 ## Mode A — author one (`/papercut <message>`, "log a papercut …")
 
@@ -65,11 +67,12 @@ Work the log, don't just print it:
 1. If `--path` exits non-zero, or the file is empty, say so and stop.
 2. **Sweep out anything already fixed first.** For each entry, check whether the friction still bites — the fix may have landed in any session since. Delete every entry that no longer does, and say which went and why. Do this before clustering: a dead entry distorts a cluster into looking like a repeat offender when the repo has already moved on. If checking an entry is genuinely more work than the triage itself, keep it and say you couldn't verify it — never guess it away.
 3. Cluster the surviving entries by theme (shell/quoting, test cwd, CI/YAML, missing helper, stale cache, etc.). Surface the repeat offenders — the frictions that show up more than once are where sanding pays off.
-3. For each cluster, state the concrete objective difference / cause and, where there is one, the fix (a helper task, an allowlist entry, a doc line, a lint step). Do not rank by ROI and do not judge severity subjectively — lay out what each is and what fixing it costs, and let the user decide.
-4. Offer — do not auto-do — to promote any cluster into real tracked work: a GitHub issue / follow-up (via `followups`) for genuine bugs, or an `admin` task / doc note for setup friction. Ask in plain chat; never use `AskUserQuestion`.
+4. For each cluster, state the concrete objective difference / cause and, where there is one, the fix (a helper task, an allowlist entry, a doc line, a lint step). Do not rank by ROI and do not judge severity subjectively — lay out what each is and what fixing it costs, and let the user decide.
+5. Offer — do not auto-do — to promote any cluster into real tracked work: a GitHub issue / follow-up (via `followups`) for genuine bugs, or an `admin` task / doc note for setup friction. Ask in plain chat; never use `AskUserQuestion`.
+6. When the user takes that offer, **delete every entry you filed, in the same turn you file it** — see the deletion rule above. The issue is the entry's new home; leaving it in both places creates a duplicate that drifts. Report each deletion next to the issue URL that replaced it.
 
 ## Proactive logging (agents, in the moment)
 
 Outside this skill, the `CLAUDE.md` rule tells the agent to log papercuts as they happen with `"$HOME/.claude/tools/papercut" -m "<model>" "…"` — the fast in-the-moment path. This skill is the human-facing surface and the review/triage brain on top of that same CLI.
 
-The deletion rule runs on the same in-the-moment footing, in the other direction: fix a friction that is already in the log — whatever you were actually working on — and delete its entry right then, without being asked and without waiting for a `/papercut` pass. Logging live and deleting live are the same discipline.
+The deletion rule runs on the same in-the-moment footing, in the other direction: fix a friction that is already in the log — whatever you were actually working on — and delete its entry right then, without being asked and without waiting for a `/papercut` pass. Same for filing: open an issue or follow-up that covers a logged entry, in any session and for any reason, and the entry goes in that turn. Logging live and deleting live are the same discipline.
