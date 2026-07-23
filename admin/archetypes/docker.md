@@ -48,6 +48,48 @@ true only when the repo owns the whole directory. `host` is checked against the
 current machine first, so the same manifest works run from a laptop or on the
 Unraid box itself.
 
+## `[docker_run]` — provisioning bind-mount dirs (`mkdir` / `chown`)
+
+A bind mount whose host dir doesn't exist yet gets created by Docker **as root**,
+and a root-owned dir is one an unprivileged container user cannot write. On Unraid
+(containers run as `nobody:users` = `99:100`) this surfaces as an opaque
+`Permission denied` thrown from inside the container, far from its cause.
+
+Declare it on the mount and `deploy image` prepares the dir before `docker run`:
+
+```toml
+[[docker_run.bind_mounts]]
+host      = "${APPDATA_DIR}/data"
+container = "/app/data"
+mkdir     = true        # create the host dir first
+chown     = "99:100"    # then own it
+```
+
+`chown` implies `mkdir` — you can't chown a dir that isn't there, so a `chown`
+alone still creates it. `${VAR}` in `host` is expanded from the environment (an
+unresolved var skips that dir with a warning, same as the mount itself). Commands
+run on the deploy target — locally or over SSH, matching the rest of the deploy.
+
+## `[docker_run.health]` — post-deploy health gate
+
+`docker run` returning 0 only means the container was **created**, not that the app
+inside came up. Without this, a container that crash-loops on boot still reports a
+successful deploy. Declare a health URL and deploy polls it before calling the
+deploy good:
+
+```toml
+[docker_run.health]
+url      = "http://127.0.0.1:${UI_PORT}/"
+expect   = 200    # default 200
+timeout  = 40     # seconds, default 30
+interval = 2      # seconds between polls, default 2 (floored at 1)
+```
+
+The poll runs **on the deploy target**, so a `127.0.0.1:PORT` url resolves against
+the published port on the host rather than the machine running `admin`. Uses `curl`.
+On timeout, deploy exits non-zero and points at `docker logs <container>`. Omit the
+table to skip the check entirely. `--dry-run` prints the poll it would run.
+
 ## Lifecycle order (baked in)
 
 This archetype bakes the standard `build → test → deploy` order with **`deploy`
