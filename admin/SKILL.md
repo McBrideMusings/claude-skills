@@ -152,7 +152,7 @@ After any `admin.toml` edit, just re-run `admin check` (no regeneration). Heavy 
 build → dev → deploy   |   test, vet, fmt, clean, docs
 ```
 
-The `docker-unraid` archetype bakes this in as its default `order`. Never reorder these three. `deploy` is always last in the lifecycle group — never before `dev`.
+The `docker` archetype bakes this in as its default `order`. Never reorder these three. `deploy` is always last in the lifecycle group — never before `dev`.
 
 Use `group` + `priority` integers per command. Sort by `(group, priority, name)`; spacers between groups are automatic.
 
@@ -228,7 +228,7 @@ Commit `admin.toml` alone — there is no `./admin` to commit alongside it, and 
 
 ## Mental model
 
-- **Archetypes are composable mixins.** `archetypes = ["docker-unraid", "apple"]` merges command sets; later archetype wins; manifest `[commands]` wins over all.
+- **Archetypes are composable mixins.** `archetypes = ["docker", "apple"]` merges command sets; later archetype wins; manifest `[commands]` wins over all.
 - **The interpreter reads `admin.toml` live.** No generation, no bundling, no artifact. `admin compile` is the one exception — it packages the interpreter + `admin_lib` + the manifest into a standalone zipapp via stdlib `zipapp`, for a machine without the tool installed.
 - **Versioning is global.** The installed tool's version (in `~/.admin/VERSION`) runs every project. Update the tool → all projects move together. `admin compile` freezes a project to a known-good copy when you need a pin.
 - **Env vars are runtime.** `${VAR}` / `${VAR:-default}` resolved by `admin_lib.core.resolve_env()` at run time. Never expand when editing the manifest.
@@ -249,7 +249,7 @@ work, read the doc for **each archetype in the project's `admin.toml`**
 | --- | --- | --- |
 | `apple` | `archetypes/apple.md` | app-icon **alpha → inset** gotcha; Dock name = `.app` filename (rename); `[apple.icons]` |
 | `rust-tauri` | `archetypes/rust-tauri.md` | macOS bundle inherits the apple icon-alpha rule |
-| `docker-unraid` | `archetypes/docker-unraid.md` | `DEPLOY_LOCAL`→`ADMIN_LOCAL`; lifecycle order |
+| `docker` | `archetypes/docker.md` | `deploy image｜files｜all`; `[deploy]` mirror dir; `[docker_run]` creates the container; `DEPLOY_LOCAL`→`ADMIN_LOCAL` |
 | `unraid-plugin` | `archetypes/unraid-plugin.md` | `DEPLOY_LOCAL`→`ADMIN_LOCAL` |
 | `cloudflare-workers` | `archetypes/cloudflare-workers.md` | dev streaming (`interactive-shell`); cwd-relative wrangler |
 | `hugo` | `archetypes/hugo.md` | static site |
@@ -282,14 +282,14 @@ env = { ADMIN_LOCAL = "true" }
 
 ### DEPLOY_LOCAL → ADMIN_LOCAL (Unraid deploy)
 
-`docker-unraid` / `unraid-plugin` archetypes ship this on `deploy`, `logs`, `diff`, `install-template`.
+`docker` / `unraid-plugin` archetypes ship this on `deploy`, `logs`, `diff`, `install-template`.
 
 `ADMIN_LOCAL=true` tells SSH/scp/rsync in `admin_lib` to run locally instead of over SSH. `_is_local_host()` checks this before IP comparison.
 
 - **Set `DEPLOY_LOCAL=true`** in `.env` on machines that ARE the Unraid host (bare or in a container on Unraid).
 - **Leave unset** on Mac / remote workstation deploying over the network.
 
-Setup for any `docker-unraid` project:
+Setup for any `docker` project:
 1. `.env.example` (committed): `DEPLOY_LOCAL=    # true when on Unraid host`
 2. `.env` on Unraid host (gitignored): `DEPLOY_LOCAL=true`
 
