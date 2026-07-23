@@ -48,6 +48,24 @@ true only when the repo owns the whole directory. `host` is checked against the
 current machine first, so the same manifest works run from a laptop or on the
 Unraid box itself.
 
+## `[docker_build]` — build on the target instead of locally
+
+By default `deploy image` builds locally for `linux/amd64` and ships the result with
+`docker save | ssh docker load`. That's the wrong shape twice over for some projects:
+an ARM Mac emulating amd64 through QEMU is slow, and a project whose code is
+**bind-mounted** from the host doesn't need a new image at all for a code change.
+
+```toml
+[docker_build]
+on_host = true                 # build on the deploy target, skip the image transfer
+context = "${APPDATA_DIR}"     # build-context path ON the host (required with on_host)
+```
+
+Deploy then runs `cd <context> && docker build -t $APP_IMAGE .` over SSH (or locally
+when the target is this machine) and skips the transfer entirely. `admin build`
+honors the same flag. `${VAR}` in `context` is expanded; `on_host` without a
+`context` is a manifest error rather than a silent local build.
+
 ## `[docker_run]` — provisioning bind-mount dirs (`mkdir` / `chown`)
 
 A bind mount whose host dir doesn't exist yet gets created by Docker **as root**,
