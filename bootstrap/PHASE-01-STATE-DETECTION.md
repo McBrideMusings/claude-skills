@@ -7,7 +7,7 @@ For each piece of the standard layout, classify into one of: `missing`, `standar
 | Standard path | Also look for (non-standard) |
 |---|---|
 | `CLAUDE.md` (root) | `AGENTS.md`, `.claude/CLAUDE.md` |
-| `.claude/CLAUDE.local.md` | `CLAUDE.local.md` (root), `.claude.local.md` |
+| `CLAUDE.local.md` (root) | `.claude/CLAUDE.local.md`, `.claude.local.md` |
 | `admin.toml` | (admin skill handles detection — Makefile, justfile, package.json scripts as substitutes; a bare `./admin` with no `admin.toml` is a stale artifact) |
 | `docs/` + `.vitepress/config.mts` | bare `docs/` (no VitePress), `documentation/`, `wiki/` |
 | `docs/CONTEXT.md` | `CONTEXT.md` (root), `GLOSSARY.md`, `docs/glossary.md`, `docs/terms.md`, per-context `src/*/CONTEXT.md` without a map |
@@ -19,7 +19,7 @@ Also probe:
 
 - `.git/` exists
 - GitHub remote: `git remote -v | grep github`
-- `.gitignore` already covers `.claude/*.local.md`
+- `.gitignore` already covers `*.local.*`
 - **Legacy planning docs** the `docs` skill knows how to clean up: `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/` — flag in summary, defer action to [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md)
 
 ## Report the state table BEFORE doing anything
@@ -30,7 +30,7 @@ Bootstrap audit — <project name>
 | Piece                  | State                                          |
 |---|---|
 | CLAUDE.md              | standard / missing / non-standard at AGENTS.md |
-| .claude/CLAUDE.local.md| missing / non-standard at ./CLAUDE.local.md    |
+| CLAUDE.local.md (root) | missing / non-standard at .claude/CLAUDE.local.md|
 | admin runner           | standard / missing                             |
 | VitePress docs         | non-standard: bare docs/ without VitePress     |
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md                   |

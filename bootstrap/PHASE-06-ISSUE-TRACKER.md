@@ -6,7 +6,7 @@ Confirm `gh` is authed and the repo has a GitHub remote — otherwise record the
 
 1. Run `gh auth status` and check `git remote -v | grep github`.
 2. **gh authed + GitHub remote** → no-op.
-3. **No GitHub remote (or gh not authed)** → record in `.claude/CLAUDE.local.md` under the "Issue tracker" section:
+3. **No GitHub remote (or gh not authed)** → record in the root `CLAUDE.local.md` under the "Issue tracker" section:
 
    ```md
    ## Issue tracker

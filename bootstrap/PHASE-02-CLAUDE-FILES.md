@@ -1,6 +1,6 @@
 # Phase 02 — CLAUDE Files
 
-Two related artifacts: the committed root `CLAUDE.md` and the gitignored `.claude/CLAUDE.local.md`.
+Two related artifacts: the committed root `CLAUDE.md` and the gitignored root `CLAUDE.local.md`.
 
 ## CLAUDE.md (repo root, committed)
 
@@ -10,22 +10,24 @@ Two related artifacts: the committed root `CLAUDE.md` and the gitignored `.claud
   - `AGENTS.md` exists — Claude Code reads both. Ask: *"You have `AGENTS.md`. Keep it (Claude Code reads both), or rename to `CLAUDE.md`?"* Default: keep.
   - `.claude/CLAUDE.md` exists — propose moving to root.
 
-## .claude/CLAUDE.local.md (gitignored, per-project local notes)
+## CLAUDE.local.md (repo root, gitignored, per-project local notes)
 
-Path is **`<project>/.claude/CLAUDE.local.md`** — inside the project's `.claude/` directory, not at the repo root.
+Path is **`<project>/CLAUDE.local.md`** — the repo **root**, NOT inside `.claude/`. Claude Code
+only auto-loads a local memory file at the root (`./CLAUDE.local.md`); a file at
+`.claude/CLAUDE.local.md` is **never loaded** — it's a dead zone unless a committed `CLAUDE.md`
+`@import`s it. Root is the only place it loads with no import, so root is the standard.
 
 - **Missing:**
-  1. Create the `.claude/` directory if needed.
-  2. Write the stub (below).
-  3. Ensure `.gitignore` has `.claude/*.local.md`.
-- **Standard** → no-op.
-- **Non-standard at `./CLAUDE.local.md`** (repo root):
-  1. **Privacy check:** is git tracking it? `git ls-files --error-unmatch CLAUDE.local.md 2>/dev/null`. If tracked → flag concern (this file is supposed to be local-only) and ask user before proceeding.
-  2. Propose: `git mv CLAUDE.local.md .claude/CLAUDE.local.md` (or plain `mv` if untracked).
-  3. Update `.gitignore`: remove any old `CLAUDE.local.md` line, add `.claude/*.local.md`.
-- **Non-standard at `.claude.local.md`** (dotfile at root): propose move + rename.
+  1. Write the stub (below) to `<project>/CLAUDE.local.md`.
+  2. Ensure `.gitignore` has `*.local.*` (the glob covers it at root or anywhere).
+- **Standard** (at repo root) → no-op.
+- **Non-standard at `.claude/CLAUDE.local.md`** (inside `.claude/` — the dead zone):
+  1. Propose the move to root: `mv .claude/CLAUDE.local.md CLAUDE.local.md` (plain `mv` — these are gitignored/untracked). If git *is* tracking it, `git mv` instead and flag that a local-only file got committed.
+  2. If a root `CLAUDE.local.md` already exists, **merge** the two (never overwrite — the `.claude/` copy may hold different content), then remove the `.claude/` one.
+  3. Ensure `.gitignore` has `*.local.*`; drop any stale `.claude/*.local.md` line.
+- **Non-standard at `.claude.local.md`** (dotfile at root): propose rename to `CLAUDE.local.md`.
 
-## Stub for new `.claude/CLAUDE.local.md`
+## Stub for new root `CLAUDE.local.md`
 
 ```md
 # Local notes — {project}

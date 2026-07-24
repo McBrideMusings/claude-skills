@@ -188,17 +188,17 @@ If `admin.toml` uses `${VAR}`, run `admin env` and tell the user which vars to e
 1. **`.gitignore`** — ensure `tmp/` and `*.local.*` are ignored. Use the glob; don't add literal `CLAUDE.local.md`. (Old generated `./admin` files should be removed, not gitignored.)
 2. **`.claude/skills/read-logs.md`** — create if missing using `references/read-logs-template.md`.
 3. **`CLAUDE.md` (committed)** — if the project has no root `CLAUDE.md`, invoke `/init` first.
-4. **`.claude/CLAUDE.local.md`** — create/update with the dev-process section (Phase 5). Keep thin: admin-specific dev process and machine overrides only.
+4. **`CLAUDE.local.md` (repo root)** — create/update with the dev-process section (Phase 5). Keep thin: admin-specific dev process and machine overrides only. Root, not `.claude/` — Claude Code only auto-loads a local file at the repo root.
 5. **Project `CLAUDE.md`** — note that `admin.toml` is the source of truth and commands run via `admin <cmd>` (the tool is installed on PATH; nothing is committed but the manifest).
 6. **Docs site, if present** — `admin.toml` must have a single `[commands.docs]` shell command (no sub-targets). If shaped wrong, invoke `/docs`.
 
 **Audit checks:**
 - Committed `CLAUDE.md` exists at project root (if missing, prompt `/init`)
-- `.claude/CLAUDE.local.md` exists (not at project root)
+- `CLAUDE.local.md` exists at the project root (not inside `.claude/`)
 - `.gitignore` has `*.local.*`
 - No stale committed `./admin` (delete if present)
 
-### Phase 5: Dev process docs in `.claude/CLAUDE.local.md`
+### Phase 5: Dev process docs in root `CLAUDE.local.md`
 
 **Native hot reload (Vite, HMR, Next, Air):**
 ```markdown

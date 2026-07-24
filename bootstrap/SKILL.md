@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Idempotent project bootstrap AND audit. Walks through the standard layout (CLAUDE.md, .claude/CLAUDE.local.md, admin runner, VitePress docs, docs/CONTEXT.md, docs/adr/, docs/PRD.md, docs/ROADMAP.md). Creates what's missing, leaves standard-path artifacts alone, and proposes migrations for non-standard placements (e.g. root CLAUDE.local.md → .claude/CLAUDE.local.md, root CONTEXT.md → docs/CONTEXT.md, decisions/ → docs/adr/). Creates and wires missing standard artifacts automatically without asking; only genuinely destructive migrations (moving/deleting existing content) confirm, and it never asks about committing. Triggers: 'bootstrap', 'bootstrap this repo', 'init this project', 'set up the workflow', 'scaffold this project', 'set this up from scratch', 'wire up a new repo', 'audit my project layout', 'migrate this project to my standard layout'."
+description: "Idempotent project bootstrap AND audit. Walks through the standard layout (CLAUDE.md, CLAUDE.local.md, admin runner, VitePress docs, docs/CONTEXT.md, docs/adr/, docs/PRD.md, docs/ROADMAP.md). Creates what's missing, leaves standard-path artifacts alone, and proposes migrations for non-standard placements (e.g. .claude/CLAUDE.local.md → root CLAUDE.local.md, root CONTEXT.md → docs/CONTEXT.md, decisions/ → docs/adr/). Creates and wires missing standard artifacts automatically without asking; only genuinely destructive migrations (moving/deleting existing content) confirm, and it never asks about committing. Triggers: 'bootstrap', 'bootstrap this repo', 'init this project', 'set up the workflow', 'scaffold this project', 'set this up from scratch', 'wire up a new repo', 'audit my project layout', 'migrate this project to my standard layout'."
 user_invocable: true
 ---
 
@@ -23,7 +23,7 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | File | Purpose |
 |---|---|
 | [PHASE-01-STATE-DETECTION.md](PHASE-01-STATE-DETECTION.md) | Probe non-standard locations, build the audit table |
-| [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md) | `CLAUDE.md` (root) + `.claude/CLAUDE.local.md` |
+| [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md) | `CLAUDE.md` (root) + `CLAUDE.local.md` (root) |
 | [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md) | `admin.toml` (delegates to `/admin`) |
 | [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (delegates to `/docs`) |
 | [PHASE-05-DOCS-ARTIFACTS.md](PHASE-05-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`, `docs/PRD.md`, `docs/ROADMAP.md` |
