@@ -43,6 +43,10 @@ The skill is one ordered workflow. Read [PHASE-01-STATE-DETECTION.md](PHASE-01-S
 | [PHASE-06-VERIFY.md](PHASE-06-VERIFY.md) | After Phase 02 / 03 / 04 — boot the dev server briefly |
 | [PHASE-07-COMMIT.md](PHASE-07-COMMIT.md) | Final phase — stage and commit |
 
+## Findings-only invocation
+
+When another skill (e.g. `improve`'s survey) invokes this for audit-only: run [PHASE-01-STATE-DETECTION.md](PHASE-01-STATE-DETECTION.md), then evaluate [PHASE-03-AUDIT.md](PHASE-03-AUDIT.md)'s mechanical and substantive checklists as a **report instead of applying them** — each hit becomes a finding ("`config.ts` needs the `.mts` rename", "`PRD.md` is stub-only"). Skip Phases 05–07 entirely. Return the findings structured (finding, evidence, strength, proposed fix). No file writes, no commits, no questions.
+
 ## When NOT to use this skill
 
 - Project doesn't use Markdown for docs (Sphinx + RST, hosted platform). VitePress-specific.

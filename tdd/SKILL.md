@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: "Test-driven development via vertical-slice tracer bullets (one test → one impl → repeat — NOT all tests first). Tests verify behavior through public interfaces, not implementation. Triggers: 'tdd', 'red green refactor', 'test first', 'write a failing test', 'build this with TDD', 'tracer bullet this'."
+description: "Test-driven development via vertical-slice tracer bullets (one test → one impl → repeat — NOT all tests first). Tests verify behavior through public interfaces, not implementation. Also owns the test-suite audit: judging an existing suite by the same criteria ('audit the tests', 'improve the tests', improve's tests aspect). Triggers: 'tdd', 'red green refactor', 'test first', 'write a failing test', 'build this with TDD', 'tracer bullet this', 'audit the tests'."
 ---
 
 # TDD
@@ -36,8 +36,8 @@ Before writing any code:
 
 - [ ] Confirm with the user what interface changes are needed
 - [ ] Confirm with the user which **behaviors** to test (not implementation steps)
-- [ ] Design the interface for testability (see `MOCKING.md` and `improve`)
-- [ ] Look for deep-module opportunities (small interface, deep implementation — see `improve`)
+- [ ] Design the interface for testability (see `MOCKING.md` and `improve`'s [ARCHITECTURE.md](../improve/ARCHITECTURE.md))
+- [ ] Look for deep-module opportunities (small interface, deep implementation — same file)
 - [ ] List the behaviors to test, in priority order
 - [ ] Get user approval on the plan
 
@@ -85,6 +85,19 @@ Once every planned behavior is green, hand off to `/simplify` for reuse/simplifi
 Mock at **system boundaries only** (external APIs, time, randomness, sometimes filesystem and DBs). Don't mock internal collaborators.
 
 See [MOCKING.md](MOCKING.md) for design-for-mockability patterns: dependency injection, SDK-style interfaces, and concrete examples.
+
+## Audit mode — judging an existing suite
+
+The build loop's criteria, applied retrospectively. Use when asked to audit or improve existing tests (including `improve`'s `tests` aspect).
+
+1. **Inventory** — locate the test files and the runner entry point (an `./admin` task or a package script). No entry point + no tests is itself the lead finding.
+2. **Run the suite** through that existing entry point only — **never install or configure tooling** to make it runnable. Record pass/fail, count, wall time. Red, flaky, or absent outranks every static finding.
+3. **Static pass** with the same criteria the loop uses: behavior vs implementation ([EXAMPLES.md](EXAMPLES.md) red flags — would the test survive an internal refactor?), public-interface-only, mocking at system boundaries only ([MOCKING.md](MOCKING.md) — internal collaborators mocked = finding), and **seam coverage**: which public seams have no tests at all. Read the platform axis's `testing.md` (as in Phase 01) for the stack's idioms before judging harness choices.
+4. **Findings**, each grounded in a named test file or a named uncovered seam — no generic "add more tests".
+
+### Findings-only invocation
+
+When another skill (e.g. `improve`'s survey) invokes the audit: no file writes, no commits, no questions — run steps 1–4 and return the findings structured (finding, evidence `file:line`, strength `Strong`/`Worth exploring`/`Speculative`, proposed fix).
 
 ## Per-Cycle Checklist
 

@@ -1,124 +1,47 @@
 ---
 name: improve
-description: "Architecture review that surfaces friction and proposes deepening opportunities — refactors that turn shallow modules into deep ones. Aim: testability and AI-navigability. Triggers: 'improve architecture', 'audit the architecture', 'find refactor opportunities', 'what's shallow here', 'where can we deepen'."
+description: "Front door for making any aspect of a project better — routes 'I want to improve something' to the aspect's owning skill, or surveys every applicable aspect when none is named. Aspects: architecture, security (posture), tests, ui, product, performance, game, docs, layout. Improvement = opportunities (nothing is broken); defects are `review`. Triggers: 'improve', '/improve', 'what should I improve', 'where can this project get better', 'improve architecture', 'improve security', 'improve tests', 'find refactor opportunities', 'what's shallow here', 'where can we deepen'."
 ---
 
-# Improve Codebase Architecture
+# Improve
 
-Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability.
+The hub for opportunity-finding: "nothing is technically broken, but this could be better." Improve holds no aspect knowledge itself except its two native lenses — every other aspect is owned by another skill, and improve **loads the owner, never reimplements its lenses**. Defect-finding is `review`'s front door, not this one.
 
-## Vocabulary
+## Aspect table
 
-Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component", "service", "API", or "boundary."
+| Aspect | Owner | Applicability |
+| --- | --- | --- |
+| `architecture` | native — [ARCHITECTURE.md](ARCHITECTURE.md) | always |
+| `security` | native — [SECURITY.md](SECURITY.md) (posture; exploits stay with `review`) | always |
+| `tests` | `tdd` audit mode | always — an absent suite is the lead finding |
+| `ui` | `ui-design` critique mode | UI surface exists |
+| `product` | `product-design` orient mode | always |
+| `performance` | `profiling` | app launchable through an existing entry point |
+| `game` | `_domains/game/design.md` + `review.md` cells, read directly | `.claude/domain` marker includes `game` |
+| `docs` | `docs` audit branch | `docs/` + `.vitepress/` exist (absence surfaces via `layout`) |
+| `layout` | `bootstrap` audit branch | always |
 
-These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../grill-me/CONTEXT-FORMAT.md](../grill-me/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
+Each delegated owner has a **"Findings-only invocation"** section in its own `SKILL.md` — the contract for being called from here: no file writes, no commits, no questions (answer what it would normally ask from repo artifacts, mark the unanswerable Assumed/Unknown), return structured findings (finding, evidence, strength, proposed fix). The `game` cells are read under the same discipline: structure and tradeoffs only, never a fun/good verdict.
 
-- **Module** — anything with an interface and an implementation (function, class, package, slice). Scale-agnostic.
-  _Avoid_: unit, component, service, layer, wrapper.
-- **Interface** — everything a caller must know to use the module correctly: type signature, invariants, ordering, error modes, required config, perf characteristics.
-  _Avoid_: API, signature (those refer only to the type-level surface).
-- **Implementation** — what's inside a module.
-- **Depth** — leverage at the interface. A module is **deep** when a large amount of behaviour sits behind a small interface. **Shallow** when the interface is nearly as complex as the implementation.
-- **Seam** _(Michael Feathers)_ — a place where you can alter behaviour without editing in that place. The *location* at which a module's interface lives.
-  _Avoid_: boundary (overloaded with DDD's bounded context).
-- **Adapter** — a concrete thing satisfying an interface at a seam. Describes *role* (what slot it fills), not substance.
-- **Leverage** — what callers get from depth. More capability per unit of interface they have to learn.
-- **Locality** — what maintainers get from depth. Change, bugs, knowledge concentrate at one place instead of spreading across callers.
+## Routing
 
-## Principles
+- **One aspect named** (`improve security`, "improve the tests") → load the owner in-session and run its audit interactively: native aspects read their file here; delegated aspects invoke the owning skill (Skill tool), which keeps its own follow-up flow with the user. No subagents, no merged report.
+- **Several aspects named** (`improve ui tests`) → survey mode over exactly those aspects.
+- **Nothing named** (bare `improve`) → survey mode over every applicable aspect.
 
-- **Depth is a property of the interface, not the implementation.** A deep module can be internally composed of small swappable parts — they just aren't part of the interface.
-- **Deletion test.** Imagine deleting the module. If complexity vanishes, it was a pass-through. If complexity reappears across N callers, it was earning its keep.
-- **The interface is the test surface.** Callers and tests cross the same seam. If you want to test *past* the interface, the module is probably the wrong shape.
-- **One adapter = hypothetical seam. Two adapters = real seam.** Don't introduce a seam unless something actually varies across it.
+## Survey mode
 
-## Designing for testability
+1. **Detect applicability** (cheap, native): check the table's conditions — domain marker, UI surface, docs site, a launchable entry point (`./admin` task or package script).
+2. **Confirm — always.** Print the applicable aspect list with what each would run, in plain chat, and wait: the user can trim, pick a subset, or abort. Never fan out without this yes.
+3. **Fan out** — one subagent (`general-purpose`) per confirmed aspect, all in one message. Each subagent's prompt: read the owner's `SKILL.md` (or the native/cell files) and execute its Findings-only invocation against this repo, returning structured findings. Aspects whose applicability turns out false up close return "not applicable/not measurable — <reason>" rather than guessed findings.
+4. **Merge** into one hermetic HTML report per [HTML-REPORT.md](HTML-REPORT.md) — one section per aspect, one card per finding, and a cross-aspect **Top recommendation**. Write to `<root>/tmp/claude/improve-survey-<slug>.html`.
 
-Good interfaces make testing natural — use this as a lens while exploring to recognise testable vs untestable shape, not as advice to emit unanchored (Phase 01's grounding rule still binds every candidate):
-
-1. **Accept dependencies, don't create them.**
-
-   ```typescript
-   // Testable
-   function processOrder(order, paymentGateway) {}
-
-   // Hard to test
-   function processOrder(order) {
-     const gateway = new StripeGateway();
-   }
-   ```
-
-2. **Return results, don't produce side effects.**
-
-   ```typescript
-   // Testable
-   function calculateDiscount(cart): Discount {}
-
-   // Hard to test
-   function applyDiscount(cart): void {
-     cart.total -= discount;
-   }
-   ```
-
-3. **Small surface area.** Fewer methods = fewer tests needed. Fewer params = simpler test setup.
-
-## Rejected framings
-
-- **Depth as ratio of implementation-lines to interface-lines** (Ousterhout): rewards padding the implementation. Depth-as-leverage is used instead.
-- **"Interface" as the TypeScript `interface` keyword or a class's public methods**: too narrow — interface here includes every fact a caller must know.
-
-## Phases
-
-### Phase 01 — Explore
-
-Read `docs/CONTEXT.md` (domain glossary + architecture vocabulary) and any ADRs in the area you're touching (`docs/adr/`).
-
-Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
-
-- Where does understanding one concept require bouncing between many small modules?
-- Where are modules **shallow** — interface nearly as complex as the implementation?
-- Where have pure functions been extracted just for testability, but real bugs hide in how they're called (no **locality**)?
-- Where do tightly-coupled modules leak across their seams?
-- Which parts of the codebase are untested, or hard to test through their current interface?
-
-Apply the **deletion test** to anything you suspect is shallow.
-
-**Grounding rule — every candidate must cite evidence from this codebase.** A deepening you propose has to point at real modules, real friction you hit while exploring, real callers that bounce between small pieces — named files, named seams. A suggestion that could apply to *any* project in this language ("add a service layer", "introduce dependency injection", "split into smaller modules") with nothing anchoring it to code you actually read is slop — drop it, don't pad the card list with it. If you can't name the modules and the friction, you don't have a candidate yet.
-
-### Phase 02 — Present Candidates as a Hermetic HTML Report
-
-Render the candidates as a single self-contained HTML file — **the diagrams carry the weight, the prose is sparse.**
-
-Write to `<root>/tmp/claude/architecture-review-<slug>.html`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/…` would land the file under whatever subdir the shell is in and the `open <path>` you print won't match. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/`open`/path MUST be the absolute `<root>/tmp/claude/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p <root>/tmp/claude` as a separate Bash call. Open it (`open <path>` on macOS) and emit the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean).
-
-See [HTML-REPORT.md](HTML-REPORT.md) for the hermetic constraints, the `explain` design-system reuse, the scaffold, the before/after diagram patterns, and the card layout. Each candidate is one card:
-
-- **Title** — names the deepening (e.g. "Collapse the Order intake pipeline").
-- **Recommendation strength** — a badge: `Strong` (happy/green), `Worth exploring` (caution/amber), `Speculative` (muted).
-- **Files** — monospaced list of the modules involved.
-- **Before / After diagram** — the centrepiece. Hand-authored inline SVG showing the shallowness and the deepening, side by side.
-- **Problem** — one sentence: what hurts.
-- **Solution** — one sentence: what changes.
-- **Wins** — bullets in glossary terms (locality / leverage), ≤6 words each.
-- **ADR callout** (if applicable) — one line in a `.callout--warn` box.
-
-**Use `docs/CONTEXT.md` vocabulary for the domain** (e.g. "the Order intake module", not "the FooBarHandler" or "the Order service") **and the architecture terms above** consistently.
-
-**ADR conflicts**: if a candidate contradicts an existing ADR, only surface when the friction is real enough to warrant revisiting. Mark clearly: *"contradicts ADR-0007 — but worth reopening because…"*. Don't list every theoretical refactor an ADR forbids.
-
-End the report with a **Top recommendation** section — which candidate to tackle first and why, anchor-linked to its card.
+   **⛔ Resolve `<root>` to an ABSOLUTE path** — run `git rev-parse --show-toplevel` in its own Bash call (fall back to `pwd`'s absolute output); every `mkdir`/`Write`/`open`/printed path is the absolute `<root>/tmp/claude/…`. If a path doesn't start with `/`, that's the bug. Ensure `tmp/` is gitignored; `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
+5. **Summarize inline** (aspect, finding count, top finding each) so the user can react without opening the file, then ask which aspect to work.
+6. **Hand off** — the picked aspect loads exactly as the one-aspect route above, its survey findings already in context as the starting point.
 
 `tmp/claude/` is age-pruned with the rest of the account-wide tmp policy; don't keep the report unless the user asks.
 
-After writing the file, present a brief inline summary (candidate number, title, recommendation strength, one-sentence problem) so the user doesn't have to open the file to react. Then ask: "Which of these would you like to explore?"
+## Native aspects
 
-### Phase 03 — Grilling Loop
-
-Once the user picks a candidate, drop into a grilling conversation. Walk the design tree — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
-
-Side effects happen inline as decisions crystallize:
-
-- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term right there. Format per [../grill-me/CONTEXT-FORMAT.md](../grill-me/CONTEXT-FORMAT.md).
-- **Sharpening a fuzzy term?** Update `docs/CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR: *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [../grill-me/ADR-FORMAT.md](../grill-me/ADR-FORMAT.md).
-- **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+`architecture` and `security` live here because no other skill owns them. Interactive runs use their full files including the grilling loop; survey subagents run their explore/lens pass and return card-shaped findings.

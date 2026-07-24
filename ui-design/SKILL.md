@@ -47,6 +47,10 @@ Same contract as `_domains/ui/design.md`.
   thing when a popover opens"): answer from `_domains/ui/vocabulary.md`. Lead with the term; add a
   competing alternate only if one genuinely applies. Naming, not building.
 
+## Findings-only invocation
+
+When another skill (e.g. `improve`'s survey) invokes `critique` non-interactively: run it exactly as specified above — it already returns ranked findings with concrete reasons — with no file writes, no commits, no questions. Structure each finding as (finding, evidence/reason, strength, proposed fix, surface-fix vs deeper-layer tag).
+
 ## When NOT to use
 
 - Pure logic, backend, or data work — no UI surface.

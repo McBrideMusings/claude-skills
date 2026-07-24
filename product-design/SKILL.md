@@ -155,6 +155,10 @@ isn't the most foundational one — name that tradeoff.
 **Recommendation:** one specific layer cell to work next, and why. Close with a genuine offer to run it
 or push back first.
 
+## Findings-only invocation
+
+When another skill (e.g. `improve`'s survey) invokes `orient` non-interactively: don't ask the framing or per-layer questions — answer them from repo artifacts (`README.md`, `docs/PRD.md`, `docs/CONTEXT.md`, `docs/adr/`, git history) and rate each layer from that evidence, marking layers the artifacts can't answer **Assumed** or **Unknown** rather than guessing. Return the audit table + bottleneck analysis as structured findings (finding, evidence, strength, proposed fix); skip the closing offer. No file writes, no commits, no questions.
+
 ## Relationship to the rest of the account
 
 - **`ui-design`** — the seventh layer (surface). `interaction-flow.md` breadboards hand off to its

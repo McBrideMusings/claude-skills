@@ -1,6 +1,6 @@
 # Architecture fit lens
 
-Evaluate whether the *diff* sits correctly in the existing structure. This is a read-only surface check on the change, not a full architecture review — for a dedicated deepening pass, the `improve` skill is the heavier tool, and this brief should point the reader there when a finding clearly warrants it. Use the architecture vocabulary from `improve` (module, interface, depth, seam — not "component/service/boundary"), and judge the change on these five lenses:
+Evaluate whether the *diff* sits correctly in the existing structure. This is a read-only surface check on the change, not a full architecture review — for a dedicated deepening pass, the `improve` skill is the heavier tool, and this brief should point the reader there when a finding clearly warrants it. Use the architecture vocabulary from `improve`'s `ARCHITECTURE.md` (module, interface, depth, seam — not "component/service/boundary"), and judge the change on these five lenses:
 
 - **Fit** — does the change respect existing module/layer responsibilities, or introduce cross-layer coupling (e.g. routing domain logic through the UI layer)?
 - **Abstraction level** — are new interfaces/types at the right level of generality, or do they leak implementation detail / over-generalize for one caller?

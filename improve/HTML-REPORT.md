@@ -1,6 +1,8 @@
 # HTML Report Format
 
-The architectural review is one **hermetic** HTML file — same hard rules as the `explain` skill. Reuse [../explain/DESIGN-SYSTEM.md](../explain/DESIGN-SYSTEM.md): its semantic-color tokens, type scale, and the `.diagram` / `.compare` / `.callout` / `.legend` component classes. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [SKILL.md](SKILL.md)) without ceremony.
+Serves both report shapes: a single-aspect architecture review, and the **survey report** (one `<section>` per aspect, one card per finding, cross-aspect Top recommendation). The card fields and diagram patterns below are written for architecture cards; other aspects' cards keep Title / badge / Files / Problem / Solution and swap the before/after SVG for whatever carries the finding (a table, a config snippet, a layer-audit table) — same components, same tone.
+
+The report is one **hermetic** HTML file — same hard rules as the `explain` skill. Reuse [../explain/DESIGN-SYSTEM.md](../explain/DESIGN-SYSTEM.md): its semantic-color tokens, type scale, and the `.diagram` / `.compare` / `.callout` / `.legend` component classes. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [SKILL.md](SKILL.md)) without ceremony.
 
 ## Hermetic constraints (non-negotiable)
 
@@ -17,7 +19,8 @@ If you've already built an `explain` artifact, clone its `assets/scaffold.html` 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Architecture review — {repo name}</title>
+    <title>Architecture review — {repo name}</title>  <!-- survey: "Improvement survey — {repo name}" -->
+
     <style>/* design-system tokens + components, inline */</style>
   </head>
   <body>
@@ -83,7 +86,7 @@ One larger card: candidate name, one sentence on why, an anchor link to its card
 
 ## Tone
 
-Plain English, concise — but the architectural nouns and verbs come straight from the Vocabulary section of [SKILL.md](SKILL.md), never their `_Avoid_` substitutes. Concision is not an excuse to drift.
+Plain English, concise — but the architectural nouns and verbs come straight from the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md), never their `_Avoid_` substitutes. Concision is not an excuse to drift.
 
 **Wins bullets** name the gain in glossary terms — *"locality: bugs concentrate in one module"*, *"leverage: one interface, N call sites"*, *"interface shrinks; implementation absorbs the wrappers"*. Don't write *"easier to maintain"* or *"cleaner code"* — those aren't in the glossary and don't earn their place.
 

@@ -30,6 +30,10 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | [PHASE-06-ISSUE-TRACKER.md](PHASE-06-ISSUE-TRACKER.md) | `gh auth status` + GitHub remote check, record fallback if needed |
 | [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/grill-me` Backfill on existing-codebase audits |
 
+## Findings-only invocation
+
+When another skill (e.g. `improve`'s survey) invokes this for audit-only: run [PHASE-01-STATE-DETECTION.md](PHASE-01-STATE-DETECTION.md) and return its audit table as structured findings (artifact, state `missing`/`standard`/`non-standard`, proposed action) — the act-don't-ask rule is **suspended**: create nothing, migrate nothing, run no later phases. No file writes, no commits, no questions.
+
 ## Multi-project usage
 
 Bootstrap is single-repo by design. For auditing a batch of repos, run once per repo from each repo's root: `cd ~/Projects/<repo> && /bootstrap`. Wrap with `/loop` if you want unattended sweeping. Don't try to audit a directory full of repos in one invocation — per-repo state is too varied for a single pass.

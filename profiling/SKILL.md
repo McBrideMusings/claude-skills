@@ -54,6 +54,10 @@ the metric meaningfully. Stop when you hit the target or the next contributor is
 micro-optimize past the point that matters. Leave a repeatable measurement (a signpost, a benchmark,
 a noted command) so the win doesn't silently regress later.
 
+## Findings-only invocation
+
+When another skill (e.g. `improve`'s survey) invokes this for audit: run **Phases 01–03 only** and return the dominant-cost findings — Phases 04–05 belong to an interactive session; change no code. Infer the metric and workload from the project type (game → the frame budget in `_domains/game/profiling.md`; web → load/interaction; CLI → startup) and **name both in the findings** so the premise can be rejected. Launch only through an existing entry point (an `./admin` task or package script). If no launchable entry point or profiler exists, return "not measurable — <reason>" instead of guessing hot paths from code. No file writes, no commits, no questions.
+
 ## When there's no platform axis
 
 Run the same five phases with the stack's native tooling. If profiling isn't feasible (no profiler,
