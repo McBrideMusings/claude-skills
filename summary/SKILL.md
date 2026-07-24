@@ -113,18 +113,24 @@ This prunes files for branches that no longer exist locally (merged-and-deleted,
 
 ### Phase 03 — Detect Git Component
 
-Run `git log --oneline origin/<base>..HEAD` via Bash tool, substituting the base branch name resolved in Phase 01.
+Resolve a **diff base** — the ref the change list is computed against — then run `git log --oneline <diff-base>..HEAD`.
 
-- If not in a git repo, or no commits beyond base: skip Phase 04 and go directly to Phase 05 (synthesize from session context + optional prior file only).
-- Otherwise: proceed to Phase 04.
+1. Start with `<diff-base>` = `origin/<base>` (the base branch name resolved in Phase 01). Run `git log --oneline origin/<base>..HEAD`.
+2. **If that is empty and the current branch *is* the base branch** — the session's commits were pushed straight to `<base>`, so `origin/<base>..HEAD` shows nothing — fall back to the session-start marker:
+   - Read `<repo-root>/tmp/claude/session-start-sha` (written by the git-sync SessionStart hook; holds HEAD as it stood when the session began).
+   - If the file exists and its sha is an ancestor of HEAD (`git merge-base --is-ancestor <sha> HEAD`), set `<diff-base>` = that sha. The range `<sha>..HEAD` is exactly the commits made during this session.
+   - If the marker is missing or its sha is not an ancestor of HEAD (stale marker, history rewritten), keep the empty result.
+
+- If not in a git repo, or the diff range is still empty after the fallback: skip Phase 04 and go directly to Phase 05 (synthesize from session context + optional prior file only).
+- Otherwise: proceed to Phase 04, passing the resolved `<diff-base>`.
 
 ### Phase 04 — Off-load Git Digest to a Haiku Sub-Agent
 
 When there's a git component, spawn a Haiku sub-agent via the Agent tool with the brief below. The git outputs and file samples can be large — keeping them in the sub-agent's context instead of the parent's is the point.
 
-Brief (substitute the actual base branch name for `<base>` before invoking):
+Brief (substitute the `<diff-base>` resolved in Phase 03 — usually `origin/<base>`, or the session-start sha when commits went straight to the base branch — everywhere the brief says `<diff-base>`):
 
-> "Build a structured digest of the changes on this branch vs `origin/<base>`. Run: `git log --oneline origin/<base>..HEAD`, `git diff origin/<base> --stat`, `git diff origin/<base> -- '*.md' '*.json' | head -200`. Read a representative sample of changed files — focus on entry points, new modules, key types. Don't read every file; use the stat output to identify clusters. Return a structured list grouped by logical area of work (not by file or commit), naming real file paths. Aim for the level of detail a PR description needs. Under 600 words."
+> "Build a structured digest of the changes on this branch vs `<diff-base>`. Run: `git log --oneline <diff-base>..HEAD`, `git diff <diff-base> --stat`, `git diff <diff-base> -- '*.md' '*.json' | head -200`. Read a representative sample of changed files — focus on entry points, new modules, key types. Don't read every file; use the stat output to identify clusters. Return a structured list grouped by logical area of work (not by file or commit), naming real file paths. Aim for the level of detail a PR description needs. Under 600 words."
 
 Before spawning the sub-agent, resolve the followups path in **two separate Bash calls** — never nest `$(...)` (triggers a permission prompt):
 1. `git rev-parse --show-toplevel` → get the repo root path
