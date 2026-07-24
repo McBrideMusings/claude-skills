@@ -20,6 +20,8 @@ Boot the dev server briefly to confirm the wiring works.
 
 3. **If `admin.toml` is wired**, run `admin docs` briefly and confirm VitePress + HMR boot.
 
+   `admin docs` writes its terminal output to `tmp/docs.log` (per admin's universal per-command logging — `tmp/<cmd>.log`, and `tmp/<cmd>-<sub>.log` for sub-targets). If the dev server hangs or errors silently, read that file directly rather than re-invoking.
+
 Failures here usually point at one of the gotchas in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) — `.mts` rename, `{{ }}` template syntax, missing `layout: home`.
 
 When verify passes, proceed to [PHASE-07-COMMIT.md](PHASE-07-COMMIT.md).
