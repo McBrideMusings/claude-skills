@@ -40,7 +40,7 @@ Order the failing issues by **unblock leverage**: how many in-scope issues each 
 
 One issue at a time, top of the queue. The user can stop at any point — progress is already durable (state lives in the edited bodies; a rerun rescans and resumes; there is no state file).
 
-1. **Interview.** Present the issue and its unresolved question, then route by failed test, exactly as implement's gate does:
+1. **Interview.** Present the issue — its number, title, full URL, and unresolved question — then route by failed test, exactly as implement's gate does:
    - Plan test failed (missing facts, unknown files or scope) → invoke `ask-questions-if-underspecified` via the Skill tool.
    - Objectivity test failed, or both (a design or product call the user owns) → invoke `grill-me` via the Skill tool. If a decision crystallises into an ADR, grill-me's existing offer covers it — take it.
 2. **Edit the body.** Rewrite the issue body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, `Type: HITL` flipped to `Type: AFK` if present. Show the new body, then `gh issue edit <n> --body`. GitHub keeps edit history; nothing is lost.
@@ -66,3 +66,4 @@ Scope is AFK-workable. Reply with a number, or tell me something else.
 - Never invent an answer. Every resolution comes from the interview; if the user declines to decide, the issue stays flagged and is reported as such.
 - Don't implement, don't commit code, don't close issues. Body edits (and grill-me's ADRs) are the only writes.
 - Interview one issue at a time — never batch questions across issues into one message.
+- Every time an issue is named to the user — the Phase 2 queue, an interview, a cascade edit, the Phase 4 report — emit its full clickable URL alongside the number, so the user can open and read it. `#121` on its own is not enough. Get the URLs from the same `gh` call that fetched the bodies (`--json number,title,url`); for a local followup or papercut, give the absolute file path and line instead.
