@@ -1,30 +1,91 @@
 ---
 name: prototype
-description: "Build a throwaway prototype to flesh out a design before committing. Routes between two branches — a runnable terminal app for state/logic questions (LOGIC.md), or several radically different UI variations on one route (UI.md). Triggers: 'prototype this', 'spike this out', 'let me play with it', 'try a few designs', 'sanity check the state machine', 'mock up some variants', 'throwaway prototype'."
+description: "Build a throwaway prototype to flesh out a design before committing. Routes between three shapes — several working UI variations behind a picker (UI.md), a runnable terminal app for state/logic questions (LOGIC.md), or competing technical approaches measured against one fixture (COMPARE.md). Triggers: 'prototype this', 'spike this out', 'let me play with it', 'try a few designs', 'sanity check the state machine', 'mock up some variants', 'which approach should we use', 'throwaway prototype'."
 ---
 
 # Prototype
 
 A prototype is **throwaway code that answers a question**. The question decides the shape.
 
-## Pick a branch
+## Pick a shape
 
-Identify which question is being answered — from the prompt, the surrounding code, or by asking if the user is around:
+Identify which question is being answered — from the prompt, the surrounding code, or by asking if the
+user is around:
 
-- **"Does this logic / state model feel right?"** → [LOGIC.md](LOGIC.md). Tiny interactive terminal app that pushes the state machine through cases hard to reason about on paper.
-- **"What should this look like?"** → [UI.md](UI.md). Several radically different UI variations on a single route, switchable from a floating bottom bar.
+- **"What should this look like?"** → [UI.md](UI.md). Several genuinely different working versions of
+  one piece of UI, in a single standalone HTML file, flipped through with the picker.
+- **"Does this logic / state model hold up?"** → [LOGIC.md](LOGIC.md). Tiny interactive terminal app
+  that pushes the state machine through cases hard to reason about on paper.
+- **"Which technical approach should we use?"** → [COMPARE.md](COMPARE.md). Two or three real
+  implementations behind one interface, run against the same fixture, measured.
 
-The two branches produce very different artifacts — getting this wrong wastes the whole prototype. If the question is genuinely ambiguous and the user isn't reachable, default to whichever branch matches the surrounding code (backend module → logic; page or component → UI) and state the assumption at the top of the prototype.
+The three shapes produce very different artifacts — getting this wrong wastes the whole prototype. If
+the question is genuinely ambiguous and the user isn't reachable, default by what the question is
+about (a page or component → UI; a state model or data shape → logic; a library, storage, or
+architecture choice → compare) and state the assumption at the top of the prototype.
 
-## Rules for both branches
+## Layer the domain on top
 
-1. **Throwaway from day one, clearly marked.** Locate the code close to where it'll actually live (next to the module or page) so context is obvious. Name it so a casual reader can tell it's a prototype, not production.
-2. **One command to run.** Whatever the project's existing task runner uses (`npm run X`, `pnpm X`, `bun X`, `python X`, `admin X`). The user starts it without thinking.
-3. **No persistence by default.** State is in-memory. Persistence is what the prototype is *checking*, not something it depends on. If the question involves a DB, use a scratch file with "PROTOTYPE — wipe me" in the name.
-4. **Skip the polish.** No tests, no error handling beyond what makes it runnable, no abstractions.
-5. **Surface the state.** After every action (logic) or variant switch (UI), render the full relevant state so the user can see what changed.
-6. **Delete or absorb when done.** Either delete it or fold the validated decision into real code.
+The shape is the *mechanism*. The domain is the *mode of software* — it says what "realistic" and
+"answered" mean here. Resolve it per [`_domains/_detect.md`](../_domains/_detect.md) (explicit
+argument → `.claude/domain` marker → classify once), then load the cell **in addition to** the shape
+file:
+
+- `ui` → [`_domains/ui/prototype.md`](../_domains/ui/prototype.md) — the craft bar every variant clears,
+  what realistic content means, the axes variants diverge on.
+- `game` → [`_domains/game/prototype.md`](../_domains/game/prototype.md) — feel questions, the surfaces a
+  game prototype runs on (Roblox scratch Place, canvas/three.js HTML file, native scratch target),
+  playtest-by-hand instead of flip-and-compare.
+- No marker → shape file only. A feature or technical spike is the generic path and needs no cell.
+
+## Rules for all three shapes
+
+1. **The artifact never lives in production files.** Everything is written under
+   `<repo-root>/tmp/claude/prototypes/` (gitignored) — a single `.html` file for UI, a directory for
+   the others. No new route, no edit to an existing page, no entry added to `package.json` or the task
+   runner. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to
+   accidentally ship and nothing to clean out of a real file.
+   Domain exception: a surface that can't be a file (a Roblox Place) uses the scratch surface named in
+   its domain cell, under the same "throwaway, never production" rule.
+2. **One command, or one double-click.** UI opens directly in a browser. Logic and compare run with the
+   project's existing runtime straight off the path — `bun tmp/claude/prototypes/queue/run.ts` — never
+   by registering a script somewhere real.
+3. **No persistence by default.** State is in memory. Persistence is what the prototype is *checking*,
+   not something it depends on. If the question is about a DB, use a scratch file inside the prototype
+   directory.
+4. **Skip the polish.** No tests, no error handling beyond what makes it runnable, no abstractions, no
+   "what if we later want".
+5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the
+   full relevant state so the user can see what changed.
+6. **Realistic content, always.** Product-shaped copy, plausible names and numbers, real-sized data. No
+   lorem ipsum, no `foo`/`bar`, no dead buttons, no "imagine this part here".
+7. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a
+   direction wins, implement it properly in the project's stack and conventions, then delete the
+   prototype. Never move the file into the codebase.
+
+## Arguments
+
+| Invocation | Behavior |
+| --- | --- |
+| `<description>` | Full run of whichever shape the question implies |
+| `<description>` + a count ("give me five") | Same, capped at 5 variants (UI) or 3 implementations (compare) |
+| `riff <name>` | New round: keep the harness, generate a fresh set diverging *around* the named variant's direction |
+
+Picking a winner needs no verb — say it in chat ("go with Dense") and the promote step runs.
 
 ## When done
 
-The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in `docs/adr/`, GitHub issue, or `NOTES.md` next to the prototype) along with the question it was answering. If the user is around, that capture is a quick conversation. If not, leave the placeholder so the verdict can be filled in before deletion.
+The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in
+`docs/adr/`, GitHub issue) along with the question it was answering — if the user is around, that's a
+quick conversation; if not, leave `NOTES.md` in the prototype directory with the verdict blank. Then
+delete the prototype.
+
+## Not this skill
+
+- Judging or improving an interface that already exists → `ui-design` critique mode.
+- Deciding whether a *layout* is right, when there's one design and the question is arrangement →
+  `ui-design` sketch mode (cheaper: ASCII in chat). Come here when the question is *which direction*,
+  and the axes in play are density, motion, personality, or interaction model — the things ASCII can't
+  show.
+- Picking a library for a web task → `_domains/ui/libraries.md` via `ui-design`. Don't burn a prototype
+  on a question a curated list already answers.

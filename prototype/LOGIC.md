@@ -9,7 +9,16 @@ A tiny interactive terminal app that lets the user drive a state model by hand. 
 - "I want to feel out what the API should look like before writing it."
 - Anything where the user wants to **press buttons and watch state change.**
 
-If the question is "what should this look like" — wrong branch. Use [UI.md](UI.md).
+If the question is "what should this look like" → [UI.md](UI.md). If it's "which of these two
+approaches should we use", where you want measurements rather than something to drive by hand →
+[COMPARE.md](COMPARE.md).
+
+## The artifact
+
+`<repo-root>/tmp/claude/prototypes/<slug>/` — a directory, gitignored, run straight off the path with
+the project's existing runtime (`bun tmp/claude/prototypes/scheduler/run.ts`). No production file is
+touched and no script is registered anywhere real; the whole thing is deleted when the question is
+answered.
 
 ## Process
 
@@ -23,7 +32,7 @@ Use whatever the host project uses. Don't add a new runtime or package manager j
 
 ### Phase 03 — Isolate the Logic in a Portable Module
 
-Put the bit that's answering the question behind a small, pure interface that could be lifted out and dropped into the real codebase later. The TUI is throwaway; the logic module shouldn't be.
+Put the bit that's answering the question behind a small, pure interface — no I/O, no terminal code mixed in — so the TUI can be peeled off it. What transfers to the real codebase is the module's *shape* (the states, the transitions, the signatures the prototype proved out), rewritten there under real conditions with tests and error handling. The prototype file itself still gets deleted.
 
 Shape options:
 
@@ -54,7 +63,11 @@ The whole frame fits one screen.
 
 ### Phase 05 — Make It Runnable in One Command
 
-Add a script to the project's task runner (`admin.toml`, `package.json` scripts, `Makefile`, `justfile`, `pyproject.toml`). User should run `admin <prototype-name>` or equivalent — never need to remember a path.
+One command, straight off the prototype path, using a runtime the project already has — `bun
+tmp/claude/prototypes/scheduler/run.ts`, `python tmp/claude/prototypes/scheduler/run.py`. Don't
+register it in `admin.toml`, `package.json`, a `Makefile`, or any other real file: the prototype is
+about to be deleted, and a stale task entry outlives it. Hand the user the full command; they don't
+need to remember it, they need to paste it once.
 
 ### Phase 06 — Hand It Over
 
@@ -70,4 +83,4 @@ When the prototype has done its job, the answer is the only thing worth keeping.
 - **Don't wire it to the real database.** In-memory store unless the question is specifically about persistence.
 - **Don't generalise.** No "what if we wanted to support X later." The prototype answers one question.
 - **Don't blur the logic and TUI together.** If the reducer / state machine references `console.log`, prompts, or escape codes, it's no longer portable.
-- **Don't ship the TUI shell to production.** The shell is throwaway; the logic module behind it is what's worth keeping.
+- **Don't ship any of it to production.** The shell is throwaway and so is the module file; what survives is the state model it proved, written properly in the real codebase.

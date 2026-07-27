@@ -166,6 +166,17 @@ Exact curves, durations, spring parameters, and the GPU-property rules are **imp
 live in `_platforms/web/review.md` and `_platforms/apple/review.md`, loaded by the `review` engine.
 The reverse glossary of motion terms is `vocabulary.md` in this directory.
 
+## The rest of this directory
+
+- `opportunities.md` — where motion is **missing or weak**: the four-question gate, the hunt-seam
+  sweep, the required rejected-candidates section. Run by `ui-design` critique, which is `improve`'s
+  `ui` aspect.
+- `review.md` — where motion is **broken**: jank, interruptibility and stranded state, accessibility.
+  Run by the `review` engine. Craft calls never go here.
+- `prototype.md` — the craft bar and divergence axes for building UI variants (`prototype`).
+- `libraries.md` — curated web/React library picks, so a solved component doesn't get hand-rolled.
+- `slop.md`, `fidelity.md`, `vocabulary.md` — AI-tell catalog, structural surface audit, motion glossary.
+
 ## Room for more lenses
 
 Add cells as they earn their place. Same rule on every lens added: a verdict is fine, but it always

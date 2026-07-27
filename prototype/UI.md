@@ -1,106 +1,135 @@
 # UI Prototype
 
-Generate **several radically different UI variations** on a single route, switchable from a floating bottom bar. The user flips between variants, picks one (or steals bits from each), then throws the rest away.
+Build **several genuinely different working versions** of one piece of UI in a single standalone HTML
+file, flipped through with the picker, and let the user pick a winner.
 
-If the question is logic/state rather than what something looks like — wrong branch. Use [LOGIC.md](LOGIC.md).
+If the question is logic/state → [LOGIC.md](LOGIC.md). If it's "which technical approach" →
+[COMPARE.md](COMPARE.md). If there is one design and the open question is arrangement, this is too
+expensive — that's `ui-design` sketch mode (ASCII in chat).
+
+Adapted from emilkowalski/skills `prototype` (MIT, © 2026 Emil Kowalski); the picker spec is copied
+verbatim in [PICKER.md](PICKER.md).
 
 ## When this is the right shape
 
-- "What should this page look like?"
-- "I want to see a few options for this dashboard before committing."
+- "What should this look like?" / "I want to see a few options before committing."
 - "Try a different layout for the settings screen."
 - Any time the user would otherwise spend a day picking between vague mockups in their head.
 
-## Two sub-shapes — strongly prefer sub-shape A
+## The artifact — always one standalone HTML file
 
-UI prototypes are much easier to judge when butting up against the rest of the app — real header, real sidebar, real data, real density. A throwaway route on its own is a vacuum; every variant looks fine in isolation.
+`<repo-root>/tmp/claude/prototypes/<slug>.html` — self-contained, inline CSS and JS, opened directly
+in a browser. No dev server, no build step, no route, no framework, and **no edit to any production
+file**. This holds even when the project is React, Vue, or SwiftUI: hand-written HTML/CSS/JS is the
+fastest path to something you can look at, and the winning direction gets rewritten in the project's
+stack at promotion anyway.
 
-### Sub-shape A — adjust an existing page (preferred)
+Make it look native to the product without importing anything from it:
 
-The route already exists. Variants render **on the same route**, gated by a `?variant=` URL search param. Existing data fetching, params, and auth stay; only rendering swaps. **Default to this.**
+- **Copy the design tokens into `:root`** — the colours, radii, spacing scale, font stack, easing and
+  duration variables read off the project's CSS/theme file during recon. Copied values, not imports.
+- **Tailwind projects** — add `<script src="https://unpkg.com/@tailwindcss/browser@4"></script>` and
+  paste the project's `@theme` block. The browser build compiles utilities on the page, so the
+  project's own class names work in the file (https://www.npmjs.com/package/@tailwindcss/browser).
+- **Type realistic content by hand** — real product copy, plausible names and numbers, a row count
+  close to the real one.
 
-If the prototype is for something that doesn't have a page yet but *would naturally live inside one* (a new dashboard section, a new card on settings, a new step in an existing flow) — that's still sub-shape A. Mount the variants inside the host page.
-
-### Sub-shape B — a new page (last resort)
-
-Use only when the thing being prototyped has no existing page to live inside. Create a throwaway route following the project's existing routing convention. Name it so it's obviously a prototype (include `prototype` in the path or filename). Same `?variant=` pattern.
-
-Sanity-check first: is there really no existing page this could be embedded in? An empty route hides design problems a populated one would expose.
+Two things this costs, both accepted: a variant cannot use the project's actual components, and
+density can't be judged against genuinely live data. When the whole question is "does our real
+`<DataGrid>` work here", that's a promotion-time question, not a prototype one.
 
 ## Process
 
-### Phase 01 — State the Question and Pick N
+### Phase 01 — Scope
 
-Default to **3 variants.** More than 5 stops being radically different and starts being noise — cap there.
+One thing per run. If the description spans several components ("the dashboard"), narrow it: pick the
+single highest-leverage piece, say which and why, offer the rest as later runs. Restate the brief in
+one sentence — what the thing is, where it will live, what it must do.
 
-Write the plan in one line, top of the prototype:
+### Phase 02 — Recon
 
-> "Three variants of the settings page, switchable via `?variant=`, on the existing `/settings` route."
+Before designing anything, map the ground the variants stand on:
 
-### Phase 02 — Generate Radically Different Variants
+- **Tokens** — colours, radii, spacing, fonts, easing/duration variables, to copy into `:root`.
+- **Personality** — playful consumer app or crisp dashboard? This bounds how far the boldest variant
+  may go.
+- **Context** — what the piece renders against: background, neighbours, sizes.
+- **Frequency** — how often a user hits this. It decides how much motion is allowed at all
+  (`_domains/ui/design.md` Lens 1).
 
-Each variant must be **structurally different** — different layout, different information hierarchy, different primary affordance. Not just different colours. Three slightly-tweaked card grids isn't a prototype, it's wallpaper.
+No project at all (empty directory, pure exploration)? Skip to Phase 03 with a restrained default look:
+neutral greys, one accent, system font stack.
 
-Hold each one to:
+### Phase 03 — Choose directions
 
-- The page's purpose and the data it has access to.
-- The project's component library / styling system.
-- A clear exported component name — `VariantA`, `VariantB`, `VariantC`.
+Default **3 variants**, up to 5 when the design space is genuinely wide. More than 5 stops being
+divergence and starts being noise.
 
-If two drafts come out too similar, redo one with explicit "do not use a card grid" guidance.
+Before writing any code, list the set: **a name and an axis for each**. Names describe the direction —
+"Quiet", "Editorial", "Playful", "Dense" — never "Variant A/B/C", which hides whether two variants are
+actually the same idea. The axis is layout, density, personality, motion, or interaction model.
 
-### Phase 03 — Wire Them Together
+If two proposed directions differ only in accent colour, copy, or corner radius, they are one
+direction — replace one with a real alternative (different layout, different interaction model,
+different motion story). Sharing the project's tokens is *not* convergence; every variant should look
+like it could ship in this product tomorrow.
 
-Single switcher component on the route:
+**Done when:** every variant has a name and a stated axis, and no two sit at the same axis position.
 
-```tsx
-// pseudo-code — adapt to the project's framework
-const variant = searchParams.get('variant') ?? 'A';
-return (
-  <>
-    {variant === 'A' && <VariantA {...data} />}
-    {variant === 'B' && <VariantB {...data} />}
-    {variant === 'C' && <VariantC {...data} />}
-    <PrototypeSwitcher variants={['A','B','C']} current={variant} />
-  </>
-);
-```
+### Phase 04 — Build
 
-Sub-shape A: existing data fetching stays above the switcher; only the rendered subtree changes per variant.
+One HTML file. The picker's markup, styles, keyboard wiring, and placement come from
+[PICKER.md](PICKER.md) — **verbatim**, never restyled with the project's tokens, so it always reads as
+harness chrome rather than part of the design being judged.
 
-### Phase 04 — Build the Floating Switcher
+Beyond the picker, the harness renders **one variant at a time, full size, in realistic surrounding
+context** — a toast needs a page behind it, a card needs siblings, a button needs a form. Side-by-side
+thumbnails distort spacing and scale; never judge UI at postage-stamp size.
 
-Small fixed-position bar at bottom-centre with three pieces:
+Every variant fully works: real interactions, real motion, real content. A dead button teaches nothing
+about the direction it was standing in for.
 
-- **Left arrow** — previous variant (wraps).
-- **Variant label** — current key plus the variant's name if exported, e.g. `B — Sidebar layout`.
-- **Right arrow** — next variant (wraps).
+The variant swap itself is **instant** — flipping is a 100+/session action, so by the frequency rule it
+gets no animation. (The picker's own highlight slides; that's specified in PICKER.md.)
 
-Behaviour:
+### Phase 05 — Verify and hand off
 
-- Clicking an arrow updates the URL search param (use the framework's router) so the variant is shareable and reload-stable.
-- Keyboard: `←` and `→` cycle. Don't intercept arrow keys when an `<input>`, `<textarea>`, or `[contenteditable]` is focused.
-- Visually distinct (high-contrast pill, subtle shadow) so it's obviously not part of the design being evaluated.
-- **Hidden in production** — gate on `process.env.NODE_ENV !== 'production'` or equivalent so a stray prototype merge can't ship the bar to users.
+Open the file and flip through every variant yourself: each renders, each interaction responds, the
+console is clean. Screenshot each one if browser tooling is available.
 
-If the project's UI framework or platform makes a floating bottom bar awkward (native menu bar app, terminal UI, plain HTML form), pick the project-appropriate equivalent — keyboard shortcut, query param + reload, native segmented control — and note it inline.
+Then present the set and **stop — the choice is the user's**:
 
-### Phase 05 — Hand It Over
+| # | Variant | Axis | When it's the right choice | Its cost |
+| --- | --- | --- | --- | --- |
+| 1 | Quiet | Minimal motion, borders over shadows | A daily-use tool | Least memorable |
+| 2 | Editorial | Large type, generous whitespace | The moment deserves weight | Eats vertical space |
 
-Surface the URL and the `?variant=` keys. The user will flip through. The interesting feedback is usually **"I want the header from B with the sidebar from C"** — that's the actual design they want.
+Close with the full path to the file and the keys to flip (`1–N`, `←`/`→`, `R` to replay).
 
-### Phase 06 — Capture the Answer and Clean Up
+Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
+in the table. If the user asks which you'd choose, answer with a reason rooted in the product's
+personality and how often the piece is seen (`ui-design` and `_domains/ui/design.md` are where that
+judgement is licensed and how it must be anchored). If two variants converged while you built them, cut
+one and say so: two truly distinct directions beat three padded ones.
 
-Once a variant wins, write down which one and why (commit message, ADR in `docs/adr/`, issue, or `NOTES.md` if running AFK). Then:
+The most useful feedback is usually **"the header from Editorial with the density of Dense"** — that's
+the actual design. Treat it as a `riff` and run Phase 03 again around it.
 
-- **Sub-shape A** — delete losing variants and the switcher; fold the winner into the existing page.
-- **Sub-shape B** — promote the winning variant to a real route; delete the throwaway and the switcher.
+### Phase 06 — Promote and delete
 
-Don't leave variants or the switcher rotting. They rot fast and confuse the next reader.
+When a direction wins: capture the answer and why (commit message, ADR, issue), implement it properly
+in the project's stack and conventions — a rewrite, never a copy of prototype markup — then delete
+`<repo-root>/tmp/claude/prototypes/<slug>.html`. Keep the file only if the user asks.
 
 ## Anti-patterns
 
-- **Variants that differ only in colour or copy.** That's a tweak, not a prototype.
-- **Sharing too much code between variants.** Shared `<Header>` fine; shared `<Layout>` defeats the point. Each variant should be free to throw out the layout.
-- **Wiring variants to real mutations.** Read-only prototypes are fine. If a variant needs to mutate, point it at a stub.
-- **Promoting the prototype directly to production.** Variant code was written under prototype constraints (no tests, minimal error handling). Rewrite it properly when folding in.
+- **Variants that differ only in colour or copy.** That's a tweak, not a divergence.
+- **A shared layout wrapper across variants.** Each variant must be free to throw out the layout;
+  sharing one defeats the point.
+- **Restyling the picker.** It is chrome. The moment it uses project tokens, it starts competing with
+  the design being judged.
+- **Lorem ipsum, placeholder avatars, `$0.00`.** Fake content flatters every variant equally and
+  therefore distinguishes none of them.
+- **Judging variants side by side at small scale.** One at a time, full size.
+- **Moving prototype markup into the codebase.** It was written with no tests, no error handling, and
+  no accessibility pass beyond what the picker spec carries.

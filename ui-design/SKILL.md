@@ -36,8 +36,10 @@ Same contract as `_domains/ui/design.md`.
   principles, cohesion). Set the `ui` domain marker (`_domains/_detect.md`) when a repo's work is
   UI-centric, so the engines pick up the UI cells too.
 - **`critique` / `audit` (post-code)** — an interface already exists and the question is "is this good?"
-  / "what's weak?" Apply the `_domains/ui/design.md` lenses, run the `_domains/ui/slop.md` catalog, **and**
-  run the `_domains/ui/fidelity.md` structural pass (does the surface honour the decisions in the layers
+  / "what's weak?" Apply the `_domains/ui/design.md` lenses, run the `_domains/ui/slop.md` catalog, run
+  the `_domains/ui/opportunities.md` pass when motion is in scope (the four-question gate, the hunt-seam
+  sweep, and its **required** rejected-candidates section — this is what `improve`'s `ui` aspect is
+  asking for), **and** run the `_domains/ui/fidelity.md` structural pass (does the surface honour the decisions in the layers
   below — vocabulary, object consistency, breadboard completeness, error recovery, accessibility). Return
   ranked findings, each with its concrete reason (named principle, slop tell, measured value, or fidelity
   discipline) and a proposed fix; tag each finding surface-fix or deeper-layer (route deeper ones to
@@ -57,6 +59,13 @@ When another skill (e.g. `improve`'s survey) invokes `critique` non-interactivel
 - A bug fix that doesn't change layout or motion.
 - Reviewing or testing UI *code* — that's the `review` / `tdd` / `verify` engines (they read the UI
   cells themselves). This skill is the design-time decision, not the code pass.
+- **The question is *which direction*, not *which arrangement*** — several genuinely different takes on
+  one piece, differing on density, motion, personality, or interaction model. Sketch mode can't show
+  those, so it filters on the wrong information: that's `prototype` (working variants in one standalone
+  HTML file behind a picker). Sketch stays the cheaper first reach when there's one design and the open
+  question is where things sit.
+- Choosing a web library rather than designing the thing — `_domains/ui/libraries.md` answers it
+  directly.
 
 ---
 

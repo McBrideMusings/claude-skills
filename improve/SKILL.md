@@ -14,7 +14,7 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 | `architecture` | native — [ARCHITECTURE.md](ARCHITECTURE.md) | always |
 | `security` | native — [SECURITY.md](SECURITY.md) (posture; exploits stay with `review`) | always |
 | `tests` | `tdd` audit mode | always — an absent suite is the lead finding |
-| `ui` | `ui-design` critique mode | UI surface exists |
+| `ui` | `ui-design` critique mode (craft lenses + slop + `_domains/ui/opportunities.md` for missing/weak motion) | UI surface exists |
 | `product` | `product-design` orient mode | always |
 | `performance` | `profiling` | app launchable through an existing entry point |
 | `game` | `_domains/game/design.md` + `review.md` cells, read directly | `.claude/domain` marker includes `game` |

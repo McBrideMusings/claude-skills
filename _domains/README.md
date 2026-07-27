@@ -26,6 +26,7 @@ _domains/
     profiling.md        <- domain performance gate (defers raw numbers to the platform profiler)
     testing.md          <- domain test discipline, read by `tdd`/`verify`
     design.md           <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
+    prototype.md        <- OPTIONAL: what a throwaway prototype answers in this domain, read by `prototype`
 ```
 
 ## Who reads what
@@ -41,17 +42,27 @@ and tradeoffs — they never deliver a fun/good verdict.
 
 ## Current state
 
-`game/` — all four engine cells + a `design.md` planning cell, seeded from
+`game/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs. numbers
+questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
 majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to-end game builds over
 this store and sets the `game` marker on scaffold.
 
-`ui/` — `design.md` (planning-time critique lenses) + `review.md` (motion/craft lens for the `review`
-engine) + `slop.md` (objective AI-slop banned-patterns catalog, read by `ui-design` critique mode and the
-`review`/`verify` engines; harvested from pbakaus/impeccable + Leonxlnx/taste-skill) + `vocabulary.md` (a reference — the
-reverse motion-term glossary, read by `ui-design` and `explain`, not an engine cell). Seeded from
-emilkowalski/skills. The `ui-design` skill is the planning
-orchestrator over this store; the implementation-level values live in `_platforms/web/review.md` and
-`_platforms/apple/review.md`. Add domains as new kinds of software appear.
+`ui/` — `design.md` (planning-time critique lenses) + `review.md` (motion **defect** lens for the
+`review` engine — jank, interruptibility/state-stranding, accessibility) + `opportunities.md` (the
+**opportunity** half: the four-question gate, the hunt-seam sweep, and the required rejected-candidates
+section, read by `ui-design` critique mode, which is what `improve`'s `ui` aspect loads) + `slop.md`
+(objective AI-slop banned-patterns catalog, read by `ui-design` critique mode and the `review`/`verify`
+engines; harvested from pbakaus/impeccable + Leonxlnx/taste-skill) + `fidelity.md` (structural surface
+audit, from jamiemill/layers-skills) + `prototype.md` (the craft bar and divergence axes for
+`prototype`'s UI shape) + `vocabulary.md` (a reference — the reverse motion-term glossary, read by
+`ui-design` and `explain`, not an engine cell) + `libraries.md` (a reference — curated web/React library
+picks, read by `ui-design` and `implement`). Seeded from emilkowalski/skills. The `ui-design` skill is
+the planning orchestrator over this store; the implementation-level values live in
+`_platforms/web/review.md` and `_platforms/apple/review.md`.
+
+The `review` / `improve` line inside `ui/`: **`review.md` is what's broken, `opportunities.md` is
+what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
+improvement pass.
 
 `product/` — the six problem-space and solution-space design layers *beneath* the surface:
 `observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
