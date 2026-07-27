@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: "Test-driven development via vertical-slice tracer bullets (one test → one impl → repeat — NOT all tests first). Tests verify behavior through public interfaces, not implementation. Also owns the test-suite audit: judging an existing suite by the same criteria ('audit the tests', 'improve the tests', improve's tests aspect). Triggers: 'tdd', 'red green refactor', 'test first', 'write a failing test', 'build this with TDD', 'tracer bullet this', 'audit the tests'."
+description: "Test-driven development via vertical-slice tracer bullets (one test → one impl → repeat — NOT all tests first); tests verify behavior through public interfaces, not implementation. Also owns the test-suite audit — judging an existing suite by the same criteria."
 ---
 
 # TDD

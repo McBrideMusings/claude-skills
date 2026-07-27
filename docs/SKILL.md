@@ -1,6 +1,6 @@
 ---
 name: docs
-description: "Bootstrap, audit, or migrate a VitePress docs site (PRD/roadmap/file-map layout), and keep it as the project's docs librarian — placing the artifacts other skills generate (specs from /to-spec, ADRs from /grill-me) into the site. Wires into admin runner and CLAUDE.md. Does NOT generate spec/PRD content itself — that's /to-spec. Triggers include: 'bootstrap docs', 'audit docs', 'migrate docs', 'wire up the docs site', 'set up VitePress'."
+description: "Bootstrap, audit, or migrate a VitePress docs site and act as the project's docs librarian, placing artifacts other skills generate (specs, ADRs) into the site. Does not generate spec/PRD content itself — that's /to-spec."
 user_invocable: true
 ---
 

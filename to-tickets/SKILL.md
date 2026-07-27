@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: "Break a plan, spec, or PRD into independently-grabbable tickets using vertical-slice tracer bullets, published to GitHub as issues. Classifies each slice as HITL (needs human input) or AFK (implement can run it). Triggers: 'to tickets', 'break this into tickets', 'convert this plan to tickets', 'split this into work items', 'make tickets from this', 'decompose this plan', 'slice this up into tickets'."
+description: "Break a plan, spec, or PRD into independently-grabbable tickets using vertical-slice tracer bullets, published to GitHub as issues. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
 ---
 
 # To Tickets

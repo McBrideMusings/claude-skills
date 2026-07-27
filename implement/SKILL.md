@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous single-pass work on one tracked item: resolve the item (argument → branch name → triage) → implement → verify at the surface → wrap-up (commit, push, land, file follow-ups). One pass, one item, then stop. `implement <issue>` works that issue directly; bare `implement` discovers one. `implement delegate` keeps Claude as orchestrator + validator and hands the implementation to a cheaper model. Triggers: \"implement\", \"/implement\", \"implement 1118\", \"do a pass\", \"walk away and work an item\", \"delegated implement\". For continuous walk-away mode across many items, use /iterate."
+description: "Autonomous single-pass work on one tracked item: resolve the item (argument → branch name → triage), implement, verify at the surface, wrap up. `implement <issue>` works that issue; bare `implement` discovers one; `implement delegate` hands implementation to a cheaper model with Claude validating. One pass, one item — continuous mode across many items is /iterate."
 ---
 
 # /implement — Single-pass autonomous iteration

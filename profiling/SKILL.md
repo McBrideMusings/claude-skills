@@ -1,6 +1,6 @@
 ---
 name: profiling
-description: "Measure where a program spends its time, memory, or energy and optimize the dominant cost — proactive, no bug required. Establishes a baseline, measures with the platform's profiler, isolates the hottest cost, changes one thing, re-measures. Triggers: 'profile this', 'where's the time going', 'where's the memory going', 'is this fast enough', 'make X faster', 'optimize this', 'why is this slow' (no regression/baseline), 'performance audit'."
+description: "Measure where a program spends its time, memory, or energy and optimize the dominant cost — proactive, no bug required: baseline, profile, isolate the hottest cost, change one thing, re-measure. Use for 'make it faster' / 'why is this slow' / performance audits when there's no regression baseline (regressions are `diagnose`)."
 ---
 
 # Profiling

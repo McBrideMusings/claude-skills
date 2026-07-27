@@ -1,6 +1,6 @@
 ---
 name: terminal
-description: "Drive a visible Terminal.app window on the macOS desktop from Claude — spawn a window the user can watch, run commands in it, and read its output back. Two modes: ONE-SHOT (spawn → run one command → wait → read; this is the transport `delegate` sits on) and SESSION (open a persistent pane, send it commands over time, read it, close it). Use when asked to run something in a real terminal window the user can see, drive a long-running terminal, send commands to a desktop terminal, or watch a process live. The transport is Terminal.app via AppleScript — the only macOS terminal that can both drive a pane and read its output back."
+description: "Drive a visible Terminal.app window on the macOS desktop — spawn a window the user can watch, run commands in it, read output back (via AppleScript). ONE-SHOT mode is the transport `delegate` sits on; SESSION mode keeps a persistent pane over time. Use when the user should see a real terminal or watch a long-running process live."
 ---
 
 # terminal — drive a visible Terminal.app window

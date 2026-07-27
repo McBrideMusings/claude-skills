@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: "Continuous walk-away harness: repeatedly cut a fresh feature branch off the default line, run one /implement continuous pass, and land it (merge on a repo you own, PR on a collaborative one) — up to 20 iterations or until the run ends. Two modes: SCOPED — give it a work group (issue numbers, a #range, label:X, milestone:X, followups, or papercuts) and it freezes that exact queue and marches it in order, skipping any item it can't work and continuing; BACKLOG-WIDE — bare `iterate` picks the next item from the whole backlog via triage each pass. Use for unattended end-to-end work across many tracked items in one sitting. Triggers: \"iterate\", \"/iterate\", \"iterate #133-140\", \"iterate label:react-native\", \"keep iterating\", \"walk away and keep working\", \"auto-pilot the backlog\". For a single item, use /implement."
+description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Use for unattended work across many tracked items; a single item is /implement."
 ---
 
 # /iterate — Continuous autonomous iteration harness

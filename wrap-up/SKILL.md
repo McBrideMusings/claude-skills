@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking (GitHub issues, followups), update docs, run code quality checks (review + simplify), commit, push, then resolve follow-ups (fix now / file / skip), summarize, and land the branch — merge on a repo you own, PR on a collaborative one. Triggers: '/wrap-up', 'wrap up', 'close out the session', 'end of session', 'finalize this work'. Also invoked by implement as its final phase."
+description: "Close out the current session: assess changes, update tracking, update docs, run review + simplify, commit, push, resolve follow-ups (fix now / file / skip), summarize, and land the branch — merge on an owned repo, PR on a collaborative one. Also invoked by implement as its final phase."
 ---
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.

@@ -1,6 +1,6 @@
 ---
 name: papercut
-description: "Log and work small frictions hit while working in a repo — retried tool calls, confusing setup, flaky commands, stale caches, misleading errors, non-obvious gotchas. Three modes: author one now (`/papercut <message>` or 'log a papercut'), mine the whole session for them (`/papercut review` — Haiku subagent reads the transcript), or triage/analyze this repo's log (bare `/papercut`). Writes to <repo>/tmp/claude/papercuts.md (gitignored, per-repo). Distinct from real bugs (issues), from follow-ups, and from what got accomplished. Triggers: 'papercut', '/papercut', 'log a papercut', 'papercut review', 'mine papercuts', 'triage papercuts', 'what papercuts do we have'."
+description: "Log and work small frictions hit while working in a repo — retried tool calls, confusing setup, flaky commands, misleading errors. Three modes: author one now (/papercut <message>), mine the session (/papercut review), or triage this repo's log (bare /papercut). Writes to <repo>/tmp/claude/papercuts.md; distinct from real bugs (issues) and follow-ups."
 ---
 
 Papercuts are small frictions logged **in the moment** — a tool call that missed and needed a retry, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha. One or two sentences: *what you were doing → what got in the way* (a guess at the cause/fix is a bonus). None are blocking; logged together they show where a repo needs sanding down.

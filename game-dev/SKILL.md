@@ -1,6 +1,6 @@
 ---
 name: game-dev
-description: "Orchestrator for building and iterating a game end-to-end. Conducts the arc — design, scaffold, playable loop, assets, polish/feel, verify, ship — delegating each phase to the right skill or axis. Explicit front door: run /game-dev to walk the whole arc, or name a phase to jump in ('add a boss', 'polish the game-feel'). One-off game asks (review/profile/generate) fire their own engines directly; reach here to conduct the whole build. Triggers: 'game-dev', 'build me a game', 'make a game', 'iterate on my game', 'game production pass'."
+description: "Orchestrator for building and iterating a game end-to-end — design, scaffold, playable loop, assets, polish/feel, verify, ship — delegating each phase to the right skill. Use to conduct a whole build or jump to a named phase; one-off game asks (review/profile/generate) fire their own skills directly."
 disable-model-invocation: true
 ---
 

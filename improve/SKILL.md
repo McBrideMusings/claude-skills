@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes 'I want to improve something' to the aspect's owning skill, or surveys every applicable aspect when none is named. Aspects: architecture, security (posture), tests, ui, product, performance, game, docs, layout. Improvement = opportunities (nothing is broken); defects are `review`. Triggers: 'improve', '/improve', 'what should I improve', 'where can this project get better', 'improve architecture', 'improve security', 'improve tests', 'find refactor opportunities', 'what's shallow here', 'where can we deepen'."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, tests, ui, product, performance, game, docs, layout) or surveys all aspects when none is named. Improvement = opportunities where nothing is broken; defects are `review`."
 ---
 
 # Improve

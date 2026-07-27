@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: "Fan out a swarm of coding agents across herdr panes — one git worktree and one `/implement` pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Requires herdr (`HERDR_ENV=1`). Triggers: \"fan these issues out\" (start a swarm), \"check on the swarm\" (reattach to one already running), \"disband the swarm\" (stop and tear everything down). One item → `/implement`. Many items sequentially in one terminal → `/iterate`."
+description: "Fan out a swarm of coding agents across herdr panes — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Requires HERDR_ENV=1. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items in one terminal is /iterate."
 ---
 
 # /orchestrate — fan work out to a swarm, land it, retire it

@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: "Reference for the `delegate` skill used by `review dual` (delegate reviews) and `implement delegate` (delegate implements): the `delegate` resolver (agent/check/exec verbs), CLAUDE_DELEGATE_AGENT vendor selection, and auth health-gating. Vendors: Codex, Reasonix/DeepSeek, or another Claude (Claude-to-Claude handoff via CLAUDE_DELEGATE_AGENT=claude). The transport (the visible Terminal.app window the agent runs in) is the separate `terminal` skill, which `delegate exec` calls. Read when wiring, debugging, or extending delegation. The router runs ANY delegated work — review OR implementation."
+description: "Reference for the delegate router used by `review dual` and `implement delegate`: resolver verbs (agent/check/exec), CLAUDE_DELEGATE_AGENT vendor selection (Codex, Reasonix/DeepSeek, or another Claude), and auth health-gating. Read when wiring, debugging, or extending any delegated work; the visible Terminal.app transport is the separate `terminal` skill."
 ---
 
 # Delegation backend

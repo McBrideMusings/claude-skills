@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: "Build a throwaway prototype to flesh out a design before committing. Routes between three shapes — several working UI variations behind a picker (UI.md), a runnable terminal app for state/logic questions (LOGIC.md), or competing technical approaches measured against one fixture (COMPARE.md). Triggers: 'prototype this', 'spike this out', 'let me play with it', 'try a few designs', 'sanity check the state machine', 'mock up some variants', 'which approach should we use', 'throwaway prototype'."
+description: "Build a throwaway prototype to flesh out a design before committing — several working UI variations behind a picker, a runnable terminal app for state/logic questions, or competing technical approaches measured against one fixture. Use for spikes, mockup variants, and 'which approach should we use'."
 ---
 
 # Prototype

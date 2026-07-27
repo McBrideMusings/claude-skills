@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Idempotent project bootstrap AND audit. Walks through the standard layout (CLAUDE.md, CLAUDE.local.md, admin runner, VitePress docs, docs/CONTEXT.md, docs/adr/, docs/PRD.md, docs/ROADMAP.md). Creates what's missing, leaves standard-path artifacts alone, and proposes migrations for non-standard placements (e.g. .claude/CLAUDE.local.md → root CLAUDE.local.md, root CONTEXT.md → docs/CONTEXT.md, decisions/ → docs/adr/). Creates and wires missing standard artifacts automatically without asking; only genuinely destructive migrations (moving/deleting existing content) confirm, and it never asks about committing. Triggers: 'bootstrap', 'bootstrap this repo', 'init this project', 'set up the workflow', 'scaffold this project', 'set this up from scratch', 'wire up a new repo', 'audit my project layout', 'migrate this project to my standard layout'."
+description: "Idempotent project bootstrap and audit of the standard layout (CLAUDE.md, CLAUDE.local.md, admin runner, VitePress docs, docs/CONTEXT.md, docs/adr/, PRD, roadmap): creates what's missing automatically, proposes migrations for non-standard placements, and only confirms genuinely destructive moves. Use for setting up, scaffolding, or auditing a repo's layout."
 user_invocable: true
 ---
 

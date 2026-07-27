@@ -1,6 +1,6 @@
 ---
 name: caffeinate
-description: "Keep the Mac awake with macOS caffeinate — manual holds (a duration, while a process runs, display on/off), plus status/cleanup/doctor for the automatic turn-bound keep-awake hook. Use when the user says 'caffeinate', 'keep my mac awake', 'don't let it sleep', 'keep the screen on', 'stay awake overnight', 'keep awake while this runs', 'caffeinate status', 'caffeinate doctor', 'clean up caffeinate', or 'am I still caffeinated'."
+description: "Keep the Mac awake with macOS caffeinate — manual holds for a duration, while a process runs, or with the display on — plus status/cleanup/doctor for the automatic turn-bound keep-awake hook. Use for any request to keep the Mac or screen awake or to check or clean up caffeinate state."
 user_invocable: true
 ---
 

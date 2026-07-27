@@ -1,6 +1,6 @@
 ---
 name: wayfinder
-description: "Plan a huge, foggy effort — bigger than one agent session can hold — as a shared map of investigation tickets on GitHub (or a local markdown map), resolved one per session until the way to the destination is clear. An ad-hoc on-ramp for greenfield builds, huge features, or migrations; produces decisions, not deliverables, then hands off to /to-spec. Triggers: 'wayfinder', 'chart a map', 'this is too big for one session', 'plan a big effort', 'work through the map', 'greenfield plan', 'map the fog'."
+description: "Plan a huge, foggy effort — bigger than one session can hold — as a shared map of investigation tickets on GitHub (or local markdown), resolved one per session until the way is clear. For greenfield builds, huge features, or migrations; produces decisions, not deliverables, then hands off to /to-spec."
 disable-model-invocation: true
 ---
 

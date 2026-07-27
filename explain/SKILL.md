@@ -1,6 +1,6 @@
 ---
 name: explain
-description: "Explain something so the user gets it — a subsystem in this codebase, or a world-knowledge concept. Default is a plain-language explanation in chat; escalates to a self-contained visual HTML explainer (inline diagrams, infographics, annotated code) when the topic is structurally visual or dense, or when the user asks. Explaining OWN code is grounded with file:line tags, never invented. Triggers: 'explain this', 'explain how X works', 'walk me through X', 'eli5 X', 'make me an explainer', 'visual explainer', '/explain'."
+description: "Explain something so the user gets it — a codebase subsystem (grounded with file:line tags, never invented) or a world-knowledge concept. Plain-language chat by default; escalates to a self-contained visual HTML explainer when the topic is structurally visual or dense, or on request."
 ---
 
 # explain

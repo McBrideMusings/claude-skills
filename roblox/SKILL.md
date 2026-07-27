@@ -1,15 +1,11 @@
 ---
 name: roblox
 description: >-
-  Build and interact with Roblox games from Claude Code — driving Roblox Studio
-  live via the official Studio MCP server (read the data model, run Luau,
-  playtest, read console output) and editing Luau scripts on disk through Rojo
-  filesystem sync. Use for any Roblox / Roblox Studio / Luau / Rojo work:
-  writing or debugging Luau, exploring or inspecting a place, running or
-  playtesting a game, DataStore/RemoteEvent/security questions, project setup,
-  ".rbxl" places, or looking up the Roblox engine API. Triggers: "roblox",
-  "roblox studio", "luau", "rojo", "playtest my game", "debug this roblox
-  script", "inspect the workspace", "set up a rojo project".
+  Build and interact with Roblox games — driving Roblox Studio live via the
+  official Studio MCP server (read the data model, run Luau, playtest, read
+  console output) and editing Luau scripts on disk through Rojo filesystem
+  sync. Use for any Roblox / Roblox Studio / Luau / Rojo work, including
+  engine-API lookups and .rbxl places.
 ---
 
 # Roblox

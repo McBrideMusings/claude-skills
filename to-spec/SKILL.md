@@ -1,6 +1,6 @@
 ---
 name: to-spec
-description: "Synthesize the current conversation into a product spec and write it as docs/PRD.md — no interview, just synthesis of what's already been discussed. The single owner of spec/PRD generation; docs and grill-me delegate here. Hands off to /to-tickets. Triggers: 'to spec', 'write the spec', 'write the PRD', 'draft the PRD', 'fill out the PRD', 'populate PRD.md', 'spec this', 'PRD from context', 'turn this into a spec'."
+description: "Synthesize the current conversation into a product spec written to docs/PRD.md — no interview, just synthesis of what's already been discussed. The single owner of spec/PRD generation; docs and grill-me delegate here. Hands off to /to-tickets."
 user_invocable: true
 ---
 

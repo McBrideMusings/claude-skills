@@ -1,6 +1,6 @@
 ---
 name: obsidian
-description: "Use the Obsidian CLI to read, search, create, and modify notes in the user's vault headlessly. Triggers: 'obsidian', 'obsidian cli', 'search my vault', 'add to my daily note', 'obsidian daily', 'create a note', 'append to today's note', 'list tasks from my vault'."
+description: "Use the Obsidian CLI to read, search, create, and modify notes in the user's vault headlessly — daily notes, tasks, searches, note creation."
 user_invocable: true
 ---
 

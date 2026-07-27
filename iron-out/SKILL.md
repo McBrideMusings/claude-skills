@@ -1,6 +1,6 @@
 ---
 name: iron-out
-description: "Iron out a backlog's ambiguity before autonomous work: scan in-scope open issues with implement's AFK gate, then resolve each failing one with the user, one interview at a time, editing issue bodies until the whole scope is workable by /orchestrate or /iterate. Scope selectors as /iterate (#range, label:X, milestone:X; bare = whole backlog). Triggers: 'iron out', 'which issues still need me', 'get the backlog AFK-ready', 'clear the ambiguity before fanning out'; also when another skill finds gate-failing issues in a scope it is about to dispatch."
+description: "Iron out a backlog's ambiguity before autonomous work: scan in-scope open issues with implement's AFK gate, then resolve each failing one with the user, editing issue bodies until the whole scope is workable by /orchestrate or /iterate. Scope selectors as /iterate; also invoked when another skill finds gate-failing issues in a scope it is about to dispatch."
 ---
 
 # Iron Out
