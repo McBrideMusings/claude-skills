@@ -95,6 +95,27 @@ For each thread, decide:
 - **25–49** — Minor / preference: nitpick, taste, or a reviewer assumption that doesn't apply here.
 - **0–24** — Misunderstanding, out of scope, contradicts an explicit user decision, refers to code that no longer exists / has been refactored, or duplicates another thread.
 
+**The score measures whether the reviewer is RIGHT — never how much work being right implies.** Size, difficulty, file count, "how much of the diff this touches" are not inputs. A correct 92 that takes six files is a 92.
+
+### Effort is BANNED as an input to score or action
+
+**Never decide to `reply` instead of `address` because the fix is large, hard, tedious, or spread across files.** This is the single most common failure of this phase: a wall of valid findings gets a uniform "deliberate / follow-up / not in this PR" because implementing them all looked like a lot of work. Sorting findings by effort and calling the expensive half "out of scope" is not triage — it is skipping the work, and the user will catch it.
+
+**Effort is not a real cost here.** The agent writes the fix; a change that reads as "an afternoon" in human terms is minutes of tool calls. Estimating in human-hours imports a cost model that does not apply to who is doing the work. So:
+
+- **Never state, imply, or reason from a time estimate** — no "quick", "an afternoon", "a big lift", "a few hours", "a one-liner vs a refactor" as *justification*. (Naming a fix's shape — "one attribute", "six lines" — as a *description* is fine; using it as the reason to skip is not.)
+- **Banned justifications**, in the plan and in the response document alike: "not worth it", "low value", "marginal", "an edge case", "too big for this PR", "I'd rather not fold this in", "follow-up" / "out of scope" when the only actual reason is size.
+
+**The three legitimate reasons to not fix something now** — each must be stated as itself, never as a stand-in for effort:
+
+1. **The code is correct as-is.** Say *why*, on the merits, citing the code: the predicate is already covered by an existing index; the exemption protects live work; the reviewer's claim is factually wrong (show it). This is a `reply` with evidence, not an opinion.
+2. **Divergent work** — the change is about a *different concern* than this PR, so it belongs in its own unit of work. Divergence is about subject matter, never magnitude. Divergent work is exactly what parallelizes: say so concretely — "own branch, can run alongside this" — so it reads as work being *routed*, not deferred. If you cannot name the different concern in one clause, it is not divergent; it is just large, and large is not a reason.
+3. **Blocked on a decision only the user can make** — the fix depends on intent you do not have. State the question. Do not guess and do not bury it.
+
+If a finding fits none of the three, its action is `address`. "It's a lot of work" is not a fourth reason.
+
+**Self-check before presenting the plan.** Count the `reply` actions. If most findings landed on `reply`, or if several `reply` items share a same-shaped justification, stop and re-score every one of them against the three reasons above. A reviewer who wrote ten findings usually found ten real things.
+
 **Recommended action** — pick one:
 
 - **address** — change the code to satisfy the comment. Include a one-line description of what the change is.
@@ -102,7 +123,7 @@ For each thread, decide:
 - **reply** — no code change; write a draft reply explaining why (out of scope, intentional, addressed elsewhere, outdated). The reply goes in the response document — never posted.
 - **ignore** — skip without responding. Reserve for clearly-stale outdated threads, accidental comments, or duplicates already covered by another thread you're addressing.
 
-Bias against blanket "address all". A 30-point comment that gets implemented is worse than a 30-point comment that gets a polite explanation — it adds churn to the diff and signals to future reviewers that all feedback is mandatory.
+Bias against implementing **preference** comments. A 30-point taste comment that gets implemented is worse than one that gets a polite explanation — it adds churn to the diff and signals to future reviewers that all feedback is mandatory. This is a bias against churn on *low-scoring* items, and nothing more: it is **not** licence to thin out a list of high-scoring findings, and it never applies to anything scored 75+. When a reviewer is right about ten things, ten `address` actions is the correct plan, not a red flag.
 
 If a thread has multiple comments (back-and-forth between reviewer and author), read the WHOLE chain — the original concern may already be resolved in discussion.
 

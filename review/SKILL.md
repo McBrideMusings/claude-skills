@@ -21,6 +21,22 @@ It covers **every** decision point, not just the ones spelled out below. Non-exh
 
 **Self-check before every question in a review.** If you are about to open a selector, stop — that is this rule firing. Rewrite the question as chat text and send that instead.
 
+## RULE 1 — effort NEVER decides what gets fixed
+
+**How much work a fix is — its size, its difficulty, how many files it touches, how long it would "take" — is banned as a reason to skip it, defer it, downgrade it, or recommend against it.** This binds everywhere in a review pass: scoring a reviewer's comment ([PR-COMMENTS.md](PR-COMMENTS.md) Phase 05), the end-of-pass fix/post/skip disposition, the blocking verdict, and every subagent spawned during the pass.
+
+**Never state or reason from a time estimate.** Human-hour estimates ("a quick one-liner", "an afternoon", "a big lift") import a cost model that does not apply — the agent writes the fix, and what reads as hours of human work is minutes of tool calls. Naming a change's *shape* as description ("one attribute", "six lines") is fine; using size as the *justification* is not.
+
+**Banned justifications**, in chat, in the report, and in any drafted reply: "not worth it", "low value", "marginal", "too big for this PR", "I'd rather not fold that in", and "follow-up" / "out of scope" whenever the real reason is magnitude.
+
+**Only three things justify not fixing now**, and each must be stated as itself:
+
+1. **The code is correct as-is** — say why on the merits, citing the code.
+2. **Divergent work** — a *different concern*, so it belongs in its own unit of work. Divergence is about subject matter, never size. It is also what parallelizes: route it ("own branch, runs alongside this"), don't shelve it.
+3. **Blocked on the user's intent** — state the question rather than guessing.
+
+Anything fitting none of the three gets fixed. **Self-check:** if most findings in a pass landed on skip/reply, or several share a same-shaped excuse, re-judge every one of them against those three reasons before presenting.
+
 ## Flavors — solo vs dual
 
 - **`review`** (default) — Claude reviews on its own.
