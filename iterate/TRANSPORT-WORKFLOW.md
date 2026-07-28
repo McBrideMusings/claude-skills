@@ -35,7 +35,21 @@ return outcomes
 - **`args`** carries the frozen queue, the cap, the default branch name, and the ownership verdict — resolved by [SKILL.md](SKILL.md) before launch. Pass it as real JSON, never a JSON-encoded string.
 - **`schema`** forces each agent to return `{item, outcome, branch, landed, reason}` rather than prose. `outcome` is one of `landed` / `item_failure` / `environment_stop`, matching SKILL.md's own classification — do not invent a fourth.
 - **The `break` on `environment_stop` is the rule from SKILL.md**, not a new one: an item-level failure skips, an environment stop ends the run. The script is where that rule becomes mechanical instead of remembered.
-- **BACKLOG-WIDE runs have no frozen queue**, so there is nothing to hand `args`. Either resolve a queue first (making it a scoped run) or use the session transport. A `while` loop calling triage from inside a script is not a substitute — the script cannot read the backlog, only its agents can, and each one would pick blind to what the last one closed.
+- **BACKLOG-WIDE runs work here too**, with no frozen queue to hand `args` — the loop becomes a `while` and each agent runs triage itself. Iterations are sequential and each lands before the next starts, so an agent's `gh issue list` does see what the previous one closed; picking is not blind. Two costs to accept before choosing it, though:
+
+  ```js
+  let n = 0
+  while (n < args.cap) {
+    const r = await agent(PASS_BACKLOG_WIDE, { label: `pass-${n + 1}`, phase: 'Iterate', model: MODEL, schema: OUTCOME })
+    n++
+    if (!r || r.outcome !== 'landed') break        // backlog-wide: first halt wins (SKILL.md)
+  }
+  ```
+
+  1. **The stopping condition is an agent's word.** A scoped run ends when a list you can see runs out. This one ends when an agent reports that triage found nothing actionable — the script has no way to check that claim. A wrong report ends the run early or burns an iteration on nothing.
+  2. **A full triage read per iteration**, inside every agent, on top of the pass itself.
+
+  Prefer resolving a selector first and running scoped. Reach for backlog-wide here when you genuinely want "whatever is next, twenty times" and are content to trust each pass's own account of the backlog.
 
 ## What the agent must do that the script cannot
 

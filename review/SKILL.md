@@ -1,6 +1,6 @@
 ---
 name: review
-description: "The single entry point for reviewing code: a nine-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first). Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "The single entry point for reviewing code: a nine-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context. Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Review
@@ -42,7 +42,17 @@ Anything fitting none of the three gets fixed. **Self-check:** if most findings 
 - **`review`** (default) — Claude reviews on its own.
 - **`review dual`** — Claude reviews, *and* an independent cross-vendor delegate reviews the same diff; the two are reconciled into one source-tagged report. The delegate catches what a same-model self-review misses (concurrency, lifecycle, edge cases) and gives a second architecture read. The token `dual` anywhere in the arguments turns it on. See **Dual flavor** below.
 
-**Scope — `review repo`.** Orthogonal to solo/dual: the `repo` token reviews the **whole codebase on the current branch** instead of a diff — every axis runs (gating off), it's context-heavy, and it always confirms before starting. It's also auto-offered when you invoke `review` with nothing to diff (clean tree, up to date). Combinable with dual (`review repo dual`). Mechanics live in [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r.
+## Transport — where the lenses run
+
+Orthogonal to every flavor and scope above. The `workflow` token moves **Phases 04–06 only** — the lens fan-out, best-practice verification, scoring, and the ≥75 filter — into a workflow script, so only surviving findings enter this context instead of every lens report. Routing, scope, the report, and every question stay in the session. `review workflow`, `review repo workflow`, `review dual workflow`.
+
+No token → the session transport: [REVIEW-CORE.md](REVIEW-CORE.md) exactly as written, Agent-tool sub-agents launched in parallel from this loop. That is the default and it is unchanged.
+
+Mechanics, and what each phase costs under the switch: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). **RULE 0 holds under both** — the workflow contains no question because every question in a review pass falls outside Phases 04–06.
+
+## Scope — `review repo`
+
+**`review repo`.** Orthogonal to solo/dual: the `repo` token reviews the **whole codebase on the current branch** instead of a diff — every axis runs (gating off), it's context-heavy, and it always confirms before starting. It's also auto-offered when you invoke `review` with nothing to diff (clean tree, up to date). Combinable with dual (`review repo dual`). Mechanics live in [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r.
 
 ## Phase 00 — Route by context
 
