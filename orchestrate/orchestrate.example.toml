@@ -1,0 +1,50 @@
+# orchestrate — worker agents and models
+#
+# Copy to $CLAUDE_CONFIG_DIR/orchestrate.toml:
+#   ~/.claude/orchestrate.toml        (personal profile)
+#   ~/.claude-work/orchestrate.toml   (work profile)
+#
+# Untracked: ~/.claude/.gitignore blanket-ignores *, so this never lands in a
+# commit. Read once per run, at the first dispatch.
+#
+# This file may only NARROW what SKILL.md permits. The guardrails below are
+# restated in SKILL.md and enforced there, so emptying or deleting this file
+# cannot widen what the swarm may run.
+
+# Concurrent workers. May be lowered; the skill's hard cap of 4 stands
+# regardless. One human answers worker questions one at a time, so a fifth
+# worker only lengthens the queue in front of the answer that unblocks the
+# other four.
+max_workers = 4
+
+# Kind used when a dispatch does not name one. Must have an [agents.*] block.
+default = "claude"
+
+# A kind is dispatchable ONLY if it has a block here, and the table key must be
+# a value herdr's `agent start --kind` accepts:
+#   pi, claude, codex, gemini, cursor, devin, agy, cline, omp, mastracode,
+#   opencode, copilot, kimi, kiro, droid, amp, grok, hermes, kilo, qodercli, maki
+# Delete a block to disable that kind.
+
+[agents.claude]
+# ALWAYS passed explicitly as `-- --model <id>`. With no flag the worker
+# inherits whatever default this machine has — which is exactly how a denied
+# model gets into the swarm.
+model   = "opus"
+allowed = ["opus", "sonnet", "haiku"]
+# Never Fable. `claude --model` takes `fable` and `claude-fable-5` as ordinary
+# aliases, so nothing below the skill will reject them.
+denied  = ["fable", "claude-fable-5"]
+
+[agents.codex]
+# Empty string -> no --model flag; codex picks its own default.
+# `codex -m/--model` takes a free-form model string with no enumerated values.
+model   = ""
+allowed = []                      # empty -> no allowlist; only `denied` applies
+denied  = []
+
+# reasonix (DeepSeek) is NOT dispatchable, and not by preference:
+# `herdr agent start --kind` has no `reasonix` value and herdr ships no
+# detection manifest for it, so a reasonix pane reports no agent_status and the
+# wake/classify loop has nothing to read. Adding a block here will not work.
+# Reach it through the `delegate` router (/implement delegate) instead.

@@ -1,17 +1,19 @@
 ---
 name: orchestrate
-description: "Fan out a swarm of coding agents across herdr panes — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Requires HERDR_ENV=1. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items in one terminal is /iterate."
+description: "Fan out a swarm of coding agents across herdr tabs — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Requires HERDR_ENV=1. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items in one terminal is /iterate."
 ---
 
 # /orchestrate — fan work out to a swarm, land it, retire it
 
-You **fan out** ready issues to a **swarm** of agents, each in its own pane and worktree, then bring their work back: verify, land, retire the worker, recompute what is now ready, dispatch again. The loop is the skill. Fanning out is the easy half; retiring workers and advancing the frontier is the half that makes it unattended.
+You **fan out** ready issues to a **swarm** of agents, each in its own herdr tab and git worktree, then bring their work back: verify, land, retire the worker, recompute what is now ready, dispatch again. The loop is the skill. Fanning out is the easy half; retiring workers and advancing the frontier is the half that makes it unattended.
 
 **The human is interrupted for exactly two things: a `blocked` worker, and a worker that stopped without a passing verdict.** Everything else retires and re-dispatches itself. Every rule below serves that.
 
-## Why panes and not sub-agents
+## Why terminals and not sub-agents
 
-The work being fanned out is decision-laden — a worker will hit a design call only the human can make. A pane worker is **watchable and answerable mid-run**; a `Workflow` or `Agent` sub-agent is neither, however well it parallelises. That property is the reason for the herdr dependency, so never trade it away to fit more workers on screen.
+The work being fanned out is decision-laden — a worker will hit a design call only the human can make. A worker in a real terminal is **watchable and answerable mid-run**; a `Workflow` or `Agent` sub-agent is neither, however well it parallelises. That property is the reason for the herdr dependency, so never trade it away to fit more workers on screen.
+
+Each worker sits in its **own tab**, so "watchable" now costs a tab switch — which is why step 5's relay carries the whole burden of making a worker answerable.
 
 ## Pre-flight
 
@@ -20,6 +22,48 @@ All must hold. Print the reason and stop otherwise.
 1. **Inside herdr** — `test "${HERDR_ENV:-}" = 1`. Do not degrade to sequential in-session work when it fails; that silently becomes a different skill.
 2. **In the primary checkout, not a worktree** — `git rev-parse --git-dir` must not contain `/worktrees/`. Only the primary checkout can hold the default branch, and landing needs it.
 3. **Clean tree on the default branch**, up to date with the remote.
+
+## Worker agents and models
+
+A worker is a coding agent of a chosen **kind** running a chosen **model**. Neither is inherited from the orchestrator's session — both are read from config and passed explicitly at dispatch.
+
+**Config file:** `$CLAUDE_CONFIG_DIR/orchestrate.toml` — `~/.claude/orchestrate.toml`, or `~/.claude-work/orchestrate.toml` under the work profile, resolved by the variable so the two profiles differ without either being tracked. Untracked (`~/.claude/.gitignore` blanket-ignores `*`). Read once per run, at the first dispatch. Commented reference copy: [orchestrate.example.toml](orchestrate.example.toml)
+
+```toml
+max_workers = 4                  # may lower the cap in "Four workers, hard cap"; may never raise it
+default     = "claude"           # kind used when the dispatch does not name one
+
+[agents.claude]                  # table key IS the herdr `agent start --kind` value
+model   = "opus"
+allowed = ["opus", "sonnet", "haiku"]
+denied  = ["fable", "claude-fable-5"]
+
+[agents.codex]
+model   = ""                     # empty -> no --model flag; codex picks its own default
+allowed = []                     # empty -> no allowlist; only `denied` applies
+denied  = []
+```
+
+A kind is dispatchable **only** if it has an `[agents.<kind>]` block. Deleting a block disables that kind; there is no second place that also has to agree.
+
+**Missing file** → dispatch `claude` on `opus` and say so in the run report. **Malformed file** → stop; do not fall back. A config that cannot be parsed is not a config that permits anything.
+
+### The guardrails live in the file *and* here
+
+The file is the readable statement of policy. These checks run at dispatch regardless of what the file says, so an edited, emptied, or deleted file cannot widen what the swarm may run.
+
+| Rule | What the orchestrator does |
+|---|---|
+| Kind must appear in herdr's `agent start --kind` enum | refuse before calling herdr, name the kind |
+| A `claude` worker is dispatched with an **explicit** `-- --model <id>`, always | omitting the flag inherits the machine's default model — that is exactly the path a denied model takes into the swarm |
+| **Never Fable.** `fable`, `claude-fable-5`, or any id containing `fable` | refuse the dispatch, name the model, stop. Not a silent fall back to the default — stop, so the config gets fixed |
+| Model absent from a non-empty `allowed`, or present in `denied` | refuse the dispatch and name both the model and the list that rejected it |
+
+`claude --model` accepts `fable` and `claude-fable-5` as ordinary aliases, so nothing below this skill will reject them. This check is the only thing standing between the config and a Fable worker.
+
+### Kinds that are not dispatchable
+
+**reasonix (DeepSeek)** — blocked, and not by preference. `herdr agent start --kind` takes a fixed enum — `pi, claude, codex, gemini, cursor, devin, agy, cline, omp, mastracode, opencode, copilot, kimi, kiro, droid, amp, grok, hermes, kilo, qodercli, maki` — and `reasonix` is not in it, nor does herdr ship a detection manifest for it. Started the only way left, `herdr pane run <pane> 'reasonix chat'`, it holds no agent name and reports no `agent_status`, so step 4's wake Monitor and step 5's classification table have nothing to read and the unattended loop is gone — which is the whole skill. **What would unblock it:** a herdr agent kind plus a detection manifest classifying `working`/`idle`/`blocked`. Until then reasonix is reachable through the `delegate` router (`/implement delegate`), never as a swarm worker.
 
 ## Branches
 
@@ -44,56 +88,50 @@ Read dependencies per issue, in this order:
 
 **Absence is not permission.** If native reports zero blockers *and* the body carries a `Blocked by:` line, the two disagree — surface it and dispatch nothing. If neither source yields a graph and more than one candidate exists, make the human confirm the order before dispatching. Treating "no graph found" as "nothing is blocked" fans work out onto unbuilt foundations, which is the failure this skill exists to prevent.
 
-**Ready is not workable.** A frontier issue carrying an unresolved decision (`Type: HITL`, missing acceptance criteria, "decide whether"/"TBD" language) will only block its worker mid-run — invoke the `iron-out` skill on the scope before dispatching, so ambiguity is cleared before the fan-out instead of answered across N panes during it.
+**Ready is not workable.** A frontier issue carrying an unresolved decision (`Type: HITL`, missing acceptance criteria, "decide whether"/"TBD" language) will only block its worker mid-run — invoke the `iron-out` skill on the scope before dispatching, so ambiguity is cleared before the fan-out instead of answered one relayed question at a time during it.
 
 **Completion criterion:** every candidate issue is classified ready or blocked, with the blocker named.
 
-### 2. Size the swarm
+### 2. Give each worker its own tab
 
-Pane readability caps the swarm, not appetite — a pane too small to read destroys the watchable-and-answerable property above.
+#### The topology is fixed. Do not invent one.
 
-#### The layout is fixed. Do not invent one.
-
-**One full-height orchestrator column on the LEFT. A grid of at most FOUR worker panes to its RIGHT.** Nothing else.
+**The orchestrator keeps its pane, whole, for the entire run. Every worker gets its own tab in the same workspace, holding one full-size pane.** Nothing is ever split.
 
 ```
-┌──────────────┬──────────────┬──────────────┐
-│              │              │              │
-│              │   worker 1   │   worker 2   │
-│              │              │              │
-│ orchestrator ├──────────────┼──────────────┤
-│  (you) —     │              │              │
-│  full height │   worker 3   │   worker 4   │
-│              │              │              │
-└──────────────┴──────────────┴──────────────┘
+workspace
+├── tab 1   orchestrator (you) — never split, never closed
+├── tab 2   worker: issue-71   ← one pane, the whole tab
+├── tab 3   worker: issue-74
+└── tab 4   worker: issue-80
 ```
 
-The orchestrator pane is the one the human reads. It **keeps its full height for the whole run** and is never split horizontally, never shrunk into a worker cell, never tiled into the same grid as the workers.
+`herdr tab create` puts the new tab in the active workspace, beside the orchestrator's, and returns both `.result.tab.tab_id` and `.result.root_pane.pane_id`. That root pane **is** the worker's pane. Nothing gets subdivided, so pane ratios and a `MIN_PANE` geometry check do not apply — a worker's pane is always the full tab.
 
-Build it exactly this way:
+**Never split `$HERDR_PANE_ID`.** Not once, for any reason. The orchestrator's pane is the only surface the human reads and the only place a worker's question can be answered.
 
-1. **Carve the worker region once, up front** — one `herdr pane split "$HERDR_PANE_ID" --direction right --ratio <r>` where `<r>` leaves the orchestrator roughly a third. That single child pane is the **worker region**. Never split `$HERDR_PANE_ID` again for any reason.
-2. **Subdivide the worker region only.** Split the region right for a second column, then split each column down for a second row. Every later worker splits a *worker* pane, never the orchestrator's.
-3. **Four workers is the hard cap**, regardless of screen size or frontier length. A fifth ready issue waits for a slot to free — that is what paces the swarm.
+Observed under the old shared-tab layout: workers tiled beside the orchestrator squeezed it into an 87×26 cell and the human could not follow the run.
 
-**Symptom you got it wrong:** the orchestrator's pane is the same height as a worker's, or `herdr pane layout` shows it at less than full height. If you ever split `$HERDR_PANE_ID` a second time, you have already broken it.
+#### Four workers, hard cap
 
-Observed failure: splitting the orchestrator pane right, then down, then splitting workers off it again produced an unreadable jumble with the orchestrator squeezed into a 87×26 cell — the human could not follow the run, which is the entire purpose of the pane layout.
+Regardless of screen size, tab count, or frontier length; `max_workers` in the config may lower it and may never raise it.
 
-#### Sizing within the cap
+The cap is no longer about pixels — every worker tab is full size now. **It is about the human.** Worker questions are relayed and answered strictly one at a time (step 5), so a fifth live worker cannot get answered any sooner; it only lengthens the queue in front of the answer that unblocks the other four. A fifth ready issue waits for a slot, and the freed slot is what paces the swarm.
 
-Read the geometry (`herdr pane layout --pane "$HERDR_PANE_ID"`) and check each prospective worker cell against **`MIN_PANE` = 80 cols × 24 rows**. Dispatch `min(frontier size, 4, cells that clear MIN_PANE)`.
+#### Workers are out of sight now — that is the cost of this layout
 
-Observed: 113×17 was unusable, 99×34 was fine. If four cells will not clear `MIN_PANE`, run fewer workers — never shrink the orchestrator column to make room.
+In a shared tab a stuck worker was at least visible in the corner of the screen. In its own tab it is invisible until someone switches to it, and the human is watching the orchestrator's tab. **Every mechanism that surfaces a worker's state — the wake Monitor (step 4), the pane read on every wake (step 5), the question queue (step 5) — is now the only way a worker is ever heard from.** Skipping one does not degrade the run; it silently strands a worker.
 
 ### 3. Fan out
 
 Per ready issue, in order:
 
 1. **Worktree** — `git -C <repo> worktree add -b <branch> ~/.worktrees/<repo>/<slug> <default-branch>`. Create it **now, not earlier**: a worktree is evidence an issue was ready, never a bet that it will be.
-2. **Pane** — `herdr pane split <target> --direction right|down --ratio <r> --cwd <worktree> --no-focus`. `<target>` is a pane **inside the worker region**, never `$HERDR_PANE_ID` — see the fixed layout in step 2.
-3. **Agent** — `herdr agent start <slug> --kind claude --pane <id> --timeout 120000`.
+2. **Tab** — `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <worktree> --label <slug> --no-focus`. Keep `.result.tab.tab_id` (teardown needs it) and `.result.root_pane.pane_id` (the agent starts there). `--no-focus` is not cosmetic: focusing a worker's tab marks it seen and collapses a later `done` into `idle`.
+3. **Agent** — `herdr agent start <slug> --kind <kind> --pane <root-pane-id> --timeout 120000 -- --model <model>`, with `<kind>` and `<model>` resolved and checked against **Worker agents and models** above. A `claude` worker always carries `-- --model <id>`.
 4. **Brief** — send the prompt from [BRIEF.md](BRIEF.md), then **send Enter separately**: `herdr agent prompt <slug> '<text>'` pastes a long prompt without submitting it, leaving the worker idle at a filled input box. Follow every prompt with `herdr agent send-keys <slug> enter` and confirm the worker reaches `working`.
+
+Record `slug → issue → tab_id → pane_id → worktree → branch` as you go. Step 7 needs the tab id, and a reattach rebuilds this table from `herdr tab list --workspace "$HERDR_WORKSPACE_ID"`.
 
 **Completion criterion:** every dispatched worker reports `working` in `herdr agent list`.
 
@@ -112,7 +150,7 @@ Emit on `blocked` and `unknown` too, never only `done` — *silence is not succe
 
 Add a long `/loop` heartbeat (1200–1800s) as a backstop for a dead Monitor or a worker stuck in a state that never changes.
 
-**Never focus a worker to inspect it.** Focusing consumes `done`, collapsing it to `idle`. CLI reads do not — always read via CLI.
+**Never focus a worker's tab to inspect it.** Focusing a tab marks it seen and consumes `done`, collapsing it to `idle`. `herdr tab focus`, `herdr pane focus`, and `herdr agent focus` all do this; CLI *reads* do not. Always read via `herdr pane read` / `herdr agent list`.
 
 ### 5. Classify each waking worker
 
@@ -137,13 +175,40 @@ So on every wake, for every non-`working` worker: read the verdict file **and** 
 
 Observed: a worker's `BLOCKED` verdict was re-reported to the human four times across ~40 minutes while the pane held a completely different question it had already moved on to — the human had answered the original in-pane and the orchestrator never noticed.
 
-#### Surface every worker question to the root pane, in full, immediately
+#### Surface every worker question to the orchestrator's pane — in full, one at a time
 
-A question asked in a worker pane is invisible. The human is watching the **orchestrator's** pane; that is the whole reason the swarm uses panes instead of sub-agents. A question that stays in the worker pane blocks that worker forever.
+A question asked in a worker tab is invisible. The human is watching the **orchestrator's** tab and nothing else. A question that stays in the worker tab blocks that worker forever, and the worker will not ask again.
 
-The moment a worker is found parked on a question, relay it into the root pane: what it is asking, the options with their concrete consequences, the file:line grounding it gave, and a recommendation. Never summarize it as "worker N is blocked" — that is not answerable. Never wait for a "better moment" to batch several together.
+**The queue is a file, not a memory.** `<repo>/tmp/claude/orchestrate/questions.json` in the primary checkout (absolute path from `git rev-parse --show-toplevel`). It survives the orchestrator being compacted or dying mid-run, which an in-context list does not — and a lost queue is a permanently stranded worker.
 
-**A worker parked on an unrelayed question is an orchestrator bug, not a worker problem.**
+```json
+[
+  { "slug": "issue-71", "tab": "w1:t3", "issue": 71,
+    "asked_at_commit": "a1b2c3d",
+    "question": "<the worker's full question text>",
+    "options": ["<option A + its concrete consequence>", "<option B + …>"],
+    "recommendation": "<yours, with the file:line grounding the worker gave>",
+    "status": "outstanding",
+    "answer": null },
+  { "slug": "issue-74", "tab": "w1:t4", "issue": 74,
+    "asked_at_commit": "e4f5g6h",
+    "question": "<…>", "options": [], "recommendation": "<…>",
+    "status": "queued", "answer": null }
+]
+```
+
+`status` is one of `queued` → `outstanding` → `answered` → `resolved`. **At most one record is `outstanding` at any moment.**
+
+On every wake, per non-`working` worker parked on a question:
+
+1. **Append it as `queued`** — full text, options with their concrete consequences, the file:line grounding, your recommendation. Never the summary "worker N is blocked"; that is not answerable, and the human should not have to switch tabs to find out what was meant.
+2. **If a record is already `outstanding`, stop there.** Say nothing further to the human. A second question printed now buries the first, and the first is the one already holding a worker still.
+3. **Otherwise promote the head of the queue to `outstanding`** and relay it into the orchestrator's pane, in full.
+4. **On the human's answer** — write it into `answer`, set `answered`, deliver it with `herdr agent prompt <slug> '<answer>'` + `herdr agent send-keys <slug> enter`, confirm the worker reaches `working`, set `resolved`, then promote the next `queued` record and relay it. One answer, one unblocked worker, then the next question — never batched.
+
+**A worker parked on an unrelayed question is an orchestrator bug, not a worker problem.** So is a `queued` record that never got promoted because nothing checked the queue after the last answer landed.
+
+Re-read the worker's pane before relaying a *re-*ask. A worker that was answered, resumed, and stopped again is asking something **new** — its old record is `resolved`, and what it is asking now is a new record with new text. Never re-relay a `resolved` record's text because the worker is idle again; that is the failure recorded above.
 
 ### 6. Land it
 
@@ -166,24 +231,37 @@ git log <default>..<branch>               # must be empty — fully merged
 rm -rf <worktree> && git -C <repo> worktree prune \
   && git -C <repo> branch -d <branch> \
   && git -C <repo> push origin --delete <branch>
-herdr pane close <pane-id>
+herdr tab close <tab-id>
 ```
+
+Close the **tab**, not the pane — the worker owns the whole tab, and a tab left holding an empty shell still occupies one of the four slots to anyone reading `herdr tab list`. Mark any `questions.json` record for that slug `resolved` in the same breath; a `queued` question belonging to a retired worker will otherwise be relayed to the human and answered into a pane that no longer exists.
 
 `git worktree remove` fails outright in a repo with submodules (`working trees containing submodules cannot be moved or removed`), which then cascades into `branch -d` failing — hence `rm -rf` plus `prune`. Chain with `&&`, never `;`: a `;`-chained success echo prints after a failed step and misreports teardown as done.
 
-#### Close the pane the moment its work is over — landing is not the only ending
+#### A worker that is done gets its tab closed. Same wake, no exceptions.
 
-Retire on **any** terminal outcome, not just a merge. A worker whose issue turned out to be already-done, wrong, or withdrawn is finished; so is one whose branch you will never land. Its pane is a slot the frontier needs, and a screen of stale panes is what makes a swarm unreadable.
+**An open tab is a claim that a worker still has something to do.** Keep that claim true, every wake. Close the tab on **any** terminal outcome, not just a merge:
 
-**A pane still open means a worker still has something to do.** Keep that true. If it has nothing left to do, close it — even when the issue stays open, even when the human still owes an answer about the *issue*. An unanswered question about what to build does not require a live agent sitting in a worktree; the question belongs in the root pane (step 5), and the pane can go.
+| Worker | Tab |
+|---|---|
+| landed | close |
+| issue turned out already-done, wrong, or withdrawn | close |
+| branch you have decided never to land | close |
+| finished, but the *issue* still needs a human decision | **close** — see below |
+| stopped with commits and no passing verdict | keep, escalate |
+| uncommitted changes in the worktree | **keep** — the one hard stop |
 
-Before closing, check `git -C <worktree> status --short` and the unmerged-commit count, exactly as above. **Uncommitted work in the worktree is the one thing that forbids teardown** — surface it and leave the pane alone. Never `rm -rf` over a dirty tree to reclaim a slot.
+The fourth row is the one that gets fumbled. An unanswered question about *what to build* does not need a live agent sitting in a worktree: the question lives in `questions.json` and gets relayed from the orchestrator's pane (step 5), and if the worker has nothing left to do until that question is answered, its tab is pure cost. Close it and re-dispatch the issue later.
+
+Before closing, check `git -C <worktree> status --short` and the unmerged-commit count exactly as above. **Uncommitted work in the worktree is the one thing that forbids teardown** — surface it and leave the tab alone. Never `rm -rf` over a dirty tree to reclaim a slot.
+
+**Symptom you got it wrong:** `herdr tab list --workspace "$HERDR_WORKSPACE_ID"` shows more tabs than you have live workers. Reconcile it every wake — a tab with no live agent and no reason to exist is a slot the frontier is waiting on.
 
 Observed: three panes sat open across most of a run — one holding a worker with nothing left to do, waiting on a decision that lived in the root pane. The frontier had ready issues and nowhere to put them.
 
 ### 8. Recompute and re-dispatch
 
-Landing a branch closes an issue, which may clear the last blocker on others. Rebuild the frontier (step 1), and fan out into the pane slot the retirement just freed (steps 2–3). The freed slot is what paces the swarm.
+Landing a branch closes an issue, which may clear the last blocker on others. Rebuild the frontier (step 1), and fan out into the slot the closed tab just freed (steps 2–3). The freed slot is what paces the swarm.
 
 **The loop ends when** the frontier is empty and no worker is live. Report what landed, what escalated, and what remains blocked and on what.
 

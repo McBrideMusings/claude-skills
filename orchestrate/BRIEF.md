@@ -12,7 +12,9 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 >
 > **Your task: `/implement <issue>` — `<one-line issue title>`.**
 >
-> Use **standalone** `/implement`, not `continuous`. If the item hides a design decision, **stop and ask me in this pane** — do not invent an answer and do not file-and-skip. Someone is watching this pane; that is the point of it.
+> Use **standalone** `/implement`, not `continuous`. If the item hides a design decision, **stop and ask, in this pane, and wait** — do not invent an answer and do not file-and-skip.
+>
+> Nobody is looking at this tab. An orchestrator polls it, relays your question to the human, and types their answer back into this pane. So: ask **once**, state the question in full with the options and their concrete consequences and the `file:line` you are looking at, then idle. Do not re-ask, do not pick an option to keep moving, and do not treat silence as agreement — a relayed question can wait behind another worker's. When the answer arrives here, carry on.
 >
 > **Do not land.** Do not merge, and do not push to `<default-branch>`. Commit and push only `<branch>`. When `/implement` reaches wrap-up, pass that instruction through: wrap-up must stop after pushing your branch and must not run its landing step. Landing is serialized by the orchestrator, and `git checkout <default-branch>` fails in a worktree regardless.
 >
@@ -29,7 +31,8 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 | worktree path + branch named | worker assumes it is in the primary checkout and pushes to the default branch |
 | submodule init, with `protocol.file.allow=always` | first build fails with an unreadable-manifest error that never mentions submodules; and in a worktree the plain form fails outright with `transport file not allowed`, because the submodule's origin is a local path |
 | standalone, not continuous | continuous mode's AFK gate *skips* decision-laden items and files a follow-up — the work never happens |
-| stop and ask in this pane | worker invents a design decision the human owns |
+| stop and ask in this pane, in full, once | worker invents a design decision the human owns |
+| nobody is watching this tab; ask once and idle | worker in its own tab assumes a human is reading it, asks a one-line question with no options ("which approach?"), gets no answer because the relay had nothing answerable to carry, then re-asks or guesses |
 | do not land, pass it through wrap-up | `wrap-up` lands by default on an owned repo; `git checkout <default>` then fails in the worktree, or worse, N workers race the same branch |
 | no repo-wide formatter | one reformat commit conflicts every sibling branch |
 | verdict file, every verdict | orchestrator has nothing to read; a missing file is indistinguishable from a pass that never ran |
