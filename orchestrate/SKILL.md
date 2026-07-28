@@ -99,6 +99,22 @@ The verdict is a file, not the pane's chat: `<worktree>/tmp/claude/verify/<item>
 
 **Check the verdict's `commit` against the branch head** (`git -C <worktree> rev-parse HEAD`) before trusting a `PASS`. A verdict describes one tree; commits made after it are unverified. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
 
+#### Read the pane on EVERY wake. The verdict file alone will lie to you.
+
+The verdict is written once and never updated. A worker that halted, got answered, resumed, and then stopped to ask something *new* still has its **original** verdict sitting on disk. Reading only the file, you will report "still blocked on the same thing" while a fresh, unasked question sits in the pane — indefinitely, because nothing else will ever surface it.
+
+So on every wake, for every non-`working` worker: read the verdict file **and** `herdr pane read <pane-id> --lines 60`. The file tells you what to do with the branch; the pane tells you what the worker needs from the human. They answer different questions and neither substitutes for the other.
+
+Observed: a worker's `BLOCKED` verdict was re-reported to the human four times across ~40 minutes while the pane held a completely different question it had already moved on to — the human had answered the original in-pane and the orchestrator never noticed.
+
+#### Surface every worker question to the root pane, in full, immediately
+
+A question asked in a worker pane is invisible. The human is watching the **orchestrator's** pane; that is the whole reason the swarm uses panes instead of sub-agents. A question that stays in the worker pane blocks that worker forever.
+
+The moment a worker is found parked on a question, relay it into the root pane: what it is asking, the options with their concrete consequences, the file:line grounding it gave, and a recommendation. Never summarize it as "worker N is blocked" — that is not answerable. Never wait for a "better moment" to batch several together.
+
+**A worker parked on an unrelayed question is an orchestrator bug, not a worker problem.**
+
 ### 6. Land it
 
 From the **primary checkout**, one worker at a time:
@@ -124,6 +140,16 @@ herdr pane close <pane-id>
 ```
 
 `git worktree remove` fails outright in a repo with submodules (`working trees containing submodules cannot be moved or removed`), which then cascades into `branch -d` failing — hence `rm -rf` plus `prune`. Chain with `&&`, never `;`: a `;`-chained success echo prints after a failed step and misreports teardown as done.
+
+#### Close the pane the moment its work is over — landing is not the only ending
+
+Retire on **any** terminal outcome, not just a merge. A worker whose issue turned out to be already-done, wrong, or withdrawn is finished; so is one whose branch you will never land. Its pane is a slot the frontier needs, and a screen of stale panes is what makes a swarm unreadable.
+
+**A pane still open means a worker still has something to do.** Keep that true. If it has nothing left to do, close it — even when the issue stays open, even when the human still owes an answer about the *issue*. An unanswered question about what to build does not require a live agent sitting in a worktree; the question belongs in the root pane (step 5), and the pane can go.
+
+Before closing, check `git -C <worktree> status --short` and the unmerged-commit count, exactly as above. **Uncommitted work in the worktree is the one thing that forbids teardown** — surface it and leave the pane alone. Never `rm -rf` over a dirty tree to reclaim a slot.
+
+Observed: three panes sat open across most of a run — one holding a worker with nothing left to do, waiting on a decision that lived in the root pane. The frontier had ready issues and nowhere to put them.
 
 ### 8. Recompute and re-dispatch
 
