@@ -52,16 +52,46 @@ Read dependencies per issue, in this order:
 
 Pane readability caps the swarm, not appetite — a pane too small to read destroys the watchable-and-answerable property above.
 
-Read the geometry (`herdr pane layout --pane "$HERDR_PANE_ID"`), reserve the orchestrator's own pane, and divide the rest by **`MIN_PANE` = 80 cols × 24 rows**, capped at **2 rows** of workers. Dispatch `min(frontier size, that number)`.
+#### The layout is fixed. Do not invent one.
 
-Observed: 113×17 was unusable, 99×34 was fine. Tune `MIN_PANE` rather than exceeding 2 rows.
+**One full-height orchestrator column on the LEFT. A grid of at most FOUR worker panes to its RIGHT.** Nothing else.
+
+```
+┌──────────────┬──────────────┬──────────────┐
+│              │              │              │
+│              │   worker 1   │   worker 2   │
+│              │              │              │
+│ orchestrator ├──────────────┼──────────────┤
+│  (you) —     │              │              │
+│  full height │   worker 3   │   worker 4   │
+│              │              │              │
+└──────────────┴──────────────┴──────────────┘
+```
+
+The orchestrator pane is the one the human reads. It **keeps its full height for the whole run** and is never split horizontally, never shrunk into a worker cell, never tiled into the same grid as the workers.
+
+Build it exactly this way:
+
+1. **Carve the worker region once, up front** — one `herdr pane split "$HERDR_PANE_ID" --direction right --ratio <r>` where `<r>` leaves the orchestrator roughly a third. That single child pane is the **worker region**. Never split `$HERDR_PANE_ID` again for any reason.
+2. **Subdivide the worker region only.** Split the region right for a second column, then split each column down for a second row. Every later worker splits a *worker* pane, never the orchestrator's.
+3. **Four workers is the hard cap**, regardless of screen size or frontier length. A fifth ready issue waits for a slot to free — that is what paces the swarm.
+
+**Symptom you got it wrong:** the orchestrator's pane is the same height as a worker's, or `herdr pane layout` shows it at less than full height. If you ever split `$HERDR_PANE_ID` a second time, you have already broken it.
+
+Observed failure: splitting the orchestrator pane right, then down, then splitting workers off it again produced an unreadable jumble with the orchestrator squeezed into a 87×26 cell — the human could not follow the run, which is the entire purpose of the pane layout.
+
+#### Sizing within the cap
+
+Read the geometry (`herdr pane layout --pane "$HERDR_PANE_ID"`) and check each prospective worker cell against **`MIN_PANE` = 80 cols × 24 rows**. Dispatch `min(frontier size, 4, cells that clear MIN_PANE)`.
+
+Observed: 113×17 was unusable, 99×34 was fine. If four cells will not clear `MIN_PANE`, run fewer workers — never shrink the orchestrator column to make room.
 
 ### 3. Fan out
 
 Per ready issue, in order:
 
 1. **Worktree** — `git -C <repo> worktree add -b <branch> ~/.worktrees/<repo>/<slug> <default-branch>`. Create it **now, not earlier**: a worktree is evidence an issue was ready, never a bet that it will be.
-2. **Pane** — `herdr pane split <target> --direction right|down --ratio <r> --cwd <worktree> --no-focus`.
+2. **Pane** — `herdr pane split <target> --direction right|down --ratio <r> --cwd <worktree> --no-focus`. `<target>` is a pane **inside the worker region**, never `$HERDR_PANE_ID` — see the fixed layout in step 2.
 3. **Agent** — `herdr agent start <slug> --kind claude --pane <id> --timeout 120000`.
 4. **Brief** — send the prompt from [BRIEF.md](BRIEF.md), then **send Enter separately**: `herdr agent prompt <slug> '<text>'` pastes a long prompt without submitting it, leaving the worker idle at a filled input box. Follow every prompt with `herdr agent send-keys <slug> enter` and confirm the worker reaches `working`.
 
