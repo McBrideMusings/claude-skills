@@ -150,6 +150,22 @@ the *first* install after the change — then never again.
 
 ## `[apple]` / `[apple.icons]` config
 
+### Generated projects — `prebuild_cmd`
+
+An `.xcodeproj` produced by XcodeGen or Tuist is usually gitignored, so it is
+absent on a fresh clone and stale after a spec edit. Declare the generator once:
+
+```toml
+[apple]
+prebuild_cmd = "xcodegen generate"
+```
+
+It runs once per invocation from `_detect_project_path`, which every apple
+action funnels through, so `build`, `dev`, `deploy`, and `icons` all get a
+project matching its spec. A non-zero exit aborts the command. Do **not** add a
+project-level `generate` command alongside it — that's a second way to do the
+same thing.
+
 ```toml
 [apple]
 project_path         = "App.xcodeproj"
