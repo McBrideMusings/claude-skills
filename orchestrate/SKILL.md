@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Workers never ask questions: anything needing a human decision is gated out before dispatch or filed and halted. Runs over herdr tabs, Claude subagents, or a workflow. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items in one terminal is /iterate."
+description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Workers never ask questions: anything needing a human decision is gated out before dispatch or filed and halted. Transport is picked by token — `orchestrate herdr|subagent|workflow` — or asked once when unnamed. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items is /iterate."
 ---
 
 # /orchestrate — fan work out to a swarm, land it, retire it
@@ -37,12 +37,14 @@ Three, differing in where a worker runs and what survives.
 
 ### Choosing
 
-**Only offer what the environment actually has.**
+**A transport named in the arguments wins, and no menu is printed.** The token `herdr`, `subagent`, or `workflow` anywhere in the arguments picks it — `orchestrate workflow`, `orchestrate label:api herdr`. Same convention as `implement delegate` and `iterate workflow`. This is how you A/B two transports over the same backlog without answering a prompt each run. Naming `herdr` outside herdr is an error, not a fallback: say so and stop.
 
-- `HERDR_ENV=1` → all three. State the trade in one line each and let the human pick before the first dispatch.
+With no token:
+
+- `HERDR_ENV=1` → all three are available. State the trade in one line each and let the human pick before the first dispatch.
 - Otherwise → **subagent or workflow**; do not offer herdr and do not stop.
 
-The workflow transport calls the `Workflow` tool, which requires the human to have asked for it. **Picking it here is that request** — do not reach for it under either other transport, and do not use `Workflow` for any other part of this skill.
+The workflow transport calls the `Workflow` tool, which requires the human to have asked for it. **Naming it — by token or by picking it from the menu — is that request.** Do not reach for it under either other transport, and do not use `Workflow` for any other part of this skill.
 
 Say which transport is running in the first status line and in the final report. The failure to avoid is not "picked the wrong one" — it is a run that quietly *became* another one, so the human waits on a `Monitor` that was never armed, or tabs over looking for workers that were never terminals.
 

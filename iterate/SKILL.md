@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Use for unattended work across many tracked items; a single item is /implement."
+description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, always sequential. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Passes run in this session by default, or in a workflow script with the `workflow` token. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
 ---
 
 # /iterate — Continuous autonomous iteration harness
@@ -19,6 +19,29 @@ Resolve the mode from the arguments **once, before anything else**:
 - **BACKLOG-WIDE** — a bare `iterate` with no selector. There is no frozen queue; each iteration runs `/implement continuous` and lets **triage** pick the next item from the whole backlog. This is the original behavior.
 
 The two modes differ only in **how each iteration's item is chosen** and **what ends the run** (a scoped run ends when its queue empties; a backlog-wide run ends on the first halt). Everything else — ownership, pre-flight, branch choreography, landing, the cap — is shared.
+
+---
+
+## Two transports — where each pass runs
+
+Independent of the mode above. The transport decides **where a `/implement` pass executes**; everything else in this file applies to both.
+
+| | **session** (default) | **workflow** |
+|---|---|---|
+| Each pass runs in | this session, in this pane | an `agent()` call inside a workflow script |
+| Who drives the outer loop | the `loop` skill, re-invoking across turns | the script's own `for … of` |
+| Where each pass's context goes | this context window, pass after pass | the agent's, discarded on return |
+| Interruptible | yes — it is your session | stoppable and resumable from `/workflows` |
+| Watchable | yes, live, in this pane | per-agent progress in `/workflows` |
+
+- **session** → [TRANSPORT-SESSION.md](TRANSPORT-SESSION.md)
+- **workflow** → [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)
+
+**Selecting one:** the token `workflow` anywhere in the arguments picks the workflow transport — `iterate workflow`, `iterate #133-140 workflow`. Same convention as `implement delegate` and `iterate followups`. No token means **session**; this skill never prompts for a transport, because a harness that stops to ask you something before it starts is not a walk-away harness.
+
+The workflow transport calls the `Workflow` tool, which requires the human to have asked for it. **The `workflow` token is that request.** Do not reach for `Workflow` under the session transport.
+
+**The transport never changes what a pass does.** A pass is `/implement continuous` either way — same gate, same phases, same verify, same wrap-up. Anything that would only be true under one transport belongs in that transport's file, not here.
 
 ---
 
@@ -74,7 +97,11 @@ If a selector is present, resolve it to an **ordered, frozen list of concrete it
 
 ## The loop
 
-Drive the **whole per-iteration block below** via the `loop` skill as the unit to repeat — it handles cadence and re-invocation, keeping the run going across iterations instead of halting after the first. The **maximum is 20 iterations** regardless of mode; even if a queue is longer or a backlog keeps refilling, 20 is the safety valve that forces a human review point.
+**The transport drives the repetition** — the `loop` skill under session, the script's own `for … of` under workflow. See the transport file for that mechanism; the steps below are the same either way.
+
+The **maximum is 20 iterations** regardless of mode or transport; even if a queue is longer or a backlog keeps refilling, 20 is the safety valve that forces a human review point.
+
+**Iterations are strictly sequential, on every transport.** Step 1 branches from the *current* head of the default line, which only exists once the previous iteration has landed. Two passes running at once would branch from the same head and race each other into the default branch. There is no version of this harness that fans out — that is `/orchestrate`, which pays for concurrency with a worktree per worker.
 
 Each iteration:
 
@@ -83,7 +110,7 @@ Each iteration:
    - **SCOPED:** pop the next item off the frozen queue. If the queue is empty, the run is **done** (not a halt) — go to "When the run ends".
    - **BACKLOG-WIDE:** no item to pick here; triage inside the pass chooses it.
 3. **Cut a fresh feature branch** off the default head, e.g. `git -C <repo> checkout -b auto-iterate/<UTC-timestamp>`. The name is generic; the human-readable identity comes from the commit/PR summary.
-4. **Run one pass.** Invoke `/implement continuous`, appending the item token for scoped mode and `delegate` if the run is delegated:
+4. **Run one pass** — the transport executes it; the invocation is identical either way. `/implement continuous`, appending the item token for scoped mode and `delegate` if the run is delegated:
    - Issue item → `/implement <n> continuous [delegate]`
    - Local item → `/implement continuous item:"<text>" source:"<loc>" [delegate]`
    - Backlog-wide → `/implement continuous [delegate]` (triage resolves the item)
@@ -146,7 +173,7 @@ For merges, the user can review with `git log --oneline origin/<default>..<defau
 
 ## Notes
 
-- This skill never invokes itself and never invokes `implement` in a loop directly — it hands the **harness** to `loop`.
+- This skill never invokes itself and never invokes `implement` in a loop directly — the transport drives the repetition (`loop` under session, the script under workflow).
 - The merge/PR mechanics are `wrap-up`'s single source of truth; this skill only supplies the ownership verdict and confirms each landing.
 - Each iteration is fully independent: one branch, one item, one landing. Nothing accumulates on a single branch.
 - The frozen queue is resolved once, up front. A scoped run is deterministic — the same selector against the same backlog produces the same march.
