@@ -8,7 +8,7 @@ Send it, then send Enter separately (see SKILL.md step 3).
 
 Substitute `<>` values. Keep every section — each one prevents a failure seen in practice.
 
-> You are in a git worktree at `<worktree-path>` on branch `<branch>`, working the `<repo>` repo. A submodule-bearing repo needs `git submodule update --init --recursive` before its first build.
+> You are in a git worktree at `<worktree-path>` on branch `<branch>`, working the `<repo>` repo. A submodule-bearing repo needs `git -c protocol.file.allow=always submodule update --init --recursive` before its first build — the plain form fails in a worktree with `transport file not allowed`.
 >
 > **Your task: `/implement <issue>` — `<one-line issue title>`.**
 >
@@ -27,7 +27,7 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 | Clause | Failure it prevents |
 |---|---|
 | worktree path + branch named | worker assumes it is in the primary checkout and pushes to the default branch |
-| submodule init | first build fails with an unreadable-manifest error that never mentions submodules |
+| submodule init, with `protocol.file.allow=always` | first build fails with an unreadable-manifest error that never mentions submodules; and in a worktree the plain form fails outright with `transport file not allowed`, because the submodule's origin is a local path |
 | standalone, not continuous | continuous mode's AFK gate *skips* decision-laden items and files a follow-up — the work never happens |
 | stop and ask in this pane | worker invents a design decision the human owns |
 | do not land, pass it through wrap-up | `wrap-up` lands by default on an owned repo; `git checkout <default>` then fails in the worktree, or worse, N workers race the same branch |
