@@ -1,6 +1,8 @@
 # Reattach to a running swarm
 
-The orchestrator session is mortal — it hits a context limit or crashes — while the swarm outlives it: agents keep working, worktrees and branches stay on disk. Reattach rebuilds the orchestrator's state from what is actually there, then resumes the loop.
+**herdr transport only.** Subagent workers are children of the orchestrator's session and die with it — there is nothing to reattach to. If the dead run used subagents, its worktrees, branches, and verdict files are still on disk: read those, land what passed, and **re-dispatch** the rest as new workers. Everything below assumes live agents in live tabs.
+
+The orchestrator session is mortal — it hits a context limit or crashes — while a herdr swarm outlives it: agents keep working, worktrees and branches stay on disk. Reattach rebuilds the orchestrator's state from what is actually there, then resumes the loop.
 
 **Nothing about the swarm lives in the dead session.** State is reconstructed from five observable places, never from memory or a handoff note.
 

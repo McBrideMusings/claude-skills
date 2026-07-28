@@ -20,6 +20,10 @@ max_workers = 4
 # Kind used when a dispatch does not name one. Must have an [agents.*] block.
 default = "claude"
 
+# Kinds are a herdr-transport concept. Under the subagent transport only
+# [agents.claude] is consulted (Claude is the only vendor available there) and
+# every other block is inert.
+#
 # A kind is dispatchable ONLY if it has a block here, and the table key must be
 # a value herdr's `agent start --kind` accepts:
 #   pi, claude, codex, gemini, cursor, devin, agy, cline, omp, mastracode,
@@ -27,9 +31,13 @@ default = "claude"
 # Delete a block to disable that kind.
 
 [agents.claude]
-# ALWAYS passed explicitly as `-- --model <id>`. With no flag the worker
-# inherits whatever default this machine has — which is exactly how a denied
-# model gets into the swarm.
+# ALWAYS passed explicitly: `-- --model <id>` under the herdr transport,
+# `model:` under the subagent transport. With no flag the worker inherits a
+# default — which is exactly how a denied model gets into the swarm.
+#
+# The subagent transport can only dispatch a model in the Agent tool's enum:
+# sonnet, opus, haiku (and fable, which is refused). A model outside that set
+# stops a subagent run; it is still fine for herdr.
 model   = "opus"
 allowed = ["opus", "sonnet", "haiku"]
 # Never Fable. `claude --model` takes `fable` and `claude-fable-5` as ordinary
