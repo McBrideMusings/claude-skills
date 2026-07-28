@@ -6,7 +6,7 @@ Stop everything and leave no residue: no live agents, no worktrees, no branches 
 
 ## 1. Take stock before touching anything
 
-Build the same picture [REATTACH.md](REATTACH.md) builds — the transport's own worker listing (`herdr agent list`, or the running-agent list), `git worktree list`, each `<worktree>/tmp/claude/verify/<item>.json`, and `questions.json`. You cannot decide what is safe to delete without it.
+Build the same picture [REATTACH.md](REATTACH.md) builds — the transport's own worker listing (`herdr agent list`, or the running-agent list), `git worktree list`, and each `<worktree>/tmp/claude/verify/<item>.json`. You cannot decide what is safe to delete without it.
 
 ## 2. Sort every worker
 
@@ -28,11 +28,9 @@ A **still-running** worker must be stopped before its worktree goes: `herdr agen
 
 `branch -d` (never `-D`) is the safety interlock: git re-checks merged-ness and refuses if the branch still holds unmerged commits. **If `-d` refuses, stop and re-sort that worker** — the refusal means step 2 misjudged it.
 
-## 4. Stop the watches and drain the queue
+## 4. Stop the watches
 
-`TaskStop` the `Monitor`, and end the `/loop` heartbeat with `ScheduleWakeup(stop: true)`. Both outlive the swarm otherwise and will wake a session with nothing to manage.
-
-Then read `<repo>/tmp/claude/orchestrate/questions.json` one last time. Any record still `queued` or `outstanding` is a question a worker was waiting on that will now never be delivered — **put its full text in the report** (step 5), then delete the file. A silently discarded queue is the disband equivalent of deleting an unmerged branch.
+`TaskStop` the `Monitor`, and end the `/loop` heartbeat with `ScheduleWakeup(stop: true)`. Both outlive the swarm otherwise and will wake a session with nothing to manage. A workflow round still running is stopped the same way, or from `/workflows`.
 
 ## 5. Report
 
@@ -40,6 +38,6 @@ Then read `<repo>/tmp/claude/orchestrate/questions.json` one last time. Any reco
 - **Kept** — worktree path, branch (pushed), why it was not landed, and what the human must decide.
 - **Retired** — count only; nothing was lost.
 - **Left running** — any worker the human chose not to interrupt.
-- **Unanswered** — every question left `queued` or `outstanding`, in full, with the issue it belonged to.
+- **Filed** — every `needs human input` follow-up a worker left behind, with the issue it belonged to.
 
 **Completion criterion:** `git worktree list` shows only the primary checkout, no swarm worker is live under the transport's own listing (and under herdr, `herdr tab list --workspace "$HERDR_WORKSPACE_ID"` shows only the orchestrator's tab), and every kept worker appears in the report with its branch pushed. A worktree that is gone but absent from the report means work was destroyed unrecorded.

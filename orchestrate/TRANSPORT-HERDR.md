@@ -1,6 +1,8 @@
 # Transport: herdr
 
-Workers are real terminals — a `claude` or `codex` process in its own herdr tab. Watchable live, answerable mid-run, and they outlive the orchestrator session.
+Workers are real terminals — a `claude` or `codex` process in its own herdr tab. Watchable live, cross-vendor, and they outlive the orchestrator session.
+
+**This transport could carry an answer to a worker. It must not.** `herdr agent prompt` would deliver one, which is exactly why the ban is written here rather than left implicit: see [SKILL.md](SKILL.md) → No worker ever asks the human anything. The only text this skill ever sends a live worker is its brief.
 
 **Requires `HERDR_ENV=1`.** Outside herdr this transport is not on offer at all; see [SKILL.md](SKILL.md) → Transports → Choosing.
 
@@ -18,7 +20,7 @@ workspace
 
 `herdr tab create` puts the new tab in the active workspace, beside the orchestrator's, and returns both `.result.tab.tab_id` and `.result.root_pane.pane_id`. That root pane **is** the worker's pane. Nothing gets subdivided, so pane ratios and a `MIN_PANE` geometry check do not apply — a worker's pane is always the full tab.
 
-**Never split `$HERDR_PANE_ID`.** Not once, for any reason. The orchestrator's pane is the only surface the human reads and the only place a worker's question can be answered.
+**Never split `$HERDR_PANE_ID`.** Not once, for any reason. The orchestrator's pane is the only surface the human reads.
 
 Observed under the old shared-tab layout: workers tiled beside the orchestrator squeezed it into an 87×26 cell and the human could not follow the run.
 
@@ -30,10 +32,6 @@ The handle is `{tab_id, pane_id, slug}`; the slug doubles as the agent name.
    `--no-focus` is not cosmetic: focusing a worker's tab marks it seen and collapses a later `done` into `idle`.
 2. **Agent** — `herdr agent start <slug> --kind <kind> --pane <root-pane-id> --timeout 120000 -- --model <model>`. A `claude` worker **always** carries `-- --model <id>`; with no flag it inherits the machine default. Names must match `[a-z][a-z0-9_-]{0,31}` and be unique among live agents.
 3. **Brief** — send [BRIEF.md](BRIEF.md), then **send Enter separately**: `herdr agent prompt <slug> '<text>'` pastes a long prompt without submitting it, leaving the worker idle at a filled input box. Follow every prompt with `herdr agent send-keys <slug> enter`.
-
-`<how-to-ask>` for the brief:
-
-> **stop and ask, in this pane, and wait.** Nobody is looking at this tab. An orchestrator polls it, relays your question to the human, and types their answer back into this pane.
 
 **Confirmed working** = the worker reports `working` in `herdr agent list`. `agent start` returning is not confirmation.
 
@@ -52,13 +50,9 @@ Emit on `blocked` and `unknown` too, never only `done`.
 
 ## `read(handle)`
 
-`herdr pane read <pane-id> --lines 60`.
+`herdr pane read <pane-id> --lines 60` — why it stopped, which follow-up it filed, which check failed. This is evidence for the report, not the start of a conversation.
 
 **Never focus a worker's tab to inspect it.** Focusing marks the tab seen and consumes `done`, collapsing it to `idle` — `herdr tab focus`, `herdr pane focus`, and `herdr agent focus` all do this. CLI *reads* do not.
-
-## `answer(handle, text)`
-
-`herdr agent prompt <slug> '<answer>'`, then `herdr agent send-keys <slug> enter`, then confirm the worker returns to `working`. The same paste-does-not-submit rule as the brief: an answer without the Enter leaves the worker sitting on a filled input box, looking idle, having received nothing.
 
 ## `retire(handle)`
 

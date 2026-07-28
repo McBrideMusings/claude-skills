@@ -1,10 +1,10 @@
 # Reattach to a running swarm
 
-**herdr transport only.** Subagent workers are children of the orchestrator's session and die with it — there is nothing to reattach to. If the dead run used subagents, its worktrees, branches, and verdict files are still on disk: read those, land what passed, and **re-dispatch** the rest as new workers. Everything below assumes live agents in live tabs.
+**herdr transport only.** Subagent and workflow workers are children of the orchestrator's session and die with it — there is nothing to reattach to. If the dead run used either, its worktrees, branches, and verdict files are still on disk: read those, land what passed, and **re-dispatch** the rest as new workers. (A workflow round that died mid-run can also be resumed by its `runId` within the *same* session — never across a restart.) Everything below assumes live agents in live tabs.
 
 The orchestrator session is mortal — it hits a context limit or crashes — while a herdr swarm outlives it: agents keep working, worktrees and branches stay on disk. Reattach rebuilds the orchestrator's state from what is actually there, then resumes the loop.
 
-**Nothing about the swarm lives in the dead session.** State is reconstructed from five observable places, never from memory or a handoff note.
+**Nothing about the swarm lives in the dead session.** State is reconstructed from four observable places, never from memory or a handoff note.
 
 ## Rebuild state
 
@@ -16,11 +16,10 @@ Run the pre-flight from SKILL.md first — reattach still needs herdr and the pr
 | Worker tabs | `herdr tab list --workspace "$HERDR_WORKSPACE_ID"` | one tab per worker, labelled with its slug; open slots against the cap of four |
 | Worktrees + branches | `git -C <repo> worktree list` | every worker's tree, including ones whose tab died |
 | Verdicts | `<worktree>/tmp/claude/verify/<item>.json` per worktree | what each worker actually achieved |
-| Outstanding questions | `<repo>/tmp/claude/orchestrate/questions.json` | what the previous orchestrator had already asked, answered, or left queued |
 
 Join them on the worktree path — the tab's label is the slug, which is the worktree's directory name. Each row is one worker; the set of rows is the swarm.
 
-**Resume the question queue before dispatching anything.** A record left `outstanding` was relayed to a human who may have answered into a pane the dead orchestrator was no longer reading; re-read that worker's pane (`herdr pane read <pane-id> --lines 60`) to see whether it moved on, and reconcile. A record left `queued` was never relayed at all — that worker has been waiting on a question nobody has ever seen. Clear the queue down to at most one `outstanding` record, oldest first, before step 3 of the resume.
+**Re-run the scope gate before dispatching anything new.** The dead session's gate pass is not evidence: issues may have been edited, and a run that died may have died *because* the backlog was not as clean as it looked. Adopting live workers does not need it; fanning out into a freed slot does.
 
 ## Classify what you find
 
@@ -45,4 +44,4 @@ Once every row is classified and the land-and-retire cases are cleared:
 2. Recompute the frontier (SKILL.md step 1). Issues closed by the previous session change it.
 3. Fan out into free slots.
 
-**Completion criterion:** every worktree in `git worktree list` maps to a live adopted worker, a landed-and-retired one, or a named escalation; every tab in `herdr tab list` maps to a live worker or the orchestrator; and `questions.json` holds at most one `outstanding` record. A worktree unaccounted for means the rebuild is not finished.
+**Completion criterion:** every worktree in `git worktree list` maps to a live adopted worker, a landed-and-retired one, or a named escalation, and every tab in `herdr tab list` maps to a live worker or the orchestrator. A worktree unaccounted for means the rebuild is not finished.
