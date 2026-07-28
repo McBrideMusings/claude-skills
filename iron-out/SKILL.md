@@ -1,17 +1,21 @@
 ---
 name: iron-out
-description: "Iron out a backlog's ambiguity before autonomous work: scan in-scope open issues with implement's AFK gate, then resolve each failing one with the user, editing issue bodies until the whole scope is workable by /orchestrate or /iterate. Scope selectors as /iterate; also invoked when another skill finds gate-failing issues in a scope it is about to dispatch."
+description: "Drive a backlog's ambiguity to zero: scan in-scope open issues with implement's AFK gate, then resolve each failing one with the user, editing issue bodies until every issue states a plan and a checkable definition of done. Use whenever issues are vague, half-specified, or 'TBD' — whether or not anything is about to work them. Selectors: issue numbers, #range, label:X, milestone:X, followups, papercuts; bare iron-out takes the whole open backlog."
 ---
 
 # Iron Out
 
-The goal state is **AFK**: every issue in scope passes `implement`'s Phase 0.5 gate — a concrete plan is statable and "done" is verifiable without a judgment call the user owns. Ambiguity is cleared **before dispatch, not during it** — fanning out work that still contains open design decisions converts a scheduling problem into a babysitting problem, N panes all blocked on one person. This skill finds the issues that would block and drives them to zero with the user.
+The goal state is **AFK**: every issue in scope passes `implement`'s Phase 0.5 gate — a concrete plan is statable and "done" is verifiable without a judgment call the user owns. This skill finds the issues that fail and drives them to zero with the user.
+
+**This is worth doing on its own.** An issue that cannot state its own plan or its own definition of done is a bad issue whether or not an agent ever touches it — you will re-derive the missing decision every time you read it. Run `iron-out` because the backlog is vague, not because something is about to consume it.
+
+It happens to also be what the autonomous harnesses require, and they say so themselves — `/orchestrate` stops its whole run on a gate failure and hands the scope here. That dependency points one way: they know about this skill; this skill does not need to know about them.
 
 It writes issue bodies, never code. The body is the single durable artifact — `implement`'s gate reads the body, so the resolution must live there. No comments, no side files.
 
 ## Scope
 
-Resolve selectors exactly as the `iterate` skill does — its "Resolving the work group" section holds the table (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Bare `iron-out` = every open issue in the current repo. Exclude `wayfinder:*`-labeled issues, same as triage. Local items (followups / papercuts) are judged like issues; their "body" is the entry line, and resolving one rewrites that line in its source file.
+Selector forms are shared with `iterate` — one table, in [../iterate/SELECTORS.md](../iterate/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `iron-out` = every open issue in the current repo. Exclude `wayfinder:*`-labeled issues, same as triage. Local items (followups / papercuts) are judged like issues; their "body" is the entry line, and resolving one rewrites that line in its source file.
 
 ## Phase 1 — Scan
 
