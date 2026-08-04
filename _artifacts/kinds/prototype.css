@@ -1,0 +1,44 @@
+/* prototype.css — stage only. No palette, no type personality, no opinions.
+   Every colour in the output comes from the fragment, which copies the host
+   project's tokens. Anything styled here would compete with the design being judged. */
+
+body { background: var(--bg); }
+
+/* switch mode: one variant at a time, full size */
+#at-stage {
+  min-height: 100vh;
+  display: block;
+}
+
+/* list mode: each variant isolated and stacked, one per screenful.
+   Never a grid of thumbnails — small side-by-side distorts spacing and scale. */
+.at-list-item {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--line);
+}
+.at-list-item:last-child { border-bottom: 0; }
+
+.at-list-head {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: baseline; gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: rgba(10, 10, 10, .82);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) inset;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px; line-height: 1;
+}
+.at-list-head .at-list-n {
+  display: grid; place-items: center;
+  width: 20px; height: 20px; border-radius: 999px;
+  background: rgba(255, 255, 255, .14);
+  font-size: 11px; font-weight: 700;
+}
+.at-list-head .at-list-name { font-weight: 600; }
+.at-list-head .at-list-axis { color: rgba(255, 255, 255, .55); font-size: 12px; }
+
+.at-list-body { flex: 1; display: block; }

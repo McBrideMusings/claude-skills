@@ -89,6 +89,37 @@ Stub: <repo-root>/tmp/claude/sketches/2026-05-05-1430-conflict-modal.monojson
 
 In a follow-up sentence (not on the same line as the path), tell the user they can ⌘-click that path in Ghostty to open it in Monodraw, draw an alternative, save, and let you know.
 
+## Escalating to a rendered greybox
+
+ASCII is the default because it's instant and disposable. It runs out when the answer depends on
+**proportion** — how wide the sidebar actually is next to the content, how a card grid wraps at a real
+width, how far down the page the third region sits, whether a column of numbers fits. Monospace cells
+can't show any of that honestly, so a yes/no given against ASCII would be answering a different
+question.
+
+When that's where you are, build a greybox wireframe:
+
+```bash
+"$HOME/.claude/tools/artifact" build \
+  --kind wireframe \
+  --title "<what's being laid out>" \
+  --fragment <repo-root>/tmp/claude/artifacts/<slug>.body.html \
+  --out <repo-root>/tmp/claude/sketches/<YYYY-MM-DD>-<HHMM>-<slug>.html
+```
+
+Class vocabulary — `.wf-region`, `.wf-label`, `.wf-ph`, `.wf-text`, `.wf-control`, `.wf-note`,
+`.wf-grid` — is in `../_artifacts/CONTRACT.md`.
+
+**It stays a sketch.** The `wireframe` kind withholds colour deliberately: no brand palette, no
+imagery, no type personality. The moment a wireframe looks designed, the feedback you get is about the
+style instead of the arrangement, and you've spent a prototype's effort to get a sketch's answer wrong.
+Everything in "stay on layout" above still applies.
+
+**Screenshot it and look at it** before handing it over, then print the path. Same absolute-path rule
+as the stub.
+
+The `.monojson` stub is still worth writing alongside it — the user may still want to redraw.
+
 ## Reading the user's edits
 
 When the user says "I edited it" / "take a look" / "I drew it":

@@ -1,0 +1,118 @@
+/* _base.css — reset, theme plumbing, layout primitives. Inlined into every kind. */
+
+:root {
+  /* type scale */
+  --f-2xl: 2rem; --f-xl: 1.5rem; --f-lg: 1.25rem; --f-md: 1rem; --f-sm: .875rem;
+  /* spacing scale */
+  --s-1: .25rem; --s-2: .5rem; --s-3: .75rem; --s-4: 1rem; --s-5: 1.5rem; --s-6: 2.5rem;
+  --radius: 10px;
+  --maxw: 72ch;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* neutral ground — light. Kinds override; components consume tokens only. */
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --ink: #1c1d22;
+  --ink-soft: #54565e;
+  --line: #e4e4ea;
+  --c-muted: #8a8c95;
+  --c-accent: #0ea5b7;
+}
+
+/* Dark comes from the OS preference... */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131419;
+    --surface: #1b1c22;
+    --ink: #ecedf1;
+    --ink-soft: #a9abb4;
+    --line: #2c2e37;
+    --c-muted: #7e818c;
+    --c-accent: #34d3e3;
+  }
+}
+
+/* ...and an explicit toggle beats it, in both directions. */
+:root[data-theme="light"] {
+  --bg: #fbfbfd;
+  --surface: #ffffff;
+  --ink: #1c1d22;
+  --ink-soft: #54565e;
+  --line: #e4e4ea;
+  --c-muted: #8a8c95;
+  --c-accent: #0ea5b7;
+}
+:root[data-theme="dark"] {
+  --bg: #131419;
+  --surface: #1b1c22;
+  --ink: #ecedf1;
+  --ink-soft: #a9abb4;
+  --line: #2c2e37;
+  --c-muted: #7e818c;
+  --c-accent: #34d3e3;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 { line-height: 1.25; font-weight: 650; text-wrap: balance; }
+p { margin: 0 0 var(--s-4); }
+a { color: var(--c-accent); }
+img, svg, video, canvas { max-width: 100%; }
+code, kbd, samp { font-family: var(--font-mono); font-size: .92em; }
+
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Wide content scrolls inside itself; the page body never scrolls sideways. */
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+.stack { display: flex; flex-direction: column; gap: var(--s-4); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.nums { font-variant-numeric: tabular-nums; }
+
+.vh {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Theme toggle — injected by the tool, sits out of the way. */
+.at-theme {
+  position: fixed; top: 12px; right: 12px; z-index: 2147483646;
+  display: grid; place-items: center; width: 30px; height: 30px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--surface); color: var(--ink-soft);
+  font: inherit; font-size: 14px; line-height: 1; cursor: pointer;
+  opacity: .55; transition: opacity 150ms ease-out;
+}
+.at-theme:hover { opacity: 1; }
+
+@media print {
+  .at-theme { display: none; }
+  body { background: #fff; color: #000; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}

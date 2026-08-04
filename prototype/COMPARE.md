@@ -4,9 +4,24 @@ Two or three **real implementations** of the same interface, run against the sam
 For questions of the form "which technical approach should we use" — SQLite or Postgres for the queue,
 polling or a websocket, one table or two, this library or hand-rolled.
 
-If the question is "what should this look like" → [UI.md](UI.md). If it's "does this state model hold
-up" → [LOGIC.md](LOGIC.md). The tell for *this* shape: there is nothing to flip through and nothing to
-drive by hand — you want numbers and the shape of the code side by side.
+If it's "does this state model hold up" → [LOGIC.md](LOGIC.md).
+
+**First, split the comparison on what the answer actually is.** The two halves use different
+transports, and picking the wrong one produces a confident answer to the wrong question:
+
+- **A number decides it** — latency, memory, rows/sec, lines of code, hard cases passed. That's this
+  file. Run it through the `terminal` skill's one-shot mode (the transport `delegate exec` sits on) so
+  the measurement happens in a visible window and the output comes back verbatim.
+- **A look decides it** — two or three approaches whose difference the user has to *see*, not read off
+  a table. That's [UI.md](UI.md) with one `<template data-variant>` per approach, named for the
+  approach. Everything below about a shared fixture and a stated criterion still applies; the fixture
+  is just the same content rendered by each.
+
+A comparison can be both: measure the numbers here, and if the numbers don't separate the approaches,
+the remaining difference is usually one you have to look at.
+
+The tell for *this* file: there is nothing to flip through and nothing to drive by hand — you want
+numbers and the shape of the code side by side.
 
 ## When this is the right shape
 

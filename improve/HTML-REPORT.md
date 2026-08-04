@@ -2,35 +2,30 @@
 
 Serves both report shapes: a single-aspect architecture review, and the **survey report** (one `<section>` per aspect, one card per finding, cross-aspect Top recommendation). The card fields and diagram patterns below are written for architecture cards; other aspects' cards keep Title / badge / Files / Problem / Solution and swap the before/after SVG for whatever carries the finding (a table, a config snippet, a layer-audit table) — same components, same tone.
 
-The report is one **hermetic** HTML file — same hard rules as the `explain` skill. Reuse [../explain/DESIGN-SYSTEM.md](../explain/DESIGN-SYSTEM.md): its semantic-color tokens, type scale, and the `.diagram` / `.compare` / `.callout` / `.legend` component classes. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [SKILL.md](SKILL.md)) without ceremony.
+The report is one **hermetic** HTML file, built with the shared `explainer` kind — the same semantic-color tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes the `explain` skill uses. Read [../_artifacts/CONTRACT.md](../_artifacts/CONTRACT.md) for the vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [SKILL.md](SKILL.md)) without ceremony.
 
-## Hermetic constraints (non-negotiable)
+## Build it
 
-- **One file.** CSS in a single `<style>`, every diagram as inline `<svg>` or CSS. No external file references.
-- **No network.** No CDN `<script>`/`<link>`, no Tailwind, no Mermaid, no web fonts, no remote images. It must render identically offline, in five years.
-- **System fonts**, and **both schemes** via `prefers-color-scheme` — drive every color from the design-system CSS variables, never a hardcoded hex in markup.
+Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The tool supplies the hermetic structure, the tokens, both themes, and the theme toggle:
 
-If you've already built an `explain` artifact, clone its `assets/scaffold.html` and fill it — the hermetic structure, color tokens, and component classes are already wired.
+```bash
+"$HOME/.claude/tools/artifact" build \
+  --kind explainer \
+  --title "Architecture review — {repo name}" \
+  --fragment <repo-root>/tmp/claude/artifacts/<slug>.body.html \
+  --out <repo-root>/tmp/claude/improve/<slug>.html
+```
 
-## Skeleton
+(Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, so the hermetic rule is enforced rather than remembered. Every path absolute — resolve the repo root with `git rev-parse --show-toplevel` in its own Bash call.
+
+**Screenshot it and look at it** before handing it over.
+
+## Fragment skeleton
 
 ```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Architecture review — {repo name}</title>  <!-- survey: "Improvement survey — {repo name}" -->
-
-    <style>/* design-system tokens + components, inline */</style>
-  </head>
-  <body>
-    <main>
-      <header><!-- repo name, date, legend --></header>
-      <section id="candidates"><!-- one card per candidate --></section>
-      <section id="top-recommendation"><!-- the one to tackle first --></section>
-    </main>
-  </body>
-</html>
+<header class="hero"><!-- repo name, date, legend --></header>
+<section id="candidates"><!-- one card per candidate --></section>
+<section id="top-recommendation"><!-- the one to tackle first --></section>
 ```
 
 ## Header

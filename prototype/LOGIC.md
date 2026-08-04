@@ -73,6 +73,13 @@ need to remember it, they need to paste it once.
 
 Give the user the run command. They'll drive it themselves. The interesting moments are "wait, that shouldn't be possible" or "huh, I assumed X would be different" — those are bugs in the *idea*, which is the whole point.
 
+**To put it in front of them without them pasting anything, use the `terminal` skill's session mode** —
+`terminal open <id>` spawns a visible Terminal.app window, `terminal send` runs the command in it, and
+`terminal read` pulls the scrollback back so you can see what state they drove it into. That's the
+right transport for a TUI: the user watches and types in a real window rather than reading a transcript
+you relay. One-shot mode is for a command that runs and finishes; this one is interactive, so it's a
+session.
+
 ### Phase 07 — Capture the Answer
 
 When the prototype has done its job, the answer is the only thing worth keeping. Ask the user (as a plain-chat question — never the `AskUserQuestion` tool / structured-question schema), or leave a `NOTES.md` next to the prototype if running AFK.

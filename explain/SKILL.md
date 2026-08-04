@@ -47,9 +47,9 @@ Sometimes a programming concept is better explained from world knowledge than fr
 
 ## The hard rules (never break)
 
-1. **Hermetic.** The output is a single `.html` file: zero network requests, **no external libraries** (no Mermaid/D3/Tailwind/Prism CDN), no web fonts. CSS in `<style>`, all diagrams as inline `<svg>` or CSS, system-font stack. It must render identically offline, on a plane, in five years. See `DESIGN-SYSTEM.md`.
+1. **Hermetic.** The output is a single `.html` file: zero network requests, **no external libraries** (no Mermaid/D3/Tailwind/Prism CDN), no web fonts. The `artifact` tool enforces this and supplies the CSS — you write content. See `../_artifacts/CONTRACT.md`.
 2. **No hallucinated code (B-mode).** Never describe a mechanism you haven't actually read. Every concrete code claim carries a `file:line` tag rendered next to the diagram node / step / statement. The doc is a **map back into the code**, not a plausible story. If you didn't open it, you can't draw it.
-3. **Semantic color.** Color *encodes meaning* (data / control-flow / happy-path / danger / caution), defined once in the design system — never decorative. See `DESIGN-SYSTEM.md`.
+3. **Semantic color.** Color *encodes meaning* (data / control-flow / happy-path / danger / caution), defined once in the `explainer` kind — never decorative. The house look is fixed: don't override the role tokens. See `../_artifacts/CONTRACT.md`.
 4. **Static-first.** Lightweight inline vanilla JS is allowed only where a dense section earns it (collapse/expand, tabbed concept↔code). No JS for anything that plain HTML can do.
 
 ## Workflow
@@ -76,17 +76,29 @@ From the prompt, infer **archetype · depth · audience** (e.g. `explain eli5 ho
 
 ### 4. Render
 
-Clone `assets/scaffold.html` and fill it. The scaffold already wires the hermetic structure, the semantic-color tokens, `prefers-color-scheme` light/dark, and the component classes. Assemble from the component kit (`DESIGN-SYSTEM.md`) and the archetype skeleton (`ARCHETYPES.md`). Hand-author every diagram as inline SVG/CSS. Tag every B-mode code claim with `file:line`.
+Read `../_artifacts/CONTRACT.md` for the `explainer` class vocabulary, then **write a body fragment — content only.** No doctype, no `<head>`, no reset, no theme block, no type scale: the tool supplies all of it, which is why none of it costs you context in either direction. Assemble from the archetype skeleton (`ARCHETYPES.md`). Hand-author every diagram as inline SVG/CSS. Tag every B-mode code claim with `file:line`.
 
-Write to **`<repo>/tmp/claude/explainers/<slug>.html`**, where `<repo>` is the ABSOLUTE repo root. **Never write to a cwd-relative `tmp/…`.** Resolve `<repo>` in its own Bash call — `git rev-parse --show-toplevel` (if it errors/empty, use the absolute output of `pwd`) — and pass the absolute `<repo>/tmp/claude/explainers/…` to `mkdir`/`Write`/`open`. The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `tmp/claude/explainers/…` would land the file under whatever subdir the shell is in, so the `open <path>` you print won't match where it landed. If the path doesn't start with `/`, it's the bug. `<slug>` is a kebab-case topic slug.
+Write the fragment to `<repo>/tmp/claude/artifacts/<slug>.body.html`, then build:
 
-### 5. Open it
+```bash
+"$HOME/.claude/tools/artifact" build \
+  --kind explainer \
+  --title "<the title>" \
+  --fragment <repo>/tmp/claude/artifacts/<slug>.body.html \
+  --out <repo>/tmp/claude/explainers/<slug>.html
+```
 
-Launch it for the user: `open <path>` on macOS. Emit the path on its own line, no trailing punctuation, so it stays ⌘-clickable.
+`<repo>` is the ABSOLUTE repo root and `<slug>` a kebab-case topic slug. **Never a cwd-relative `tmp/…`.** Resolve `<repo>` in its own Bash call — `git rev-parse --show-toplevel` (if it errors/empty, use the absolute output of `pwd`). The Bash working directory is NOT guaranteed to be the repo root; a bare `tmp/claude/explainers/…` lands the file under whatever subdir the shell is in, so the `open <path>` you print won't match where it landed. If the path doesn't start with `/`, it's the bug. (The tool rejects a relative path rather than guessing.)
+
+### 5. Verify, then open it
+
+**Screenshot it and look at it.** A font falling back, an overlapping diagram, a blank section — none of that is visible in the source, and the path alone pushes the discovery onto the user. Check both themes; the file ships with a toggle.
+
+Then launch it: `open <path>` on macOS. Emit the path on its own line, no trailing punctuation, so it stays ⌘-clickable.
 
 ### 6. Refine in place
 
-After it opens, offer cheap adjustments and **regenerate the same file in place**: "deeper on X · simpler · shift focus to Y · shorter". No new files per refinement — overwrite the slug.
+After it opens, offer cheap adjustments and **regenerate the same file in place**: "deeper on X · simpler · shift focus to Y · shorter". Edit the fragment and re-run the build to the same `--out`. No new files per refinement — overwrite the slug.
 
 ### 7. Keep (on request)
 
@@ -109,6 +121,6 @@ Don't auto-keep; wait for the user to ask.
 
 ## Reference files
 
-- `DESIGN-SYSTEM.md` — hermetic constraints, semantic-color tokens, component vocabulary.
 - `ARCHETYPES.md` — the five shapes: skeleton + signature diagram for each.
-- `assets/scaffold.html` — the hermetic starter template to clone and fill.
+- `../_artifacts/CONTRACT.md` — the `explainer` class vocabulary, semantic-colour roles, fragment rules.
+- `../_artifacts/README.md` — what the shared store is and why the tool exists.
