@@ -113,6 +113,10 @@ Each finding goes into exactly one bucket:
 
 If a finding doesn't clearly fit one bucket, say so. Let the user decide.
 
+**A bucket is a proposal, never a decision.** Placing something in "worth porting" does not mean it gets ported — it means you are recommending it and the user has not answered yet. Nothing in the report is acted on until the user says yes to that specific item in Phase 08. Write the buckets in that voice: "recommend taking X because Y", not "we will take X".
+
+**Say what each item actually does, in plain language, before naming what to do with it.** Every finding and every candidate carries one to three sentences a non-programmer could follow: what the thing does, when it fires, what changes if it lands. Not the code's own vocabulary, not the reference's headline. "Runs `df` and `du`, shows you the biggest folders, deletes build caches after you say yes, and can move big media to an external drive and leave a symlink behind" — not "disk reclamation with tiered safety". If you cannot write that sentence, you have not read enough of the reference; go read it before writing the entry.
+
 ### Phase 06 — Produce the report
 
 Write to `<root>/tmp/claude/repo-analysis-<ref-name>.md`, where `<ref-name>` is a short slug naming the reference repo(s) — e.g. `repo-analysis-cmux.md`, or `repo-analysis-hlsjs-shaka.md` for multiple references. Never write to a bare `repo-analysis.md`: each analysis gets its own file, so a later run against a different reference never overwrites an earlier report. If the exact target filename already exists (a re-run against the same reference), overwrite it. Resolve `<root>` to an absolute path via `git rev-parse --show-toplevel` in its own Bash call (fallback: absolute `pwd` if not a git repo) — every `mkdir`/`Write` path must start with `/` or it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent), then `mkdir -p <root>/tmp/claude` before writing. ALWAYS use this exact structure:
