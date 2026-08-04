@@ -183,7 +183,7 @@ Parse the reply into per-item dispositions; **unmentioned items default to skip.
 
 ### Step B — Summarize
 
-Invoke the `summary` skill to generate the unified summary of the branch's changes and session work. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session.
+Invoke the `summary` skill **with the `write` token** — `summary write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong mode here.)
 
 ### Step C — Land the branch (merge on owned, PR on collaborative)
 

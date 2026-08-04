@@ -1,11 +1,35 @@
 ---
 name: summary
-description: "Summarize the current session or branch — what was built and why — or draft a PR description from the work done."
+description: "Read a branch in and catch up on it — the diff, the commits, and the PR discussion — so you can pick up half-finished work. `summary write` instead generates the pasteable summary of what was built and why, for a PR description or the session record."
 ---
 
 # Summary
 
-Generate a concise, pasteable summary of what was built and decided this session. Combines two sources:
+Two modes. **Bare `/summary` catches you up on a branch** — it reads, holds the branch in context, and writes nothing. **`summary write` generates the summary artifact** and writes the branch-scoped file.
+
+Pick by the token, never by guessing from repo state. No token means catch-up.
+
+## Catch-up mode (bare `/summary`)
+
+For resuming work — your own from a previous session, or someone else's branch you've just checked out. Read-only: **make no file changes, write no summary file, commit nothing.**
+
+1. **Resolve the branch and base.** `git branch --show-current`, then `git symbolic-ref --short refs/remotes/origin/HEAD` (strip `origin/`; fall back to `main`).
+2. **Read the diff.** `git diff <base>...HEAD --stat` first to find the clusters, then `git diff <base>...HEAD` in full. Read the actual changes — the stat alone is not enough to answer a follow-up question about them.
+3. **Read the commits.** `git log <base>..HEAD --oneline` for how the work progressed.
+4. **Read the PR if there is one.** `gh pr list --head "$(git branch --show-current)" --json number,title,body,url,state,comments --jq '.[0]'` — the body carries acceptance criteria and the comments carry review feedback and decisions already made. No PR is fine; say so and move on.
+5. **Read the prior summary file if one exists** at the branch-scoped path resolved in Phase 01 below. It holds rationale and rejected approaches the diff can't show.
+6. **Report in chat**: what the branch does, the files and areas it touches, decisions visible in the changes, open review comments, and the working-tree state (clean, uncommitted changes, ahead/behind).
+7. **Say you're ready** for follow-up work on this branch.
+
+If the current branch is the base branch, or has no divergence from it, say there's nothing to catch up on and stop.
+
+Large diff: read the structure first, then the key files in full. Don't summarize from the stat.
+
+## Write mode (`summary write`)
+
+Everything below this line. Generate a concise, pasteable summary of what was built and decided this session, and write the file. This is the mode `wrap-up` invokes at its Phase 6.
+
+Combines two sources:
 
 - **Branch diff** — git commits and file changes since the branch diverged from the base branch (if in a git repo with changes)
 - **Session context** — what was discussed, decided, or resolved in this conversation
@@ -29,6 +53,23 @@ Added a promo code CRUD page to the admin tool.
 ```
 Refactored the settlement ledger to use D1 batch writes, eliminating the race condition that could leave balances inconsistent under concurrent rebuys.
 ```
+
+### Problem
+
+One short paragraph, between the header and the change list. What was broken, missing, or wrong — and the **root cause**, not the symptom. This is the part a reviewer needs to judge whether the approach is right, and it's the part the diff cannot show.
+
+Write it so someone who has never opened the repo can say which behavior was wrong and why. Name the real values — the actual input, the actual output, what it should have been.
+
+```
+### Problem
+
+Two players rebuying in the same tick each read the balance before either wrote it back, so the
+second write clobbered the first. A player who rebought for 500 alongside another 500 rebuy ended
+up with one 500 credited instead of two — the ledger showed 500 where it should have shown 1000.
+The writes were separate `put` calls with no transaction around them.
+```
+
+**Skip it** when there is genuinely no problem behind the change — a new feature with no prior broken behavior, a dependency bump, a docs pass. Don't manufacture one. Never write a Problem section that restates the header in different words.
 
 ### Change list
 
@@ -68,6 +109,12 @@ Resolves #42
 
 Added a CRUD page for promo codes to the admin tool.
 
+### Problem
+
+Promo codes could only be created by hand-editing rows in the D1 console, so every code shipped
+without an audit trail and a typo in `reward_id` produced a code that silently granted nothing. Three
+of the eleven live codes pointed at guard ids that no longer existed.
+
 - **AdminRPC** — four new methods plus a `withAudit` helper in `adminRpc.ts`.
 - **Promo Codes screen** — `PromoCodes.tsx`: table with Code, Type, Reward, Uses, Expires columns.
   - **GuardPicker** — fuzzy combobox over the card-guards catalog; shows `id` not display label.
@@ -77,6 +124,8 @@ Added a CRUD page for promo codes to the admin tool.
 ```
 
 ## Phases
+
+**Write mode only.** Catch-up mode is the seven steps above and ends there — it resolves no output path, prunes nothing, and writes no file.
 
 ### Phase 01 — Resolve Scope and Path
 
@@ -153,6 +202,7 @@ Other rules:
 
 - **Net diff only, not intermediate steps.** If something was added and then removed within this branch, and the net result is that it never reached the base, omit it entirely. The audience is co-workers reviewing a PR — they don't care about reversals that never shipped. Only the final state relative to the base matters.
 - Start with the header: 1–2 sentence outcome description, preceded by `Resolves #N` if a linked issue exists.
+- Then the Problem section, if the change had a problem behind it — what was broken and the root cause, with real values. Pull this from your session context and the prior summary file; the sub-agent's digest describes the diff, not the reason for it. Skip it for new features, bumps, and docs passes rather than inventing one.
 - Then the change list — group by logical area of work, not by file or commit.
 - Use sub-bullets for features with multiple distinct child components; inline small sub-items instead of nesting them.
 - For ruled-out approaches: only include if a reviewer would genuinely benefit from knowing why the alternative was rejected. If so, add it as a sub-bullet under the change it belongs to — never as a top-level bullet. Pull these from your own conversation context + the prior summary file's preserved notes; the sub-agent didn't see them. Skip entirely if the decision reflects incomplete knowledge rather than a real tradeoff.

@@ -12,6 +12,7 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 | Aspect | Owner | Applicability |
 | --- | --- | --- |
 | `architecture` | native — [ARCHITECTURE.md](ARCHITECTURE.md) | always |
+| `interface-safety` | native — [INTERFACE-SAFETY.md](INTERFACE-SAFETY.md) | always — a seam with callers exists |
 | `security` | native — [SECURITY.md](SECURITY.md) (posture; exploits stay with `review`) | always |
 | `tests` | `tdd` audit mode | always — an absent suite is the lead finding |
 | `ui` | `ui-design` critique mode (craft lenses + slop + `_domains/ui/opportunities.md` for missing/weak motion) | UI surface exists |
@@ -44,4 +45,6 @@ Each delegated owner has a **"Findings-only invocation"** section in its own `SK
 
 ## Native aspects
 
-`architecture` and `security` live here because no other skill owns them. Interactive runs use their full files including the grilling loop; survey subagents run their explore/lens pass and return card-shaped findings.
+`architecture`, `security`, and `interface-safety` live here because no other skill owns them. Interactive runs use their full files including the grilling loop; survey subagents run their explore/lens pass and return card-shaped findings.
+
+`interface-safety` asks one question the other aspects don't: can a caller do the obvious thing and get the wrong result? It is the proactive half of the footgun test that `review`'s `contracts` axis runs read-only on a diff.

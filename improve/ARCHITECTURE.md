@@ -26,6 +26,19 @@ These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongsi
 - **Deletion test.** Imagine deleting the module. If complexity vanishes, it was a pass-through. If complexity reappears across N callers, it was earning its keep.
 - **The interface is the test surface.** Callers and tests cross the same seam. If you want to test *past* the interface, the module is probably the wrong shape.
 - **One adapter = hypothetical seam. Two adapters = real seam.** Don't introduce a seam unless something actually varies across it.
+- **Zero callers means delete, not improve.** Before preserving any compatibility path — a mode flag, a prop, a wrapper, a route alias, a fallback branch — grep for real callers. None means it goes; a compat path with no caller is not a constraint, it's residue. Making it tidier is work spent on code that should not exist. This is the checkable form of the design-from-the-end-state move below.
+
+## Designing from the intended end state
+
+When reworking an existing change, the reference point is the shape the code *should* have if it had been built that way from day one — not the smallest diff from the shape history happens to have produced. Adapted from jnsahaj/skills `zero-tech-debt`.
+
+1. **State the intended end state** in one or two sentences before touching anything.
+2. **Grep for real callers** of every compat path, per the rule above. Delete what has none.
+3. **Reshape around the final surface.** One clear flow beats a flow plus mode flags. Split only where a real boundary appears — separate state, separate layout, separate controls, separate domain commands.
+4. **Move shared rules to one owner.** Feature flags, permissions, route gating, URL state, command naming — these duplicate across pages and hide inside view components. One place each.
+5. **Verify the intended flow**, including the assumptions the deletions invalidated — navigation, permissions, persisted state.
+
+Bounds: don't invent a generic framework for one feature, keep the rework scoped to what makes the final shape coherent, and prefer names describing product intent over implementation history.
 
 ## Designing for testability
 

@@ -28,7 +28,7 @@ The review engine — what runs against a **single target** (a working tree, a b
 - Else if working tree is clean: find the base branch (`main` / `master`), compute `git merge-base HEAD origin/main`, then diff and log against that.
 - If no changes anywhere (clean tree, up to date with base — nothing to diff): **offer Repo mode instead of stopping.** Ask in plain chat — *"Nothing to review as a diff — run a full-repo review? It's heavy: every axis across the whole tree."* On an explicit yes, go to **Phase 01r**; otherwise say there's nothing to review and stop. **Never auto-run the full scan** — it always waits on a yes.
 
-**Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched nine parallel sub-agents.
+**Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched ten parallel sub-agents.
 
 ### Phase 01a — Confirm the checkout is at the branch head
 
@@ -136,6 +136,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/architecture.md`](axes/architecture.md) — architecture fit
 - [`axes/spec.md`](axes/spec.md) — spec compliance (consumes the Phase 03 spec source + `IS_DRAFT`)
 - [`axes/negative-space.md`](axes/negative-space.md) — unmet obligations the diff itself creates
+- [`axes/slop.md`](axes/slop.md) — structure that adds no meaning (comment/helper/type/memo/effect slop, compatibility cruft, diff churn)
 - [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs (**gated** — most diffs skip it; emits *flags* verified in Phase 04b, not findings)
 
 Plus one always-on, **non-scored** sub-agent that does not live in `axes/` (it produces narrative, not scored issues, and is never opted out):
@@ -157,7 +158,7 @@ The **best-practice** lens produces *flags*, not findings — it has no doc acce
 
 ### Phase 05 — Score Every Issue
 
-For each issue from any of the nine scored lenses (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
+For each issue from any of the ten scored lenses (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
 
 ### Phase 06 — Filter
 
@@ -246,7 +247,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 
 - **The top line is the summary sentence.** Nothing — no header, no metadata — sits above it.
 - **`## Issues (N found)`** — N is the total across all axes. Draft "Outstanding work" gaps are *not* counted in N.
-- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Security`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Best-practice`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
+- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Security`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Slop`, `Best-practice`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
 - **Numbering is continuous across sections** — 1…N down the whole report, never restarting at 1 per axis. (Above: Spec is 1, Bugs are 2–3, Architecture are 4–5, Contracts is 6.)
 - **Small lists may stay flat.** When N is small (≈≤4) and the findings cluster in one or two axes, a single flat ordered list with no `### Axis` headers is fine. Numbering is 1…N either way.
 - **Never include a "Dismissed", "Considered and dismissed", or "Dismissed during reconciliation" section** — in any form. Findings that don't survive scoring are simply absent. The report is the surviving issues and nothing else. (Repo mode is the one exception, and it still never puts a dismissed section *in the report* — its cross-run considered-and-rejected data lives in the separate ledger file described in Phase 01r; the report body remains surviving issues only.)
@@ -287,6 +288,7 @@ Every issue is tagged `[<axis>(/<subtype>) · <severity>]` — axis (with an opt
 - `contracts` — from the Code comments and contracts agent
 - `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit.
 - `negative-space` — from the Negative-space lens (an unmet obligation the diff creates: un-updated caller, unhandled failure path, missing test/validation/observability, unflagged breaking change or migration). Always a design call — surface, never auto-fix; bounded to obligations the diff itself creates. Use **Fix (design call):** framing.
+- `slop` — from the Code slop lens (structure that adds no meaning: comment/helper/type/memo/effect slop, compatibility cruft, diff churn). Never blocking — slop doesn't make behavior wrong. Most land `low`.
 - `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.
 - `<platform>` (e.g. `apple`) — from the conditional platform lens (Phase 04), when the diff's platform has a `_platforms/<platform>/review.md`. Platform-idiom findings with a concrete cost (deprecation, correctness, accessibility, perf). Scored like any other axis; group under a `### <Platform>` section.
 - `<domain>` (e.g. `game`) — from the conditional domain lens (Phase 04), when a domain marker is in scope and `_domains/<domain>/review.md` exists. Mode-specific findings (game-feel, readability, difficulty) with a concrete cost. Scored like any other axis; group under a `### <Domain>` section.

@@ -22,4 +22,23 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Middle Man** — a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest** — a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
+## The reuse rule — search before accepting anything new
+
+The smell baseline above catches duplication *inside the diff*. This rule catches the more common case: the diff writes something the repo already has, somewhere the diff doesn't touch.
+
+**Before accepting any new helper, component, hook, utility, server action, route pattern, error shape, or styling primitive, grep the repo for an existing one.** A finding here names the existing thing and its path. Without that search, "you could have reused something" is a guess — don't file it.
+
+- Prefer extending the existing flow, even when it needs a small change, over a parallel implementation beside it.
+- If the diff creates a *shared* helper, check it has real reuse. Private logic extracted once and given a vague name is not a shared helper.
+- Errors, loading states, and result shapes should use whatever pattern the repo already standardized on. A bespoke success/failure type next to an existing one is a finding.
+- File placement should match the domain and its neighbours; user-facing copy should match the tone already in the product.
+
+**Red flags — prompts to go look, not automatic findings:**
+
+- A new top-level `utils`, `helpers`, `shared`, `common`, or `misc` module.
+- A new custom primitive where the product already ships a component or pattern for it.
+- Naming that describes the implementation rather than what the thing does, where the repo's siblings do the opposite.
+
+Overlap with the `slop` axis: "this wrapper adds no meaning" is slop; "this already exists at `path/x.ts`" is this rule. Don't double-report.
+
 Axis tag: `standards`.

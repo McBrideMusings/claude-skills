@@ -15,6 +15,7 @@ Resolve in this order and stop at the first that answers:
    | --- | --- |
    | `*.swift`, `*.xcodeproj`, `*.xcworkspace`, `Package.swift`, `Info.plist` | `apple` |
    | `package.json` with `react` / `vue` / `svelte` / `next` / `vite`, or `*.tsx`/`*.jsx` | `web` |
+   | `package.json` with `react` or `next` (dep), or `*.tsx`/`*.jsx` in scope | `react` (also implies `web` — load both) |
    | `package.json` with `three` (dep), or `import ... from 'three'` in scope | `threejs` (also implies `web` — load both) |
    | `wrangler.toml`, `wrangler.jsonc` | `cloudflare-workers` |
    | `pyproject.toml`, `setup.py`, `*.py` | `python` |

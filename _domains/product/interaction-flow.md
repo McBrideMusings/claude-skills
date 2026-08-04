@@ -64,6 +64,35 @@ Breadboarding is the default; the rest serve particular situations.
 | **Service blueprinting** | Flow spans channels or involves backstage operations (staff, systems, third parties). |
 | **Critical User Journeys** | Deciding which flow to work on — the minimal path to core value (high-traffic, high-revenue, metric-critical). |
 | **Flow diagram** (`graph LR`) | Orientation only — flow through time reads left to right. The text breadboard stays the primary artefact; the diagram loses conditional detail. |
+| **Current vs desired flow trees** | Changing a flow that already exists in shipped code, where the work has to end up as an implementation plan. See below. |
+
+### Current vs desired flow trees
+
+Breadboarding describes the flow you are designing. When the flow already exists and the job is to change it, two trees make the delta visible — and give the change a shape an engineer can act on without the plan collapsing into line numbers. Adapted from jnsahaj/skills `ux-flow-plan`.
+
+Restate the goal in the user's own product words first. Then build both trees, current before desired:
+
+```text
+Current flow
+User action
+└─ System behavior
+   └─ Architectural layer that owns it
+      └─ Function / file anchor
+
+Desired flow
+User action
+└─ System behavior
+   └─ New or changed layer
+      └─ Function / file anchor
+```
+
+Then name the boundary decisions the desired tree implies — which layer detects the condition, which owns the side effects, which updates the UI, which persists state. These are the real decisions; the trees exist to surface them.
+
+**The ordering rule is the whole point: anchors attach after the tree settles, never before.** Function names and file paths go in as leaves once the flow is agreed, and they stay leaves — the narrative is the flow, not the code. Starting from the code produces a plan shaped like the existing implementation, which is exactly the thing being changed.
+
+Close with a short decision list: the recommended structure, what was rejected, and the open questions. Say whether the feature is deliberately coupled to an existing concept or deliberately independent of it — that one is load-bearing and easy to leave implicit.
+
+Keep the trees in plain product and architecture language. Reach for framework jargon only where it names a real boundary.
 
 ## Working the layer
 

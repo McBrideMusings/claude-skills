@@ -1,13 +1,13 @@
 ---
 name: review
-description: "The single entry point for reviewing code: a nine-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context. Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "The single entry point for reviewing code: a ten-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context. Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Review
 
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs. `review` is the **single entry point** for review — it routes by context (your working tree, a branch, one PR, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
 
-The review engine itself — the nine-axis dispatch, scoring, and report format — lives in [REVIEW-CORE.md](REVIEW-CORE.md). This file is the router: it resolves ownership, picks a branch, then hands off to REVIEW-CORE.md (self-review) or [PR-COMMENTS.md](PR-COMMENTS.md) (address my PR's unresolved comments). Load the branch file only once you've routed to it — that keeps context small.
+The review engine itself — the ten-axis dispatch, scoring, and report format — lives in [REVIEW-CORE.md](REVIEW-CORE.md). This file is the router: it resolves ownership, picks a branch, then hands off to REVIEW-CORE.md (self-review) or [PR-COMMENTS.md](PR-COMMENTS.md) (address my PR's unresolved comments). Load the branch file only once you've routed to it — that keeps context small.
 
 ## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a review
 

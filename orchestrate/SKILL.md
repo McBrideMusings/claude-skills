@@ -189,6 +189,22 @@ Per ready issue, in order:
 
 Record `slug → issue → handle → worktree → branch` as you go. Step 7 needs the handle.
 
+**Naming `<slug>` and `<branch>`.** Both come from the issue title, same rules (the branch is `<slug>`; prefix it per the repo's convention if it has one). Adapted from jnsahaj/skills `ga`.
+
+- Lowercase kebab-case, **3–4 words maximum**. These names appear in worktree paths, tmux session names, and PR lists — long ones are unreadable everywhere they show up.
+- Prefix `fix-` when the issue is a bug. Nothing else gets a prefix.
+- Abbreviate aggressively: `btn auth cfg nav perf err msg req res fmt val tmpl env deps`.
+
+| Issue title | Slug |
+|---|---|
+| "the login button doesn't work on mobile" | `fix-mobile-login-btn` |
+| "add a dark mode toggle to settings" | `dark-mode-toggle` |
+| "search results are slow when filtering by date" | `fix-search-date-perf` |
+| "implement rate limiting on the API" | `api-rate-limit` |
+| "add webhook support for deployments" | `deploy-webhooks` |
+
+Slugs must be unique within a run — on a collision, append the issue number rather than lengthening the name.
+
 **Completion criterion:** every dispatched worker is confirmed working by the transport's own check — not by the dispatch call returning.
 
 ### 4. Arm the wake signal — `wake()`
