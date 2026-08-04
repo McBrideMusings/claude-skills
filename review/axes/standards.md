@@ -22,6 +22,21 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 - **Middle Man** — a class or function that mostly just delegates onward. → cut it, call the real target direct.
 - **Refused Bequest** — a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
 
+## Names and comments are prose — the word rules
+
+Mysterious Name above catches the name a reader can't decode. These catch the names that read fine and are still wrong. Same bind as the smells: judgement calls, CLAUDE.md overrides, skip anything tooling enforces. Adapted from bholmesdev/skills `simplify`, which applies Orwell's rules from "Politics and the English Language" to code.
+
+- **One word per concept, one concept per word.** A repo keeps a vocabulary. If `sync` names "pull remote changes," it cannot also name "flush edits to disk" — rename one. A finding names both uses and their `file:line`; a word used twice for two jobs is the whole evidence.
+- **Cut words the context already carries.** A name repeating what its module, file, or type already says is padding: inside `workspaceWatcher.ts`, `startNativeWorkspaceWatcher` says nothing `watchWorkspace` doesn't.
+- **A compound name is usually a hedge.** A long stacked name is the author specifying instead of describing — `lastObservedDiskContent` is a specification to defend; `baseline` is a name. When a name grows a third qualifier, the concept underneath is usually unclear.
+- **Prefer the short physical word to the long abstract one.** `prune`, `run`, `watch`, `drop`, `walk` over `reconcile`, `coalesce`, `normalize`, `reconciliation`. Latinate vocabulary sounds technical while saying less; the Anglo-Saxon word is shorter and names something that happens.
+  - **Carve-out, and it is narrow:** the long word stands only when it is *this project's* own vocabulary — named in `CLAUDE.md` or `docs/CONTEXT.md`, or already used as a domain term across existing code. Point at where. "It's a normal technical word" does not clear it; `normalize` survives in a repo whose docs define normalization, not in a repo that merely uses it because it sounded right.
+
+## Shape rules
+
+- **Derivability — don't pass or store what's already computable.** If a value can be derived from values already in scope, it should not also be a parameter, a field, or stored state. A function taking both `content` and an `isDirty` flag that is always `content !== baseline` should take one. Removing derivable state usually simplifies the signature, the type, and the control flow in one move. Platform-neutral: it applies to a React component's state, a Swift initializer taking `items` and `count`, and a Go struct caching `total` beside the slice it sums.
+- **Inverted pyramid within a file.** Exported and significant functions go at the top; private helpers below them. Don't make a reader scroll past six helpers to reach the function the file is named after.
+
 ## The reuse rule — search before accepting anything new
 
 The smell baseline above catches duplication *inside the diff*. This rule catches the more common case: the diff writes something the repo already has, somewhere the diff doesn't touch.

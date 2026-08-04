@@ -48,6 +48,9 @@ Same contract as `_domains/ui/design.md`.
 - **Naming a motion effect** — the user describes an effect loosely and wants the term ("the bouncy
   thing when a popover opens"): answer from `_domains/ui/vocabulary.md`. Lead with the term; add a
   competing alternate only if one genuinely applies. Naming, not building.
+- **Writing alt text for an image** — in a component, a doc, a README, a slide: answer from
+  `_domains/ui/alt-text.md`. Return the line itself, nothing around it. Writing the description, not
+  auditing a page's accessibility.
 
 ## Findings-only invocation
 

@@ -44,7 +44,6 @@ stronger, not weaker.
 
 ## State ownership and prop plumbing
 
-- **Redundant state** — a value stored in state that is already derivable from props or other state.
 - **Prop plumbing through components that don't use the value.** Look for whether the intermediate
   component should take `children` instead, or whether the state is owned too high.
 - **Two backing entities presented as one product concept.** When the UI treats them as one thing, pass one
