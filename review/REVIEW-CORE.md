@@ -73,7 +73,15 @@ Moving the user's worktree is a git state change on their checkout, so it waits 
 
 Reached only via explicit `review repo` or an accepted offer above. The target is the **whole codebase on the current branch**, reviewed as it stands — there is no diff.
 
-- **Scope** = all tracked files: `git ls-files`. If the tree is large enough that one pass can't hold it, **don't silently sample** — say so and offer to scope by path/subdir (`review repo <path>`), per the no-narrower-menu rule's "genuinely too large" carve-out. A path argument after `repo` narrows scope to that subtree.
+- **Scope** = all tracked files: `git ls-files`. A path argument after `repo` narrows scope to that subtree.
+
+- **Slice first. One pass over a whole codebase is not the default and never was tractable.** Before Phase 04, partition the scope into **coherent subsystem slices** — by feature area or bounded context, following the repo's own structure (top-level packages/apps, then domain folders), not by file count or alphabet. Name each slice for what it *is* (`league-domain`, `gems-store`, `migrations-infra`), print the slice list, and run the full Phase 04→06 lens set **once per slice**. Findings from every slice merge into one report.
+
+  Aim for slices a lens can actually hold — roughly a subsystem's worth, not a whole app. Observed: a real repo review was hand-split into ten slices of 600–1,800 words apiece, producing 41 findings, because it could not be done in one pass. Doing that by hand is the failure this rule removes.
+
+  **Do not silently sample.** If a slice is still too big after partitioning, say so and narrow it explicitly — never review part of a slice and report as though you covered it.
+
+  Under the workflow transport this is a `pipeline()` over slices; under the session transport it is one lens fan-out per slice, sequentially. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
 - **Gating is off.** Every scored lens runs, including the normally-gated `security` and `best-practice` lenses — forward "repo mode: gating disabled, review the code as it stands (not a diff)" into each Phase 04 sub-agent so they read whole files rather than hunting for changed lines. `best-practice` still routes its flags through Phase 04b verification.
 - **History/blame lens** still works (it reads `git blame`/`log` on the files in scope). The **Spec** lens has no single diff to check against — point it at the repo's PRD/spec from Phase 03 and let it report drift, or skip if there's no spec.
 - Everything downstream (Phase 05 scoring, Phase 06 filter, Phase 07 report) is unchanged. Expect a larger report; the ≥75 filter still applies.
@@ -160,15 +168,29 @@ Keep issues scoring **≥ 75**. Drop the rest.
 ### Phase 07 — Write the Report
 
 - Filename: `/Users/pierce/.claude-tmp/claude-review-YYYY-MM-DD-HHMMSS.md` using current local time. No `mkdir` needed — `/Users/pierce/.claude-tmp/` is a persistent directory. No pruning needed; files are tiny.
-- Write the review using the format below.
+- Write the review using the format below. **Carry the coverage line** — which lenses ran, which were gated off and why, which failed. Track this from Phase 04 onward; it cannot be reconstructed afterwards.
 - Print the full review body to chat, then follow with a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Review written to /Users/pierce/.claude-tmp/claude-review-2026-05-05-143022.md`
 
 ## File format
 
-The report **opens with a single high-level summary sentence** — no `# Review` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Everything after it is the issue list, grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
+The report **opens with a single high-level summary sentence** — no `# Review` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Then the **coverage line**, then the issue list grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
+
+### The coverage line — mandatory, every report, including clean ones
+
+One line naming **which lenses ran, which were gated off, and which failed**. Without it, a lens that never ran is indistinguishable from a lens that found nothing, and the report reads as a clean bill of health for an axis nobody looked at.
+
+```
+Lenses: standards, bug, history, contracts, architecture, spec, negative-space · gated off: security, best-practice · failed: none
+```
+
+- **Gated off** — name every gated lens that did not run and, in three words, why (`security: no auth/crypto/input surface`). Evidence this matters: across 367 findings in 2.5 months of use, `security` produced **one**, and no report says whether that is a clean record or a gate that never opened.
+- **Failed** — any lens whose sub-agent errored or returned nothing. Never fold a dead lens into silence.
+- **Slices (repo mode)** — append the slice names so a reader can see the partition the review actually covered.
 
 ```
 Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord button in prod; the other five (architecture, contracts, best-practice) are non-blocking quality notes worth folding in but break nothing.
+
+Lenses: standards, bug, history, contracts, architecture, spec, negative-space · gated off: security (no auth/crypto/input surface), best-practice (no dependency changes) · failed: none
 
 ## Outstanding work (draft PR)
 (only when IS_DRAFT=true and the Spec agent produced `spec/missing-partial` entries — expected gaps, not issues. Draft entry style: Gap, not Why/Fix. No severity, not counted in the Issues total. Omit this whole section when not a draft.)

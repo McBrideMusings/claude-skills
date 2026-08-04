@@ -21,6 +21,15 @@ It covers **every** decision point, not just the ones spelled out below. Non-exh
 
 **Self-check before every question in a review.** If you are about to open a selector, stop — that is this rule firing. Rewrite the question as chat text and send that instead.
 
+### Where it has actually broken — check these two by name
+
+The rule was violated twice in ~120 real passes, both at points the prose above already covers but nobody recognised in the moment. Treat these as named tripwires:
+
+1. **"The diff hasn't changed since I last reviewed this — what do you want from this pass?"** A re-review of an unchanged diff feels like a fresh routing decision, so it invites a selector. It is a review question, asked after `/review`, and it is banned. Say it in chat: *"Diff is unchanged since the last pass on #1188. Type `again` for a fresh pass, `axes <names>` to re-run specific lenses, or tell me what changed in your thinking."*
+2. **"How much of this should I apply now vs hand back?"** Scope-of-fix at the end of a pass is *exactly* the end-of-pass disposition the rule enumerates. Per-finding typed answers, always: *"1 fix, 2 post, 3 skip."*
+
+Both fired mid-pass in the work repo. The lesson is not that the rule was unclear — it is that a selector looks reasonable precisely when the question feels like routing rather than review. **From `/review` until the report is written, there is no such thing as a routing question that escapes this rule.**
+
 ## RULE 1 — effort NEVER decides what gets fixed
 
 **How much work a fix is — its size, its difficulty, how many files it touches, how long it would "take" — is banned as a reason to skip it, defer it, downgrade it, or recommend against it.** This binds everywhere in a review pass: scoring a reviewer's comment ([PR-COMMENTS.md](PR-COMMENTS.md) Phase 05), the end-of-pass fix/post/skip disposition, the blocking verdict, and every subagent spawned during the pass.
