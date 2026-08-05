@@ -50,7 +50,7 @@ gh project item-list <N> --owner <owner> --format json --limit 100
 
 On auth/repo-not-found errors: report and stop.
 
-**Exclude wayfinder tickets.** Drop any issue carrying a `wayfinder:*` label (the map or its child tickets) from the candidate set — they're a separate planning surface owned by `wayfinder`, not implementable backlog. `implement` discovers through this skill, so this filter covers it too.
+**Exclude questions.** Drop any issue carrying the `question` label from the candidate set — a question is a decision to be made, owned by `iron-out`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
 
 **Docs** (if in local repo): read `docs/PRD.md` (what the project is) and `docs/roadmap.md` (Now / Next / Later / Deferred). If neither default path exists, glob `**/PRD.md` and `**/roadmap.md` once before giving up. Use whichever exist; if both, use both as project-phase inputs.
 

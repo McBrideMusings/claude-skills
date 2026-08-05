@@ -10,7 +10,7 @@ Take the current conversation and codebase understanding and produce a **spec** 
 
 **Do NOT interview the user.** Just synthesize what's already been discussed. Interviewing is `grill-me`'s job; by the time you reach `to-spec`, that thinking is done and lives in the conversation.
 
-Normal place in the pipeline: `grill-me` → **`to-spec`** → `to-tickets` → `implement`. (`wayfinder` also exits here for a big effort.)
+Normal place in the pipeline: `grill-me` → **`to-spec`** → `to-tickets` → `implement`. (`iron-out` also exits here once a foggy effort's questions are all answered; its `to-tickets` output lands back on the same milestone.)
 
 ## Stance
 

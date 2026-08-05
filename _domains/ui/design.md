@@ -1,6 +1,6 @@
 # UI design axis
 
-Read by **planning** skills (`ui-design`, `grill-me`, `wayfinder`) when the domain is `ui`. Design-time
+Read by **planning** skills (`ui-design`, `grill-me`, `iron-out`) when the domain is `ui`. Design-time
 critique lenses for interactive interfaces — not a code engine. Loaded on top of whatever the planning
 skill already does, the same way the engines layer platform + domain.
 

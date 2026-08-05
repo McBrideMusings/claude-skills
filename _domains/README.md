@@ -36,7 +36,7 @@ loading the platform axis, each checks the domain marker and — if present — 
 `_domains/<domain>/<engine>.md` and applies it on top.
 
 The store **also feeds planning skills**, not just engines. A `design.md` cell holds design-time
-critique lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `wayfinder`, and
+critique lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `iron-out`, and
 `game-dev`'s design phase read it optionally when the domain is in scope. Design cells name structure
 and tradeoffs — they never deliver a fun/good verdict.
 
