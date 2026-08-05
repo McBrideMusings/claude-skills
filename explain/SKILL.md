@@ -42,7 +42,7 @@ Sometimes a programming concept is better explained from world knowledge than fr
 2. **No hallucinated code (B-mode).** Never describe a mechanism you haven't actually read. Every concrete code claim carries a `file:line` tag rendered next to the diagram node / step / statement. The doc is a **map back into the code**, not a plausible story. If you didn't open it, you can't draw it.
 3. **Semantic color.** Color *encodes meaning* (data / control-flow / happy-path / danger / caution), defined once in the `explainer` kind — never decorative. The house look is fixed: don't override the role tokens. See `../_artifacts/CONTRACT.md`.
 4. **Static-first.** Lightweight inline vanilla JS is allowed only where a dense section earns it (collapse/expand, tabbed concept↔code). No JS for anything that plain HTML can do.
-5. **Local file only.** The explainer is written to disk and opened with `open <absolute-path>`. Never publish it anywhere.
+5. **Local file only, default browser.** The explainer is written to disk and opened with bare `open <absolute-path>` — never with `-a <app>`, never via a browser-automation tool. Never publish it anywhere.
 
 ## Workflow
 
@@ -90,7 +90,9 @@ Write the fragment to `<repo>/tmp/claude/artifacts/<slug>.body.html`, then build
 
 **Screenshot it and look at it.** A font falling back, an overlapping diagram, a blank section — none of that is visible in the source, and the path alone pushes the discovery onto the user. Check both themes; the file ships with a toggle.
 
-Then launch it: `open <path>` on macOS. Emit the path on its own line, no trailing punctuation, so it stays ⌘-clickable.
+Then launch it with **bare `open <absolute-path>`** and nothing else. No `-a`, no `open -a Safari`, no `open -a "Google Chrome"`, no AppleScript, no browser-automation tool — those override the user's default browser and drop the explainer in the wrong app. Bare `open` hands the file to whichever browser the user has actually set as their handler; naming a browser is always a bug here, even if a specific one seems safer.
+
+Emit the path on its own line, no trailing punctuation, so it stays ⌘-clickable.
 
 Give the headline in chat too — two or three sentences of what the explainer says — so the user isn't forced into the browser to learn the answer. The file carries the depth; chat carries the gist.
 
