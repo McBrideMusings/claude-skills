@@ -34,6 +34,8 @@ Selector forms are shared with `iterate` — one table, in [../iterate/SELECTORS
 
 **Dependencies** are a `Blocked by #<n>` line in the body (one per blocker), plus GitHub's native `blockedBy`. An item is unblocked when every blocker is closed.
 
+**Free text that isn't a selector is a loose idea, not a scope** — `iron-out a 3D storefront browser for my Plex library`. There is no backlog to scan yet, so go to [Charting a foggy effort](#charting-a-foggy-effort) first; the loop runs afterwards over the milestone it creates.
+
 ## Charting a foggy effort
 
 When the user arrives with an idea rather than a backlog — a greenfield build, a huge feature, a migration — there is nothing to scan yet. Chart it first. Only reach for this when the effort is too big to hold in one session; a smaller idea goes straight to `/grill-me` → `/to-spec`.
