@@ -23,6 +23,8 @@ The trade this makes, stated plainly: an issue that turns out to be ambiguous co
 
 Three, differing in where a worker runs and what survives.
 
+These are the same targets as [../delegate/TARGETS.md](../delegate/TARGETS.md) — `subagent` is that ladder's Claude agent, `herdr` is its herdr tab — with two differences that belong to swarms only: every worker gets a **git worktree**, and there is a fourth surface, `workflow`, which exists because a script can pace a whole round. Terminal.app is absent on purpose: a Terminal window holds no agent herdr can report a status for, so nothing here could read a worker's state.
+
 | | **herdr** | **subagent** | **workflow** |
 |---|---|---|---|
 | Worker runs in | its own herdr tab, a real `claude`/`codex` process | an `Agent` call in this session | an `agent()` call inside a workflow script |

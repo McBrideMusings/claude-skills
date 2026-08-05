@@ -6,12 +6,19 @@
 # and never name a specific vendor:
 #
 #   delegate agent                       print the resolved agent (codex|reasonix|claude), or fail
+#   delegate transport                   print the transport `exec` would use, and why
 #   delegate check                       is the resolved agent authed & reachable? (exit 0/1)
 #   delegate exec [--headless] <prompt-file> <outfile>
-#                                          run the agent non-interactively with the prompt; output to <outfile>.
-#                                          default: in a visible Terminal.app window you can watch.
-#                                          --headless: no window — run as a plain subprocess (backend-only,
+#                                          run the agent with the prompt; output to <outfile>.
+#                                          default: in whichever watchable surface this session lives in —
+#                                          a herdr tab when we're inside herdr, else a Terminal.app window.
+#                                          --headless: no surface — run as a plain subprocess (backend-only,
 #                                          for cron / SSH / no-GUI where AppleScript can't open a window).
+#
+# Transport is resolved, never asked: inside herdr (HERDR_ENV=1) with a vendor herdr can
+# start, the delegate is a LIVE agent in its own tab you can take over; otherwise it is a
+# one-shot piped into a Terminal.app window. $DELEGATE_TRANSPORT=terminal|herdr forces one.
+# Either way the caller's contract is identical — prompt in a file, answer in <outfile>.
 #
 # Selection: $CLAUDE_DELEGATE_AGENT, set per-profile in settings.local.json
 # (reasonix on personal, codex on work; claude for Claude-to-Claude). A repo can
@@ -39,6 +46,54 @@ resolve_agent() {
 }
 
 cmd_agent() { resolve_agent; }
+
+# The herdr `agent start --kind` value for a vendor, or empty if herdr cannot start it.
+# reasonix is absent from herdr's fixed --kind enum, so a reasonix delegate can only ever
+# run in Terminal.app — that is a herdr limitation, not a preference.
+herdr_kind() {
+  case "$1" in
+    claude) printf 'claude\n' ;;
+    codex)  printf 'codex\n' ;;
+    *)      printf '' ;;
+  esac
+}
+
+# Which surface `exec` will run the delegate in. Prints "<transport>\t<reason>".
+resolve_transport() {
+  local a="$1" forced="${DELEGATE_TRANSPORT:-}" kind
+  kind="$(herdr_kind "$a")"
+
+  if [ -n "$forced" ]; then
+    case "$forced" in
+      terminal) printf 'terminal\tforced by DELEGATE_TRANSPORT\n'; return 0 ;;
+      herdr)
+        if [ "${HERDR_ENV:-}" != "1" ]; then
+          echo "delegate: DELEGATE_TRANSPORT=herdr but this session is not inside herdr (HERDR_ENV != 1)" >&2; return 1
+        fi
+        if [ -z "$kind" ]; then
+          echo "delegate: DELEGATE_TRANSPORT=herdr but '$a' is not in herdr's --kind enum" >&2; return 1
+        fi
+        printf 'herdr\tforced by DELEGATE_TRANSPORT\n'; return 0 ;;
+      *) echo "delegate: unknown DELEGATE_TRANSPORT '$forced' (expected terminal|herdr)" >&2; return 1 ;;
+    esac
+  fi
+
+  if [ "${HERDR_ENV:-}" != "1" ]; then
+    printf 'terminal\tnot inside herdr\n'
+  elif [ -z "$kind" ]; then
+    printf "terminal\tinside herdr, but '%s' is not in herdr's --kind enum\n" "$a"
+  elif ! command -v herdr >/dev/null 2>&1; then
+    printf 'terminal\tinside herdr, but the herdr CLI is not on PATH\n'
+  else
+    printf 'herdr\tinside herdr and herdr can start %s\n' "$kind"
+  fi
+}
+
+cmd_transport() {
+  local a; a="$(resolve_agent)" || return 1
+  local r; r="$(resolve_transport "$a")" || return 1
+  printf '%s (%s)\n' "$(printf '%s' "$r" | cut -f1)" "$(printf '%s' "$r" | cut -f2)"
+}
 
 cmd_check() {
   local a out; a="$(resolve_agent)" || return 1
@@ -80,6 +135,35 @@ cmd_exec() {
   fi
   [ -f "$promptfile" ] || { echo "delegate: prompt file not found: $promptfile" >&2; return 1; }
 
+  # --headless has no surface to pick, so it never consults the transport resolver.
+  local transport reason
+  if [ "$headless" -eq 1 ]; then
+    transport="terminal"; reason="--headless"
+  else
+    local r; r="$(resolve_transport "$a")" || return 1
+    transport="$(printf '%s' "$r" | cut -f1)"; reason="$(printf '%s' "$r" | cut -f2)"
+  fi
+  echo "delegate: $a via $transport ($reason)"
+
+  local rc=0
+
+  if [ "$transport" = "herdr" ]; then
+    # A live interactive agent in its own tab — the user can watch it, type at it, and
+    # keep it after this session ends. It is the agent's own TUI, so there are no
+    # -p/exec flags here; `herdr-agent` tells it to write <outfile> itself.
+    local -a iargs=()
+    case "$a" in
+      claude) iargs=(--permission-mode "${CLAUDE_DELEGATE_PERMISSION_MODE:-acceptEdits}")
+              [ -n "${CLAUDE_DELEGATE_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DELEGATE_MODEL") ;;
+      codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
+    esac
+    "$HOME/.claude/skills/delegate/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
+    return "$rc"
+  fi
+
+  # Terminal.app: a one-shot piped into the vendor's non-interactive mode. delegate owns
+  # *which vendor command runs*; the `terminal` skill owns the window, the sentinel and
+  # polling, the cold-start guard, and the window-left-open behavior.
   local runner
   case "$a" in
     codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
@@ -87,15 +171,10 @@ cmd_exec() {
     claude)   runner="claude -p --permission-mode ${CLAUDE_DELEGATE_PERMISSION_MODE:-acceptEdits}${CLAUDE_DELEGATE_MODEL:+ --model $CLAUDE_DELEGATE_MODEL}" ;; # print mode; prompt on stdin; edits auto-approved, other tools per the user's own allowlist rules
   esac
 
-  # delegate owns *which vendor command runs*; the `terminal` skill owns the transport
-  # (the visible Terminal.app window, the sentinel/polling, the cold-start guard, the
-  # window-left-open behavior). Write the vendor invocation as a one-shot payload and
-  # hand it to `terminal run`. --headless passes straight through for cron/SSH.
   local terminal="$HOME/.claude/skills/terminal/terminal"
   local payload; payload="$(mktemp -t delegate-payload.XXXXXX)"
   printf 'cat %q | %s\n' "$promptfile" "$runner" > "$payload"
 
-  local rc=0
   if [ "$headless" -eq 1 ]; then
     "$terminal" run --headless "$payload" "$outfile" || rc=$?
   else
@@ -110,8 +189,9 @@ cmd_exec() {
 }
 
 case "${1:-}" in
-  agent) cmd_agent ;;
-  check) cmd_check ;;
-  exec)  shift; cmd_exec "$@" ;;
-  *) echo "usage: delegate {agent|check|exec [--headless] <prompt-file> <outfile>}" >&2; exit 2 ;;
+  agent)     cmd_agent ;;
+  transport) cmd_transport ;;
+  check)     cmd_check ;;
+  exec)      shift; cmd_exec "$@" ;;
+  *) echo "usage: delegate {agent|transport|check|exec [--headless] <prompt-file> <outfile>}" >&2; exit 2 ;;
 esac

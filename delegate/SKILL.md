@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: "Reference for the delegate router used by `review dual` and `implement delegate`: resolver verbs (agent/check/exec), CLAUDE_DELEGATE_AGENT vendor selection (Codex, Reasonix/DeepSeek, or another Claude), and auth health-gating. Read when wiring, debugging, or extending any delegated work; the visible Terminal.app transport is the separate `terminal` skill."
+description: "Owner of the delegation-target ladder every skill picks from — Claude agent by default, escalating to a live herdr tab or a Terminal.app window — plus the router behind it: resolver verbs (agent/transport/check/exec), CLAUDE_DELEGATE_AGENT vendor selection (Codex, Reasonix/DeepSeek, or another Claude), and auth health-gating. Read when wiring, debugging, or extending any delegated work."
 ---
 
 # Delegation backend
@@ -15,18 +15,15 @@ How the delegate flavors — `review dual` (the delegate **reviews** the same di
 
 > The smoke test showed `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.
 
-Two layers, kept separate on purpose:
-
-1. **The `delegate` resolver** (`delegate` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind three verbs.
-2. **The transport** — the visible Terminal.app window the agent runs in. This is **not** delegate's code: it's the separate `terminal` skill, which delegate's `exec` verb calls. Skills never touch either layer directly except through the three verbs.
-
-> **Three ways to hand work to a second agent — pick by what you want to watch and bill:**
+> ## Which target, before any of this
 >
-> 1. **This router** (`CLAUDE_DELEGATE_AGENT=codex|reasonix|claude`) — a separate agent process in a watchable Terminal.app window (or `--headless`), output to a file. Cross-vendor AND Claude-to-Claude: `claude` runs `claude -p` non-interactively, model picked by `CLAUDE_DELEGATE_MODEL` (e.g. a cheap Sonnet/Haiku implementer, or Opus for heavy work).
-> 2. **The Agent tool** with a model override — an in-session Claude subagent, no window, no resolver. Cheapest and tightest for a plan-follower that needs no independent terminal.
-> 3. **A Herdr pane** (when running inside Herdr — `HERDR_ENV=1`) — an *interactive* Claude the user can take over: `herdr pane split` + `herdr agent start … --kind claude -- --model <model>` + `herdr agent prompt`. See the `herdr` skill. Pick this when the delegate should outlive the orchestrating session or the user wants to talk to it directly.
->
-> `implement delegate` offers the router and the Agent tool as its implementer choices; the Herdr path is for sessions already inside Herdr.
+> **[TARGETS.md](TARGETS.md) owns the choice** of *whether* to reach for this router at all: the default for any delegation is the in-session **Claude `Agent` tool**, and only cross-vendor work, work the user must watch or take over, or work that must outlive this session escalates to a separate process. Read it first; this file is only about what happens once that escalation is warranted.
+
+Three layers, kept separate on purpose:
+
+1. **The `delegate` resolver** (`delegate` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind four verbs.
+2. **The transport choice** — herdr tab or Terminal.app window. Resolved by `delegate`, never asked (see below). `delegate transport` prints the answer and its reason.
+3. **The transports themselves** — `herdr-agent` in this directory for the live herdr tab, and the separate `terminal` skill for the Terminal.app window. Skills never touch a transport directly.
 
 ---
 
@@ -43,21 +40,26 @@ delegate agent
     → prints the resolved agent: "codex" | "reasonix" | "claude"
     → exits nonzero if unset/unknown. Skills use it only to label output.
 
+delegate transport
+    → prints the surface `exec` would use and why: "herdr (inside herdr and herdr can
+      start claude)", "terminal (inside herdr, but 'reasonix' is not in herdr's --kind
+      enum)", "terminal (not inside herdr)".
+    → use it to name the target in a status line without running anything.
+
 delegate check
     → is the resolved agent authenticated & reachable? exit 0 = ready, nonzero + message.
     → this IS the health gate — run it first; halt the skill on nonzero.
 
 delegate exec [--headless] <prompt-file> <outfile>
-    → run the resolved agent non-interactively with the prompt in <prompt-file>;
-      its output lands in <outfile>. Default: runs in a visible Terminal.app window you
-      can watch, blocks until the agent finishes, then returns. There is no "review" verb —
+    → run the resolved agent with the prompt in <prompt-file>; its answer lands in
+      <outfile>. Blocks until the agent finishes, then returns. There is no "review" verb —
       a review is just an exec whose prompt asks for a review.
-    → --headless: skip the window. Runs the agent as a plain subprocess, output straight to
-      <outfile>, no AppleScript. Same prompt/outfile contract — the window is the only
-      difference. Use it where there's no GUI session to open a window in (cron, SSH,
-      scheduled agents): the windowed default needs Terminal.app plus the one-time macOS
-      Automation grant, which a headless run can't satisfy. The visible window stays the
-      default for interactive use; nothing asks you to choose.
+    → the surface is resolved, not chosen: a live agent in a herdr tab when we're inside
+      herdr, else a one-shot in a visible Terminal.app window. Same contract either way.
+    → --headless: skip both surfaces. Runs the agent as a plain subprocess, output straight
+      to <outfile>. Use it where there's no GUI session and no herdr session to put
+      anything in (cron, SSH, scheduled agents): the windowed default needs Terminal.app
+      plus the one-time macOS Automation grant, which a headless run can't satisfy.
 ```
 
 The review prompt, the verdict format (e.g. `MERGEABLE / BLOCK`), and any follow-up rounds live in the **skills**, not here. The resolver doesn't know or care what the prompt is about.
@@ -111,17 +113,44 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 ---
 
-## The transport — owned by the `terminal` skill
+## The two transports
 
-`delegate exec` does **not** spawn or watch the window itself. It builds the vendor payload (`cat <prompt-file> | <runner>`) and hands it to the `terminal` skill's one-shot verb:
+`delegate exec` never spawns or watches a surface itself. It decides **which vendor command runs**, resolves **which surface** to run it in, and hands off. Both transports take the same contract — a prompt in a file, the answer in `<outfile>`, blocking until done — so no consuming skill branches on which one ran.
+
+### Resolution — automatic, and stated
+
+| Condition | Transport |
+|---|---|
+| `--headless` | plain subprocess, no surface at all |
+| `HERDR_ENV=1` **and** the vendor is in herdr's `--kind` enum | **herdr tab** |
+| anything else | **Terminal.app window** |
+| `DELEGATE_TRANSPORT=terminal\|herdr` | forces one; forcing `herdr` where it can't run is an error, not a fallback |
+
+`delegate exec` prints the resolved transport and its reason as its first line, and `delegate transport` prints the same without running anything. **Put that line in the status message** — a delegate the user is told to go watch, that was only ever a background subprocess, is the failure this exists to stop.
+
+**`reasonix` is not in herdr's `--kind` enum**, so a reasonix delegate always lands in Terminal.app even inside herdr. On the personal profile (`CLAUDE_DELEGATE_AGENT=reasonix`) that is the normal case, not an edge.
+
+### herdr — a live agent in its own tab (`herdr-agent` in this directory)
+
+`herdr tab create` (never a split — splitting squeezes the pane the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`.
+
+What runs is the vendor's **real interactive TUI**, not a piped one-shot. Three consequences:
+
+- **It has no stdout to tee**, so `herdr-agent` appends a paragraph to the prompt telling the agent to write its complete answer to `<outfile>` itself. **That appended paragraph is the outfile contract** — remove it and every caller reads an empty file. If the agent finishes without writing it, `herdr-agent` scrapes `herdr pane read` into `<outfile>` and says on stderr that it did.
+- **You can take it over.** Switch to the tab and type. That is the reason to prefer this surface.
+- **It outlives us.** The tab and the agent survive this Claude session dying. `herdr-agent` never closes the tab and never focuses it — focusing marks it seen and collapses a `done` into `idle`. The user closes it.
+
+Completion is herdr's own agent lifecycle state, not a sentinel: herdr already tracks whether the agent is `working`, so there is nothing to poll a file for.
+
+### Terminal.app — a one-shot in a window (the `terminal` skill)
+
+`delegate` builds `cat <prompt-file> | <runner>` and hands it to:
 
 ```
 "$HOME/.claude/skills/terminal/terminal" run [--headless] <payload-file> <outfile>
 ```
 
-That skill owns the whole Terminal.app transport — the visible window, the cold-start single-window guard, the `__TERMINAL_DONE__` sentinel and polling, and the window-left-open-at-an-idle-shell behavior. `--headless` passes straight through for cron/SSH where there's no GUI to open a window in. The division of labor: **`delegate` decides *which vendor command* runs; `terminal` runs it in a watchable pane.**
-
-For the transport internals, the TCC/Automation grant, the secrets-on-a-pane caution, and the session mode (a persistent pane you can send commands to over time), read the `terminal` skill — `skills/terminal/SKILL.md` and its `one-shot.md` / `session.md` reference files.
+That skill owns the whole Terminal.app transport — the visible window, the cold-start single-window guard, the `__TERMINAL_DONE__` sentinel and polling, and the window-left-open-at-an-idle-shell behavior. For its internals, the TCC/Automation grant, the secrets-on-a-pane caution, and its session mode (a persistent pane you send commands to over time), read `skills/terminal/SKILL.md` and its `one-shot.md` / `session.md`.
 
 ### Adding another agent
 

@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# herdr-agent — run one delegated task as a LIVE interactive agent in its own herdr tab.
+#
+#   herdr-agent run <kind> <prompt-file> <outfile> [-- <agent-arg>...]
+#
+# The herdr counterpart to `terminal run`. Same caller contract — prompt in a file,
+# response in <outfile>, blocks until done — but the thing in the tab is a real
+# interactive agent session, not a piped one-shot:
+#
+#   * you can switch to its tab and type at it while it works, or take it over after
+#   * it outlives this Claude session (the tab and the agent stay up if we die)
+#   * it writes <outfile> ITSELF, because an interactive TUI has no stdout to tee.
+#     The instruction to do that is appended to the prompt below — that appended
+#     paragraph IS the outfile contract. Remove it and the caller reads an empty file.
+#
+# Completion is `herdr agent prompt --wait`, not a sentinel: herdr already tracks the
+# agent's lifecycle state, so we wait on `idle`/`done` rather than polling a file.
+#
+# The tab is deliberately LEFT OPEN and never focused. Focusing marks it seen and
+# collapses a `done` into `idle`; closing it throws away the session you might want
+# to take over. The user closes it.
+set -eu
+
+TIMEOUT_MS=2400000   # 40m, matching `terminal run`'s ceiling
+READY_MS=120000      # how long to wait for the agent TUI to come up in the pane
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "herdr-agent: missing '$1'" >&2; exit 1; }; }
+
+# Block until <pane> is idle at its own shell — one foreground process, and it's the shell.
+wait_pane_ready() {
+  local pane="$1" i=0
+  while [ "$i" -lt 40 ]; do
+    if herdr pane process-info --pane "$pane" 2>/dev/null | jq -e '
+          .result.process_info
+          | (.foreground_processes | length) == 1
+            and .foreground_processes[0].pid == .shell_pid' >/dev/null; then
+      return 0
+    fi
+    sleep 0.5; i=$((i + 1))
+  done
+  return 1
+}
+
+cmd_run() {
+  local kind="${1:-}" promptfile="${2:-}" outfile="${3:-}"
+  if [ -z "$kind" ] || [ -z "$promptfile" ] || [ -z "$outfile" ]; then
+    echo "usage: herdr-agent run <kind> <prompt-file> <outfile> [-- <agent-arg>...]" >&2; return 2
+  fi
+  shift 3
+  [ "${1:-}" = "--" ] && shift || true
+  [ -f "$promptfile" ] || { echo "herdr-agent: prompt file not found: $promptfile" >&2; return 1; }
+
+  [ "${HERDR_ENV:-}" = "1" ] || { echo "herdr-agent: not running inside herdr (HERDR_ENV != 1)" >&2; return 1; }
+  [ -n "${HERDR_WORKSPACE_ID:-}" ] || { echo "herdr-agent: HERDR_WORKSPACE_ID is unset" >&2; return 1; }
+  need herdr; need jq
+
+  # Agent names must match [a-z][a-z0-9_-]{0,31} and be unique among live agents.
+  local slug="delegate-$$"
+
+  : > "$outfile"
+
+  # A tab, never a split. Splitting the caller's pane squeezes the surface the user is
+  # actually reading; --no-focus keeps the tab unseen so a later `done` stays `done`.
+  local created pane tab
+  created="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$slug" --no-focus)" || {
+    echo "herdr-agent: could not create a tab" >&2; return 1; }
+  pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
+  tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+  [ -n "$pane" ] || { echo "herdr-agent: tab create returned no pane id" >&2; return 1; }
+
+  # `agent start` requires the pane to be sitting at its interactive shell prompt. A tab
+  # created a moment ago is still spawning its shell, and starting into that returns
+  # `agent_pane_busy`. The pane is ready when the only foreground process IS the shell.
+  wait_pane_ready "$pane" || { echo "herdr-agent: pane $pane never reached a shell prompt — leaving tab $tab open" >&2; return 1; }
+
+  if ! herdr agent start "$slug" --kind "$kind" --pane "$pane" --timeout "$READY_MS" -- "$@" >/dev/null; then
+    echo "herdr-agent: '$kind' did not come up in pane $pane — leaving tab $tab open to inspect" >&2
+    return 1
+  fi
+
+  # An interactive agent prints to a TUI, so there is nothing to tee. Tell it where to
+  # put the answer; the caller reads that file exactly as it reads `terminal run`'s.
+  local text
+  text="$(cat "$promptfile")
+"'
+────────────────────────────────────────────────────────────
+HOW TO RETURN YOUR ANSWER — required, do this last:
+Write your complete response to the file below, as a whole file, in Markdown.
+Do not summarise it there; that file IS your answer and is the only part that is read.
+
+  '"$outfile"'
+────────────────────────────────────────────────────────────'
+
+  # --wait blocks on the agent's own lifecycle state. If submission stalls (older herdr
+  # pastes without submitting), press Enter and wait again rather than hanging forever.
+  if ! herdr agent prompt "$slug" "$text" --wait --until idle --until done --timeout "$TIMEOUT_MS" >/dev/null 2>&1; then
+    herdr agent send-keys "$slug" enter >/dev/null 2>&1 || true
+    herdr agent prompt "$slug" "" --wait --until idle --until done --timeout "$TIMEOUT_MS" >/dev/null 2>&1 || true
+  fi
+
+  # The agent may have finished without writing the file (ignored the instruction, hit a
+  # permission wall, crashed). Its pane still holds the answer, so scrape rather than
+  # hand the caller an empty file — and say which one happened.
+  if [ ! -s "$outfile" ]; then
+    echo "herdr-agent: $kind wrote nothing to $outfile — falling back to its pane output" >&2
+    herdr pane read "$pane" --lines 600 > "$outfile" 2>/dev/null || true
+  fi
+
+  echo "herdr-agent: $kind finished → $outfile (tab $tab left open — switch to it to take over, close it when done)"
+}
+
+case "${1:-}" in
+  run) shift; cmd_run "$@" ;;
+  *) echo "usage: herdr-agent run <kind> <prompt-file> <outfile> [-- <agent-arg>...]" >&2; exit 2 ;;
+esac
