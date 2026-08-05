@@ -111,7 +111,7 @@ Judge the item on two tests:
 **Fail either test → act by pass mode:**
 
 - **Standalone pass — resolve with the user, routed by which test failed:**
-  - **Plan test failed** (missing facts, unclear scope, don't-know-the-files): invoke `ask-questions-if-underspecified` via the Skill tool — targeted clarifying questions to fill the gaps.
+  - **Plan test failed** (missing facts, unclear scope, don't-know-the-files): ask the user targeted clarifying questions — one at a time, in plain chat, never the `AskUserQuestion` tool. Read the codebase for anything the repo can answer; only ask for what it can't. This is a factual gap-fill, not a design interview — don't reach for `grill-me` here.
   - **Objectivity test failed** (a qualitative / product / design call the user owns): invoke `grill-me` via the Skill tool — the design interview that surfaces and records the decision.
   - After the interview resolves, **re-run this gate once.** If it now passes, proceed to Phase 1. If it still fails, **halt** and surface the specific residual uncertainty — do not loop the interview a second time, and do not proceed anyway.
 

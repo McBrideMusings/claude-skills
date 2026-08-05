@@ -84,7 +84,7 @@ The answer isn't part of the body — it's recorded on resolution (see [Work thr
 
 Every ticket is either **HITL** — worked *with* a human who speaks for themselves — or **AFK**, driven by the agent alone. A HITL ticket only resolves through that live exchange; the agent never stands in for the human's side of it (a grilling agent that answers its own questions has broken this — see the guard in `grill-me`).
 
-- **Research** (AFK) → runs **`deep-research`** (or `grounded-research` for a quick fact-check). Reading docs, third-party APIs, local knowledge bases. Produces a cited markdown file, linked as an asset. Use when knowledge outside the working directory is needed.
+- **Research** (AFK) → runs **`research`**. Reading docs, third-party APIs, local knowledge bases. Produces a cited markdown file, linked as an asset. Use when knowledge outside the working directory is needed.
 - **Prototype** (HITL) → runs **`prototype`**. Raise the fidelity of the discussion with a cheap, rough, concrete artifact to react to — an outline, a stub, or UI/logic code. Links the prototype as an asset. Use when "how should it look/behave" is the key question.
 - **Grilling** (HITL) → runs **`grill-me`**. One question at a time, the human deciding. The default type.
 - **Task** (HITL or AFK): manual work that must happen before a *decision* can be made — nothing to decide, prototype, or research, but the discussion is blocked until it's done (signing up for a service so its API can be judged, provisioning access, moving data so its shape can be seen). The one type that *does* rather than decides — and it earns its place by unblocking a decision, not by delivering the destination. Agent drives it alone where it can (AFK); otherwise hands the human a precise checklist (HITL). Resolved when done; the answer records what was done and any resulting facts (credentials location, new URLs, row counts) later tickets depend on.
@@ -159,7 +159,7 @@ User invokes with a map (URL or number). A ticket is optional — without one, y
 
 1. Load the **map** — the low-res view, not every ticket body.
 2. Choose the ticket. If the user named one, use it. Otherwise take the first frontier ticket in order. **Claim it** (self-assign) before any work.
-3. Resolve it — **zoom as needed**: fetch the full body of any related or closed ticket on demand; run the skill its `wayfinder:<type>` names (research→`deep-research`, prototype→`prototype`, grilling→`grill-me`, task→manual). If in doubt, `/grill-me`.
+3. Resolve it — **zoom as needed**: fetch the full body of any related or closed ticket on demand; run the skill its `wayfinder:<type>` names (research→`research`, prototype→`prototype`, grilling→`grill-me`, task→manual). If in doubt, `/grill-me`.
 4. Record the resolution: post the answer as a comment, close the issue, append a one-line gist to the map's Decisions-so-far.
 5. Add newly-surfaced tickets (create-then-wire); graduate any fog the answer made specifiable, clearing each graduated patch from Not yet specified. If the answer reveals a ticket sits beyond the destination, rule it out of scope rather than resolving it. If the decision invalidates other parts of the map, update or delete those tickets.
 

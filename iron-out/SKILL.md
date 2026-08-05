@@ -45,7 +45,7 @@ Order the failing issues by **unblock leverage**: how many in-scope issues each 
 One issue at a time, top of the queue. The user can stop at any point — progress is already durable (state lives in the edited bodies; a rerun rescans and resumes; there is no state file).
 
 1. **Interview.** Present the issue — its number, title, full URL, and unresolved question — then route by failed test, exactly as implement's gate does:
-   - Plan test failed (missing facts, unknown files or scope) → invoke `ask-questions-if-underspecified` via the Skill tool.
+   - Plan test failed (missing facts, unknown files or scope) → ask targeted clarifying questions, one at a time in plain chat, never the `AskUserQuestion` tool. Read the codebase for anything the repo can answer; only ask for what it can't.
    - Objectivity test failed, or both (a design or product call the user owns) → invoke `grill-me` via the Skill tool. If a decision crystallises into an ADR, grill-me's existing offer covers it — take it.
 2. **Edit the body.** Rewrite the issue body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, `Type: HITL` flipped to `Type: AFK` if present. Show the new body, then `gh issue edit <n> --body`. GitHub keeps edit history; nothing is lost.
 3. **Verify.** Re-run the two tests on the edited body. Fail → the interview missed something; surface the residual and resolve it before moving on. Never leave an issue half-ironed.
