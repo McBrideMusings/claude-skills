@@ -1,42 +1,33 @@
 ---
 name: explain
-description: "Explain something so the user gets it — a codebase subsystem (grounded with file:line tags, never invented) or a world-knowledge concept. Plain-language chat by default; escalates to a self-contained visual HTML explainer when the topic is structurally visual or dense, or on request."
+description: "Explain something so the user gets it — a codebase subsystem (grounded with file:line tags, never invented) or a world-knowledge concept. Builds a self-contained visual HTML explainer by default; drops to a plain chat answer only when a couple of sentences fully resolve it."
 ---
 
 # explain
 
-Explain something so the user *gets it* — a subsystem in this repo, or a world-knowledge concept. Two tiers: a plain chat explanation by default, a designed hermetic HTML artifact when the topic earns it.
+Explain something so the user *gets it* — a subsystem in this repo, or a world-knowledge concept.
 
-## Tier 1 — explain in chat (default)
+**The default output is a hermetic HTML explainer file, opened locally.** Diagrams, semantic color, annotated code — a thing the user can keep open beside their work. Build it unless the request is small enough that a couple of sentences in chat genuinely finish the job.
 
-Most of the time, just explain it well in the conversation. No file. Hold every explanation to:
+## When chat alone is enough (the exception)
 
-- **Ground it, don't guess.** Pull from what you've actually read (B-mode: real files) or from high-trust sources (A-mode), not parametric vibes. Cite as you go — `file:line` for code, a named source for world knowledge. If a specific fact is shaky, say so rather than invent it.
-- **Check the shared knowledge stores.** If the topic maps to a platform (`_platforms/<p>/`) or a mode of development (`_domains/<d>/`) this account already carries curated knowledge for — an Apple/web/three.js stack, game or UI design — read the relevant cell (e.g. `_domains/ui/design.md`, `_platforms/apple/review.md`) and use it as grounding context before explaining. Prefer it over parametric memory; it's the account's vetted take.
-- **One thing, low load.** Explain the single thing asked, scoped tight. Difficulty is the enemy of understanding — it eats the working memory the user needs to follow you. Strip everything not required to get *this* across.
-- **Calibrate to the listener.** Infer what they already know from the conversation and meet them just past it. An `eli5` gets an analogy anchor; a senior asking about a race condition gets the mechanism. Don't over- or under-shoot.
-- **Point to one primary source** to go deeper — the single most high-trust file, doc, paper, or talk on the topic. One good pointer beats five.
-- **Invite follow-ups.** You're their explainer; the conversation continues. End open.
+Answer in chat, no file, only when **all** of these hold:
 
-For B-mode (this repo), the grounding rule is the same hard rule as Tier 2: every concrete code claim is backed by a file you actually opened — cite `file:line`. Never describe a mechanism you haven't read.
+- The answer fits in a few sentences — a definition, one flag's meaning, a single "why does X happen".
+- Nothing about it is structural: no multi-step flow, no interacting modules, no comparison, no timeline, no layered concept.
+- The user won't want to return to it while they work.
 
-After the chat explanation, if a diagram or visual structure would genuinely add something, offer the escalation in one line: *"Want this as a visual HTML explainer?"* — don't assume it.
+If you answer in chat, hold to the same bar as the artifact: ground every code claim in a file you actually opened and cite `file:line`; for world knowledge, cite a named source and flag any shaky fact instead of inventing it. Point to one primary source to go deeper. End open — the conversation continues.
 
-## When to escalate to the HTML artifact (Tier 2)
+Then offer the upgrade in one line: *"Want this as a visual HTML explainer?"*
 
-Escalate when **any** of these holds:
+**Anything larger builds the file.** Multiple findings, a flow, an architecture, X vs Y, a concept with layers, or an explicit "make me an explainer / as HTML / visual / diagram this" — go straight to the artifact. When unsure, build it.
 
-- **The user asks** — "make me an explainer", "as HTML", "visual", "diagram this".
-- **The topic is structurally visual** — a multi-step flow, an architecture with several interacting modules, a comparison matrix, a timeline, layered "go deeper" concept reveals. A diagram carries what prose can't.
-- **It's dense enough to keep open** — the user will want to return to it while they work, not scroll back through chat.
-
-Stay in chat for a definition, a single mechanism, a "why does X happen" — anything a few sentences resolve. When unsure, default to chat and *offer* the upgrade.
-
-> `explain` (chat tier) overlaps `zoom-out`, but they answer different questions: `zoom-out` maps *where you are* in unfamiliar code (relevant modules + callers); `explain` makes you *understand how X works*. Reach for `zoom-out` when lost, `explain` when curious.
+> `explain` overlaps `zoom-out`, but they answer different questions: `zoom-out` maps *where you are* in unfamiliar code (relevant modules + callers); `explain` makes you *understand how X works*. Reach for `zoom-out` when lost, `explain` when curious.
 
 ---
 
-The rest of this skill is the **Tier 2** artifact: produce **one hermetic `.html` file** that explains something using designed visuals (inline SVG diagrams, semantic color, infographics, annotated code) so the user can open it in a browser and *get it*.
+The rest of this skill is the artifact: **one hermetic `.html` file** that explains something using designed visuals (inline SVG diagrams, semantic color, infographics, annotated code) so the user can open it in a browser and *get it*.
 
 ## Two sources, one spine
 
@@ -51,6 +42,7 @@ Sometimes a programming concept is better explained from world knowledge than fr
 2. **No hallucinated code (B-mode).** Never describe a mechanism you haven't actually read. Every concrete code claim carries a `file:line` tag rendered next to the diagram node / step / statement. The doc is a **map back into the code**, not a plausible story. If you didn't open it, you can't draw it.
 3. **Semantic color.** Color *encodes meaning* (data / control-flow / happy-path / danger / caution), defined once in the `explainer` kind — never decorative. The house look is fixed: don't override the role tokens. See `../_artifacts/CONTRACT.md`.
 4. **Static-first.** Lightweight inline vanilla JS is allowed only where a dense section earns it (collapse/expand, tabbed concept↔code). No JS for anything that plain HTML can do.
+5. **Local file only.** The explainer is written to disk and opened with `open <absolute-path>`. Never publish it anywhere.
 
 ## Workflow
 
@@ -68,7 +60,9 @@ When unsure, default to **Process** for "how does X work" and **Architecture** f
 
 ### 2. Gather (B-mode)
 
-Explore as far as needed to actually understand — read the real files, follow the callers, use `docs/CONTEXT.md` vocabulary if it exists. Quality of the explainer is capped by how well you understood the code. Do not start rendering until the mechanism is clear and every claim you plan to make is backed by a file you've read. A-mode: synthesize from knowledge; if a specific fact is shaky, flag it rather than invent it. If the topic maps to a `_platforms/<p>/` or `_domains/<d>/` cell (see the store-consult bullet in Tier 1), read it too.
+Explore as far as needed to actually understand — read the real files, follow the callers, use `docs/CONTEXT.md` vocabulary if it exists. Quality of the explainer is capped by how well you understood the code. Do not start rendering until the mechanism is clear and every claim you plan to make is backed by a file you've read. A-mode: synthesize from knowledge; if a specific fact is shaky, flag it rather than invent it.
+
+**Check the shared knowledge stores.** If the topic maps to a platform (`_platforms/<p>/`) or a mode of development (`_domains/<d>/`) this account already carries curated knowledge for — an Apple/web/three.js stack, game or UI design — read the relevant cell (e.g. `_domains/ui/design.md`, `_platforms/apple/review.md`) and use it as grounding context. Prefer it over parametric memory; it's the account's vetted take.
 
 ### 3. Infer the knobs
 
@@ -77,6 +71,8 @@ From the prompt, infer **archetype · depth · audience** (e.g. `explain eli5 ho
 ### 4. Render
 
 Read `../_artifacts/CONTRACT.md` for the `explainer` class vocabulary, then **write a body fragment — content only.** No doctype, no `<head>`, no reset, no theme block, no type scale: the tool supplies all of it, which is why none of it costs you context in either direction. Assemble from the archetype skeleton (`ARCHETYPES.md`). Hand-author every diagram as inline SVG/CSS. Tag every B-mode code claim with `file:line`.
+
+Keep the explanation itself to the same standard the chat tier holds: one thing at a time, scoped tight, calibrated to what the listener already knows, with one primary source to go deeper.
 
 Write the fragment to `<repo>/tmp/claude/artifacts/<slug>.body.html`, then build:
 
@@ -95,6 +91,8 @@ Write the fragment to `<repo>/tmp/claude/artifacts/<slug>.body.html`, then build
 **Screenshot it and look at it.** A font falling back, an overlapping diagram, a blank section — none of that is visible in the source, and the path alone pushes the discovery onto the user. Check both themes; the file ships with a toggle.
 
 Then launch it: `open <path>` on macOS. Emit the path on its own line, no trailing punctuation, so it stays ⌘-clickable.
+
+Give the headline in chat too — two or three sentences of what the explainer says — so the user isn't forced into the browser to learn the answer. The file carries the depth; chat carries the gist.
 
 ### 6. Refine in place
 
