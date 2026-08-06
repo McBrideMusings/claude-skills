@@ -20,7 +20,9 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 >
 > **Your verify phase is what reports you finished.** `/implement` Phase 1.5 must run and must write `<worktree-path>/tmp/claude/verify/<issue>.json`. That file is the only thing the orchestrator can read — your transcript is not recoverable. Write it for every verdict, `SKIP` included.
 >
-> Start by reading the issue: `gh issue view <issue> --repo <owner/repo>`.
+> Start by reading the issue: `bd show <issue> --json` on a beads repo, `gh issue view <issue> --repo <owner/repo>` on GitHub.
+>
+> **Read the tracker; never write to it.** No `bd update`, no `bd close`, no `gh issue close`, no comments. On beads the embedded database takes one writer at a time and your sibling workers are competing for it; on either backend the orchestrator records the outcome from the primary checkout once your verdict file lands. Your verdict file is how you report — that is the whole channel.
 
 ## Why each clause is here
 

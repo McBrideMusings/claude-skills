@@ -10,7 +10,7 @@ Walk through the standard project layout. **Create what's missing, migrate what'
 
 **Idempotent.** Run as many times as wanted. Safe to point at a fresh repo OR an existing repo that's accumulated docs in non-standard places. Each phase has three branches: missing → create, standard → skip, non-standard → propose migration.
 
-**Act, don't ask — additive work runs automatically.** Every phase creates and wires the missing standard artifacts *without asking permission* — no "shall I create admin.toml?", no "add VitePress?", no per-phase "proceed?" offer. Creating what's missing and wiring it is the whole point of the skill; do it. The user pre-empts by saying "skip X" / "no docs" up front (and "skip docs" / "don't worry about docs" silently skips Phases 04–05) — but silence means proceed, never means ask. The ONLY thing that stops for a question is a **genuinely destructive migration**: moving or renaming existing files (which can break references) or deleting/overwriting content the user already wrote. Those confirm (see the per-phase "Default: yes" prompts). Pure additive creation never does.
+**Act, don't ask — additive work runs automatically.** Every phase creates and wires the missing standard artifacts *without asking permission* — no "shall I create admin.toml?", no "add VitePress?", no per-phase "proceed?" offer. Creating what's missing and wiring it is the whole point of the skill; do it. The user pre-empts by saying "skip X" / "no docs" up front (and "skip docs" / "don't worry about docs" silently skips Phases 04–05) — but silence means proceed, never means ask. The ONLY thing that stops for a question is a **genuinely destructive migration**: moving or renaming existing files (which can break references) or deleting/overwriting content the user already wrote. Those confirm (see the per-phase "Default: yes" prompts). Pure additive creation never does. **One further exception:** Phase 06's issue-backend choice asks, because there is no "standard" tracker to create — picking one changes where every future ticket lives and `bd init` writes git hooks into the user's repo.
 
 **Any confirmation you do surface is a plain-chat question** — never the `AskUserQuestion` tool / structured-question schema. Answered inline in free-form ("skip admin", "yes but leave the PRD"), which the chip-picker UI can't carry.
 
@@ -27,7 +27,7 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md) | `admin.toml` (delegates to `/admin`) |
 | [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (delegates to `/docs`) |
 | [PHASE-05-DOCS-ARTIFACTS.md](PHASE-05-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`, `docs/PRD.md`, `docs/ROADMAP.md` |
-| [PHASE-06-ISSUE-TRACKER.md](PHASE-06-ISSUE-TRACKER.md) | `gh auth status` + GitHub remote check, record fallback if needed |
+| [PHASE-06-ISSUE-TRACKER.md](PHASE-06-ISSUE-TRACKER.md) | Resolve the issue backend (beads / GitHub / local), offer `bd init` or a GitHub→beads migration, record the answer |
 | [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/grill-me` Backfill on existing-codebase audits |
 
 ## Findings-only invocation

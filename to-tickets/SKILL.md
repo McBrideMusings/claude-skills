@@ -1,13 +1,13 @@
 ---
 name: to-tickets
-description: "Break a plan, spec, or PRD into independently-grabbable tickets using vertical-slice tracer bullets, published to GitHub as issues. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
+description: "Break a plan, spec, or PRD into independently-grabbable tickets using vertical-slice tracer bullets, published to the repo's issue backend — beads or GitHub. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
 ---
 
 # To Tickets
 
 Break a plan into independently-grabbable tickets using **vertical slices** (tracer bullets). Tickets become inputs to `implement` / `iterate`.
 
-**Issue tracker:** default to GitHub via the `gh` CLI. If no GitHub remote exists (`git remote -v | grep github` finds nothing), tell the user and ask them how they want to track issues before proceeding.
+**Issue backend:** resolve once via [`../_tracker/_detect.md`](../_tracker/_detect.md) and hold the answer for the whole run — `beads`, `github`, or `local`. Phases 05 and 06 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
 
 ## Proposal file
 
@@ -25,7 +25,7 @@ After writing, tell the user the full path so they can open it — put the path 
 
 ### Phase 01 — Gather context
 
-Work from whatever is in the conversation. If the user passes an issue reference (number, URL, path) as an argument, fetch it (`gh issue view <N>`) and read its full body + comments.
+Work from whatever is in the conversation. If the user passes an issue reference (ID, number, URL, path) as an argument, fetch it (`bd show <id> --json` on beads, `gh issue view <N>` on GitHub) and read its full body + comments.
 
 ### Phase 02 — Explore the codebase (if needed)
 
@@ -88,9 +88,17 @@ Iterate until approved.
 
 If the proposal groups slices under `## Milestone: <name>` headings, confirm before publishing:
 
-> "These slices fall into N milestones: <list>. Create them on GitHub?"
+> "These slices fall into N milestones: <list>. Create them?"
 
-For each confirmed milestone, **reuse open milestones by exact title match** — never create duplicates:
+For each confirmed milestone, **reuse existing ones by exact title match** — never create duplicates.
+
+**`beads`** — the milestone equivalent is an epic, and membership is a real parent link:
+
+1. Look for an existing one: `bd list -t epic --status open --json` and match on title.
+2. **Exact title match → reuse its ID.**
+3. **No match → create it:** `bd create "<name>" -t epic --silent` — capture the printed ID.
+
+**`github`:**
 
 1. List open milestones and check for a name match:
    ```bash
@@ -108,13 +116,20 @@ Skip this phase entirely if the proposal has no milestone groupings.
 
 ### Phase 06 — Publish
 
-Publish in **dependency order** (blockers first) so "Blocked by" can reference real issue IDs. Use the body template from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md).
+Publish in **dependency order** (blockers first) so blockers can reference real issue IDs. Use the body template from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md).
 
 Per slice:
 
-- **GitHub:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
+- **`beads`:** `bd create "<title>" -t <task|bug|feature> -p <0-4> --body-file <path> --silent`
+  - Capture the printed ID; later slices need it for their blocker edges.
+  - Milestone group → `--parent <epic-id>` from Phase 05.
+  - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `triage` and `iterate` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
+  - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
+  - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
+- **`github`:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
   - `--milestone` only when the slice belongs to a milestone group (omit otherwise). The milestone name must match a title from Phase 05.
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
+  - Blockers are prose only (`Blocked by #N` in the body) — GitHub has no dependency edges.
 
 Do NOT close or modify any parent issue.
 

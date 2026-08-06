@@ -76,7 +76,8 @@ All must hold. Print the reason and stop otherwise.
 1. **A transport is available and named** — see [Transports](#transports). What is forbidden is degrading to **sequential in-session work** — doing the issues yourself, one after another, in this pane. That is `/iterate`, and running it under this name is the silent-different-skill failure.
 2. **In the primary checkout, not a worktree** — `git rev-parse --git-dir` must not contain `/worktrees/`. Only the primary checkout can hold the default branch, and landing needs it.
 3. **Clean tree on the default branch**, up to date with the remote.
-4. **The scope gate** — below. This one stops more runs than the other three combined, and it is supposed to.
+4. **On a beads repo, tracker writes are single-writer.** All worktrees share the main repository's one `.beads` workspace, and beads' default embedded Dolt engine serves one writer at a time — N workers each running `bd update --claim` or `bd close` will contend, and a loser gets an error, not a queue. So: **workers never write to beads.** They report their verdict file as always; this orchestrator does every claim, comment, and close from the primary checkout at steps 5–7, where the writes are already serialised. If the repo has run `bd init --server`, concurrent writes are safe and this restriction lifts — check with `bd where --json`: a `database_path` ending in `embeddeddolt` is embedded (single writer), one ending in `dolt` is server mode. Say which mode you found.
+5. **The scope gate** — below. This one stops more runs than the other three combined, and it is supposed to.
 
 ### The scope gate — every issue in scope, before anything is dispatched
 
@@ -150,9 +151,9 @@ Every layer below this skill accepts Fable happily: `claude --model` takes `fabl
 
 The **frontier** is the open issues whose blockers are all closed. Only the frontier is ever dispatched.
 
-Read dependencies per issue, in this order:
+Resolve the issue backend via [`../_tracker/_detect.md`](../_tracker/_detect.md), then read dependencies per issue, in this order:
 
-1. **Native** — `gh issue view <n> --json blockedBy --jq '.blockedBy.totalCount'`.
+1. **Native** — on beads, `bd ready --json` *is* the frontier, already computed (`bd ready --explain --json` names each blocker for the report); on GitHub, `gh issue view <n> --json blockedBy --jq '.blockedBy.totalCount'`.
 2. **Prose fallback** — a `Blocked by: #70, #72` line in the body.
 
 **Absence is not permission.** If native reports zero blockers *and* the body carries a `Blocked by:` line, the two disagree — surface it and dispatch nothing. If neither source yields a graph and more than one candidate exists, make the human confirm the order before dispatching. Treating "no graph found" as "nothing is blocked" fans work out onto unbuilt foundations, which is the failure this skill exists to prevent.

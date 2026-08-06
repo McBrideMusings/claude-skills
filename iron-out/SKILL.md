@@ -71,7 +71,10 @@ Fog only ever gathers *toward* the destination. Work past it is **Out of scope**
 
 ## Phase 1 — Scan
 
-Fetch every in-scope issue (`gh issue list … --json number,title,url,labels,body`) plus dependencies (`gh issue view <n> --json blockedBy`; `Blocked by:` prose fallback). Hand the bodies to a Haiku sub-agent so they stay out of parent context.
+Resolve the issue backend via [`../_tracker/_detect.md`](../_tracker/_detect.md), then fetch every in-scope issue plus its dependencies. Hand the bodies to a Haiku sub-agent so they stay out of parent context.
+
+- **`beads`:** `bd list --status open --json` (filtered per selector) and `bd dep tree <id>` for the edges. The dependency graph is real here, so `Blocked by:` prose in a body is a *finding* — an edge someone never wired — not the source of truth. Note each one and offer to convert it: `bd dep add <id> <blocker-id> -t blocks`.
+- **`github`:** `gh issue list … --json number,title,url,labels,body` plus `gh issue view <n> --json blockedBy`, with the `Blocked by:` prose fallback.
 
 Sub-agent brief:
 
@@ -121,8 +124,8 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 
 ### 3b. Record the resolution
 
-- **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, `Type: HITL` flipped to `Type: AFK` if present. Show the new body, then `gh issue edit <n> --body`. GitHub keeps edit history; nothing is lost.
-- **Question** → post the answer as a comment (`gh issue comment <n>`), then `gh issue close <n>`.
+- **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, `Type: HITL` flipped to `Type: AFK` if present. Show the new body, then write it: `bd update <id> --body-file <path>` (plus `--acceptance` for the check, and `--remove-label hitl --add-label afk`) on beads, `gh issue edit <n> --body` on GitHub. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
+- **Question** → post the answer as a comment, then close: `bd comment <id> "<answer>"` + `bd close <id> -r "answered"` on beads, `gh issue comment <n>` + `gh issue close <n>` on GitHub.
 
 Assets are linked, never pasted.
 

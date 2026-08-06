@@ -84,13 +84,13 @@ Resolve the mode once, here, and carry it into item-resolution (Phase 0) and the
 implement discovers **one** item to work, in this order. Stop at the first that resolves:
 
 1. **Explicit item text (passed by `/iterate`).** If the arguments contain an `item:"…"` token, that text **is** the work item — a local followup or papercut that has no issue number. An optional `source:"…"` token records where it came from (e.g. `followups.md`, `papercuts.md`, a `file:line`). Skip triage entirely; the caller already chose the item. This branch exists so `/iterate` can freeze a scoped queue of local items and feed them one at a time. **Still run the Phase 0.5 AFK-ability gate on the text** — a vague local item must fail the gate and be handled per pass mode, exactly like a triage pick, never guessed.
-2. **Explicit argument.** If the arguments contain a bare issue number (e.g. `/implement 1118`) or an issue reference, that issue **is** the work item. Confirm it exists (`gh issue view <n> --json number,title,state`); if it's closed or missing, halt and say so. Skip triage entirely — the user named the target.
-3. **Branch-name context.** Otherwise, inspect the current branch name for an embedded issue number (e.g. `fix/1118-login`, `1118-foo`, `issue-1118`). If one is present and matches an open GitHub issue, that issue is the work item. Skip triage.
+2. **Explicit argument.** If the arguments contain a bare issue number (e.g. `/implement 1118`) or an issue reference (a beads ID like `myproj-zb8`), that issue **is** the work item. Resolve the backend via [`../_tracker/_detect.md`](../_tracker/_detect.md) and confirm it exists — `bd show <id> --json` on beads, `gh issue view <n> --json number,title,state` on GitHub; if it's closed or missing, halt and say so. Skip triage entirely — the user named the target.
+3. **Branch-name context.** Otherwise, inspect the current branch name for an embedded issue ID (e.g. `fix/1118-login`, `1118-foo`, `issue-1118`, `myproj-zb8-login`). If one is present and matches an open issue on the resolved backend, that issue is the work item. Skip triage.
 4. **Triage.** Only if none of the above resolve, invoke the `triage` skill via the Skill tool to discover the item — with these overrides:
    - **Standalone pass:** run triage **interactively** — let it recommend and ask the user which one item to work. Work exactly the one they pick, then this pass is done.
    - **Continuous pass:** run triage **non-interactively** — skip the "wait for user confirmation" step at triage Step 7 and proceed with the top recommendation. (`/iterate` supplies the fresh backlog each iteration; a single continuous pass still works exactly one item.)
    - **Skip triage's Step 9 (offer wrap-up).** implement runs wrap-up itself in Phase 2; don't let triage invoke it or it will double-commit.
-   - **Refuse untracked items.** The item must be an existing GitHub issue or an entry in `<repo-root>/tmp/claude/followups.md`. If triage's top pick is a fresh idea, a "while we're here" cleanup, or an invented refactor, halt and surface it for the user to file or reject. Never invent feature work autonomously.
+   - **Refuse untracked items.** The item must be an existing issue on the resolved backend or an entry in `<repo-root>/tmp/claude/followups.md`. If triage's top pick is a fresh idea, a "while we're here" cleanup, or an invented refactor, halt and surface it for the user to file or reject. Never invent feature work autonomously.
    - **Empty queue:** if triage finds nothing actionable, print *"Nothing to iterate on."* and stop.
 
 Whichever branch resolved it, implement now has exactly **one** item. Proceed to Phase 0.5.
@@ -189,7 +189,7 @@ Write it on **every** verdict, `SKIP` included. A missing file is not a pass —
 Invoke the `wrap-up` skill via the Skill tool with these overrides:
 
 - **Pass mode — pass it explicitly.** Tell wrap-up whether this is a **standalone** or **continuous** pass, using the mode resolved above. wrap-up defaults to the interactive/standalone posture and will halt for human disposition unless it is *told* `continuous` — so a continuous pass MUST pass the `continuous` token through. Never leave the mode implicit.
-- **Tracking:** apply automatically — close fulfilled GitHub issues with summary comments, move resolved followup items to the Resolved section, close milestones that hit zero open issues. No confirmation prompts.
+- **Tracking:** apply automatically — close fulfilled issues on the repo's tracker with summary comments, move resolved followup items to the Resolved section, close milestones that hit zero open issues. No confirmation prompts.
 - **Docs:** apply mechanical doc updates automatically (file-map.md, CLAUDE.md doc-table additions). For substantive doc updates that would normally prompt, do NOT prompt — append them as follow-up items with titles like *"Update PRD section X to reflect Y"*.
 - **Quality:** run code-simplifier and code-review. Auto-apply simplifications. Auto-fix any 75+ issues. If a 75+ issue can't be auto-fixed in 1–2 attempts, halt before committing.
 - **Commit + push + land:** commit with project conventions, push, and land per wrap-up's own ownership rules (merge on an owned repo; PR on a collaborative one). wrap-up owns the merge/PR choreography — implement does not duplicate it.
@@ -209,9 +209,9 @@ Backlog: X open issues (closed Y this pass). Roadmap: Z of W items complete (P%)
 
 **Computing the snapshot:**
 
-1. **GitHub issues** — run `gh issue list --state open --json number --limit 1000` and count. "Closed this pass" is the number wrap-up's tracking step closed (usually 1, occasionally 0).
+1. **Open issues** — on beads, `bd count --status open` (add `bd ready --json | jq length` for the unblocked figure, which is the more useful number when the backlog has real dependency edges); on GitHub, `gh issue list --state open --json number --limit 1000` and count. "Closed this pass" is the number wrap-up's tracking step closed (usually 1, occasionally 0).
 2. **Roadmap** — check `ROADMAP.md`, `docs/ROADMAP.md`, `docs/roadmap.md` in order. If found, count checkbox lines: `[x]`/`[X]` complete, `[ ]` remaining. Report "Z of W items complete (P%)". If no roadmap file, omit the roadmap part.
-3. If `gh` is unavailable or errors, omit the issues line rather than halting.
+3. If the backend's CLI is unavailable or errors, omit the issues line rather than halting.
 
 ---
 

@@ -1,18 +1,102 @@
-# Phase 06 — Issue Tracker Check
+# Phase 06 — Issue Tracker
 
-Confirm `gh` is authed and the repo has a GitHub remote — otherwise record the fallback so downstream skills know.
+Resolve which issue backend this repo uses, offer to set up beads if it has none, and record the
+answer so every downstream skill (`to-tickets`, `triage`, `implement`, `iterate`, `orchestrate`,
+`iron-out`, `followups`, `wrap-up`) picks it up without re-deriving it.
 
-## Steps
+## Step 1 — Detect
 
-1. Run `gh auth status` and check `git remote -v | grep github`.
-2. **gh authed + GitHub remote** → no-op.
-3. **No GitHub remote (or gh not authed)** → record in the root `CLAUDE.local.md` under the "Issue tracker" section:
+Run the resolution in [`../_tracker/_detect.md`](../_tracker/_detect.md). It gives one of:
 
-   ```md
-   ## Issue tracker
-   Local markdown in `.scratch/<slug>/` (no GitHub remote / gh not authed at bootstrap time)
-   ```
+| State | Meaning |
+| --- | --- |
+| `beads` | `bd where` exits 0 — a beads workspace already exists |
+| `github` | GitHub remote + `gh auth status` OK, no beads |
+| `local` | neither |
+| **blocked** | `.beads/` exists but `bd` is not on PATH |
 
-   So that `to-tickets`, `triage`, and `implement` pick up the convention later.
+**Blocked** → stop this phase, tell the user `brew install beads`, record nothing, move on to
+Phase 07. Don't guess at a backend when the real one is unreadable.
+
+## Step 2 — Act on the state
+
+### `beads` — already set up
+
+No-op. Also run `bd config get github.repository` once; if it prints a repo, note mirror mode in
+the record below.
+
+### `github` — offer migration
+
+This is a **plain-chat question, not automatic** — moving a repo's tracker of record is a decision
+about how the user works, not a missing standard artifact, and `bd init` installs git hooks in
+their repo. Ask once:
+
+> This repo tracks issues on GitHub (`<n>` open). Beads adds a real dependency graph and a
+> `bd ready` queue that only shows unblocked work. Want to migrate to beads, keeping GitHub as a
+> mirror? (yes / beads only, no mirror / no — stay on GitHub)
+
+- **yes** →
+  ```bash
+  bd init --quiet --skip-agents --prefix <repo-name>
+  bd config set github.repository <owner>/<repo>
+  bd github sync --pull-only --dry-run
+  ```
+  Show the dry-run result, then run it for real without `--dry-run`. Pulled issues carry their
+  GitHub number as `--external-ref gh-<n>`, so `bd show` still points back.
+
+  Then **wire the dependencies the import can't see.** GitHub has no dependency edges, so
+  "Blocked by #N" lives in issue bodies as prose. Grep the imported descriptions for
+  `[Bb]locked by #` / `[Dd]epends on #`, map each `#N` to its bead via the external ref, and add a
+  real edge: `bd dep add <id> <blocker-id> -t blocks`. Report how many edges you created and list
+  any prose reference you could not resolve — never silently drop one.
+
+- **beads only, no mirror** → same `bd init`, skip the `bd config set`, skip the sync. Existing
+  GitHub issues stay where they are; say so plainly rather than leaving the user to discover it.
+
+- **no** → record `github` and move on.
+
+### `local` — offer init
+
+Same question, shorter, since there's nothing to migrate:
+
+> No issue tracker here. Beads works with no remote and no account, and gives a dependency-aware
+> ready queue. Run `bd init`? (yes / no — keep using `tmp/claude/followups.md`)
+
+- **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`. If
+  `<repo-root>/tmp/claude/followups.md` exists with open items, offer to import them —
+  one `bd create "<title>" -t task` per unchecked item — and move each imported item into the
+  file's `## Resolved` section with the new bead ID appended, so nothing is tracked twice.
+- **no** → record `local`.
+
+`--skip-agents` is deliberate: this repo's agent instructions live in `CLAUDE.md`, and the bd verb
+tables live in `_tracker/beads.md`. Don't let `bd init` drop an unasked-for `AGENTS.md` into a
+repo the user didn't ask to change.
+
+## Step 3 — Record the answer
+
+Write the resolved backend into the root `CLAUDE.local.md` under an `## Issue tracker` heading,
+replacing any existing section:
+
+```md
+## Issue tracker
+beads (prefix `myproj`) — mirrored to GitHub via `bd github sync`
+```
+
+One of these four bodies:
+
+- `beads (prefix <p>) — mirrored to GitHub via `bd github sync``
+- `beads (prefix <p>) — local only, no GitHub mirror`
+- `GitHub issues via gh`
+- `Local markdown in <repo-root>/tmp/claude/followups.md (no GitHub remote / gh not authed at bootstrap time)`
+
+Step 2 of `_tracker/_detect.md` reads this section and trusts it over auto-detection, so it is how
+a repo pins a choice that detection would otherwise get wrong.
+
+## Step 4 — Concurrency note
+
+If the repo is one the user runs `/orchestrate` against, say once: beads' default embedded engine
+serves **one writer at a time**, and every worktree shares the main repository's `.beads`. Either
+keep tracker writes on the orchestrator or re-init with `bd init --server`. Don't change it for
+them — just name it.
 
 Then proceed to [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md).

@@ -72,26 +72,30 @@ Summarize the work completed this session by reviewing:
 
 Check for and update ANY of these tracking mechanisms that exist. Do not create any that don't exist. Capture which issues closed this pass for the Phase 6 summary.
 
-**Ownership check — do this first (reused again in Phase 6 landing).** `gh repo view --json owner --jq .owner.login` vs `gh api user --jq .login`. Owner == my login (or no GitHub remote) → **owned (solo)**; else → **collaborative**.
+**Ownership check — do this first (reused again in Phase 6 landing).** `gh repo view --json owner --jq .owner.login` vs `gh api user --jq .login`. Owner == my login (or no GitHub remote) → **owned (solo)**; else → **collaborative**. A beads-only repo with no GitHub remote is always **owned** — there is nobody else's lifecycle to respect.
 
-### GitHub Issues and Milestones
+### Issues and Milestones
+
+Resolve the backend once via [`../_tracker/_detect.md`](../_tracker/_detect.md).
 
 **Always — owned and collaborative alike:**
-- Run `gh issue list --state open` and review each open issue against the session's work. Look for **two** cases, not one:
+- List open issues (`bd list --status open --json` on beads, `gh issue list --state open` on GitHub) and review each against the session's work. Look for **two** cases, not one:
   - **Completed** — session work fulfilled the issue's intent.
   - **Reversed or obsoleted** — session work went the opposite direction, abandoned the intent, or made the issue moot. Example: an issue "Rename remaining init-* commands to audit-*" is obsoleted when the session instead renames the audit-* commands away from that prefix — the issue is now backwards.
 - Build a list of matches. Surface them in the Phase 6 session summary regardless of owned/collaborative — the user wants to see "this session resolved issues #12, #34" either way.
-- **Milestones** — `gh` has no `milestone` subcommand. Use the API to list:
+- **Milestones** — on beads these are epics: `bd list -t epic --status open --json`, then `bd epic status` for per-epic progress (`--eligible-only` lists exactly the epics ready to close, and `bd epic close-eligible` closes them). On GitHub, `gh` has no `milestone` subcommand, so use the API to list:
   - `gh api repos/{owner}/{repo}/milestones --jq '.[] | "\(.number) \(.title) \(.open_issues)/\(.open_issues + .closed_issues)"'`
 
 **Owned (solo) repos only — actually close:**
-- Close issues with `gh issue close NUMBER --comment "reason"` (use a summary of what shipped for completed; name the reversal for obsoleted).
-- Close milestones (when 0 open issues remain): `gh api repos/{owner}/{repo}/milestones/NUMBER -X PATCH -f state=closed`
+- Close issues: `bd close <id> -r "<reason>"` on beads, `gh issue close NUMBER --comment "reason"` on GitHub (use a summary of what shipped for completed; name the reversal for obsoleted).
+- Close the milestone when 0 open issues remain: on beads, `bd close <epic-id> -r "all children complete"`; on GitHub, `gh api repos/{owner}/{repo}/milestones/NUMBER -X PATCH -f state=closed`.
 - **Always** check milestones after closing issues — if a milestone has 0 open issues, close it immediately.
+- **On beads, add `--suggest-next` to the close** and report what it unblocked. That is the one thing this session hands the next one, and it costs nothing.
+- **On beads, push at the end of the phase:** `bd dolt push`. Issue data travels over the Dolt remote, not in the git commit — skip this and the work is closed only on this machine. In mirror mode (`bd config get github.repository` prints a repo), also run `bd github sync --push-only` so the GitHub copy matches.
 - Under `implement`'s overrides this is automatic (no confirmation).
 
 **Collaborative repos — report only, never close:**
-- Do NOT call `gh issue close` or the milestone close API — issue lifecycle there belongs to someone else (a PM or the repo owner triages).
+- Do NOT close issues, milestones, or epics — issue lifecycle there belongs to someone else (a PM or the repo owner triages).
 - Do NOT post a comment on issues unless the user explicitly asks ("comment on #123 that this is done").
 - In the session summary, list matches as **"Issues resolved by this session (not closed — owned by `<owner>`): #12, #34"** so the user can hand them off.
 
@@ -176,7 +180,7 @@ Parse the reply into per-item dispositions; **unmentioned items default to skip.
 
 *Act pass* — only after every disposition is recorded, execute by group:
 1. **Fix now** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change.
-2. **File** — batch-file issues (`gh issue create`, or `followups.md` appends on a non-GitHub repo); capture new numbers/URLs for Step B.
+2. **File** — batch-file issues on the resolved backend (`bd create`, `gh issue create`, or `followups.md` appends when neither exists); capture the new IDs/URLs for Step B.
 3. **Skip** — drop.
 
 **⛔ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or skipped, and `git status` is clean.**
@@ -201,7 +205,7 @@ Reuse the Phase 2 ownership verdict.
 
 No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push.
 
-**Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never call `gh issue close` here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
+**Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never close an issue here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (On a beads repo in mirror mode, `#<n>` is the mirrored GitHub number — it's the `external_ref` field on the bead, `gh-<n>`. A bead with no external ref has no GitHub issue to close; list it in the summary instead.) (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
 - **Interactive pass** → **offer** the PR (only on an explicit yes in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines). If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
 - **Continuous pass authorized by `/iterate`** → **create the PR autonomously.** Starting an `/iterate` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the loop's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
 

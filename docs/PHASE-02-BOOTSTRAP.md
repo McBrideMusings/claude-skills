@@ -74,7 +74,7 @@ Keep these in sync as you work:
 | `docs/api.md` | (if exists) external API surface changes |
 | `docs/architecture/*` | (if exists) subsystem behavior changes |
 
-Don't write new top-level planning / phase / feature docs in `docs/` — file a GitHub issue instead. `roadmap.md` is the only forward-looking doc.
+Don't write new top-level planning / phase / feature docs in `docs/` — file an issue on the repo's tracker instead (see `../_tracker/_detect.md`). `roadmap.md` is the only forward-looking doc.
 ```
 
 ## `[commands.docs]` shape for admin.toml

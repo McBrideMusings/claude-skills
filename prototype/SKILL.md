@@ -81,7 +81,7 @@ Picking a winner needs no verb — say it in chat ("go with Dense") and the prom
 ## When done
 
 The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in
-`docs/adr/`, GitHub issue) along with the question it was answering — if the user is around, that's a
+`docs/adr/`, a tracked issue) along with the question it was answering — if the user is around, that's a
 quick conversation; if not, leave `NOTES.md` in the prototype directory with the verdict blank. Then
 delete the prototype.
 

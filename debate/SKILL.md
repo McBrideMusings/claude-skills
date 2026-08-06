@@ -17,7 +17,7 @@ There is no argument grammar. Read the whole argument string as intent and resol
 | What you're looking at | Resolves to |
 |---|---|
 | No argument | the current conversation — the thing this session has been designing |
-| `#47`, `47` | `gh issue view 47` |
+| `#47`, `47`, `myproj-zb8` | that issue, read from the repo's backend (`bd show myproj-zb8 --json` / `gh issue view 47`) |
 | A path that exists | that file's content as the subject |
 | A path under `tmp/claude/debates/` | a prior debate — carry its full record forward as prior art |
 | Anything else | the text itself, verbatim, as the prompt |

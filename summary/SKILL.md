@@ -42,7 +42,7 @@ On non-base branches the summary file is **branch-scoped and persistent across s
 
 ### Header
 
-One or two sentences. Plain English, user-visible outcome, no labels or bullets. If the branch resolves a GitHub issue, open with `Resolves #N` on its own line. Skip if no issue — don't invent one.
+One or two sentences. Plain English, user-visible outcome, no labels or bullets. If the branch resolves a GitHub issue, open with `Resolves #N` on its own line — GitHub reads that line and closes the issue when the PR merges. On a beads repo, write `Resolves <bead-id>` instead; nothing parses it, so `/wrap-up` still has to run `bd close`, and the line is there for the human reading the summary. Skip if no issue — don't invent one.
 
 ```
 Resolves #42

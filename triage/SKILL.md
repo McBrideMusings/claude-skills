@@ -1,6 +1,6 @@
 ---
 name: triage
-description: "Pick the next work item from GitHub issues or prior-session follow-ups. Assesses project phase (early vs mature) and recommends one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', 'pick next issue', start-of-session planning."
+description: "Pick the next work item from the repo's issue backend (beads or GitHub) or prior-session follow-ups. Assesses project phase (early vs mature) and recommends one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', 'pick next issue', start-of-session planning."
 ---
 
 # Triage
@@ -27,7 +27,9 @@ User may pass a GitHub URL:
 | `github.com/owner/repo/issues` or `github.com/owner/repo` | All open issues |
 | `github.com/orgs/owner/projects/N` | Project board items |
 
-**No URL** → default to current repo (`gh repo view --json nameWithOwner -q .nameWithOwner`). Also check `<repo-root>/tmp/claude/followups.md` for prior-session items. If detection fails, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
+**No URL** → default to the current repo, whichever backend owns its issues (resolve via [`../_tracker/_detect.md`](../_tracker/_detect.md); on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). Also check `<repo-root>/tmp/claude/followups.md` for prior-session items. If detection fails, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
+
+**The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`triage label:auth`, `triage p0`), resolved against the `bd` flags in Phase 02.
 
 ## Phases
 
@@ -37,7 +39,20 @@ If URL passed: strip `https://`, parse `owner/repo`, detect type from path + que
 
 ### Phase 02 — Fetch Issues and Read Docs
 
-**Issues** — pick the right `gh` command:
+**Issues** — resolve the backend once via [`../_tracker/_detect.md`](../_tracker/_detect.md), then read the list from it.
+
+**`beads`:**
+
+```bash
+bd ready --json          # unblocked work only — the candidate set
+bd list --status open --json   # everything open, for the "nothing is ready" report
+```
+
+`bd ready` already does what Phase 06 approximates on GitHub: it excludes anything with an open blocker. Score only what `ready` returns. If `ready` is empty but `list` is not, say so plainly — the backlog is entirely blocked, and the right next move is unblocking, not picking. `bd ready --explain --json` names each blocker.
+
+Filters map onto the same flags: `--label <name>` (repeatable, AND), `--label-any a,b` (OR), `-t bug`, `-p 1`, `--parent <epic-id>` for the milestone equivalent.
+
+**`github`:**
 
 ```bash
 # All open / label / search
@@ -48,7 +63,9 @@ gh issue list --repo owner/repo --state open [--label X | --search "q" | --miles
 gh project item-list <N> --owner <owner> --format json --limit 100
 ```
 
-On auth/repo-not-found errors: report and stop.
+GitHub cannot compute a ready queue — Phase 06's blocker handling stays as written.
+
+On auth/repo-not-found errors (or `bd` missing with a `.beads/` present): report and stop.
 
 **Exclude questions.** Drop any issue carrying the `question` label from the candidate set — a question is a decision to be made, owned by `iron-out`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
 
@@ -62,7 +79,7 @@ Phases 04, 05, and 06 (project-phase assessment, grouping, scoring/ranking) are 
 
 Brief (treat the rules in Phases 04–06 below as the sub-agent's brief, not the parent's own work):
 
-> "You are receiving: (a) a JSON list of GitHub issues with `number, title, labels, body, createdAt, comments, assignees`; (b) the contents of `docs/PRD.md` and `docs/roadmap.md` if present; (c) the contents of `<repo-root>/tmp/claude/followups.md` if present.
+> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees`) or beads' (`id, title, status, priority, issue_type, created_at, dependency_count, comment_count`; labels and body come from `bd show`). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; (b) the contents of `docs/PRD.md` and `docs/roadmap.md` if present; (c) the contents of `<repo-root>/tmp/claude/followups.md` if present.
 >
 > Do three things and return a compact JSON result:
 >
@@ -207,8 +224,8 @@ If the user rejects a presented candidate with a durable reason ("no, we decided
 
 ### Phase 09 — Implement
 
-- Treat a free-form reply as an override; resolve it to specific issue numbers first.
-- `gh issue view <N>` for each chosen issue.
+- Treat a free-form reply as an override; resolve it to specific issue IDs first.
+- Read each chosen issue in full — `bd show <id> --json` on beads, `gh issue view <N>` on GitHub.
 - **Verify the claim** (bug issues only). Before exploring further, reproduce the bug from the reporter's steps. Report what happened: confirmed (with the code path it hits), failed to reproduce, or insufficient detail to try. A confirmed repro makes the rest of the implementation much more reliable; on failed/insufficient, stop and check with the user before proceeding rather than implementing a fix for an unconfirmed bug.
 - Explore relevant code areas.
 - If scope has 4+ issues or estimate >4 hours, ask if user wants a plan drafted to `~/.claude/plans/` first.

@@ -5,7 +5,7 @@ description: "Log and work small frictions hit while working in a repo — retri
 
 Papercuts are small frictions logged **in the moment** — a tool call that missed and needed a retry, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha. One or two sentences: *what you were doing → what got in the way* (a guess at the cause/fix is a bonus). None are blocking; logged together they show where a repo needs sanding down.
 
-**Not** the same as: real bugs / tracked work (GitHub issues — use `followups` or `triage`), the session summary (`summary`), or anything about what got *accomplished*.
+**Not** the same as: real bugs / tracked work (issues on the repo's tracker — use `followups` or `triage`), the session summary (`summary`), or anything about what got *accomplished*.
 
 ## The writer — always route through the CLI
 
@@ -26,7 +26,7 @@ The log is the list of frictions that are **untracked**. An entry leaves it the 
 
 **Fixed — the fix landed in the code.** Documenting a workaround, or fixing one of three things an entry describes, is not fixed — either finish it or edit the entry down to the part that still bites. If an entry is really a lesson rather than a friction ("never do X in this file"), its home is a comment where X lives, not the log; move it and delete it here.
 
-**Filed — the entry became a GitHub issue or a follow-up.** File it, then delete the entry, and give the issue URL in the same breath so the trail is visible. The friction is still real and still unfixed — that's exactly what the issue now records, in the place work actually gets picked up from. Keeping a copy in the log buys nothing and costs a duplicate that will drift out of sync with the issue. One friction, one home. Partial promotion follows the same rule as a partial fix: if the issue covers only part of an entry, edit the entry down to the part that isn't filed rather than deleting it whole.
+**Filed — the entry became a tracked issue or a follow-up.** File it, then delete the entry, and give the issue URL in the same breath so the trail is visible. The friction is still real and still unfixed — that's exactly what the issue now records, in the place work actually gets picked up from. Keeping a copy in the log buys nothing and costs a duplicate that will drift out of sync with the issue. One friction, one home. Partial promotion follows the same rule as a partial fix: if the issue covers only part of an entry, edit the entry down to the part that isn't filed rather than deleting it whole.
 
 ## Mode A — author one (`/papercut <message>`, "log a papercut …")
 
@@ -68,7 +68,7 @@ Work the log, don't just print it:
 2. **Sweep out anything already fixed first.** For each entry, check whether the friction still bites — the fix may have landed in any session since. Delete every entry that no longer does, and say which went and why. Do this before clustering: a dead entry distorts a cluster into looking like a repeat offender when the repo has already moved on. If checking an entry is genuinely more work than the triage itself, keep it and say you couldn't verify it — never guess it away.
 3. Cluster the surviving entries by theme (shell/quoting, test cwd, CI/YAML, missing helper, stale cache, etc.). Surface the repeat offenders — the frictions that show up more than once are where sanding pays off.
 4. For each cluster, state the concrete objective difference / cause and, where there is one, the fix (a helper task, an allowlist entry, a doc line, a lint step). Do not rank by ROI and do not judge severity subjectively — lay out what each is and what fixing it costs, and let the user decide.
-5. Offer — do not auto-do — to promote any cluster into real tracked work: a GitHub issue / follow-up (via `followups`) for genuine bugs, or an `admin` task / doc note for setup friction. Ask in plain chat; never use `AskUserQuestion`.
+5. Offer — do not auto-do — to promote any cluster into real tracked work: a tracked issue / follow-up (via `followups`) for genuine bugs, or an `admin` task / doc note for setup friction. Ask in plain chat; never use `AskUserQuestion`.
 6. When the user takes that offer, **delete every entry you filed, in the same turn you file it** — see the deletion rule above. The issue is the entry's new home; leaving it in both places creates a duplicate that drifts. Report each deletion next to the issue URL that replaced it.
 
 ## Proactive logging (agents, in the moment)
