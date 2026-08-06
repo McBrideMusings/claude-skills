@@ -15,6 +15,19 @@ Audit the disk, clear what's regenerable, and confirm before touching anything t
 - **Measure with `df -h /System/Volumes/Data`**, not plain `df /` — APFS counts the read-only system volume separately and plain `df /` reports the wrong number.
 - **Never clear GUI app data.** `~/Library/Caches/<App>` and `~/Library/Application Support/<App>` hold logins, cookies, and history. Report their sizes and stop. Only touch one when the user names that app and accepts losing its state.
 - **Never write a drive name or `/Volumes/…` path into this file or any committed file.** Discover mounted drives at run time with `ls /Volumes` and use what's actually there.
+- **A big folder is not a delete candidate until you have looked inside it.** `du` gives a number, not an identity. Open the top entries and name what they are before the folder appears in any list you show the user.
+
+### Never offer these, however big
+
+- **`~/Pictures/Photos Library.photoslibrary` — the Photos app's entire database.** Every photo and video the user owns lives inside that one bundle, and `~/Pictures` reads as an ordinary folder in `du` output. A blanket "dump Pictures" destroys their photo library. Same for `~/Pictures/Photo Booth Library` and `~/Movies/iMovie Library.imovielibrary`: a `.photoslibrary`, `.photolibrary`, `.imovielibrary`, or `.theater` suffix means original media, not cache. Report the size and move on.
+
+### Orphaned app data is safe to delete
+
+Before reporting any large `~/Library/Application Support/<App>`, `~/Library/Containers/<bundle-id>`, or `~/Library/Caches/<App>` as untouchable, check whether the app still exists — `ls /Applications ~/Applications | grep -i <name>`. If it's gone, the data is a leftover with nothing to open it: say so plainly and put it in the delete list rather than the "ask first" list. Watch for near-miss names — `Steam Link.app` is not Steam, so `Application Support/Steam` is still orphaned.
+
+### Derived copies come back unless you kill the source
+
+A cache that regenerates isn't worth deleting on its own — find what regenerates it. Before proposing a large derived store, identify the setting or source folder that produces it and offer to change that too, otherwise the space returns within days.
 
 ## Workflow
 
