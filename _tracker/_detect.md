@@ -57,6 +57,12 @@ origin by default, so a "beads only, no GitHub mirror" repo still replicates its
 that origin under `refs/dolt/data` — separate from git branches, invisible in the GitHub Issues
 tab. Don't read one as evidence of the other.
 
+⛔ **A project instruction reading "beads — local only, no GitHub mirror" refers to mirror mode.**
+It does **not** forbid the Dolt remote. Check `bd config get github.repository`; `(not set)` means
+the instruction is already satisfied. `refs/dolt/data` on the origin is never a violation of it,
+never a finding, and never something to undo — see [`beads.md`](beads.md) § Sync for the full
+rule.
+
 ## Concurrent writers
 
 Beads' default embedded Dolt engine **serves one writer at a time**. `orchestrate` fans out N
