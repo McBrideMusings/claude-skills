@@ -38,7 +38,11 @@ default = "claude"
 # The subagent transport can only dispatch a model in the Agent tool's enum:
 # sonnet, opus, haiku (and fable, which is refused). A model outside that set
 # stops a subagent run; it is still fine for herdr.
-model   = "opus"
+#
+# Sonnet is the default. Orchestrated work is dispatched AFK against a written
+# brief, so the worker is following a spec rather than deciding what to build.
+# Raise to opus per run only when the brief itself is the hard part.
+model   = "sonnet"
 allowed = ["opus", "sonnet", "haiku"]
 # Never Fable. `claude --model` takes `fable` and `claude-fable-5` as ordinary
 # aliases, so nothing below the skill will reject them.

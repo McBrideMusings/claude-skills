@@ -101,7 +101,7 @@ max_workers = 4                  # may lower a transport's concurrency; may neve
 default     = "claude"           # kind used when the dispatch does not name one
 
 [agents.claude]                  # table key IS the herdr `agent start --kind` value
-model   = "opus"
+model   = "sonnet"               # the orchestration default — see below
 allowed = ["opus", "sonnet", "haiku"]
 denied  = ["fable", "claude-fable-5"]
 
@@ -113,7 +113,15 @@ denied  = []
 
 A kind is dispatchable **only** if it has an `[agents.<kind>]` block. Deleting a block disables that kind; there is no second place that also has to agree.
 
-**Missing file** → dispatch `claude` on `opus` and say so in the run report. **Malformed file** → stop; do not fall back. A config that cannot be parsed is not a config that permits anything.
+**Missing file** → dispatch `claude` on `sonnet` and say so in the run report. **Malformed file** → stop; do not fall back. A config that cannot be parsed is not a config that permits anything.
+
+### Sonnet is the default worker model
+
+Orchestrated work is dispatched away-from-keyboard against a written brief. The worker is not deciding what to build — it is following a spec that survived the readiness gate, in an isolated worktree, with its output verified before it lands. That is Sonnet's job. Dispatching opus by default spends the expensive model on execution that was already specified, across every worker in the swarm at once.
+
+Raise a run to opus deliberately, and say why in the run report, when the brief itself is the hard part: a design the ticket states as a goal rather than a change, a refactor whose shape is not settled, or work that has already come back failed under sonnet. Raise the run, not the config default — a permanent bump to opus is the same mistake with a longer half-life.
+
+This is a default, not a guardrail. `allowed`/`denied` still decide what may run at all; this decides what runs when nothing says otherwise.
 
 ### The guardrails live in the file *and* here
 
