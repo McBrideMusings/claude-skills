@@ -155,7 +155,7 @@ The **Agent tool** is the target for this, and it is also the default everywhere
 5. **Report on return.** When the notification lands, read the result and surface it to the user classified as exactly one of:
    - **question** — it hit a call the user owns. Bring the question into the interview loop as a normal `decision`.
    - **ready to react** — the artifact exists. Give its absolute path (own line, no trailing punctuation), say what to look at, and interview the user's reaction.
-   - **needs more info** — it lacked something the handoff should have carried. Supply it via `SendMessage` to the same agent rather than respawning.
+   - **needs more info** — it lacked something the handoff should have carried. Supply it via `SendMessage` to the same agent rather than respawning. **If the send fails with "No transcript found"** (completed background agents are often not resumable), fall back to the durable path: append the new information to the handoff file as a new round section and spawn a fresh agent pointed at it — the handoff, not the agent's memory, is the source of truth.
    - **findings** — it answered the question. Post the answer, close the issue, cascade.
 
 **Never stand in for the user's side of an `artifact` item.** A subagent that builds a prototype *and* decides whether it feels right has broken the whole point — the same guard `grill-me` carries.
