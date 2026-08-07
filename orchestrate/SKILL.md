@@ -259,6 +259,8 @@ From the **primary checkout**, one worker at a time:
 3. **Moved** → another branch landed since this worker forked. Merge, then **re-run `verify` on the merged result** before pushing. Two branches can each pass alone and break together.
 4. **Conflict** → abort the merge, leave the worktree and branch intact, escalate. Never force-resolve.
 
+Then **write the verdict's `index_entries`** into the shared index files the brief told the worker not to touch ([BRIEF.md](BRIEF.md)), and commit them with the merge or immediately after. This is the orchestrator's half of that trade and it is not optional: suppressing the edits without making them swaps a loud merge conflict for a silently stale index, which is the failure those files exist to prevent. A landed `PASS` whose worker added a file and named no entry gets that gap recorded in the report, not skipped.
+
 Close the issue with what shipped.
 
 ### 7. Retire the worker
@@ -315,6 +317,7 @@ The only other moment the human is involved. Name all of it:
 - **Stopped without a verdict** — issue, what the read showed, the follow-up filed.
 - **Escalated** — conflicts, stale verdicts, dirty worktrees left standing.
 - **Still blocked** — issue and the blocker it is waiting on.
+- **Index entries written**, and any landed branch that added a file and named none — that is a stale index in the making, and it is only visible here.
 
 ## Worker rules the brief must carry
 
@@ -324,3 +327,4 @@ These are properties of the swarm, not of any one worker — [BRIEF.md](BRIEF.md
 - **One `/implement <n> continuous` per worker. Never `/iterate`.** `continuous` is what makes a worker file-and-halt instead of prompting. `/iterate` halts unless it is on the default branch, and git refuses a second checkout of it (`fatal: 'main' is already used by worktree at …`), so it cannot run in a worktree at all.
 - **Workers never land.** Same constraint: `wrap-up`'s landing does `git checkout main`, which fails in a worktree. They commit and push their own branch; the orchestrator lands.
 - **No repo-wide formatters.** One worker reformatting the workspace makes every sibling branch conflict on formatting alone. Format only what you touched.
+- **No edits to the repo's shared index files.** A file map, a component registry, a docs table of contents — anything every change appends a row to — collides across branches by construction. Workers report the row they would have written; the orchestrator writes it at landing (step 6).

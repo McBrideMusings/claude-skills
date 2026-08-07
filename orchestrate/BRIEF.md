@@ -23,6 +23,8 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 > Start by reading the issue: `bd show <issue> --json` on a beads repo, `gh issue view <issue> --repo <owner/repo>` on GitHub.
 >
 > **Read the tracker; never write to it.** No `bd update`, no `bd close`, no `gh issue close`, no comments. On beads the embedded database takes one writer at a time and your sibling workers are competing for it; on either backend the orchestrator records the outcome from the primary checkout once your verdict file lands. Your verdict file is how you report — that is the whole channel.
+>
+> **Do not edit `<shared-index-files>`.** Every worker appends to the same lines of those files, so every branch after the first conflicts on them and none of it is about the code. Instead, put the exact text you would have written into your verdict file under `index_entries`, as `{"file": "<path>", "entry": "<the line or row>"}` — one per file you added, moved, renamed, or changed the purpose of. The orchestrator writes them from the primary checkout after your branch lands. Leaving the list out when you touched such a file is a defect, not a shortcut: the file goes stale silently, which is the failure those indexes exist to prevent.
 
 ## Why each clause is here
 
@@ -35,6 +37,15 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 | do not land, pass it through wrap-up | `wrap-up` lands by default on an owned repo; `git checkout <default>` then fails in the worktree, or worse, N workers race the same branch |
 | no repo-wide formatter | one reformat commit conflicts every sibling branch |
 | verdict file, every verdict | orchestrator has nothing to read; a missing file is indistinguishable from a pass that never ran |
+| no edits to shared index files | a repo-wide index (a file map, a component registry, a docs table of contents) is one list every change appends to, so N branches collide on it by construction. Observed on `iptv-mac`: 3 of 4 parallel branches conflicted on `docs/file-map.md`, two aborted outright, and resolving them by hand took a sizeable share of the round — none of it about the code being reviewed |
+
+## Naming the shared index files
+
+`<shared-index-files>` is filled in per repo at dispatch, not left as a placeholder. Find them before the first dispatch: a file the repo's own `CLAUDE.md` tells every change to keep in sync, and any file whose diff is one appended row per change. On `iptv-mac` that is `docs/file-map.md`; `docs/roadmap.md` and `docs/PRD.md` are borderline — they are narrative rather than one-row-per-file, so a worker editing them conflicts less often and the edit needs its context.
+
+If a repo has none, drop the clause. It is a no-op there, and the rule below applies.
+
+**The orchestrator owes the other half of this trade.** Writing the entries after landing is part of step 6, not an optional tidy-up — a swarm that suppresses the edits and then forgets to make them has traded a loud conflict for a silent staleness, which is worse. Read every landed verdict's `index_entries`, write them in the primary checkout, and commit them with the merge or immediately after.
 
 ## Adding to the brief
 
