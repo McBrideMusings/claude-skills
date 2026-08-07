@@ -1,5 +1,11 @@
 .DS_Store
 
+# Scratch, per the global rule that tmp/ is gitignored in every repo including
+# this one. Papercut and followup logs are working notes, not repo content —
+# tracking them left the submodule permanently dirty against an entry nobody
+# was going to commit.
+tmp/
+
 # Installed and updated by tldraw offline (Develop -> Install Agent Skills).
 # Theirs to change, not ours to track.
 tldraw-offline/

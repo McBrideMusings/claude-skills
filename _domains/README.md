@@ -15,6 +15,10 @@ skill (same mechanism as `_platforms/`).
 
 Engines read **both**: platform axis first, domain overlay on top.
 
+A third store, [`../_tracker/`](../_tracker/README.md), sits outside this pairing entirely — it
+names the **issue backend** a skill writes to (beads / GitHub / local file), not knowledge layered
+onto an engine. Resolved per repo by `_tracker/_detect.md`, independently of platform and domain.
+
 ## Layout
 
 ```

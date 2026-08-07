@@ -12,6 +12,23 @@ dependent_count, comment_count`. `bd count --json` returns `{"count": N, "schema
 without `--json` it prints the bare number. `bd where --json` returns `{database_path, path,
 prefix}` — use its exit code as the beads-present test.
 
+## Permissions — per machine, not synced
+
+`~/.claude/settings.json` is deliberately gitignored (see `~/.claude/CONTRIBUTING.md` — the repo is
+default-deny with an allowlist, and per-machine settings stay local). So these entries do **not**
+follow you to a new machine or into the `~/.claude-work` profile, and without them every `bd` call
+prompts, which kills any unattended `implement` / `iterate` / `orchestrate` run. Add them under
+`permissions` on each machine:
+
+```jsonc
+"allow": [ "Bash(bd *)" ],
+"ask":   [ "Bash(bd delete:*)", "Bash(bd prune:*)", "Bash(bd purge:*)",
+           "Bash(bd flatten:*)", "Bash(bd admin reset:*)" ]
+```
+
+`ask` wins over `allow`, so the five destructive verbs still surface a prompt. Everything else —
+every read, every `create`/`update`/`close`, `dolt push`, `export` — runs without one.
+
 ## Verb table
 
 | Verb | Command |

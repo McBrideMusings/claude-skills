@@ -61,3 +61,11 @@ only — game knowledge lives in the domain store). `web/diagnose` backfills whe
 A parallel store, [`../_domains/`](../_domains/README.md), holds **domain × engine** knowledge — a
 *mode* of development (e.g. `game`) rather than a stack. Engines read the platform axis first, then
 layer the domain axis on top when a domain marker is in scope. See `_domains/_detect.md`.
+
+## The other shared store
+
+[`../_tracker/`](../_tracker/README.md) is the third `_`-prefixed store, and it works differently
+from these two: not knowledge layered onto an engine, but the **issue backend** a skill writes to —
+beads, GitHub, or a local file, resolved per repo by `_tracker/_detect.md`. Any skill that creates,
+reads, closes, or comments on a tracked item reads it. Unrelated to platform or domain detection;
+a repo resolves all three independently.
