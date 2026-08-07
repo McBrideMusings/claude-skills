@@ -24,7 +24,9 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 >
 > **Read the tracker; never write to it.** No `bd update`, no `bd close`, no `gh issue close`, no comments. On beads the embedded database takes one writer at a time and your sibling workers are competing for it; on either backend the orchestrator records the outcome from the primary checkout once your verdict file lands. Your verdict file is how you report — that is the whole channel.
 >
-> **Do not edit `<shared-index-files>`.** Every worker appends to the same lines of those files, so every branch after the first conflicts on them and none of it is about the code. Instead, put the exact text you would have written into your verdict file under `index_entries`, as `{"file": "<path>", "entry": "<the line or row>"}` — one per file you added, moved, renamed, or changed the purpose of. The orchestrator writes them from the primary checkout after your branch lands. Leaving the list out when you touched such a file is a defect, not a shortcut: the file goes stale silently, which is the failure those indexes exist to prevent.
+> **Do not edit `<shared-index-files>`.** Every worker appends to the same lines of those files, so every branch after the first conflicts on them and none of it is about the code. Instead, put the exact text you would have written into your verdict file under `index_entries`, as `{"file": "<path>", "entry": "<the full replacement line or row>"}`. The orchestrator writes them from the primary checkout after your branch lands.
+>
+> **What needs an entry is not "files I created" — it is every line of those indexes your change made untrue.** Before writing the list, open each index and read the entries for every file in your diff, including ones you only edited. If an entry describes behaviour you changed, a count you changed, or a rule you added a condition to, it needs a replacement line even though the file already existed. Return `[]` only after looking, never by assuming an edit-only change cannot have stranded a description. Observed: a worker changed when playback resumes and returned `[]`, leaving three entries describing the old rule — and because nothing conflicted, nothing announced it.
 
 ## Why each clause is here
 
@@ -38,6 +40,7 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 | no repo-wide formatter | one reformat commit conflicts every sibling branch |
 | verdict file, every verdict | orchestrator has nothing to read; a missing file is indistinguishable from a pass that never ran |
 | no edits to shared index files | a repo-wide index (a file map, a component registry, a docs table of contents) is one list every change appends to, so N branches collide on it by construction. Observed on `iptv-mac`: 3 of 4 parallel branches conflicted on `docs/file-map.md`, two aborted outright, and resolving them by hand took a sizeable share of the round — none of it about the code being reviewed |
+| "entries your change made untrue", not "files you created" | the first round under the clause above, a worker that added no files returned `index_entries: []` and left three entries describing the resume rule it had just changed. An edit-only diff reads as "nothing to index" unless the brief says otherwise, and the failure is silent by construction — suppressing the edit is exactly what removed the conflict that used to announce it |
 
 ## Naming the shared index files
 
