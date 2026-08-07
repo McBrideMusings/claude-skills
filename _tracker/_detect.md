@@ -38,9 +38,13 @@ bd github status
 ```
 
 **Read the `Status:` line, not the exit code.** `bd github status` exits 0 whether or not GitHub is
-configured. `bd config get github.repository` is not a usable test either: on an unset key it
-prints the literal string `github.repository (not set)` on stdout and still exits 0, so "produced
-output" means nothing here.
+configured, so branching on its exit code always says "configured."
+
+The same trap sits in the other command that answers this question. `bd config get
+github.repository` on an unset key prints the literal string `github.repository (not set)` and
+exits 0 — non-empty output, success exit. **Match the text `(not set)`; never test for empty
+output or a non-zero exit.** Both commands answer correctly when read as text and wrongly when
+read as a status code.
 
 - **`Status: ✅ Configured`** (or an `Owner:`/`Repository:` pair with values) → **mirror mode**.
   Beads is the source of truth; GitHub Issues is a copy. After any write (create, close, comment,
@@ -51,17 +55,30 @@ output" means nothing here.
 
 Mirror mode does not change which verb table you read — it appends one push per write.
 
-**Mirror mode is about GitHub *Issues*, and nothing else.** It is unrelated to `sync.remote`, the
-Dolt remote that carries the issue database itself. Beads points `sync.remote` at the repo's git
-origin by default, so a "beads only, no GitHub mirror" repo still replicates its database over
-that origin under `refs/dolt/data` — separate from git branches, invisible in the GitHub Issues
-tab. Don't read one as evidence of the other.
+### ⛔ Two different things live on GitHub. Learn them apart before you say a word about either.
 
-⛔ **A project instruction reading "beads — local only, no GitHub mirror" refers to mirror mode.**
-It does **not** forbid the Dolt remote. Check `bd config get github.repository`; `(not set)` means
-the instruction is already satisfied. `refs/dolt/data` on the origin is never a violation of it,
-never a finding, and never something to undo — see [`beads.md`](beads.md) § Sync for the full
-rule.
+| | **GitHub Issues mirror** | **The Dolt remote** |
+| --- | --- | --- |
+| What it is | each bead copied into a real GitHub issue | the issue *database* stored in the repo |
+| Where it lands | the repo's **Issues tab** | `refs/dolt/data` + `refs/heads/__dolt_remote_info__` |
+| Turned on by | `bd config set github.repository <owner>/<repo>` | `bd dolt push` — on by default, git origin |
+| Governed by | `github.repository` / `bd github status` | `sync.remote` |
+| Default | **off** | **on** |
+| Is it optional? | yes | **no — it is how beads persists anything** |
+
+**The issue data belonging to the GitHub repo is the entire point of beads.** `.beads/` is
+gitignored and disposable; those two refs are the only off-machine copy. Pushing them is the
+system working.
+
+⛔ **A project instruction reading "beads — local only, no GitHub mirror" is about the left column
+only.** It does not forbid the Dolt remote, has nothing to say about it, and is already satisfied
+whenever `bd config get github.repository` prints `(not set)`.
+
+⛔ **`refs/dolt/data` on the origin is never a finding.** Not a leak, not a violation, not a
+surprise, not something to mention, and never something to undo. Do not offer to delete it, do not
+ask whether the user wants it there, do not report it in an audit. If you are about to write a
+sentence containing both "refs/dolt" and any of *leaked / left the machine / undo / revert /
+local only*, you have made this exact mistake — stop and read [`beads.md`](beads.md) § Sync.
 
 ## Concurrent writers
 

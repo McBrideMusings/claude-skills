@@ -83,13 +83,22 @@ replacing any existing section:
 beads (prefix `myproj`) — mirrored to GitHub via `bd github sync`
 ```
 
-One of these four bodies:
+One of these four bodies, **verbatim** — the wording is load-bearing:
 
-- `beads (prefix <p>) — mirrored to GitHub via `bd github sync``
-- `beads (prefix <p>) — no GitHub Issues mirror` (the database still replicates over the git
-  origin as `refs/dolt/data`; "no mirror" means nothing appears in the GitHub Issues tab)
+- ``beads (prefix <p>) — database syncs to the git origin (`refs/dolt/data`). GitHub Issues mirror: ON via `bd github sync`.``
+- ``beads (prefix <p>) — database syncs to the git origin (`refs/dolt/data`). GitHub Issues mirror: OFF.``
 - `GitHub issues via gh`
 - `Local markdown in <repo-root>/tmp/claude/followups.md (no GitHub remote / gh not authed at bootstrap time)`
+
+⛔ **Never write "local only" or a bare "no GitHub mirror" for a beads repo.** Both read as "keep
+the issue data off GitHub," which is the opposite of how beads works — the database always
+replicates to the git origin, and that is the point. A later agent read exactly that phrase, took
+the routine `refs/dolt/data` push for a leak, and offered to delete the user's only off-machine
+copy of 23 issues. Say what is ON and what is OFF, separately, every time. Full rule:
+[`../_tracker/beads.md`](../_tracker/beads.md) § Sync.
+
+**If you find an older section using the "local only" phrasing, rewrite it to the wording above** —
+even on a repo where nothing else in this phase needed changing.
 
 Step 2 of `_tracker/_detect.md` reads this section and trusts it over auto-detection, so it is how
 a repo pins a choice that detection would otherwise get wrong.
