@@ -91,7 +91,7 @@ Resolve the backend once via [`../_tracker/_detect.md`](../_tracker/_detect.md).
 - Close the milestone when 0 open issues remain: on beads, `bd close <epic-id> -r "all children complete"`; on GitHub, `gh api repos/{owner}/{repo}/milestones/NUMBER -X PATCH -f state=closed`.
 - **Always** check milestones after closing issues — if a milestone has 0 open issues, close it immediately.
 - **On beads, add `--suggest-next` to the close** and report what it unblocked. That is the one thing this session hands the next one, and it costs nothing.
-- **On beads, push at the end of the phase:** `bd dolt push`. Issue data travels over the Dolt remote, not in the git commit — skip this and the work is closed only on this machine. In mirror mode (`bd config get github.repository` prints a repo), also run `bd github sync --push-only` so the GitHub copy matches.
+- **On beads, push at the end of the phase:** `bd dolt push`. Issue data travels over the Dolt remote, not in the git commit — skip this and the work is closed only on this machine. **If `bd config get sync.remote` reads `(not set)`, this repo has never pushed its issue database, and `bd dolt push` will silently configure the git origin as the Dolt remote and push to it. Ask before that first push** — it sends the backlog to a remote the user may have deliberately kept it off. Every push after that is unremarkable. In mirror mode (`bd github status` reports `Status: ✅ Configured`), also run `bd github sync --push-only` so the GitHub Issues copy matches.
 - Under `implement`'s overrides this is automatic (no confirmation).
 
 **Collaborative repos — report only, never close:**

@@ -31,20 +31,31 @@ invocation and reuse the answer for the rest of the run.
 ## Mirror mode (beads + GitHub together)
 
 When step 3 resolved `beads`, check once whether the beads database is configured to mirror to
-GitHub:
+GitHub Issues:
 
 ```bash
-bd config get github.repository
+bd github status
 ```
 
-- **Prints a repo (`owner/name`)** → **mirror mode**. Beads is the source of truth; GitHub is a
-  copy. After any write (create, close, comment, label), push just that item:
-  `bd github sync --push-only --issues <id>`. Read paths still read beads only — never `gh issue
-  list` — because the mirror lags by design.
-- **Empty / non-zero exit** → **beads only**. Do not touch `gh` for issues at all. Do not offer to
-  set up the mirror mid-task; that is a `bootstrap` decision.
+**Read the `Status:` line, not the exit code.** `bd github status` exits 0 whether or not GitHub is
+configured. `bd config get github.repository` is not a usable test either: on an unset key it
+prints the literal string `github.repository (not set)` on stdout and still exits 0, so "produced
+output" means nothing here.
+
+- **`Status: ✅ Configured`** (or an `Owner:`/`Repository:` pair with values) → **mirror mode**.
+  Beads is the source of truth; GitHub Issues is a copy. After any write (create, close, comment,
+  label), push just that item: `bd github sync --push-only --issues <id>`. Read paths still read
+  beads only — never `gh issue list` — because the mirror lags by design.
+- **`Status: ❌ Not configured`** → **beads only**. Do not touch `gh` for issues at all. Do not
+  offer to set up the mirror mid-task; that is a `bootstrap` decision.
 
 Mirror mode does not change which verb table you read — it appends one push per write.
+
+**Mirror mode is about GitHub *Issues*, and nothing else.** It is unrelated to `sync.remote`, the
+Dolt remote that carries the issue database itself. Beads points `sync.remote` at the repo's git
+origin by default, so a "beads only, no GitHub mirror" repo still replicates its database over
+that origin under `refs/dolt/data` — separate from git branches, invisible in the GitHub Issues
+tab. Don't read one as evidence of the other.
 
 ## Concurrent writers
 

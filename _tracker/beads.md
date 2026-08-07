@@ -85,9 +85,16 @@ bd dolt push     # at the end of a session that wrote
 `bd init` installs git hooks that handle most of this; an explicit `bd dolt push` at session end
 is still the reliable close-out (`wrap-up` does it).
 
+**`bd dolt push` configures a remote if none exists.** On a repo with no `sync.remote` set, it
+prints `Configured Dolt remote origin from git origin.` and pushes the issue database to the git
+origin under `refs/dolt/data` — it does not fail, and it does not ask. That ref is separate from
+git branches and never shows in the GitHub Issues tab, but the issue data does leave the machine.
+On a repo the user deliberately kept local, confirm before the first push, and check with
+`bd config get sync.remote` (`(not set)` means no remote yet) if you need to know beforehand.
+
 ## Mirror mode
 
-If `bd config get github.repository` prints a repo, push each write through:
+If `bd github status` reports `Status: ✅ Configured`, push each write through:
 
 ```bash
 bd github sync --push-only --issues <id>

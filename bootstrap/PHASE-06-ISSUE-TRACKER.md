@@ -22,8 +22,9 @@ Phase 07. Don't guess at a backend when the real one is unreadable.
 
 ### `beads` — already set up
 
-No-op. Also run `bd config get github.repository` once; if it prints a repo, note mirror mode in
-the record below.
+No-op. Also run `bd github status` once; if its `Status:` line reads `✅ Configured`, note mirror
+mode in the record below. Do not test this with `bd config get github.repository` — on an unset key
+it prints `github.repository (not set)` and exits 0, so every repo would look configured.
 
 ### `github` — offer migration
 
@@ -85,7 +86,8 @@ beads (prefix `myproj`) — mirrored to GitHub via `bd github sync`
 One of these four bodies:
 
 - `beads (prefix <p>) — mirrored to GitHub via `bd github sync``
-- `beads (prefix <p>) — local only, no GitHub mirror`
+- `beads (prefix <p>) — no GitHub Issues mirror` (the database still replicates over the git
+  origin as `refs/dolt/data`; "no mirror" means nothing appears in the GitHub Issues tab)
 - `GitHub issues via gh`
 - `Local markdown in <repo-root>/tmp/claude/followups.md (no GitHub remote / gh not authed at bootstrap time)`
 
