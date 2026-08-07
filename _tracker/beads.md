@@ -111,9 +111,59 @@ appears in the Issues tab. Verify with `bd config get github.repository`; `(not 
 compliant state. These are two unrelated mechanisms, and reading a line about one as a rule about
 the other has already cost real time.
 
-Also: JSONL export (`export.auto`, `.beads/issues.jsonl`) is **not** the sync path and is off by
-default — beads' own config comments say so. Dolt remotes carry the data. Do not "fix" a repo by
-enabling export because issue data isn't visible in `git ls-files`.
+## JSONL export — on by default in this setup
+
+Separate from sync, and **not** a substitute for it. The Dolt refs remain the source of truth and
+the only real backup; `bd export --help` says outright that JSONL "does not capture Dolt branches,
+commit history, working-set state, or non-issue tables." What the export buys is a plain-text
+copy of the backlog committed alongside the code: readable on github.com, diffable in PRs,
+greppable without `bd` installed.
+
+**Standing convention: every beads repo here has it on.** `bootstrap` turns it on at init; if you
+find a beads repo without it, turn it on.
+
+```bash
+bd config set export.auto true
+bd config set export.git-add true
+bd export --output .beads/issues.jsonl   # one-time seed — see below
+git add .beads/issues.jsonl
+```
+
+### ⛔ `export.auto: true` does nothing until the file is already tracked
+
+Verified on `bd 1.1.2`. Setting the config and committing produces **no file at all**. Run the
+hook with `--verbose` and it says why:
+
+```
+pre-commit: skipping JSONL export — no staged .beads paths
+auto-export: skipping — running as git hook
+```
+
+The pre-commit hook only refreshes `issues.jsonl` when the commit already stages something under
+`.beads/`, and the interval-based auto-export deliberately stands down inside a git hook. So the
+file that does not exist is never staged, is therefore never written, and the setting looks broken
+while reporting `true` from `bd config get`.
+
+**Break the loop once with an explicit `bd export` + `git add`.** After that first commit it is
+self-maintaining: every later commit picks up a fresh `issues.jsonl` automatically, staged by the
+hook, even when the commit is otherwise unrelated to issues. Confirmed — a commit touching only
+`README.md` came out as `.beads/issues.jsonl | 1 +` and `README.md | 1 +`.
+
+`bd config set export.auto true` writes a flat `export.auto:` key beside any existing `export:`
+map in `config.yaml`. It looks wrong and reads back correctly; leave it alone.
+
+### Pull before reading, push after writing
+
+Issue state travels between machines through Dolt, and nothing in git brings it along. So a
+session that touches issues brackets its work:
+
+```bash
+bd dolt pull     # before the first read — another machine may have moved the backlog
+bd dolt push     # after the last write
+```
+
+`wrap-up` does both. The `issues.jsonl` in the commit is a by-product of that, never the carrier —
+a clone that only has the JSONL and never pulls has a stale, read-only picture.
 
 ## Mirror mode
 

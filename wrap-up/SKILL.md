@@ -78,6 +78,8 @@ Check for and update ANY of these tracking mechanisms that exist. Do not create 
 
 Resolve the backend once via [`../_tracker/_detect.md`](../_tracker/_detect.md).
 
+**On beads, `bd dolt pull` first — before you list anything.** Issue state moves between machines through Dolt, and nothing in the git checkout carries it, so the local database can be behind another machine's by an entire session's worth of work. Reading first and pulling later means closing issues against a stale backlog. Pull, then list.
+
 **Always — owned and collaborative alike:**
 - List open issues (`bd list --status open --json` on beads, `gh issue list --state open` on GitHub) and review each against the session's work. Look for **two** cases, not one:
   - **Completed** — session work fulfilled the issue's intent.
@@ -92,6 +94,7 @@ Resolve the backend once via [`../_tracker/_detect.md`](../_tracker/_detect.md).
 - **Always** check milestones after closing issues — if a milestone has 0 open issues, close it immediately.
 - **On beads, add `--suggest-next` to the close** and report what it unblocked. That is the one thing this session hands the next one, and it costs nothing.
 - **On beads, push at the end of the phase:** `bd dolt push`. Issue data travels over the Dolt remote, not in the git commit — skip this and the work is closed only on this machine. **Run it unconditionally, including the very first push on a repo that has never pushed.** If `sync.remote` is unset, `bd` configures the git origin as the Dolt remote and pushes the database to `refs/dolt/data` — that is beads working as designed, not a leak, and it needs no confirmation. Do not report those refs, do not unset `sync.remote`, do not delete them; they are the only off-machine copy. See [`../_tracker/beads.md`](../_tracker/beads.md) § Sync. In mirror mode (`bd github status` reports `Status: ✅ Configured`), also run `bd github sync --push-only` so the GitHub Issues copy matches — mirror mode is about the Issues tab and is unrelated to `sync.remote`.
+- **On beads, the JSONL export rides along in Phase 5's commit.** With the standard config (`export.auto` + `export.git-add`, set by `bootstrap`), the pre-commit hook refreshes `.beads/issues.jsonl` and stages it, so this session's issue changes land in the same commit as the code. Nothing to do — but if `git status` after Phase 5 still shows `.beads/issues.jsonl` modified and unstaged, the export never got seeded on this repo: run `bd export --output .beads/issues.jsonl`, `git add` it, and amend. See [`../_tracker/beads.md`](../_tracker/beads.md) § JSONL export.
 - Under `implement`'s overrides this is automatic (no confirmation).
 
 **Collaborative repos — report only, never close:**

@@ -22,9 +22,33 @@ Phase 07. Don't guess at a backend when the real one is unreadable.
 
 ### `beads` — already set up
 
-No-op. Also run `bd github status` once; if its `Status:` line reads `✅ Configured`, note mirror
-mode in the record below. Do not test this with `bd config get github.repository` — on an unset key
-it prints `github.repository (not set)` and exits 0, so every repo would look configured.
+Run `bd github status` once; if its `Status:` line reads `✅ Configured`, note mirror mode in the
+record below. Do not test this with `bd config get github.repository` — on an unset key it prints
+`github.repository (not set)` and exits 0, so every repo would look configured.
+
+Then apply the **JSONL export standard** below if it isn't already on — this is additive, so it
+runs automatically without asking, like every other missing standard artifact in this skill.
+
+### The JSONL export standard — every beads repo gets it
+
+A plain-text copy of the backlog rides along in the repo's commits, so it is readable on
+github.com, diffable in PRs, and greppable without `bd` installed. Check `bd config get
+export.auto`; if it isn't `true`:
+
+```bash
+bd config set export.auto true
+bd config set export.git-add true
+bd export --output .beads/issues.jsonl
+git add .beads/issues.jsonl
+```
+
+⛔ **The last two lines are not optional.** `export.auto` alone produces nothing: the pre-commit
+hook only refreshes `issues.jsonl` when a `.beads/` path is already staged, so a file that has
+never been committed is never written, while `bd config get export.auto` cheerfully reports
+`true`. Seed it once by hand and it maintains itself from then on. Full detail:
+[`../_tracker/beads.md`](../_tracker/beads.md) § JSONL export.
+
+This does **not** replace the Dolt sync — it is a readable copy, not a backup. Both are on.
 
 ### `github` — offer migration
 
@@ -43,7 +67,8 @@ their repo. Ask once:
   bd github sync --pull-only --dry-run
   ```
   Show the dry-run result, then run it for real without `--dry-run`. Pulled issues carry their
-  GitHub number as `--external-ref gh-<n>`, so `bd show` still points back.
+  GitHub number as `--external-ref gh-<n>`, so `bd show` still points back. Then apply the JSONL
+  export standard above.
 
   Then **wire the dependencies the import can't see.** GitHub has no dependency edges, so
   "Blocked by #N" lives in issue bodies as prose. Grep the imported descriptions for
@@ -63,7 +88,8 @@ Same question, shorter, since there's nothing to migrate:
 > No issue tracker here. Beads works with no remote and no account, and gives a dependency-aware
 > ready queue. Run `bd init`? (yes / no — keep using `tmp/claude/followups.md`)
 
-- **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`. If
+- **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`, then apply the JSONL export
+  standard above. If
   `<repo-root>/tmp/claude/followups.md` exists with open items, offer to import them —
   one `bd create "<title>" -t task` per unchecked item — and move each imported item into the
   file's `## Resolved` section with the new bead ID appended, so nothing is tracked twice.
