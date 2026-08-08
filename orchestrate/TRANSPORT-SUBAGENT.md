@@ -2,7 +2,7 @@
 
 Workers are `Agent` calls in this session. No terminal, no tab, nothing to watch — but they run anywhere and need no `Monitor`, and the harness notifies you when each one finishes.
 
-Available whether or not you are inside herdr. Chosen, and named in the report, exactly like the others.
+Available whether or not you are inside herdr, and **this is the transport a run with no token gets** ([SKILL.md](SKILL.md) → Choosing). Named in the first status line and the report exactly like the others — a default still gets said out loud.
 
 **This transport could carry an answer to a worker. It must not.** `SendMessage` would resume a finished agent from its transcript, which is exactly why the ban is written here rather than left implicit: see [SKILL.md](SKILL.md) → No worker ever asks the human anything. The only text this skill ever sends a worker is its brief.
 

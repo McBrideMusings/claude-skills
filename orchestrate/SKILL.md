@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Workers never ask questions: anything needing a human decision is gated out before dispatch or filed and halted. Transport is picked by token — `orchestrate herdr|subagent|workflow` — or asked once when unnamed. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items is /iterate."
+description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Workers never ask questions: anything needing a human decision is gated out before dispatch or filed and halted. Workers are subagents by default; `orchestrate herdr` or `orchestrate workflow` picks another transport. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items is /iterate."
 ---
 
 # /orchestrate — fan work out to a swarm, land it, retire it
@@ -39,14 +39,15 @@ These are the same targets as [../delegate/TARGETS.md](../delegate/TARGETS.md) �
 
 ### Choosing
 
-**A transport named in the arguments wins, and no menu is printed.** The token `herdr`, `subagent`, or `workflow` anywhere in the arguments picks it — `orchestrate workflow`, `orchestrate label:api herdr`. Same convention as `implement delegate` and `iterate workflow`. This is how you A/B two transports over the same backlog without answering a prompt each run. Naming `herdr` outside herdr is an error, not a fallback: say so and stop.
+**Subagent is the default. No menu is ever printed, inside herdr or out.** A run with no transport token dispatches subagents, and the first status line says so.
 
-With no token:
+A token in the arguments picks another one — `herdr` or `workflow` anywhere in the arguments, as in `orchestrate workflow`, `orchestrate label:api herdr`. Same convention as `implement delegate` and `iterate workflow`. That is also how you A/B two transports over the same backlog. Naming `herdr` outside herdr is an error, not a fallback: say so and stop.
 
-- `HERDR_ENV=1` → all three are available. State the trade in one line each and let the human pick before the first dispatch.
-- Otherwise → **subagent or workflow**; do not offer herdr and do not stop.
+**Why subagent and not workflow.** The workflow transport calls the `Workflow` tool, which may only be called when the human has asked for it — **typing the token is that request**, and a default cannot make it on the human's behalf. Beyond that rule, workflow's unit is a round: the whole batch goes out, the whole batch comes back, and the frontier sits still until the slowest item in the round finishes. Subagent frees and refills one slot at a time, which is what keeps a swarm full. Workflow's own advantages — `schema`-validated returns instead of prose, a run resumable by `runId`, live per-agent progress in `/workflows` — are worth the token when you want them, not worth defaulting to.
 
-The workflow transport calls the `Workflow` tool, which requires the human to have asked for it. **Naming it — by token or by picking it from the menu — is that request.** Do not reach for it under either other transport, and do not use `Workflow` for any other part of this skill.
+**The trade, stated as two different efficiencies.** Workflow is cheaper on *this* context: a round returns small validated objects and wakes you once, where subagent hands you each worker's full report and wakes you per worker. Subagent is cheaper on *time*: a freed slot refills immediately instead of waiting out the round. Neither changes what the workers themselves spend — N issues is N `/implement` passes on any transport. Type `workflow` when a long frontier is about to fill this context; take the default when you want the swarm kept full.
+
+So: do not reach for `Workflow` under either other transport, and do not use it for any other part of this skill.
 
 Say which transport is running in the first status line and in the final report. The failure to avoid is not "picked the wrong one" — it is a run that quietly *became* another one, so the human waits on a `Monitor` that was never armed, or tabs over looking for workers that were never terminals.
 
@@ -73,7 +74,7 @@ All three use the **same worktrees** (`git worktree add -b <branch>`, created by
 
 All must hold. Print the reason and stop otherwise.
 
-1. **A transport is available and named** — see [Transports](#transports). What is forbidden is degrading to **sequential in-session work** — doing the issues yourself, one after another, in this pane. That is `/iterate`, and running it under this name is the silent-different-skill failure.
+1. **A transport is resolved** — the token if one was typed, subagent otherwise; see [Transports](#transports). What is forbidden is degrading to **sequential in-session work** — doing the issues yourself, one after another, in this pane. That is `/iterate`, and running it under this name is the silent-different-skill failure.
 2. **In the primary checkout, not a worktree** — `git rev-parse --git-dir` must not contain `/worktrees/`. Only the primary checkout can hold the default branch, and landing needs it.
 3. **Clean tree on the default branch**, up to date with the remote.
 4. **On a beads repo, tracker writes are single-writer.** All worktrees share the main repository's one `.beads` workspace, and beads' default embedded Dolt engine serves one writer at a time — N workers each running `bd update --claim` or `bd close` will contend, and a loser gets an error, not a queue. So: **workers never write to beads.** They report their verdict file as always; this orchestrator does every claim, comment, and close from the primary checkout at steps 5–7, where the writes are already serialised. If the repo has run `bd init --server`, concurrent writes are safe and this restriction lifts — check with `bd where --json`: a `database_path` ending in `embeddeddolt` is embedded (single writer), one ending in `dolt` is server mode. Say which mode you found.
