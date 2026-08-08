@@ -50,7 +50,11 @@ A sketch presents *one* layout decision. When multiple frames are needed, be exp
 
 Default to the smallest sketch that lets the user say yes/no. Six labelled frames is rarely the smallest sketch.
 
-### Output 02 — Sibling .monojson Stub on Disk
+### Output 02 — Sibling .monojson Stub on Disk (opt-in)
+
+**Do not emit the stub unless the user asks for a canvas.** When the ASCII sketch answers the question, the file is pure confusion — and it has already misfired: a user opened it expecting the sketch, found a blank document, and reasonably concluded the export was broken. It cannot ever contain the sketch. Monodraw's CLI is render-only with no import flag, so there is no path from ASCII back into a Monodraw file.
+
+Emit it when the user asks to redraw, asks for a canvas, or pushes back on the layout in a way that means they want to move things themselves.
 
 Write an empty Monodraw canvas to `<repo-root>/tmp/claude/sketches/<YYYY-MM-DD>-<HHMM>-<slug>.monojson` and print the path in chat so the user can click it in Ghostty to open Monodraw.
 
@@ -84,8 +88,10 @@ Use the actual slug, not the placeholder. The seed is a valid empty canvas; the 
 After writing the stub, print one line in chat with the full absolute path so it's clickable in Ghostty. The path MUST be the last token on its line with **no trailing punctuation** (`.`, `,`, `)`, etc.) — Ghostty grabs the contiguous run under the cursor and a trailing character breaks the open:
 
 ```
-Stub: <repo-root>/tmp/claude/sketches/2026-05-05-1430-conflict-modal.monojson
+Blank canvas to redraw in: <repo-root>/tmp/claude/sketches/2026-05-05-1430-conflict-modal.monojson
 ```
+
+**Say it is blank, on the line that hands it over.** "Stub:" tells the user nothing about what is inside, so they open it expecting the sketch. Naming it a blank canvas makes the emptiness the stated purpose rather than a surprise.
 
 In a follow-up sentence (not on the same line as the path), tell the user they can ⌘-click that path in Ghostty to open it in Monodraw, draw an alternative, save, and let you know.
 
@@ -118,7 +124,7 @@ Everything in "stay on layout" above still applies.
 **Screenshot it and look at it** before handing it over, then print the path. Same absolute-path rule
 as the stub.
 
-The `.monojson` stub is still worth writing alongside it — the user may still want to redraw.
+The `.monojson` stub follows the same opt-in rule as above — write it only if the user asks for a canvas, not by default.
 
 ## Reading the user's edits
 

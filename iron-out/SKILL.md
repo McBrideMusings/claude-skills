@@ -71,7 +71,9 @@ Fog only ever gathers *toward* the destination. Work past it is **Out of scope**
 
 ## Phase 1 — Scan
 
-Resolve the issue backend via [`../_tracker/_detect.md`](../_tracker/_detect.md), then fetch every in-scope issue plus its dependencies. Hand the bodies to a Haiku sub-agent so they stay out of parent context.
+Resolve the issue backend via [`../_tracker/_detect.md`](../_tracker/_detect.md), then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context.
+
+**Sonnet, not Haiku — the isolation is the point, not the model.** A Haiku run returned template placeholder text in every `question` field (literally `"Decision or design choice not settled: Which"`) while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone. Re-running on Sonnet produced real questions from the same bodies.
 
 - **`beads`:** `bd list --status open --json` (filtered per selector) and `bd dep tree <id>` for the edges. The dependency graph is real here, so `Blocked by:` prose in a body is a *finding* — an edge someone never wired — not the source of truth. Note each one and offer to convert it: `bd dep add <id> <blocker-id> -t blocks`.
 - **`github`:** `gh issue list … --json number,title,url,labels,body` plus `gh issue view <n> --json blockedBy`, with the `Blocked by:` prose fallback.
@@ -87,9 +89,17 @@ Sub-agent brief:
 >
 > Then say what resolving it would take: `decision` (a call the user owns), `fact` (something knowable by reading docs, APIs, or code), `artifact` (needs something concrete to react to), `manual` (needs the user to go do a thing offline).
 >
-> Return JSON only: per issue `{"number": N, "verdict": "afk"|"needs-human", "failed_test": "plan"|"objectivity"|"both", "needs": "decision"|"fact"|"artifact"|"manual", "question": "<the specific unresolved thing, one line>", "blocked_by": [numbers]}`.
+> 3. **Staleness check** — the two tests above ask whether an issue is *decidable*. They never ask whether what it says about the codebase is still *true*. So also resolve every concrete thing the body cites: file paths, symbols, and commit hashes. `grep` the symbol, stat the path, `git cat-file -e` the hash. Anything that no longer resolves goes in `stale_claims` — a finding, not a gate failure.
+>
+> Read the code before trusting an asserted limitation. "There is no way to X" in a body is a claim with an expiry date, not a fact.
+>
+> Return JSON only: per issue `{"number": N, "verdict": "afk"|"needs-human", "failed_test": "plan"|"objectivity"|"both", "needs": "decision"|"fact"|"artifact"|"manual", "question": "<the specific unresolved thing, one line>", "stale_claims": ["<citation that no longer resolves, and what is there now>"], "blocked_by": [numbers]}`.
 
-**Completion criterion:** every scoped issue has a verdict, and every `needs-human` verdict names its specific unresolved question — "vague" is not a finding.
+**Completion criterion:** every scoped issue has a verdict, every `needs-human` verdict names its specific unresolved question — "vague" is not a finding — and every issue has a `stale_claims` array, empty only after actually checking.
+
+**Reject a placeholder before you use it.** A `question` that echoes this brief's own wording, restates the test name, or is under about fifteen words is a non-answer that will read as a finished scan. Re-run rather than printing it.
+
+**Stale claims are reported alongside the verdict, and they change what the pass does.** An issue can pass both gates cleanly and still be false — those are the expensive ones, because nothing downstream doubts them. Observed in a single pass: an issue describing a 659-line diff in a project file that had stopped being tracked the day after filing; a docs issue whose own instructions named two toolbar buttons that had been removed, which would have produced a confidently wrong spec; and two issues sitting labelled human-only for weeks on an asserted tooling limit that was not real. Fix the body as part of the pass — a stale issue is unworkable in exactly the way this skill exists to fix.
 
 If nothing fails and there is no fog, report that the scope is already AFK-workable and go to Phase 4.
 

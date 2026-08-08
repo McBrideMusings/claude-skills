@@ -27,7 +27,7 @@ Same contract as `_domains/ui/design.md`.
 
 ## Modes
 
-- **`sketch` (default, lowest fidelity, first reach)** — an ASCII layout in chat + an empty `.monojson`
+- **`sketch` (default, lowest fidelity, first reach)** — an ASCII layout in chat, plus a blank `.monojson` canvas only if asked
   stub on disk. The fastest way to get a layout in front of the user and a yes/no back. Reach for it
   first on any layout question. Procedure in [SKETCH.md](SKETCH.md) — load it when entering sketch mode.
   When ASCII can't carry the layout — real proportions, a wrapping grid, a long scroll, anything where
