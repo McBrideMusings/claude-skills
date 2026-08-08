@@ -161,6 +161,8 @@ Passing tests are not evidence the item works — they prove CI runs. Before wra
 
 `verify` owns what verification means and how to get a handle on the app; do not restate or re-derive its method here. This phase adds exactly two things on top of it.
 
+**Where `verify` lives, so you don't conclude it is missing.** It is bundled into the Claude Code binary — there is no file for it under `~/.claude/skills/`, and it does not appear in the skill listing. `find` will come up empty and the listing will look like it was never built; neither is evidence. `Skill(verify)` loads it anyway (confirmed on 2.1.224–2.1.226). Do not hand-roll the verification, do not substitute a test run, and do not log a papercut about a missing skill. If a repo has its own `.claude/skills/verify/` — which the bundled skill writes on its first cold start there — that project version loads instead, by design.
+
 **1. Persist the verdict.** `verify` reports inline in chat, which nothing outside this session can read — and when the pass runs in a pane, that transcript is often unrecoverable. Write the verdict to `<repo-root>/tmp/claude/verify/<item>.json`, taking `<repo-root>` from `git rev-parse --show-toplevel` in its own call:
 
 ```json
