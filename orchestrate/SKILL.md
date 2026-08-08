@@ -271,14 +271,14 @@ Teardown is the orchestrator's job because it is **structurally impossible for t
 ```bash
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
-rm -rf <worktree> && git -C <repo> worktree prune \
+git -C <repo> worktree remove --force <worktree> \
   && git -C <repo> branch -d <branch> \
   && git -C <repo> push origin --delete <branch>
 ```
 
 Then `retire(handle)` — the transport's own teardown, which is a `herdr tab close` on one and nothing at all on the other two.
 
-`git worktree remove` fails outright in a repo with submodules (`working trees containing submodules cannot be moved or removed`), which then cascades into `branch -d` failing — hence `rm -rf` plus `prune`. Chain with `&&`, never `;`: a `;`-chained success echo prints after a failed step and misreports teardown as done.
+**`--force` is load-bearing in a repo with submodules.** Plain `git worktree remove` refuses with `fatal: working trees containing submodules cannot be moved or removed`, which then cascades into `branch -d` failing because the worktree still holds the branch. `--force` removes it cleanly (checked on git 2.50.1 against a worktree with the submodule checked out), so it replaces the older `rm -rf` + `worktree prune` dance. Chain with `&&`, never `;`: a `;`-chained success echo prints after a failed step and misreports teardown as done.
 
 #### A worker that is done gets retired. Same wake, no exceptions.
 

@@ -22,7 +22,7 @@ A branch with commits and no passing verdict is the case that matters. Push it s
 
 ## 3. Retire what sorted clean
 
-Per worker, using the recipe in SKILL.md step 7 — `rm -rf` + `worktree prune` + `branch -d` + remote delete, chained with `&&`, then `retire(handle)`: `herdr tab close <tab-id>` under the herdr transport, nothing under the subagent one.
+Per worker, using the recipe in SKILL.md step 7 — `worktree remove --force` + `branch -d` + remote delete, chained with `&&`, then `retire(handle)`: `herdr tab close <tab-id>` under the herdr transport, nothing under the subagent one.
 
 A **still-running** worker must be stopped before its worktree goes: `herdr agent`'s pane is torn down by closing the tab, and a live subagent needs `TaskStop` first. Never `rm -rf` a worktree with a worker standing in it.
 

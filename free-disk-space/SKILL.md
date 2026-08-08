@@ -54,7 +54,7 @@ On a yes, clear it with the tools' own commands. Everything else — app data, m
 
 ### 4. Audit git worktrees
 
-For each worktree: is it dirty, and does it hold commits that aren't pushed anywhere? Clean **and** fully merged → `git worktree remove` and `git branch -d`. Never `-D` — the safe delete refusing is the signal that work would be lost. Keep and report anything dirty or ahead.
+For each worktree: is it dirty, and does it hold commits that aren't pushed anywhere? Clean **and** fully merged → `git worktree remove` and `git branch -d`. In a repo with submodules the plain remove refuses (`fatal: working trees containing submodules cannot be moved or removed`) and takes `branch -d` down with it — `git worktree remove --force` gets past that, and the dirty/ahead check above is what makes forcing safe here. Never `branch -D` — the safe delete refusing is the signal that work would be lost. Keep and report anything dirty or ahead.
 
 ### 5. Offload keepers
 
