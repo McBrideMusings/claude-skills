@@ -48,6 +48,40 @@ true only when the repo owns the whole directory. `host` is checked against the
 current machine first, so the same manifest works run from a laptop or on the
 Unraid box itself.
 
+### `post_sync` — fix up what the sync just wrote (the ownership trap)
+
+`[deploy]` accepts six keys: `delete, dest, exclude, host, post_sync, src`.
+
+**Use `post_sync` for the rsync ownership trap.** rsync carries the *sending*
+machine's uid/gid onto the directories it creates under `dest`, so a container
+running as `99:100` can read them but not write. The app dies on its first write
+and, under `restart: unless-stopped`, keeps dying — every service on that box
+down until someone chowns by hand.
+
+```toml
+[deploy]
+src       = "deploy/appdata"
+dest      = "${APPDATA}"
+host      = "${USER}@${HOST}"
+post_sync = "chown -R ${UID:-99}:${GID:-100} ${APPDATA}"
+```
+
+It runs **where the files landed** — over SSH for a remote target, locally when
+the target is this machine. `${VAR}` is expanded; a dry run prints the command
+instead of running it; a failing hook is reported loudly but does not fail the
+sync (the files are already there, and claiming success would hide a
+half-finished deploy).
+
+The `chown` on `[[docker_run.bind_mounts]]` does **not** substitute for this — it
+owns the mount root only, not the subdirectories the sync writes into it, and it
+fires on `deploy image` while this breakage is on `deploy files`, the cheap
+deploy.
+
+> Historical note: `post_sync` was in `DEPLOY_KEYS` but unwired for a while, so a
+> manifest could declare it, pass `admin check`, and silently never run it.
+> Fixed 2026-08-09 (`admin_lib/remote.py`). If you are on an older installed
+> tool, `bash ~/projects/admin-project-tool/install.sh`.
+
 ## `[docker_build]` — build on the target instead of locally
 
 By default `deploy image` builds locally for `linux/amd64` and ships the result with
