@@ -101,6 +101,13 @@ The picker's markup, styles, keyboard wiring, URL persistence, and placement all
 **Write none of it**, and never restyle it — it stays identical across every project so it reads as
 harness chrome rather than part of the design being judged.
 
+The same is true of the other harness widgets a prototype gets for free: the device-size switcher
+along the top (each size renders the page in a real viewport, so the fragment's media queries actually
+fire), `a` to comment on any element, and `c` to flag text that fails contrast. Tell the user those
+exist when handing the prototype over — a comment pinned to an element comes back naming the fragment
+line that produced it, which is the fastest revision loop available. See
+`../_artifacts/CONTRACT.md` for how the comments come back.
+
 `--picker switch` renders **one variant at a time, full size, in realistic surrounding context** — a
 toast needs a page behind it, a card needs siblings, a button needs a form. `--picker list` stacks each
 variant full size, one per screenful, when the user wants to scroll rather than flip. Neither mode ever

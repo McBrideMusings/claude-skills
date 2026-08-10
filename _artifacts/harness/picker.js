@@ -52,9 +52,17 @@
       else el.removeAttribute('aria-current');
     });
     moveHighlight();
-    var url = new URL(location);
-    url.searchParams.set('v', i + 1);
-    history.replaceState(null, '', url);
+    // srcdoc pages have no query string to persist into (viewport.js frames the page
+    // that way), so the URL write is best-effort and the attributes are the real signal.
+    try {
+      var url = new URL(location);
+      url.searchParams.set('v', i + 1);
+      history.replaceState(null, '', url);
+    } catch (e) {}
+    var root = document.documentElement;
+    root.setAttribute('data-at-variant', templates[i].getAttribute('data-variant') || '');
+    root.setAttribute('data-at-variant-index', String(i + 1));
+    window.dispatchEvent(new CustomEvent('at:variant', { detail: { index: i } }));
     mount(i);
   }
 
@@ -74,7 +82,11 @@
     else if (e.key === 'r' || e.key === 'R') mount(current);
   });
 
-  setActive((parseInt(new URLSearchParams(location.search).get('v'), 10) || 1) - 1);
+  // data-at-variant-init wins: it is how a viewport.js device frame is told which variant
+  // the host was showing, and a srcdoc document has no query string of its own.
+  var initial = parseInt(document.documentElement.getAttribute('data-at-variant-init'), 10) ||
+    parseInt(new URLSearchParams(location.search).get('v'), 10) || 1;
+  setActive(initial - 1);
   // Enable the slide only after first paint, so load doesn't animate.
   requestAnimationFrame(function () {
     requestAnimationFrame(function () { picker.setAttribute('data-ready', ''); });

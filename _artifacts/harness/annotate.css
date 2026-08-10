@@ -1,0 +1,328 @@
+/* annotate.css — the comment layer. Chrome, not design.
+
+   Same rule as picker.css: deliberately NOT theme-aware, never restyled with project
+   tokens. Dark glass reads as harness on top of any page, light or dark.
+
+   Dormant by default — nothing here renders until annotate.js sets data-at-annotate on
+   :root, which only happens when the user presses `a`. An artifact handed to someone
+   else shows no annotation chrome at all. */
+
+.at-notes-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483640;
+  pointer-events: none;
+  display: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-at-annotate] .at-notes-layer { display: block; }
+
+/* --- the element being aimed at ------------------------------------------- */
+
+:root[data-at-annotate] .at-aim {
+  outline: 2px solid #f5a524 !important;
+  outline-offset: 1px;
+  cursor: crosshair !important;
+}
+
+:root[data-at-annotate] * { cursor: crosshair !important; }
+
+/* The harness keeps its own cursors: the picker, the device switcher and the panel stay
+   clickable while you annotate, so they must not look like annotation targets. */
+:root[data-at-annotate] .at-panel,
+:root[data-at-annotate] .at-panel *,
+:root[data-at-annotate] .at-composer,
+:root[data-at-annotate] .at-composer * { cursor: auto !important; }
+:root[data-at-annotate] .at-panel button,
+:root[data-at-annotate] .at-composer button,
+:root[data-at-annotate] .at-theme,
+:root[data-at-annotate] .proto-picker button,
+:root[data-at-annotate] .at-vp button { cursor: pointer !important; }
+
+/* --- a pinned comment ------------------------------------------------------ */
+
+.at-ring {
+  position: absolute;
+  border: 1.5px solid rgba(245, 165, 36, 0.85);
+  border-radius: 4px;
+  background: rgba(245, 165, 36, 0.07);
+}
+
+.at-ring[data-state="stale"] {
+  border-style: dashed;
+  border-color: rgba(160, 160, 160, 0.8);
+  background: transparent;
+}
+
+.at-badge {
+  position: absolute;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 0;
+  background: #f5a524;
+  color: #1a1204;
+  font: 600 12px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-align: center;
+  pointer-events: auto;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.at-badge[data-state="stale"] { background: #9a9a9a; color: #fff; }
+.at-badge[data-selected] { outline: 2px solid #fff; outline-offset: 1px; }
+
+/* --- the composer ---------------------------------------------------------- */
+
+.at-composer {
+  position: absolute;
+  width: 300px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(18, 18, 18, 0.94);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 12px 32px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.at-composer-target {
+  margin: 0 0 6px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.at-composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 66px;
+  padding: 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  resize: vertical;
+}
+
+.at-composer textarea:focus {
+  outline: none;
+  border-color: rgba(245, 165, 36, 0.8);
+}
+
+.at-composer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.at-composer-hint {
+  flex: 1;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+}
+
+/* --- the panel ------------------------------------------------------------- */
+
+.at-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
+  width: 300px;
+  z-index: 2147483641;
+  display: none;
+  flex-direction: column;
+  border-radius: 12px;
+  background: rgba(18, 18, 18, 0.93);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 16px 40px rgba(0, 0, 0, 0.42);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-at-annotate] .at-panel { display: flex; }
+
+.at-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.at-panel-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.at-panel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+}
+
+.at-empty {
+  padding: 14px 10px;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.at-empty kbd {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.at-note {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.at-note:hover { background: rgba(255, 255, 255, 0.06); }
+
+.at-note-n {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #f5a524;
+  color: #1a1204;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+.at-note[data-state="stale"] .at-note-n { background: #9a9a9a; color: #fff; }
+
+.at-note-body { flex: 1; min-width: 0; }
+
+.at-note-text {
+  margin: 0 0 3px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.at-note-src {
+  color: rgba(255, 255, 255, 0.42);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  word-break: break-all;
+}
+
+.at-note-flag {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.13);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.at-note-del {
+  flex: none;
+  align-self: flex-start;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.at-note-del:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+.at-panel-foot {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.at-btn {
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.88);
+  font: 500 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+
+.at-btn:hover { background: rgba(255, 255, 255, 0.13); color: #fff; }
+.at-btn:active { transform: scale(0.97); }
+.at-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.45); outline-offset: 2px; }
+
+.at-btn--primary {
+  flex: 1;
+  border-color: transparent;
+  background: #f5a524;
+  color: #1a1204;
+  font-weight: 600;
+}
+
+.at-btn--primary:hover { background: #ffb733; color: #1a1204; }
+
+.at-btn[data-done] { background: #3fb950; border-color: transparent; color: #06210c; }
+
+/* --- the toast ------------------------------------------------------------- */
+
+.at-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 2147483642;
+  max-width: 340px;
+  padding: 9px 13px;
+  border-radius: 9px;
+  background: rgba(18, 18, 18, 0.94);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 10px 28px rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.at-toast code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: #f5a524;
+}
+
+@media print {
+  .at-notes-layer, .at-panel, .at-toast { display: none !important; }
+}

@@ -25,7 +25,36 @@ harness/
   picker.css      <- the variant picker, fixed spec, never restyled
   picker.js       <- picker wiring, driven by <template data-variant>
   deck.js         <- slide keyboard navigation
+  theme.js        <- light/dark toggle
+  annotate.css    <- the comment layer
+  annotate.js     <- comment on elements, export the comments as markdown
+  contrast.css    <- the WCAG check's badges
+  contrast.js     <- flag text that fails AA against its backdrop
+  viewport.css    <- the device-size switcher
+  viewport.js     <- frames the page in a real viewport per device size
 ```
+
+## Widgets
+
+Generic chrome any artifact can carry, declared in one table (`WIDGETS`) in the tool.
+Adding one is a row there plus its files here — not three new branches in the build path.
+`artifact kinds` prints the current set; `--with NAME` adds one to a kind that does not
+get it by default, `--without NAME` drops one.
+
+| Widget | Default on | What it does |
+|---|---|---|
+| `theme` | every kind but `prototype` | light/dark toggle button |
+| `annotate` | every kind | press `a`: comment on elements, export the comments as markdown |
+| `contrast` | every kind | press `c`: flag text failing WCAG AA against its backdrop |
+| `viewport` | `prototype`, `wireframe` | device-size switcher, in a real viewport |
+
+`annotate` and `contrast` are on everywhere because they are **dormant**: they render
+nothing at all until their key is pressed, so an artifact you hand to someone else looks
+exactly as it would without them. `viewport` is visible chrome, so it only ships where
+judging the layout is the point.
+
+The picker and the deck navigator are not widgets — they restructure the body rather
+than adding chrome to it, so they keep their own path in the tool.
 
 The tool that assembles all of it: `~/.claude/tools/artifact`.
 

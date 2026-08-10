@@ -171,6 +171,35 @@ colour/type/layout plan before any markup. Classes: `.page-hero`, `.page-section
    it themes. A path is delivery, not verification — a font falling back, an overlap, or a blank
    variant is invisible in source.
 3. `open <absolute-path>`, printed on its own line with no trailing punctuation.
+4. Say which keys the artifact answers to: `a` to comment on anything, `c` to check contrast, and the
+   device switcher along the top when it is a prototype or a wireframe.
+
+## Getting comments back
+
+Every artifact carries the annotate widget. Pressing `a` turns the page into a review surface: click
+any element, type what is wrong with it, and the comment is pinned to that element with a number.
+Comments survive reload, and survive a rebuild — a pin reattaches by the fragment line it was made
+against, falls back to matching the element's text (flagged `MOVED`), and is kept and flagged `STALE`
+rather than dropped when the element is gone.
+
+Two ways out of the browser, both producing the same markdown:
+
+- **Copy** — clipboard, to paste into the conversation.
+- **Send to Claude** — writes `~/Downloads/artifact-feedback--<artifact-basename>.md`.
+
+**Wait for that file instead of asking whether they're done.** After `open`, start a bounded watcher
+in the background; the harness re-invokes you when it exits:
+
+```bash
+F="$HOME/Downloads/artifact-feedback--<artifact-basename>.md"
+for i in $(seq 1 900); do [ -f "$F" ] && break; sleep 2; done; [ -f "$F" ] && cat "$F"
+```
+
+Then delete the file once you have read it — Chrome appends ` (1)` to the name of a download that
+collides with one already on disk, and the watcher would keep matching the stale one.
+
+Each comment names a line of the **fragment**, not of the built artifact. Edit the fragment and
+rebuild to the same `--out`; do not hand-edit the HTML.
 
 ## Refining
 
