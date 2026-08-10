@@ -59,6 +59,11 @@ Two hooks in `settings.json` keep the Mac awake **only while Claude is actively 
 
 Why it can't leak: the turn hold is pinned to the session PID, the grace hold is a bounded `-t` timer, and 10 concurrent sessions are just the OR of 10 independent holds — no shared counter to get stuck. When every session is idle past its grace, zero caffeinate procs remain and the Mac sleeps normally. A manual hold (above) is invisible to the hook and outlives it.
 
+The pidfiles themselves are self-maintaining, so `cleanup` is a diagnostic, not routine hygiene:
+
+- `start` deletes any `hook-*.pid` untouched for more than 24h before doing anything else. A live session rewrites its own pidfile every turn and no hold outlives `MAX_TURN_SECS`, so an older file is dead by definition. `manual-*.pid` is never touched.
+- Before killing the PID it recorded, the hook checks that PID is still a `caffeinate`. Without that check, resuming a weeks-old session would `kill` whatever unrelated process had since inherited that recycled PID.
+
 Tunables (env, machine-local `settings.json` → `env`): `CLAUDE_CAFFEINATE_GRACE_SECS` (post-turn grace, default 900), `CLAUDE_CAFFEINATE_MAX_TURN_SECS` (turn backstop, default 3600), `CLAUDE_CAFFEINATE_DISABLE=1` (turn the hook off entirely).
 
 ## `status`
@@ -100,7 +105,7 @@ Checklist — verify the whole keep-awake system is wired and leak-free:
    ```bash
    jq -r '.hooks.UserPromptSubmit,.hooks.Stop,.hooks.StopFailure' ~/.claude/settings.json | grep -c 'caffeinate.sh'
    ```
-4. **No leaks** — every live `caffeinate` proc is either referenced by a live pidfile or a manual hold; no `hook-*.pid` points at a dead PID. (Run `cleanup`'s prune, then re-check.)
+4. **No leaks** — every live `caffeinate` proc is either referenced by a live pidfile or a manual hold. Note the direction: an untracked live proc is the leak. A `hook-*.pid` pointing at a dead PID is expected for up to 24h (the session's grace expired, the next `start` will reap the file) — only flag one older than that, since it means the age prune isn't running.
 5. **State sanity** — if `pmset -g assertions` shows the system held awake but there is **no active turn and no manual hold and every grace window has expired**, that's a leak → run `cleanup`.
 
 Report each as ✅ / ⚠️ with the one-line fix. If a hook line is missing, offer to add it via the `update-config` skill (never hand-edit a user into a broken `settings.json`).
