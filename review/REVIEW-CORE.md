@@ -51,21 +51,23 @@ gh pr view <n> --json headRefOid --jq .headRefOid
 git rev-parse HEAD
 ```
 
-**If HEAD is not the head — stop. Do not review, do not launch Phase 04, do not report partial findings.** Print:
+**If HEAD is not the head, sync automatically when it's safe, ask when it isn't.** The only real risk is discarding a local commit that exists nowhere else — judge the response on that, not on convenience:
 
-- local `HEAD` sha and the authoritative head sha,
-- the ahead/behind counts,
-- the commits you are missing — `git log --oneline HEAD..FETCH_HEAD` — because a commit titled like a fix for the last review is the single most load-bearing thing the user needs to see,
-- whether the local commits that are "ahead" are genuinely local work or pre-rebase duplicates of remote commits (compare messages) — this decides whether moving is lossy.
+- **Ahead-count is `0`** (the left number in `git rev-list --left-right --count HEAD...FETCH_HEAD`) — every commit the worktree is missing is already public on the remote/PR head, so no local work is at risk. **Sync without asking**: `git reset --hard <authoritative-head-sha>` (use `git checkout <head-sha>` instead when the branch ref itself shouldn't move — e.g. a teammate's branch you don't own). Then state one line so the sync is visible, not silent: old HEAD sha → new HEAD sha, and the commits just pulled in (`git log --oneline <old-head>..<new-head>`, titles only). Continue straight into the review.
+- **Ahead-count is nonzero** — local commits exist that the remote doesn't have; resetting would discard them. Stop. Do not review, do not launch Phase 04, do not report partial findings. Print:
+  - local `HEAD` sha and the authoritative head sha,
+  - the ahead/behind counts,
+  - the commits missing locally — `git log --oneline HEAD..FETCH_HEAD` — because a commit titled like a fix for the last review is the single most load-bearing thing the user needs to see,
+  - whether the "ahead" commits are genuinely local work or pre-rebase duplicates of remote commits (compare messages) — this decides whether moving is lossy.
 
-Then offer, as **plain chat text with typed keywords** (RULE 0 — no selector), the ways to move the worktree onto the real head, each with what it costs:
+  Then offer, as **plain chat text with typed keywords** (RULE 0 — no selector), the ways to move the worktree onto the real head, each with what it costs:
 
-```
-`reset` — git reset --hard origin/<branch> (discards local commits; say which, and whether their content survives on the remote)
-`detach` — git checkout <head-sha> (branch ref untouched, fully reversible; use when local commits must survive)
-```
+  ```
+  `reset` — git reset --hard origin/<branch> (discards local commits; say which, and whether their content survives on the remote)
+  `detach` — git checkout <head-sha> (branch ref untouched, fully reversible; use when local commits must survive)
+  ```
 
-Moving the user's worktree is a git state change on their checkout, so it waits on an **explicit yes in that message** — never move it unilaterally. On a clean pass through this phase, say nothing and continue; the check is only worth words when it fails.
+  Moving the user's worktree here is a git state change that would destroy local-only work, so it waits on an **explicit yes in that message** — never move it unilaterally. On a clean pass through this phase (counts already both `0`), say nothing and continue.
 
 **Never work around a stale checkout by reviewing the remote diff alone** (`gh pr diff` into a prompt, a raw `git diff` against `FETCH_HEAD`) while the working tree still holds old files. The lenses read files, not just the diff — a diff-only patch leaves every sub-agent reading the stale tree, which is the exact failure this phase exists to prevent.
 
