@@ -169,6 +169,49 @@ alone still creates it. `${VAR}` in `host` is expanded from the environment (an
 unresolved var skips that dir with a warning, same as the mount itself). Commands
 run on the deploy target — locally or over SSH, matching the rest of the deploy.
 
+### The `${VAR}` in `host` is resolved from TWO different environments in one deploy
+
+**Known tool bug, confirmed in source, not yet fixed.** With `[docker_run].remote_env_file`
+set, the `-v` argument and the `mkdir`/`chown` for the *same mount* read the same
+`${VAR}` from different places:
+
+| What | Reads from |
+| --- | --- |
+| the `-v` flag | the **remote** env file, over ssh |
+| the `mkdir` / `chown` | the **local** `os.environ` |
+
+`admin_lib/docker.py:591` builds `run_env_vars = _read_remote_env_file(host, remote_env_file)`
+and hands it to the run-args rendering. `admin_lib/docker.py:640` is the provisioning
+call and simply omits it:
+
+```python
+provision = _provision_commands(target_cfg) if target_cfg is not None else []
+```
+
+`_provision_commands(cfg, env_vars=None)` then falls back to `env_vars = os.environ`
+(`docker.py:1079`). So on a workstation deploying to a remote host, provisioning
+sees nothing.
+
+**What it looks like** — one deploy, both lines, and the second one is the mount
+the first one said it was skipping:
+
+```
+docker_run.bind_mounts: host '${PLEXDB_APPDATA}' references unset env var — skipping provision
+...
+docker run -d --name plexdb -v /mnt/user/appdata/plexdb:/data ...
+```
+
+**Why it reads as harmless and isn't.** On an existing host the directory is already
+there, so nothing breaks and the warning looks cosmetic. On a *fresh* host it is the
+exact failure `mkdir`/`chown` exist to prevent: Docker creates the dir itself as root,
+the container runs as `99:100`, and the app dies on its first write with a
+`Permission denied` far from its cause — under `restart: unless-stopped`, forever.
+
+**Do not "fix" this by putting the value in the local `.env`.** A `remote_env_file`
+exists precisely because those paths name directories on the *target*; a local value
+that ever won would bind-mount a workstation path onto the server. The fix is passing
+`run_env_vars` at `docker.py:640`, in the tool.
+
 ## `[docker_run.health]` — post-deploy health gate
 
 `docker run` returning 0 only means the container was **created**, not that the app

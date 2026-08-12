@@ -1,6 +1,6 @@
 ---
 name: admin
-description: "Add/edit/audit a project's admin task runner — edit admin.toml commands, validate with admin check, or migrate inline code to admin_lib. The tool interprets admin.toml at runtime (no generated ./admin)."
+description: "Add/edit/audit a project's admin task runner, AND diagnose it when an `admin` command misbehaves — edit admin.toml commands, validate with admin check, or migrate inline code to admin_lib. Load this BEFORE concluding an admin feature is missing, broken, unwired, or inert, and before explaining why a deploy, build, or task did or didn't do something: an `admin deploy` that skipped a step, a `--dry-run` that showed less than expected, a config key with no visible effect, an unknown-command fallback printing the menu. The tool interprets admin.toml at runtime (no generated ./admin)."
 ---
 
 # /admin — Manifest-Driven Admin Task Runner
