@@ -46,12 +46,13 @@ get it by default, `--without NAME` drops one.
 | `theme` | every kind but `prototype` | light/dark toggle button |
 | `annotate` | every kind | press `a`: comment on elements, export the comments as markdown |
 | `contrast` | every kind | press `c`: flag text failing WCAG AA against its backdrop |
-| `viewport` | `prototype`, `wireframe` | device-size switcher, in a real viewport |
+| `viewport` | never — opt in with `--with viewport` | device-size switcher (Fit / Phone / Tablet / Desktop), in a real viewport |
 
 `annotate` and `contrast` are on everywhere because they are **dormant**: they render
 nothing at all until their key is pressed, so an artifact you hand to someone else looks
-exactly as it would without them. `viewport` is visible chrome, so it only ships where
-judging the layout is the point.
+exactly as it would without them. `viewport` is visible chrome and no kind implies it —
+a prototype can just as easily be a desktop-only menubar panel as a responsive page — so
+the model asks for it per artifact.
 
 The picker and the deck navigator are not widgets — they restructure the body rather
 than adding chrome to it, so they keep their own path in the tool.

@@ -13,6 +13,12 @@ What you write is a **body fragment**: real content, nothing else. No `<!DOCTYPE
   --out /abs/repo/tmp/claude/explainers/statusline-auth.html
 ```
 
+**Decide whether the artifact needs the device switcher.** Add `--with viewport` when the layout is
+meant to respond to width and seeing it at phone or tablet size is part of the judgement. Leave it off
+— the default — when the thing only ever exists at one size: a macOS menubar panel, a desktop-only
+window, a single component in isolation, a report meant to be read on a laptop. Sizes the artifact will
+never be used at are chrome that invites a pointless verdict.
+
 `artifact kinds` lists the kinds and their flags. `artifact serve <path>` is a contingency that shells
 to `python3 -m http.server`; you almost never need it — `file://` runs inline modules and blob workers
 fine, and a hermetic artifact never calls `fetch`.

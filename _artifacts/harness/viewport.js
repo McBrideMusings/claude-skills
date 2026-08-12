@@ -1,4 +1,4 @@
-/* viewport.js — see the artifact at phone, tablet, laptop and desktop sizes.
+/* viewport.js — see the artifact at phone, tablet and desktop sizes.
 
    Why an iframe and not a width-constrained div: CSS media queries answer to the
    *viewport*, not to the box an element sits in. A 390px-wide <div> shows a squeezed
@@ -23,7 +23,6 @@
     { label: 'Fit', w: 0, h: 0 },
     { label: 'Phone', w: 390, h: 844 },
     { label: 'Tablet', w: 834, h: 1112 },
-    { label: 'Laptop', w: 1280, h: 800 },
     { label: 'Desktop', w: 1440, h: 900 }
   ];
 
