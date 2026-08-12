@@ -31,6 +31,53 @@ container outright — no Unraid GUI step. Only the legacy no-`[docker_run]` pat
 (inspect the live container, replay its config) requires a container to already
 exist; that's what the "Create it from the Unraid Docker GUI" error means.
 
+## The Unraid template — `deploy` installs it, and three things hide that
+
+**`admin deploy` already installs the Unraid GUI template. You never scp it by
+hand, and there is no missing feature here.** `admin_lib/docker.py` calls
+`ensure_docker_template(...)` as part of `deploy image`. Do not go looking for a
+gap; go looking for which of the three silent no-ops below you have hit.
+
+| Silent no-op | What it looks like | Fix |
+| --- | --- | --- |
+| **The call is inside `if not dry_run:`** | `admin deploy --dry-run` shows no template step at all | Nothing. A dry run skips it *by design* — the dry run is not evidence about this feature, ever |
+| **Default src is `deploy/unraid-template.xml`, and a missing file returns early** | Deploy runs green, the host never gets the template, nothing is printed | The project named its file something else. Set `[install_template] src = "deploy/<actual-name>.xml"` |
+| **`UNRAID_HOST` unset** | Same silence | Set it in `.env` |
+
+```toml
+[install_template]
+src  = "deploy/my-plexdb.xml"   # default: deploy/unraid-template.xml
+name = "plexdb"                 # default: slug of APP_IMAGE, minus registry and tag
+```
+
+The destination is `/boot/config/plugins/dockerMan/templates-user/my-<name>.xml`,
+where `<name>` defaults to the `APP_IMAGE` slug — `plexdb:latest` → `my-plexdb.xml`.
+**A project whose template file is already called `my-<name>.xml` still needs the
+`src` override**, because the default *source* path is the archetype's generic
+filename, not the destination's. That mismatch is the whole trap: the file is
+sitting right there, correctly named for where it is going, and the install
+walks past it.
+
+It also self-skips when the template is already on the host (`test -f`), so
+re-deploys cost nothing, and a failed `scp` warns rather than failing the deploy
+— a bad template must never block shipping the image.
+
+### Diagnosing it, in the right order
+
+Burned a long session on this once by reasoning from a dry run and concluding the
+feature did not exist. It does. Check in this order:
+
+1. `ssh <host> ls /boot/config/plugins/dockerMan/templates-user/ | grep <name>` —
+   is it already there? Then it worked, possibly on a deploy months ago.
+2. `ls deploy/` in the project — does the filename match `[install_template].src`,
+   or the `deploy/unraid-template.xml` default if there is no override?
+3. Only then read `admin_lib/unraid.py`.
+
+**`admin install-template` is not a command every docker project has.** It is
+declared per project, so an unknown-command fallback printing the menu means the
+project did not declare it — not that template install is unimplemented. Deploy
+does it either way.
+
 ## `[deploy]` — the mirror directory
 
 ```toml

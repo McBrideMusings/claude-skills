@@ -19,6 +19,8 @@ Source repo: `~/projects/admin-project-tool/` (CLI `admin-run`, runtime `admin_l
 
 1. **Treat the tool as a black box.** Do NOT read source under `~/projects/admin-project-tool/` (interpreter, archetype, or detector `.py` files) unless the user asks you to debug the tool itself. Only read: the project's `admin.toml` and this skill.
 
+   **The one standing exception: before telling the user a feature is missing, broken, unwired, or inert, read the source and quote the line.** "Black box" governs routine editing, not diagnosis — a black box you are about to declare defective is exactly the case where you open it. A `--dry-run` that omits a step, an unknown-command fallback printing the menu, or a config key that produces no visible effect are all things the tool does on purpose in some path; none of them is evidence on its own. Saying "this doesn't work" without a quoted line is how a working feature gets rebuilt, or a correct config gets deleted for looking inert.
+
 2. **After any commit+push to admin-project-tool, immediately reinstall:** `bash ~/projects/admin-project-tool/install.sh`. Full sequence for any tool change: **edit → commit → push → install**. There is no per-project regeneration step — installing updates the one interpreter every project shares. Installing from an unpushed commit embeds a dirty SHA into `~/.admin/VERSION`.
 
 3. **`admin.toml` is the only source of truth.** A project commits just the manifest; there is no `./admin` file to hand-edit or keep in sync. (If a project still has an old committed `./admin`, it's a stale generated artifact — delete it; `admin` runs from PATH.)
@@ -249,7 +251,7 @@ work, read the doc for **each archetype in the project's `admin.toml`**
 | --- | --- | --- |
 | `apple` | `archetypes/apple.md` | app-icon **alpha → inset** gotcha; Dock name = `.app` filename (rename); `[apple.icons]` |
 | `rust-tauri` | `archetypes/rust-tauri.md` | macOS bundle inherits the apple icon-alpha rule |
-| `docker` | `archetypes/docker.md` | `deploy image｜files｜all`; `[deploy]` mirror dir; `[docker_run]` creates the container; `DEPLOY_LOCAL`→`ADMIN_LOCAL` |
+| `docker` | `archetypes/docker.md` | `deploy image｜files｜all`; `[deploy]` mirror dir; `[docker_run]` creates the container; **`deploy` installs the Unraid template — three silent no-ops make it look missing**; `DEPLOY_LOCAL`→`ADMIN_LOCAL` |
 | `unraid-plugin` | `archetypes/unraid-plugin.md` | `DEPLOY_LOCAL`→`ADMIN_LOCAL` |
 | `cloudflare-workers` | `archetypes/cloudflare-workers.md` | dev streaming (`interactive-shell`); cwd-relative wrangler |
 | `hugo` | `archetypes/hugo.md` | static site |
