@@ -374,8 +374,8 @@ Two things worth knowing before you debug something here:
   and then fails on its first real unit of work. Leave it on unless the program
   genuinely needs a pinned PATH.
 
-`${VAR}` placeholders resolve at run time, but **the resolver does not nest** —
-`${A:-${B}/x}` expands wrongly. Use a plain `~` or a single-level default.
+`${VAR}` placeholders resolve at run time and nest, so `${GOPATH_BIN:-${HOME}/go/bin}`
+means what it reads. A default is only expanded when it is actually used.
 
 Note `admin service install` is also usually a step inside `deploy`, since a
 deploy replaces the binary the agent is running.
