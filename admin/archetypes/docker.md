@@ -223,6 +223,28 @@ the published port on the host rather than the machine running `admin`. Uses `cu
 On timeout, deploy exits non-zero and points at `docker logs <container>`. Omit the
 table to skip the check entirely. `--dry-run` prints the poll it would run.
 
+## `logs` — follow by default, `--no-follow` to get an answer back
+
+`admin logs [dev|live]` follows. That is right for a person watching a run and
+wrong for anything that has to continue afterwards — a script, a check after a
+deploy, an agent — which is why it takes:
+
+```
+admin logs live --tail 40 --no-follow   # last 40 lines of the container, then exits
+admin logs live --from 00:02:00:00      # everything since 2h ago, then keeps trailing
+admin logs dev --tail 100 --no-follow   # same, against the newest local dev log
+```
+
+`--tail N` (also `--tail=N`, `-n N`) sets how much history prints; the default is
+200 for a container and 100 for a dev file. Both flags work on both targets.
+
+**Don't write a per-project shell script that ssh's to the host and runs `docker
+logs`** — that is what `live` already does (`remote_logs` in `admin_lib/docker.py`
+builds `ssh <host> docker logs …`), and a project-local copy duplicates the
+plumbing while giving one repo what every docker project should have. An
+unrecognised flag is now a hard error; before that it fell through unread and
+followed forever, which reads as a hang rather than a rejected argument.
+
 ## Lifecycle order (baked in)
 
 This archetype bakes the standard `build → test → deploy` order with **`deploy`
