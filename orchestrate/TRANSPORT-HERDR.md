@@ -30,7 +30,7 @@ The handle is `{tab_id, pane_id, slug}`; the slug doubles as the agent name.
 
 1. **Tab** — `herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd <worktree> --label <slug> --no-focus`. Keep `.result.tab.tab_id` (teardown needs it) and `.result.root_pane.pane_id` (the agent starts there).
    `--no-focus` is not cosmetic: focusing a worker's tab marks it seen and collapses a later `done` into `idle`.
-2. **Agent** — `herdr agent start <slug> --kind <kind> --pane <root-pane-id> --timeout 120000 -- --model <model>`. A `claude` worker **always** carries `-- --model <id>`; with no flag it inherits the machine default. Names must match `[a-z][a-z0-9_-]{0,31}` and be unique among live agents.
+2. **Agent** — `herdr agent start <slug> --kind <kind> --pane <root-pane-id> --timeout 120000 -- --model <model>`. A `claude` worker **always** carries `-- --model <id>`, and that id is this issue's tier — `sonnet` or `haiku`, per [SKILL.md](SKILL.md) → Picking the model per issue. With no flag it inherits the machine default, which may be Opus; `claude --model` also accepts `opus` and `fable` as ordinary aliases, so nothing here rejects them but the skill's own check. Names must match `[a-z][a-z0-9_-]{0,31}` and be unique among live agents.
 3. **Brief** — send [BRIEF.md](BRIEF.md), then **send Enter separately**: `herdr agent prompt <slug> '<text>'` pastes a long prompt without submitting it, leaving the worker idle at a filled input box. Follow every prompt with `herdr agent send-keys <slug> enter`.
 
 **Confirmed working** = the worker reports `working` in `herdr agent list`. `agent start` returning is not confirmation.

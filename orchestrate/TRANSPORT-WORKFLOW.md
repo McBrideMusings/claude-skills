@@ -18,7 +18,7 @@ Available whether or not you are inside herdr. **It calls the `Workflow` tool, w
 
 **One `Workflow` call for the whole ready batch.** Not one per issue — that would be a workflow of one, which is a subagent with extra steps.
 
-Pass the batch through `args` as real JSON — a list of `{issue, slug, worktree, branch, title}` objects, one per issue that cleared step 3. Never a JSON-encoded string; the script would receive one string and `args.map` would throw.
+Pass the batch through `args` as real JSON — a list of `{issue, slug, worktree, branch, title, model}` objects, one per issue that cleared step 3. Never a JSON-encoded string; the script would receive one string and `args.map` would throw.
 
 The script's shape:
 
@@ -31,7 +31,7 @@ export const meta = {
 
 const results = await pipeline(
   args,
-  item => agent(BRIEF(item), { label: item.slug, phase: 'Implement', model: MODEL, schema: RESULT }),
+  item => agent(BRIEF(item), { label: item.slug, phase: 'Implement', model: item.model, schema: RESULT }),
 )
 
 return results.filter(Boolean)
@@ -39,7 +39,7 @@ return results.filter(Boolean)
 
 - **`pipeline()`, not `parallel()`.** There is no cross-item stage here, so a barrier would only make every item wait for the slowest.
 - **`schema`** forces each agent to return a validated object rather than prose. Ask for `{issue, verdict, branch, commit, halted_on}` — the same facts the verdict file holds, so the two can be checked against each other.
-- **`model`** comes from the config, explicitly, per [SKILL.md](SKILL.md) → Worker agents and models. `agent()`'s enum includes `fable`; it is refused here like everywhere else.
+- **`model`** is **per item**, `"sonnet"` or `"haiku"`, resolved in step 3 by [SKILL.md](SKILL.md) → Picking the model per issue and carried in `args` — not one constant for the round. Do not omit it and do not compute it inside the script: `agent()` with no `model` inherits the main-loop model, which is the orchestrator's own and frequently Opus. `agent()`'s enum also includes `opus` and `fable`; both are refused here like everywhere else.
 - **`BRIEF(item)`** is [BRIEF.md](BRIEF.md), filled in. Add the same clause the subagent transport needs — the agent does not start inside the worktree:
 
 > Work exclusively inside the git worktree at `<worktree-path>` — every command either runs with `git -C <worktree-path>` or after a `cd` into it. You did not start there.

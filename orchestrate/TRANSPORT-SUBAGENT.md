@@ -20,14 +20,14 @@ One `Agent` call, `run_in_background: true` (the default — do not make it sync
 Agent(
   description: "<slug>",             // 3-5 words; how it shows up in the task list
   subagent_type: "claude",           // or "general-purpose" — it needs full tools
-  model: "<model from config>",      // see the constraint below
+  model: "sonnet" | "haiku",         // this issue's tier — see the constraint below
   prompt: "<BRIEF.md, filled in>"
 )
 ```
 
 **The handle is the `agentId` from the spawn result** — record it, and its name if the spawn result gives one.
 
-**Model constraint on top of the config's own rules:** the `Agent` tool's `model` is an enum — `sonnet`, `opus`, `haiku`, `fable`. A config `model` outside that set cannot be dispatched here; stop and say so rather than silently omitting the parameter, because an omitted `model` inherits the parent's. **`fable` is in that enum and is refused**, exactly as under the other transport.
+**Model constraint on top of the config's own rules:** the `Agent` tool's `model` is an enum — `sonnet`, `opus`, `haiku`, `fable` — and this skill permits exactly two of them, `sonnet` and `haiku`, picked per issue by [SKILL.md](SKILL.md) → Picking the model per issue. A config model outside those two cannot be dispatched here; stop and say so rather than silently omitting the parameter, because an omitted `model` inherits the parent's — and this orchestrator often runs on Opus, which is precisely the model no worker may get. **`opus` and `fable` are in that enum and are both refused**, exactly as under the other transports.
 
 **Do not use `isolation: "worktree"`.** SKILL.md step 3 already created the worktree on a branch this skill will land; letting the tool make its own leaves the branch outside the orchestrator's control, and the tool auto-cleans a worktree it considers unchanged.
 

@@ -32,21 +32,30 @@ default = "claude"
 
 [agents.claude]
 # ALWAYS passed explicitly: `-- --model <id>` under the herdr transport,
-# `model:` under the subagent transport. With no flag the worker inherits a
-# default — which is exactly how a denied model gets into the swarm.
+# `model:` under the subagent transport, per-item `model:` under the workflow
+# transport. With no flag the worker inherits a default — the machine's, or the
+# orchestrator's own session, which is often Opus. That is exactly how a denied
+# model gets into the swarm.
 #
-# The subagent transport can only dispatch a model in the Agent tool's enum:
-# sonnet, opus, haiku (and fable, which is refused). A model outside that set
-# stops a subagent run; it is still fine for herdr.
-#
-# Sonnet is the default. Orchestrated work is dispatched AFK against a written
-# brief, so the worker is following a spec rather than deciding what to build.
-# Raise to opus per run only when the brief itself is the hard part.
-model   = "sonnet"
-allowed = ["opus", "sonnet", "haiku"]
-# Never Fable. `claude --model` takes `fable` and `claude-fable-5` as ordinary
-# aliases, so nothing below the skill will reject them.
-denied  = ["fable", "claude-fable-5"]
+# TWO TIERS, PICKED PER ISSUE at dispatch (SKILL.md -> Picking the model per
+# issue) — not once per run:
+#   model_simple (haiku)  narrow, fully-specified work: a bug with a named
+#                         input/output and a located cause, a one- or two-file
+#                         change with nothing open about the fix's shape, a
+#                         mechanical rename, a test added to an existing suite.
+#   model (sonnet)        everything else, and the tie-break whenever unsure:
+#                         new feature surfaces, unsettled refactors, unlocated
+#                         causes, edits across three or more files.
+# A failed haiku issue is re-dispatched once on `model`. A failed sonnet issue
+# is not escalated — there is nowhere above sonnet here; it goes to iron-out.
+model        = "sonnet"
+model_simple = "haiku"
+allowed      = ["sonnet", "haiku"]
+# Never Opus, never Fable. `claude --model` takes `opus`, `fable`, and
+# `claude-fable-5` as ordinary aliases, and the Agent tool's enum lists opus and
+# fable too, so nothing below the skill will reject them. Refusal is by
+# substring and it STOPS the run — it never quietly downgrades to sonnet.
+denied       = ["opus", "claude-opus-5", "fable", "claude-fable-5"]
 
 [agents.codex]
 # Empty string -> no --model flag; codex picks its own default.

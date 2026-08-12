@@ -93,7 +93,9 @@ The `iron-out` skill exists for exactly this handoff and already runs implement'
 
 ## Worker agents and models
 
-A worker is a coding agent of a chosen **kind** running a chosen **model**. Neither is inherited from the orchestrator's session — both are read from config and passed explicitly at dispatch, on every transport.
+A worker is a coding agent of a chosen **kind** running a chosen **model**. Neither is inherited from the orchestrator's session — the kind and the two candidate models come from config, and the model is passed explicitly at dispatch, on every transport.
+
+**Only two models ever run a worker: `sonnet` and `haiku`.** Never Opus, never Fable — see [Never Opus, never Fable](#never-opus-never-fable). Which of the two an issue gets is decided per issue, at dispatch, by [Picking the model per issue](#picking-the-model-per-issue).
 
 **Config file:** `$CLAUDE_CONFIG_DIR/orchestrate.toml` — `~/.claude/orchestrate.toml`, or `~/.claude-work/orchestrate.toml` under the work profile, resolved by the variable so the two profiles differ without either being tracked. Untracked (`~/.claude/.gitignore` blanket-ignores `*`). Read once per run, at the first dispatch. Commented reference copy: [orchestrate.example.toml](orchestrate.example.toml)
 
@@ -102,9 +104,10 @@ max_workers = 4                  # may lower a transport's concurrency; may neve
 default     = "claude"           # kind used when the dispatch does not name one
 
 [agents.claude]                  # table key IS the herdr `agent start --kind` value
-model   = "sonnet"               # the orchestration default — see below
-allowed = ["opus", "sonnet", "haiku"]
-denied  = ["fable", "claude-fable-5"]
+model        = "sonnet"          # the harder tier, and the default when unsure
+model_simple = "haiku"           # the cheaper tier, for narrow well-specified work
+allowed      = ["sonnet", "haiku"]
+denied       = ["opus", "fable", "claude-fable-5"]
 
 [agents.codex]
 model   = ""                     # empty -> no --model flag; codex picks its own default
@@ -114,15 +117,31 @@ denied  = []
 
 A kind is dispatchable **only** if it has an `[agents.<kind>]` block. Deleting a block disables that kind; there is no second place that also has to agree.
 
-**Missing file** → dispatch `claude` on `sonnet` and say so in the run report. **Malformed file** → stop; do not fall back. A config that cannot be parsed is not a config that permits anything.
+A `model_simple` missing from a block means that kind has one tier: every issue on it gets `model`.
 
-### Sonnet is the default worker model
+**Missing file** → dispatch `claude` with `sonnet`/`haiku` as the two tiers, pick per issue as below, and say in the run report that no config was found. **Malformed file** → stop; do not fall back. A config that cannot be parsed is not a config that permits anything.
 
-Orchestrated work is dispatched away-from-keyboard against a written brief. The worker is not deciding what to build — it is following a spec that survived the readiness gate, in an isolated worktree, with its output verified before it lands. That is Sonnet's job. Dispatching opus by default spends the expensive model on execution that was already specified, across every worker in the swarm at once.
+### Sonnet and Haiku are the only worker models
 
-Raise a run to opus deliberately, and say why in the run report, when the brief itself is the hard part: a design the ticket states as a goal rather than a change, a refactor whose shape is not settled, or work that has already come back failed under sonnet. Raise the run, not the config default — a permanent bump to opus is the same mistake with a longer half-life.
+Orchestrated work is dispatched away-from-keyboard against a written brief. The worker is not deciding what to build — it is following a spec that survived the readiness gate, in an isolated worktree, with its output verified before it lands. That is Sonnet's job, and for the narrowest issues it is Haiku's. Neither tier is chosen to save money; they are chosen because execution against a settled spec is what they are for, and running a whole swarm on the expensive model buys judgment the brief already supplied.
 
-This is a default, not a guardrail. `allowed`/`denied` still decide what may run at all; this decides what runs when nothing says otherwise.
+### Picking the model per issue
+
+Decided **per issue, at dispatch** — step 3's model check — from the issue body and the brief you are about to write, not from the run as a whole. A swarm normally runs a mix.
+
+| Give the issue `model_simple` (haiku) when **all** of these hold | Give it `model` (sonnet) when **any** of these hold |
+|---|---|
+| The issue names the wrong behaviour concretely — an input, the output it produced, the output it should have produced | The issue states a goal rather than a change ("make search feel faster", "add offline support") |
+| The cause is already located, or locating it is one grep — a named file, function, constant, or config key | The cause is unknown, or the issue is a symptom with no named source |
+| The change is confined to one or two files and does not add a new module, surface, or interface | The change adds a new feature surface, a new module, or a new public interface |
+| Nothing about the shape of the fix is open — a bounds check, an off-by-one, a wrong operator, a missing field, a string, a version bump, a mechanical rename, a test added to an existing suite | The shape of the fix is open: a refactor whose structure is not settled, a design decision inside the implementation, cross-cutting edits across three or more files |
+| Verification is an existing command that already exists and passes today | Verification needs new scaffolding, a new test harness, or driving a UI |
+
+**When the two columns disagree, or you are unsure, use `model`.** The cost of a wrong Sonnet is a slightly more expensive worker; the cost of a wrong Haiku is a worktree of plausible wrong code that step 5 has to catch and step 3 has to re-dispatch.
+
+**A failed Haiku issue is re-dispatched on `model`, once, and the report says so.** A failed Sonnet issue is *not* escalated — there is nowhere above Sonnet to go here. Twice-failed work is not a model problem: file the follow-up and hand the issue to `iron-out`.
+
+Say the per-issue split in the run report — `slug → model`, or a count per tier when the swarm is large.
 
 ### The guardrails live in the file *and* here
 
@@ -132,12 +151,18 @@ The file is the readable statement of policy. These checks run at dispatch regar
 |---|---|
 | Kind must appear in herdr's `agent start --kind` enum | refuse before dispatching, name the kind |
 | The model is passed **explicitly**, always — `-- --model <id>` under herdr, `model:` under subagent and workflow | omitting it inherits a default (the machine's, or this session's) — that is exactly the path a denied model takes into the swarm |
+| **A `claude` worker runs `sonnet` or `haiku`, and nothing else** | any other id — refuse the dispatch, name the model, stop |
+| **Never Opus.** `opus`, `claude-opus-5`, `claude-opus-5[1m]`, or any id containing `opus` | refuse the dispatch, name the model, stop. This holds even when the orchestrator itself is running on Opus — the session's model is never inherited |
 | **Never Fable.** `fable`, `claude-fable-5`, or any id containing `fable` | refuse the dispatch, name the model, stop. Not a silent fall back to the default — stop, so the config gets fixed |
 | Model absent from a non-empty `allowed`, or present in `denied` | refuse the dispatch and name both the model and the list that rejected it |
 
-Every layer below this skill accepts Fable happily: `claude --model` takes `fable` and `claude-fable-5` as ordinary aliases, and both the `Agent` tool's and `agent()`'s `model` enums list `fable`. This check is the only thing standing between the config and a Fable worker.
+#### Never Opus, never Fable
 
-**Per transport:** subagent and workflow can only dispatch a model in their enum (`sonnet`, `opus`, `haiku`) — a config model outside it stops the run rather than dispatching with no model at all. `[agents.codex]` and every other non-`claude` kind is inert there; kinds are a herdr concept.
+Every layer below this skill accepts both happily: `claude --model` takes `opus`, `fable`, and `claude-fable-5` as ordinary aliases, and both the `Agent` tool's and `agent()`'s `model` enums list `opus` and `fable`. This check is the only thing standing between the config and an Opus or Fable worker.
+
+Refusal is by substring, not by exact match — `opus` and `fable` appearing anywhere in the id (`claude-opus-5`, `us.anthropic.claude-opus-…`, `claude-fable-5`) is enough. And it is a **stop**, never a quiet downgrade to `sonnet`: a config asking for a banned model is a config to fix, and silently substituting hides it.
+
+**Per transport:** subagent and workflow can only dispatch a model in their enum (`sonnet`, `opus`, `haiku`, `fable`) — of which this skill permits exactly `sonnet` and `haiku`; a config model outside those two stops the run rather than dispatching with no model at all. `[agents.codex]` and every other non-`claude` kind is inert there; kinds are a herdr concept.
 
 ### Kinds that are not dispatchable
 
@@ -224,11 +249,11 @@ Per ready issue, in order:
 1. **Dispatch gate** — implement's gate again, on this issue's current body. It should pass; the scope gate already cleared it. If it fails now, do what a continuous `/implement` pass does with a gate failure — file the `needs human input: …` follow-up — then **skip the issue and keep going**. A single late failure does not stop a run already underway. Name every skipped issue in the report; a non-empty list means the scope gate missed something.
 2. **Worktree** — `git -C <repo> worktree add -b <branch> ~/.worktrees/<repo>/<slug> <default-branch>`. **This skill creates it, never the transport** — that is why landing, verdict paths, and teardown are identical on all three. Create it **now, not earlier**: a worktree is evidence an issue was ready, never a bet that it will be.
 3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else). On an Apple project that means a simulator per worker, created here alongside the worktree.
-4. **Model check** — resolve kind and model against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them.
+4. **Model check** — resolve the kind, then pick this issue's tier with [Picking the model per issue](#picking-the-model-per-issue), then check the resolved id against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them. Record the tier next to the slug; the run report names it.
 5. **`dispatch(…)`** — the transport file. Returns the **handle** you will use for every later verb. The workflow transport dispatches the whole batch in one call rather than per issue; its file says how.
 6. **Brief** — [BRIEF.md](BRIEF.md).
 
-Record `slug → issue → handle → worktree → branch → device` as you go. Step 7 needs the handle and the device.
+Record `slug → issue → model → handle → worktree → branch → device` as you go. Step 7 needs the handle and the device.
 
 **Naming `<slug>` and `<branch>`.** Both come from the issue title, same rules (the branch is `<slug>`; prefix it per the repo's convention if it has one). Adapted from jnsahaj/skills `ga`.
 
@@ -264,7 +289,8 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 | `working` | leave alone |
 | `done`/`idle`, verdict `PASS`/`SKIP` **and** `commit` == branch head | land it (step 6) |
 | `done`/`idle`, verdict `PASS`/`SKIP` but `commit` **behind** the head | **stale** — escalate; the tip commits shipped unverified |
-| `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing | report it, retire it, leave the issue open |
+| `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `haiku` | retire it, tear the worktree down, and re-dispatch the issue **once** on `model` (sonnet) through step 3; name the retry in the report |
+| `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `sonnet` | report it, retire it, leave the issue open. No escalation above sonnet exists — a second failure is work for `iron-out`, not a bigger model |
 | `blocked` (herdr: an approval prompt) | escalate to the human; never auto-approve |
 | `unknown` | report it, retire it; it does not prove completion |
 
@@ -360,6 +386,7 @@ Landing a branch closes an issue, which may clear the last blocker on others. Re
 The only other moment the human is involved. Name all of it:
 
 - **Transport** used, and the concurrency it ran at.
+- **Models** — `slug → sonnet|haiku` for every dispatch, or a count per tier when the swarm is large, plus every issue that was re-dispatched from haiku to sonnet after a failure. A tier split nobody can see is a tier split nobody can correct.
 - **Landed** — issue, branch, merge commit.
 - **Skipped at the dispatch gate** — issue, which test failed, the follow-up filed. If this list is non-empty, the scope gate missed something; say so.
 - **Stopped without a verdict** — issue, what the read showed, the follow-up filed.
