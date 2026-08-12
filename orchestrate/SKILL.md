@@ -60,7 +60,7 @@ Everything below is written against these. The mechanics live in the transport f
 | `dispatch(…)` → handle | `tab create` + `agent start` + brief | `Agent(prompt, model, description)` | one `Workflow` call over the whole ready batch |
 | `wake()` → handles + status | `Monitor` polling `herdr agent list` | task notification per agent | one notification when the round returns |
 | `read(handle)` | `herdr pane read <pane> --lines 60` | the `Agent` tool result | the round's returned array |
-| `retire(handle)` | worktree/branch teardown + `herdr tab close` | worktree/branch teardown | worktree/branch teardown |
+| `retire(handle)` | worktree/branch teardown + `herdr tab close` | `TaskStop` + worktree/branch teardown | `TaskStop` + worktree/branch teardown |
 
 **There is no fifth verb.** `answer(handle, text)` does not exist, on any transport, including the two that could technically support it. Do not add it back for "just this one case" — a swarm with one answerable worker is a swarm someone has to sit and watch.
 
@@ -295,6 +295,8 @@ Copy it at read time, not at teardown time. A worker can be retired for reasons 
 
 **A worker going quiet is liveness, not completion** — one that gave up, failed, or filed-and-halted ends in the same idle state as one that finished. Never tear down on transport state alone, and never on a worker's closing summary: a returned report is prose, the verdict is evidence.
 
+**And the reverse also holds: a notification is not a death.** On the subagent transport one fires whenever an agent stops with no live background children, so an agent that left a build running notifies, then resumes when the build ends. Judge by whether the worktree is changing — new commits, a verdict file, touched sources — not by the notification. Observed in one round: four workers were each declared dead on their first notification and three recovery dispatches were fired into worktrees whose original workers were still alive, briefly putting two agents in the same tree. The tell that they were not dead was `ListAgents` showing them `running` again after being reported `completed`.
+
 **Check the verdict's `commit` against the branch head** (`git -C <worktree> rev-parse HEAD`) before trusting a `PASS`. implement already forbids handing forward a verdict whose `commit` is behind the head; this is orchestrate checking that it held, because orchestrate is the one that ships the result. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
 
 #### `read(handle)` on EVERY wake
@@ -333,7 +335,11 @@ git -C <repo> worktree remove --force <worktree> \
 
 **Retire the worker's device too**, if step 3 gave it one — the platform cell you read there has the teardown commands. Whatever it is, it survives its worker and holds resources; a long run that skips this ends with one per issue still alive.
 
-Then `retire(handle)` — the transport's own teardown, which is a `herdr tab close` on one and nothing at all on the other two.
+Then `retire(handle)` — the transport's own teardown: a `herdr tab close` on one, a `TaskStop` on the other two.
+
+**Stop the agent before removing its worktree, not after, and do it even for a worker that already reported and landed.** On the subagent and workflow transports a worker that ended its turn may not be finished: an agent that left a background command running resumes when that command completes, so it keeps waking, keeps spending tokens, and — once you have merged its branch and removed its worktree — does so inside a directory that no longer exists. Observed: a landed worker went on notifying five more times across two hours against a deleted worktree, because teardown was treated as the whole of retirement.
+
+**Reconcile every wake.** A notification from a worker whose issue is already closed means one was left running; stop it. Any agent `ListAgents` shows as `running` with no open issue behind it is the same failure.
 
 **`--force` is load-bearing in a repo with submodules.** Plain `git worktree remove` refuses with `fatal: working trees containing submodules cannot be moved or removed`, which then cascades into `branch -d` failing because the worktree still holds the branch. `--force` removes it cleanly (checked on git 2.50.1 against a worktree with the submodule checked out), so it replaces the older `rm -rf` + `worktree prune` dance. Chain with `&&`, never `;`: a `;`-chained success echo prints after a failed step and misreports teardown as done.
 

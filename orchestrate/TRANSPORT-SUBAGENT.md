@@ -53,6 +53,10 @@ Read it against the verdict file, exactly as SKILL.md step 5 says: a returned re
 
 ## `retire(handle)`
 
-Nothing to close. A worker that ended its turn is already gone; SKILL.md step 7's worktree and branch teardown is the whole of retirement.
+**`TaskStop` the agent, then do SKILL.md step 7's worktree and branch teardown.** Every time, including a worker that already reported and landed — not only a withdrawn issue or a wrong dispatch.
 
-If a worker must be stopped **while still running** — a withdrawn issue, a wrong dispatch — `TaskStop` its task, then tear down. Never `rm -rf` a worktree with a live agent standing in it.
+**A worker that ended its turn is not necessarily gone.** A task notification fires whenever an agent stops with no live background children, and an agent that left a build, a monitor or any other background command running **resumes when that command finishes**. So the same agent notifies repeatedly, and each resumption is a real turn: it re-reads state, re-checks its build, and spends tokens. Once its branch is merged and its worktree removed, it is doing all of that inside a directory that no longer exists.
+
+Observed: a worker delivered a `PASS`, its branch was landed and its worktree torn down, and it went on notifying five more times over the following two hours against a deleted worktree. Nothing in the transport state distinguishes that from useful work — the giveaway is a notification arriving from a worker whose issue you have already closed.
+
+**Reconcile on every wake.** Any agent still listed as `running` whose issue is closed should have been stopped at landing; stop it now. `ListAgents` is the check.
