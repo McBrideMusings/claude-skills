@@ -35,3 +35,16 @@ write, at which seam, in which framework.
 Use `ios-simulator-skill` for build + simulator-boot + XCUITest runs. For a plain logic-test suite,
 the project's admin runner (`./admin test`) or `xcodebuild test` / `swift test` is enough and
 doesn't need a booted simulator — prefer it for speed in the `tdd` red→green loop.
+
+**Never locate a built app by globbing DerivedData.** `find DerivedData -name '*.app' | head -1`
+returns whichever product directory the filesystem hands back first — an older build, another
+target, or another checkout's output. An orchestrator did exactly this and reported a shipped
+feature as missing. Ask the build system:
+
+```bash
+xcodebuild -showBuildSettings | grep BUILT_PRODUCTS_DIR
+```
+
+**`xcodebuild test` outruns the Bash tool's 120-second default timeout** on any real project. Pass
+`timeout` explicitly — up to `600000` (10 minutes) — rather than backgrounding the build. If a run
+genuinely needs longer, split it (build, then test).

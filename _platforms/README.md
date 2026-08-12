@@ -21,6 +21,7 @@ _platforms/
     diagnose.md         <- what to instrument, read at diagnose Phase 04
     profiling.md        <- profiler catalog, read by the `profiling` engine (and diagnose's perf branch)
     testing.md          <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)
+    orchestrate.md      <- what N parallel workers must each get their own of, and how to pin to it
 ```
 
 A cell may be absent — the engine then runs generic-only for that platform. Add a platform by
@@ -35,6 +36,7 @@ adding a directory; add an engine column by adding that filename across the plat
 | `profiling` | `<p>/profiling.md` | after platform detect |
 | `tdd` | `<p>/testing.md` | Phase 01/02 (write the failing test) |
 | project `verify` | `<p>/testing.md` | when a repo's own `.claude/skills/verify/` drives the change |
+| `orchestrate` | `<p>/orchestrate.md` | step 3 (fan out) and step 7 (retire), per worker |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
 store directly. The testing axis reaches verification two ways instead: `tdd` reads it when writing
@@ -53,8 +55,10 @@ Adapted from [MengTo/Skills](https://github.com/MengTo/Skills) — see that repo
   `_domains/ui/`.
 
 Columns are filled as real work in a stack appears, not pre-built. Current state: `apple` has all
-four cells; `web` has `profiling` + `testing` + `review`; `threejs` has all four cells (WebGL stack
-only — game knowledge lives in the domain store). `web/diagnose` backfills when needed.
+five cells; `web` has `profiling` + `testing` + `review`; `threejs` has `review` + `diagnose` +
+`profiling` + `testing` (WebGL stack only — game knowledge lives in the domain store).
+`web/diagnose` backfills when needed, and `orchestrate` exists only for `apple` — that column
+fills the first time a swarm runs on a stack with a shared device, port, or database.
 
 ## Domain overlay
 
