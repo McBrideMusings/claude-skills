@@ -20,6 +20,8 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 >
 > **Your verify phase is what reports you finished.** `/implement` Phase 1.5 must run and must write `<worktree-path>/tmp/claude/verify/<issue>.json`. That file is the only thing the orchestrator can read — your transcript is not recoverable. Write it for every verdict, `SKIP` included.
 >
+> **Never end your turn while a background command is still running.** Run builds, test suites and any other slow command in the foreground and wait for them, or poll them to completion yourself before doing anything else. You have no way to be woken when one finishes — ending your turn to wait for a notification ends *you*, and everything you have not committed is stranded in the worktree for someone else to recover.
+>
 > Start by reading the issue: `bd show <issue> --json` on a beads repo, `gh issue view <issue> --repo <owner/repo>` on GitHub.
 >
 > **Read the tracker; never write to it.** No `bd update`, no `bd close`, no `gh issue close`, no comments. On beads the embedded database takes one writer at a time and your sibling workers are competing for it; on either backend the orchestrator records the outcome from the primary checkout once your verdict file lands. Your verdict file is how you report — that is the whole channel.
@@ -39,6 +41,7 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 | do not land, pass it through wrap-up | `wrap-up` lands by default on an owned repo; `git checkout <default>` then fails in the worktree, or worse, N workers race the same branch |
 | no repo-wide formatter | one reformat commit conflicts every sibling branch |
 | verdict file, every verdict | orchestrator has nothing to read; a missing file is indistinguishable from a pass that never ran |
+| never end your turn on a background command | **two of four workers in one round died this way, identically.** Each launched its test build in the background and ended its turn "waiting for the completion notification" — but a subagent has no wake signal, so ending the turn ended the worker. Both left substantial uncommitted work (170 and 194 lines plus a new file each), no commits, and no verdict, which is the one state that forbids teardown and forces a recovery dispatch. The pull is strong because backgrounding a slow build is correct behaviour *in a session with a human*; in a worker it is fatal |
 | no edits to shared index files | a repo-wide index (a file map, a component registry, a docs table of contents) is one list every change appends to, so N branches collide on it by construction. Observed on `iptv-mac`: 3 of 4 parallel branches conflicted on `docs/file-map.md`, two aborted outright, and resolving them by hand took a sizeable share of the round — none of it about the code being reviewed |
 | "entries your change made untrue", not "files you created" | the first round under the clause above, a worker that added no files returned `index_entries: []` and left three entries describing the resume rule it had just changed. An edit-only diff reads as "nothing to index" unless the brief says otherwise, and the failure is silent by construction — suppressing the edit is exactly what removed the conflict that used to announce it |
 
