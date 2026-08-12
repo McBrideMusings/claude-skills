@@ -318,6 +318,70 @@ project.
 
 ---
 
+## Always-on processes on macOS (`[launchd]`)
+
+A project with a process that should be alive at login declares
+`modules = ["launchd"]` plus a `[launchd]` table, and wires a `service` command.
+**Do not write a per-project shell script that generates a plist and drives
+`launchctl`** — that is what this module replaced. It is a module, not an
+archetype, because a Go supervisor, a Python daemon and a shell script all
+register with launchd identically; it composes with whatever stack archetype the
+project already uses.
+
+```toml
+modules = ["launchd"]
+
+[launchd]
+label       = "com.example.myserver"      # required
+program     = "~/go/bin/myserver"         # required, absolute after ~ expansion
+args        = ["-wait-for-lock"]
+stdout      = "${HOME}/.myserver/out.log"
+stderr      = "${HOME}/.myserver/err.log"
+working_dir = "${HOME}"
+throttle    = 10
+# also: env, inherit_path (default true), inherit_home (default true),
+#       keep_alive (true), run_at_load (true), process_type ("Background"),
+#       nice, start_interval
+
+[commands.service]
+desc = "Manage the LaunchAgent (install|uninstall|status|restart|stop|start)"
+steps = ["service"]
+group = 3
+priority = 1
+
+[actions.service]
+kind = "python"
+run  = '''
+launchd_service(globals().get("_LAUNCHD_CONFIG") or {}, args)
+'''
+```
+
+Two things worth knowing before you debug something here:
+
+- **`install` is deliberately not always a re-registration.** macOS 13+ Background
+  Task Management records every launchd item and posts an "App Background
+  Activity" notification the first time it sees one, keyed on the plist being
+  installed rather than the process starting — so a `deploy` that rewrote an
+  identical plist and did `bootout` + `bootstrap` produced a notification on
+  every deploy. `install` renders the plist and compares it with what is on disk:
+  identical and already loaded → `launchctl kickstart -k` only, no write, no new
+  BTM record. It writes and re-registers only on a genuine change, a missing
+  plist, or an unloaded agent. A `service install` that prints "restarted …
+  (plist unchanged)" is working correctly, not skipping work.
+- **`inherit_path` writes the invoking shell's PATH into the plist.** launchd
+  gives an agent `/usr/bin:/bin:/usr/sbin:/sbin` and nothing else, so a process
+  that shells out to anything from Homebrew or a language toolchain starts fine
+  and then fails on its first real unit of work. Leave it on unless the program
+  genuinely needs a pinned PATH.
+
+`${VAR}` placeholders resolve at run time, but **the resolver does not nest** —
+`${A:-${B}/x}` expands wrongly. Use a plain `~` or a single-level default.
+
+Note `admin service install` is also usually a step inside `deploy`, since a
+deploy replaces the binary the agent is running.
+
+---
+
 ## Per-command env injection
 
 Any `[commands.X]` can declare an `env` table. Values support `${VAR:-default}`.
