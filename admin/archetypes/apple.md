@@ -198,3 +198,40 @@ mac_asset_dir = "App/Assets.xcassets/AppIcon.appiconset"
 If a `dev`/launch command's output collapses or elides, the action needs
 `interactive-shell` (raw stream), not `pty=True`. See the main SKILL.md
 "Fixing the collapsing/elided dev-output box" note.
+
+---
+
+## Signing without a person: the App Store Connect API key
+
+If a machine has these three exported (they are in `~/.claude/.env` on the main
+Mac), the archetype signs and provisions with no Apple ID in Xcode:
+
+```
+APP_STORE_CONNECT_KEY_PATH  APP_STORE_CONNECT_KEY_ID  APP_STORE_CONNECT_ISSUER_ID
+```
+
+`admin appid` then covers what used to need the developer portal — `admin appid`
+alone reports on the project's identifiers, `--capability icloud` enables one,
+`--name` registers a new one.
+
+### The trap that makes a correct App ID look broken
+
+```
+error: "<app>" requires a provisioning profile with the iCloud feature.
+```
+
+Reads as *the capability is missing from the App ID*. Usually it is not. Check,
+in this order:
+
+1. **Is something forcing manual signing?** `CODE_SIGN_STYLE=Manual` with an
+   empty `PROVISIONING_PROFILE_SPECIFIER` tells `xcodebuild` never to create a
+   profile, so `-allowProvisioningUpdates` and the API key are both ignored and
+   it falls back to the wildcard team profile. `[apple] sign_identity` used to
+   do this unconditionally; since 2026-08-12 it only does so for apps whose
+   entitlements need no profile.
+2. **Is Xcode signed out?** It does not say so — same error. Its preferences
+   lie about it too: the account row outlives the keychain credential.
+3. **Only then, the App ID.** `admin appid <bundle-id>` answers it in one call.
+
+Automatic signing also refuses an identity *hash* — pass the name
+(`"Apple Development"`).
