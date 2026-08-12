@@ -185,6 +185,32 @@ Dispatch `min(frontier size, max_workers, the transport's concurrency)`.
 
 Topology, if the transport has any, is fixed by the transport file. Do not invent one.
 
+#### A worktree isolates source and nothing else
+
+A worktree gives each worker its own checkout. It gives them nothing else. Everything downstream of the build is still one shared thing: the device the app installs onto, the bundle id it installs under, the container that bundle id owns, the simulator's pasteboard and keychain, a local database or dev server on a fixed port.
+
+So two workers verifying at the same time can each be looking at the other's build. The symptoms do not read as a collision — a worker reports its own new button missing, or a timed observation comes out wrong, and both look like a bug in the change under test. **Suspect the shared device before the diff whenever a worker reports its own change absent.**
+
+**On an Apple project, give each worker its own simulator.** Create it beside the worktree in step 3 and record the UDID with the handle:
+
+```bash
+xcrun simctl create "orch-<slug>" \
+  com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
+  com.apple.CoreSimulator.SimRuntime.iOS-26-5      # returns the UDID
+xcrun simctl boot <udid>
+```
+
+Then every command the worker runs is pinned to that UDID rather than to a device name:
+
+- `xcodebuild -destination 'id=<udid>'` — **not** `-destination 'name=iPhone 17 Pro'`, which resolves to whichever device happens to answer to that name and is how siblings end up on the same phone.
+- `xcrun simctl install <udid>` / `launch <udid>`, `idb --udid <udid>`.
+
+Retire it in step 7 with the worktree — `xcrun simctl shutdown <udid>` then `xcrun simctl delete <udid>` — or a long run leaves a booted simulator per issue behind, each holding memory.
+
+**Never locate a build with `find DerivedData -name '*.app' | head -1`.** DerivedData is per-worktree, so `head -1` returns an arbitrary sibling's output; an orchestrator did exactly this and reported a shipped feature as missing. Ask the build system instead: `xcodebuild -showBuildSettings | grep BUILT_PRODUCTS_DIR`.
+
+**The same reasoning, not the same commands, applies elsewhere.** An Android emulator, a browser profile, a dev server port, a local database, a Docker container name: if two workers would reach for one of them at once, give each its own and pin every command to the specific one. The question to ask per project is "what does the verification touch that the worktree does not cover", and the answer is rarely nothing.
+
 #### Nothing is watching the workers
 
 A herdr worker is invisible until someone switches to its tab; a subagent or workflow worker has nothing to switch to. The human is watching **this** pane and nothing else, and no worker can call for attention. **The wake signal (step 4) and the read on every wake (step 5) are the only way a worker is ever heard from.** Skipping one does not degrade the run; it silently strands a worker.
@@ -195,11 +221,12 @@ Per ready issue, in order:
 
 1. **Dispatch gate** — implement's gate again, on this issue's current body. It should pass; the scope gate already cleared it. If it fails now, do what a continuous `/implement` pass does with a gate failure — file the `needs human input: …` follow-up — then **skip the issue and keep going**. A single late failure does not stop a run already underway. Name every skipped issue in the report; a non-empty list means the scope gate missed something.
 2. **Worktree** — `git -C <repo> worktree add -b <branch> ~/.worktrees/<repo>/<slug> <default-branch>`. **This skill creates it, never the transport** — that is why landing, verdict paths, and teardown are identical on all three. Create it **now, not earlier**: a worktree is evidence an issue was ready, never a bet that it will be.
-3. **Model check** — resolve kind and model against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them.
-4. **`dispatch(…)`** — the transport file. Returns the **handle** you will use for every later verb. The workflow transport dispatches the whole batch in one call rather than per issue; its file says how.
-5. **Brief** — [BRIEF.md](BRIEF.md).
+3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else). On an Apple project that means a simulator per worker, created here alongside the worktree.
+4. **Model check** — resolve kind and model against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them.
+5. **`dispatch(…)`** — the transport file. Returns the **handle** you will use for every later verb. The workflow transport dispatches the whole batch in one call rather than per issue; its file says how.
+6. **Brief** — [BRIEF.md](BRIEF.md).
 
-Record `slug → issue → handle → worktree → branch` as you go. Step 7 needs the handle.
+Record `slug → issue → handle → worktree → branch → device` as you go. Step 7 needs the handle and the device.
 
 **Naming `<slug>` and `<branch>`.** Both come from the issue title, same rules (the branch is `<slug>`; prefix it per the repo's convention if it has one). Adapted from jnsahaj/skills `ga`.
 
@@ -291,6 +318,8 @@ git -C <repo> worktree remove --force <worktree> \
 ```
 
 **The first line is not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy from step 5 is missing, do it now rather than removing the worktree — this is the check that stops a whole swarm's evidence disappearing one worker at a time, each teardown looking perfectly clean as it goes.
+
+**Retire the worker's device too**, if step 3 gave it one — `xcrun simctl shutdown <udid>` then `xcrun simctl delete <udid>`. A booted simulator survives its worker and holds memory; a long run that skips this ends with one per issue still running.
 
 Then `retire(handle)` — the transport's own teardown, which is a `herdr tab close` on one and nothing at all on the other two.
 
