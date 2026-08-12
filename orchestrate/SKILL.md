@@ -207,6 +207,8 @@ Then every command the worker runs is pinned to that UDID rather than to a devic
 
 Retire it in step 7 with the worktree — `xcrun simctl shutdown <udid>` then `xcrun simctl delete <udid>` — or a long run leaves a booted simulator per issue behind, each holding memory.
 
+**One device per worker also isolates the app's stored state, including the iCloud key-value store** — which looked like a second, separate sharing problem and is not. `NSUbiquitousKeyValueStore` persists inside the device's own data directory (`Devices/<udid>/data/Containers/Data/InternalDaemon/…/com.apple.kvs/…/<team>.<identifier>`), simulators carry no iCloud account, and there is no host-side store they proxy into. Checked 2026-08-12: three devices running the same app held three distinct files with three different checksums. So workers that appeared to overwrite each other's seeded state were doing it *through the shared device*, not through iCloud, and separating the devices separates the stores.
+
 **Never locate a build with `find DerivedData -name '*.app' | head -1`.** DerivedData is per-worktree, so `head -1` returns an arbitrary sibling's output; an orchestrator did exactly this and reported a shipped feature as missing. Ask the build system instead: `xcodebuild -showBuildSettings | grep BUILT_PRODUCTS_DIR`.
 
 **The same reasoning, not the same commands, applies elsewhere.** An Android emulator, a browser profile, a dev server port, a local database, a Docker container name: if two workers would reach for one of them at once, give each its own and pin every command to the specific one. The question to ask per project is "what does the verification touch that the worktree does not cover", and the answer is rarely nothing.
