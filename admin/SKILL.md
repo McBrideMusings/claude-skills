@@ -146,15 +146,33 @@ admin check .
 
 After any `admin.toml` edit, just re-run `admin check` (no regeneration). Heavy inline code → propose a migration plan per the inline policy.
 
-### Phase 2c: Standard command order
+### Phase 2c: The standard layout
 
-**ALWAYS: `build`, `dev`, `deploy` — in that order. Non-negotiable.**
+**Every `admin.toml` in every project has the same three lifecycle verbs, in this order, and everything else lives below them.**
 
 ```
-build → dev → deploy   |   test, vet, fmt, clean, docs
+build → dev → deploy        ← group 1, always these three, always this order
+────────────────────────    ← automatic spacer
+everything else             ← group 2, alphabetical-ish by priority
 ```
 
-The `docker` archetype bakes this in as its default `order`. Never reorder these three. `deploy` is always last in the lifecycle group — never before `dev`.
+#### The three verbs and exactly what each one means
+
+| Verb | Means | Ends with |
+|---|---|---|
+| **`build`** | Compile/bundle the thing **in the repo**. Nothing leaves the working tree. | An artifact under `.build/`, `dist/`, `target/`, `build/` |
+| **`dev`** | Run it **from source, here, now**, for me to look at. Watches/reloads if the stack can. | A process running in my terminal until I stop it |
+| **`deploy`** | Put the built thing **where it actually runs** — this machine or its host — and make that copy live. | The real installed/running copy replaced: `/Applications/X.app`, `~/go/bin/x`, the plugin dir, the container on the host, the Worker |
+
+**`deploy` installs. It does not produce a shippable file.** This is the standard across the whole fleet — `deploy` already means "install to ~/.admin" (admin-project-tool), "install to /Applications" (charcoal), "install cnav-bin to GOPATH/bin" (cnav), "push code to the host, recreate the container" (local-genai), "copy dist/ to the Stash plugins dir" (stash-subtitles), "install binary to ~/go/bin" (wtree). A project that spells local install `install` is the outlier — rename it to `deploy`.
+
+**A file for other people or other machines is `distribute`, and it is NOT one of the three.** `.dmg`, `.xpi`, a tarball, a GitHub release upload, a published package — that is `distribute`, in group 2. Never `deploy`, never `release`, never `publish`.
+
+Two more names that are not free to invent:
+- **`setup`** — one-time after a fresh clone (resolve deps, install toolchain). Group 1, priority 5, above `build`. Not `install`, not `bootstrap`.
+- **`start`** — build then launch the *installed* thing without replacing it. Optional; only add it when the app is a GUI that also has a `dev` from-source path.
+
+Never reorder `build`/`dev`/`deploy`. `deploy` is always last in group 1 — never before `dev`. The `docker` archetype bakes this in as its default `order`.
 
 Use `group` + `priority` integers per command. Sort by `(group, priority, name)`; spacers between groups are automatic.
 
@@ -173,13 +191,45 @@ desc = "Run tests"; steps = ["test"]; group = 2; priority = 10
 # vet=20, fmt=30, clean=40
 ```
 
-Group 1 = build/run/ship. Group 2 = quality/housekeeping. Defaults (`group=0, priority=0`) → alphabetical, no spacers (fine for ≤3 commands).
+Group 1 = build/run/install. Group 2 = everything else. Defaults (`group=0, priority=0`) → alphabetical, no spacers (fine for ≤3 commands).
+
+Canonical slots — use these numbers so every project's menu lines up:
+
+| Group | Priority | Command |
+|---|---|---|
+| 1 | 5 | `setup` (only if a fresh clone needs one) |
+| 1 | 10 | **`build`** |
+| 1 | 20 | **`dev`** |
+| 1 | 25 | `start` (only for a GUI app with an installed copy) |
+| 1 | 30 | **`deploy`** |
+| 2 | 5 | `distribute` |
+| 2 | 10 | `test` |
+| 2 | 20 | `vet` / `lint` |
+| 2 | 30 | `fmt` |
+| 2 | 40 | `clean` |
+| 2 | 50 | `docs` |
+| 2 | 60+ | project-specific (`logs`, `snapshot`, `kill`, `reload`, …) |
 
 Notes:
-- `dev` = run locally (e.g. `go run ./cmd/...`, `npm run dev`).
 - `docs` = serve docs locally with hot reload. **Single command, no sub-targets** (e.g. `run = "npm run docs:dev"`). Skip docs build/preview/deploy unless the user explicitly publishes.
 
 Legacy `order = [...]` with `"---"` separator still works but prefer group/priority. When using explicit `order`, the first three entries must be `"build", "dev", "deploy"` — always.
+
+### Phase 2d: Audit + normalize an existing manifest
+
+**Offer this unprompted the first time a session touches `admin.toml`, or when an `admin` command surprises the user** (the wrong thing happened, or a verb didn't exist). One line: "`admin.toml` here uses `install` for the local install — the fleet standard is `deploy`. Want me to normalize it?" Then wait.
+
+Checklist, in order:
+
+1. **Do `build`, `dev`, `deploy` all exist?** A missing one is usually mis-named, not absent — find what does the job and rename it.
+2. **Does `deploy` install, or does it build a shippable file?** If it builds a `.dmg`/`.xpi`/tarball/release, that command is `distribute` (group 2), and the local-install command — often called `install` — becomes `deploy`.
+3. **Is there an `install`?** Two cases: it installs the built app locally → rename to `deploy`; it installs dev toolchain/deps → rename to `setup`.
+4. **Any `release` / `publish` / `ship`?** → `distribute`.
+5. **Any `run`?** If it runs from source → `dev`. If it launches the installed copy → `start`.
+6. **Are group/priority on the canonical slots above?** Fix the numbers so the printed menu matches every other project.
+7. **`admin check`**, then update the project's own docs in the same pass — a rename that leaves `CLAUDE.md`, `CLAUDE.local.md`, and `.claude/skills/*` naming the old verb sends the next session down a path that no longer exists. Grep the repo for the old verb before finishing.
+
+Renaming a command is free — `admin.toml` is globally gitignored and there is no generated artifact — but the docs referencing it are not. Step 7 is the part that actually costs something if skipped.
 
 ### Phase 3: Env var discovery
 
