@@ -54,16 +54,23 @@ A dev variant's name comes from different sources per surface:
 | Surface | Source |
 | --- | --- |
 | Dock hover tooltip / Finder | the **`.app` filename** (`MyApp.app` → "MyApp") |
-| Menu-bar app menu | `CFBundleName` |
-| Some Finder/system surfaces | `CFBundleDisplayName` |
+| Menu-bar app menu | `CFBundleName` — patched post-build by `dev_macos_postprocess` |
+| Some Finder/system surfaces | `CFBundleDisplayName` — patched post-build too |
 | In-app strings (window title, welcome screen) | hardcoded unless they read `Bundle.main`'s `CFBundleDisplayName` |
 
-So setting `CFBundleName`/`CFBundleDisplayName` to "MyApp Dev" fixes the menu
-bar but NOT the Dock tooltip. To rename the dev variant in the Dock you must
-rename the `.app` file → set `[apple] mac_dev_product_name = "<Name> Dev"`. The
-dev loop's `dev_macos_postprocess` renames the built app → `<Name> Dev.app`,
-patches `CFBundleDisplayName`, and re-signs with the stable identity (TCC grants
-survive). Keep `PRODUCT_NAME` stable so the build's `.app` (and `TEST_HOST`) is
+Naming the dev variant in the menu bar and naming it in the Dock are two
+different jobs, and `mac_dev_product_name` does both. Set `[apple]
+mac_dev_product_name = "<Name> Dev"` and the dev loop's `dev_macos_postprocess`
+renames the built app → `<Name> Dev.app` (the only thing the Dock tooltip reads),
+patches `CFBundleName` **and** `CFBundleDisplayName` to match, and re-signs with
+the stable identity (TCC grants survive).
+
+Both plist keys are patched post-build rather than set in the project spec
+because a project with `GENERATE_INFOPLIST_FILE = YES` cannot set `CFBundleName`
+in the spec at all — Xcode derives it from `PRODUCT_NAME`, there is no
+`INFOPLIST_KEY_CFBundleName` to override it with, and `PRODUCT_NAME` has to stay
+put or `TEST_HOST` and the built `.app` name move with it. Setting
+`INFOPLIST_KEY_CFBundleName` in `project.yml` looks right and does nothing. Keep `PRODUCT_NAME` stable so the build's `.app` (and `TEST_HOST`) is
 unaffected. Make in-app strings read `Bundle.main`'s `CFBundleDisplayName` so the
 variant labels itself everywhere.
 
