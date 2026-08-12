@@ -241,6 +241,19 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 
 The verdict is a file, not the worker's own words: `<worktree>/tmp/claude/verify/<item>.json`. **`/implement`'s Phase 1.5 owns that file** — its schema, when it is written, and what each verdict means. Orchestrate is only its reader; do not re-specify it here.
 
+**Copy the verdict into the primary checkout the moment you read it, before anything else happens to that worktree:**
+
+```bash
+mkdir -p <repo>/tmp/claude/verify
+cp <worktree>/tmp/claude/verify/<item>.json <repo>/tmp/claude/verify/<item>.json
+```
+
+The verdict lives inside the worktree, `tmp/` is gitignored so it never rides the branch, and step 7 removes the worktree with `--force`. **Teardown therefore destroys the only copy of the evidence for every slice the swarm lands.** The work was verified and nothing records it: `tmp/claude/verify/` in the primary checkout stops at whatever the last non-swarm pass wrote, which reads from the outside exactly like a swarm that skipped verification entirely.
+
+Observed: a seven-issue run landed six slices, each driven at its surface by its own worker, each with a verdict the orchestrator read before merging — and left no verdict file behind for any of them. The reviewer afterwards could not tell "verified, evidence deleted" from "never verified", and had to re-drive the whole integrated result to find out.
+
+Copy it at read time, not at teardown time. A worker can be retired for reasons that skip step 6 entirely (a `FAIL`, an `unknown`, an issue that turned out already done), and those verdicts are worth keeping too — a `FAIL` nobody can read afterwards is the one you most needed.
+
 **A worker going quiet is liveness, not completion** — one that gave up, failed, or filed-and-halted ends in the same idle state as one that finished. Never tear down on transport state alone, and never on a worker's closing summary: a returned report is prose, the verdict is evidence.
 
 **Check the verdict's `commit` against the branch head** (`git -C <worktree> rev-parse HEAD`) before trusting a `PASS`. implement already forbids handing forward a verdict whose `commit` is behind the head; this is orchestrate checking that it held, because orchestrate is the one that ships the result. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
@@ -269,12 +282,15 @@ Close the issue with what shipped.
 Teardown is the orchestrator's job because it is **structurally impossible for the worker**: git refuses to delete a branch that a worktree still has checked out, and the worker is standing in it. Whatever created a resource retires it — this skill made the worktree and the branch, so this skill removes them, on every transport.
 
 ```bash
+test -f <repo>/tmp/claude/verify/<item>.json   # the verdict is already out — step 5
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
 git -C <repo> worktree remove --force <worktree> \
   && git -C <repo> branch -d <branch> \
   && git -C <repo> push origin --delete <branch>
 ```
+
+**The first line is not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy from step 5 is missing, do it now rather than removing the worktree — this is the check that stops a whole swarm's evidence disappearing one worker at a time, each teardown looking perfectly clean as it goes.
 
 Then `retire(handle)` — the transport's own teardown, which is a `herdr tab close` on one and nothing at all on the other two.
 
@@ -319,6 +335,7 @@ The only other moment the human is involved. Name all of it:
 - **Escalated** — conflicts, stale verdicts, dirty worktrees left standing.
 - **Still blocked** — issue and the blocker it is waiting on.
 - **Index entries written**, and any landed branch that added a file and named none — that is a stale index in the making, and it is only visible here.
+- **Verdicts preserved** — one line listing the `tmp/claude/verify/<item>.json` files now in the primary checkout, and naming any landed issue that has none. A swarm that lands six slices should leave six verdicts behind; anything less means the evidence went out with a worktree and the next person to look will have to re-drive the result to learn what you already knew.
 
 ## Worker rules the brief must carry
 
