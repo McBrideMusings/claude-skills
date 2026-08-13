@@ -2,7 +2,7 @@
 
 Auto-entered from [SKILL.md](SKILL.md) Phase 00 when the current branch has an **open PR that is mine** (author or assignee) carrying **unaddressed reviewer feedback in any shape** — an unresolved inline thread, a formal review whose substance sits in the review **body** (zero inline threads), or a plain conversation comment with nothing pushed since (see SKILL.md step 3's *commits-pushed-after* heuristic). Work through every feedback point one by one: fetch → score → plan → (on approval) apply code fixes + write a local reply doc. Mutually exclusive with the self-review core — this branch runs *instead of* [REVIEW-CORE.md](REVIEW-CORE.md). **Never gate on inline-thread count alone** — a body-only review has zero threads and is the exact case that silently slipped through before.
 
-**Never posts to GitHub.** All reviewer replies are written to a local response document the user copy-pastes; thread resolution is the user's to do.
+**Never posts words to GitHub.** All reviewer replies are written to a local response document the user copy-pastes; thread resolution is the user's to do. The one action this branch may take on GitHub is re-requesting a formal reviewer once the fixes are pushed (Phase 08), and only on an explicit yes.
 
 **RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, regardless of which skill entered the review. Full statement in [SKILL.md](SKILL.md) RULE 0 — it binds here identically.
 
@@ -225,9 +225,37 @@ On approval, apply the code changes for the `address` / `partial` items, commit,
 
 If the user rejects or edits, re-score the affected threads, regenerate the response document, and re-present.
 
+## Phase 08 — Offer to re-request the review
+
+**Whenever the feedback came from a formal review, offer to re-request that reviewer once the fixes are pushed.** Not a footnote and not something the user should have to think of — a review with a verdict on it stays on the PR as the reviewer's standing position, and `CHANGES_REQUESTED` keeps gating the merge, until they are asked again. Fixing everything and saying nothing leaves the PR looking exactly as blocked as it did before the work.
+
+The offer applies to a reviewer who submitted a **formal review of any state** — `CHANGES_REQUESTED`, `COMMENTED`, or `APPROVED` on a since-changed diff. It does **not** apply to someone who only left a conversation comment: there is no review to supersede, and re-requesting reads as a nudge rather than a status change.
+
+Make the offer in the same message as the response document, one plain line per reviewer, keyword-answered (RULE 0 — never a selector):
+
+```
+@alexthemighty's CHANGES_REQUESTED is still gating the merge. Re-request their review? `re-request` / `skip`
+```
+
+On an explicit yes **in that message** — this is an outward action on someone else's queue, held to the same gate as any send:
+
+```
+gh pr edit <pr_number> --repo <owner>/<repo> --add-reviewer <login>
+```
+
+`--add-reviewer` works on someone who has already reviewed: GitHub drops their prior verdict from the merge gate and puts them back in `reviewRequests`. Confirm it by reading the list back rather than trusting the command's silence:
+
+```
+gh pr view <pr_number> --json reviewRequests --jq '[.reviewRequests[].login]'
+```
+
+**Order matters: push first.** Re-requesting before the fix commits are on the branch asks someone to look at the code they already rejected. Same rule as the reply itself — the branch must be pushed before either goes out.
+
+**Two ways it fails, both worth naming rather than retrying.** A reviewer without push access to the repo cannot be re-requested and the command errors; say so and leave the reply to do the work. And re-requesting yourself is rejected outright — if the author and the reviewer are the same login, there is nothing to offer.
+
 ## Guardrails
 
-- **No GitHub writes, ever.** No `gh pr comment`, no `gh pr review`, no `gh api` mutations, no thread resolution. Read-only against GitHub for the entire branch.
+- **No GitHub writes except the Phase 08 re-request, and that one only on an explicit yes.** No `gh pr comment`, no `gh pr review`, no `gh api` mutations, no thread resolution — the reply is the user's to paste and the threads are theirs to resolve. The single exception is `gh pr edit --add-reviewer` in Phase 08, which posts no words of its own and only puts back a request the reviewer's own verdict replaced; it still needs a yes in the message, never prior or implied consent.
 - **No code edits before plan approval.** Edits happen after the user approves the plan — and only for `address` / `partial` items.
 - **All replies go to the response document as one consolidated comment.** The user copy-pastes it as a single PR-level comment. Never offer to post for them, and never split into per-thread drafts unless the user explicitly asks.
 - **Don't manufacture feedback.** Fall back to the self-review core only when **all three** sources (inline threads, non-author review bodies, non-author conversation comments) are empty — never invent an item to triage. Zero inline threads alone is not emptiness if a review body or comment carries findings.
