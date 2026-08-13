@@ -163,11 +163,11 @@ Passing tests are not evidence the item works — they prove CI runs. Before wra
 
 **Where `verify` lives, so you don't conclude it is missing.** It is bundled into the Claude Code binary — there is no file for it under `~/.claude/skills/`, and it does not appear in the skill listing. `find` will come up empty and the listing will look like it was never built; neither is evidence. `Skill(verify)` loads it anyway (confirmed on 2.1.224–2.1.226). Do not hand-roll the verification, do not substitute a test run, and do not log a papercut about a missing skill.
 
-**The project's own `verify` is the real one — the bundled skill is only its bootstrap.** How you drive a surface is never generic: a TUI needs a headless frame dump, an iOS app needs a simulator, a Worker needs a request against a dev server. The bundled skill exists to figure that out once per repo and write it down as `.claude/skills/verify/`, which then shadows it for every later pass. So:
+**The project's own `verify` is the real one — the bundled skill is only its bootstrap.** How you drive a surface is never generic: a TUI needs a headless frame dump, an iOS app needs a simulator, a Worker needs a request against a dev server. The bundled skill exists to figure that out once per repo and write it down as `.claude/skills/verify-project/`, which then shadows it for every later pass. So:
 
-- If `<repo>/.claude/skills/verify/` exists, that is the skill you are running. Trust it over anything the bundled version would have done.
+- If `<repo>/.claude/skills/verify-project/` exists, that is the skill you are running. Trust it over anything the bundled version would have done.
 - If it does not exist, let the bundled skill write one, and make sure what it writes names *this* repo's actual surface and commands — not a generic recipe that would read the same in any project.
-- **Keep it out of git.** A `verify` skill is per-checkout tooling, not shipped code: add `.claude/skills/verify` to `<repo>/.git/info/exclude` (never `.gitignore`, which is committed) the moment you create one. If you find it already tracked in a repo, untrack it — `git rm --cached -r .claude/skills/verify` plus the exclude line — on a branch if the repo is not the user's own.
+- **Keep it out of git.** A `verify` skill is per-checkout tooling, not shipped code: add `.claude/skills/verify-project` to `<repo>/.git/info/exclude` (never `.gitignore`, which is committed) the moment you create one. If you find it already tracked in a repo, untrack it — `git rm --cached -r .claude/skills/verify-project` plus the exclude line — on a branch if the repo is not the user's own.
 
 **1. Persist the verdict.** `verify` reports inline in chat, which nothing outside this session can read — and when the pass runs in a pane, that transcript is often unrecoverable. Write the verdict to `<repo-root>/tmp/claude/verify/<item>.json`, taking `<repo-root>` from `git rev-parse --show-toplevel` in its own call:
 

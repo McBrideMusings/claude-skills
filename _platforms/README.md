@@ -35,7 +35,7 @@ adding a directory; add an engine column by adding that filename across the plat
 | `diagnose` | `<p>/diagnose.md`, `<p>/profiling.md` (perf) | Phase 04 (Instrument) |
 | `profiling` | `<p>/profiling.md` | after platform detect |
 | `tdd` | `<p>/testing.md` | Phase 01/02 (write the failing test) |
-| project `verify` | `<p>/testing.md` | when a repo's own `.claude/skills/verify/` drives the change |
+| project `verify` | `<p>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
 | `orchestrate` | `<p>/orchestrate.md` | step 3 (fan out) and step 7 (retire), per worker |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
