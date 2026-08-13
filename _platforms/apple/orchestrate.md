@@ -46,6 +46,46 @@ simulators carry no iCloud account, and there is no host-side store they proxy i
 checksums. So workers that appeared to overwrite each other's seeded state were doing it *through
 the shared device*, not through iCloud, and separating the devices separates the stores.
 
+## A macOS app has no simulator — find its singletons instead
+
+Everything above is iOS. A **macOS-app** worker builds and runs on the host itself, so there is no
+device to hand out. What it collides on instead is every per-machine singleton the app binds by a
+fixed name:
+
+| Singleton | Typically | Isolate with |
+|---|---|---|
+| a debug/control socket | one hardcoded path under `~` | an env var naming the path |
+| `UserDefaults` | one domain per bundle id | a build setting suffixing the bundle id |
+| the installed app | one `/Applications/<App>.app` | run from the build directory, never install |
+
+Ask what the app opens by a fixed name and give each worker its own. Create them in **step 3**
+beside the worktree; state them in the brief; remove them in **step 7**.
+
+**Worked example — `term-wheelhouse`.** Both of its singletons are parameterised, so N workers run
+concurrently:
+
+```bash
+# step 3, per worker
+WHEELHOUSE_DEBUG_SOCKET=/tmp/orch-<slug>.sock      # DebugStateServer.socketPath honours it
+WHEELHOUSE_BUNDLE_ID_SUFFIX=.orch-<slug>           # project.yml builds PRODUCT_BUNDLE_IDENTIFIER from it
+# step 7, per worker
+rm -f /tmp/orch-<slug>.sock
+defaults delete com.piercemakes.wheelhouse.macos.orch-<slug>
+```
+
+**The symptom of getting this wrong is the same one the simulator section warns about, and it is
+worse here because the theft is silent.** A Unix-socket server typically calls `unlink(path)` before
+binding, to clear a socket a crashed run left behind — so the second app does not fail to bind, it
+*takes over*. Both workers then read the second app's state through what each believes is its own
+socket, and worker A reports its own new tab, row or field missing. That reads as a broken change.
+Observed on `term-wheelhouse` 2026-08-13: the path was hardcoded, and it had to be fixed
+(`WHEELHOUSE_DEBUG_SOCKET`) before more than one macOS-app issue could be in flight at all.
+
+**When the app has no override, dispatch ONE macOS-app worker at a time and say so in the report.**
+A serialized lane is a real cost; a lane that silently interleaves two workers' verifications is a
+wrong answer, which is worse. Non-macOS issues still run alongside it — the constraint is on
+macOS-app workers, not on the swarm.
+
 ## Retire the simulator in step 7
 
 ```bash
@@ -54,6 +94,24 @@ xcrun simctl shutdown <udid> && xcrun simctl delete <udid>
 
 Skip it and a long run ends with one booted simulator per issue, each holding memory. It survives
 its worker; nothing else cleans it up.
+
+## A sleeping display makes a macOS GUI worker unverifiable, and no worker can wake it
+
+An unattended run happens late, on an idle machine, which is exactly when the display sleeps. A
+Metal-backed view has no drawable then, so anything read *out of the rendered surface* comes back
+empty rather than wrong — a terminal grid reports zero rows, a snapshot field derived from layout
+reports nothing. Empty is indistinguishable from broken, and the natural reading is that the change
+under test failed.
+
+**It cannot be fixed from inside the run.** Checked 2026-08-13 on macOS 15: `caffeinate -u -t 300`,
+`caffeinate -d -i -t 600` and a synthetic `System Events` key event all left `screencapture`
+returning an all-black frame. Waking a sleeping display needs real hardware input.
+
+So, when gating macOS-app issues for an unattended swarm, prefer the ones whose verification reads
+**state** rather than **pixels** — a JSON snapshot of which tab is active, an HTTP route's response,
+a file on disk. Send anything that has to inspect rendered output to a run with a human at the
+screen, and say in the report that it was held back rather than letting a worker return an empty
+read as a pass.
 
 ## Signing
 
