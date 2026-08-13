@@ -12,7 +12,7 @@ For things that *happen over time*: request lifecycles, build pipelines, auth ha
 
 **Skeleton**
 1. Hero + one-sentence "what runs, and when".
-2. **Signature diagram: step timeline + sequence diagram.** Left-rail numbered steps down the page; a sequence diagram (lifelines + arrows) for the inter-actor calls. Color arrows `--c-flow`, payloads `--c-data`.
+2. **Signature diagram: step timeline + sequence diagram.** Left-rail numbered steps down the page; a sequence diagram (lifelines + arrows) for the inter-actor calls. Color arrows `--c-flow`, payloads `--c-data`. When the point is a *change* to the flow rather than explaining an existing one, a call-stack diff (`../_plan-format.md`) inside a code panel can stand in for or supplement the sequence diagram.
 3. `.steps` walkthrough — one numbered step per stage, each with its `file:line` and a one-line "what changes here".
 4. Edge cases / failure modes in `.callout--danger` (what happens when it breaks).
 5. Recap: the whole flow in 3 bullets.
@@ -25,7 +25,7 @@ For *structure*: module maps, service boundaries, how a subsystem is wired.
 
 **Skeleton**
 1. Hero + "the parts and who talks to whom".
-2. **Signature diagram: module map + data-flow.** Boxes for modules grouped into subtle background bands by layer; arrows for dependencies/data; mark trust/process boundaries in `--c-danger`. Legend required.
+2. **Signature diagram: module map + data-flow.** Boxes for modules grouped into subtle background bands by layer; arrows for dependencies/data; mark trust/process boundaries in `--c-danger`. Legend required. For a *proposed* restructuring rather than the current state, a before/after component tree (`../_plan-format.md`) reads better than forcing the change into the module-map diagram.
 3. Per-module cards: name, responsibility (one line), `file:line` entry point, what it depends on.
 4. A representative data-flow traced through the map (highlight the path).
 5. `.callout--warn` for the non-obvious coupling / the thing that surprises newcomers.

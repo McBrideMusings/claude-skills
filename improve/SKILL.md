@@ -22,7 +22,7 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 | `docs` | `docs` audit branch | `docs/` + `.vitepress/` exist (absence surfaces via `layout`) |
 | `layout` | `bootstrap` audit branch | always |
 
-Each delegated owner has a **"Findings-only invocation"** section in its own `SKILL.md` — the contract for being called from here: no file writes, no commits, no questions (answer what it would normally ask from repo artifacts, mark the unanswerable Assumed/Unknown), return structured findings (finding, evidence, strength, proposed fix). The `game` cells are read under the same discipline: structure and tradeoffs only, never a fun/good verdict.
+Each delegated owner has a **"Findings-only invocation"** section in its own `SKILL.md` — the contract for being called from here: no file writes, no commits, no questions (answer what it would normally ask from repo artifacts, mark the unanswerable Assumed/Unknown), return structured findings (finding, evidence, strength, proposed fix). Write the proposed fix in the shape of the change — a type signature, component tree, or call-stack diff (`../_plan-format.md`) — not just a name for it, when the fix has structural shape. The `game` cells are read under the same discipline: structure and tradeoffs only, never a fun/good verdict.
 
 ## Routing
 
