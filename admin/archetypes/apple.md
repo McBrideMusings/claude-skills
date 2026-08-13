@@ -193,6 +193,18 @@ mac_asset_dir = "App/Assets.xcassets/AppIcon.appiconset"
 - The dev build auto-gets: DEV banner (overlaid → flattened to RGB → restored
   after build) and the renamed `.app`.
 
+## tvOS: `dev tv` is the simulator, `deploy tv` is the Apple TV
+
+`tv_scheme` in `[apple]` turns on all three — `build tv`, `dev tv` (tvOS
+simulator, pinned with `tv_device` / `TV_DEVICE`), and `deploy tv` (Release
+build → install on a paired Apple TV over the network, via `devicectl`).
+
+**Pairing is one-time, network-only, and not something `admin` can do.** Apple
+TV: Settings → Remotes and Devices → Remote App and Devices, leave it open;
+Mac: Xcode → Window → Devices and Simulators → select the Apple TV → type the
+PIN. Before that, `devicectl` does not list the device at all, so it looks like
+`deploy tv` is broken rather than not-yet-paired.
+
 ## Dev-output streaming
 
 If a `dev`/launch command's output collapses or elides, the action needs
