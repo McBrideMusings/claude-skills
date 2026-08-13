@@ -81,6 +81,23 @@ socket, and worker A reports its own new tab, row or field missing. That reads a
 Observed on `term-wheelhouse` 2026-08-13: the path was hardcoded, and it had to be fixed
 (`WHEELHOUSE_DEBUG_SOCKET`) before more than one macOS-app issue could be in flight at all.
 
+**A worker kills only its own build, by bundle id — never by app name.** A macOS-app worker ends by
+tidying up the app it launched, and the obvious command is a name match:
+
+```bash
+pkill -f Wheelhouse            # ← kills the human's running copy too
+pkill -f "Wheelhouse.app/Contents/MacOS/Wheelhouse"   # ← so does this
+```
+
+The developer is usually running the real app on the same machine, and it matches both. Match the
+worker's own bundle id or its own build path instead, and say so in the brief. Observed 2026-08-13:
+a swarm of three ended with the developer's own `/Applications/Wheelhouse.app` no longer running —
+nothing in any verdict mentioned it, because from inside a worker it looked like successful cleanup.
+
+**Also assign a scratch server port per worker** when the app talks to a local server. Three workers
+each defaulting to the project's usual port is the same collision wearing different clothes, and it
+surfaces as one worker's app showing another's data.
+
 **When the app has no override, dispatch ONE macOS-app worker at a time and say so in the report.**
 A serialized lane is a real cost; a lane that silently interleaves two workers' verifications is a
 wrong answer, which is worse. Non-macOS issues still run alongside it — the constraint is on
