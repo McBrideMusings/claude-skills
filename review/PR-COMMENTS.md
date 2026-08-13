@@ -133,6 +133,19 @@ Write a **single consolidated reply** the user copy-pastes as one PR comment. Th
 
 - Filename: `/Users/pierce/.claude-tmp/claude-pr-comments-<number>-<YYYY-MM-DD-HHMMSS>.md` using current local time. No `mkdir` needed — `/Users/pierce/.claude-tmp/` is a persistent directory. No pruning needed; files are tiny.
 
+### Budget — hard caps, not guidance
+
+The pasteable block obeys all four. If a draft breaks one, cut words; never raise the cap.
+
+| Cap | Value |
+|---|---|
+| Whole pasteable block | **150 words**, excluding the numbered prefixes and the `file:line` tags |
+| Per item | **1 line**; a second line only when the *why* is not visible in the change itself |
+| Per sentence | **20 words** |
+| Items | **one per plan issue with action `address` / `partial` / `reply`**; `ignore` items never appear |
+
+Over 8 items the block still fits 150 words — that is 15 words an item, which is enough. It is not licence to merge items. An item that cannot be said in eight words is usually two items.
+
 Document format:
 
 ```
@@ -146,34 +159,88 @@ Head: <short-sha>
 
 ---
 
-Thanks @<reviewer> — quick rundown:
-
-1. <issue 1 one-line summary> — fixed. <optional one-sentence note on the approach if non-obvious>
-2. <issue 2 one-line summary> — <reply text explaining why no change, or what partial change was made>. (<file>:<line>)
-3. <issue 3 one-line summary> — fixed. [if multiple commits: "fixed in `<sha>`"]
+1. <what was flagged, ≤6 words> — <what changed, imperative-past> (`<path>:<line>`)
+2. <what was flagged, ≤6 words> — not changing. <evidence sentence with a value or a `<path>:<line>`>
+3. <what was flagged, ≤6 words> — <what landed> (`<path>:<line>`); skipped <what>, <reason>
 ...
 
 ---
 
 ## Reference (not for pasting)
 
-- 1: <thread/comment URL> · action: address · file: <path>:<line>
-- 2: <thread/comment URL> · action: reply  · file: <path>:<line>
-- 3: <thread/comment URL> · action: partial · file: <path>:<line>
+- 1: <thread/comment URL> · address · <path>:<line>
+- 2: <thread/comment URL> · reply   · <path>:<line>
+- 3: <thread/comment URL> · partial · <path>:<line>
 ```
 
-Rules for the consolidated reply:
+### What each action looks like
 
-- **One numbered item per plan issue.** Numbering must match Phase 07 exactly.
-- **Include items with action `address`, `partial`, or `reply`.** Skip `ignore` items entirely; call them out at the bottom of the plan instead.
-- **Leading sentence is the reviewer-friendly summary**, followed by the per-issue text:
-  - `address` → "fixed" (single commit) or "fixed in `<sha>`" (multiple commits) + an optional brief note if the approach is non-obvious.
-  - `partial` → name what landed and what was deliberately skipped, with a one-line reason for the skip.
-  - `reply` → the explanation itself (out of scope, intentional, addressed elsewhere, outdated, codebase convention cites file:line).
-- **Keep it conversational and short.** One line per item; two max. No headers, no nested bullets — one comment a human reads top-to-bottom.
-- **Commit SHA handling.** `<commit-sha-placeholder>` is a temporary marker. As soon as code changes are committed (after plan approval), replace every placeholder with the real short SHA from the `git commit` output. If all `address`/`partial` items land in one commit, drop the SHA reference — "fixed" is enough. Never leave a placeholder in the final document.
-- **Reference section at the bottom** lists each numbered item's source URL, action, and file:line — never pasted.
-- **Single- vs multi-reviewer.** All from one reviewer → address by handle in the opener. Multiple → drop the "@reviewer" greeting, open "Quick rundown:".
+- **address** → one line. What changed and where. `renamed` / `moved` / `added` / `now returns`. Add `in \`<sha>\`` only when the fixes span more than one commit.
+- **partial** → one line. What landed, then what you did not do and the reason — the reason is one of the three legitimate ones from Phase 05, named as itself.
+- **reply** → two lines maximum, and the second carries the evidence: a value read out of the running code, or a `<path>:<line>` where the codebase already settles it. A `reply` with no value and no path is not finished.
+
+**Commit SHA handling.** `<commit-sha-placeholder>` is a temporary marker. As soon as code changes are committed (after plan approval), replace every placeholder with the real short SHA from the `git commit` output. If all `address`/`partial` items land in one commit, drop the SHA reference. Never leave a placeholder in the final document.
+
+### What is cut entirely
+
+| Cut | Why |
+|---|---|
+| `Thanks @<reviewer> —` and `Quick rundown:` openers | The list is the message. A greeting is a line the reviewer reads and learns nothing from. |
+| Any restatement of what the reviewer said | They wrote it. The ≤6-word flag is a pointer, not a summary. |
+| "Good catch", "you're right", "fair point", apologies | Not information; each one invites a reply that is also not information. |
+| The optional "note on the approach" for `address` items | The diff is the approach. If the approach genuinely needs defending, that is a `partial`, not a footnote. |
+| `ignore` items | They stay in the Phase 07 plan for the user and never reach the PR. |
+| Headers, nested bullets, bold, tables inside the pasteable block | One flat numbered list a human reads top to bottom. |
+
+### Reply-comment style rules
+
+These are words posted under the user's name on someone else's PR. Tone is not decoration here — a hedged or padded reply reads as an opening for negotiation, and the reviewer takes it.
+
+**Sentence shape** (ASD-STE100 — https://www.asd-ste100.org/ ; Google developer documentation style guide — https://developers.google.com/style/tone):
+
+1. **One idea per sentence.** No sentence carries a claim and its justification. Split them.
+2. **20 words per sentence, maximum.** Do not hit the cap by dropping the subject or the article — an ambiguous short sentence is worse than a clear long one.
+3. **Active voice.** "The scan now reads the section id from config", never "the section id is now read from config".
+4. **Present tense for current behaviour, simple past for the change.** "`resolveSeat` returns the button seat" and "moved the guard into `dealRound`". No present perfect, no future tense.
+5. **No semicolons.** Two sentences instead.
+6. **Noun clusters capped at three words.** "player session cache key lookup" is a sentence hiding from you.
+
+**Banned outright** — each one lengthens the thread:
+
+- **Hedges:** `might`, `may`, `could potentially`, `it seems`, `I think`, `arguably`, `probably`, `IIRC`, `in theory`, `somewhat`, `a bit`.
+- **Apology and gratitude:** `sorry`, `apologies`, `thanks`, `thank you`, `good catch`, `great point`, `nice spot`, `appreciate`.
+- **Restatement:** any clause beginning "you mentioned", "as you noted", "your point about", "if I understand correctly".
+- **Softeners around a refusal:** `happy to change this if you feel strongly`, `let me know if you'd prefer`, `open to discussion`, `no strong opinion`. State the position. The reviewer knows how to reply.
+- **Abstraction nouns doing a fact's job:** `incorrect behavior`, `unexpected state`, `mishandled`, `improper`, `suboptimal`, `non-deterministic ordering`, `the logic doesn't account for`, `edge case`, `cosmetic`, `semantics`, `surface`, `invariant`, `boundary`. Also banned: any sentence whose subject is an abstraction. Not "the ordering is unstable" — "the second player with two pair got the side pot".
+- **Phantom authority:** `a known issue`, `well-documented`, `widely reported`, `notoriously`, `tends to`, `is known to`, unless a URL sits inside the same sentence.
+
+**Evidence rule.** Any reply claiming the reviewer is wrong, that the code is already correct, or that a convention says otherwise MUST carry one of these in the same item: a value read out of the running system (a count, a returned value, a duration, a row); a `<path>:<line>` pointing at the code that settles it; or a commit sha where it was already fixed. No exceptions. "This is intentional" with nothing after it is not a reply, it is a second round of review.
+
+**Handles.** Name a reviewer only when the PR has more than one and an item would otherwise be unattributable. Never open with a handle.
+
+**Worked reduction.** The same three items, before and after:
+
+```
+Thanks @alexthemighty — quick rundown:
+
+1. Side pot going to the wrong player at showdown — fixed. I reworked
+   evaluateShowdown so that it now takes kickers into account before it
+   decides the winner, which should handle the case you flagged.
+2. Hardcoded Plex section id — you're right that this is fragile, though
+   I think it might only bite on a non-default install. It seems safer to
+   leave it for now; happy to change this if you feel strongly.
+3. Missing test for the heads-up blind swap — good catch, added.
+```
+
+```
+1. Side pot at showdown — kickers now break the tie before the pot is
+   assigned (`poker-ui/src/game/handEval.ts:214`)
+2. Hardcoded Plex section id — not changing. `PLEX_LIBRARY_SECTION` already
+   overrides it and defaults to 3 only when unset (`scan-worker/config.ts:31`)
+3. Heads-up blind swap — added (`poker-ui/test/seatRotation.test.ts:64`)
+```
+
+118 words to 52. Item 2 is the load-bearing change: the first version hedges twice, offers to reopen the argument, and cites nothing — three separate invitations to reply. The second states the position once and points at the line that settles it.
 
 ## Phase 07 — Present the plan (plan mode)
 
@@ -184,44 +251,89 @@ Build the plan body and call `ExitPlanMode` with it. Format:
 
 <pr_url>
 <N> unresolved threads · base: <base> · head: <short-sha>
-Response: /Users/pierce/.claude-tmp/claude-pr-comments-<number>-<timestamp>.md (single consolidated reply, numbered to match the issues below)
 
 ## Threads
 
-### 1. [score: 92 · address] <one-line summary>
-- **File:** `path/to/file.ext:LINE` (outdated: yes/no)
-- **Thread:** <comment url>
-- **Reviewer (@login):** <quote the key sentence>
-- **Why it matters:** <1–2 sentence rationale for the score>
-- **Plan:** <what the code change will be>
+Full block for every item scored **50 and above**. Fields in this order, no others:
 
-### 2. [score: 68 · partial] <one-line summary>
-- **File:** ...
-- **Thread:** ...
-- **Reviewer (@login):** ...
-- **Why:** ...
-- **Plan:** address the null check; skip the broader refactor (out of scope for this PR)
+### 1. [92 · address] <one-line summary>
+- `path/to/file.ext:LINE` — outdated: no — <comment url>
+- **@login:** "<the key sentence, quoted, one sentence>"
+- **Score:** <one sentence, ≤20 words, citing the code or the comment>
+- **Plan:** <the code change, one sentence>
 
-### 3. [score: 40 · reply] <one-line summary>
-- **File:** ...
-- **Thread:** ...
-- **Reviewer (@login):** ...
-- **Why:** stylistic preference; codebase convention is the other way (cite file:line)
-- **Reply draft:** in response document, Thread 3
+### 2. [68 · partial] <one-line summary>
+- `poker-ui/src/table/SeatRing.tsx:88` — outdated: no — <comment url>
+- **@login:** "..."
+- **Score:** ...
+- **Plan:** add the null check; the ring refactor is a different concern and goes on its own branch
 
-### 4. [score: 15 · ignore] <one-line summary>
-- **File:** ...
-- **Thread:** ...
-- **Reviewer (@login):** ...
-- **Why:** refers to a function that no longer exists in this PR (outdated, removed in <sha>)
+Everything scored **below 50** is one table row, no block — the long tail is always the low scores, and four labelled fields to say "skipping this" is where the plan's length actually lives:
+
+| # | score | action | summary | file | why |
+|---|---|---|---|---|---|
+| 3 | 40 | reply | double-quote preference | `scan-worker/config.ts:12` | repo convention is single quotes — `.prettierrc:4` |
+| 4 | 15 | ignore | drop `formatSeatLabel` | — | function removed in `a41c9de` |
 
 ## Summary
-- Address: N · Partial: N · Reply: N · Ignore: N
-- Code touch points: roughly N files
-- Response: /Users/pierce/.claude-tmp/claude-pr-comments-<number>-<timestamp>.md (one consolidated comment — paste as a single PR comment, do not split per thread)
+- address N · partial N · reply N · ignore N · N files touched
+- Response doc: /Users/pierce/.claude-tmp/claude-pr-comments-<number>-<timestamp>.md
+- Paste as ONE PR comment. Do not split per thread.
 ```
 
-On approval, apply the code changes for the `address` / `partial` items, commit, and backfill the real SHAs into the response document. The user handles all GitHub replies and thread resolution themselves using the response document.
+The quoted reviewer sentence, the score rationale, and the plan sentence all stay for items scored 50+. Cutting those is how the effort-triage failure Phase 05 spends forty lines preventing gets back in — a plan that shows scores without their reasons cannot be argued with, so it gets approved by default.
+
+On approval, apply the code changes for the `address` / `partial` items, commit under the rules below, then backfill the real short SHAs into the response document. The user handles all GitHub replies and thread resolution themselves.
+
+### Commit messages for review fixes
+
+A review-fix commit is read by the reviewer, in the PR's commit list, next to their own comment. It is the second outward artifact of this branch and gets the same discipline as the first.
+
+**The rules, in force order.** Where the sources disagree, the later line wins and the reason is stated — never pick silently.
+
+1. Separate subject from body with a blank line. (cbea rule 1 — https://cbea.ms/git-commit/)
+2. **Subject ≤ 72 characters.** cbea rule 2 and tbaggery (https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html) both say 50, with cbea calling 72 the hard truncation point. **CLAUDE.md section 7 says ≤72, and CLAUDE.md wins** — it is the repo owner's own convention, and the Conventional Commits prefix eats 10–20 characters before the description starts. Aim short anyway: a subject you cannot get under 72 usually means the commit is two commits.
+3. **Conventional Commits: `type(scope): description`.** `type` is one of `feat`, `fix`, `perf`, `refactor`, `test`, `docs`, `build`, `ci`, `chore`. `scope` is the package or subsystem; omit the parentheses entirely when no single scope fits. **This overrides cbea rule 3 (capitalize the subject)** — the type is lowercase by the spec, and the description stays lowercase unless it opens with an identifier that is capitalized in the code.
+4. Do not end the subject with a period. (cbea rule 4)
+5. **Imperative mood.** "compare kickers", never "compared kickers" or "compares kickers". Git writes its own commits this way. (cbea rule 5, tbaggery)
+6. **Body wrapped at 72 columns**, blank line between paragraphs. `git log` does not wrap. (cbea rule 6, tbaggery)
+7. **The body explains the problem and why this change fixes it — not how.** The diff is the how. Write the body only when the why is not obvious from the subject; a one-line commit is finished when it is. (cbea rule 7, CLAUDE.md section 7)
+
+**Review-specific rules on top:**
+
+- **Never name the review as the change.** `fix: address review comments`, `fix: PR feedback`, `chore: review fixes` are all banned — they describe your Tuesday, not the code. The subject names what the code now does.
+- **The body may cite where the finding came from, on its own last line**, one line, no thanks: `Raised by @alexthemighty on PR #214.` Omit it when the subject and body already stand alone.
+- **One finding per commit** when the findings are unrelated. The reviewer reads the commit list against their own comments; a commit satisfying four unrelated findings cannot be checked against any of them.
+- **ABSOLUTE — no attribution to any tool, assistant, model, or vendor**, in the subject, the body, or a trailer. No `Co-Authored-By` of any kind, no generated-with footer, no emoji badge. Scan every message before `git commit`.
+
+**Worked examples.**
+
+```
+fix(hand-eval): compare kickers before awarding the side pot
+
+evaluateShowdown returned the first player whose rank matched, so on
+a board-paired two pair the 3,200-chip side pot went to the player
+holding the 9 kicker instead of the one holding the ace. Kickers now
+break the tie before the pot is assigned.
+
+Raised by @alexthemighty on PR #214.
+```
+
+```
+refactor(scan-worker): read the Plex section id from config
+
+The section id was hardcoded to 3. On a Plex server whose library
+happens to be section 5, the nightly scan walked an empty section,
+inserted zero rows, and exited 0 — so the catalog silently stopped
+updating and nothing logged a failure. The id now comes from
+PLEX_LIBRARY_SECTION and the worker exits non-zero when it is unset.
+```
+
+```
+test(seat-rotation): cover the heads-up blind swap
+```
+
+The third has no body on purpose: the subject says what the commit adds, and nothing about the why is hidden.
 
 If the user rejects or edits, re-score the affected threads, regenerate the response document, and re-present.
 

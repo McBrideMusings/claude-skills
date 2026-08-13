@@ -16,7 +16,7 @@ The failure this catches has no error and no failing test. The code looks right.
 
 Two more shapes of the same defect: a schema that accepts states the UI never wants (the bad state is merely discouraged instead of unrepresentable), and a prop that only works when a sibling prop is set the right way (you can wire it up half-right).
 
-**When you flag one, the Fix names a rung on this ladder, highest first:**
+**Do not write the fix — Phase 06b does that, for findings that survive scoring.** Name the rung of this ladder the remedy belongs on and stop there; the fix author works down from it, highest first:
 
 1. Make the existing API do the safe thing.
 2. Narrow the type or schema so the bad state cannot be represented at all.

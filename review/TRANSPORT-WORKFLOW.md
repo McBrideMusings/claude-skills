@@ -1,6 +1,6 @@
 # Transport: workflow
 
-An override for **Phases 04 → 04b → 05 → 06 only** — the lens fan-out, the best-practice verification, the scoring, and the filter. Everything before and after stays exactly where it is.
+An override for **Phases 04 → 04b → 05 → 05b → 06 → 06b → 06c only** — the lens fan-out, the best-practice verification, the scoring, the reproduction gate, the filter, and fix authoring. Everything before and after stays exactly where it is.
 
 Selected by the `workflow` token in the arguments: `review workflow`, `review repo workflow`, `review dual workflow`. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise. No token means the session transport, which is [REVIEW-CORE.md](REVIEW-CORE.md) unchanged.
 
@@ -9,7 +9,8 @@ Selected by the `workflow` token in the arguments: `review workflow`, `review re
 | Phase | Where | Why |
 |---|---|---|
 | 00 routing, 01/01a/01r scope | session | reads git state and may have to ask; a workflow can take no input |
-| **04, 04b, 05, 06** | **the workflow** | the fan-out — this is the whole point |
+| 03c intent | either | one agent, one round; run it in the session when its table is wanted in chat, or as the workflow's first stage when it isn't |
+| **04, 04b, 05, 05b, 06, 06b, 06c** | **the workflow** | the fan-out — this is the whole point |
 | 07 report, disposition offers | session | RULE 0's typed-keyword questions live here |
 
 **RULE 0 is not weakened by this transport.** Nothing inside the workflow asks the user anything, because nothing inside it ever needed to — every question in a review pass happens before Phase 04 or after Phase 06. If a lens turns out to need the user, that is a Phase 03-shaped problem (find the spec, confirm the scope) and it gets resolved in the session before launching.
@@ -26,11 +27,11 @@ Selected by the `workflow` token in the arguments: `review workflow`, `review re
 ```js
 export const meta = {
   name: 'review-lenses',
-  description: 'Run every review lens over a diff, score each finding, return survivors',
-  phases: [{ title: 'Lenses' }, { title: 'Score' }],
+  description: 'Run every review lens over a diff, score each finding, verify the behavior claims, propose fixes for survivors',
+  phases: [{ title: 'Lenses' }, { title: 'Score' }, { title: 'Verify' }, { title: 'Fix' }],
 }
 
-const survivors = await pipeline(
+const scored = await pipeline(
   args.lenses,
   lens => agent(lens.brief, { label: lens.axis, phase: 'Lenses', model: 'sonnet', schema: FINDINGS }),
   (r, lens) => parallel((r?.findings ?? []).map(f => () =>
@@ -38,13 +39,29 @@ const survivors = await pipeline(
       .then(s => ({ ...f, axis: lens.axis, score: s?.score ?? 0 })))),
 )
 
-return survivors.flat().filter(Boolean).filter(f => f.score >= 75)
+const candidates = scored.flat().filter(Boolean)
+
+// Phase 05b — strictly sequential: every finding shares one scratch worktree.
+const verdicts = []
+for (const f of candidates.filter(f => QUALIFIES(f) && f.score > 0)) {
+  verdicts.push(await agent(VERIFY(f, args.scope), { label: `verify:${f.axis}`, phase: 'Verify', model: 'sonnet', schema: VERDICT }))
+}
+const graded = APPLY_VERDICTS(candidates, verdicts.filter(Boolean))
+
+const survivors = graded.filter(f => f.score >= 75 && f.tier !== 3)
+if (!survivors.length) return []
+
+const fixed = await agent(FIXES(survivors, args.intent, args.scope), { label: 'fixes', phase: 'Fix', model: 'sonnet', schema: FIXES_RESULT })
+return survivors.map(f => ({ ...f, ...(fixed?.byId?.[f.id] ?? {}) })).filter(f => !f.retracted)
 ```
 
 - **`args.lenses`** is assembled in the session, one entry per lens that REVIEW-CORE.md Phase 04 says should run — the `axes/` files that survived gating, the always-on non-scored one, and any platform/domain lens detected. Each entry's `brief` is that file's content **plus every forwarded directive Phase 04 already requires**: the writing-style rules verbatim, `IS_DRAFT`, the spec source, the exact diff scope, the under-400-words cap, and the injection-defense directive. Pass it as real JSON, never a JSON-encoded string.
 - **The injection-defense directive is not optional here either.** Workflow agents inherit no more of this skill's context than Agent-tool subagents do.
 - **Models are pinned per stage** exactly as REVIEW-CORE.md pins them — Sonnet for lenses, Haiku for scoring. `agent()`'s enum includes `fable`; it is never used.
 - **The `≥ 75` filter is Phase 06** and stays in the script so sub-75 findings never travel. Phase 06's inline-scorer clause does not apply — the fan-out ran by definition.
+- **The verify loop is a `for`, not a `parallel()`, and that is deliberate.** Every finding shares one scratch worktree, so two concurrent verifiers would reset the tree out from under each other. It is the one stage in this script that must not fan out. Its agent needs Bash; it creates, resets, and removes the worktree exactly as Phase 05b specifies, and it must clean up even when it throws.
+- **`args.intent`** is the Phase 03c table, passed as real JSON. Each lens entry's `brief` already carries it or does not, per the Phase 04 table in [REVIEW-CORE.md](REVIEW-CORE.md) — the workflow forwards briefs, it does not decide which lenses see intent. It reaches the Fix stage separately so the fix author can quote the postcondition a fix restores.
+- **The Fix stage runs once, after the filter — never inside `pipeline()`.** A fix stage that started early would be writing fixes for findings that had not been filtered yet, which is the exact configuration the split exists to remove. `retracted` findings — ones the fix author concluded were not real — are dropped here and never reach Phase 07.
 
 ## Phase 04b, which does not fit the pipeline
 

@@ -1,6 +1,6 @@
 ---
 name: review
-description: "The single entry point for reviewing code: a ten-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context. Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "The single entry point for reviewing code: a ten-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context; `noverify` skips the execution gate that runs each behavior claim against the code before it can reach the report. Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Review
@@ -53,11 +53,15 @@ Anything fitting none of the three gets fixed. **Self-check:** if most findings 
 
 ## Transport — where the lenses run
 
-Orthogonal to every flavor and scope above. The `workflow` token moves **Phases 04–06 only** — the lens fan-out, best-practice verification, scoring, and the ≥75 filter — into a workflow script, so only surviving findings enter this context instead of every lens report. Routing, scope, the report, and every question stay in the session. `review workflow`, `review repo workflow`, `review dual workflow`.
+Orthogonal to every flavor and scope above. The `workflow` token moves **Phases 04–06c only** — the lens fan-out, best-practice verification, scoring, the reproduction gate, the ≥75 filter, and fix authoring — into a workflow script, so only surviving findings enter this context instead of every lens report. Routing, scope, the report, and every question stay in the session. `review workflow`, `review repo workflow`, `review dual workflow`.
 
 No token → the session transport: [REVIEW-CORE.md](REVIEW-CORE.md) exactly as written, Agent-tool sub-agents launched in parallel from this loop. That is the default and it is unchanged.
 
 Mechanics, and what each phase costs under the switch: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). **RULE 0 holds under both** — the workflow contains no question because every question in a review pass falls outside Phases 04–06.
+
+## Verification gate — `noverify`
+
+Phase 05b ([REVIEW-CORE.md](REVIEW-CORE.md)) feeds each behavior-claiming finding's stated input to the running code in a throwaway git worktree and keeps only what actually reproduces; Phase 06c then checks that the proposed fix removes it. The gate is **on by default** on every route, costs ≤8 minutes, and never touches the working tree. The token **`noverify`** turns it off for one pass — use it when the toolchain is unavailable, and expect a noisier report. There is no way to turn it off permanently, because "the model read it and was confident" is the thing it exists to distrust.
 
 ## Scope — `review repo`
 
@@ -214,10 +218,11 @@ Then run the offer(s) for this routing, per Phase 00 — never automatic. On my 
 **Every offer here is plain chat text — RULE 0 applies hardest at this exact point.** The end-of-pass disposition is where the selector gets reached for most often, and it is banned here like everywhere else. Print one line per finding with its keyword options and let the user type the answer:
 
 ```
-1. [low · best-practice] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip`
-2. [high · bug] <one-line finding> — `fix` · `post` (recommended — changes intended behavior) · `skip`
+1. [bug · T1 · high] <one-line finding> — verified `reproduced` — `post` (recommended — blocking, reproduces) · `fix` · `skip`
+2. [best-practice · T2 · low] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip`
+3. [slop · T2 · low] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`)
 
-Type a disposition per finding, e.g. `1 fix, 2 post`.
+Type a disposition per finding, e.g. `1 post, 2 fix, 3 skip`.
 ```
 
 Lead each line with the recommended keyword's rationale in a clause, not a paragraph. Never render this as an option menu.
@@ -240,6 +245,20 @@ Split on "is this small, safe, and intent-neutral," **not** on the blocking verd
 - Preflight: the PR branch must be checked out with a clean working tree. State exactly which findings you'll commit and confirm before touching the branch.
 - Apply the selected fixes (hand the finding subset to `implement` / `implement delegate`, or edit directly for one-liners), run the project's checks, then `git push origin <headRefName>` — never to `main`, never `--force`. Pre-flight the no-attribution rule on the commit message.
 - Caveat: this needs push access to the PR's head branch. Same-org branches accept the push; a fork from an outside contributor only accepts it if "allow maintainer edits" is on. If the push is rejected, say so and fall that finding back to the post bucket.
+
+**Comment budget — at most FIVE posted threads per PR, per pass.** Everything above the cap stays in the local report file and in chat; it does not go to GitHub. This caps the *posted* set only — the report file is always complete.
+
+Five is the number because of what the extra ones cost. Concise, focused review comments are far more likely to be acted on than long ones, and the failure being corrected here is a tool posting 14 comments carrying 3 real findings — the author then spends the round-trip sorting them instead of fixing the bug. At the ≥0.80 signal-ratio target, five threads permit at most one item the author judges to be noise; a sixth, seventh, and eighth thread do not add coverage, they add a review cycle. If you cannot say the PR's problems in five threads, the PR needs a conversation, not a longer comment list — say that in chat.
+
+**Ranking for the cap**, applied after the Phase 06 filter:
+
+1. **Tier 1 with verdict `reproduced`** — post every one. **The cap does not apply to these and they are never cut, at any count.** If seven reproduced Tier 1 findings survive, all seven post, and you say in chat that blocking findings exceeded the budget. Shipping broken behavior to save a comment slot is not a trade this rule permits.
+2. **Tier 1, `not-executable`** — highest score first.
+3. **Tier 2** — highest score first, then by file path.
+
+Fill the remaining slots down that order and stop. Tier 3 never enters the list because it never survives Phase 06.
+
+**The posted comment says nothing about what was withheld.** No "3 additional non-blocking items omitted", no counts, no axis summary, no offer to expand. A disclosure line is an invitation to ask for the rest, which reinstates exactly the round-trip the cap removes. **Tell the user instead**, in chat, in one line naming the count, the axes, and the report path: `3 Tier 2 findings held back (contracts, slop) — full list in the report.` They can post any of them by name if they disagree.
 
 **Posting the rest — recommend the verdict, block on broken behavior, not on severity.** For the findings going back to the author (not fixed on the branch), propose one consolidated review verdict. On a PR you didn't author GitHub records that verdict as your review decision (Request changes even gates the merge), so the post offer **always proposes a verdict**, never a bare comment. (Self-authored PRs can't get a verdict — GitHub blocks self-approve/-request-changes — which is why this lives only on the teammate-PR path.) What separates blocking from non-blocking is *what the finding is about*, never how confident or how large it is:
 
