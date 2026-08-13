@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Workers never ask questions: anything needing a human decision is gated out before dispatch or filed and halted. Workers are subagents by default; `orchestrate herdr` or `orchestrate workflow` picks another transport. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items is /iterate."
+description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Workers never ask questions: anything needing a human decision is gated out before dispatch or filed and halted. Every worker is a staged `/implement` workflow in its own git worktree. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items is /iterate."
 ---
 
 # /orchestrate — fan work out to a swarm, land it, retire it
@@ -19,37 +19,33 @@ The trade this makes, stated plainly: an issue that turns out to be ambiguous co
 
 **So the backlog must be workable before the run starts.** That is what the two gates in Pre-flight and step 3 are for. `orchestrate` does not discover ambiguity gracefully; it refuses to start on it.
 
-## Transports
+## Transport — one, and it is workflow
 
-Three, differing in where a worker runs and what survives.
+**Every worker is `workflow('implement', { … })` inside a workflow script.** There is no transport menu, no transport token, and no default to pick. Invoking `/orchestrate` is the request that authorizes the `Workflow` tool.
 
-These are the same targets as [../delegate/TARGETS.md](../delegate/TARGETS.md) — `subagent` is that ladder's Claude agent, `herdr` is its herdr tab — with two differences that belong to swarms only: every worker gets a **git worktree**, and there is a fourth surface, `workflow`, which exists because a script can pace a whole round. Terminal.app is absent on purpose: a Terminal window holds no agent herdr can report a status for, so nothing here could read a worker's state.
+→ [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)
 
-| | **herdr** | **subagent** | **workflow** |
-|---|---|---|---|
-| Worker runs in | its own herdr tab, a real `claude`/`codex` process | an `Agent` call in this session | an `agent()` call inside a workflow script |
-| Loop granularity | **per worker** — one finishes, you land and refill its slot | **per worker** | **per round** — the whole batch goes out, the script returns, you land the batch |
-| Watchable | yes — switch to its tab and read it live | no | partly — `/workflows` shows each agent's progress and tokens |
-| Cross-vendor | yes — any kind in herdr's `--kind` enum | no — Claude only | no — Claude only |
-| Wake signal | a `Monitor` you arm and must keep alive | the harness's task notification, per agent | one notification when the whole round returns |
-| Survives a dead orchestrator | yes ([REATTACH.md](REATTACH.md)) | no — the agents are children of this session | no — but the run is resumable in-session by `runId` |
-| Concurrency | 4 | `min(16, cores - 2)` | the runtime's own cap, under the session's size guideline |
+Every worker still gets its own **git worktree**, created by this skill before the round launches — the script itself has no filesystem access.
 
-`Workflow`'s documented constraint — *no mid-run user input; only agent permission prompts can pause a run* — used to disqualify it. It costs nothing now that nothing asks.
+### Why the other two are gone
 
-### Choosing
+They were not equivalent options that got trimmed for tidiness. A worker dispatched as a single `Agent` call — which is what both the subagent and herdr transports did — runs all six implement phases in **one context that grows all pass**. Measured across 24h of session logs: 40 such workers averaged ~300 turns, peaked between 243k and 406k context, and together were **37% of all token spend**.
 
-**Subagent is the default. No menu is ever printed, inside herdr or out.** A run with no transport token dispatches subagents, and the first status line says so.
+Only the workflow transport can call `workflow('implement')`, which is what splits a pass into per-phase contexts. So the old claim that *"neither changes what the workers themselves spend — N issues is N `/implement` passes on any transport"* stopped being true. The transports were not peers; two of them were the expensive shape.
 
-A token in the arguments picks another one — `herdr` or `workflow` anywhere in the arguments, as in `orchestrate workflow`, `orchestrate label:api herdr`. Same convention as `implement delegate` and `iterate workflow`. That is also how you A/B two transports over the same backlog. Naming `herdr` outside herdr is an error, not a fallback: say so and stop.
+### What was lost with them, stated plainly
 
-**Why subagent and not workflow.** The workflow transport calls the `Workflow` tool, which may only be called when the human has asked for it — **typing the token is that request**, and a default cannot make it on the human's behalf. Beyond that rule, workflow's unit is a round: the whole batch goes out, the whole batch comes back, and the frontier sits still until the slowest item in the round finishes. Subagent frees and refills one slot at a time, which is what keeps a swarm full. Workflow's own advantages — `schema`-validated returns instead of prose, a run resumable by `runId`, live per-agent progress in `/workflows` — are worth the token when you want them, not worth defaulting to.
+- **Live watching.** herdr let you switch to a worker's tab and read it. `/workflows` gives per-agent progress, tokens, and a stop control instead — a summary, not a transcript.
+- **Cross-vendor workers.** herdr could dispatch `codex` and other kinds. Workflow is Claude-only.
+- **Surviving a dead orchestrator.** herdr workers outlived the session and could be reattached. A workflow run dies with this session; it is resumable in-session by its `runId`, which covers a stopped or partially failed round but **not** a crashed orchestrator.
 
-**The trade, stated as two different efficiencies.** Workflow is cheaper on *this* context: a round returns small validated objects and wakes you once, where subagent hands you each worker's full report and wakes you per worker. Subagent is cheaper on *time*: a freed slot refills immediately instead of waiting out the round. Neither changes what the workers themselves spend — N issues is N `/implement` passes on any transport. Type `workflow` when a long frontier is about to fill this context; take the default when you want the swarm kept full.
+That last one is a real capability that no longer exists anywhere in this skill. If a long unattended swarm needs to survive the orchestrator dying, that is a reason to reopen this decision — not something the workflow transport quietly handles.
 
-So: do not reach for `Workflow` under either other transport, and do not use it for any other part of this skill.
+### The constraint that shapes everything below
 
-Say which transport is running in the first status line and in the final report. The failure to avoid is not "picked the wrong one" — it is a run that quietly *became* another one, so the human waits on a `Monitor` that was never armed, or tabs over looking for workers that were never terminals.
+**The unit is a round, not a worker.** The whole batch goes out, the script returns, you land the batch, then you dispatch the next. The frontier sits still until the slowest item in a round finishes. Keep rounds small enough that one bad brief does not burn the whole frontier.
+
+`Workflow`'s documented limit — *no mid-run user input; only agent permission prompts can pause a run* — is why a round is the unit: the sign-off between rounds is the landing step.
 
 ### The transport is four verbs
 
@@ -64,17 +60,15 @@ Everything below is written against these. The mechanics live in the transport f
 
 **There is no fifth verb.** `answer(handle, text)` does not exist, on any transport, including the two that could technically support it. Do not add it back for "just this one case" — a swarm with one answerable worker is a swarm someone has to sit and watch.
 
-- **herdr** → [TRANSPORT-HERDR.md](TRANSPORT-HERDR.md)
-- **subagent** → [TRANSPORT-SUBAGENT.md](TRANSPORT-SUBAGENT.md)
-- **workflow** → [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)
+→ [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)
 
-All three use the **same worktrees** (`git worktree add -b <branch>`, created by this skill, never by the transport), the **same verdict files**, and the **same landing** (step 6). Only the four verbs differ.
+Worktrees (`git worktree add -b <branch>`) are created by this skill, never by the transport; verdict files and landing (step 6) are unchanged.
 
 ## Pre-flight
 
 All must hold. Print the reason and stop otherwise.
 
-1. **A transport is resolved** — the token if one was typed, subagent otherwise; see [Transports](#transports). What is forbidden is degrading to **sequential in-session work** — doing the issues yourself, one after another, in this pane. That is `/iterate`, and running it under this name is the silent-different-skill failure.
+1. **The `Workflow` tool is available** — see [Transport](#transport--one-and-it-is-workflow). What is forbidden is degrading to **sequential in-session work** — doing the issues yourself, one after another, in this pane. That is `/iterate`, and running it under this name is the silent-different-skill failure.
 2. **In the primary checkout, not a worktree** — `git rev-parse --git-dir` must not contain `/worktrees/`. Only the primary checkout can hold the default branch, and landing needs it.
 3. **Clean tree on the default branch**, up to date with the remote.
 4. **On a beads repo, tracker writes are single-writer.** All worktrees share the main repository's one `.beads` workspace, and beads' default embedded Dolt engine serves one writer at a time — N workers each running `bd update --claim` or `bd close` will contend, and a loser gets an error, not a queue. So: **workers never write to beads.** They report their verdict file as always; this orchestrator does every claim, comment, and close from the primary checkout at steps 5–7, where the writes are already serialised. If the repo has run `bd init --server`, concurrent writes are safe and this restriction lifts — check with `bd where --json`: a `database_path` ending in `embeddeddolt` is embedded (single writer), one ending in `dolt` is server mode. Say which mode you found.
@@ -173,8 +167,7 @@ Refusal is by substring, not by exact match — `opus` and `fable` appearing any
 | You want | Go to |
 |---|---|
 | Start a swarm | the loop below |
-| The mechanics of a transport | [TRANSPORT-HERDR.md](TRANSPORT-HERDR.md) · [TRANSPORT-SUBAGENT.md](TRANSPORT-SUBAGENT.md) · [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) |
-| Adopt a swarm already running (this session did not start it) | [REATTACH.md](REATTACH.md) — herdr only |
+| The mechanics of the transport | [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) |
 | Stop everything and tear it all down | [DISBAND.md](DISBAND.md) |
 
 **Check for an existing swarm before starting one.** `herdr agent list` naming live agents, or `git worktree list` showing worktrees, means a swarm exists — reattach instead of fanning out a second one on top of it. Worktrees left by a dead subagent or workflow swarm look identical to a live one's: check whether anything is actually running before assuming either.

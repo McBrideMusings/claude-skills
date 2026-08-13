@@ -1,6 +1,8 @@
 # Transport: workflow
 
-Each `/implement` pass runs as one `agent()` call inside a workflow script. The script holds the outer loop; the runtime executes it in the background; this session holds only the final report.
+Each `/implement` pass runs as `workflow('implement', { … })` — a child workflow, not a single `agent()` call. The script holds the outer loop; the runtime executes it in the background; this session holds only the final report.
+
+**Never `agent(PASS(item))`.** A pass dispatched as one agent runs all six implement phases in one context that grows for ~300 turns; measured over 24h those were 37% of all token spend. `workflow('implement')` gives each phase its own context. Nesting is one level: this script is the parent, `~/.claude/workflows/implement.js` is the child, and the child's stages are plain agents.
 
 Selected by the `workflow` token in the arguments. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise.
 
@@ -24,7 +26,7 @@ export const meta = {
 const outcomes = []
 for (const item of args.queue) {
   if (outcomes.length >= args.cap) break
-  const r = await agent(PASS(item), { label: item.label, phase: 'Iterate', model: MODEL, schema: OUTCOME })
+  const r = await workflow('implement', { resolved: item.item, branch: item.branch, model: MODEL, mode: 'continuous' })
   outcomes.push(r)
   if (r && r.outcome === 'environment_stop') break
   log(`${outcomes.length}/${args.queue.length}: ${item.label} -> ${r ? r.outcome : 'died'}`)
@@ -40,7 +42,7 @@ return outcomes
   ```js
   let n = 0
   while (n < args.cap) {
-    const r = await agent(PASS_BACKLOG_WIDE, { label: `pass-${n + 1}`, phase: 'Iterate', model: MODEL, schema: OUTCOME })
+    const r = await workflow('implement', { model: MODEL, mode: 'continuous' })  // no item: implement's Resolve stage picks one via triage
     n++
     if (!r || r.outcome !== 'landed') break        // backlog-wide: first halt wins (SKILL.md)
   }
@@ -80,4 +82,4 @@ The tool result gives the persisted script path and a `runId`. Keep both: editin
 
 **Buys:** twenty passes without twenty passes' worth of context in this window; a codified loop you can read and re-run; resumability; a stop control in `/workflows`.
 
-**Costs:** you cannot answer a permission prompt to keep a pass alive — the runtime pauses only for agent permission prompts and takes no other input. Under the session transport a prompt waits for you; here it is the run's problem. implement's BASH COMMAND RULES are load-bearing on this transport in a way they are not on the other.
+**Costs:** you cannot answer a permission prompt to keep a pass alive — the runtime pauses only for agent permission prompts and takes no other input. A prompt nobody answers is the run's problem, not a pause. implement's BASH COMMAND RULES are load-bearing here: one non-allowlisted command kills a pass.

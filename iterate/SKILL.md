@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, always sequential. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Passes run in this session by default, or in a workflow script with the `workflow` token. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
+description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, always sequential. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Every pass runs as a staged `/implement` workflow. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
 ---
 
 # /iterate — Continuous autonomous iteration harness
@@ -22,27 +22,17 @@ The two modes differ only in **how each iteration's item is chosen** and **what 
 
 ---
 
-## Two transports — where each pass runs
+## Where each pass runs — always a workflow
 
-Independent of the mode above. The transport decides **where a `/implement` pass executes**; everything else in this file applies to both.
+**There is one transport.** Every pass is `workflow('implement', { … })`, driven by the script's own `for … of` loop. There is no session transport and no `workflow` token to type; invoking `/iterate` is the request that authorizes the `Workflow` tool.
 
-| | **session** (default) | **workflow** |
-|---|---|---|
-| Each pass runs in | this session, in this pane | an `agent()` call inside a workflow script |
-| Who drives the outer loop | the `loop` skill, re-invoking across turns | the script's own `for … of` |
-| Where each pass's context goes | this context window, pass after pass | the agent's, discarded on return |
-| Interruptible | yes — it is your session | stoppable and resumable from `/workflows` |
-| Watchable | yes, live, in this pane | per-agent progress in `/workflows` |
+→ [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)
 
-- **session** → [TRANSPORT-SESSION.md](TRANSPORT-SESSION.md)
-- **workflow** → [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)
+**Why the session transport is gone.** Running pass after pass in one session context is exactly the shape that made this expensive. Measured across 24h of session logs, implement passes running as a single growing context averaged ~300 turns, peaked between 243k and 406k, and were **37% of all token spend** — and under the session transport every pass in a run piled into the *same* window, on top of each other. The workflow transport gives each pass its own context and each phase within it a fresh one. Keeping both meant keeping the expensive one as the default.
 
-**Selecting one:** the token `workflow` anywhere in the arguments picks the workflow transport — `iterate workflow`, `iterate #133-140 workflow`. Same convention as `implement delegate` and `iterate followups`. No token means **session**; this skill never prompts for a transport, because a harness that stops to ask you something before it starts is not a walk-away harness.
+What you lose: watching a pass execute live in this pane. `/workflows` shows per-agent progress, tokens, and a stop control instead, and a run is stoppable and resumable by its `runId`.
 
-The workflow transport calls the `Workflow` tool, which requires the human to have asked for it. **The `workflow` token is that request.** Do not reach for `Workflow` under the session transport.
-
-**The transport never changes what a pass does.** A pass is `/implement continuous` either way — same gate, same phases, same verify, same wrap-up. Anything that would only be true under one transport belongs in that transport's file, not here.
-
+**A pass is `/implement continuous`** — same gate, same phases, same verify, same wrap-up. `iterate` decides *which* item and *when to stop*; it never changes what a pass does.
 ---
 
 ## When to Use
@@ -97,11 +87,11 @@ If a selector is present, resolve it to an **ordered, frozen list of concrete it
 
 ## The loop
 
-**The transport drives the repetition** — the `loop` skill under session, the script's own `for … of` under workflow. See the transport file for that mechanism; the steps below are the same either way.
+**The workflow script drives the repetition** — its own `for … of` over the queue. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) for that mechanism; the steps below are what each turn of it does.
 
-The **maximum is 20 iterations** regardless of mode or transport; even if a queue is longer or a backlog keeps refilling, 20 is the safety valve that forces a human review point.
+The **maximum is 20 iterations** regardless of mode; even if a queue is longer or a backlog keeps refilling, 20 is the safety valve that forces a human review point.
 
-**Iterations are strictly sequential, on every transport.** Step 1 branches from the *current* head of the default line, which only exists once the previous iteration has landed. Two passes running at once would branch from the same head and race each other into the default branch. There is no version of this harness that fans out — that is `/orchestrate`, which pays for concurrency with a worktree per worker.
+**Iterations are strictly sequential.** Step 1 branches from the *current* head of the default line, which only exists once the previous iteration has landed. Two passes running at once would branch from the same head and race each other into the default branch. There is no version of this harness that fans out — that is `/orchestrate`, which pays for concurrency with a worktree per worker.
 
 Each iteration:
 
@@ -110,7 +100,7 @@ Each iteration:
    - **SCOPED:** pop the next item off the frozen queue. If the queue is empty, the run is **done** (not a halt) — go to "When the run ends".
    - **BACKLOG-WIDE:** no item to pick here; triage inside the pass chooses it.
 3. **Cut a fresh feature branch** off the default head, e.g. `git -C <repo> checkout -b auto-iterate/<UTC-timestamp>`. The name is generic; the human-readable identity comes from the commit/PR summary.
-4. **Run one pass** — the transport executes it; the invocation is identical either way. `/implement continuous`, appending the item token for scoped mode and `delegate` if the run is delegated:
+4. **Run one pass** — `workflow('implement', { … })` with `mode: 'continuous'`, the resolved item, the branch, and the model. The equivalent `/implement continuous` invocation, with the item token for scoped mode and `delegate` when the run is delegated:
    - Issue item → `/implement <n> continuous [delegate]`
    - Local item → `/implement continuous item:"<text>" source:"<loc>" [delegate]`
    - Backlog-wide → `/implement continuous [delegate]` (triage resolves the item)
@@ -173,7 +163,7 @@ For merges, the user can review with `git log --oneline origin/<default>..<defau
 
 ## Notes
 
-- This skill never invokes itself and never invokes `implement` in a loop directly — the transport drives the repetition (`loop` under session, the script under workflow).
+- This skill never invokes itself and never invokes `implement` in a loop directly — the workflow script drives the repetition.
 - The merge/PR mechanics are `wrap-up`'s single source of truth; this skill only supplies the ownership verdict and confirms each landing.
 - Each iteration is fully independent: one branch, one item, one landing. Nothing accumulates on a single branch.
 - The frozen queue is resolved once, up front. A scoped run is deterministic — the same selector against the same backlog produces the same march.

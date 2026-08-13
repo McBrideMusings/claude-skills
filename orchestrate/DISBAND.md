@@ -6,7 +6,7 @@ Stop everything and leave no residue: no live agents, no worktrees, no branches 
 
 ## 1. Take stock before touching anything
 
-Build the same picture [REATTACH.md](REATTACH.md) builds — the transport's own worker listing (`herdr agent list`, or the running-agent list), `git worktree list`, and each `<worktree>/tmp/claude/verify/<item>.json`. You cannot decide what is safe to delete without it.
+Build the full picture first — the run's returned array (or `/workflows` if a round is still going), `git worktree list`, and each `<worktree>/tmp/claude/verify/<item>.json`. You cannot decide what is safe to delete without it.
 
 ## 2. Sort every worker
 

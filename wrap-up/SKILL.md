@@ -51,6 +51,23 @@ Invoking this skill grants explicit authority to auto-commit and auto-push. The 
 
 ---
 
+## ⛔ Run Phases 1–4 as a workflow — `~/.claude/workflows/wrap-up.js`
+
+wrap-up fires at the most expensive moment there is: the end of a session, when context is at its peak and every turn re-reads all of it. Measured over 24h: 34 runs, all of them paying that.
+
+Phases 1–4 are near-pure fan-out with compact returns, so they run staged — `Workflow({ name: 'wrap-up', args: { repo, item, mode } })`. Assess runs first; tracking, docs and quality then run in parallel; each returns a small validated object.
+
+**Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see.
+
+**When `implement` invokes wrap-up it does not call this script.** Workflow nesting is one level deep, and an implement pass launched by `/orchestrate` or `/iterate` is already a child. implement's own Wrap stage runs these phases as an agent pointed at this file, which is why the phases below are the single source of truth for both paths.
+
+Two rules that apply to every phase, on either path:
+
+- **Open the repo with `~/.claude/tools/repo-snapshot <dir>`** — one call for branch, upstream position, working tree, recent commits and diff stat, instead of four to six serial `git -C` calls.
+- **Route every build, test, lint and typecheck through the `build-runner` subagent**, which returns only failures.
+
+---
+
 ## ⛔ BASH COMMAND RULES
 
 When invoked by `implement`, wrap-up runs unattended and a single permission prompt kills the autonomous run. Same hard bans as `implement` — never use `@{u}`/`@{upstream}`/`{…}` refspecs (use `origin/main` or `origin/$(git branch --show-current)`), never chain non-allowlisted sub-commands with `&&`/`;`, never `$(...)` a non-allowlisted inner command, no `#` comments or newlines inside a Bash call, never `cd … && git` (use `git -C <abs-path> …`), and never `cat <file> || echo` existence-checks (use the Read tool). See `implement`'s BASH COMMAND RULES for the full list — they apply here verbatim.

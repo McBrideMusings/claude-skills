@@ -9,6 +9,25 @@ One pass on one tracked item: resolve what to work on → implement → wrap-up.
 
 **One pass = one item = at most one commit, then done.** implement carries no looping logic of its own: it does not pull the next backlog item, it does not re-invoke itself, it does not manage cadence across passes. Continuous walk-away work across many items is `/iterate`'s job — a separate harness that drives implement. If you find yourself starting a second item in one invocation, that is the bug this skill exists to prevent.
 
+## ⛔ Run the pass as a workflow — `~/.claude/workflows/implement.js`
+
+**A pass runs staged, not as one long context.** The phases below are the source of truth for *what* each stage does; `~/.claude/workflows/implement.js` is the harness that runs them, one `agent()` per phase, each starting fresh and handing the next a small validated object.
+
+Invoke it with `Workflow({ name: 'implement', args: { … } })`. Arguments: `issue` or `item` (or `resolved` when the caller already fetched and gated the item), `worktree`/`repo`, `branch`, `mode` (`standalone` | `continuous`), `model`.
+
+**Why this is not optional.** Measured across 24h of session logs: 40 implement passes that ran as a single agent averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend**. The cost was never the code — it was one context that grew all pass and was re-read on every turn. Staging removes the growth curve; running the phases inline puts it back.
+
+**Two rules the harness depends on, which apply to every stage:**
+
+- **Never run a build, test, lint or typecheck directly.** Dispatch the `build-runner` subagent, which returns only the failures. Raw build output was the largest single source of growth inside a pass.
+- **Never read a screenshot to check something.** Dispatch `screenshot-checker`. Images were 84% of all tool-result bytes in the measured day, and an image stays in context for every turn after it lands.
+
+**Nesting is one level deep.** When `/orchestrate` or `/iterate` calls `workflow('implement')`, this script is already a child — its stages are plain agents and cannot open a further workflow. That is why the Wrap phase inlines wrap-up's phases rather than calling `workflow('wrap-up')`.
+
+**Running the phases inline is still correct in one case:** a pass already executing inside a subagent that has no `Workflow` tool. Follow the phases in order, in context, and keep the two rules above.
+
+---
+
 ## Flavors — solo vs delegate
 
 - **`implement`** (default) — Claude does everything itself: resolve → implement → wrap-up.

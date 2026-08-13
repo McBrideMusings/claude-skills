@@ -1,16 +1,16 @@
 # Transport: workflow
 
-Workers are `agent()` calls inside a workflow script. The script holds the fan-out; the runtime executes it in the background; the whole batch returns at once as data.
+Workers are `workflow('implement', …)` child workflows inside a workflow script. The script holds the fan-out; the runtime executes it in the background; the whole batch returns at once as data.
 
-**This transport is per-round, not per-worker.** The other two dispatch one worker into one freed slot. This one dispatches a batch, waits for the batch, lands the batch, and dispatches the next. Everything downstream of `wake()` in [SKILL.md](SKILL.md) happens in batches here.
+**This transport is per-round, not per-worker.** It dispatches a batch, waits for the batch, lands the batch, and dispatches the next. Everything downstream of `wake()` in [SKILL.md](SKILL.md) happens in batches here.
 
-Available whether or not you are inside herdr. **It calls the `Workflow` tool, which requires the human to have asked for it — the human picking this transport is that request.** Do not reach for `Workflow` anywhere else in this skill.
+**It calls the `Workflow` tool, which requires the human to have asked for it — invoking `/orchestrate` is that request.** Do not reach for `Workflow` anywhere else in this skill.
 
 ## What it cannot do — read this before dispatching
 
 - **No mid-run input, at all.** The runtime's documented constraint: *only agent permission prompts can pause a run; for sign-off between stages, run each stage as its own workflow.* That is why a round is the unit — the sign-off between rounds is the landing step.
 - **No filesystem or shell from the script itself.** Only its agents can read, write, and run commands. Worktrees are therefore created by SKILL.md step 3 **before** the workflow launches, exactly as under the other transports; the script never makes one.
-- **The swarm dies with this session** — like subagent, no reattach. But a run is **resumable in-session** by its `runId`: unchanged `agent()` calls return cached results and only the failed or edited ones re-run.
+- **The swarm dies with this session** — there is no reattach anywhere in this skill any more. A run is **resumable in-session** by its `runId`: unchanged calls return cached results and only the failed or edited ones re-run. A crashed orchestrator loses the round.
 - **Claude only.** `[agents.codex]` is inert here.
 - **Cost is not per-worker.** A round of N issues is N implement passes running at once. Watch `/workflows` for the running token total, and keep rounds small enough that a bad brief does not burn the whole frontier.
 
@@ -31,18 +31,24 @@ export const meta = {
 
 const results = await pipeline(
   args,
-  item => agent(BRIEF(item), { label: item.slug, phase: 'Implement', model: item.model, schema: RESULT }),
+  item => workflow('implement', {
+    resolved: item.item,          // already fetched and gated by the scope gate
+    worktree: item.worktree,
+    branch:   item.branch,
+    model:    item.model,
+    mode:     'continuous',
+  }),
 )
 
 return results.filter(Boolean)
 ```
 
+- **`workflow('implement', …)`, not `agent(BRIEF(item))`.** This is the whole point of the transport and it is not a stylistic choice. A worker that is one `agent()` call runs all six implement phases in one context: measured over 24h, 40 such workers averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend**. `workflow('implement')` runs the same pass with each phase in its own context, and only a small validated object crosses each boundary. `~/.claude/workflows/implement.js` holds the stages.
+- **Nesting is exactly one level.** This script is the parent, `implement.js` is the child, and the child's stages are plain `agent()` calls that **cannot** open a further workflow. That is why `implement.js` inlines wrap-up's phases instead of calling `workflow('wrap-up')`. A third level throws at runtime, mid-round.
 - **`pipeline()`, not `parallel()`.** There is no cross-item stage here, so a barrier would only make every item wait for the slowest.
-- **`schema`** forces each agent to return a validated object rather than prose. Ask for `{issue, verdict, branch, commit, halted_on}` — the same facts the verdict file holds, so the two can be checked against each other.
-- **`model`** is **per item**, `"sonnet"` or `"haiku"`, resolved in step 3 by [SKILL.md](SKILL.md) → Picking the model per issue and carried in `args` — not one constant for the round. Do not omit it and do not compute it inside the script: `agent()` with no `model` inherits the main-loop model, which is the orchestrator's own and frequently Opus. `agent()`'s enum also includes `opus` and `fable`; both are refused here like everywhere else.
-- **`BRIEF(item)`** is [BRIEF.md](BRIEF.md), filled in. Add the same clause the subagent transport needs — the agent does not start inside the worktree:
-
-> Work exclusively inside the git worktree at `<worktree-path>` — every command either runs with `git -C <worktree-path>` or after a `cd` into it. You did not start there.
+- **`resolved`** carries the item the scope gate already fetched and cleared, so the child skips its own Resolve and Gate stages instead of re-fetching an issue this skill has already read. Pass the whole record, not just the number.
+- **`model`** is **per item**, `"sonnet"` or `"haiku"`, resolved in step 3 by [SKILL.md](SKILL.md) → Picking the model per issue and carried in `args` — not one constant for the round. Do not omit it: with no `model` the child inherits the main-loop model, which is the orchestrator's own and frequently Opus. `opus` and `fable` are refused here like everywhere else.
+- **[BRIEF.md](BRIEF.md) still governs worker behaviour** — `implement.js` reads the implement and wrap-up SKILL.md files itself, and the worktree clause is generated from the `worktree` argument. Do not paste the brief in as a prompt; pass the arguments and let the child assemble it.
 
 **The handle is the run's `runId`**, plus the batch you passed. Record both: the `runId` is what resumes a partially failed round, and the batch is what tells you which worktrees exist.
 
