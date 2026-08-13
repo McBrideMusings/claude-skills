@@ -58,9 +58,13 @@ filename, not the destination's. That mismatch is the whole trap: the file is
 sitting right there, correctly named for where it is going, and the install
 walks past it.
 
-It also self-skips when the template is already on the host (`test -f`), so
-re-deploys cost nothing, and a failed `scp` warns rather than failing the deploy
-— a bad template must never block shipping the image.
+It pushes on **every** `deploy image` — the old `test -f` skip was removed,
+because it made this a first-deploy convenience rather than a sync: later edits
+to the repo's template stayed local while the GUI kept describing a container
+that no longer matched the deployed one, and editing that container through the
+Unraid GUI wrote the stale answer back over the live config. A failed `scp`
+warns rather than failing the deploy — a bad template must never block shipping
+the image.
 
 ### Diagnosing it, in the right order
 
@@ -77,6 +81,38 @@ feature did not exist. It does. Check in this order:
 declared per project, so an unknown-command fallback printing the menu means the
 project did not declare it — not that template install is unimplemented. Deploy
 does it either way.
+
+## Passing GPU hardware in (`devices`, `runtime`, `gpu`)
+
+A container that transcodes needs the render node, and NVENC additionally needs
+the alternate runtime. All three keys live in `[docker_run]`:
+
+```toml
+[docker_run]
+runtime = "nvidia"          # --runtime; for NVENC/CUDA under Unraid's Nvidia-Driver plugin
+gpu     = true              # --gpus all; only works if nvidia-container-runtime is the DEFAULT runtime
+
+[[docker_run.devices]]
+host        = "/dev/dri"    # --device /dev/dri:/dev/dri
+container   = "/dev/dri"    # optional, defaults to host
+permissions = "rwm"         # optional, omitted from the spec when rwm
+```
+
+Two traps:
+
+- **`gpu` is not a substitute for `runtime`.** `--gpus all` requires
+  nvidia-container-runtime registered as docker's *default* runtime. On Unraid
+  the plugin installs it as a *named* runtime, which is why the GUI's own
+  templates emit `--runtime=nvidia`. Prefer `runtime`.
+- **`runtime` is `declared_only`.** Docker reports a `Runtime` for every
+  container — `"runc"` when nothing asked for one — so an undeclared live value
+  is deliberately ignored rather than reported as drift. Declaring it makes it
+  participate in drift detection normally.
+
+For VAAPI on an Intel iGPU, map the render node and check which one it is first:
+`ls -l /dev/dri/by-path/` shows the PCI address, and the iGPU is the one at
+`00:02.0` (usually `renderD128`); a discrete card sits on its own bus. The nodes
+are world-writable on Unraid, so no `group_add` is needed.
 
 ## `[deploy]` — the mirror directory
 
