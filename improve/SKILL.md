@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, tests, ui, product, performance, game, docs, layout) or surveys all aspects when none is named. Improvement = opportunities where nothing is broken; defects are `review`."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, tests, ui, product, performance, game, docs, layout, claude-md) or surveys all aspects when none is named. Improvement = opportunities where nothing is broken; defects are `review`."
 ---
 
 # Improve
@@ -21,6 +21,7 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 | `game` | `_domains/game/design.md` + `review.md` cells, read directly | `.claude/domain` marker includes `game` |
 | `docs` | `docs` audit branch | `docs/` + `.vitepress/` exist (absence surfaces via `layout`) |
 | `layout` | `bootstrap` audit branch | always |
+| `claude-md` | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 
 Each delegated owner has a **"Findings-only invocation"** section in its own `SKILL.md` — the contract for being called from here: no file writes, no commits, no questions (answer what it would normally ask from repo artifacts, mark the unanswerable Assumed/Unknown), return structured findings (finding, evidence, strength, proposed fix). Write the proposed fix in the shape of the change — a type signature, component tree, or call-stack diff (`../_plan-format.md`) — not just a name for it, when the fix has structural shape. The `game` cells are read under the same discipline: structure and tradeoffs only, never a fun/good verdict.
 
@@ -45,6 +46,6 @@ Each delegated owner has a **"Findings-only invocation"** section in its own `SK
 
 ## Native aspects
 
-`architecture`, `security`, and `interface-safety` live here because no other skill owns them. Interactive runs use their full files including the grilling loop; survey subagents run their explore/lens pass and return card-shaped findings.
+`architecture`, `security`, `interface-safety`, and `claude-md` live here because no other skill owns them. Interactive runs use their full files including the grilling loop; survey subagents run their explore/lens pass and return card-shaped findings.
 
 `interface-safety` asks one question the other aspects don't: can a caller do the obvious thing and get the wrong result? It is the proactive half of the footgun test that `review`'s `contracts` axis runs read-only on a diff.

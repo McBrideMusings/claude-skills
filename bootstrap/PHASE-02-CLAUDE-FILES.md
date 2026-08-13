@@ -5,10 +5,24 @@ Two related artifacts: the committed root `CLAUDE.md` and the gitignored root `C
 ## CLAUDE.md (repo root, committed)
 
 - **Missing** → invoke built-in `/init` to populate from a codebase scan.
-- **Standard** → no-op.
+- **Standard** → no-op, unless it's long enough to be a relevance-signal candidate (below).
 - **Non-standard:**
   - `AGENTS.md` exists — Claude Code reads both. Ask: *"You have `AGENTS.md`. Keep it (Claude Code reads both), or rename to `CLAUDE.md`?"* Default: keep.
   - `.claude/CLAUDE.md` exists — propose moving to root.
+
+### Content quality: `<important if="condition">` blocks
+
+Claude Code injects a system reminder with every CLAUDE.md: *"this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task."* The longer and flatter a CLAUDE.md is, the more of it gets silently ignored under that framing — including the parts that matter.
+
+If the existing `CLAUDE.md` reads as one flat wall of rules (no XML relevance tags, roughly 100+ lines of domain-specific guidance), propose wrapping the conditionally-relevant sections in `<important if="condition">…</important>` tags — the same XML-tag pattern Claude Code's own system prompt uses, which gives the model an explicit relevance signal that cuts through the "may or may not be relevant" framing.
+
+- **Foundational context stays bare** — project identity, project map, tech stack, anything relevant to 90%+ of tasks. Leave it as plain markdown at the top.
+- **Domain-specific guidance gets wrapped** — testing patterns, API conventions, state management, i18n, anything relevant to a specific kind of task. Each rule or tight group of related rules gets its own narrowly-scoped condition (`<important if="you are adding or modifying API routes">`, not `<important if="you are writing or modifying any code">`).
+- **Keep the commands table** — wrap it in one `<important if="you need to run commands to build, test, lint, or generate code">` block, but never drop commands from it.
+- **Delete along the way**: anything a linter/formatter/pre-commit hook already enforces, code snippets (replace with a file path reference — they go stale), and vague non-actionable instructions ("follow best practices").
+- Prefer this inline-conditional approach over sharding into separate files the agent has to discover via tool calls — the whole point is that everything stays in the one file, weighted by relevance, not scattered behind lookups.
+
+Propose the rewrite; don't apply it silently — restructuring an existing file is the same permission gate as any other content rewrite.
 
 ## CLAUDE.local.md (repo root, gitignored, per-project local notes)
 
