@@ -38,6 +38,8 @@ for p in re.split(r'\n(?=## )', t):
 
 The biggest section is almost always the one nobody defends. Lead the conversation with the table.
 
+**Thresholds.** Past ~3,000 words (~4,000 tokens) a file is due for a prune; past ~4,500, recommend a full rebuild rather than a trim. Claude offers this unprompted rather than waiting to be asked — that standing instruction belongs in the rebuilt `CLAUDE.md` itself, not only here, or it only fires when someone already suspected the problem.
+
 ## Phase 3 — Inventory what already enforces behavior
 
 Before judging a single rule, count what fires with an **empty** CLAUDE.md. Any rule already covered here is a delete, not a keep — a second copy is the contradiction problem, not a safety net.
@@ -89,6 +91,22 @@ Present the whole section's table at once and let the user answer by exception. 
 - **Linter territory** — formatting a formatter already enforces.
 - **Inline code snippets** that will drift from the real implementation. Substitute a path the model can go read.
 - **Vague instructions** — "follow best practices", "leverage the X agent". Not concrete enough to change behavior.
+
+### Is it hookable?
+
+Run this on every rule before assigning any other verdict — routing to a hook is the largest reduction available and the only verdict that makes a rule *more* enforced rather than less.
+
+Hookable when **all** of these hold:
+
+1. **Decidable from the tool call alone** — the command string, file path, or arguments settle it. No reading of intent required.
+2. **Names a literal pattern** to require or avoid: an unquoted `*`, a `cd` outside a subshell, a `{...}` refspec, a `Co-Authored-By` trailer, a specific tool.
+3. **A matcher exists** — `PreToolUse` on `Bash`, `Read`, `Write`, `Artifact`, or an MCP tool name.
+
+Not hookable when the rule turns on judgment: *significantly altering*, *unrelated code*, *worth doing*, *the simplest thing*. No string test decides those; they stay prose.
+
+**The strongest signal is escalation in the prose itself.** A rule wearing ⛔, HARD BAN, ALWAYS, NEVER, or a paragraph explaining how badly it went last time is a rule that prose has already failed to enforce — the author kept adding emphasis because repetition wasn't working. In this repo every single ⛔/HARD BAN item was guard-shaped and hookable. Sort the file by emphasis and you have your hook backlog.
+
+Then apply the false-positive test from Phase 7 before promising the conversion. A rule that can't be pattern-matched without blocking legitimate work stays prose, and you say why.
 
 **Never cut a truth rule.** "Only claim what you verified", "flag uncertainty", "never cite a source you haven't read" — those stop invented facts, they aren't severity filters. They stay whatever else goes.
 
