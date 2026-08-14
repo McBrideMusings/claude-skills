@@ -19,7 +19,13 @@ Also probe:
 
 - `.git/` exists
 - GitHub remote: `git remote -v | grep github`
-- `.gitignore` already covers `*.local.*`
+- **`.gitignore` coverage.** Ask git, don't read the file — a pattern can arrive from a parent `.gitignore`, `.git/info/exclude`, or the global `~/.config/git/ignore`, and grepping misses all three:
+  ```
+  git check-ignore -q tmp/claude/x.md   # scratch
+  git check-ignore -q .env              # secrets
+  git check-ignore -q CLAUDE.local.md   # local notes
+  ```
+  A non-zero exit means not covered. Also check whether anything already slipped through: `git ls-files tmp/ .env`
 - **Legacy planning docs** the `docs` skill knows how to clean up: `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/` — flag in summary, defer action to [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md)
 
 ## Report the state table BEFORE doing anything
@@ -31,6 +37,7 @@ Bootstrap audit — <project name>
 |---|---|
 | CLAUDE.md              | standard / missing / non-standard at AGENTS.md |
 | CLAUDE.local.md (root) | missing / non-standard at .claude/CLAUDE.local.md|
+| .gitignore             | tmp/ not covered; .env not covered; 2 files tracked under tmp/ |
 | admin runner           | standard / missing                             |
 | VitePress docs         | non-standard: bare docs/ without VitePress     |
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md                   |

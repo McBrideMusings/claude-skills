@@ -13,6 +13,7 @@ Bootstrap result — <project name>
 |---|---|---|
 | CLAUDE.md              | missing                         | created via /init             |
 | CLAUDE.local.md (root) | non-standard at .claude/CLAUDE.local.md| migrated + .gitignore updated|
+| .gitignore             | tmp/ and .env uncovered         | 3 standard lines added        |
 | admin runner           | Makefile present, no admin.toml | deferred — run /admin         |
 | VitePress docs         | bare docs/                      | migrated to VitePress         |
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md    | migrated + refs updated       |

@@ -1,6 +1,6 @@
 # Phase 02 — CLAUDE Files
 
-Two related artifacts: the committed root `CLAUDE.md` and the gitignored root `CLAUDE.local.md`.
+Three related artifacts: the committed root `CLAUDE.md`, the gitignored root `CLAUDE.local.md`, and the `.gitignore` that makes the second one work.
 
 ## CLAUDE.md (repo root, committed)
 
@@ -58,5 +58,39 @@ This file is gitignored.
 ## Open questions
 - {anything load-bearing the user wants to remember}
 ```
+
+## `.gitignore` (repo root, committed)
+
+Several standing rules are only true if this file says so, and a rule with no file behind it is not enforced — it's a hope. Measured across 79 repos before this phase existed: 19 did not ignore `tmp/`, 39 did not ignore `.env`, and 6 had scratch files committed under `tmp/`. Add the missing lines automatically; this is additive work, so don't ask.
+
+**Every project gets these three.** Append any that are missing, under a comment, without touching existing content:
+
+```gitignore
+# Agent scratch — plans, PRDs, summaries, handoffs. Never committed.
+tmp/
+
+# Local-only notes and settings (CLAUDE.local.md, *.local.json).
+*.local.*
+
+# Secrets. The committed reference is .env.example, which carries
+# placeholders and ${VAR} references — never real values.
+.env
+.env.*
+!.env.example
+```
+
+**Then the ecosystem lines**, from what the repo actually contains — never a generic pile of every language:
+
+| If the repo has | Add |
+| --- | --- |
+| `package.json` | `node_modules/`, `dist/`, `.next/`, `*.tsbuildinfo` |
+| `Cargo.toml` | `target/` |
+| `pyproject.toml` / `requirements.txt` | `__pycache__/`, `.venv/`, `*.egg-info/` |
+| `*.xcodeproj` / `Package.swift` | `.build/`, `DerivedData/`, `*.xcuserdatad` |
+| `go.mod` | the built binary by name |
+
+**Not here — these are already handled globally** in `~/.config/git/ignore`, and repeating them per-project is the duplication problem: macOS noise (`.DS_Store`, `._*`, `.Spotlight-V100`), `admin.toml` and `/admin`, `.claude/settings.local.json`, `.claude/platform`, `.claude/domain`.
+
+**If `tmp/` was already being tracked**, ignoring it now does not untrack it. Report the tracked paths and offer `git rm -r --cached tmp/` — that's a history-touching change, so it confirms first. Same for a committed `.env`, which additionally means the secret is already published and needs rotating, not just untracking. Say so plainly rather than filing it as a cleanup.
 
 Then proceed to [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md).

@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Idempotent project bootstrap and audit of the standard layout (CLAUDE.md, CLAUDE.local.md, admin runner, VitePress docs, docs/CONTEXT.md, docs/adr/, PRD, roadmap): creates what's missing automatically, proposes migrations for non-standard placements, and only confirms genuinely destructive moves. Use for setting up, scaffolding, or auditing a repo's layout."
+description: "Idempotent project bootstrap and audit of the standard layout (CLAUDE.md, CLAUDE.local.md, .gitignore, admin runner, VitePress docs, docs/CONTEXT.md, docs/adr/, PRD, roadmap): creates what's missing automatically, proposes migrations for non-standard placements, and only confirms genuinely destructive moves. Use for setting up, scaffolding, or auditing a repo's layout — including running it against an existing project to check it still matches the standard."
 user_invocable: true
 ---
 
