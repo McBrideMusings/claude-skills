@@ -1,28 +1,150 @@
 # Aspect: `claude-md` (native)
 
-CLAUDE.md content quality — whether the file's *structure* helps or fights the model's own relevance filtering. Distinct from `layout` (owned by `bootstrap`): layout asks whether `CLAUDE.md`/`CLAUDE.local.md` exist and sit in the standard location; this lens asks whether an *existing* file is actually going to be read.
+Whether a `CLAUDE.md` is actually going to be read and obeyed. Distinct from `layout` (owned by `bootstrap`), which only asks whether the file exists in the right place.
 
-## Grounding rule
+Two modes:
 
-Same as [ARCHITECTURE.md](ARCHITECTURE.md): every finding quotes this repo's actual `CLAUDE.md`, not a generic complaint. Read the file in full before judging it.
+- **Rebuild** — the default for an interactive run. Archive the file, empty it, and put every rule back only if it earns its place. Below.
+- **Audit** — findings-only, for `improve`'s survey fan-out. No writes, no questions. [Jump to it](#audit-mode).
 
-## The core problem
+## Why rebuild instead of edit
 
-Claude Code injects a system reminder with every CLAUDE.md: *"this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task."* A long, flat CLAUDE.md gets partially ignored under that framing — the model can't tell which parts apply to the task at hand, so it discounts all of it, including the parts that matter.
+Boris Cherny, on stage at Y Combinator, on cutting 80% of Claude Code's own system prompt: *"For people using Claude Code, every 6 months delete your CLAUDE.md. Delete your skills. Delete your hooks. See what the model does and it might surprise you."* Anthropic's own ceiling: *"target under 200 lines per CLAUDE.md file. Longer files consume more context and reduce adherence."*
 
-## Areas
+Editing preserves the sunk cost. Rebuilding forces every rule to re-argue for itself. Three things a bloated file costs at once: **tokens** (paid every session, relevant or not), **accuracy** (contradicting rules resolve arbitrarily and you never see which won), **attention** (the file goes in first, so every line pushes the real request further from the edge the model reads carefully — *Lost in the Middle*).
 
-- **Relevance signal** — does the file use `<important if="condition">` blocks to mark domain-specific sections (testing, API conventions, state management), or is it one flat wall of rules with no way for the model to tell what applies to the current task? Foundational context (identity, project map, tech stack) should stay bare; everything else that's relevant to a specific kind of work is a candidate for wrapping.
-- **Condition specificity** — where `<important if>` blocks already exist, are the conditions narrow and targeted (`you are adding or modifying API routes`) or broad enough to match everything (`you are writing or modifying any code`)? A broad condition is functionally unwrapped.
-- **Linter territory** — style/formatting rules a linter, formatter, or pre-commit hook already enforces (camelCase, `const` over `let`, import order). These cost attention for zero benefit; the fix is a hook, not a CLAUDE.md line.
-- **Staleness risk** — inline code snippets that will drift from the real implementation. Prefer a file path reference the model can go read.
-- **Vague instructions** — "follow best practices," "leverage the X agent," anything not concrete and actionable enough to change behavior.
-- **Missing commands** — a commands table that's incomplete relative to what the project actually exposes (`package.json` scripts, `admin.toml` tasks, Makefile targets).
+The archive is what makes the deletion safe. Never run this without it.
 
-## Findings
+## Phase 1 — Archive, and commit before touching anything
 
-Each finding: the **gap** (what's flat, broad, stale, or vague), **evidence** (the actual line/section quoted), **fix** (the concrete rewrite — narrowed condition, hook to add, path reference to substitute), **strength** (`Strong` / `Worth exploring` / `Speculative`). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
+```
+cp <root>/CLAUDE.md <root>/docs/archive/CLAUDE-<YYYY-MM-DD>.md
+git add + commit + push
+```
 
-## Interactive follow-up
+Absolute paths only. Commit lands **before** any edit — the rebuild is worthless if a crash loses the original.
 
-Same grilling loop as architecture (see [ARCHITECTURE.md](ARCHITECTURE.md)). For the actual rewrite mechanics — the `<important if>` structure, what stays bare, what gets deleted — hand off to `bootstrap`'s CLAUDE.md phase rather than reimplementing them here; this lens finds the gaps, bootstrap applies the rewrite.
+## Phase 2 — Measure
+
+Report words and estimated tokens **per section**, not line count. Line count lies: a file can sit under the 200-line ceiling while carrying 6,000 words in enormous bullets.
+
+```python
+import re
+t = open(path).read()
+for p in re.split(r'\n(?=## )', t):
+    w = len(p.split())
+    print(f"{w:5d}  {int(w*1.35):6d}tok  {p.split(chr(10))[0][:60]}")
+```
+
+The biggest section is almost always the one nobody defends. Lead the conversation with the table.
+
+## Phase 3 — Inventory what already enforces behavior
+
+Before judging a single rule, count what fires with an **empty** CLAUDE.md. Any rule already covered here is a delete, not a keep — a second copy is the contradiction problem, not a safety net.
+
+- **Hooks** — `jq '.hooks' settings.json settings.local.json`
+- **Skills** — descriptions auto-load; a rule restating a skill's own description is dead weight
+- **`MEMORY.md`** — auto-memory entries are already in context every session
+- **The session's own system prompt** — read it. It may already carry the rule (in this repo it already capped subagent spawning and workflow use)
+- **`docs/`** — and check whether anything actually routes to it
+
+## Phase 4 — Ask what breaks when the file is empty
+
+**One question, before showing the user any old text:** *with nothing in CLAUDE.md, what are the three things I'd get wrong that would cost you a session?* From memory — not from the file.
+
+Attach your own prediction so they can disagree instead of starting cold. Their answer becomes the priority order, and whatever they can't name from memory is a deletion candidate: they wrote it, they live with it, and if it isn't in their head it probably wasn't paying rent.
+
+## Phase 5 — Cross-check the archives
+
+Read **every** file in `docs/archive/CLAUDE-*.md`, not just the newest. Carry-over across versions is the strongest evidence available, and it costs nothing to compute.
+
+- **Present in every version** → load-bearing. Keep without re-litigating.
+- **Deleted in one rebuild, re-added later** → the deletion was wrong. Mark it permanent and say so out loud; do not put it up for a vote again.
+- **Appeared once, gone since** → safe to leave out.
+- **In the newest archive but nowhere else** → it's new and untested. Fair game.
+
+With one archive this yields little. Say that plainly rather than dressing up a single-file diff as a trend.
+
+## Phase 6 — Triage, section by section, as tables
+
+One table per section. One verdict per rule, from exactly five:
+
+| Verdict | When |
+| --- | --- |
+| **Keep** | Changes behavior, nothing else enforces it, can't be mechanized |
+| **Compress** | Right rule, three times the words it needs. Cut the worked examples and the rant |
+| **→ hook** | Guard-shaped: a check on a command string, a path, an argument. Deterministic |
+| **→ doc / skill** | Domain knowledge that only matters for one kind of task. Replace with one routing line |
+| **Delete** | Already enforced elsewhere, model-default behavior, role padding, or vague enough to change nothing |
+
+Present the whole section's table at once and let the user answer by exception. That is far faster than one question at a time, and it's how this method was actually validated.
+
+**Specific things to hunt:**
+
+- **Guard-shaped rules → hooks.** Anything phrased as "never type X" is a string test. This is the single largest reduction available; one repo's shell-ban section was 900 words that a hook replaces entirely.
+- **Role padding** — "you are an expert with 20 years of experience". Optional now. Delete unless it demonstrably changes output.
+- **Verify-twice rules** — "always double-check your work". The model self-corrects; this pays for the work twice.
+- **"Only flag the big issues"** — taken literally, you get told less than you wanted. Invert: report everything, the user filters.
+- **"Don't overthink"** — rules against thinking make internal tags leak into the answer. Cut.
+- **Linter territory** — formatting a formatter already enforces.
+- **Inline code snippets** that will drift from the real implementation. Substitute a path the model can go read.
+- **Vague instructions** — "follow best practices", "leverage the X agent". Not concrete enough to change behavior.
+
+**Never cut a truth rule.** "Only claim what you verified", "flag uncertainty", "never cite a source you haven't read" — those stop invented facts, they aren't severity filters. They stay whatever else goes.
+
+## Phase 7 — Build every hook before deleting its prose
+
+**Hard gate. A rule routed to a hook stays in the file until its hook is written, tested, and registered.** Delete first and you get the worst of both: no words, no enforcement, and nobody notices for weeks. This has already happened once in this repo.
+
+For each hook:
+
+1. Write it to `hooks/<name>.sh`. Match the existing convention: read stdin, `jq -r '.tool_input.command'`, emit a `permissionDecision: "deny"` with a reason that teaches the fix.
+2. **Design against false positives, and say what legitimate work it could block.** A hook banning the word "Claude" in commit messages breaks a repo whose subject *is* Claude. Match the boilerplate, never the topic.
+3. Test a matrix of should-allow and should-block cases, including the user's real historical commands. Show the results.
+4. Register in `settings.json`. Flag it if `settings.json` is gitignored — the hook file syncs to other machines and the registration does not.
+
+## Phase 8 — Author what was never written down
+
+Emptying the file exposes gaps the old one never covered. Ask directly, near the end, while the user is already thinking in rules:
+
+- What do you correct me on repeatedly that isn't in here?
+- What did you assume I knew?
+- Anything you've told me three times in a session? *(Worth a standing rule: if I ask for the same thing three times, say so and propose a hook.)*
+
+In this repo that phase produced five rules that had never existed: the project-local `verify` skill requirement, model tiering by task complexity, orchestration-by-default in a multi-pane environment, proactive doc upkeep, and archive-awareness itself.
+
+## Phase 9 — Order for attention, then write
+
+The model reads the beginning and end carefully and skims the middle. Put what fires on every single turn — voice, how to talk to the user — at the top. Put conditional and rarely-triggered material at the bottom.
+
+Wrap domain-specific sections in `<important if="...">` so the model can tell what applies:
+
+```
+<important if="you are running inside herdr (HERDR_ENV=1)">
+```
+
+Conditions must be **narrow**. `you are writing or modifying any code` matches everything and is functionally unwrapped. If you have not seen a given condition fire, say so — it's the documented mechanism, not a verified one.
+
+End the file with a **knowledge map**: a table of where domain knowledge lives and when to read it. This is what lets the file stay short without losing anything — one line replaces a section.
+
+Carry the archive-awareness section forward into every rebuild, or the next rebuild deletes the mechanism that makes rebuilds safe.
+
+## Phase 10 — Report honestly
+
+- Before and after: words, tokens, percent cut.
+- The honest count: *"6,076 words in. 12 deletes, 9 compressions, 7 routed, 1 hook built."*
+- **What you could not check, marked NOT RUN.** Never a clean bill you didn't earn. In this repo that included: whether the `herdr` and `admin` skills actually contain the rules deleted on the assumption they did, and whether `<important if>` fires.
+- Duplicates now sitting in both `MEMORY.md` and `CLAUDE.md`.
+- Every hook approved but not yet built, named individually.
+
+If most of the file should go, say so plainly. The scaffolding the user is proudest of is the likeliest casualty.
+
+---
+
+## Audit mode
+
+For `improve`'s survey fan-out: no writes, no commits, no questions. Run phases 2, 3, 5, and 6 read-only and return findings.
+
+Each finding: the **gap** (what's flat, duplicated, guard-shaped, stale, or vague), **evidence** (the actual line quoted — never a generic complaint), **fix** (the concrete rewrite: narrowed condition, the hook to write, the path to substitute), **strength** (`Strong` / `Worth exploring` / `Speculative`). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
+
+Read the file in full before judging it. A finding that doesn't quote the repo's own `CLAUDE.md` isn't a finding.
