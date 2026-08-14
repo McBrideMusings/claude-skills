@@ -122,7 +122,7 @@ entering lists, empty-state and success components, `transition: all`, `scale(0)
 | 1 | `Toast.tsx:41` | Appears instantly | Preventing a jarring change | Occasional | `@starting-style` entry `opacity: 0; translateY(100%)` → settled, 400 ms ease, exit the same edge |
 
 Every "suggested motion" cell carries **exact values** — curve, duration, properties — taken from
-`_platforms/web/review.md`'s tokens (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--ease-in-out:
+`_domains/web/review.md`'s tokens (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--ease-in-out:
 cubic-bezier(0.77, 0, 0.175, 1)`, `--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1)`) or from the
 project's own tokens, never approximated. `transform` and `opacity` only; include reduced-motion
 handling (gentler, not zero) and `@media (hover: hover) and (pointer: fine)` gating on anything

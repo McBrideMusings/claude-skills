@@ -89,7 +89,7 @@ tmp/
 | `*.xcodeproj` / `Package.swift` | `.build/`, `DerivedData/`, `*.xcuserdatad` |
 | `go.mod` | the built binary by name |
 
-**Not here — these are already handled globally** in `~/.config/git/ignore`, and repeating them per-project is the duplication problem: macOS noise (`.DS_Store`, `._*`, `.Spotlight-V100`), `admin.toml` and `/admin`, `.claude/settings.local.json`, `.claude/platform`, `.claude/domain`.
+**Not here — these are already handled globally** in `~/.config/git/ignore`, and repeating them per-project is the duplication problem: macOS noise (`.DS_Store`, `._*`, `.Spotlight-V100`), `admin.toml` and `/admin`, `.claude/settings.local.json`. `.claude/domain` is the opposite case — commit it; see [`_domains/_detect.md`](../_domains/_detect.md).
 
 **If `tmp/` was already being tracked**, ignoring it now does not untrack it. Report the tracked paths and offer `git rm -r --cached tmp/` — that's a history-touching change, so it confirms first. Same for a committed `.env`, which additionally means the secret is already published and needs rotating, not just untracking. Say so plainly rather than filing it as a cleanup.
 

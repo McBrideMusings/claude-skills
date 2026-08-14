@@ -53,9 +53,7 @@ Tool preference:
 
 **Perf branch.** For perf regressions, logs are usually wrong. Establish a baseline (timing harness, `performance.now()`, profiler, query plan), then bisect. Measure first, fix second.
 
-**Platform axis.** Detect the platform via [`../_platforms/_detect.md`](../_platforms/_detect.md). If `../_platforms/<platform>/diagnose.md` exists, read it for what to instrument and how to read it on this stack (e.g. SwiftUI `_printChanges`, view-identity vs re-evaluation). On the perf branch, also read `../_platforms/<platform>/profiling.md` for the profiler catalog — the same file the `profiling` skill uses. No axis for the platform → instrument with the stack's native tools as usual.
-
-**Domain axis.** Also detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md). If `../_domains/<domain>/diagnose.md` exists (e.g. `game`), read it **on top of** the platform axis for mode-specific failure modes — nondeterministic update order, input latency, collision/physics glitches, state-machine bugs. Overlay, not replacement: apply both.
+**Domain labels.** Resolve the labels in scope via [`../_domains/_detect.md`](../_domains/_detect.md). For each matched label with a `diagnose.md` cell, read it — a stack label (e.g. `../_domains/apple/diagnose.md`) for what to instrument and how to read it on this stack (SwiftUI `_printChanges`, view-identity vs re-evaluation); a mode label (e.g. `../_domains/game/diagnose.md`) for mode-specific failure modes — nondeterministic update order, input latency, collision/physics glitches, state-machine bugs. No ordering between them — apply every matched cell. On the perf branch, also read each matched label's `profiling.md` for its profiler catalog — the same files the `profiling` skill uses. No matching label → instrument with the stack's native tools as usual.
 
 ## Phase 05 — Fix + Regression Test
 

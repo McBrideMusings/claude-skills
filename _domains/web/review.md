@@ -6,8 +6,8 @@ output contract as the other lenses: report only genuine problems, `file:line`, 
 headline, a **Why** (concrete cost), and a **Fix** with a before/after where it clarifies. Axis tag:
 `web`. Do not nitpick style or invent issues.
 
-This is the **implementation** half of motion review. The principle-level lens (`_domains/ui/review.md`)
-loads alongside this one when the `ui` domain is in scope; this cell carries the exact curves,
+This is the **implementation** half of motion review. The principle-level lens (`_domains/gui/review.md`)
+loads alongside this one when the `gui` label is in scope; this cell carries the exact curves,
 durations, and properties to cite in fixes. Substantive bar from Emil Kowalski (animations.dev).
 
 ## Concrete values (cite these instead of approximating)

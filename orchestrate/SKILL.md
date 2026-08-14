@@ -211,9 +211,9 @@ So two workers verifying at the same time can each be looking at the other's bui
 
 **The rule, on every platform:** ask "what does the verification touch that the worktree does not cover" — a device, an emulator, a browser profile, a dev server port, a local database, a Docker container name. Whatever the answer names, give each worker its own, **pin every command to that specific one by id rather than by name**, and retire it in step 7 alongside the worktree. A name resolves to whichever instance answers to it; an id does not. The answer to that question is rarely nothing.
 
-**The commands live in the shared platform store, not here** — one project's toolchain is dead weight in every other project's context, and orchestrate is not the only engine that needs them.
+**The commands live in the shared domain store, not here** — one project's toolchain is dead weight in every other project's context, and orchestrate is not the only engine that needs them.
 
-Resolve the platform with [../_platforms/_detect.md](../_platforms/_detect.md) — the same way `review`, `diagnose`, and `profiling` do — then read `../_platforms/<platform>/orchestrate.md` if it exists. Do it **in step 3, before creating anything**. Today only [apple](../_platforms/apple/orchestrate.md) has that cell; a platform with no cell is a no-op, not an error — apply the rule above yourself, and add the cell if the run teaches you the commands.
+Resolve the labels with [../_domains/_detect.md](../_domains/_detect.md) — the same way `review`, `diagnose`, and `profiling` do — then read `../_domains/<label>/orchestrate.md` for each matched label that has one. Do it **in step 3, before creating anything**. Today only [apple](../_domains/apple/orchestrate.md) has that cell; a matched label with no cell is a no-op, not an error — apply the rule above yourself, and add the cell if the run teaches you the commands.
 
 #### Nothing is watching the workers
 
@@ -225,7 +225,7 @@ Per ready issue, in order:
 
 1. **Dispatch gate** — implement's gate again, on this issue's current body. It should pass; the scope gate already cleared it. If it fails now, do what a continuous `/implement` pass does with a gate failure — file the `needs human input: …` follow-up — then **skip the issue and keep going**. A single late failure does not stop a run already underway. Name every skipped issue in the report; a non-empty list means the scope gate missed something.
 2. **Worktree** — `git -C <repo> worktree add -b <branch> ~/.worktrees/<repo>/<slug> <default-branch>`. **This skill creates it, never the transport** — that is why landing, verdict paths, and teardown are identical on all three. Create it **now, not earlier**: a worktree is evidence an issue was ready, never a bet that it will be.
-3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else), and read `../_platforms/<platform>/orchestrate.md` for the commands. Created here, alongside the worktree.
+3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else), and read `../_domains/<label>/orchestrate.md` for the commands. Created here, alongside the worktree.
 4. **Model check** — resolve the kind, then pick this issue's tier with [Picking the model per issue](#picking-the-model-per-issue), then check the resolved id against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them. Record the tier next to the slug; the run report names it.
 5. **`dispatch(…)`** — the transport file. Returns the **handle** you will use for every later verb. The workflow transport dispatches the whole batch in one call rather than per issue; its file says how.
 6. **Brief** — [BRIEF.md](BRIEF.md).

@@ -94,7 +94,7 @@ is itself a tell. `_base.css` already honours `prefers-reduced-motion`.
 
 ## Don't look machine-made
 
-`_domains/ui/slop.md` is the catalogue — read it, don't take a summary of it from here. Two copies of a
+`_domains/gui/slop.md` is the catalogue — read it, don't take a summary of it from here. Two copies of a
 list like that drift, and that file is the better one.
 
 The short version: the stock answer to any brief is the thing to avoid. Absent user instruction, that

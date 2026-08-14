@@ -1,7 +1,7 @@
 # UI slop catalog
 
 Read by **planning** (`ui-design` critique/audit mode) and the **engines** (`review`, `verify`) when the
-domain is `ui`. Objective banned-patterns and AI tells — the part that fixes "every AI frontend looks
+domain is `gui`. Objective banned-patterns and AI tells — the part that fixes "every AI frontend looks
 the same." Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0) and Taste Skill
 (`Leonxlnx/taste-skill`, MIT). Unlike the lenses, almost none
 of this is a judgement call: it's match-and-refuse.

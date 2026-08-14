@@ -1,9 +1,9 @@
 # UI motion defect lens
 
 Platform-agnostic lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04
-when the `ui` domain is in scope. Same output contract as the other lenses: report only genuine
+when the `gui` label is in scope. Same output contract as the other lenses: report only genuine
 problems, `file:line`, a full-sentence headline, a **Why** (the concrete cost), and a **Fix**. Axis
-tag: `ui`. Do not nitpick style or invent issues.
+tag: `gui`. Do not nitpick style or invent issues.
 
 **Scope — defects only.** `review` judges whether the code is correct: does it drop frames, does it
 break for a user with reduced motion, does it strand state under real input. Craft questions — should
@@ -13,8 +13,8 @@ the product's personality — are **not** defects and do not belong in a review.
 mode. If a finding here is really "this would be nicer as X", it is out of scope; drop it.
 
 This lens flags the **principle**; the exact curve/duration/GPU-property values and the
-framework-specific fixes come from the platform cell — `_platforms/web/review.md` (CSS/React) or
-`_platforms/apple/review.md` (SwiftUI) — which the engine loads alongside this one.
+framework-specific fixes come from the platform cell — `_domains/web/review.md` (CSS/React) or
+`_domains/apple/review.md` (SwiftUI) — which the engine loads alongside this one.
 
 Also load **`slop.md`** in the same pass and run its catalog against the changed surface: the absolute
 bans, the colour/type tells, and the model-specific defects are objective match-and-refuse checks (a

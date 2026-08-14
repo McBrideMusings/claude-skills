@@ -90,7 +90,7 @@ Reviewed at vendoring time (34 files, ~10k lines). What is actually true of them
 
 A project's own `verify` skill references this file rather than restating it:
 
-> Simulator driving: see `~/.claude/skills/_platforms/apple/simulator.md`. Device: iPhone 16 Pro, iOS 18.2. App bundle id: `com.example.app`.
+> Simulator driving: see `~/.claude/skills/_domains/apple/simulator.md`. Device: iPhone 16 Pro, iOS 18.2. App bundle id: `com.example.app`.
 
 Project-specific things — which device, which bundle id, which screens matter, what "working" looks like for this app — belong in the project's skill. Everything above is generic and stays here, once.
 

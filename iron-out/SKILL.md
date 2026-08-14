@@ -59,7 +59,7 @@ When the user arrives with an idea rather than a backlog — a greenfield build,
 ```
 
 <!-- If the effort is in a domain with a design axis (detect via ../_domains/_detect.md — today: `game`
-     via ../_domains/game/design.md, `ui` via ../_domains/ui/design.md), point Notes at it so every
+     via ../_domains/game/design.md, `ui` via ../_domains/gui/design.md), point Notes at it so every
      pass's interviews consult the domain's design lenses. Structure + tradeoffs only, never a fun-verdict. -->
 
 4. **File the questions you can state now** as issues on that milestone, labelled `question`. Then wire `Blocked by` edges in a **second pass** — issues need numbers before they can reference each other.

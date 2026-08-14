@@ -35,7 +35,7 @@ The shape is the *mechanism*. The domain is the *mode of software* — it says w
 argument → `.claude/domain` marker → classify once), then load the cell **in addition to** the shape
 file:
 
-- `ui` → [`_domains/ui/prototype.md`](../_domains/ui/prototype.md) — the craft bar every variant clears,
+- `ui` → [`_domains/gui/prototype.md`](../_domains/gui/prototype.md) — the craft bar every variant clears,
   what realistic content means, the axes variants diverge on.
 - `game` → [`_domains/game/prototype.md`](../_domains/game/prototype.md) — feel questions, the surfaces a
   game prototype runs on (Roblox scratch Place, canvas/three.js HTML file, native scratch target),
@@ -92,5 +92,5 @@ delete the prototype.
   `ui-design` sketch mode (cheaper: ASCII in chat). Come here when the question is *which direction*,
   and the axes in play are density, motion, personality, or interaction model — the things ASCII can't
   show.
-- Picking a library for a web task → `_domains/ui/libraries.md` via `ui-design`. Don't burn a prototype
+- Picking a library for a web task → `_domains/gui/libraries.md` via `ui-design`. Don't burn a prototype
   on a question a curated list already answers.

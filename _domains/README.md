@@ -1,76 +1,114 @@
-# `_domains/` — shared domain-knowledge store
+# `_domains/` — shared label-knowledge store
 
-Not a skill. A **matrix of domain × engine** knowledge layered on top of `_platforms/`. A *domain*
-is a mode of software development (`game`, …) that adds knowledge the platform axis can't carry — a
-game needs game-loop determinism and playtest discipline whether it runs on three.js, SpriteKit, or
-Unity. The leading `_` and the absence of any `SKILL.md` keep this directory from registering as a
-skill (same mechanism as `_platforms/`).
+Not a skill. A **matrix of label × engine** knowledge that the workflow-engine skills (`review`,
+`diagnose`, `profiling`, and — via `tdd`/`verify` — testing) read from at run time. The leading `_`
+and the absence of any `SKILL.md` keep this directory from registering as a skill.
 
-## vs `_platforms/`
+## What a label is
 
-- `_platforms/<p>/` = the **stack** — three.js draw calls, Instruments, py-spy. Auto-detected from
-  files in scope.
-- `_domains/<d>/` = the **mode** — game loop, playtest, frame-budget gate. Marker-detected (see
-  `_detect.md`), because modes have no file signature.
-
-Engines read **both**: platform axis first, domain overlay on top.
+One flat store, one kind of label. A label can describe a *stack* (`apple`, `web`, `react`,
+`threejs`) or a *mode* of development (`game`); the store doesn't distinguish — every label is a
+directory of engine cells that stacks with every other label in scope, detected the same way (see
+`_detect.md`). A repo's `.claude/domain` marker can name several labels at once — a game on an
+iPhone carries `apple` (how you build/test/ship on Apple), `mobile` (what a phone app is regardless
+of vendor), and `game` (how games are built regardless of device) simultaneously.
 
 A third store, [`../_tracker/`](../_tracker/README.md), sits outside this pairing entirely — it
 names the **issue backend** a skill writes to (beads / GitHub / local file), not knowledge layered
-onto an engine. Resolved per repo by `_tracker/_detect.md`, independently of platform and domain.
+onto an engine. Resolved per repo by `_tracker/_detect.md`, independently of the domain marker.
 
 ## Layout
 
 ```
 _domains/
-  _detect.md            <- marker-first detection (classify-once, offer-stub)
-  <domain>/
-    review.md           <- extra lens the `review` engine adds when this domain is in scope
-    diagnose.md         <- domain-specific "what to watch" at diagnose's instrument phase
-    profiling.md        <- domain performance gate (defers raw numbers to the platform profiler)
-    testing.md          <- domain test discipline, read by `tdd`/`verify`
-    design.md           <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
-    prototype.md        <- OPTIONAL: what a throwaway prototype answers in this domain, read by `prototype`
+  _detect.md            <- marker-first detection, marker grammar, classifier heuristic
+  <label>/
+    review.md           <- lens the `review` engine adds when this label is in scope
+    diagnose.md          <- what to instrument / watch, read at diagnose's instrument phase
+    profiling.md         <- profiler catalog / performance gate, read by the `profiling` engine
+    testing.md            <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)
+    orchestrate.md        <- what N parallel workers must each get their own of, and how to pin to it
+    design.md             <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
+    prototype.md           <- OPTIONAL: what a throwaway prototype answers for this label, read by `prototype`
 ```
+
+A cell may be absent — the engine then runs generic-only for that label. Add a label by adding a
+directory (see `_detect.md`'s "Adding a label"); add an engine column by adding that filename across
+the labels that need it.
 
 ## Who reads what
 
-The four code engines (`review`/`diagnose`/`profiling`/`testing`) work like `_platforms/`: after
-loading the platform axis, each checks the domain marker and — if present — loads
-`_domains/<domain>/<engine>.md` and applies it on top.
+| Engine | Reads | When |
+| --- | --- | --- |
+| `review` | `<label>/review.md` | Phase 04 — added as one extra lens sub-agent per matched label |
+| `diagnose` | `<label>/diagnose.md`, `<label>/profiling.md` (perf) | Phase 04 (Instrument) |
+| `profiling` | `<label>/profiling.md` | after label detect |
+| `tdd` | `<label>/testing.md` | Phase 01/02 (write the failing test) |
+| project `verify` | `<label>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
+| `orchestrate` | `<label>/orchestrate.md` | step 3 (fan out) and step 7 (retire), per worker |
 
-The store **also feeds planning skills**, not just engines. A `design.md` cell holds design-time
-critique lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `iron-out`, and
-`game-dev`'s design phase read it optionally when the domain is in scope. Design cells name structure
+The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
+store directly. The testing axis reaches verification two ways instead: `tdd` reads it when writing
+tests, and a **project-local** `verify` skill (which built-in `verify` bootstraps per repo) can read
+`_domains/<label>/testing.md` for stack-specific drive/harness knowledge.
+
+The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique
+lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `iron-out`, and
+`game-dev`'s design phase read it optionally when the label is in scope. Design cells name structure
 and tradeoffs — they never deliver a fun/good verdict.
 
+## No precedence
+
+Stacked cells can contradict each other — `apple/review.md` and `gui/review.md` both carry motion
+knowledge today. There is deliberately no precedence table: a conflict is reported as a finding,
+because ranking the cells would guard a duplication that should be removed instead. See
+`_detect.md`'s "No precedence".
+
 ## Current state
+
+`apple/` has all five engine cells (`review`, `diagnose`, `profiling`, `testing`, `orchestrate`);
+`web/` has `profiling` + `testing` + `review`; `react/` has `review`; `threejs/` has `review` +
+`diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in `game/`). `orchestrate`
+exists only for `apple` today — that column fills the first time a swarm runs on a stack with a
+shared device, port, or database.
 
 `game/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs. numbers
 questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
 majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to-end game builds over
 this store and sets the `game` marker on scaffold.
 
-`ui/` — `design.md` (planning-time critique lenses) + `review.md` (motion **defect** lens for the
-`review` engine — jank, interruptibility/state-stranding, accessibility) + `opportunities.md` (the
-**opportunity** half: the four-question gate, the hunt-seam sweep, and the required rejected-candidates
-section, read by `ui-design` critique mode, which is what `improve`'s `ui` aspect loads) + `slop.md`
-(objective AI-slop banned-patterns catalog, read by `ui-design` critique mode and the `review`/`verify`
-engines; harvested from pbakaus/impeccable + Leonxlnx/taste-skill) + `fidelity.md` (structural surface
-audit, from jamiemill/layers-skills) + `prototype.md` (the craft bar and divergence axes for
-`prototype`'s UI shape) + `vocabulary.md` (a reference — the reverse motion-term glossary, read by
-`ui-design` and `explain`, not an engine cell) + `libraries.md` (a reference — curated web/React library
-picks, read by `ui-design` and `implement`). Seeded from emilkowalski/skills. The `ui-design` skill is
-the planning orchestrator over this store; the implementation-level values live in
-`_platforms/web/review.md` and `_platforms/apple/review.md`.
+`gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +
+`review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
+accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
+sweep, and the required rejected-candidates section, read by `ui-design` critique mode, which is what
+`improve`'s `ui` aspect loads) + `slop.md` (objective AI-slop banned-patterns catalog, read by
+`ui-design` critique mode and the `review`/`verify` engines; harvested from pbakaus/impeccable +
+Leonxlnx/taste-skill) + `fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
+`prototype.md` (the craft bar and divergence axes for `prototype`'s UI shape) + `vocabulary.md` (a
+reference — the reverse motion-term glossary, read by `ui-design` and `explain`, not an engine cell) +
+`libraries.md` (a reference — curated web/React library picks, read by `ui-design` and `implement`).
+Seeded from emilkowalski/skills. The `ui-design` skill is the planning orchestrator over this store;
+the implementation-level values live in `web/review.md` and `apple/review.md`.
 
-The `review` / `improve` line inside `ui/`: **`review.md` is what's broken, `opportunities.md` is
+The `review` / `improve` line inside `gui/`: **`review.md` is what's broken, `opportunities.md` is
 what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
 improvement pass.
 
-`product/` — the six problem-space and solution-space design layers *beneath* the surface:
+`product-design/layers/` — the six problem-space and solution-space design layers that used to live
+here as `product/`, now outside this store entirely (it was never a label a repo carries):
 `observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
 `interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `product-design` orchestrator
-conducts the layer work over this store; `interaction-flow.md` hands its breadboard off to the
+conducts the layer work over that directory; `interaction-flow.md` hands its breadboard off to the
 `ui-design` sketch mode, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
-Add domains as new kinds of software appear.
+
+Add labels as new kinds of software or new stacks appear.
+
+## Attribution
+
+Adapted from [MengTo/Skills](https://github.com/MengTo/Skills) — see that repo's LICENSE:
+- `apple/` — `swiftui-pro` (Paul Hudson), `swiftui-debugging`, `performance-profiling`.
+  `apple/profiling/*.md` copied verbatim from its `performance-profiling/references/`.
+- `web/profiling.md` (+ `web/profiling/browser-profiling.md`) — `optimize-web-animations`.
+- `web/review.md` and `apple/review.md`'s motion block — emilkowalski/skills (`emil-design-eng`,
+  `apple-design`, `review-animations`). The platform-agnostic design principles behind them live in
+  `gui/`.

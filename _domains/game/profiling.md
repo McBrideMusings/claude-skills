@@ -1,12 +1,12 @@
 # Game profiling axis
 
-Read by the `profiling` engine when the domain is `game` — loaded on top of the platform axis, not instead of it.
+Read by the `profiling` engine when the `game` label is in scope, stacked alongside any matched stack label — no ordering between them.
 
 Adapted from majidmanzarpour/threejs-game-skills.
 
 A game has a hard, recurring deadline every other app doesn't: the frame. This axis says **what a
 game must HIT and where the hitches come from**. It does not measure — use the platform's profiler
-via `_platforms/<p>/profiling.md` for raw FPS, frame time, allocation, and GPU numbers. This file
+via `_domains/<p>/profiling.md` for raw FPS, frame time, allocation, and GPU numbers. This file
 turns those numbers into a pass/fail gate.
 
 ## The frame-budget gate
@@ -61,4 +61,4 @@ no playability/readability regression before keeping it.
 - [ ] Before/after numbers for every optimization kept.
 
 Headless/software-rendered FPS is functional-only — never report it as performance evidence. Get the
-real numbers from `_platforms/<p>/profiling.md`; this file only says whether they pass.
+real numbers from `_domains/<p>/profiling.md`; this file only says whether they pass.

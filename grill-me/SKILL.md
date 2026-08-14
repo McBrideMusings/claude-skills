@@ -94,10 +94,10 @@ When the interview is eliciting *what users need* or *what the domain's vocabula
 butter of Shape and Backfill — pull the matching `product-design` cell for the discipline that keeps the
 questions honest, then interrogate with it:
 
-- **User needs / job stories** → [`../_domains/product/user-needs.md`](../_domains/product/user-needs.md):
+- **User needs / job stories** → [`../product-design/layers/user-needs.md`](../product-design/layers/user-needs.md):
   need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark
   confidence (observed/inferred/assumed).
-- **Domain terminology** → [`../_domains/product/domain.md`](../_domains/product/domain.md): record
+- **Domain terminology** → [`../product-design/layers/domain.md`](../product-design/layers/domain.md): record
   synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/
   instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
 

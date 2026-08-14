@@ -1,6 +1,6 @@
 # UI structural-fidelity audit
 
-Read by `ui-design` critique/audit mode (and the `review`/`verify` engines when the domain is `ui`).
+Read by `ui-design` critique/audit mode (and the `review`/`verify` engines when the domain is `gui`).
 The **structural** half of a surface audit — does the interface honour the decisions made in the layers
 below it? — complementary to the **craft** half in `design.md` (motion/type/colour/layout/slop). Adapted
 from jamiemill/layers-skills (MIT), the Surface layer.
@@ -8,7 +8,7 @@ from jamiemill/layers-skills (MIT), the Surface layer.
 The surface is where everything decided below becomes something a person encounters. **Surface problems
 are often symptoms of deeper ones.** The central discipline: tell apart issues you fix at the surface
 from issues whose root is in the conceptual model or interaction flow — route those back to the matching
-`_domains/product/` cell rather than patching the symptom. (This audit judges *fidelity to the decisions
+`../../product-design/layers/` cell rather than patching the symptom. (This audit judges *fidelity to the decisions
 below*; `design.md` judges *craft quality*. Run both in a critique.)
 
 ## The decisions this audit checks
@@ -24,7 +24,7 @@ below*; `design.md` judges *craft quality*. Run both in a critique.)
 
 - **Surface fix vs deeper-layer issue.** The key judgement: is this a copy/layout fix, or a symptom whose
   root is in the conceptual model or interaction flow? Wrong vocabulary may be a rewrite — or a model that
-  never settled the term. Route deeper issues to `_domains/product/conceptual-model.md` or
+  never settled the term. Route deeper issues to `../../product-design/layers/conceptual-model.md` or
   `interaction-flow.md` (via `product-design`), not to a surface patch.
 - **Terms match the ubiquitous language.** Flag direct violations (a model term used inconsistently),
   unlisted terms (surface words not in the model — add to model, or remove as noise), and tone
@@ -55,14 +55,14 @@ Auditing existing surface against the layers below. Use whichever the concern ca
 | **Emotional-register check** | Return to the emotional and social jobs; find where tone, framing, or emphasis misaligns. |
 | **Feedback & error inventory** | For each action and state transition: how does the user know it worked, is in progress, or failed — and what to do next? |
 | **Hierarchy review** | Per key place: what must the user notice or act on, and does the surface make that most prominent? Decide what's primary before how to signal it. |
-| **Accessibility pass** | Contrast, sizing, touch targets, keyboard, screen-reader labels, focus. (The measured a11y values — 4.5:1, 44×44px — are enforced by the engines via `design.md` / `_platforms/`.) |
+| **Accessibility pass** | Contrast, sizing, touch targets, keyboard, screen-reader labels, focus. (The measured a11y values — 4.5:1, 44×44px — are enforced by the engines via `design.md` / `_domains/`.) |
 | **Consistency pass** | Similar things treated similarly, different things differently; medium conventions honoured or deliberately broken. |
 
 ## In a critique
 
 When `ui-design` runs a post-code critique/audit, run this fidelity pass **alongside** the `design.md`
 craft lenses and the `slop.md` catalog. Tag each finding: **surface-fix** (fix here) or **deeper-layer**
-(route to the named `_domains/product/` cell). A finding is still a verdict-plus-reason — the reason here
+(route to the named `../../product-design/layers/` cell). A finding is still a verdict-plus-reason — the reason here
 is a named discipline above (e.g. "this is a Broken object: the invoice's actions are split across two
 screens with no cross-link"), not a measured craft value. Report the cross-layer issues first: they're
 the ones a surface patch would only mask.

@@ -4,7 +4,7 @@ Axis tag: `ui`. Applicability: a UI surface exists — rendered components, a st
 
 **Read:** `../../ui-design/SKILL.md`, its **`critique` / `audit` (post-code)** mode and its **Findings-only invocation** contract. Run critique exactly as specified there — it already returns ranked findings with concrete reasons.
 
-Also read `../../_domains/ui/opportunities.md` for missing or weak motion; absent motion is an opportunity this aspect owns and no other one looks for.
+Also read `../../_domains/gui/opportunities.md` for missing or weak motion; absent motion is an opportunity this aspect owns and no other one looks for.
 
 ## Aspect-specific rules
 

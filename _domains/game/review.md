@@ -1,6 +1,6 @@
 # Game review axis
 
-Read by the `review` engine when the domain is `game` — loaded on top of the platform axis, not instead of it.
+Read by the `review` engine when the `game` label is in scope, stacked alongside any matched stack label — no ordering between them.
 
 Adapted from majidmanzarpour/threejs-game-skills.
 
@@ -61,4 +61,4 @@ phase). A decorative space that does not change player choices is a finding.
 - [ ] Tuning lives in named constants, and changes are recorded.
 
 Performance readability is a gameplay gate, not just a graphics one — see `profiling.md` for the
-frame budget; use the platform's profiler via `_platforms/<p>/profiling.md` for the raw numbers.
+frame budget; use the platform's profiler via `_domains/<p>/profiling.md` for the raw numbers.

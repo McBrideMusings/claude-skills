@@ -1,13 +1,13 @@
 # UI design axis
 
-Read by **planning** skills (`ui-design`, `grill-me`, `iron-out`) when the domain is `ui`. Design-time
+Read by **planning** skills (`ui-design`, `grill-me`, `iron-out`) when the domain is `gui`. Design-time
 critique lenses for interactive interfaces — not a code engine. Loaded on top of whatever the planning
 skill already does, the same way the engines layer platform + domain.
 
 Sources: **Emil Kowalski's design engineering** (animations.dev) — Sonner/Vaul author. **Apple —
 *Designing Fluid Interfaces*** (WWDC 2018), ***The Details of UI Typography*** (WWDC 2020),
 ***Principles of Great Design***. These are platform-agnostic design ideas; the CSS/SwiftUI that
-*implements* them lives in `_platforms/web/` and `_platforms/apple/`, not here.
+*implements* them lives in `_domains/web/` and `_domains/apple/`, not here.
 
 ## The one rule — judge craft, always anchor to a concrete reason
 
@@ -163,7 +163,7 @@ a legitimate option to put on the table.
 ## Where the concrete values live
 
 Exact curves, durations, spring parameters, and the GPU-property rules are **implementation** — they
-live in `_platforms/web/review.md` and `_platforms/apple/review.md`, loaded by the `review` engine.
+live in `_domains/web/review.md` and `_domains/apple/review.md`, loaded by the `review` engine.
 The reverse glossary of motion terms is `vocabulary.md` in this directory.
 
 ## The rest of this directory

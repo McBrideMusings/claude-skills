@@ -62,7 +62,7 @@ Before designing anything, map the ground the variants stand on:
   may go.
 - **Context** — what the piece renders against: background, neighbours, sizes.
 - **Frequency** — how often a user hits this. It decides how much motion is allowed at all
-  (`_domains/ui/design.md` Lens 1).
+  (`_domains/gui/design.md` Lens 1).
 
 No project at all (empty directory, pure exploration)? Skip to Phase 03 with a restrained default look:
 neutral greys, one accent, system font stack.
@@ -138,7 +138,7 @@ Close with the full path to the file and the keys to flip (`1–N`, `←`/`→`,
 
 Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
 in the table. If the user asks which you'd choose, answer with a reason rooted in the product's
-personality and how often the piece is seen (`ui-design` and `_domains/ui/design.md` are where that
+personality and how often the piece is seen (`ui-design` and `_domains/gui/design.md` are where that
 judgement is licensed and how it must be anchored). If two variants converged while you built them, cut
 one and say so: two truly distinct directions beat three padded ones.
 

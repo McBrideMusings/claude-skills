@@ -2,7 +2,7 @@
 
 Not a skill. The **implementation and delivery substrate** every skill uses when its output is a
 self-contained HTML file. The leading `_` and the absence of any `SKILL.md` keep this directory from
-registering as a skill (same mechanism as `_domains/` and `_platforms/`).
+registering as a skill (same mechanism as `_domains/` and `_domains/`).
 
 The principle: **the verb is the skill; this is what the verbs share.** `explain` decides what an
 explanation should say, `prototype` decides which directions diverge, `ui-design` decides where things

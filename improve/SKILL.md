@@ -38,7 +38,7 @@ Improve finds things that work today and could be better. If something is wrong 
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
-| `ui` | [aspects/ui.md](aspects/ui.md) | `ui-design` critique mode | UI surface exists |
+| `gui` | [aspects/ui.md](aspects/ui.md) | `ui-design` critique mode | UI surface exists |
 | `product` | [aspects/product.md](aspects/product.md) | `product-design` orient mode | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
 | `game` | [aspects/game.md](aspects/game.md) | `_domains/game/` cells | `.claude/domain` marker includes `game` |

@@ -19,7 +19,7 @@ this skill adds is a caller for `page` and `deck`.
 | Explaining how something works | `explain` — its Tier 2 builds `--kind explainer` |
 | Several different takes on one piece of UI | `prototype` — `--kind prototype` behind a picker |
 | Where things sit in a layout | `ui-design` — ASCII first, `--kind wireframe` when it escalates |
-| A chart or dashboard as the point of the page | Still here, but read `_domains/ui/design.md` too |
+| A chart or dashboard as the point of the page | Still here, but read `_domains/gui/design.md` too |
 | Exploring, investigating, or brainstorming | **Nothing.** Answer in chat. A file is not the deliverable unless one was asked for. |
 
 That last row is a rule, not a preference. A cheap `page` kind makes reaching for a file easier, which

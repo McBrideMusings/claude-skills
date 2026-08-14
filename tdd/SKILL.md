@@ -47,7 +47,7 @@ You can't test everything. Confirm with the user exactly which behaviors matter 
 
 **Seam gate.** A **seam** is the public boundary a test observes behavior at, without reaching inside. Write down the seams under test and confirm them with the user before writing any test — no test is written at an unconfirmed seam. This is the mechanism that makes "confirm which behaviors to test" above a hard gate rather than a checklist formality.
 
-**Platform axis.** Detect the platform via [`../_platforms/_detect.md`](../_platforms/_detect.md). If `../_platforms/<platform>/testing.md` exists, read it for the framework, harness location, and idioms for this stack before writing the tracer bullet — it names which seam to prefer (e.g. a view-model over a slow UI test) and which tooling to invoke. No axis → use the project's existing test setup.
+**Domain labels.** Resolve the labels in scope via [`../_domains/_detect.md`](../_domains/_detect.md). For each matched label with a `testing.md` cell, read it for the framework, harness location, and idioms before writing the tracer bullet — it names which seam to prefer (e.g. a view-model over a slow UI test) and which tooling to invoke. No matching label → use the project's existing test setup.
 
 ### Phase 02 — Tracer Bullet
 
@@ -92,7 +92,7 @@ The build loop's criteria, applied retrospectively. Use when asked to audit or i
 
 1. **Inventory** — locate the test files and the runner entry point (an `./admin` task or a package script). No entry point + no tests is itself the lead finding.
 2. **Run the suite** through that existing entry point only — **never install or configure tooling** to make it runnable. Record pass/fail, count, wall time. Red, flaky, or absent outranks every static finding.
-3. **Static pass** with the same criteria the loop uses: behavior vs implementation ([EXAMPLES.md](EXAMPLES.md) red flags — would the test survive an internal refactor?), public-interface-only, mocking at system boundaries only ([MOCKING.md](MOCKING.md) — internal collaborators mocked = finding), and **seam coverage**: which public seams have no tests at all. Read the platform axis's `testing.md` (as in Phase 01) for the stack's idioms before judging harness choices.
+3. **Static pass** with the same criteria the loop uses: behavior vs implementation ([EXAMPLES.md](EXAMPLES.md) red flags — would the test survive an internal refactor?), public-interface-only, mocking at system boundaries only ([MOCKING.md](MOCKING.md) — internal collaborators mocked = finding), and **seam coverage**: which public seams have no tests at all. Read the matched label's `testing.md` (as in Phase 01) for the stack's idioms before judging harness choices.
 4. **Findings**, each grounded in a named test file or a named uncovered seam — no generic "add more tests".
 
 ### Findings-only invocation

@@ -1,7 +1,7 @@
 # Web UI library picks
 
 A **reference cell, web/React only** — nothing here applies to SwiftUI, Roblox, terminal UI, or any
-other surface. Read by `ui-design` and `implement` when the domain is `ui` and the stack is web, to
+other surface. Read by `ui-design` and `implement` when the domain is `gui` and the stack is web, to
 answer "what should I use for X" without hand-rolling a component a good library already owns.
 
 Harvested from emilkowalski/skills `pick-ui-library` (MIT, © 2026 Emil Kowalski) — a taste-driven,
