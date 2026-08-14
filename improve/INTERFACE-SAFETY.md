@@ -2,7 +2,7 @@
 
 Make the obvious call the correct call. Named for Rico Mariani's "pit of success" — the API should be shaped so that falling in the normal direction lands on correct behavior, and the wrong thing takes effort.
 
-Uses the vocabulary in [SKILL.md](SKILL.md) — **module**, **interface**, **seam**, **adapter**, **leverage**. Adapted from jnsahaj/skills `pit-of-success`.
+Uses the vocabulary in [ARCHITECTURE.md](ARCHITECTURE.md) — **module**, **interface**, **seam**, **adapter**, **leverage**. Adapted from jnsahaj/skills `pit-of-success`.
 
 ## The defect this finds
 

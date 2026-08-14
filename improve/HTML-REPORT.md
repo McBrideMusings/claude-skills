@@ -2,7 +2,7 @@
 
 Serves both report shapes: a single-aspect architecture review, and the **survey report** (one `<section>` per aspect, one card per finding, cross-aspect Top recommendation). The card fields and diagram patterns below are written for architecture cards; other aspects' cards keep Title / badge / Files / Problem / Solution and swap the before/after SVG for whatever carries the finding (a table, a config snippet, a layer-audit table) — same components, same tone.
 
-The report is one **hermetic** HTML file, built with the shared `explainer` kind — the same semantic-color tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes the `explain` skill uses. Read [../_artifacts/CONTRACT.md](../_artifacts/CONTRACT.md) for the vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [SKILL.md](SKILL.md)) without ceremony.
+The report is one **hermetic** HTML file, built with the shared `explainer` kind — the same semantic-color tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes the `explain` skill uses. Read [../_artifacts/CONTRACT.md](../_artifacts/CONTRACT.md) for the vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md)) without ceremony.
 
 ## Build it
 
@@ -24,9 +24,16 @@ Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The
 
 ```html
 <header class="hero"><!-- repo name, date, legend --></header>
+<section id="coverage"><!-- survey report only — what ran, what didn't --></section>
 <section id="candidates"><!-- one card per candidate --></section>
 <section id="top-recommendation"><!-- the one to tackle first --></section>
 ```
+
+## Coverage section — survey reports only, and mandatory
+
+One compact table, directly under the header, before any card. One row per aspect the survey was given, with exactly one of four results: **`n findings`**, **`no findings`**, **`not applicable — <reason>`**, or **`died`**. These are four different things and a report that collapses them hands out a clean bill of health nobody earned — an aspect that never ran is not an aspect that found nothing.
+
+Below the table, one line for anything tagged `review-territory` during the pass: *"3 defects surfaced during the survey — run `/review` to develop them."* They are never cards; improve does not report defects.
 
 ## Header
 
