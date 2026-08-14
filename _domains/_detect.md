@@ -21,7 +21,11 @@ Resolve in this order, stop at the first that answers:
 4. **No `_domains/<label>/` fits** the classified label → offer to author a stub:
    `_domains/<label>/{review,diagnose,profiling,testing}.md` (seeded), then set the marker to it. This
    is how new labels are born; don't silently fall back to generic-only without offering the stub.
-5. **No label / user declines → generic-only.** No overlay loaded. Graceful, never blocks.
+5. **No label / user declines → write an empty marker.** Nothing applies here — a plain-text config
+   repo, a docs-only repo. Write `.claude/domain` as an empty file (zero rules). This is a classified
+   state, not an unclassified one: an empty marker means "classified, no labels apply" and stops step 3
+   from ever re-running here, the same way a populated marker does. No overlay loaded either way.
+   Graceful, never blocks.
 
 ## Marker grammar
 
@@ -32,6 +36,12 @@ App/**:     apple, mobile, gui, game
 Server/**:  go, backend
 **:         cli
 ```
+
+An **empty file (zero rules)** is itself a valid classified state — it means this repo was
+classified and no label applies, not "not yet classified". Step 2 (Marker) still matches on an empty
+file: the marker exists, so `labels(scope_paths)` resolves to the empty set and generic-only runs,
+without falling through to step 3's classify-once. Distinguish this from a *missing* `.claude/domain`
+file, which is what sends resolution to step 3.
 
 Resolution:
 
