@@ -53,9 +53,14 @@ Substantive bar from Emil Kowalski (animations.dev) and Apple's *Designing Fluid
 
 **Physical correctness with a functional cost**
 - Entry from `scale(0)` or equivalent — the element materialises from nothing, and at small scales the
-  intermediate frames are unreadable. → start from ~`0.95` + fade.
+  intermediate frames are unreadable. Exact starting scale: platform cell.
 - Enter and exit taking different *paths* on a dismissable surface, so the element's return target is
   no longer predictable.
+- Overshoot/bounce on motion that carried no momentum (a menu that just faded in) — reserve overshoot
+  for gesture-driven motion (a flick, a drag release); anything else should be critically damped.
+- A drag or dismissable element that snaps to the nearest target from the *release position* instead of
+  projecting its resting point forward from the release *velocity* — ignores the motion the user's
+  gesture already had.
 
 ## The remedial order (prefer earlier moves)
 
