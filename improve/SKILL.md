@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, interface-safety, tests, ui, product, performance, game, docs, layout, claude-md) or surveys all applicable aspects when none is named. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md) or surveys all applicable aspects when none is named. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Improve
@@ -38,7 +38,7 @@ Improve finds things that work today and could be better. If something is wrong 
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
-| `gui` | [aspects/ui.md](aspects/ui.md) | `ui-design` critique mode | UI surface exists |
+| `gui` | [aspects/gui.md](aspects/gui.md) | `ui-design` critique mode | UI surface exists |
 | `product` | [aspects/product.md](aspects/product.md) | `product-design` orient mode | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
 | `game` | [aspects/game.md](aspects/game.md) | `_domains/game/` cells | `.claude/domain` marker includes `game` |
@@ -52,7 +52,7 @@ Every delegated owner carries a **"Findings-only invocation"** section stating i
 ## Routing
 
 - **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; delegated aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no scoring, no report. IMPROVE-CORE.md is not involved.
-- **Several aspects named** (`improve ui tests`) → survey over exactly those, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
+- **Several aspects named** (`improve gui tests`) → survey over exactly those, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 - **Nothing named** (bare `improve`) → survey over every applicable aspect, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 
 ## Transport — where the aspects run

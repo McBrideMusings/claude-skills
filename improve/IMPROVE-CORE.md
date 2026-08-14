@@ -4,21 +4,42 @@ The phases a survey runs, the brief every aspect sub-agent gets, the scoring, an
 
 Two transports. The default runs Phases 04–06b in this session with Agent-tool sub-agents. The `workflow` token moves those same phases into a workflow script so only surviving findings enter this context — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which aspects run and what each brief contains are identical either way.*
 
-## Phase 01 — Detect applicability
+## Phase 01 — Detect applicability, and build the repo map
 
-Cheap and native, in this session. Each aspect brief in [`aspects/`](aspects/) states its own condition; check them here so a plainly inapplicable aspect never costs a sub-agent:
+Cheap and native, in this session. **One Bash call**, not seven — every condition below is a file test, and running them separately is seven round-trips for one answer:
 
-| Aspect | Condition | How to check |
-|---|---|---|
-| `architecture`, `interface-safety`, `security`, `product`, `layout` | always | — |
-| `tests` | always (an absent suite is the lead finding) | — |
-| `claude-md` | a committed `CLAUDE.md` at the repo root | `git ls-files CLAUDE.md` |
-| `ui` | a UI surface exists | components, stylesheets, a page, or a TUI |
-| `performance` | a launchable entry point | an `./admin` task or a package script |
-| `docs` | `docs/` **and** `docs/.vitepress/` | `test -d` both |
-| `game` | domain marker includes `game` | `.claude/domain` |
+```bash
+root=$(git rev-parse --show-toplevel) && cd "$root" && {
+  echo "root=$root"
+  echo "claude-md=$(git ls-files CLAUDE.md | head -1)"
+  echo "docs=$([ -d docs ] && [ -d docs/.vitepress ] && echo yes)"
+  echo "domain=$(cat .claude/domain 2>/dev/null | tr '\n' ' ')"
+  echo "admin=$([ -f admin.toml ] && echo yes)"
+  echo "scripts=$(jq -r '.scripts|keys|join(",")' package.json 2>/dev/null)"
+  echo "--- tree"; git ls-files | head -400
+  echo "--- langs"; git ls-files | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -12
+}
+```
+
+| Aspect | Condition |
+|---|---|
+| `architecture`, `interface-safety`, `security`, `product`, `layout` | always |
+| `tests` | always — an absent suite is the lead finding |
+| `claude-md` | `claude-md=` non-empty |
+| `gui` | a UI surface in the tree — components, stylesheets, a page, or a TUI |
+| `performance` | `admin=yes` or `scripts=` names a start/dev/run entry |
+| `docs` | `docs=yes` |
+| `game` | per [`../_domains/_detect.md`](../_domains/_detect.md) — an explicit label in the invocation wins, then the `domain=` marker, and only then classification. **Do not read `.claude/domain` directly**: `improve game` on an unmarked repo is an explicit argument and must run, and a marker-less repo gets classified once and persisted rather than silently skipped. |
 
 An aspect that passes here can still turn out inapplicable up close. Its brief tells it to return `not applicable — <reason>` rather than manufacture findings; that string reaches the report as a coverage line, never as a card.
+
+### The repo map — build it once, forward it to all of them
+
+The block above already collected it. Condense it to **under 400 words** — root path, the language histogram, the top-level directory list, the entry point, the test directory, where docs live, the domain labels — and forward it inside every Phase 03 brief.
+
+Without it, eleven sub-agents each spend their first five to fifteen tool calls rediscovering the same tree, in parallel, from scratch. This is the single largest latency cost in a survey and it is paid eleven times for one answer. Forwarding ~500 tokens per agent to remove it is the cheapest trade in this skill.
+
+It is a **map, not a conclusion.** It tells an aspect where to look; it never tells it what it will find, and no finding may cite the map as evidence.
 
 ## Phase 02 — Confirm, always
 
@@ -28,11 +49,13 @@ RULE 0 binds here: plain chat text, typed answer. *"Running: architecture, tests
 
 ## Phase 03 — Assemble the briefs
 
-One brief per confirmed aspect: the content of its [`aspects/`](aspects/) file, **plus every directive below forwarded verbatim**. The aspect files do not restate these; the dispatch forwards them so findings arrive at Phase 05 already in the target shape.
+One brief per confirmed aspect: the content of its [`aspects/`](aspects/) file, **the Phase 01 repo map**, and **every directive below forwarded verbatim**. The aspect files do not restate these; the dispatch forwards them so findings arrive at Phase 05 already in the target shape.
 
 **The finding shape.** Forward verbatim:
 
-> *Return each finding as: **title** (names the change, not the problem area) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **strength** (`Strong` / `Worth exploring` / `Speculative`). Cap your whole response at 400 words.*
+> *Return each finding as: **title** (names the change, not the problem area) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **strength** (`Strong` / `Worth exploring` / `Speculative`). **At most 5 findings, at most 120 words each.** If you have more than five, return the five best and say how many you dropped — the count reaches the report, the sixth finding does not.*
+
+The budget is **per finding with a count limit**, not one cap across the response. A single cap is what silently starves an aspect: five findings under a 400-word cap get 80 words each, which cannot hold evidence *and* leverage *and* the shape of the fix, so the agent drops the shape — and a fix with no shape caps at 50 in Phase 05 and never reaches the report. The cap would have discarded the findings after paying for them.
 
 **The shape rule.** Forward verbatim:
 
@@ -64,7 +87,15 @@ One message, all aspects in parallel. One **Sonnet** sub-agent per confirmed asp
 
 ## Phase 05 — Score every finding
 
-One **Haiku** scoring sub-agent per finding, in parallel. Brief: the content of [GROUNDING.md](GROUNDING.md) passed **verbatim**, plus the finding. It carries the scale and the criteria.
+One **Haiku** scoring sub-agent **per aspect**, in parallel — not per finding. Brief: the content of [GROUNDING.md](GROUNDING.md) passed **verbatim**, plus that aspect's findings (at most five, per the Phase 03 cap).
+
+**Why batched.** GROUNDING.md is ~1,500 tokens and it is the whole brief. Per-finding scoring re-sends it once per finding: eleven aspects at four findings each is 44 agents and ~66k tokens of duplicated criteria to answer 44 questions. Per-aspect it is 11 agents and ~17k. The work each agent does is unchanged — it still opens every cited path.
+
+**The anti-anchoring directive, forwarded verbatim, is what makes batching safe:**
+
+> *Score each finding independently against the criteria. Do not compare them to each other, do not rank them, and do not normalise the batch — four weak findings do not make the least weak one strong, and one strong finding does not lift the others. A finding's score must be identical to what it would be if it were the only one you were given.*
+
+Ranking happens in Phase 06b, over survivors from every aspect, and it is the only place comparison is allowed.
 
 The scorer opens the cited paths. That citation check is the whole gate — improve has no execution gate because an opportunity has no failing input to feed to the code. What it has instead is a claim about what is *there*, and that is checkable by reading.
 

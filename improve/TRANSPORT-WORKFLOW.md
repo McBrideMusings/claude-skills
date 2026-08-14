@@ -14,11 +14,19 @@ Selected by the `workflow` token in the arguments: `improve workflow`, `improve 
 | **04, 05, 06, 06b** | **the workflow** | the fan-out — this is the whole point |
 | 07 report, screenshot, hand-off | session | the remaining questions live here |
 
+## When the token is given but the transport doesn't pay
+
+**Fewer than three aspects survive Phase 02 → run in the session anyway**, and say so in one line: *"`workflow` given, but only `architecture` and `tests` are running — that's two agents, so I'm running them here; the transport pays from three up."*
+
+A workflow costs a script, a launch, a notification round-trip, and a return value you then have to unpack. Against two aspects it buys nothing — two Agent-tool calls in one message already run in parallel and their reports are small enough to sit in context. The transport exists for the eleven-aspect bare `improve`, and honouring the token on a two-aspect run is ceremony charged to the user for the privilege of having typed a word.
+
+This is a judgement about arithmetic, not a question — do not ask, just say which way it went.
+
 **RULE 0 is not weakened by this transport.** Nothing inside the workflow asks the user anything, because nothing inside it ever needed to — every question in a survey happens at Phase 02 or Phase 07. If an aspect turns out to need the user, that is a Phase 01 problem (its applicability was wrong) and it gets resolved in the session before launching.
 
 ## What it buys
 
-1. **The findings never enter this context until the report.** Today every aspect report — up to eleven at 400 words each — plus a scoring result per finding lands in the parent window before anything is filtered. Under this transport only survivors come back. This is the bigger win, and it is why a bare `improve` on a repo with every aspect applicable benefits most.
+1. **The findings never enter this context until the report.** Today every aspect report — up to eleven, each carrying up to five findings — plus a scoring result per aspect lands in the parent window before anything is filtered. Under this transport only survivors come back. This is the bigger win, and it is why a bare `improve` on a repo with every aspect applicable benefits most.
 2. **The barrier between Phase 04 and Phase 05 disappears.** Today every aspect must return before scoring starts, so `performance` — which launches and profiles the app, the slowest aspect by far — holds up the scoring of `claude-md`'s findings, which were ready in seconds. `pipeline()` scores an aspect's findings the moment *that* aspect returns.
 
 ## The script
@@ -33,9 +41,12 @@ export const meta = {
 const scored = await pipeline(
   args.aspects,
   a => agent(a.brief, { label: a.axis, phase: 'Aspects', model: 'sonnet', schema: FINDINGS }),
-  (r, a) => parallel((r?.findings ?? []).map(f => () =>
-    agent(SCORE(f, args.grounding), { label: `score:${a.axis}`, phase: 'Score', model: 'haiku', schema: SCORE_RESULT })
-      .then(s => ({ ...f, axis: a.axis, score: s?.score ?? 0 })))),
+  (r, a) => {
+    const found = r?.findings ?? []
+    if (!found.length) return []
+    return agent(SCORE_BATCH(found, args.grounding), { label: `score:${a.axis}`, phase: 'Score', model: 'haiku', schema: SCORES })
+      .then(s => found.map((f, i) => ({ ...f, axis: a.axis, score: s?.scores?.[i] ?? 0 })))
+  },
 )
 
 const all = scored.flat().filter(Boolean)
@@ -46,9 +57,10 @@ const top = await agent(RANK(survivors), { label: 'rank', phase: 'Rank', model: 
 return { survivors, top, coverage: COVERAGE(args.aspects, scored) }
 ```
 
-- **`args.aspects`** is assembled in the session — one entry per aspect that survived Phase 01 and the user's Phase 02 trim. Each entry's `brief` is its `aspects/` file content **plus every forwarded directive Phase 03 requires**: the finding shape, the shape rule, the grounding rule, the boundary rule, the read-only rule, the injection-defense directive, and the 400-word cap. Pass it as real JSON, never a JSON-encoded string.
+- **`args.aspects`** is assembled in the session — one entry per aspect that survived Phase 01 and the user's Phase 02 trim. Each entry's `brief` is its `aspects/` file content **plus the Phase 01 repo map and every forwarded directive Phase 03 requires**: the finding shape, the shape rule, the grounding rule, the boundary rule, the read-only rule, the injection-defense directive, and the ≤5-findings / ≤120-words-each budget. Pass it as real JSON, never a JSON-encoded string.
 - **The injection-defense directive is not optional here either.** Workflow agents inherit no more of this skill's context than Agent-tool sub-agents do.
-- **`args.grounding`** is [GROUNDING.md](GROUNDING.md)'s content, verbatim, reaching every scorer. It is passed once and referenced by every `SCORE()` call rather than re-read per agent.
+- **`args.grounding`** is [GROUNDING.md](GROUNDING.md)'s content, verbatim, reaching every scorer. It is passed once and referenced by every `SCORE_BATCH()` call rather than re-read per agent.
+- **Scoring is one agent per aspect, not per finding**, and `SCORE_BATCH` carries the anti-anchoring directive from IMPROVE-CORE.md Phase 05 verbatim. The `if (!found.length) return []` guard matters: an aspect that returned `not applicable` must not spawn a scorer to score nothing, and `COVERAGE` reads that empty array as "ran, no findings" — distinct from the `null` a dead agent leaves.
 - **Models are pinned per stage** exactly as IMPROVE-CORE.md pins them — Sonnet for aspects, Haiku for scoring, Sonnet for the rank. `agent()`'s enum includes `fable`; it is never used.
 - **The `≥ 75` filter is Phase 06** and stays in the script so sub-75 findings never travel. Phase 06's inline-scorer clause does not apply — the fan-out ran by definition.
 - **`MERGE_DUPLICATES` is plain code, not an agent.** Two findings merge when they name the same file *and* the same change; the merged card carries both axis tags and the union of the evidence. Doing this in JS after the barrier is why the rank stage sits outside `pipeline()`: ranking before the merge would rank the same finding twice.
