@@ -44,6 +44,8 @@ Adapted from MengTo/Skills `swiftui-pro` (Paul Hudson, MIT).
 - Overshoot/bounce on motion with no momentum, or a drag/dismiss that snaps to the nearest target from
   release position instead of release velocity (principle: `_domains/gui/review.md`) → `bounce: 0` by
   default, and project the resting point from release velocity via `.spring(duration:bounce:)`.
+- Entry from `.scaleEffect(0)` or a transition that scales from zero → start from ~`0.95` with opacity:
+  `.transition(.scale(scale: 0.95).combined(with: .opacity))`.
 - Feedback deferred to gesture end / touch-up instead of firing on touch-down and continuously through
   the gesture.
 - `withAnimation` wrapping work that isn't the state change (side effects, expensive recompute).
