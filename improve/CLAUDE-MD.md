@@ -4,7 +4,7 @@ Whether a `CLAUDE.md` is actually going to be read and obeyed. Distinct from `la
 
 Two modes:
 
-- **Rebuild** — the default for an interactive run. Archive the file, empty it, and put every rule back only if it earns its place. Below.
+- **Rebuild** — the default for an interactive run. Empty the file and put every rule back only if it earns its place, with git history as the safety net. Below.
 - **Audit** — findings-only, for `improve`'s survey fan-out. No writes, no questions. [Jump to it](#audit-mode).
 
 ## Why rebuild instead of edit
@@ -13,16 +13,29 @@ Boris Cherny, on stage at Y Combinator, on cutting 80% of Claude Code's own syst
 
 Editing preserves the sunk cost. Rebuilding forces every rule to re-argue for itself. Three things a bloated file costs at once: **tokens** (paid every session, relevant or not), **accuracy** (contradicting rules resolve arbitrarily and you never see which won), **attention** (the file goes in first, so every line pushes the real request further from the edge the model reads carefully — *Lost in the Middle*).
 
-The archive is what makes the deletion safe. Never run this without it.
+Git history is what makes the deletion safe. Never run this on a file git can't recover.
 
-## Phase 1 — Archive, and commit before touching anything
+## Two files, two jobs
 
-```
-cp <root>/CLAUDE.md <root>/docs/archive/CLAUDE-<YYYY-MM-DD>.md
-git add + commit + push
-```
+Which one you're rebuilding changes what belongs in it. Establish this before Phase 1.
 
-Absolute paths only. Commit lands **before** any edit — the rebuild is worthless if a crash loses the original.
+| | **Global** (`~/.claude/CLAUDE.md`) | **Project** (`<repo>/CLAUDE.md`) |
+| --- | --- | --- |
+| Holds | Voice, judgment, permission gates, git policy, how to dispatch work, environment, a knowledge map | What the project is in two lines, the commands table, where things live, project-specific conventions, domain vocabulary, gotchas that have actually bitten |
+| Never holds | Anything about one project | **Anything the global file already says** |
+| Size threshold | ~3,000 words | ~1,200 words |
+| Audience | Just the user | On a collaborative repo, teammates and their agents too — so no personal preferences |
+| Structure owner | This file | `bootstrap` — defer to its layout rather than inventing a competing one |
+
+**The hard rule for a project rebuild: read the global `CLAUDE.md` first, then delete everything the project file restates.** A project file repeating "commit straight to main" or "write short sentences" is pure duplication, and duplication *across* two files is worse than within one — you can't see both at once to notice they've drifted apart.
+
+## Phase 1 — Commit the current file, don't copy it
+
+A tracked `CLAUDE.md` is already archived: every version is in `git log`, with a commit message explaining why each rule arrived. Copying it to `docs/archive/` stores a second copy of something git holds better. Don't.
+
+So Phase 1 is only: **make sure the working tree is clean and the current file is committed** before editing. That's the whole safety requirement.
+
+`CLAUDE.md` is always supposed to be tracked. If it isn't, that's the bug — `git add` it and commit before starting, and say you did. Don't design around an untracked file and don't make a backup copy instead.
 
 ## Phase 2 — Measure
 
@@ -56,16 +69,24 @@ Before judging a single rule, count what fires with an **empty** CLAUDE.md. Any 
 
 Attach your own prediction so they can disagree instead of starting cold. Their answer becomes the priority order, and whatever they can't name from memory is a deletion candidate: they wrote it, they live with it, and if it isn't in their head it probably wasn't paying rent.
 
-## Phase 5 — Cross-check the archives
+## Phase 5 — Read the file's own history
 
-Read **every** file in `docs/archive/CLAUDE-*.md`, not just the newest. Carry-over across versions is the strongest evidence available, and it costs nothing to compute.
+```
+git log --follow --format='%h|%ad|%s' --date=short -- CLAUDE.md
+git log --follow -p -- CLAUDE.md          # when you need the actual wording back
+git show <sha>:CLAUDE.md                  # any past version, whole
+```
 
-- **Present in every version** → load-bearing. Keep without re-litigating.
-- **Deleted in one rebuild, re-added later** → the deletion was wrong. Mark it permanent and say so out loud; do not put it up for a vote again.
-- **Appeared once, gone since** → safe to leave out.
-- **In the newest archive but nowhere else** → it's new and untested. Fair game.
+The log beats a folder of snapshots because each commit message carries **why** the rule arrived. A line like `Ask a decision once, then only name it as open rather than restating it` tells you what the author was trying to fix — a snapshot only tells you the text existed.
 
-With one archive this yields little. Say that plainly rather than dressing up a single-file diff as a trend.
+Carry-over across versions is the strongest evidence available and costs one command:
+
+- **Survived every rewrite** → load-bearing. Keep without re-litigating.
+- **Removed once, added back later** → the removal was wrong. Mark it permanent, say so out loud, and don't put it up for a vote again.
+- **Added once, gone since, never returned** → safe to leave out.
+- **Only in the most recent commits** → new and untested. Fair game.
+
+A file with three commits yields little. Say that plainly rather than dressing up a two-version diff as a trend.
 
 ## Phase 6 — Triage, section by section, as tables
 
@@ -129,7 +150,7 @@ Emptying the file exposes gaps the old one never covered. Ask directly, near the
 - What did you assume I knew?
 - Anything you've told me three times in a session? *(Worth a standing rule: if I ask for the same thing three times, say so and propose a hook.)*
 
-In this repo that phase produced five rules that had never existed: the project-local `verify` skill requirement, model tiering by task complexity, orchestration-by-default in a multi-pane environment, proactive doc upkeep, and archive-awareness itself.
+In this repo that phase produced five rules that had never existed: the project-local `verify` skill requirement, model tiering by task complexity, orchestration-by-default in a multi-pane environment, proactive doc upkeep, and history-awareness itself.
 
 ## Phase 9 — Order for attention, then write
 
@@ -145,7 +166,7 @@ Conditions must be **narrow**. `you are writing or modifying any code` matches e
 
 End the file with a **knowledge map**: a table of where domain knowledge lives and when to read it. This is what lets the file stay short without losing anything — one line replaces a section.
 
-Carry the archive-awareness section forward into every rebuild, or the next rebuild deletes the mechanism that makes rebuilds safe.
+Carry the history-awareness section forward into every rebuild, or the next rebuild deletes the mechanism that makes rebuilds safe.
 
 ## Phase 10 — Report honestly
 
