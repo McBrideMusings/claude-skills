@@ -13,7 +13,11 @@ One pass on one tracked item: resolve what to work on → implement → wrap-up.
 
 **A pass runs staged, not as one long context.** The phases below are the source of truth for *what* each stage does; `~/.claude/workflows/implement.js` is the harness that runs them, one `agent()` per phase, each starting fresh and handing the next a small validated object.
 
-Invoke it with `Workflow({ name: 'implement', args: { … } })`. Arguments: `issue` or `item` (or `resolved` when the caller already fetched and gated the item), `worktree`/`repo`, `branch`, `mode` (`standalone` | `continuous`), `model`.
+Invoke it with `Workflow({ name: 'implement', args: { … } })`. Arguments: `issue` or `item` (or `resolved` when the caller already fetched and gated the item), `worktree`/`repo`, `branch`, `mode` (`standalone` | `continuous`), `model`, `land`.
+
+**`land` says who owns the outcome, and it is the argument that decides whether the pass closes its item.** `'self'` — this pass lands its own branch and closes its own item in the Track stage. `'caller'` — a swarm worker: commit and push, then stop, and leave the tracker alone for `/orchestrate` to record after it re-verifies and lands. Unset defaults to `'caller'` when a `worktree` was given, `'self'` otherwise.
+
+Pass it explicitly on a standalone pass that runs in a worktree. That case is the reason the argument exists: the role used to be inferred from `worktree` being set, so a normal `/implement` in an isolated checkout — which is most of them — silently adopted the worker rules and neither landed nor closed anything. Work shipped and the tracker still read open. `mode` cannot carry this, because `/orchestrate` and `/iterate` both pass `continuous` and only one of them may land.
 
 **Why this is not optional.** Measured across 24h of session logs: 40 implement passes that ran as a single agent averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend**. The cost was never the code — it was one context that grew all pass and was re-read on every turn. Staging removes the growth curve; running the phases inline puts it back.
 
@@ -198,7 +202,9 @@ Passing tests are not evidence the item works — they prove CI runs. Before wra
 
 Write it on **every** verdict, `SKIP` included. A missing file is not a pass — it is indistinguishable from a pass that never ran, which is exactly what a reader must never have to guess.
 
-**A verdict describes one tree, and touching the code voids it.** `commit` is what makes that checkable. If you change anything after `verify` returns — fixing a finding, a last tidy-up, a review nit — the verdict no longer describes what you are about to land: **re-run `verify` and rewrite the file.** Never hand forward a verdict whose `commit` is behind the branch head. Observed: a worker verified `PASS`, committed one more change, and shipped it unverified under the earlier verdict.
+**A verdict describes one tree, and touching the code voids it.** If you change anything after `verify` returns — fixing a finding, a last tidy-up, a review nit — the verdict no longer describes what you are about to land: **re-run `verify` and rewrite the file.** Observed: a worker verified `PASS`, committed one more change, and shipped it unverified under the earlier verdict.
+
+**What `commit` means here, because the obvious reading is wrong.** `verify` runs before wrap-up commits, so at verify time the branch head is still the *parent* of the commit this work becomes. `commit` therefore records that parent, and a verdict whose `commit` sits one behind the branch head is the normal, correct state — not staleness. Measured across three worktrees in one swarm, two verdict files recorded `c05e355` against branch heads `a85f9dc` and `8cd7231`; both were valid. The Track stage re-stamps the file with the real commit once it exists, preserving the original as `verified_parent`. So: never gate landing on `commit == branch head` before Track has run — that test fails on every honest verdict. Fill in `branch` too; two of those three files had it null, which strands the verdict with no route back to the work.
 
 **2. Gate on it.**
 
@@ -216,7 +222,7 @@ Write it on **every** verdict, `SKIP` included. A missing file is not a pass —
 Invoke the `wrap-up` skill via the Skill tool with these overrides:
 
 - **Pass mode — pass it explicitly.** Tell wrap-up whether this is a **standalone** or **continuous** pass, using the mode resolved above. wrap-up defaults to the interactive/standalone posture and will halt for human disposition unless it is *told* `continuous` — so a continuous pass MUST pass the `continuous` token through. Never leave the mode implicit.
-- **Tracking:** apply automatically — close fulfilled issues on the repo's tracker with summary comments, move resolved followup items to the Resolved section, close milestones that hit zero open issues. No confirmation prompts.
+- **Tracking:** wrap-up does NOT write to the tracker. The Track stage after it does, so there is exactly one writer and a skipped close is visible instead of silent. Closing is automatic and unprompted when all three hold: `land` resolves to `'self'`, verification returned `PASS`, and something was committed. Otherwise the item stays open and the pass reports `item_open_because`. `SKIP` is not `PASS` — an item nobody managed to verify is not one to close on a machine's say-so. Moving resolved followup items to the Resolved section and closing emptied milestones stay with wrap-up.
 - **Docs:** apply mechanical doc updates automatically (file-map.md, CLAUDE.md doc-table additions). For substantive doc updates that would normally prompt, do NOT prompt — append them as follow-up items with titles like *"Update PRD section X to reflect Y"*.
 - **Quality:** run code-simplifier and code-review. Auto-apply simplifications. Auto-fix any 75+ issues. If a 75+ issue can't be auto-fixed in 1–2 attempts, halt before committing.
 - **Commit + push + land:** commit with project conventions, push, and land per wrap-up's own ownership rules (merge on an owned repo; PR on a collaborative one). wrap-up owns the merge/PR choreography — implement does not duplicate it.

@@ -37,6 +37,7 @@ const results = await pipeline(
     branch:   item.branch,
     model:    item.model,
     mode:     'continuous',
+    land:     'caller',           // THIS skill lands and closes, never the worker
   }),
 )
 
@@ -48,7 +49,8 @@ return results.filter(Boolean)
 - **`pipeline()`, not `parallel()`.** There is no cross-item stage here, so a barrier would only make every item wait for the slowest.
 - **`resolved`** carries the item the scope gate already fetched and cleared, so the child skips its own Resolve and Gate stages instead of re-fetching an issue this skill has already read. Pass the whole record, not just the number.
 - **`model`** is **per item**, `"sonnet"` or `"haiku"`, resolved in step 3 by [SKILL.md](SKILL.md) → Picking the model per issue and carried in `args` — not one constant for the round. Do not omit it: with no `model` the child inherits the main-loop model, which is the orchestrator's own and frequently Opus. `opus` and `fable` are refused here like everywhere else.
-- **[BRIEF.md](BRIEF.md) still governs worker behaviour** — `implement.js` reads the implement and wrap-up SKILL.md files itself, and the worktree clause is generated from the `worktree` argument. Do not paste the brief in as a prompt; pass the arguments and let the child assemble it.
+- **`land: 'caller'`** is what keeps a worker a worker: commit and push its branch, then stop, and never touch the tracker. This skill lands and records the outcome afterwards, from the primary checkout, once it has re-verified against a base that may have moved. Omitting it happens to work — the child defaults to `'caller'` whenever a `worktree` is given — but write it anyway. The default is a safety net for old call sites, and a reader of this script should not have to know that to see that workers do not land.
+- **[BRIEF.md](BRIEF.md) still governs worker behaviour** — `implement.js` reads the implement and wrap-up SKILL.md files itself, and the worker clause is generated from the `land` argument. Do not paste the brief in as a prompt; pass the arguments and let the child assemble it.
 
 **The handle is the run's `runId`**, plus the batch you passed. Record both: the `runId` is what resumes a partially failed round, and the batch is what tells you which worktrees exist.
 

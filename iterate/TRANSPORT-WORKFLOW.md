@@ -26,7 +26,7 @@ export const meta = {
 const outcomes = []
 for (const item of args.queue) {
   if (outcomes.length >= args.cap) break
-  const r = await workflow('implement', { resolved: item.item, branch: item.branch, model: MODEL, mode: 'continuous' })
+  const r = await workflow('implement', { resolved: item.item, branch: item.branch, model: MODEL, mode: 'continuous', land: 'self' })
   outcomes.push(r)
   if (r && r.outcome === 'environment_stop') break
   log(`${outcomes.length}/${args.queue.length}: ${item.label} -> ${r ? r.outcome : 'died'}`)
@@ -35,6 +35,7 @@ return outcomes
 ```
 
 - **`args`** carries the frozen queue, the cap, the default branch name, and the ownership verdict — resolved by [SKILL.md](SKILL.md) before launch. Pass it as real JSON, never a JSON-encoded string.
+- **`land: 'self'`** — unlike an `/orchestrate` worker, an iterate pass lands its own branch and closes its own item. That is the child's default when no `worktree` is passed, but state it: the contrast with `/orchestrate`'s `land: 'caller'` is the whole reason the two loops differ, and `mode: 'continuous'` is identical in both.
 - **`schema`** forces each agent to return `{item, outcome, branch, landed, reason}` rather than prose. `outcome` is one of `landed` / `item_failure` / `environment_stop`, matching SKILL.md's own classification — do not invent a fourth.
 - **The `break` on `environment_stop` is the rule from SKILL.md**, not a new one: an item-level failure skips, an environment stop ends the run. The script is where that rule becomes mechanical instead of remembered.
 - **BACKLOG-WIDE runs work here too**, with no frozen queue to hand `args` — the loop becomes a `while` and each agent runs triage itself. Iterations are sequential and each lands before the next starts, so an agent's `gh issue list` does see what the previous one closed; picking is not blind. Two costs to accept before choosing it, though:
@@ -42,7 +43,7 @@ return outcomes
   ```js
   let n = 0
   while (n < args.cap) {
-    const r = await workflow('implement', { model: MODEL, mode: 'continuous' })  // no item: implement's Resolve stage picks one via triage
+    const r = await workflow('implement', { model: MODEL, mode: 'continuous', land: 'self' })  // no item: implement's Resolve stage picks one via triage
     n++
     if (!r || r.outcome !== 'landed') break        // backlog-wide: first halt wins (SKILL.md)
   }
