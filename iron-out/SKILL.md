@@ -118,6 +118,8 @@ One issue at a time, top of the queue. The user can stop at any point — progre
 - Plan test failed (missing facts, unknown files or scope) → ask targeted clarifying questions, one at a time in plain chat, never the `AskUserQuestion` tool. Read the codebase for anything the repo can answer; only ask for what it can't.
 - Objectivity test failed, or both (a design or product call the user owns) → invoke `grill-me` via the Skill tool. If a decision crystallises into an ADR, grill-me's existing offer covers it — take it.
 
+**Any question offering more than one path carries a recommendation and a stated reason, per CLAUDE.md's Deciding & designing rule** — a bare menu of options is a non-answer whether it's this interview or `grill-me`'s. A single-fact question ("which file holds X?") doesn't need one; a question with two or more live paths does.
+
 Cheap and conversational, so **many per session**. No per-session cap.
 
 **`fact` or `artifact` — dispatch a subagent.** These are session-sized and would eat the interview loop alive. Offer once, in plain chat:
