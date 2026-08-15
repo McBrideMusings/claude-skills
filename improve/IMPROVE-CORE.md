@@ -1,6 +1,8 @@
 # Improve — the survey engine
 
-The phases a survey runs, the brief every aspect sub-agent gets, the scoring, and the merge. [SKILL.md](SKILL.md) is the router and hands off here; a **single-aspect** run does not come through this file at all — it loads the aspect's owner interactively and stays in conversation.
+The phases a survey runs, the brief every aspect sub-agent gets, the scoring, the merge, and the ticketing that ends every route. [SKILL.md](SKILL.md) is the router and hands off here.
+
+A **single-aspect** run skips Phases 01–07 — it loads the aspect's owner interactively and stays in conversation — and then rejoins at **Phase 08**, which is not optional for any route. Its findings get scored inline against [GROUNDING.md](GROUNDING.md) first, per Phase 06's inline-scorer clause.
 
 Two transports. The default runs Phases 04–06b in this session with Agent-tool sub-agents. The `workflow` token moves those same phases into a workflow script so only surviving findings enter this context — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which aspects run and what each brief contains are identical either way.*
 
@@ -114,13 +116,38 @@ One pass over the survivors, in this session, producing the **Top recommendation
 
 The ranking input is leverage and dependency order — what a change unblocks, what has to happen before what. **RULE 1 binds absolutely here:** effort, size, file count, and any hours figure are not inputs. A merged multi-aspect finding usually ranks above a single-aspect one because more lenses independently landed on it, and that is a real signal rather than a tally.
 
-## Phase 07 — Report and hand off
+**This ranking is the ticket order.** Dependency order becomes the blocked-by chain in Phase 08, and the Top recommendation becomes the first unblocked ticket — so rank the whole list, not just the winner. Where finding B only makes sense after finding A lands, say so here; that pair is the one thing Phase 08 cannot recover on its own.
+
+## Phase 07 — Report
 
 1. **Write the HTML report** per [HTML-REPORT.md](HTML-REPORT.md) — one `<section>` per aspect, one card per surviving finding, the Top recommendation section, and the coverage line. Title it "Improvement survey — {repo name}".
 
    **⛔ Resolve `<root>` to an ABSOLUTE path** — run `git rev-parse --show-toplevel` in its own Bash call. Every `mkdir` / `Write` / `open` / printed path is the absolute `<root>/tmp/claude/improve/…`. If a path doesn't start with `/`, that's the bug. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
 2. **Screenshot it and look at it** before handing it over. A path is not verification.
 3. **Summarize inline** — per aspect: finding count and the top finding's title, so the user can react without opening the file. Name any aspect that returned not-applicable and any sub-agent that died. A missing aspect reads as a clean bill of health for that aspect.
-4. **Ask which to work**, RULE 0 style: plain chat, typed answer. The picked aspect then loads exactly as the single-aspect route in [SKILL.md](SKILL.md), with its survey findings already in context as the starting point — including the interactive grilling loop the survey brief told the sub-agent to skip.
+4. **Do not ask what to work on.** The report is a reading surface, not a menu; the next step is Phase 08 for every route. The only thing to ask here is whether any card is wrong, and the answer changes the ticket, not the plan.
 
 `tmp/claude/` is age-pruned with the rest of the account-wide tmp policy; don't keep the report unless asked.
+
+## Phase 08 — Ticket the survivors
+
+**This phase is the point of the skill.** A survey that ends with a report and no tickets has produced nothing durable — the context dies with the session and the findings die with it.
+
+1. **Resolve the backend once** via [`../_tracker/_detect.md`](../_tracker/_detect.md) — `beads`, `github`, or `local`. Hold the answer for the rest of the phase.
+2. **Turn each surviving finding into a ticket draft.** One finding, one ticket. The finding already carries the four fields a ticket needs, so this is a translation, not a rewrite:
+
+   | Finding field | Ticket field |
+   |---|---|
+   | title | ticket title — the change, imperative |
+   | proposed fix (the *shape*) | the body's plan section, verbatim shape — signature, call-stack diff, module layout |
+   | evidence (`file:line`) | the body's "where" section, paths intact |
+   | leverage | the body's "why", in real units |
+   | axis tag(s) | label(s) |
+
+   **Never compress the shape into a name on the way in.** "Make the intake module deep" is not a ticket; the three-function collapse with its three call sites is. A ticket whose body cannot be handed to `implement` without another survey has lost everything the pass paid for.
+3. **Classify each AFK or HITL**, per `to-tickets` — AFK where the shape is settled and a worker can land it unattended, HITL where a decision the survey marked `Assumed` or `Unknown` has to be made by a human first. A finding whose fix depends on an assumption is HITL, and the assumption goes in the body as the question to answer.
+4. **Carry the Phase 06b order in** as the dependency chain — `blocked-by` on beads, the stated prerequisite in the body on GitHub.
+5. **Hand off to `to-tickets`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. `to-tickets` writes the proposal to `<root>/tmp/claude/to-tickets.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine.
+6. **Report back**: the ticket ids and titles in Phase 06b order, then one line naming what to run next — `implement <first-id>` for one, `iterate` or `orchestrate` for the slate.
+
+Findings that scored below 75 are already gone (Phase 06) and do not get filed. `review-territory` lines are not filed either — they stay the single `/review` pointer from Phase 06 step 3.

@@ -86,6 +86,8 @@ Before: a tree of calls as nested boxes. After: the same tree collapsed into one
 
 One larger card: candidate name, one sentence on why, an anchor link to its card. That's it.
 
+**Every card is a ticket body in waiting.** Phase 08 files the surviving cards to the tracker, so a card whose Solution names an outcome instead of showing the change produces a ticket nobody can implement. Keep the shape — the signature, the call-stack diff, the before/after layout — inside the card rather than only in the diagram, since the diagram does not survive the trip to a plain-text issue body.
+
 ## Tone
 
 Plain English, concise — but the architectural nouns and verbs come straight from the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md), never their `_Avoid_` substitutes. Concision is not an excuse to drift.

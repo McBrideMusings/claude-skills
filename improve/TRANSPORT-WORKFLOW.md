@@ -12,7 +12,8 @@ Selected by the `workflow` token in the arguments: `improve workflow`, `improve 
 | **02 confirm** | **session, always** | it is a question, and a workflow can take no input |
 | 03 brief assembly | session | it is string building, and `args` has to be real JSON |
 | **04, 05, 06, 06b** | **the workflow** | the fan-out — this is the whole point |
-| 07 report, screenshot, hand-off | session | the remaining questions live here |
+| 07 report, screenshot | session | it writes files and opens them |
+| **08 ticketing** | **session, always** | it publishes to a tracker outside this machine, and its confirm is a question |
 
 ## When the token is given but the transport doesn't pay
 
@@ -22,7 +23,7 @@ A workflow costs a script, a launch, a notification round-trip, and a return val
 
 This is a judgement about arithmetic, not a question — do not ask, just say which way it went.
 
-**RULE 0 is not weakened by this transport.** Nothing inside the workflow asks the user anything, because nothing inside it ever needed to — every question in a survey happens at Phase 02 or Phase 07. If an aspect turns out to need the user, that is a Phase 01 problem (its applicability was wrong) and it gets resolved in the session before launching.
+**RULE 0 is not weakened by this transport.** Nothing inside the workflow asks the user anything, because nothing inside it ever needed to — every question in a survey happens at Phase 02 or Phase 08. If an aspect turns out to need the user, that is a Phase 01 problem (its applicability was wrong) and it gets resolved in the session before launching.
 
 ## What it buys
 
@@ -68,7 +69,7 @@ return { survivors, top, coverage: COVERAGE(args.aspects, scored) }
 
 ## Reading the result
 
-One `<task-notification>` when the run returns. The return value is `{ survivors, top, coverage }`, straight into context. Hand it to Phase 07 and continue in the session.
+One `<task-notification>` when the run returns. The return value is `{ survivors, top, coverage }`, straight into context. Hand it to Phases 07 and 08 and continue in the session.
 
 `null` entries mean an agent died — an aspect that never ran is not an aspect that found nothing, and `COVERAGE` is what keeps those apart. **Name any dead aspect in the report.** A silently missing aspect reads as a clean bill of health for it.
 

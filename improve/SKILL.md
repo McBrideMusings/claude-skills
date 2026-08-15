@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md) or surveys all applicable aspects when none is named. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md) or surveys all applicable aspects when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; improve never implements what it finds. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Improve
@@ -9,11 +9,13 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 
 This file is the **router**. The survey engine — phases, briefs, scoring, merge — lives in [IMPROVE-CORE.md](IMPROVE-CORE.md); load it only once routing has picked survey mode.
 
+**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `to-tickets`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
+
 ## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a survey
 
 **Every question this skill asks — without exception — is plain chat text answered by a typed keyword. The `AskUserQuestion` tool (the arrow-key option selector) is never called at any point in an improve pass.**
 
-It covers every decision point, not just the ones spelled out: the Phase 02 confirm, trimming the aspect list, which aspect to work at the end, and any ambiguity that needs the user to settle it. It binds the sub-files this skill hands off to and every sub-agent spawned during the pass.
+It covers every decision point, not just the ones spelled out: the Phase 02 confirm, trimming the aspect list, the Phase 08 publish confirm and any ticket trimming there, and any ambiguity that needs the user to settle it. It binds the sub-files this skill hands off to and every sub-agent spawned during the pass.
 
 **Do this instead.** Print the options as plain chat text — numbered or keyworded — and say what to type. *"Running: architecture, tests, ui, layout. Type `go`, name a subset, or `skip <aspect>`."*
 
@@ -28,6 +30,14 @@ This rule matters more here than in `review`, because every single thing improve
 ## RULE 2 — an opportunity is not a defect
 
 Improve finds things that work today and could be better. If something is wrong *now* — a wrong value, a crash, an unhandled path, an exploitable weakness — it is `review`'s, and it leaves this pass as a one-line `review-territory` pointer, never as a card. The boundary runs through the `security` aspect most sharply: posture gaps are improve's, exploitable-today weaknesses are `review`'s.
+
+## RULE 3 — improve writes tickets, never code
+
+**No route through this skill edits a source file, and no route implements a finding.** The deliverable of an improve pass is a set of tickets on the repo's issue backend, each one ready for `implement` / `iterate` / `orchestrate` to pick up later. That holds for a full survey, for a two-aspect survey, and for a single-aspect interactive run.
+
+If the user asks to build a finding during the pass, the answer is: file it, then run `implement <id>`. Filing first is what makes the work resumable by a different session on a different day, and what stops a survey from collapsing into one unplanned refactor while the other ten findings evaporate.
+
+The one thing that reaches the tracker is a finding that **survived scoring** (Phase 05/06). Findings improve dropped do not become tickets; `review-territory` lines do not become tickets — they become a pointer to `/review`.
 
 ## Aspect table
 
@@ -51,13 +61,15 @@ Every delegated owner carries a **"Findings-only invocation"** section stating i
 
 ## Routing
 
-- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; delegated aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no scoring, no report. IMPROVE-CORE.md is not involved.
+- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; delegated aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no HTML report. IMPROVE-CORE.md is not involved — **except its Phase 08**, which this route still runs: score the findings yourself against [GROUNDING.md](GROUNDING.md), then take the survivors to tickets. The grilling loop is what sharpens a finding into a ticket body worth handing to `implement`; it is not a licence to build the thing.
 - **Several aspects named** (`improve gui tests`) → survey over exactly those, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 - **Nothing named** (bare `improve`) → survey over every applicable aspect, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 
+All three end at **Phase 08 — Ticket the survivors** in [IMPROVE-CORE.md](IMPROVE-CORE.md).
+
 ## Transport — where the aspects run
 
-Orthogonal to the routing above, and only meaningful in survey mode. The `workflow` token moves **Phases 04–06b only** — the fan-out, the scoring, the filter and merge, the ranking — into a workflow script, so only surviving findings enter this context instead of every aspect report. Applicability, the confirm, the report, and every question stay in the session. `improve workflow`, `improve architecture tests workflow`.
+Orthogonal to the routing above, and only meaningful in survey mode. The `workflow` token moves **Phases 04–06b only** — the fan-out, the scoring, the filter and merge, the ranking — into a workflow script, so only surviving findings enter this context instead of every aspect report. Applicability, the confirm, the report, the ticketing, and every question stay in the session. `improve workflow`, `improve architecture tests workflow`.
 
 No token → the session transport: [IMPROVE-CORE.md](IMPROVE-CORE.md) exactly as written, Agent-tool sub-agents launched in parallel from this loop. That is the default.
 
