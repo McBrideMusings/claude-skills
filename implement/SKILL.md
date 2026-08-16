@@ -210,7 +210,11 @@ Write it on **every** verdict, `SKIP` included. A missing file is not a pass —
 
 A test is evidence only if it fails without the change. Adding one is not evidence that anything was fixed, and "I added tests" is the most common way a pass looks green while the bug is still there.
 
-Take the production change out of the tree without touching the tests (`git stash push -- <the non-test paths>`), run **only** the new or changed tests narrowed by name, read what it printed, restore the tree (`git stash pop`), and confirm `git status --short` matches what it showed before. Then add to the verdict file:
+Capture the production half as a patch and reverse it out — `git -C <root> diff -- <non-test paths> > <root>/tmp/claude/mutation.patch`, then `git -C <root> apply -R` it. Run **only** the new or changed tests, narrowed by name. Read what it printed. Restore with `git -C <root> apply <the patch>` and confirm `git status --short` matches what it showed before.
+
+**Not `git stash`.** `refs/stash` lives in the shared git directory, so in a swarm two workers in different worktrees share one stash stack and each can pop the other's entry. A patch file inside the worktree cannot collide. An untracked new production file is not in `diff` — `mv` it aside and back instead.
+
+Then add to the verdict file:
 
 ```json
 "mutation": {"method": "<what you removed and how>", "command": "<the exact test invocation>",
