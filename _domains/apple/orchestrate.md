@@ -32,6 +32,27 @@ fails the create with a message that reads like a permissions problem.
 
 The worker's brief carries its own UDID and this rule, or the worker reaches for a name.
 
+**Pass it as `constraints`, not by editing the worktree.** On the workflow transport that is a per-item
+`constraints` string on the `workflow('implement', …)` call; `implement.js` injects it into the Verify
+stage above its own instructions, prefixed with *"a surface you are told not to touch is shared with
+sibling workers, and driving it corrupts their runs as well as yours"* — which is exactly the failure
+this section describes. A worker told to `SKIP` rather than route around a constraint is the behaviour
+you want when a device is genuinely unreachable.
+
+Do **not** write the UDID into the worktree's `CLAUDE.local.md` instead. That file is symlinked back to
+the primary checkout by `worktree-link-locals.sh`, so appending to it edits the *shared* file every
+sibling worker reads — each worker would end up seeing every other worker's UDID, which is worse than
+telling it nothing. Copy it if you must write there at all; `constraints` is the supported path.
+
+```js
+constraints: [
+  `Your simulator is ${udid}. Pin every command to it by id — \`xcodebuild -destination 'id=${udid}'\`,`,
+  `\`xcrun simctl install|launch ${udid}\`, \`idb --udid ${udid}\`. Never a device name: the repo's own`,
+  `verify skill names a device by name, and a name resolves to whichever simulator answers to it.`,
+  `Do not boot, install onto, or drive any other simulator.`,
+].join(' ')
+```
+
 **The symptom of getting this wrong does not look like a collision.** A worker reports its own new
 button missing, or a timed observation comes out wrong, and both read as a bug in the change under
 test. Suspect the shared device before the diff whenever a worker reports its own change absent.

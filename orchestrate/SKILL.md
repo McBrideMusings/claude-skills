@@ -229,6 +229,18 @@ Per ready issue, in order:
 
 1. **Dispatch gate** — implement's gate again, on this issue's current body. It should pass; the scope gate already cleared it. If it fails now, do what a continuous `/implement` pass does with a gate failure — file the `needs human input: …` follow-up — then **skip the issue and keep going**. A single late failure does not stop a run already underway. Name every skipped issue in the report; a non-empty list means the scope gate missed something.
 2. **Worktree** — `git -C <repo> worktree add -b <branch> ~/.worktrees/<repo>/<slug> <default-branch>`. **This skill creates it, never the transport** — that is why landing, verdict paths, and teardown are identical on all three. Create it **now, not earlier**: a worktree is evidence an issue was ready, never a bet that it will be.
+
+   **Then link the local files in, by hand, in the same breath:**
+
+   ```bash
+   CLAUDE_PROJECT_DIR=<worktree> bash ~/.claude/hooks/worktree-link-locals.sh
+   ```
+
+   That hook normally fires on `SessionStart`/`CwdChanged` and brings in every gitignored local file a worktree needs — `admin.toml`, `.env*`, `CLAUDE.local.md`, `.mcp.json`, and **`.claude/skills/*`**. **It never fires for an orchestrated worker.** The trigger is a Claude session entering the worktree, and no session ever does: this skill creates the worktree from the primary checkout with a plain `git worktree add`, and workflow-transport workers inherit the orchestrator's `CLAUDE_PROJECT_DIR`, which is the primary checkout. So the hook has to be invoked directly, here.
+
+   **The expensive half is the skills, not the config.** A project's `verify-project` skill is routinely gitignored — it holds machine-specific paths — so it does not ride the branch, and a worker without it reaches Phase 1.5 with no idea how this project is verified. Observed 2026-08-15 on `stash-mobile`: four workers dispatched, `.claude/skills/verify/` present in the primary checkout and absent from all four worktrees, caught only because the orchestrator went looking after the round was already running. A missing `admin.toml` fails loudly on the first build; a missing verify skill just produces a weaker verdict.
+
+   Run it after every `worktree add`, including a recovery dispatch into an existing worktree.
 3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else), and read `../_domains/<label>/orchestrate.md` for the commands. Created here, alongside the worktree.
 4. **Model check** — resolve the kind, then pick this issue's tier with [Picking the model per issue](#picking-the-model-per-issue), then check the resolved id against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them. Record the tier next to the slug; the run report names it.
 5. **`dispatch(…)`** — the transport file. Returns the **handle** you will use for every later verb. The workflow transport dispatches the whole batch in one call rather than per issue; its file says how.
