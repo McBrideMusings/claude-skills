@@ -348,9 +348,10 @@ test -f <repo>/tmp/claude/verify/<item>.json   # the verdict is already out — 
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
 git -C <repo> worktree remove --force <worktree> \
-  && git -C <repo> branch -d <branch> \
-  && git -C <repo> push origin --delete <branch>
+  && git -C <repo> branch -d <branch>
 ```
+
+**No `push origin --delete`.** Workers do not push, so a worker branch exists only locally and there is nothing on the remote to delete — the command fails with `remote ref does not exist` and, chained with `&&`, makes a clean teardown read as a failed one. Run it only if you pushed the branch yourself for some reason, and then only after `git -C <repo> ls-remote --exit-code origin <branch>` confirms it is there.
 
 **The first line is not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy from step 5 is missing, do it now rather than removing the worktree — this is the check that stops a whole swarm's evidence disappearing one worker at a time, each teardown looking perfectly clean as it goes.
 
@@ -428,6 +429,8 @@ These are properties of the swarm, not of any one worker — [BRIEF.md](BRIEF.md
 
 - **Never ask.** No worker has a channel to a human. An unresolved decision is a filed follow-up and a halt, never a question and never a guess.
 - **One `/implement <n> continuous` per worker. Never `/iterate`.** `continuous` is what makes a worker file-and-halt instead of prompting. `/iterate` halts unless it is on the default branch, and git refuses a second checkout of it (`fatal: 'main' is already used by worktree at …`), so it cannot run in a worktree at all.
-- **Workers never land.** Same constraint: `wrap-up`'s landing does `git checkout main`, which fails in a worktree. They commit and push their own branch; the orchestrator lands.
+- **Workers never land, and never push.** A worker's Wrap stage is a four-step commit, not `wrap-up` with its landing and tracker steps subtracted — `implement.js` generates it from `land: 'caller'`. It ends at the commit: a linked worktree shares the primary checkout's object store, so the orchestrator already has every worker commit and lands from there.
+
+  **Do not reinstate "do not push to the default branch" as the rule.** That was the rule, in the brief and in `implement.js`, and 2026-08-16 two workers merged into `main` and pushed to `origin/main` anyway. `git checkout main` does fail in a worktree — the sentence claiming that makes landing impossible was wrong, and it stopped everyone looking. The workers ran `git -C <primary-checkout>`. A worker whose pass contains no push at all has nothing to route around.
 - **No repo-wide formatters.** One worker reformatting the workspace makes every sibling branch conflict on formatting alone. Format only what you touched.
 - **No edits to the repo's shared index files.** A file map, a component registry, a docs table of contents — anything every change appends a row to — collides across branches by construction. Workers report the row they would have written; the orchestrator writes it at landing (step 6).
