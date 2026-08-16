@@ -15,10 +15,11 @@ approaches should we use", where you want measurements rather than something to 
 
 ## The artifact
 
-`<repo-root>/tmp/claude/prototypes/<slug>/` — a directory, gitignored, run straight off the path with
-the project's existing runtime (`bun tmp/claude/prototypes/scheduler/run.ts`). No production file is
-touched and no script is registered anywhere real; the whole thing is deleted when the question is
-answered.
+`<repo-root>/tmp/claude/prototypes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
+the path with the project's existing runtime (`bun tmp/claude/prototypes/scheduler/v1/run.ts`). The
+slug names what's being prototyped and never changes; each new round is the next `vN` and earlier
+rounds stay put (see SKILL.md "Naming and versions"). No production file is touched and no script is
+registered anywhere real; the whole `<slug>/` tree is deleted when the question is answered.
 
 ## Process
 

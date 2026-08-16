@@ -42,13 +42,45 @@ file:
   playtest-by-hand instead of flip-and-compare.
 - No marker → shape file only. A feature or technical spike is the generic path and needs no cell.
 
+## Naming and versions — every shape, every round
+
+A prototype topic gets **one kebab-case slug naming what the prototype is for**, chosen on the first
+round and never changed: `wheelhouse-nav`, `settings-screen`, `queue-backend`. Everything for that
+topic lives in `<repo-root>/tmp/claude/prototypes/<slug>/`.
+
+Each round is a **version directory or file numbered `v1`, `v2`, `v3`** inside it:
+
+```
+tmp/claude/prototypes/wheelhouse-nav/v1.html      # UI: one file per round
+tmp/claude/prototypes/wheelhouse-nav/v2.html
+tmp/claude/prototypes/queue-backend/v1/run.ts     # logic & compare: one directory per round
+tmp/claude/prototypes/queue-backend/v2/run.ts
+```
+
+Rules:
+
+1. **The version number is the only thing that changes between rounds.** Never a word suffix — no
+   `-riff`, `-revised`, `-v2-final`, `-new`, `-alt`, and no new adjective in the title. "Wheelhouse Nav
+   Riff" is the bug this rule exists to stop.
+2. **Pick the version by scanning the directory**: highest existing `vN` + 1. Round one is `v1`, even
+   when nobody expects a second round.
+3. **Never overwrite or delete an older version.** Old rounds stay so directions can be compared and
+   walked back. Deletion happens once, at promotion, for the whole topic directory.
+4. **The artifact title is `<Topic> v<N>`** — `--title "Wheelhouse Nav v2"`. Same topic words every
+   round, only the number moves.
+5. **Say what changed.** When handing over `v2`, open with one line naming what it does differently
+   from `v1` and the path to both.
+
+Variant names *inside* a round stay descriptive — "Quiet", "Editorial", "Dense". Those name directions
+being compared at once; the version numbers the rounds.
+
 ## Rules for all three shapes
 
 1. **The artifact never lives in production files.** Everything is written under
-   `<repo-root>/tmp/claude/prototypes/` (gitignored) — a single `.html` file for UI, a directory for
-   the others. No new route, no edit to an existing page, no entry added to `package.json` or the task
-   runner. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to
-   accidentally ship and nothing to clean out of a real file.
+   `<repo-root>/tmp/claude/prototypes/<slug>/` (gitignored). No new route, no edit to an existing page,
+   no entry added to `package.json` or the task runner. Nothing in the repo imports it. This is what
+   makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real
+   file.
    Domain exception: a surface that can't be a file (a Roblox Place) uses the scratch surface named in
    its domain cell, under the same "throwaway, never production" rule.
 2. **One command, or one double-click.** UI opens directly in a browser — the `artifact` build step is
@@ -74,16 +106,23 @@ file:
 | --- | --- |
 | `<description>` | Full run of whichever shape the question implies |
 | `<description>` + a count ("give me five") | Same, capped at 5 variants (UI) or 3 implementations (compare) |
-| `riff <name>` | New round: keep the harness, generate a fresh set diverging *around* the named variant's direction |
+| `riff <name>` | Next version: keep the harness and the slug, generate a fresh set diverging *around* the named variant's direction, written to the next `vN` |
+
+`riff` is a verb for what to build, never a word that reaches a filename or title.
+
+Any follow-up on a prototype already on disk — "riff", "try it denser", "what about tabs" — is a new
+version of the same topic under the same slug, not a new prototype. Reuse the slug whenever the topic
+matches; a new slug means a genuinely different thing is being prototyped.
 
 Picking a winner needs no verb — say it in chat ("go with Dense") and the promote step runs.
 
 ## When done
 
 The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in
-`docs/adr/`, a tracked issue) along with the question it was answering — if the user is around, that's a
-quick conversation; if not, leave `NOTES.md` in the prototype directory with the verdict blank. Then
-delete the prototype.
+`docs/adr/`, a tracked issue) along with the question it was answering and which version won — if the
+user is around, that's a quick conversation; if not, leave `NOTES.md` in
+`<repo-root>/tmp/claude/prototypes/<slug>/` with the verdict blank. Then delete the whole topic
+directory, every version with it.
 
 ## Not this skill
 

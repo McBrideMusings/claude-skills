@@ -19,7 +19,8 @@ write it.
 
 ## The artifact — always one standalone HTML file
 
-`<repo-root>/tmp/claude/prototypes/<slug>.html` — self-contained, inline CSS and JS, opened directly
+`<repo-root>/tmp/claude/prototypes/<slug>/v<N>.html`, where `<slug>` names what the prototype is for
+and `<N>` is the round (see SKILL.md "Naming and versions") — self-contained, inline CSS and JS, opened directly
 in a browser. No dev server, no route, no framework, and **no edit to any production file**. This holds
 even when the project is React, Vue, or SwiftUI: hand-written HTML/CSS/JS is the fastest path to
 something you can look at, and the winning direction gets rewritten in the project's stack at
@@ -53,6 +54,11 @@ One thing per run. If the description spans several components ("the dashboard")
 single highest-leverage piece, say which and why, offer the rest as later runs. Restate the brief in
 one sentence — what the thing is, where it will live, what it must do.
 
+Then fix the slug and the version. `ls <repo-root>/tmp/claude/prototypes/`: an existing directory for
+this topic means this is the next version of it — reuse the slug, take the highest `vN` + 1, and read
+the previous version's fragment so this round diverges from it instead of repeating it. No directory
+means a new topic, slug named for the thing being designed, `v1`.
+
 ### Phase 02 — Recon
 
 Before designing anything, map the ground the variants stand on:
@@ -85,17 +91,19 @@ like it could ship in this product tomorrow.
 
 ### Phase 04 — Build
 
-Write the fragment to `<repo-root>/tmp/claude/artifacts/<slug>.body.html`: one
+Write the fragment to `<repo-root>/tmp/claude/artifacts/<slug>-v<N>.body.html`: one
 `<template data-variant="Name" data-axis="...">` per direction, plus the project's tokens in a
 `<style>`. Then:
 
 ```bash
 "$HOME/.claude/tools/artifact" build \
   --kind prototype --picker switch \
-  --title "<what's being judged>" \
-  --fragment <repo-root>/tmp/claude/artifacts/<slug>.body.html \
-  --out <repo-root>/tmp/claude/prototypes/<slug>.html
+  --title "Wheelhouse Nav v2" \
+  --fragment <repo-root>/tmp/claude/artifacts/<slug>-v<N>.body.html \
+  --out <repo-root>/tmp/claude/prototypes/<slug>/v<N>.html
 ```
+
+The title is the topic plus the version number and nothing else — no adjective describing the round.
 
 The picker's markup, styles, keyboard wiring, URL persistence, and placement all come from the tool.
 **Write none of it**, and never restyle it — it stays identical across every project so it reads as
@@ -134,7 +142,9 @@ Then present the set and **stop — the choice is the user's**:
 | 1 | Quiet | Minimal motion, borders over shadows | A daily-use tool | Least memorable |
 | 2 | Editorial | Large type, generous whitespace | The moment deserves weight | Eats vertical space |
 
-Close with the full path to the file and the keys to flip (`1–N`, `←`/`→`, `R` to replay).
+Close with the full path to the file and the keys to flip (`1–N`, `←`/`→`, `R` to replay). On `v2` and
+later, also give the previous version's path and one line on what this round changed — the older
+versions stay on disk precisely so the user can open both.
 
 Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
 in the table. If the user asks which you'd choose, answer with a reason rooted in the product's
@@ -143,13 +153,15 @@ judgement is licensed and how it must be anchored). If two variants converged wh
 one and say so: two truly distinct directions beat three padded ones.
 
 The most useful feedback is usually **"the header from Editorial with the density of Dense"** — that's
-the actual design. Treat it as a `riff` and run Phase 03 again around it.
+the actual design. Treat it as a `riff`: run Phase 03 again around it and build the next `vN` under the
+same slug. `v1` stays where it is.
 
 ### Phase 06 — Promote and delete
 
 When a direction wins: capture the answer and why (commit message, ADR, issue), implement it properly
 in the project's stack and conventions — a rewrite, never a copy of prototype markup — then delete
-`<repo-root>/tmp/claude/prototypes/<slug>.html`. Keep the file only if the user asks.
+`<repo-root>/tmp/claude/prototypes/<slug>/`, every version in it. Record which version and variant won.
+Keep the files only if the user asks.
 
 ## Anti-patterns
 
@@ -161,5 +173,8 @@ in the project's stack and conventions — a rewrite, never a copy of prototype 
 - **Lorem ipsum, placeholder avatars, `$0.00`.** Fake content flatters every variant equally and
   therefore distinguishes none of them.
 - **Judging variants side by side at small scale.** One at a time, full size.
+- **A word-suffixed round** — `nav-riff.html`, `nav-v2-final.html`, a title reading "Wheelhouse Nav
+  Riff". Rounds are numbered; the topic words never move.
+- **Overwriting `v1` with the next round.** Old versions are the comparison.
 - **Moving prototype markup into the codebase.** It was written with no tests, no error handling, and
   no accessibility pass beyond what the picker spec carries.
