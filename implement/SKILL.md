@@ -206,9 +206,26 @@ Write it on **every** verdict, `SKIP` included. A missing file is not a pass —
 
 **What `commit` means here, because the obvious reading is wrong.** `verify` runs before wrap-up commits, so at verify time the branch head is still the *parent* of the commit this work becomes. `commit` therefore records that parent, and a verdict whose `commit` sits one behind the branch head is the normal, correct state — not staleness. Measured across three worktrees in one swarm, two verdict files recorded `c05e355` against branch heads `a85f9dc` and `8cd7231`; both were valid. The Track stage re-stamps the file with the real commit once it exists, preserving the original as `verified_parent`. So: never gate landing on `commit == branch head` before Track has run — that test fails on every honest verdict. Fill in `branch` too; two of those three files had it null, which strands the verdict with no route back to the work.
 
+**1b. If the pass added or changed a test, prove the test discriminates — and put the proof in the verdict file.**
+
+A test is evidence only if it fails without the change. Adding one is not evidence that anything was fixed, and "I added tests" is the most common way a pass looks green while the bug is still there.
+
+Take the production change out of the tree without touching the tests (`git stash push -- <the non-test paths>`), run **only** the new or changed tests narrowed by name, read what it printed, restore the tree (`git stash pop`), and confirm `git status --short` matches what it showed before. Then add to the verdict file:
+
+```json
+"mutation": {"method": "<what you removed and how>", "command": "<the exact test invocation>",
+             "output": "<the real failure text>", "discriminates": true,
+             "tests": ["<test names>"]}
+```
+
+**Report `discriminates: false` honestly when they pass anyway** — that is the answer this check exists to surface, and a false `true` is the one unrecoverable one. For genuinely new behaviour with nothing to revert, `discriminates: false` with `"no prior implementation to revert"` as the `method`.
+
+Observed 2026-08-16: a swarm worker landed three tests that each rebuilt the production logic inside the test body and asserted on their own copy — one carried the comment `// Replicate the padding logic from the fix`. Reverting the fix commit and re-running them printed `ok  powerhour/internal/tui/dashboard  0.283s`. They passed against the exact bug they were written to catch, and nothing in the pass had asked otherwise.
+
 **2. Gate on it.**
 
 - `PASS` or `SKIP` → continue into Phase 2.
+- A `PASS` on a diff that touched tests, with no `mutation` block or with `discriminates: false`, **does not close the item.** The work still commits — a weak test is no reason to strand a correct implementation in an uncommitted worktree — and the pass reports the missing proof in `item_open_because`. `~/.claude/workflows/implement.js` makes that call from the file list; it is not the verifying agent's to soften.
 - `FAIL` or `BLOCKED` → **halt before wrap-up.** Nothing commits, pushes, or lands. Surface the verdict with the evidence `verify` captured; in a **continuous** pass, file a follow-up and hand control back to `/iterate`.
 
 `verify` admits no partial pass and resolves doubt as `FAIL`. Do not soften a `FAIL` into a follow-up and proceed — a failed verification is a halt, not a note.

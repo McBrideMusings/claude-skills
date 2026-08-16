@@ -297,6 +297,8 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 | `blocked` (herdr: an approval prompt) | escalate to the human; never auto-approve |
 | `unknown` | report it, retire it; it does not prove completion |
 
+**A `PASS` whose diff added tests and whose verdict has no `mutation` block is not a pass.** `/implement` Phase 1.5 requires the worker to strip its production change, re-run only the new tests, and record the real failure text; a verdict missing that — or carrying `discriminates: false` — is a pass that proved nothing about the test it shipped. Land it if the behavioural evidence stands on its own, but say so in the report and file the test as a follow-up. Observed 2026-08-16: three landed tests each rebuilt the production logic inside the test body, and all three passed with the fix reverted.
+
 The verdict is a file, not the worker's own words: `<worktree>/tmp/claude/verify/<item>.json`. **`/implement`'s Phase 1.5 owns that file** — its schema, when it is written, and what each verdict means. Orchestrate is only its reader; do not re-specify it here.
 
 **Copy the verdict into the primary checkout the moment you read it, before anything else happens to that worktree:**
