@@ -362,11 +362,11 @@ A worker with **uncommitted work and no commits** can be neither retired (teardo
 
 Do not create a second worktree, and do not merge the default branch into the stranded branch — integration stays the orchestrator's job at landing.
 
-#### Teardown cannot silence an already-stopped worker
+#### A report from a worker you already retired is not new work
 
-`TaskStop` refuses an agent that has already stopped — on the subagent transport it answers `Task <id> is not running (status: completed)` — and that agent can still wake again afterwards, because a notification fires whenever it stops with no live background children. Observed: a worker woke and reported five more times across two hours after its branch was merged, its issue closed, and its worktree removed.
+A stopped worker can still surface a report afterwards — a late notification, a resumed turn, an agent that had a background child outlive it. Observed on the retired subagent transport: a worker reported five more times across two hours after its branch was merged, its issue closed and its worktree removed, describing work in a directory that no longer existed.
 
-Nothing the orchestrator does prevents this. The rule is to **recognise a wake from a retired worker and ignore it** rather than read it as new work: cross-check the handle against the issues you have already closed before acting on any report.
+Do not act on it. **Cross-check the handle against the issues you have already closed before treating any report as live**, and never let one re-open a slug you have landed.
 
 #### A worker that is done gets retired. Same wake, no exceptions.
 
