@@ -260,6 +260,15 @@ The transport file says how. Two rules hold for all three:
 
 - **Every non-working state wakes you, not just success.** `blocked`, `unknown`, errored, exited — *silence is not success*. A worker that gave up must not look identical to one still working.
 - **Add a long `/loop` heartbeat (1200–1800s)** as a backstop, whatever the transport's own signal is. It catches a dead Monitor, a notification that never fires, and a worker stuck in a state that never changes.
+- **Sweep every live worker's worktree on each wake and on each heartbeat — not just the one that woke.** The transport tells you an agent *stopped*; only the worktree tells you whether it *finished*. Three commands per worker:
+
+```bash
+git -C <worktree> log --oneline <default-branch>..<branch>   # commits: none means nothing landable
+git -C <worktree> status --short                             # dirty: work exists, uncommitted
+ls -l <worktree>/tmp/claude/verify/<item>.json               # verdict, and its mtime
+```
+
+  Read them together. **Commits + clean tree + verdict** is a worker that finished. **No commits + dirty tree** is a worker that did not — whatever the transport says, and whatever its closing message claims. A dirty tree whose mtimes are still advancing is mid-flight; the same tree unchanged across two sweeps is stranded, and stranded means [recovery](#recovering-a-stranded-worker), never teardown. The worker that just woke is the one you already know about; the sweep is for the others.
 
 ### 5. Classify each waking worker
 
@@ -268,8 +277,9 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 | State | Do |
 |---|---|
 | `working` | leave alone |
-| `done`/`idle`, verdict `PASS`/`SKIP` **and** `commit` == branch head | land it (step 6) |
-| `done`/`idle`, verdict `PASS`/`SKIP` but `commit` **behind** the head | **stale** — escalate; the tip commits shipped unverified |
+| `done`/`idle`, verdict `PASS`/`SKIP`, branch has ≥1 commit past the base, `commit` == branch head, tree clean | land it (step 6) |
+| verdict `PASS`/`SKIP` but the branch has **no commits past the base** | **not a pass — it is empty.** The verdict describes code in no commit. Keep the worktree, [recover it](#recovering-a-stranded-worker); never land, never tear down |
+| `done`/`idle`, verdict `PASS`/`SKIP` but `commit` **behind** the head, or the tree is dirty | **stale** — escalate; the tip commits or the uncommitted edits shipped unverified |
 | `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `haiku` | retire it, tear the worktree down, and re-dispatch the issue **once** on `model` (sonnet) through step 3; name the retry in the report |
 | `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `sonnet` | report it, retire it, leave the issue open. No escalation above sonnet exists — a second failure is work for `iron-out`, not a bigger model |
 | `blocked` (herdr: an approval prompt) | escalate to the human; never auto-approve |
@@ -295,6 +305,8 @@ Copy it at read time, not at teardown time. A worker can be retired for reasons 
 **And the reverse also holds: a notification is not a death.** On the subagent transport one fires whenever an agent stops with no live background children, so an agent that left a build running notifies, then resumes when the build ends. Judge by whether the worktree is changing — new commits, a verdict file, touched sources — not by the notification. Observed in one round: four workers were each declared dead on their first notification and three recovery dispatches were fired into worktrees whose original workers were still alive, briefly putting two agents in the same tree. The tell that they were not dead was `ListAgents` showing them `running` again after being reported `completed`.
 
 **Check the verdict's `commit` against the branch head** (`git -C <worktree> rev-parse HEAD`) before trusting a `PASS`. implement already forbids handing forward a verdict whose `commit` is behind the head; this is orchestrate checking that it held, because orchestrate is the one that ships the result. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
+
+**A verdict naming the base commit is the other tell, and it is not staleness — it is emptiness.** If the verdict's `commit` equals the commit the branch was cut from, the worker wrote its verdict before committing anything. Observed: a `PASS` verdict whose `commit` was the base `main` commit, on a branch with zero commits and five files of uncommitted work. Nothing about that reads as wrong until you look. `git -C <worktree> log --oneline <default-branch>..<branch>` returning empty is the check to run, because it is true even when the verdict omits `commit` entirely — and a comparison phrased only as "behind the head" lets this straight through.
 
 #### `read(handle)` on EVERY wake
 
@@ -339,6 +351,22 @@ Then `retire(handle)` — the transport's own teardown: a `herdr tab close` on o
 **Reconcile every wake.** A notification from a worker whose issue is already closed means one was left running; stop it. Any agent `ListAgents` shows as `running` with no open issue behind it is the same failure.
 
 **`--force` is load-bearing in a repo with submodules.** Plain `git worktree remove` refuses with `fatal: working trees containing submodules cannot be moved or removed`, which then cascades into `branch -d` failing because the worktree still holds the branch. `--force` removes it cleanly (checked on git 2.50.1 against a worktree with the submodule checked out), so it replaces the older `rm -rf` + `worktree prune` dance. Chain with `&&`, never `;`: a `;`-chained success echo prints after a failed step and misreports teardown as done.
+
+#### Recovering a stranded worker
+
+A worker with **uncommitted work and no commits** can be neither retired (teardown destroys the work) nor landed (there is nothing to merge). Dispatch a **recovery worker into the same worktree** — an ordinary step-3 dispatch with three additions:
+
+- Say plainly that this is a recovery, paste what the previous worker left (`git status --short`), and state that it never committed.
+- Say the existing verdict file is **not** evidence and must be overwritten, naming the commit it wrongly claims, so the recovery worker does not trust it.
+- Make the ordering its first instruction: judge the existing work against the acceptance criteria, finish what is missing, then **commit and push before anything optional**.
+
+Do not create a second worktree, and do not merge the default branch into the stranded branch — integration stays the orchestrator's job at landing.
+
+#### Teardown cannot silence an already-stopped worker
+
+`TaskStop` refuses an agent that has already stopped — on the subagent transport it answers `Task <id> is not running (status: completed)` — and that agent can still wake again afterwards, because a notification fires whenever it stops with no live background children. Observed: a worker woke and reported five more times across two hours after its branch was merged, its issue closed, and its worktree removed.
+
+Nothing the orchestrator does prevents this. The rule is to **recognise a wake from a retired worker and ignore it** rather than read it as new work: cross-check the handle against the issues you have already closed before acting on any report.
 
 #### A worker that is done gets retired. Same wake, no exceptions.
 
