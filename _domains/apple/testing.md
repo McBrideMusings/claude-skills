@@ -48,3 +48,22 @@ xcodebuild -showBuildSettings | grep BUILT_PRODUCTS_DIR
 **`xcodebuild test` outruns the Bash tool's 120-second default timeout** on any real project. Pass
 `timeout` explicitly — up to `600000` (10 minutes) — rather than backgrounding the build. If a run
 genuinely needs longer, split it (build, then test).
+
+**`xcodebuild` does not hand its own environment to the test process.** Exporting a variable in the
+shell that runs `xcodebuild test` reaches `xcodebuild` and stops there — the xctest host is launched
+fresh, so `ProcessInfo.processInfo.environment` inside a test never sees it. Nothing warns you; the
+code simply reads its default, which is exactly what a test asserting the default would report as
+success.
+
+Only the `TEST_RUNNER_` prefix crosses, with the prefix stripped:
+
+```bash
+TEST_RUNNER_MY_VAR=49300 xcodebuild -scheme App -destination 'platform=macOS' test
+# the test process sees MY_VAR=49300
+```
+
+Verified 2026-08-16 on `iptv-mac` (Xcode 17F113): a per-worker port base set plainly was ignored and
+two concurrent suites both bound the default port; re-exported under the prefix, they bound their
+own. This is the mechanism to reach for whenever an orchestrated worker needs to parameterise a
+**host-level** resource — a port, a socket path, a scratch directory — that a git worktree does not
+isolate.

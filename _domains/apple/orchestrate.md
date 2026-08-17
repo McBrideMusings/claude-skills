@@ -94,6 +94,25 @@ rm -f /tmp/orch-<slug>.sock
 defaults delete com.piercemakes.wheelhouse.macos.orch-<slug>
 ```
 
+**Worked example — `iptv-mac`.** One variable moves every debug listener, and `admin.toml`'s
+`test_cmd` re-exports it under the `TEST_RUNNER_` prefix, without which `xcodebuild` swallows it
+(see `testing.md`). Give each worker a base at least 200 apart — the suite's own offsets reach
+`+ 100`:
+
+```bash
+# step 3, per worker
+IPTV_PORT_BASE=49100        # DebugPorts.base; DemoServer and DebugControlChannel derive from it
+# step 7: nothing to remove — the temp directories are namespaced by the same base
+```
+
+**Finding the second shared thing is the part that takes the time.** On `iptv-mac` the ports were
+obvious and were not the whole story: the demo server's media directories lived under one shared
+prefix in the user's temporary directory, and each process swept the lot on startup. Two runs on
+perfectly isolated ports still deleted each other's directories, and the symptom was a 120-second
+timeout that read as a starved encoder. **After isolating the obvious resource, run two full suites
+at once and check they both pass before dispatching a round** — one measured run is worth more than
+any amount of reading, and it is how both of that repo's collisions were found.
+
 **The symptom of getting this wrong is the same one the simulator section warns about, and it is
 worse here because the theft is silent.** A Unix-socket server typically calls `unlink(path)` before
 binding, to clear a socket a crashed run left behind — so the second app does not fail to bind, it
