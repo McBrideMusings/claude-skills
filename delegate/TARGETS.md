@@ -40,6 +40,30 @@ Nobody implements step 3 by hand. `delegate exec` does it, and `delegate transpo
 the answer with its reason. Both surfaces take the same contract — prompt in a file, answer
 in `<outfile>` — so a skill never branches on which one ran.
 
+## Where the work happens — a second axis, not part of the ladder
+
+The ladder above answers *which surface*. It does not answer *which checkout*, and those are
+independent questions. Answer both before dispatching.
+
+**If the delegate will write code, it works in a git worktree.** Not the main checkout, no
+matter which rung of the ladder it landed on, and no matter how small the change is. A
+one-file edit dispatched onto `main` is the same hazard as a twenty-file one: the user is
+usually still working in that checkout, and an agent committing underneath them is a
+collision they did not agree to.
+
+Inside herdr that is `herdr worktree create --workspace <repo-workspace-id> --branch <name>`,
+then start the agent in the pane that comes back. Targeting `--workspace` is what keeps the
+worktree grouped under the repo in the sidebar instead of detaching to top level; never
+`herdr workspace create --cwd <worktree-path>`, and never a custom `--label`.
+
+**The worktree lands its own work.** Tell it in the dispatch prompt: verify, build, merge
+into `main`, remove the worktree. A worktree that finishes and then waits for the
+orchestrator to merge it is a queue the user has to drain by hand.
+
+**The exception is work that only reads.** A build, a test run, a log tail, a probe, a
+review that reports findings — those belong in a pane on the main checkout, because
+isolating them buys nothing and a fresh worktree costs a checkout.
+
 ## What blocks the herdr tab
 
 `herdr agent start --kind` takes a fixed enum (`pi, claude, codex, gemini, cursor, devin,
@@ -70,4 +94,4 @@ tabbing over to watch a delegate that was only ever an in-session agent.
 - The resolver, the vendors, and the auth gate → [SKILL.md](SKILL.md)
 - The herdr live-agent transport → `herdr-agent` in this directory
 - The Terminal.app transport → [../terminal/SKILL.md](../terminal/SKILL.md)
-- Swarms, which layer worktrees and a `workflow` target on top of this → [../orchestrate/SKILL.md](../orchestrate/SKILL.md)
+- Swarms, which layer a `workflow` target and many parallel worktrees on top of this → [../orchestrate/SKILL.md](../orchestrate/SKILL.md)
