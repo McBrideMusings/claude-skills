@@ -236,7 +236,19 @@ Per ready issue, in order:
    CLAUDE_PROJECT_DIR=<worktree> bash ~/.claude/hooks/worktree-link-locals.sh
    ```
 
-   That hook normally fires on `SessionStart`/`CwdChanged` and brings in every gitignored local file a worktree needs — `admin.toml`, `.env*`, `CLAUDE.local.md`, `.mcp.json`, and **`.claude/skills/*`**. **It never fires for an orchestrated worker.** The trigger is a Claude session entering the worktree, and no session ever does: this skill creates the worktree from the primary checkout with a plain `git worktree add`, and workflow-transport workers inherit the orchestrator's `CLAUDE_PROJECT_DIR`, which is the primary checkout. So the hook has to be invoked directly, here.
+   **Then mark it as a worker worktree, in the same breath:**
+
+   ```bash
+   touch "$(git -C <worktree> rev-parse --absolute-git-dir)/SWARM-WORKER"
+   ```
+
+   That marker is what `~/.claude/hooks/swarm-worker-push-guard.sh` reads to deny `git push`, `gh pr`/`gh issue` writes, and `bd` writes from inside this worktree. **It is the only thing that actually stops a worker landing its own work** — the prompts have said "you do not push, merge, open a PR" since 2026-08-16 and workers did all three anyway: two pushed to `origin/main`, and on 2026-08-17 a Green-stage agent ran `git push origin <branch>:main`, opened a PR, self-merged it, and closed the issue, all from a prompt whose first paragraph said "Execute ONLY the phase named below."
+
+   It lives in the git admin dir rather than the working tree so a worker staging its own files cannot commit it, `git status` never shows it, and `git worktree remove` deletes it — a marker cannot outlive its round. A worktree with no marker is untouched by the hook, which is what keeps `land: 'self'` passes (`/iterate`, a standalone `/implement`, `EnterWorktree`) working normally.
+
+   Run it after every `worktree add`, recovery dispatches included. Skipping it does not weaken the round's rules; it removes the only enforcement they have.
+
+   That link hook normally fires on `SessionStart`/`CwdChanged` and brings in every gitignored local file a worktree needs — `admin.toml`, `.env*`, `CLAUDE.local.md`, `.mcp.json`, and **`.claude/skills/*`**. **It never fires for an orchestrated worker.** The trigger is a Claude session entering the worktree, and no session ever does: this skill creates the worktree from the primary checkout with a plain `git worktree add`, and workflow-transport workers inherit the orchestrator's `CLAUDE_PROJECT_DIR`, which is the primary checkout. So the hook has to be invoked directly, here.
 
    **The expensive half is the skills, not the config.** A project's `verify-project` skill is routinely gitignored — it holds machine-specific paths — so it does not ride the branch, and a worker without it reaches Phase 1.5 with no idea how this project is verified. Observed 2026-08-15 on `stash-mobile`: four workers dispatched, `.claude/skills/verify/` present in the primary checkout and absent from all four worktrees, caught only because the orchestrator went looking after the round was already running. A missing `admin.toml` fails loudly on the first build; a missing verify skill just produces a weaker verdict.
 
@@ -431,7 +443,7 @@ These are properties of the swarm, not of any one worker — [BRIEF.md](BRIEF.md
 
 - **Never ask.** No worker has a channel to a human. An unresolved decision is a filed follow-up and a halt, never a question and never a guess.
 - **One `/implement <n> continuous` per worker. Never `/iterate`.** `continuous` is what makes a worker file-and-halt instead of prompting. `/iterate` halts unless it is on the default branch, and git refuses a second checkout of it (`fatal: 'main' is already used by worktree at …`), so it cannot run in a worktree at all.
-- **Workers never land, and never push.** A worker's Wrap stage is a four-step commit, not `wrap-up` with its landing and tracker steps subtracted — `implement.js` generates it from `land: 'caller'`. It ends at the commit: a linked worktree shares the primary checkout's object store, so the orchestrator already has every worker commit and lands from there.
+- **Workers never land, and never push — and step 3's `SWARM-WORKER` marker is what makes that true.** Every clause below is prose an agent has already been observed reading and ignoring; the marker turns them into a denied tool call. A worker's Wrap stage is a four-step commit, not `wrap-up` with its landing and tracker steps subtracted — `implement.js` generates it from `land: 'caller'`. It ends at the commit: a linked worktree shares the primary checkout's object store, so the orchestrator already has every worker commit and lands from there.
 
   **Do not reinstate "do not push to the default branch" as the rule.** That was the rule, in the brief and in `implement.js`, and 2026-08-16 two workers merged into `main` and pushed to `origin/main` anyway. `git checkout main` does fail in a worktree — the sentence claiming that makes landing impossible was wrong, and it stopped everyone looking. The workers ran `git -C <primary-checkout>`. A worker whose pass contains no push at all has nothing to route around.
 - **Workers never invoke `/code-review`.** `implement.js` has a Review stage that is handed the worktree path and reads its working-tree diff with `git -C`. Nested inside a worker, `/code-review` resolved its own cwd to *this* session's primary checkout and reviewed a clean `main` three times on 2026-08-16 — "no changes to review" reads as "no findings", so the gate passed on a diff nobody saw. The returned object carries `review: {findings, blocking}`; `unreviewed: true` on it means the same thing as a missing verdict file, and blocks the close.
