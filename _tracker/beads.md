@@ -12,13 +12,12 @@ dependent_count, comment_count`. `bd count --json` returns `{"count": N, "schema
 without `--json` it prints the bare number. `bd where --json` returns `{database_path, path,
 prefix}` — use its exit code as the beads-present test.
 
-## Permissions — per machine, not synced
+## Permissions
 
-`~/.claude/settings.json` is deliberately gitignored (see `~/.claude/CONTRIBUTING.md` — the repo is
-default-deny with an allowlist, and per-machine settings stay local). So these entries do **not**
-follow you to a new machine or into the `~/.claude-work` profile, and without them every `bd` call
-prompts, which kills any unattended `implement` / `iterate` / `orchestrate` run. Add them under
-`permissions` on each machine:
+`~/.claude/settings.json` is tracked, and `~/.claude-work/settings.json` is a symlink to it, so
+these entries follow you to a new machine and into the work profile once committed. Without them
+every `bd` call prompts, which kills any unattended `implement` / `iterate` / `orchestrate` run.
+Add them under `permissions` once:
 
 ```jsonc
 "allow": [ "Bash(bd *)" ],

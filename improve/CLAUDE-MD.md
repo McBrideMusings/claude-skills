@@ -140,7 +140,7 @@ For each hook:
 1. Write it to `hooks/<name>.sh`. Match the existing convention: read stdin, `jq -r '.tool_input.command'`, emit a `permissionDecision: "deny"` with a reason that teaches the fix.
 2. **Design against false positives, and say what legitimate work it could block.** A hook banning the word "Claude" in commit messages breaks a repo whose subject *is* Claude. Match the boilerplate, never the topic.
 3. Test a matrix of should-allow and should-block cases, including the user's real historical commands. Show the results.
-4. Register in `settings.json`. Flag it if `settings.json` is gitignored — the hook file syncs to other machines and the registration does not.
+4. Register in `settings.json`, and commit that alongside the hook file — in `~/.claude` both are tracked, so a hook committed without its registration is inert on every other machine.
 
 ## Phase 8 — Author what was never written down
 
