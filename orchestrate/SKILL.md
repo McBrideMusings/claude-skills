@@ -283,7 +283,21 @@ Slugs must be unique within a run — on a collision, append the issue number ra
 The transport file says how. Two rules hold for all three:
 
 - **Every non-working state wakes you, not just success.** `blocked`, `unknown`, errored, exited — *silence is not success*. A worker that gave up must not look identical to one still working.
-- **Add a long `/loop` heartbeat (1200–1800s)** as a backstop, whatever the transport's own signal is. It catches a dead Monitor, a notification that never fires, and a worker stuck in a state that never changes.
+- **Arm a long heartbeat (1200–1800s)** as a backstop, whatever the transport's own signal is. It catches a dead Monitor, a notification that never fires, and a worker stuck in a state that never changes.
+
+  **The mechanism, because naming only the outcome does not work.** `ScheduleWakeup` is the only tool that schedules a wake, and it exists **only inside a `/loop`** — a session started as a bare `/orchestrate` cannot call it. So arming the heartbeat is a step, not an assumption: **immediately after the first `dispatch(…)` returns, invoke the `loop` skill in dynamic mode** — `Skill(loop, "check the running orchestrate round: sweep every live worker's worktree, land anything finished, dispatch the next round when the frontier frees")` — with no interval, so you pace it yourself. From that point `ScheduleWakeup` is callable, and every turn ends with one:
+
+  ```
+  ScheduleWakeup({ delaySeconds: 1500, noop: <true if nothing changed>,
+                   prompt: "<the same /loop input verbatim>",
+                   reason: "backstop while round <n> runs" })
+  ```
+
+  Call `ScheduleWakeup({stop: true})` when the loop ends — the frontier is empty and no worker is live.
+
+  Observed 2026-08-17: an orchestrator read the old wording ("add a long `/loop` heartbeat"), found `ScheduleWakeup` unavailable outside a loop, dispatched a four-worker round with no backstop at all, and correctly reported that it had none — the instruction named a result with no route to it, so the only compliant move left was to announce the gap.
+
+  **If you genuinely cannot arm one** — the `loop` skill is unavailable, or the human declined it — say so in the dispatch message in one line, naming what the run is relying on instead (usually the transport's own notification). A missing backstop the human knows about is a risk; a missing backstop nobody mentioned is how a round dies silently.
 - **Sweep every live worker's worktree on each wake and on each heartbeat — not just the one that woke.** The transport tells you an agent *stopped*; only the worktree tells you whether it *finished*. Three commands per worker:
 
 ```bash

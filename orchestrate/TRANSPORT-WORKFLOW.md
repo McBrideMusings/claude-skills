@@ -60,7 +60,7 @@ The tool result also gives the path the script was persisted to, under the sessi
 
 Nothing to arm. One `<task-notification>` arrives when the whole round returns.
 
-Still add the long `/loop` heartbeat (1200–1800s). One notification for a whole round means one thing that can fail to arrive, and a round can run for a long time before anyone notices it did not.
+Still arm the long heartbeat (1200–1800s) — [SKILL.md](SKILL.md) step 4 has the mechanism, and it is a step you take rather than a property you assume: invoke the `loop` skill right after this transport's one `Workflow` call returns, then end every turn with `ScheduleWakeup`. One notification for a whole round means **one** thing that can fail to arrive, and a round can run for a long time before anyone notices it did not. This transport needs the backstop more than the others, not less: per-worker transports leak evidence that something is still alive, and this one is silent from dispatch to return.
 
 To watch mid-round, the human runs `/workflows` — per-agent progress, tokens, and a stop control. That is a human affordance, not a channel: **do not treat a running agent's progress line as a read.**
 
