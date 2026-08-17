@@ -222,10 +222,12 @@ Then run the offer(s) for this routing, per Phase 00 — never automatic. On my 
 2. [best-practice · T2 · low] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip`
 3. [slop · T2 · low] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`)
 
-Type a disposition per finding, e.g. `1 post, 2 fix, 3 skip`.
+Type a disposition per finding, e.g. `1 post, 2 fix, 3 skip` — or `go` to accept every listed `(recommended)` keyword at once.
 ```
 
 Lead each line with the recommended keyword's rationale in a clause, not a paragraph. Never render this as an option menu.
+
+**`go` is a keyword, not a selector — it does not reopen RULE 0.** RULE 0 bans a *menu* that hides the reasoning behind a click; `go` is typed chat text that means "apply the disposition already printed and reasoned about on every line above," same as `yes` confirms the one action in a single-action offer (an Approve with nothing found, arming auto-merge). It is available whenever **every** line in the list carries a `(recommended)` keyword — if any finding's line has no clear recommendation (two keywords with neither marked, or a genuine "your call" case), that finding is excluded from what `go` covers and must still be typed individually; say so in the same message as the list (`go covers 1–2; 3 has no clear recommendation — type its disposition separately`). `go` never applies to Queue mode's PR-selection step or any other multi-item choice that isn't a findings disposition — those already have their own plain-text answer format and don't carry per-line recommendations to default to.
 
 **Offer grill-me** — only on the self-review path, and only when the report carries uncertain findings (per REVIEW-CORE.md's hand-off rule). Offer a `grill-me` pass that interrogates those findings one question at a time to settle intent. This is an *addition* to the fix offer below, not a replacement — run it first when it applies, then continue to the fix offer.
 
