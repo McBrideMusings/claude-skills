@@ -128,6 +128,7 @@ and the replay button. **Write no picker code.**
 
 - `data-variant` is the picker label — a direction ("Quiet", "Dense"), never "Variant A".
 - `data-axis` is optional; `list` mode prints it under the heading.
+- **Never write `data-round` yourself.** `--round N` stamps it. See "Rounds" below.
 - Add `data-motion` to the fragment's first `<template>` if any variant has an entrance animation worth
   re-triggering — the tool then renders the replay button.
 - Add `data-picker-position="top"` on a template when a variant occupies the bottom-centre of the
@@ -138,6 +139,43 @@ and the replay button. **Write no picker code.**
   siblings, a button needs a form.
 - The variant swap is instant. Flipping is a 100+/session action; it gets no animation. (The picker's
   own highlight slides — that's specified in `harness/picker.css` and is not yours to change.)
+
+### Rounds — one canonical file per topic
+
+A prototype topic has **one output file for its whole life**: `prototypes/<slug>/<slug>.html`. Each
+round is a rebuild of that same path with `--round N`:
+
+```bash
+artifact build --kind prototype --picker switch --round 2 \
+  --title "Branches Pane" \
+  --fragment <root>/tmp/claude/artifacts/branches-pane-v2.body.html \
+  --out <root>/tmp/claude/prototypes/branches-pane/branches-pane.html
+```
+
+The tool reads the file it is about to overwrite, keeps every round that is **not** N, stamps this
+fragment's templates `data-round="N"`, and writes them all back. Rebuilding round N replaces round N
+and nothing else. Each round's non-template markup — its `<style>` of project tokens — is fenced as
+`<!--at:round N-->…<!--/at:round N-->` and carried forward too, newest last, so a later round's
+redefinition of a class wins by ordinary cascade while v1 keeps the rules it was built against.
+
+The two axes never share a letter:
+
+| | URL | Control | Keys |
+| --- | --- | --- | --- |
+| **Round** — a whole rebuild of the design | `?r=2` | dimmed `v2` chip, bottom-right corner; click to expand the list | `[` `]`, `Esc` to close |
+| **Variant** — a direction within one round | `?v=3` | the centre pill: named buttons, sliding highlight | `1`–`N`, `←`/`→` |
+
+The round control is **not** in the pill and is not supposed to be noticed. Changing round is a
+once-a-session act; changing variant is a hundred-times-a-session one, so the round chip sits alone in
+the corner at 40% opacity, collapsed to the current round's label, and only expands on click. It is
+omitted entirely while a topic has one round.
+
+Opening the file bare shows the newest round's first variant. Stepping rounds keeps the variant slot,
+so `]` compares the same position across versions. An out-of-range `r` or `v` falls back rather than
+blanking, and the URL is rewritten to what is actually on screen.
+
+`--round` applies to `--picker switch` only; `list` mode stacks one round and has nowhere to put a
+ticker.
 
 ## `wireframe` — greybox
 

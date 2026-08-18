@@ -48,28 +48,37 @@ A prototype topic gets **one kebab-case slug naming what the prototype is for**,
 round and never changed: `wheelhouse-nav`, `settings-screen`, `queue-backend`. Everything for that
 topic lives in `<repo-root>/tmp/claude/prototypes/<slug>/`.
 
-Each round is a **version directory or file numbered `v1`, `v2`, `v3`** inside it:
+**UI prototypes are one canonical file, named for the slug, that accumulates rounds.** Logic and
+compare prototypes are code, so they keep one directory per round:
 
 ```
-tmp/claude/prototypes/wheelhouse-nav/v1.html      # UI: one file per round
-tmp/claude/prototypes/wheelhouse-nav/v2.html
-tmp/claude/prototypes/queue-backend/v1/run.ts     # logic & compare: one directory per round
+tmp/claude/prototypes/wheelhouse-nav/wheelhouse-nav.html   # UI: ONE file, every round inside it
+tmp/claude/prototypes/queue-backend/v1/run.ts              # logic & compare: one dir per round
 tmp/claude/prototypes/queue-backend/v2/run.ts
 ```
 
+For UI, the round lives **inside** the file, not in its name: `artifact build --round 2` stamps this
+round's variants, carries the earlier rounds forward, and adds a dimmed round chip in the bottom-right
+corner that expands into the version list on click. The file is opened at `<slug>.html` forever — the
+same URL every round, so a bookmark never goes stale and nothing has to be `ls`-ed to find the newest.
+
+That leaves exactly two axes, and they never share a letter: **`?r=` is the round, `?v=` is the
+variant.** A file called `v1.html` read back as `?v=3` is the confusion this split exists to end — that
+URL meant round 1, variant 3, and read as "third iteration".
+
 Rules:
 
-1. **The version number is the only thing that changes between rounds.** Never a word suffix — no
-   `-riff`, `-revised`, `-v2-final`, `-new`, `-alt`, and no new adjective in the title. "Wheelhouse Nav
-   Riff" is the bug this rule exists to stop.
-2. **Pick the version by scanning the directory**: highest existing `vN` + 1. Round one is `v1`, even
-   when nobody expects a second round.
-3. **Never overwrite or delete an older version.** Old rounds stay so directions can be compared and
-   walked back. Deletion happens once, at promotion, for the whole topic directory.
-4. **The artifact title is `<Topic> v<N>`** — `--title "Wheelhouse Nav v2"`. Same topic words every
-   round, only the number moves.
-5. **Say what changed.** When handing over `v2`, open with one line naming what it does differently
-   from `v1` and the path to both.
+1. **The slug is the whole filename.** Never a word suffix — no `-riff`, `-revised`, `-v2-final`,
+   `-new`, `-alt` — and never a version in the name. "Wheelhouse Nav Riff" is the bug this stops.
+2. **Pick the round by reading the file**: `grep -o 'data-round="[0-9]*"' <slug>.html | sort -u`,
+   highest + 1. No file means round 1, even when nobody expects a second round.
+3. **Never rebuild an earlier round.** `--round N` replaces round N and only round N; passing a round
+   that already exists overwrites that round's variants. Old rounds stay so directions can be compared
+   and walked back. Deletion happens once, at promotion, for the whole topic directory.
+4. **The artifact title is the topic alone** — `--title "Wheelhouse Nav"`. No version, no adjective:
+   the round chip already says which round is on screen.
+5. **Say what changed.** When handing over round 2, open with one line naming what it does differently
+   from round 1, and the one path plus `?r=1` to jump back.
 
 Variant names *inside* a round stay descriptive — "Quiet", "Editorial", "Dense". Those name directions
 being compared at once; the version numbers the rounds.
@@ -106,7 +115,7 @@ being compared at once; the version numbers the rounds.
 | --- | --- |
 | `<description>` | Full run of whichever shape the question implies |
 | `<description>` + a count ("give me five") | Same, capped at 5 variants (UI) or 3 implementations (compare) |
-| `riff <name>` | Next version: keep the harness and the slug, generate a fresh set diverging *around* the named variant's direction, written to the next `vN` |
+| `riff <name>` | Next round: keep the harness and the slug, generate a fresh set diverging *around* the named variant's direction, built into the same file with `--round <N+1>` |
 
 `riff` is a verb for what to build, never a word that reaches a filename or title.
 

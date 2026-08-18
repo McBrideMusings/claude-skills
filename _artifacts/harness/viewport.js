@@ -91,6 +91,8 @@
     clone.setAttribute('data-at-key', root.getAttribute('data-at-key') || location.pathname);
     var v = root.getAttribute('data-at-variant-index');
     if (v) clone.setAttribute('data-at-variant-init', v);
+    var r = root.getAttribute('data-at-round');
+    if (r) clone.setAttribute('data-at-round-init', r);
     clone.removeAttribute('data-at-vp');
     clone.removeAttribute('data-at-annotate');
     return '<!DOCTYPE html>\n' + clone.outerHTML;

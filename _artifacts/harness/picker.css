@@ -85,6 +85,121 @@
   color: #fff;
 }
 
+/* Only the active round's variants sit in the pill. `display: flex` above beats the
+   `hidden` attribute's UA rule, so it has to be turned off explicitly — otherwise every
+   round's buttons stack up and the highlight measures the wrong row. */
+.proto-picker-item[hidden] {
+  display: none;
+}
+
+/* The round ticker — which VERSION of the design, not which variant of it.
+
+   Deliberately not in the pill and deliberately quiet. Flipping variants is a
+   100+/session action and gets the centre of the screen; changing round is a
+   once-a-session action, so it sits alone in the bottom-right corner, dimmed to 40%
+   until pointed at, and collapsed to just the current round until clicked. Same fixed
+   spec as the pill: never restyled with project tokens. */
+.proto-rounds {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2147483647;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 12px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+  opacity: 0.4;
+  transition: opacity 150ms ease-out;
+}
+
+.proto-rounds:hover,
+.proto-rounds:focus-within,
+.proto-rounds[data-open] {
+  opacity: 1;
+}
+
+.proto-rounds[data-position="top"] {
+  bottom: auto;
+  top: 24px;
+  flex-direction: column-reverse;
+}
+
+/* The list opens upward, newest nearest the toggle, so the round you are on does not
+   move under the cursor when it expands. */
+.proto-rounds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.82);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 8px 24px rgba(0, 0, 0, 0.24);
+}
+
+.proto-rounds-list[hidden] {
+  display: none;
+}
+
+.proto-round,
+.proto-rounds-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 26px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font: inherit;
+  cursor: pointer;
+  transition: color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.proto-rounds-toggle {
+  background: rgba(10, 10, 10, 0.82);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 8px 24px rgba(0, 0, 0, 0.24);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.proto-round:hover,
+.proto-rounds-toggle:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.proto-round:active,
+.proto-rounds-toggle:active {
+  transform: scale(0.97);
+}
+
+.proto-round:focus-visible,
+.proto-rounds-toggle:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 2px;
+}
+
+.proto-round[data-active] {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
 .proto-picker-divider {
   width: 1px;
   height: 16px;

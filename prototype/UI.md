@@ -19,8 +19,9 @@ write it.
 
 ## The artifact — always one standalone HTML file
 
-`<repo-root>/tmp/claude/prototypes/<slug>/v<N>.html`, where `<slug>` names what the prototype is for
-and `<N>` is the round (see SKILL.md "Naming and versions") — self-contained, inline CSS and JS, opened directly
+`<repo-root>/tmp/claude/prototypes/<slug>/<slug>.html`, where `<slug>` names what the prototype is for
+— one canonical file for the topic's whole life, every round inside it behind the corner round chip
+(see SKILL.md "Naming and versions"). Self-contained, inline CSS and JS, opened directly
 in a browser. No dev server, no route, no framework, and **no edit to any production file**. This holds
 even when the project is React, Vue, or SwiftUI: hand-written HTML/CSS/JS is the fastest path to
 something you can look at, and the winning direction gets rewritten in the project's stack at
@@ -54,10 +55,11 @@ One thing per run. If the description spans several components ("the dashboard")
 single highest-leverage piece, say which and why, offer the rest as later runs. Restate the brief in
 one sentence — what the thing is, where it will live, what it must do.
 
-Then fix the slug and the version. `ls <repo-root>/tmp/claude/prototypes/`: an existing directory for
-this topic means this is the next version of it — reuse the slug, take the highest `vN` + 1, and read
-the previous version's fragment so this round diverges from it instead of repeating it. No directory
-means a new topic, slug named for the thing being designed, `v1`.
+Then fix the slug and the round. `ls <repo-root>/tmp/claude/prototypes/`: an existing directory for
+this topic means this is its next round — reuse the slug, read the highest round already in the file
+(`grep -o 'data-round="[0-9]*"' <slug>.html | sort -u`) and add 1, and read the previous round's
+variants so this one diverges from them instead of repeating them. No directory means a new topic,
+slug named for the thing being designed, round 1.
 
 ### Phase 02 — Recon
 
@@ -97,13 +99,15 @@ Write the fragment to `<repo-root>/tmp/claude/artifacts/<slug>-v<N>.body.html`: 
 
 ```bash
 "$HOME/.claude/tools/artifact" build \
-  --kind prototype --picker switch \
-  --title "Wheelhouse Nav v2" \
+  --kind prototype --picker switch --round <N> \
+  --title "Wheelhouse Nav" \
   --fragment <repo-root>/tmp/claude/artifacts/<slug>-v<N>.body.html \
-  --out <repo-root>/tmp/claude/prototypes/<slug>/v<N>.html
+  --out <repo-root>/tmp/claude/prototypes/<slug>/<slug>.html
 ```
 
-The title is the topic plus the version number and nothing else — no adjective describing the round.
+`--out` is the same path every round. The tool reads it before overwriting, keeps every round that
+isn't `<N>`, and adds the round chip in the bottom-right corner. The title is the topic and nothing
+else — no version, no adjective; the chip already says which round is showing.
 
 The picker's markup, styles, keyboard wiring, URL persistence, and placement all come from the tool.
 **Write none of it**, and never restyle it — it stays identical across every project so it reads as
@@ -142,9 +146,9 @@ Then present the set and **stop — the choice is the user's**:
 | 1 | Quiet | Minimal motion, borders over shadows | A daily-use tool | Least memorable |
 | 2 | Editorial | Large type, generous whitespace | The moment deserves weight | Eats vertical space |
 
-Close with the full path to the file and the keys to flip (`1–N`, `←`/`→`, `R` to replay). On `v2` and
-later, also give the previous version's path and one line on what this round changed — the older
-versions stay on disk precisely so the user can open both.
+Close with the full path to the file and the keys to flip: `1–N` and `←`/`→` for variants, `[` / `]`
+for rounds (or the dimmed chip in the bottom-right corner), `R` to replay. From round 2 on, add one line on what this round changed and the same path
+with `?r=1` appended — the earlier rounds live in the same file precisely so the user can flip back.
 
 Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
 in the table. If the user asks which you'd choose, answer with a reason rooted in the product's
@@ -153,8 +157,8 @@ judgement is licensed and how it must be anchored). If two variants converged wh
 one and say so: two truly distinct directions beat three padded ones.
 
 The most useful feedback is usually **"the header from Editorial with the density of Dense"** — that's
-the actual design. Treat it as a `riff`: run Phase 03 again around it and build the next `vN` under the
-same slug. `v1` stays where it is.
+the actual design. Treat it as a `riff`: run Phase 03 again around it and rebuild the same file with
+`--round <N+1>`. The earlier rounds stay in it untouched.
 
 ### Phase 06 — Promote and delete
 
@@ -173,8 +177,11 @@ Keep the files only if the user asks.
 - **Lorem ipsum, placeholder avatars, `$0.00`.** Fake content flatters every variant equally and
   therefore distinguishes none of them.
 - **Judging variants side by side at small scale.** One at a time, full size.
-- **A word-suffixed round** — `nav-riff.html`, `nav-v2-final.html`, a title reading "Wheelhouse Nav
-  Riff". Rounds are numbered; the topic words never move.
-- **Overwriting `v1` with the next round.** Old versions are the comparison.
+- **A version or a word in the filename** — `nav-riff.html`, `nav-v2.html`, `nav-v2-final.html`, a
+  title reading "Wheelhouse Nav Riff". One file per topic; the round lives inside it.
+- **Building the next round to a new path.** That splits the topic across files again and is exactly
+  what `--round` exists to stop.
+- **Restyling or relocating the round chip.** It is harness chrome, and its being hard to notice is
+  the design: rounds change once a session, variants a hundred times.
 - **Moving prototype markup into the codebase.** It was written with no tests, no error handling, and
   no accessibility pass beyond what the picker spec carries.
