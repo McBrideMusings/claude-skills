@@ -191,6 +191,8 @@ Resolve the issue backend via [`../_tracker/_detect.md`](../_tracker/_detect.md)
 
 **Completion criterion:** every candidate issue is classified ready or blocked, with the blocker named.
 
+**Bare invocation — no issue numbers, label, or milestone named — still builds this frontier from the whole open backlog.** It does not skip straight to dispatch. Present the frontier (count, and each issue's title) and wait for a go-ahead before step 2. Dispatching a multi-worker swarm is exactly the class of hard-to-reverse, significant action that gets confirmed first, not assumed — same standing rule that applies to any other significant or hard-to-reverse action. This is a real stop every run hits, not a formality: skipping it is how a frontier nobody looked at gets fanned out. A named scope (issue numbers, `label:X`, `milestone:X`) narrows what step 1 reads, but the same present-and-wait still applies before step 2 — naming a scope is not itself the go-ahead.
+
 ### 2. Size the swarm
 
 Dispatch `min(frontier size, max_workers, the transport's concurrency)`.
@@ -436,6 +438,21 @@ Landing a branch closes an issue, which may clear the last blocker on others. Re
 - **workflow** — capacity frees a whole round at a time. Land every branch the round returned, retire them all, then dispatch the next round. Do not start a second workflow while one is running.
 
 **The loop ends when** the frontier is empty and no worker is live.
+
+### Pane rotation between rounds (optional, herdr only)
+
+Landing a round leaves this session holding everything it read while doing it — every worker's returned object, every re-verify, every conflict resolution. That accumulation is dead weight for the *next* round: it does not need to know how round 1 landed, only that it did. Running every round in the same session lets that weight build for the life of the swarm.
+
+**When `HERDR_ENV=1` and a round has just landed, propose rotating to a fresh pane for the next one — do not do it silently.** State the proposal in one line and wait: *"Round N landed. Dispatch round N+1 from a fresh pane so it starts with no round-1 context, and close this one once it's running?"* A "no" or no response keeps the swarm in this session exactly as before this section existed — rotation is an offer, not a new default, because closing the calling pane ends this session and that is the kind of hard-to-reverse action this project's global instructions require confirming first.
+
+On a "yes":
+
+1. **Split, in the current tab, without stealing focus** — `herdr pane split --current --direction right --cwd "$PWD" --no-focus` (or `down`, by `herdr pane layout`'s own rule). Read the new pane id from `.result.pane.pane_id`.
+2. **Start a `claude` agent in it** — `herdr agent start orch-r<N+1> --kind claude --pane <pane-id>`.
+3. **Prompt it with a self-contained brief**, since it starts with none of this session's context: the repo path, that this is `/orchestrate` continuing an existing swarm, that round `N` just landed (name the issues and commits), and to run its own pre-flight — rebuilding the frontier itself rather than trusting a stale list handed across the rotation. `herdr agent prompt orch-r<N+1> "<brief>" --wait --timeout 120000` — the wait is what confirms it actually started rather than merely being told to.
+4. **Only after that wait returns** `idle`/`working`/`done` — never before — stop this session's own loop (`ScheduleWakeup({stop: true})`) and close this pane: `herdr pane close "$HERDR_PANE_ID"`. Confirming first is the whole point: a pane closed before the new one is confirmed running strands the round with nobody watching it, which is the exact failure the loop's wake signal exists to prevent.
+
+**Do not rotate mid-round.** This applies only between rounds, at the same point step 8 already re-dispatches — a round in flight has a live `wake()` obligation that a closed pane cannot honor.
 
 ### The report
 
