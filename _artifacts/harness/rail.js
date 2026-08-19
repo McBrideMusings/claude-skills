@@ -177,6 +177,12 @@
       g.toggleAttribute('hidden', !!gr && gr !== round);
       paintAxis(g);
     });
+    // A round's top-level markup lives in the document permanently, so it has to be
+    // hidden when its round is not the one on screen — otherwise round 1's shared
+    // screens stack under round 2's.
+    [].slice.call(document.querySelectorAll('.at-shell')).forEach(function (s) {
+      s.toggleAttribute('hidden', s.getAttribute('data-round') !== round);
+    });
 
     writeUrl();
 

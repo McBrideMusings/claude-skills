@@ -195,6 +195,9 @@ html[data-at-rail] body {
 
 .at-rail-note b { color: #979ea8; font-weight: 600; }
 
+/* A round's top-level markup, hidden by rail.js when its round is not on screen. */
+.at-shell[hidden] { display: none !important; }
+
 /* --- the stage the rail drives --- */
 
 html[data-at-rail] #at-stage {
