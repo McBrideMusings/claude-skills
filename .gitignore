@@ -12,3 +12,6 @@ tldraw-offline/
 
 # Installed via `npx skills add ogulcancelik/herdr` — third-party skill (symlink into ~/.agents), theirs to update, not ours to track.
 herdr
+
+# Installed from https://impeccable.style — third-party skill, theirs to update, not ours to track.
+impeccable/
