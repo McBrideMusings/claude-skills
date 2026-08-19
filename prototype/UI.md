@@ -120,6 +120,13 @@ exist when handing the prototype over — a comment pinned to an element comes b
 line that produced it, which is the fastest revision loop available. See
 `../_artifacts/CONTRACT.md` for how the comments come back.
 
+**Screen size is the switcher's job, never a variant's.** `--with viewport` already renders the same
+fragment at phone, tablet, and desktop width in real viewports. A "Phone" variant next to a "Desktop"
+variant spends two of your three or four slots on something the harness supplies for free, and it
+splits one design across two templates that then drift. Build **one** responsive variant and let the
+switcher size it — if it looks wrong at desktop width, that is a media query to write, not a template
+to add.
+
 `--picker switch` renders **one variant at a time, full size, in realistic surrounding context** — a
 toast needs a page behind it, a card needs siblings, a button needs a form. `--picker list` stacks each
 variant full size, one per screenful, when the user wants to scroll rather than flip. Neither mode ever
@@ -183,5 +190,7 @@ Keep the files only if the user asks.
   what `--round` exists to stop.
 - **Restyling or relocating the round chip.** It is harness chrome, and its being hard to notice is
   the design: rounds change once a session, variants a hundred times.
+- **A "Phone" variant and a "Desktop" variant of the same design.** Screen size is the viewport
+  switcher's axis, not a variant's. One responsive template, sized by the harness.
 - **Moving prototype markup into the codebase.** It was written with no tests, no error handling, and
   no accessibility pass beyond what the picker spec carries.
