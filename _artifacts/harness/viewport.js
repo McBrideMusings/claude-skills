@@ -216,7 +216,7 @@
     // removing it makes the frame render an empty stage. rail.css hides it under
     // html[data-at-embedded], which is the right mechanism: present, not visible.
     [].slice.call(clone.querySelectorAll(
-      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-toast'
+      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-toast, .at-rail-reopen'
     )).forEach(function (n) { n.remove(); });
     var stage = clone.querySelector('#at-stage');
     if (stage) stage.innerHTML = '';
