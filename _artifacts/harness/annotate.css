@@ -132,12 +132,22 @@
 
 /* --- the panel ------------------------------------------------------------- */
 
+:root { --at-panel-w: 300px; }
+
+/* The panel is a review surface for the artifact, so it must not cover the artifact.
+   While annotate mode is on the page reflows beside it — the same move the prototype
+   rail makes with padding-left — instead of parking a 300px pane over the right third
+   of the content the reviewer is trying to comment on. The theme toggle lives in that
+   same corner and moves with it. */
+:root[data-at-annotate] body { padding-right: calc(var(--at-panel-w) + 32px); }
+:root[data-at-annotate] .at-theme { right: calc(var(--at-panel-w) + 28px); }
+
 .at-panel {
   position: fixed;
   top: 16px;
   right: 16px;
   bottom: 16px;
-  width: 300px;
+  width: var(--at-panel-w);
   z-index: 2147483641;
   display: none;
   flex-direction: column;

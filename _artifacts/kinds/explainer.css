@@ -3,9 +3,9 @@
 :root {
   --c-data: #2563eb;   --c-data-bg: #eff4ff;
   --c-flow: #7c3aed;   --c-flow-bg: #f4efff;
-  --c-happy: #16a34a;  --c-happy-bg: #ecfaf0;
-  --c-danger: #dc2626; --c-danger-bg: #fdeeee;
-  --c-warn: #d97706;   --c-warn-bg: #fdf4e6;
+  --c-happy: #15803d;  --c-happy-bg: #ecfaf0;
+  --c-danger: #b91c1c; --c-danger-bg: #fdeeee;
+  --c-warn: #b45309;   --c-warn-bg: #fdf4e6;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -19,9 +19,9 @@
 :root[data-theme="light"] {
   --c-data: #2563eb;   --c-data-bg: #eff4ff;
   --c-flow: #7c3aed;   --c-flow-bg: #f4efff;
-  --c-happy: #16a34a;  --c-happy-bg: #ecfaf0;
-  --c-danger: #dc2626; --c-danger-bg: #fdeeee;
-  --c-warn: #d97706;   --c-warn-bg: #fdf4e6;
+  --c-happy: #15803d;  --c-happy-bg: #ecfaf0;
+  --c-danger: #b91c1c; --c-danger-bg: #fdeeee;
+  --c-warn: #b45309;   --c-warn-bg: #fdf4e6;
 }
 :root[data-theme="dark"] {
   --c-data: #6ea8fe;   --c-data-bg: #19233b;
@@ -31,44 +31,54 @@
   --c-warn: #f0b357;   --c-warn-bg: #322413;
 }
 
-main { max-width: var(--maxw); margin: 0 auto; padding: var(--s-6) var(--s-5) 6rem; }
+/* main is the measure grid from _base.css: prose at --maxw, figures at --maxw-wide. */
+main { padding: var(--s-7) var(--s-5) 6rem; }
 
-h1 { font-size: var(--f-2xl); margin: 0 0 var(--s-2); }
-h2 { font-size: var(--f-xl); margin: var(--s-6) 0 var(--s-3); padding-top: var(--s-4); border-top: 1px solid var(--line); }
+h1 { font-size: var(--f-3xl); margin: 0 0 var(--s-3); }
+/* More air above a heading than below it, so a section reads as belonging to what
+   follows it rather than floating between two. */
+h2 { font-size: var(--f-xl); margin: var(--s-7) 0 var(--s-3); }
 h3 { font-size: var(--f-lg); margin: var(--s-5) 0 var(--s-2); }
 
 /* hero */
 .hero { margin-bottom: var(--s-6); }
-.hero .what { font-size: var(--f-lg); color: var(--ink-soft); margin: 0 0 var(--s-3); }
+.hero .what { font-size: var(--f-lg); color: var(--ink-soft); margin: 0 0 var(--s-4); max-width: 56ch; }
+/* One archetype label per document — the explainer's voice, not a per-section eyebrow.
+   Set as a plain tracked label: a pill in the accent colour is the stock treatment. */
 .badge {
-  display: inline-block; font-size: var(--f-sm); font-weight: 600; letter-spacing: .04em;
-  color: var(--c-accent); border: 1px solid currentColor; border-radius: 999px;
-  padding: 2px 10px; text-transform: uppercase;
+  display: block; font-size: .8rem; font-weight: 700; letter-spacing: .13em;
+  color: var(--c-muted); text-transform: uppercase; margin-bottom: var(--s-3);
 }
+/* The promise of the piece. Set apart by size and a hairline, not a coloured stripe. */
 .why {
-  background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--c-accent);
-  border-radius: var(--radius); padding: var(--s-3) var(--s-4); color: var(--ink-soft);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  padding: var(--s-4) 0; margin: 0; color: var(--ink-soft);
 }
 
-/* callout — the modifier states the role; the role states the meaning */
+/* Callout — the modifier states the role; the role states the meaning.
+   The role is carried by the label and by a hairline the role tints. A thick coloured
+   left border is the one treatment to refuse here: it is the single most recognisable
+   machine-made accent, and it says nothing the tinted ground and the label are not
+   already saying. Three encodings of one fact is not emphasis, it is noise. */
 .callout {
-  border: 1px solid var(--line); border-left: 4px solid var(--c-muted);
+  border: 1px solid var(--line);
   background: var(--surface); border-radius: var(--radius);
-  padding: var(--s-3) var(--s-4); margin: var(--s-4) 0;
+  padding: var(--s-4); margin: var(--s-4) 0;
 }
 .callout .label {
-  font-size: var(--f-sm); font-weight: 700; text-transform: uppercase;
-  letter-spacing: .04em; display: block; margin-bottom: var(--s-1);
+  font-size: .8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .09em; display: block; margin-bottom: var(--s-2);
 }
-.callout--data   { border-left-color: var(--c-data);   background: var(--c-data-bg); }
+.callout > :last-child { margin-bottom: 0; }
+.callout--data   { border-color: color-mix(in srgb, var(--c-data) 34%, var(--line));   background: var(--c-data-bg); }
 .callout--data   .label { color: var(--c-data); }
-.callout--flow   { border-left-color: var(--c-flow);   background: var(--c-flow-bg); }
+.callout--flow   { border-color: color-mix(in srgb, var(--c-flow) 34%, var(--line));   background: var(--c-flow-bg); }
 .callout--flow   .label { color: var(--c-flow); }
-.callout--happy  { border-left-color: var(--c-happy);  background: var(--c-happy-bg); }
+.callout--happy  { border-color: color-mix(in srgb, var(--c-happy) 34%, var(--line));  background: var(--c-happy-bg); }
 .callout--happy  .label { color: var(--c-happy); }
-.callout--danger { border-left-color: var(--c-danger); background: var(--c-danger-bg); }
+.callout--danger { border-color: color-mix(in srgb, var(--c-danger) 34%, var(--line)); background: var(--c-danger-bg); }
 .callout--danger .label { color: var(--c-danger); }
-.callout--warn   { border-left-color: var(--c-warn);   background: var(--c-warn-bg); }
+.callout--warn   { border-color: color-mix(in srgb, var(--c-warn) 34%, var(--line));   background: var(--c-warn-bg); }
 .callout--warn   .label { color: var(--c-warn); }
 
 /* diagram frame */
@@ -82,13 +92,38 @@ h3 { font-size: var(--f-lg); margin: var(--s-5) 0 var(--s-2); }
 .diagram svg text { font-family: var(--font-sans); }
 .diagram figcaption { color: var(--ink-soft); font-size: var(--f-sm); margin-top: var(--s-3); text-align: center; }
 
+/* Diagram primitives. Without these every explainer invents its own node and edge
+   styling in the fragment, so no two diagrams in the house look alike and the semantic
+   roles stop being reliable. Mark up a node as
+   <g class="node node--flow"><rect .../><text class="node-t">…</text></g>. */
+.diagram .node rect, .diagram .node circle, .diagram .node ellipse, .diagram .node path.node-s {
+  fill: var(--surface); stroke: var(--c-muted); stroke-width: 1.25;
+}
+.diagram .node--data   :is(rect, circle, ellipse, path.node-s) { fill: var(--c-data-bg);   stroke: var(--c-data); }
+.diagram .node--flow   :is(rect, circle, ellipse, path.node-s) { fill: var(--c-flow-bg);   stroke: var(--c-flow); }
+.diagram .node--happy  :is(rect, circle, ellipse, path.node-s) { fill: var(--c-happy-bg);  stroke: var(--c-happy); }
+.diagram .node--danger :is(rect, circle, ellipse, path.node-s) { fill: var(--c-danger-bg); stroke: var(--c-danger); }
+.diagram .node--warn   :is(rect, circle, ellipse, path.node-s) { fill: var(--c-warn-bg);   stroke: var(--c-warn); }
+.diagram .node-t { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; }
+.diagram .node-s { fill: var(--ink-soft); font-size: 11.5px; text-anchor: middle; }
+.diagram .edge { stroke: var(--c-muted); stroke-width: 1.25; fill: none; }
+.diagram .edge--dashed { stroke-dasharray: 4 4; }
+.diagram .edge-t { fill: var(--ink-soft); font-size: 11px; text-anchor: middle; }
+
 /* legend */
 .legend {
   display: flex; flex-wrap: wrap; gap: var(--s-4); justify-content: center;
   font-size: var(--f-sm); color: var(--ink-soft); margin-top: var(--s-3);
 }
 .legend span { display: inline-flex; align-items: center; gap: var(--s-2); }
-.legend .dot { width: 11px; height: 11px; border-radius: 3px; }
+/* The swatch is the only thing carrying the role here, so it ships with the sheet
+   rather than being redefined — and mis-defined — in every fragment. */
+.legend .dot { width: 11px; height: 11px; border-radius: 3px; background: var(--c-muted); }
+.legend .dot--data   { background: var(--c-data); }
+.legend .dot--flow   { background: var(--c-flow); }
+.legend .dot--happy  { background: var(--c-happy); }
+.legend .dot--danger { background: var(--c-danger); }
+.legend .dot--warn   { background: var(--c-warn); }
 
 /* steps — the Process backbone */
 .steps { list-style: none; counter-reset: step; padding: 0; margin: var(--s-4) 0; }
@@ -97,12 +132,17 @@ h3 { font-size: var(--f-lg); margin: var(--s-5) 0 var(--s-2); }
   border-left: 2px solid var(--line); margin-left: var(--s-3);
 }
 .steps > li:last-child { border-left-color: transparent; }
+/* The marker is neutral on purpose. Filling it with --c-flow spends a semantic hue on
+   decoration — the one thing the colour system forbids — and white on the dark theme's
+   light violet lands at 1.9:1, well under the 4.5:1 floor. */
 .steps > li::before {
   counter-increment: step; content: counter(step);
   position: absolute; left: calc(-1 * var(--s-4)); top: -2px;
-  width: 1.7rem; height: 1.7rem; background: var(--c-flow); color: #fff;
+  width: 1.7rem; height: 1.7rem;
+  background: var(--bg); color: var(--ink-soft);
+  border: 1.5px solid var(--line);
   border-radius: 50%; display: grid; place-items: center;
-  font-size: var(--f-sm); font-weight: 700;
+  font-size: var(--f-sm); font-weight: 700; font-variant-numeric: tabular-nums;
 }
 .steps h3 { margin: 0 0 var(--s-1); }
 
@@ -116,10 +156,18 @@ h3 { font-size: var(--f-lg); margin: var(--s-5) 0 var(--s-2); }
 .compare .col h3 { margin-top: 0; }
 @media (max-width: 640px) { .compare, .compare.three { grid-template-columns: 1fr; } }
 
-/* tables */
-table { width: 100%; border-collapse: collapse; margin: var(--s-4) 0; font-size: var(--f-sm); }
-th, td { text-align: left; padding: var(--s-2) var(--s-3); border-bottom: 1px solid var(--line); }
-th { color: var(--ink-soft); font-weight: 650; }
+/* Tables: one rule under the header, one under the last row, zebra in between.
+   A border on every row is a ladder and stops the header reading as a header. */
+table { width: 100%; border-collapse: collapse; margin: var(--s-5) 0; font-size: var(--f-sm); }
+th, td { text-align: left; padding: var(--s-2) var(--s-3); border: 0; }
+thead th {
+  color: var(--ink-soft); font-weight: 650; font-size: .8em;
+  text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--ink-soft); padding-bottom: var(--s-2);
+}
+tbody tr:nth-child(even) { background: color-mix(in srgb, var(--ink) 3.5%, transparent); }
+tbody tr:last-child td { border-bottom: 1px solid var(--line); }
+td.nums, th.nums { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* annotated code — hand-coloured, no highlighting library */
 .code {
@@ -136,7 +184,7 @@ th { color: var(--ink-soft); font-weight: 650; }
 
 /* file:line cite */
 .cite {
-  font-family: var(--font-mono); font-size: .78em; color: var(--c-muted);
+  font-family: var(--font-mono); font-size: .78em; color: var(--ink-soft);
   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
   padding: 1px 6px; white-space: nowrap;
 }

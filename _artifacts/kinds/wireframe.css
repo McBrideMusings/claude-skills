@@ -8,7 +8,9 @@
   --maxw: 90ch;
 }
 
-main { max-width: var(--maxw); margin: 0 auto; padding: var(--s-6) var(--s-5) 6rem; }
+/* A greybox is judged on arrangement, so it takes the full frame rather than the
+   measure grid _base.css gives the document kinds. */
+main { display: block; max-width: var(--maxw); margin: 0 auto; padding: var(--s-6) var(--s-5) 6rem; }
 
 h1 { font-size: var(--f-xl); margin: 0 0 var(--s-2); }
 h2 { font-size: var(--f-lg); margin: var(--s-6) 0 var(--s-3); color: var(--ink-soft); }
@@ -30,9 +32,12 @@ h2 { font-size: var(--f-lg); margin: var(--s-6) 0 var(--s-3); color: var(--ink-s
   text-transform: uppercase; color: var(--c-muted);
 }
 
-/* dashed placeholder — an image, a map, a chart, whatever isn't decided yet */
+/* Dashed placeholder — an image, a map, a chart, whatever isn't decided yet.
+   Flex, not grid: `display: grid` makes every inline child its own grid row, so a
+   caption containing a <b> or a <code> gets broken onto three stacked lines. */
 .wf-ph {
-  display: grid; place-items: center;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: .3em; text-align: center;
   border: 1.5px dashed var(--wf-line);
   border-radius: 4px;
   background: var(--wf-fill);

@@ -13,7 +13,12 @@
    Its appearance is not a design decision. It stays identical across every project so it
    always reads as harness chrome, never as part of the design being judged. Deliberately
    NOT theme-aware: fixed dark, because it must sit beside light and dark prototypes
-   alike. Never restyle it with project tokens. */
+   alike. Never restyle it with project tokens.
+
+   Fixed spec covers the look, not the legibility floor. Every text colour here clears
+   4.5:1 against #101114 and must keep clearing it: the group labels, the second lines
+   and the scope note were all shipped at 2.0–3.9:1, which the harness's own contrast
+   widget (press `c`) flags on its own chrome. */
 
 :root {
   --at-rail-w: 272px;
@@ -68,7 +73,7 @@ html[data-at-rail] body {
   font-size: 11px;
   font-weight: 400;
   line-height: 1.45;
-  color: #6b727c;
+  color: #8a919c;
 }
 
 /* --- groups --- */
@@ -89,7 +94,7 @@ html[data-at-rail] body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.9px;
-  color: #5c636d;
+  color: #8a919c;
 }
 
 .at-rail-label .at-rail-hint {
@@ -97,7 +102,7 @@ html[data-at-rail] body {
   font-size: 9.5px;
   letter-spacing: 0.4px;
   text-transform: none;
-  color: #444a53;
+  color: #767d88;
   font-variant-numeric: tabular-nums;
 }
 
@@ -160,7 +165,7 @@ html[data-at-rail] body {
   font-style: normal;
   font-size: 10.5px;
   line-height: 1.35;
-  color: #5c636d;
+  color: #8a919c;
 }
 
 .at-rail-item[data-active] em { color: #8296b8; }
@@ -190,7 +195,7 @@ html[data-at-rail] body {
   border-top: 1px solid #22262c;
   font-size: 11px;
   line-height: 1.5;
-  color: #5c636d;
+  color: #8a919c;
 }
 
 .at-rail-note b { color: #979ea8; font-weight: 600; }

@@ -1,12 +1,19 @@
 /* _base.css — reset, theme plumbing, layout primitives. Inlined into every kind. */
 
 :root {
-  /* type scale */
-  --f-2xl: 2rem; --f-xl: 1.5rem; --f-lg: 1.25rem; --f-md: 1rem; --f-sm: .875rem;
-  /* spacing scale */
-  --s-1: .25rem; --s-2: .5rem; --s-3: .75rem; --s-4: 1rem; --s-5: 1.5rem; --s-6: 2.5rem;
+  /* Type scale. The root is 17px, so every rem here is a real rendered size:
+     --f-3xl 47px, --f-2xl 36px, --f-xl 26px, --f-lg 20px, --f-md 17px, --f-sm 15px.
+     --f-3xl is the display step: one per artifact, never for a section heading. */
+  --f-3xl: 2.75rem; --f-2xl: 2.1rem; --f-xl: 1.5rem; --f-lg: 1.16rem; --f-md: 1rem; --f-sm: .875rem;
+  /* Spacing scale. --s-7 is the section step: nothing smaller separates two sections,
+     nothing larger sits inside one. */
+  --s-1: .25rem; --s-2: .5rem; --s-3: .75rem; --s-4: 1rem; --s-5: 1.5rem; --s-6: 2.5rem; --s-7: 4rem;
   --radius: 10px;
-  --maxw: 72ch;
+  /* Prose measure, and the wider one that tables, diagrams and code break out to.
+     Reading width and figure width are two different numbers; one column for both
+     either squeezes the figures or overruns the prose. */
+  --maxw: 68ch;
+  --maxw-wide: 96ch;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
@@ -16,8 +23,8 @@
   --ink: #1c1d22;
   --ink-soft: #54565e;
   --line: #e4e4ea;
-  --c-muted: #8a8c95;
-  --c-accent: #0ea5b7;
+  --c-muted: #6b747c;
+  --c-accent: #067a88;
 }
 
 /* Dark comes from the OS preference... */
@@ -28,7 +35,7 @@
     --ink: #ecedf1;
     --ink-soft: #a9abb4;
     --line: #2c2e37;
-    --c-muted: #7e818c;
+    --c-muted: #8b8f9a;
     --c-accent: #34d3e3;
   }
 }
@@ -40,8 +47,8 @@
   --ink: #1c1d22;
   --ink-soft: #54565e;
   --line: #e4e4ea;
-  --c-muted: #8a8c95;
-  --c-accent: #0ea5b7;
+  --c-muted: #6b747c;
+  --c-accent: #067a88;
 }
 :root[data-theme="dark"] {
   --bg: #131419;
@@ -49,36 +56,76 @@
   --ink: #ecedf1;
   --ink-soft: #a9abb4;
   --line: #2c2e37;
-  --c-muted: #7e818c;
+  --c-muted: #8b8f9a;
   --c-accent: #34d3e3;
 }
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /* The scale above is stated in rem, so the root size is what makes it real. */
+  font-size: 17px;
+}
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: 17px;
+  font-size: var(--f-md);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-h1, h2, h3, h4 { line-height: 1.25; font-weight: 650; text-wrap: balance; }
+/* Tracking tightens as size grows: at display sizes the default spacing reads loose. */
+h1, h2, h3, h4 { line-height: 1.2; font-weight: 650; text-wrap: balance; letter-spacing: -0.01em; }
+h1 { letter-spacing: -0.022em; }
 p { margin: 0 0 var(--s-4); }
-a { color: var(--c-accent); }
 img, svg, video, canvas { max-width: 100%; }
 code, kbd, samp { font-family: var(--font-mono); font-size: .92em; }
+
+/* The surfaces the browser draws still belong to the design. Left at their defaults
+   they are the clearest tell that a page was assembled rather than built. */
+a {
+  color: var(--c-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+::selection { background: color-mix(in srgb, var(--c-accent) 26%, transparent); color: var(--ink); }
+input, textarea, [contenteditable] { caret-color: var(--c-accent); }
+* { scrollbar-color: var(--c-muted) transparent; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--c-muted) 55%, transparent);
+  border: 3px solid transparent; background-clip: content-box; border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--c-muted); background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }
+hr { border: 0; border-top: 1px solid var(--line); margin: var(--s-6) 0; }
 
 :where(a, button, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--c-accent);
   outline-offset: 2px;
   border-radius: 3px;
 }
+
+/* One reading column, plus a wider track a figure can break out into.
+   Prose stays at --maxw; anything marked .wide — and by default every table, figure,
+   diagram and code block — spans --maxw-wide. A single column for both squeezes the
+   figures to the width of a sentence, which is what a 72ch-everything page looks like.
+   deck, prototype and wireframe want the full viewport and opt out with display:block. */
+main {
+  display: grid;
+  justify-content: center;
+  grid-template-columns:
+    [wide-start] minmax(0, calc((var(--maxw-wide) - var(--maxw)) / 2))
+    [prose-start] minmax(0, var(--maxw)) [prose-end]
+    minmax(0, calc((var(--maxw-wide) - var(--maxw)) / 2)) [wide-end];
+}
+main > * { grid-column: prose; min-width: 0; }
+main > :is(.wide, figure, table, .scroll-x, .code, .compare) { grid-column: wide; }
 
 /* Wide content scrolls inside itself; the page body never scrolls sideways. */
 .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }

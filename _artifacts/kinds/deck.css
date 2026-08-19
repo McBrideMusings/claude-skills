@@ -2,28 +2,42 @@
    this file supplies structure, navigation chrome, and print pagination. */
 
 body { overflow-x: hidden; }
+main { display: block; }
 
+/* A slide is read across a room, not held at arm's length, so its type scales with the
+   viewport instead of inheriting the document scale. At 1280px the title lands near
+   56px; the page kind's --f-2xl would put it at 36px and leave two thirds of the slide
+   empty, which is what a deck typeset as a document looks like. */
 [data-slide] {
   position: relative;
   min-height: 100vh;
   display: none;
   flex-direction: column;
   justify-content: center;
-  max-width: 60ch;
+  width: min(86ch, 82vw);
   margin: 0 auto;
-  padding: var(--s-6) var(--s-5) 5rem;
+  padding: var(--s-7) var(--s-5) 5rem;
 }
 [data-slide][data-current] { display: flex; }
 
 [data-slide] h2 {
-  font-size: var(--f-2xl);
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  letter-spacing: -0.025em;
   margin: 0 0 var(--s-5);
+  max-width: 20ch;
 }
 
+[data-slide] h3 { font-size: clamp(1.1rem, 1.6vw, 1.45rem); margin: 0 0 var(--s-3); }
+[data-slide] :is(p, li) { font-size: clamp(1rem, 1.35vw, 1.25rem); }
+[data-slide] ul { padding-left: 1.1em; }
+[data-slide] li { margin-bottom: var(--s-3); }
+
 .deck-lead {
-  font-size: var(--f-lg);
+  font-size: clamp(1.15rem, 1.8vw, 1.6rem);
+  line-height: 1.4;
   color: var(--ink-soft);
   margin-bottom: var(--s-5);
+  max-width: 34ch;
 }
 
 /* Pinned to the slide's bottom rather than pushed there with margin-top:auto —
@@ -38,7 +52,7 @@ body { overflow-x: hidden; }
   color: var(--c-muted);
 }
 
-.deck-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-5); }
+.deck-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-6); }
 @media (max-width: 700px) { .deck-split { grid-template-columns: 1fr; } }
 
 /* counter — injected by the tool */

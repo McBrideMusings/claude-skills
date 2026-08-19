@@ -4,11 +4,17 @@
 
 body { background: var(--bg); }
 
-/* switch mode: one variant at a time, full size */
+/* Switch mode: one variant at a time, full size.
+   The stage is a column and the mounted variant stretches to fill it. Without this the
+   stage is 100vh but the variant is only as tall as its content, so the prototype's own
+   background stops partway down and the artifact's page background shows below it — a
+   seam that reads as a rendering bug in every prototype whose content is short. */
 #at-stage {
   min-height: 100vh;
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
+#at-stage > * { flex: 1 0 auto; }
 
 /* list mode: each variant isolated and stacked, one per screenful.
    Never a grid of thumbnails — small side-by-side distorts spacing and scale. */
