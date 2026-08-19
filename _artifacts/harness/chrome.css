@@ -1,0 +1,40 @@
+/* chrome.css — the one palette every piece of harness chrome consumes.
+
+   The rail, the comment panel, the device bezel and the toasts are all the same thing:
+   fixed-dark furniture that sits beside an artifact whose own theme is none of their
+   business. They used to each carry their own hardcoded greys — the rail on #101114 /
+   #181b20 / #23272d, the panel on rgba(18,18,18,.93) with its own amber — which is how
+   the rail's labels ended up at 2.0-3.9:1 while the panel's were fine, and how a fix to
+   one silently left the other behind.
+
+   Deliberately NOT theme-aware. Chrome stays dark beside a light artifact and beside a
+   dark one, so it always reads as the harness and never as part of the design.
+
+   Every ink value here clears 4.5:1 against --at-c-bg, and must keep clearing it. */
+
+:root {
+  --at-c-bg: #101114;          /* the rail's ground */
+  --at-c-panel: rgba(18, 18, 18, 0.93);  /* floating surfaces, over an artifact */
+  --at-c-surface: #181b20;     /* a control at rest */
+  --at-c-surface-hi: #23272d;  /* a control under the pointer */
+  --at-c-line: #22262c;        /* divider */
+  --at-c-edge: #23272d;        /* control border */
+  --at-c-edge-hi: #333a43;     /* control border, hover */
+
+  --at-c-ink: #e8eaed;         /* primary text — 14.9:1 */
+  --at-c-dim: #979ea8;         /* secondary text — 7.4:1 */
+  --at-c-faint: #8a919c;       /* labels and second lines — 5.9:1 */
+  --at-c-fainter: #767d88;     /* hints — 4.6:1, the floor */
+
+  --at-c-sel: #1b2740;         /* selected control ground */
+  --at-c-sel-edge: #3f6ac2;    /* selected control border, and the focus marker */
+  --at-c-sel-ink: #cfe0ff;     /* selected control text */
+  --at-c-sel-dim: #8296b8;     /* selected control second line */
+
+  --at-c-mark: #f5a524;        /* the annotate layer's pin colour */
+  --at-c-mark-hi: #ffb733;     /* pin colour, hover */
+  --at-c-mark-ink: #1a1204;    /* text on --at-c-mark */
+  --at-c-stale: #9a9a9a;       /* a pin whose element is gone */
+  --at-c-ok: #3fb950;          /* a completed action */
+  --at-c-ok-ink: #06210c;      /* text on --at-c-ok */
+}

@@ -1,0 +1,43 @@
+<h1>Artifact review surface — layout only</h1>
+<p class="wf-note">Greybox. The question is where things sit, not what they look like.</p>
+
+<div class="wf-region">
+  <span class="wf-label">Top bar</span>
+  <div class="wf-grid" data-cols="2">
+    <div>
+      <div class="wf-text" data-lines="1"></div>
+    </div>
+    <div style="display:flex; gap:.75rem; justify-content:flex-end;">
+      <span class="wf-control">Contrast</span>
+      <span class="wf-control" data-primary>Export</span>
+    </div>
+  </div>
+</div>
+
+<div class="wf-grid" data-cols="2">
+  <div class="wf-region">
+    <span class="wf-label">Artifact</span>
+    <div class="wf-ph">rendered artifact, full width</div>
+    <div class="wf-text" data-lines="3"></div>
+  </div>
+
+  <div class="wf-region">
+    <span class="wf-label">Comment list</span>
+    <div class="wf-region">
+      <span class="wf-label">Comment 1</span>
+      <div class="wf-text" data-lines="3"></div>
+    </div>
+    <div class="wf-region">
+      <span class="wf-label">Comment 2 · stale</span>
+      <div class="wf-text"></div>
+    </div>
+    <span class="wf-control">Copy all</span>
+  </div>
+</div>
+
+<h2>Empty state</h2>
+<div class="wf-region">
+  <span class="wf-label">Comment list</span>
+  <div class="wf-ph">No comments yet — press <b>a</b> and click anything</div>
+</div>
+<p class="wf-note">Both columns scroll independently; the artifact column keeps its own scroll position when a comment is opened.</p>

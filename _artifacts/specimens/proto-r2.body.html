@@ -1,0 +1,100 @@
+<style>
+  :root { --brand: #2f6df6; --card: #ffffff; --page: #f4f5f8; --edge: #dfe1e7; --text: #16181d; --dim: #6a6d78; --radius-card: 10px; }
+  .proto-frame { min-height: 100%; background: var(--page); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 20px; }
+  .p-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .p-h { font-size: 20px; font-weight: 700; margin: 0; }
+  .p-search { width: 100%; padding: 9px 12px; margin-bottom: 14px; border: 1px solid var(--edge); border-radius: 8px; font: inherit; font-size: 14px; background: var(--card); color: var(--text); }
+  .p-card { background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius-card); padding: 14px; margin-bottom: 10px; }
+  .p-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .p-name { font-weight: 600; }
+  .p-sub { color: var(--dim); font-size: 13px; }
+  .p-btn { border: 0; background: var(--brand); color: #fff; border-radius: 8px; padding: 8px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .p-empty { border: 1px dashed var(--edge); border-radius: var(--radius-card); padding: 32px; text-align: center; color: var(--dim); }
+  .p-err { border: 1px solid #e5b3b3; background: #fdf3f3; color: #8a2020; border-radius: var(--radius-card); padding: 14px; font-size: 14px; }
+  .p-dense .p-card { padding: 8px 12px; margin-bottom: 4px; border-radius: 6px; }
+  .p-dense .p-sub { font-size: 12px; }
+  .p-warm { --page: #f6f2ec; --brand: #9a5b2d; --edge: #e3d9cc; }
+</style>
+
+<nav data-axis="state" data-label="Data">
+  <button data-value="full">Six sessions<em>the normal case</em></button>
+  <button data-value="empty">No sessions<em>first run</em></button>
+  <button data-value="error">Daemon unreachable<em>what the list does with no data</em></button>
+</nav>
+
+<nav data-axis="sort" data-label="Order">
+  <button data-value="recent">Most recent</button>
+  <button data-value="name">By name</button>
+</nav>
+
+<aside data-rail-note><b>Scope.</b> Session list only. Search filters nothing yet.</aside>
+
+<template data-variant="Quiet" data-caption="Borders over shadows, one accent">
+  <div class="proto-frame">
+    <div class="p-top"><h1 class="p-h">Sessions</h1><button class="p-btn">New</button></div>
+    <input class="p-search" placeholder="Filter sessions" />
+    <div data-state="full" data-list></div>
+    <div data-state="empty" hidden><div class="p-empty">Nothing running yet. Start a session and it shows up here.</div></div>
+    <div data-state="error" hidden><div class="p-err"><b>Can't reach the daemon.</b><br />Start it with <code>herdr daemon</code>, then reload.</div></div>
+  </div>
+</template>
+
+<template data-variant="Dense" data-caption="Half the row height, same information">
+  <div class="proto-frame p-dense">
+    <div class="p-top"><h1 class="p-h">Sessions</h1><button class="p-btn">New</button></div>
+    <input class="p-search" placeholder="Filter sessions" />
+    <div data-state="full" data-list></div>
+    <div data-state="empty" hidden><div class="p-empty">Nothing running yet. Start a session and it shows up here.</div></div>
+    <div data-state="error" hidden><div class="p-err"><b>Can't reach the daemon.</b><br />Start it with <code>herdr daemon</code>, then reload.</div></div>
+  </div>
+</template>
+
+<template data-variant="Warm" data-caption="Paper ground, clay accent">
+  <div class="proto-frame p-warm">
+    <div class="p-top"><h1 class="p-h">Sessions</h1><button class="p-btn">New</button></div>
+    <input class="p-search" placeholder="Filter sessions" />
+    <div data-state="full" data-list></div>
+    <div data-state="empty" hidden><div class="p-empty">Nothing running yet. Start a session and it shows up here.</div></div>
+    <div data-state="error" hidden><div class="p-err"><b>Can't reach the daemon.</b><br />Start it with <code>herdr daemon</code>, then reload.</div></div>
+  </div>
+</template>
+
+<script>
+  (function () {
+    var ROWS = [
+      { name: 'reddit-poker', when: '2 minutes ago', branch: 'main', t: 2 },
+      { name: 'admin-project-tool', when: 'yesterday', branch: 'fix/toml-parse', t: 1400 },
+      { name: '.claude', when: '3 days ago', branch: 'main', t: 4320 },
+      { name: 'plexbuster', when: '4 days ago', branch: 'feat/scan', t: 5760 },
+      { name: 'stash-reels', when: 'last week', branch: 'main', t: 10080 },
+      { name: 'term-wheelhouse', when: 'last week', branch: 'wip', t: 11500 }
+    ];
+    var order = 'recent';
+
+    function paint() {
+      var rows = ROWS.slice().sort(function (a, b) {
+        return order === 'name' ? a.name.localeCompare(b.name) : a.t - b.t;
+      });
+      document.querySelectorAll('[data-list]').forEach(function (host) {
+        host.innerHTML = rows.map(function (r) {
+          return '<div class="p-card"><div class="p-row"><div>' +
+            '<div class="p-name">' + r.name + '</div>' +
+            '<div class="p-sub">' + r.when + ' &middot; ' + r.branch + '</div>' +
+            '</div><button class="p-btn">Resume</button></div></div>';
+        }).join('');
+      });
+    }
+
+    addEventListener('at:axis', function (e) {
+      if (e.detail.axis === 'state') {
+        document.querySelectorAll('[data-state]').forEach(function (el) {
+          el.hidden = el.dataset.state !== e.detail.value;
+        });
+      }
+      if (e.detail.axis === 'sort') { order = e.detail.value; paint(); }
+    });
+
+    addEventListener('at:variant', paint);
+    paint();
+  })();
+</script>

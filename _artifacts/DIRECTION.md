@@ -45,14 +45,25 @@ nothing to do with letterforms. **Never link a webfont** — no Google Fonts, no
 makes a network request. `_base.css` ships system sans and system mono stacks; the way to get a face
 with genuine character is a `@font-face` `data:` URI embedded in the fragment. If you don't have a face
 to embed, get your contrast from weight, width, size, and tracking rather than from a second family
-that isn't really there.
+that isn't really there. Note what the platform sans as your *display* voice actually says: it is the
+face every page gets by not choosing, and on an identity-first artifact that reads as no decision made.
 
-Cap measure around 65 characters. Commit to one type scale and don't wander off it. `text-wrap: balance`
-on headings. A hint of letter-spacing on uppercase labels.
+The scale is already built: `--f-3xl` down to `--f-sm` on a 17px root, and `--f-3xl` is the display
+step — one per artifact, on the title, never on a section heading. A title only a third larger than
+its body text is the single clearest sign nobody set a hierarchy. Prose stays at `--maxw` (68ch) and
+figures break out to `--maxw-wide`; don't re-centre things by hand. `text-wrap: balance` on headings,
+tracking tightening as size grows, a hint of letter-spacing on uppercase labels.
 
 **Neutrals are choices too.** A dead-centre mid-grey announces that nobody thought about it; tint it
 faintly toward the accent and it reads as considered. Pure white and near-black grounds are fine when
 the subject wants them — the test is whether the neutral was selected or merely left over.
+
+**Every colour you choose has to clear the contrast floor, and you check rather than assume.** Body and
+placeholder text at 4.5:1, large text at 3:1, against whatever is actually behind it. This is where
+chosen palettes fail most often and most invisibly: the base tokens themselves shipped with the muted
+grey at 3.2:1 and the accent at 2.96:1 — so every link on every artifact failed AA — and nobody saw it
+until the artifact's own `c` check was run in both themes. Light grey "for elegance" on a near-white
+ground is the specific reflex to distrust. Press `c`, read the number, fix the value.
 
 **Both themes, equal care.** `_base.css` wires the mechanism: tokens on `:root`, reassigned inside
 `@media (prefers-color-scheme: dark)`, then reassigned again under `:root[data-theme="dark"]` and
@@ -100,6 +111,16 @@ list like that drift, and that file is the better one.
 The short version: the stock answer to any brief is the thing to avoid. Absent user instruction, that
 freedom is yours; don't spend it on a cliché.
 
+Three that the kind stylesheets have already been cleared of, so reintroducing one in a fragment
+undoes work rather than adding any: a coloured `border-left` thicker than 1px on a callout or a card;
+a tiny uppercase eyebrow above every section (one per document is a voice, one per section is machine
+grammar); and a rule under every row of a table, which turns it into a ladder and stops the header
+reading as a header.
+
+**Then the browser's own surfaces**, which `_base.css` now themes and a fragment can undo by accident:
+text selection, the caret, scrollbars, focus rings, underline offset. Left at their defaults they are
+the cheapest tell that a page was assembled rather than built, and the one most reliably skipped.
+
 ## Process
 
 Code comes second. Write a short design plan first:
@@ -120,4 +141,4 @@ ground, slide it toward an analogous hue or drain some saturation — don't trad
 ## Delivery
 
 Never publish to a hosted page — see `~/.claude/CLAUDE.md` §5. Write the file, screenshot it, look at
-it, then `open <absolute-path>`.
+it, run the one batched pass in [`CRITIQUE.md`](CRITIQUE.md), then `open <absolute-path>`.

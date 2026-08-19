@@ -78,14 +78,24 @@
     return false;
   }
 
-  function check() {
+  /* `c` checks the artifact; `C` checks the harness furniture around it.
+     The chrome is normally excluded because it is not the design under review, and
+     flagging the rail to someone judging their own UI is noise. But excluded means
+     unchecked: the rail's labels, second lines and scope note all shipped at 2.0-3.9:1
+     and nothing here would ever have said so. Two modes, one instrument. */
+  var CHROME = '.at-panel, .at-notes-layer, .at-toast, .at-vp, .at-rail, .at-rail-reopen, ' +
+    '.at-composer, .at-theme, .at-oc, .at-vp-size';
+
+  function check(chromeOnly) {
     layer.innerHTML = '';
     var all = document.querySelectorAll('body *');
     var tested = 0, failed = 0, skipped = 0, items = [];
 
     for (var i = 0; i < all.length; i++) {
       var el = all[i];
-      if (el.closest('.at-cx-layer, .at-panel, .at-notes-layer, .at-toast, .at-vp, .at-rail')) continue;
+      if (el.closest('.at-cx-layer')) continue;
+      var inChrome = !!el.closest(CHROME);
+      if (chromeOnly ? !inChrome : inChrome) continue;
       if (!hasOwnText(el)) continue;
 
       var cs = getComputedStyle(el);
@@ -143,7 +153,7 @@
     setTimeout(function () { if (t.parentNode) t.remove(); }, 4200);
   }
 
-  function setMode(next) {
+  function setMode(next, chromeOnly) {
     on = next;
     if (!on) {
       root.removeAttribute('data-at-contrast');
@@ -151,18 +161,19 @@
       return;
     }
     root.setAttribute('data-at-contrast', '');
-    var r = check();
+    var r = check(chromeOnly);
+    var what = chromeOnly ? ' harness chrome elements' : ' text elements';
+    var skip = r.skipped ? ' (' + r.skipped + ' skipped: text over an image or gradient)' : '';
     toast(r.failed
-      ? r.failed + ' of ' + r.tested + ' text elements fail WCAG AA' +
-        (r.skipped ? ' (' + r.skipped + ' skipped: text over an image or gradient)' : '')
-      : 'All ' + r.tested + ' text elements pass WCAG AA' +
-        (r.skipped ? ' (' + r.skipped + ' skipped: text over an image or gradient)' : ''));
+      ? r.failed + ' of ' + r.tested + what + ' fail WCAG AA' + skip
+      : 'All ' + r.tested + what + ' pass WCAG AA' + skip);
   }
 
   document.addEventListener('keydown', function (e) {
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === 'c' || e.key === 'C') { e.preventDefault(); setMode(!on); }
+    if (e.key === 'c') { e.preventDefault(); setMode(!on, false); }
+    else if (e.key === 'C') { e.preventDefault(); setMode(true, true); }
     else if (e.key === 'Escape' && on) setMode(false);
   });
 
@@ -170,10 +181,10 @@
      without a keypress, by a test or by an agent auditing its own artifact. */
   window.atContrast = {
     mode: function (next) { setMode(next === undefined ? !on : !!next); return on; },
-    check: function () {
+    check: function (chromeOnly) {
       var was = on;
       if (!was) root.setAttribute('data-at-contrast', '');
-      var r = check();
+      var r = check(!!chromeOnly);
       if (!was) { root.removeAttribute('data-at-contrast'); layer.innerHTML = ''; }
       return r;
     }

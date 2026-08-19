@@ -1,0 +1,55 @@
+<style>
+  /* host project tokens, copied — prototype.css supplies no palette */
+  :root { --brand: #2f6df6; --card: #ffffff; --page: #f4f5f8; --edge: #dfe1e7; --text: #16181d; --dim: #6a6d78; --radius-card: 10px; }
+  .proto-frame { min-height: 100%; background: var(--page); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 24px; }
+  .p-card { background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius-card); padding: 16px; margin-bottom: 12px; }
+  .p-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .p-name { font-weight: 600; }
+  .p-sub { color: var(--dim); font-size: 13px; }
+  .p-btn { border: 0; background: var(--brand); color: #fff; border-radius: 8px; padding: 8px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+  .p-empty { border: 1px dashed var(--edge); border-radius: var(--radius-card); padding: 32px; text-align: center; color: var(--dim); }
+  .p-edit .p-card { border-radius: 2px; border-color: #111; box-shadow: 4px 4px 0 #111; }
+  .p-edit .p-btn { background: #111; border-radius: 2px; }
+</style>
+
+<nav data-axis="state" data-label="Data">
+  <button data-value="full">Three sessions<em>the normal case</em></button>
+  <button data-value="empty">No sessions<em>first run</em></button>
+</nav>
+
+<aside data-rail-note><b>Scope.</b> Session list only. No transcript view in this round.</aside>
+
+<template data-variant="Quiet" data-caption="Borders over shadows, one accent">
+  <div class="proto-frame">
+    <div data-state="full">
+      <div class="p-card"><div class="p-row"><div><div class="p-name">reddit-poker</div><div class="p-sub">2 minutes ago · main</div></div><button class="p-btn">Resume</button></div></div>
+      <div class="p-card"><div class="p-row"><div><div class="p-name">admin-project-tool</div><div class="p-sub">yesterday · fix/toml-parse</div></div><button class="p-btn">Resume</button></div></div>
+      <div class="p-card"><div class="p-row"><div><div class="p-name">.claude</div><div class="p-sub">3 days ago · main</div></div><button class="p-btn">Resume</button></div></div>
+    </div>
+    <div data-state="empty" hidden>
+      <div class="p-empty">Nothing running yet. Start a session and it shows up here.</div>
+    </div>
+  </div>
+</template>
+
+<template data-variant="Stamped" data-caption="Hard edges, offset shadow, black accent">
+  <div class="proto-frame p-edit">
+    <div data-state="full">
+      <div class="p-card"><div class="p-row"><div><div class="p-name">reddit-poker</div><div class="p-sub">2 minutes ago · main</div></div><button class="p-btn">Resume</button></div></div>
+      <div class="p-card"><div class="p-row"><div><div class="p-name">admin-project-tool</div><div class="p-sub">yesterday · fix/toml-parse</div></div><button class="p-btn">Resume</button></div></div>
+      <div class="p-card"><div class="p-row"><div><div class="p-name">.claude</div><div class="p-sub">3 days ago · main</div></div><button class="p-btn">Resume</button></div></div>
+    </div>
+    <div data-state="empty" hidden>
+      <div class="p-empty">Nothing running yet. Start a session and it shows up here.</div>
+    </div>
+  </div>
+</template>
+
+<script>
+  addEventListener('at:axis', function (e) {
+    if (e.detail.axis !== 'state') return;
+    document.querySelectorAll('[data-state]').forEach(function (el) {
+      el.hidden = el.dataset.state !== e.detail.value;
+    });
+  });
+</script>

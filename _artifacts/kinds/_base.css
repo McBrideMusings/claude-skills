@@ -127,6 +127,33 @@ main {
 main > * { grid-column: prose; min-width: 0; }
 main > :is(.wide, figure, table, .scroll-x, .code, .compare) { grid-column: wide; }
 
+/* A wrapper that passes the measure grid through to its own children, so a table inside
+   a section still reaches the wide track. `page`'s two structural wrappers are named
+   here rather than re-declaring the same three lines in page.css: one definition of the
+   pass-through is worth this file knowing two class names. */
+:is(.subgrid, .page-section, .page-hero) {
+  grid-column: wide; display: grid; grid-template-columns: subgrid;
+}
+:is(.subgrid, .page-section, .page-hero) > * { grid-column: prose; min-width: 0; }
+:is(.subgrid, .page-section, .page-hero) > :is(.wide, figure, table, .scroll-x, .code, .compare) {
+  grid-column: wide;
+}
+
+/* Tables. One rule under the header, one under the last row, zebra between — a border on
+   every row is a ladder and stops the header reading as a header. Here rather than in
+   each kind: page and explainer had identical copies, which is the shape a rule takes
+   just before the two drift apart. */
+table { width: 100%; border-collapse: collapse; margin: var(--s-5) 0; font-size: var(--f-sm); }
+th, td { text-align: left; padding: var(--s-2) var(--s-3); border: 0; }
+thead th {
+  color: var(--ink-soft); font-weight: 650; font-size: .8em;
+  text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--ink-soft); padding-bottom: var(--s-2);
+}
+tbody tr:nth-child(even) { background: color-mix(in srgb, var(--ink) 3.5%, transparent); }
+tbody tr:last-child td { border-bottom: 1px solid var(--line); }
+td.nums, th.nums { text-align: right; }
+
 /* Wide content scrolls inside itself; the page body never scrolls sideways. */
 .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
 
