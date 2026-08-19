@@ -62,12 +62,63 @@ html[data-at-rail] body {
   gap: 6px;
 }
 
+.at-rail-titlebar {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
 .at-rail-title {
+  flex: 1;
+  min-width: 0;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.2px;
   line-height: 1.25;
 }
+
+.at-rail-keys,
+.at-rail-collapse {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #767d88;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.at-rail-keys:hover,
+.at-rail-collapse:hover { background: #23272d; color: #e8eaed; }
+
+/* --- the key list: the shortcuts do not exist until they are discoverable --- */
+
+.at-rail-legend {
+  display: none;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 12px 0 0;
+  border-top: 1px solid #22262c;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.at-rail[data-legend] .at-rail-legend { display: grid; }
+
+.at-rail-legend dt {
+  color: #e8eaed;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.at-rail-legend dd { margin: 0; color: #8a919c; }
 
 .at-rail-sub {
   font-size: 11px;
@@ -147,6 +198,19 @@ html[data-at-rail] body {
 
 .at-rail-item:active { transform: scale(0.99); }
 
+/* A control that does nothing must not look like one that does. Rotate on a desktop
+   frame was `disabled` and rendered identically to every live button, down to the
+   pointer cursor. */
+.at-rail-item:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.at-rail-item:disabled:hover {
+  color: #979ea8;
+  border-color: #23272d;
+}
+
 .at-rail-item:focus-visible {
   outline: 2px solid rgba(122, 162, 247, 0.6);
   outline-offset: 2px;
@@ -199,6 +263,56 @@ html[data-at-rail] body {
 }
 
 .at-rail-note b { color: #979ea8; font-weight: 600; }
+
+/* --- the focused axis ---
+
+   `x` moves this marker; `,` and `.` step whichever group holds it. Shown only when
+   there is more than one axis, because with one axis there is nothing to choose. */
+
+.at-rail-axis[data-focus] .at-rail-label { color: #b9c0cb; }
+
+.at-rail-axis[data-focus] .at-rail-label::before {
+  content: "";
+  width: 3px;
+  height: 10px;
+  margin-right: 2px;
+  border-radius: 2px;
+  background: #3f6ac2;
+}
+
+/* --- collapsed ---
+
+   The rail is 272px the prototype does not get. Judging a 1440-wide desktop layout in a
+   1280 window means the frame is scaled to 67% before the rail takes its cut. `\` gives
+   the width back; the reopen chevron is the only thing left on screen. */
+
+html[data-at-rail-collapsed] .at-rail { display: none; }
+html[data-at-rail-collapsed][data-at-rail] body { padding-left: 0; }
+
+.at-rail-reopen {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 2147483646;
+  display: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #23272d;
+  border-radius: 7px;
+  background: #101114;
+  color: #979ea8;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.at-rail-reopen:hover { color: #e8eaed; border-color: #333a43; }
+
+html[data-at-rail-collapsed] .at-rail-reopen { display: grid; }
+html[data-at-embedded] .at-rail-reopen { display: none !important; }
 
 /* A round's top-level markup, hidden by rail.js when its round is not on screen. */
 .at-shell[hidden] { display: none !important; }

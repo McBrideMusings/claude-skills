@@ -13,9 +13,21 @@
      must not reset which screen you were looking at, because the whole point is
      comparing the same screen across two directions.
 
-   Keyboard: 1-N and Left/Right switch variants; `[` / `]` step rounds; R replays the
-   entrance animation; Escape blurs. Ignored while focus is in a field or a modifier is
-   held — a prototype's own inputs are real and typing in them must work.
+   Keyboard, coarse to fine, matching the order of the rail itself:
+
+     [ ]        step round
+     1-N ← →    switch variant
+     x          focus the next axis group     , .   step the focused axis
+     d D        step device (viewport.js)
+     r          replay the entrance animation
+     \          collapse the rail
+     ?          show this list in the rail
+     Escape     blur
+
+   Ignored while focus is in a field or a modifier is held — a prototype's own inputs are
+   real and typing in them must work. Axes and devices get keys because they are the
+   controls that move most: a variant is chosen a few times, a state is flipped all
+   session.
 
    AXES ARE EVENT-DRIVEN. The rail owns no opinion about what an axis means: clicking an
    option dispatches
@@ -99,6 +111,10 @@
     axisState[key] = value;
     paintAxis(g);
     writeUrl();
+    // data-at-axis-state is what a device frame is told to catch up to, and what any
+    // outside reader polls. It was written only on variant/round changes, so an axis
+    // flip left it describing the state before the flip.
+    root.setAttribute('data-at-axis-state', JSON.stringify(axisState));
     emitAxis(g);
   }
 
@@ -177,6 +193,8 @@
       g.toggleAttribute('hidden', !!gr && gr !== round);
       paintAxis(g);
     });
+    axisFocus = 0;
+    paintAxisFocus();
     // A round's top-level markup lives in the document permanently, so it has to be
     // hidden when its round is not the one on screen — otherwise round 1's shared
     // screens stack under round 2's.
@@ -221,8 +239,85 @@
     setActive(r, Math.min(current, inRound(r).length - 1));
   }
 
+  /* ---------------- focused axis ----------------
+
+     One key cannot address "which axis" and "which option" at once, and digits already
+     belong to variants. So `x` moves a focus marker down the axis groups and `,` / `.`
+     step whichever group holds it. Three keys cover any number of axes and collide with
+     nothing. */
+
+  var axisFocus = 0;
+
+  function paintAxisFocus() {
+    var live = activeAxes();
+    live.forEach(function (g, i) {
+      g.toggleAttribute('data-focus', live.length > 1 && i === axisFocus);
+    });
+  }
+
+  function focusNextAxis() {
+    var live = activeAxes();
+    if (!live.length) return;
+    axisFocus = (axisFocus + 1) % live.length;
+    paintAxisFocus();
+  }
+
+  function stepAxis(delta) {
+    var live = activeAxes();
+    if (!live.length) return;
+    var g = live[Math.min(axisFocus, live.length - 1)];
+    var opts = axisOptions(g);
+    if (!opts.length) return;
+    var key = g.getAttribute('data-axis');
+    var i = 0;
+    for (var j = 0; j < opts.length; j++) {
+      if (opts[j].getAttribute('data-value') === axisState[key]) { i = j; break; }
+    }
+    setAxis(g, opts[(i + delta + opts.length) % opts.length].getAttribute('data-value'));
+    paintAxisFocus();
+  }
+
+  /* ---------------- collapse ----------------
+
+     The rail costs 272px of the window for as long as it is open, which is width the
+     design under judgement does not get — and the reason a desktop frame has to be
+     scaled down hardest. Collapsing is one key, and it persists like every other bit of
+     rail state. */
+
+  function setCollapsed(on) {
+    root.toggleAttribute('data-at-rail-collapsed', on);
+    try {
+      var url = new URL(location);
+      if (on) url.searchParams.set('rail', '0');
+      else url.searchParams.delete('rail');
+      history.replaceState(null, '', url);
+    } catch (e) {}
+    window.dispatchEvent(new Event('at:relayout'));
+  }
+
+  var reopen = document.createElement('button');
+  reopen.className = 'at-rail-reopen';
+  reopen.type = 'button';
+  reopen.setAttribute('aria-label', 'Show the controls');
+  reopen.textContent = '›';
+  reopen.addEventListener('click', function () { setCollapsed(false); });
+  document.body.appendChild(reopen);
+
+  var collapseBtn = rail.querySelector('.at-rail-collapse');
+  if (collapseBtn) collapseBtn.addEventListener('click', function () { setCollapsed(true); });
+
+  function toggleLegend() {
+    rail.toggleAttribute('data-legend');
+  }
+  var legendBtn = rail.querySelector('.at-rail-keys');
+  if (legendBtn) legendBtn.addEventListener('click', toggleLegend);
+
   document.addEventListener('keydown', function (e) {
+    // An embedded copy is driven by its host: acting locally as well would apply the
+    // same keypress twice and leave the frame describing a state the rail does not show.
+    if (root.hasAttribute('data-at-embedded')) return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+    if (e.key === 'Escape') { if (document.activeElement) document.activeElement.blur(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     var n = inRound(round).length;
     var num = parseInt(e.key, 10);
@@ -231,7 +326,35 @@
     else if (e.key === 'ArrowLeft') setActive(round, (current - 1 + n) % n);
     else if (e.key === ']') stepRound(1);
     else if (e.key === '[') stepRound(-1);
+    else if (e.key === 'x' || e.key === 'X') focusNextAxis();
+    else if (e.key === ',' || e.key === '<') stepAxis(-1);
+    else if (e.key === '.' || e.key === '>') stepAxis(1);
+    else if (e.key === '\\') setCollapsed(!root.hasAttribute('data-at-rail-collapsed'));
+    else if (e.key === '?') toggleLegend();
     else if (e.key === 'r' || e.key === 'R') mount();
+  });
+
+  /* ---------------- driven from outside ----------------
+
+     A device frame is a clone of this document, so it runs this same script. Rather than
+     being rebuilt every time the host's state changes — which throws away the frame's
+     scroll position, its typed input and any state the prototype itself holds — it is
+     told what changed and applies it in place. */
+
+  window.addEventListener('message', function (e) {
+    var m = e.data;
+    if (!m || m.at !== 'sync') return;
+    if (m.round && m.variantIndex) {
+      var i = Math.min(parseInt(m.variantIndex, 10), inRound(m.round).length) - 1;
+      if (m.round !== round || i !== current) setActive(m.round, i);
+    }
+    if (m.axes) {
+      axisGroups.forEach(function (g) {
+        var key = g.getAttribute('data-axis');
+        if (!(key in m.axes) || axisState[key] === m.axes[key]) return;
+        setAxis(g, m.axes[key]);
+      });
+    }
   });
 
   /* ---------------- a slot other harness widgets add controls to ----------------
@@ -300,6 +423,8 @@
       if (ok) axisState[key] = want;
     });
   }
+
+  if (q.get('rail') === '0') root.setAttribute('data-at-rail-collapsed', '');
 
   var r0 = root.getAttribute('data-at-round-init') || q.get('r') || round;
   if (rounds.indexOf(r0) < 0) r0 = round;

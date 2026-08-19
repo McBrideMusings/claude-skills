@@ -28,6 +28,15 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-not
 }
 
 html:not([data-at-rail]) .at-vp-host { left: 0; }
+html[data-at-rail-collapsed] .at-vp-host { left: 0; }
+
+/* 1:1 — the frame keeps its real pixel size and the host scrolls to the rest of it.
+   Centring a frame that is wider than the host would cut off its left edge with no way
+   back, so alignment flips to the start in whichever axis has overflowed. */
+.at-vp-host[data-actual] {
+  align-items: safe center;
+  justify-content: safe center;
+}
 
 /* --- the shell: bezel + whatever chrome sits OUTSIDE the viewport --- */
 

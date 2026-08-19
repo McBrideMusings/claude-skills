@@ -228,6 +228,12 @@ Never draw your own status bar or window chrome in the fragment. Reserve the spa
 publishes `--at-safe-top` and `--at-safe-bottom`, and pads `body` by them automatically. Set
 `data-at-safe="none"` on your root element if your layout wants to paint under the status bar itself.
 
+A frame larger than the window is scaled down to fit, and the rail says by how much — `1440 × 900 ·
+67%`. Nobody can judge type or spacing at 67%, so `1:1` turns scaling off and lets the page scroll to
+the rest of the frame instead. Flipping a variant or an axis does **not** rebuild the frame: it is
+told what changed and applies it in place, so scroll position, typed input and whatever state the
+prototype holds all survive. Only changing device or orientation rebuilds it.
+
 Each frame is a real `<iframe>`, so `@media (max-width: 640px)` fires inside it for real — which a
 width-constrained `<div>` can never do, and is why device frames are the harness's job.
 
@@ -255,8 +261,13 @@ The controls never share a letter:
 | --- | --- | --- | --- |
 | **Round** — a whole rebuild of the design | `?r=2` | rail, top: `v1 v2 v3` chips | `[` `]` |
 | **Variant** — a direction within one round | `?v=3` | rail: named buttons | `1`–`N`, `←`/`→` |
-| **Axis** — which state of the thing | `?screen=chat` | rail: one group per axis | — |
-| **Device** — which frame it renders in | — | rail, below the axes | — |
+| **Axis** — which state of the thing | `?screen=chat` | rail: one group per axis | `x` focuses the next axis, `,` / `.` step it |
+| **Device** — which frame it renders in | `?d=phone-landscape` | rail, below the axes | `d` / `D` |
+
+The rail also answers `\` (collapse — it costs 272px the design does not get, and `?rail=0`
+remembers it), `?` (show the key list), `r` (replay), and `Escape` (blur). Pressing a key while a
+device frame has focus works: the frame forwards the keys the host owns and keeps `a` and `c` for
+itself.
 
 Ordered coarse to fine down the rail, so the thing you change once a session sits above the thing you
 change a hundred times. The round group is omitted entirely while a topic has one round.

@@ -29,7 +29,32 @@
 
 (function () {
   var root = document.documentElement;
-  if (root.hasAttribute('data-at-embedded')) return;   // no frames inside a frame
+
+  /* Inside a frame: no nested frames, but the keyboard has to be given back.
+     Clicking a device frame moves focus into the iframe, and from then on every keypress
+     belongs to that document — so the rail's keys, and `a` and `c`, all silently stop
+     working the moment you interact with the thing you are reviewing. The frame is
+     same-origin, so it forwards what it is not going to use itself up to the host, which
+     re-dispatches it as if the host had focus. A key typed into one of the prototype's
+     own fields is left alone. */
+  if (root.hasAttribute('data-at-embedded')) {
+    document.addEventListener('keydown', function (e) {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Only the keys the HOST owns. `a` and `c` stay in the frame: annotating and the
+      // contrast check are about the framed document, and comments made inside it land
+      // in the same bucket anyway.
+      if (!/^([0-9]|[xXrRdD]|\[|\]|,|\.|<|>|\\|\?)$/.test(e.key) &&
+          e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      try { parent.postMessage({ at: 'key', key: e.key }, '*'); } catch (err) {}
+    });
+    return;
+  }
+
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.at !== 'key') return;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: e.data.key, bubbles: true }));
+  });
 
   var CATALOG = {
     fit:     { label: 'Fit',     w: 0,    h: 0,    chrome: null,      rotates: false },
@@ -46,12 +71,43 @@
 
   var current = 0;
   var landscape = false;
+  var actual = false;          // 1:1 — show the frame at its real size and scroll to it
   var host = null;
   var frame = null;
   var shell = null;
   var deviceBtns = [];
   var rotateBtn = null;
+  var actualBtn = null;
   var sizeLabel = null;
+
+  /* Every bit of frame state belongs in the URL, so a phone-landscape view of variant 2
+     is a link. Rotate used to call apply() directly and skipped this, which meant the
+     one control whose result you would most want to send someone was the one that did
+     not survive being sent. */
+  function writeDeviceUrl() {
+    try {
+      var url = new URL(location);
+      url.searchParams.set('d', names[current] + (landscape ? '-landscape' : ''));
+      if (actual) url.searchParams.set('zoom', '1');
+      else url.searchParams.delete('zoom');
+      history.replaceState(null, '', url);
+    } catch (e) {}
+  }
+
+  function toggleRotate() {
+    if (!CATALOG[names[current]].rotates) return;
+    landscape = !landscape;
+    paintControls();
+    writeDeviceUrl();
+    apply();
+  }
+
+  function toggleActual() {
+    actual = !actual;
+    paintControls();
+    writeDeviceUrl();
+    fit();
+  }
 
   /* ---------------- controls: into the rail when there is one ---------------- */
 
@@ -63,11 +119,8 @@
       deviceBtns.push(rail.item(row, CATALOG[n].label, function () { select(i); }));
     });
     var row2 = rail.row(g);
-    rotateBtn = rail.item(row2, '↻  Rotate', function () {
-      if (!CATALOG[names[current]].rotates) return;
-      landscape = !landscape;
-      apply();
-    });
+    rotateBtn = rail.item(row2, '↻  Rotate', toggleRotate);
+    actualBtn = rail.item(row2, '1:1', toggleActual);
     sizeLabel = document.createElement('div');
     sizeLabel.className = 'at-vp-size';
     g.appendChild(sizeLabel);
@@ -92,11 +145,13 @@
     rotateBtn.type = 'button';
     rotateBtn.setAttribute('aria-label', 'Rotate');
     rotateBtn.innerHTML = '&#8635;';
-    rotateBtn.addEventListener('click', function () {
-      if (!CATALOG[names[current]].rotates) return;
-      landscape = !landscape;
-      apply();
-    });
+    rotateBtn.addEventListener('click', toggleRotate);
+    actualBtn = document.createElement('button');
+    actualBtn.className = 'at-vp-item';
+    actualBtn.type = 'button';
+    actualBtn.textContent = '1:1';
+    actualBtn.addEventListener('click', toggleActual);
+    bar.appendChild(actualBtn);
     sizeLabel = document.createElement('span');
     sizeLabel.className = 'at-vp-size';
     bar.appendChild(divider);
@@ -112,20 +167,22 @@
       rotateBtn.toggleAttribute('disabled', !d.rotates);
       rotateBtn.toggleAttribute('data-active', d.rotates && landscape);
     }
+    if (actualBtn) {
+      actualBtn.toggleAttribute('disabled', !d.w);
+      actualBtn.toggleAttribute('data-active', !!d.w && actual);
+    }
   }
 
   function select(i) {
     current = i;
     if (!CATALOG[names[i]].rotates) landscape = false;
     paintControls();
-    // `?d=` names the frame, so a phone view is bookmarkable and reproducible — the
-    // same reason `?r=`/`?v=`/`?<axis>=` are written.
-    try {
-      var url = new URL(location);
-      url.searchParams.set('d', names[current] + (landscape ? '-landscape' : ''));
-      history.replaceState(null, '', url);
-    } catch (e) {}
+    writeDeviceUrl();
     apply();
+  }
+
+  function stepDevice(delta) {
+    select((current + delta + names.length) % names.length);
   }
 
   /* ---------------- inside-the-viewport chrome ---------------- */
@@ -234,12 +291,12 @@
       root.removeAttribute('data-at-vp');
       if (host) { host.remove(); host = null; frame = null; shell = null; }
       sizeLabel.textContent = '';
+      paintControls();
       return;
     }
     var land = d.rotates && landscape;
     var w = land ? d.h : d.w;
     var h = land ? d.w : d.h;
-    sizeLabel.textContent = w + ' × ' + h;
 
     if (!host) {
       host = document.createElement('div');
@@ -270,41 +327,76 @@
     host.appendChild(shell);
 
     root.setAttribute('data-at-vp', '');
+    // A change landing between here and the frame's first paint would arrive before
+    // there is anything to receive it, so the fresh frame is synced once on load.
+    frame.addEventListener('load', syncFrame);
     frame.srcdoc = srcdoc(d, land);
     fit();
   }
 
-  /* Scale down (never up) when the framed device is bigger than the window. */
+  /* Scale down (never up) when the framed device is bigger than the window — and say so.
+     A 1440 desktop in a 1280 window renders at 67%, which is not a size anyone can judge
+     type or spacing at. The label used to print the CSS size either way, so the number on
+     screen described a frame you were not actually looking at. 1:1 turns scaling off and
+     lets the host scroll to the rest. */
   function fit() {
     if (!shell || !host) return;
     shell.style.transform = '';
-    var availW = host.clientWidth - 40;
-    var availH = host.clientHeight - 40;
+    shell.style.marginBottom = '';
+    shell.style.marginRight = '';
+    host.toggleAttribute('data-actual', actual);
+
+    var d = CATALOG[names[current]];
+    var land = d.rotates && landscape;
+    var vw = land ? d.h : d.w;
+    var vh = land ? d.w : d.h;
     var w = shell.offsetWidth;
     var h = shell.offsetHeight;
-    var k = Math.min(1, availW / w, availH / h);
+    var k = actual ? 1 : Math.min(1, (host.clientWidth - 40) / w, (host.clientHeight - 40) / h);
+
     if (k < 1) {
       shell.style.transform = 'scale(' + k.toFixed(4) + ')';
       shell.style.marginBottom = -(h * (1 - k)) + 'px';
       shell.style.marginRight = -(w * (1 - k)) + 'px';
-    } else {
-      shell.style.marginBottom = '';
-      shell.style.marginRight = '';
     }
+    sizeLabel.textContent = vw + ' × ' + vh +
+      (k < 1 ? '  ·  ' + Math.round(k * 100) + '%' : '  ·  1:1');
   }
 
   window.addEventListener('resize', fit);
+  window.addEventListener('at:relayout', fit);
 
-  /* Flipping variant or axis in the host reframes the copy, so the frame is never stale. */
-  function reframe() {
-    if (!frame) return;
-    var d = CATALOG[names[current]];
-    frame.srcdoc = srcdoc(d, d.rotates && landscape);
+  /* The host's state changed. Tell the frame; do NOT rebuild it.
+     Rebuilding from srcdoc re-parses the whole document, which throws away the frame's
+     scroll position, anything typed into it, and any state the prototype itself holds —
+     on an action that happens a hundred times a session. The frame is same-origin, runs
+     this same rail.js, and knows how to apply a round, a variant and an axis in place. */
+  function syncFrame() {
+    if (!frame || !frame.contentWindow) return;
+    var axes = {};
+    try { axes = JSON.parse(root.getAttribute('data-at-axis-state') || '{}'); } catch (e) {}
+    frame.contentWindow.postMessage({
+      at: 'sync',
+      round: root.getAttribute('data-at-round'),
+      variantIndex: root.getAttribute('data-at-variant-index'),
+      axes: axes
+    }, '*');
   }
-  window.addEventListener('at:variant', reframe);
-  window.addEventListener('at:axis', reframe);
+  window.addEventListener('at:variant', syncFrame);
+  window.addEventListener('at:axis', syncFrame);
 
-  var want = new URLSearchParams(location.search).get('d') || '';
+  /* `d` steps the frame, `D` steps back. Same guard as the rail's own keys: a prototype's
+     inputs are real, so typing in one never moves the device. */
+  document.addEventListener('keydown', function (e) {
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === 'd') stepDevice(1);
+    else if (e.key === 'D') stepDevice(-1);
+  });
+
+  var params = new URLSearchParams(location.search);
+  actual = params.get('zoom') === '1';
+  var want = params.get('d') || '';
   var wantLandscape = /-landscape$/.test(want);
   var wantName = want.replace(/-landscape$/, '');
   var wantIndex = names.indexOf(wantName);
