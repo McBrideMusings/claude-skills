@@ -191,7 +191,15 @@ Resolve the issue backend via [`../_tracker/_detect.md`](../_tracker/_detect.md)
 
 **Completion criterion:** every candidate issue is classified ready or blocked, with the blocker named.
 
-**Bare invocation — no issue numbers, label, or milestone named — still builds this frontier from the whole open backlog.** It does not skip straight to dispatch. Present the frontier (count, and each issue's title) and wait for a go-ahead before step 2. Dispatching a multi-worker swarm is exactly the class of hard-to-reverse, significant action that gets confirmed first, not assumed — same standing rule that applies to any other significant or hard-to-reverse action. This is a real stop every run hits, not a formality: skipping it is how a frontier nobody looked at gets fanned out. A named scope (issue numbers, `label:X`, `milestone:X`) narrows what step 1 reads, but the same present-and-wait still applies before step 2 — naming a scope is not itself the go-ahead.
+**Bare invocation — no issue numbers, label, or milestone named — builds this frontier from the whole open backlog and dispatches it, no go-ahead prompt.** The user has stated standing consent for this (2026-08-19): a bare `/orchestrate` should never re-litigate "should I dispatch" — that conversation is settled at invocation time, not per run.
+
+To keep an unreviewed swarm from fanning out onto vague or high-blast-radius work, the **default scope excludes**, automatically and without asking:
+
+- any issue with the `spec` label — a spec is a decision to make, not a slice to implement
+- any issue attached to a milestone — milestone issues here are the vague Phase-N buckets ("Web UI Server Infrastructure"), not sliced work
+- anything that fails the dispatch gate at step 3 (implement's Phase 0.5 AFK check), same as a named scope — a single such failure files its follow-up and is skipped, it does not stop the round, since a bare run was never vetted by a human in the first place
+
+Everything else in the frontier goes out this round, sized per step 2. **State the exclusions in the report** (count of spec/milestone issues held back, by number) so they stay visible even though nobody confirmed them. A named scope (issue numbers, `label:X`, `milestone:X`) bypasses these default exclusions entirely — naming a scope is itself the human's review, so everything named is eligible.
 
 ### 2. Size the swarm
 
