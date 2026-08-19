@@ -27,6 +27,8 @@ Source repo: `~/projects/admin-project-tool/` (CLI `admin-run`, runtime `admin_l
 
 4. **Act, don't ask, for standard setup.** Creating or editing `admin.toml`, wiring standard commands (build/dev/deploy/test/docs), populating `[urls]`, or writing a thin passthrough to an existing runner (Makefile/justfile/npm) is routine — just do it and validate with `admin check`. No "shall I create it?", no "want me to wire X?", no "commit?" prompts. The ONLY thing that stops for a decision is a genuine design fork: heavy inline code that should migrate to `admin_lib` (present finding + migration plan first), or a tool/archetype change (Phase 0 commit+push+install). `admin.toml` is globally gitignored, so its edits are never a commit question anyway.
 
+5. **A fully-Python bundled `./admin` is not a foundation to extend — rip it out immediately.** Signature: a `# @bundled admin_lib=...` header, or any large hand-written committed Python script implementing build/dev/deploy logic (predates ADR-0006 and the `admin.toml` interpreter, or was never migrated). The instinct to "just add one more target to what's already there" is wrong even when it technically works — it's exactly how a project ends up with two competing admin systems once `admin.toml` shows up alongside it. The moment you recognize one: stop, migrate the whole project to `admin.toml` in the same pass (Phase 2a bootstrap, hand-port the custom logic per the layout preferences below), delete the old script, commit. Never patch the bundled script "for now" — not even to add one small thing.
+
 ---
 
 ## Inline code policy
@@ -215,6 +217,20 @@ Notes:
 
 Legacy `order = [...]` with `"---"` separator still works but prefer group/priority. When using explicit `order`, the first three entries must be `"build", "dev", "deploy"` — always.
 
+### Personal preferences (pierce) — read before laying out any `admin.toml`
+
+The tool itself enforces almost none of this — no naming convention, no menu shape, no archetype-composition rule. These are standing preferences, not tool constraints, and getting them wrong is the single most common reason a manifest needs correcting after the fact.
+
+**Prefer verb + sub-target dispatch over one top-level command per target.** If several things build/dev/deploy under the same conceptual verb and differ only in *which* thing (a native client for two platforms, a binary vs a Docker image, two Docker images), express them as `admin build <target>` — matching how the `apple` archetype's own `build mac|ios|tv` already works — never as separate top-level commands (`build-ios`, `build-go`, `deploy-agent`, `deploy-web`, `deploy-server`, …). A menu with a dozen narrowly-named top-level commands is the exact "what are all these, why do we have all these, I'm confused" complaint — the fix is collapsing them back under `build`/`dev`/`deploy` with sub-targets, not defending the sprawl. Only fall back to separate top-level commands when the targets are genuinely heterogeneous enough that no single dispatcher/archetype can express them together (e.g., a Go binary + Docker images living beside a completely separate Xcode client) — and even then, question whether the two really belong in the same `admin.toml` at all (see the multi-app note below) before reaching for a pile of hyphenated commands.
+
+**Composing more than one archetype needs an explicit collision check, every time — never assume the merge "just worked."** Two archetypes can both define `build`/`dev`/`deploy`/`reload`; the later one in the `archetypes = [...]` list silently wins for any name they share, and `admin check` prints `merge: command 'X' from 'Y' overridden by archetype 'Z'` for every collision — read every line of that output, not just the "ok" summary. A collision means the *other* archetype's version of that command, and everything unique to it (a stray `open`/`logs`/`run-args`, a bogus "prod" URL health-check with nothing behind it), is still present and now confusing since the thing it was for got silently dropped. If a project genuinely needs pieces of two archetypes, either accept the override and remove the now-orphaned unique commands from the losing archetype explicitly, or don't compose them at all — one archetype cleanly beats two composed sloppily.
+
+**`project_name` always names the whole project/repo, never one app or component living inside it** — even when that component is the only thing currently wired into `admin.toml`. A repo called "Open Assistant" that currently only builds one sub-app (say, a companion iOS client) still has `project_name = "Open Assistant"`; the sub-app's own name belongs in `ios_scheme`/`mac_scheme`/wherever the archetype config actually wants it, never smuggled into the project identity.
+
+**Before inventing an app identifier (bundle ID, package name, image name, anything reverse-DNS-shaped), check for an existing personal namespace convention already in use elsewhere in the same repo or fleet, and match it.** Don't derive an identifier from the current app/feature's own name (`com.hermescompanion.app` for an app called Hermes Companion) — check other targets in the same project, or other projects on this machine, for the real convention (e.g. `com.piercemakes.*`) and use that, asking only if none is found anywhere.
+
+**One `admin.toml` per thing the user actually wants to build right now.** Wiring in every buildable component of a repo "for completeness" is not the default — if the user names one specific app/target, wire only that, and say so rather than silently including the rest. Removing something later because it was never asked for reads as churn; ask what's actually wanted before the first draft, or keep the first draft minimal and let the user ask for more.
+
 ### Phase 2d: Audit + normalize an existing manifest
 
 **Offer this unprompted the first time a session touches `admin.toml`, or when an `admin` command surprises the user** (the wrong thing happened, or a verb didn't exist). One line: "`admin.toml` here uses `install` for the local install — the fleet standard is `deploy`. Want me to normalize it?" Then wait.
@@ -318,33 +334,39 @@ project.
 
 ---
 
-## Always-on processes on macOS (`[launchd]`)
+## Always-on user services (`[launchd]`) — macOS launchd, Linux systemd --user, or remote over SSH
 
-A project with a process that should be alive at login declares
-`modules = ["launchd"]` plus a `[launchd]` table, and wires a `service` command.
-**Do not write a per-project shell script that generates a plist and drives
-`launchctl`** — that is what this module replaced. It is a module, not an
-archetype, because a Go supervisor, a Python daemon and a shell script all
-register with launchd identically; it composes with whatever stack archetype the
-project already uses.
+A project with a process that should be alive at login (on this machine, or as
+standing infra on another one) declares `modules = ["launchd"]` plus a
+`[launchd]` table, and wires a `service` command. **Do not write a
+per-project shell script that generates a plist/unit and drives
+`launchctl`/`systemctl`, and do not write one that pushes a binary over SSH and
+installs it remotely** — that is what this module replaced (`admin_lib/launchd.py`).
+It is a module, not an archetype: a Go supervisor, a Python daemon and a shell
+script all register identically, so it composes with whatever stack archetype
+the project already uses. The config table is called `[launchd]` for historical
+reasons but drives all three targets — the same table, same verb names, works
+unmodified on macOS or Linux.
 
 ```toml
 modules = ["launchd"]
 
 [launchd]
 label       = "com.example.myserver"      # required
-program     = "~/go/bin/myserver"         # required, absolute after ~ expansion
+program     = "~/go/bin/myserver"         # required, absolute after ~ expansion — the INSTALLED path
+source      = "server/myserver"           # optional — a freshly built binary elsewhere; `install`
+                                           # atomically swaps it into `program` before touching the service
 args        = ["-wait-for-lock"]
 stdout      = "${HOME}/.myserver/out.log"
 stderr      = "${HOME}/.myserver/err.log"
 working_dir = "${HOME}"
 throttle    = 10
 # also: env, inherit_path (default true), inherit_home (default true),
-#       keep_alive (true), run_at_load (true), process_type ("Background"),
+#       keep_alive (true), run_at_load (true), process_type ("Background", macOS only),
 #       nice, start_interval
 
 [commands.service]
-desc = "Manage the LaunchAgent (install|uninstall|status|restart|stop|start)"
+desc = "Manage the service (install|uninstall|status|restart|stop|start)"
 steps = ["service"]
 group = 3
 priority = 1
@@ -356,7 +378,7 @@ launchd_service(globals().get("_LAUNCHD_CONFIG") or {}, args)
 '''
 ```
 
-Two things worth knowing before you debug something here:
+Three things worth knowing before you debug something here:
 
 - **`install` is deliberately not always a re-registration.** macOS 13+ Background
   Task Management records every launchd item and posts an "App Background
@@ -367,18 +389,56 @@ Two things worth knowing before you debug something here:
   identical and already loaded → `launchctl kickstart -k` only, no write, no new
   BTM record. It writes and re-registers only on a genuine change, a missing
   plist, or an unloaded agent. A `service install` that prints "restarted …
-  (plist unchanged)" is working correctly, not skipping work.
-- **`inherit_path` writes the invoking shell's PATH into the plist.** launchd
-  gives an agent `/usr/bin:/bin:/usr/sbin:/sbin` and nothing else, so a process
-  that shells out to anything from Homebrew or a language toolchain starts fine
-  and then fails on its first real unit of work. Leave it on unless the program
-  genuinely needs a pinned PATH.
+  (plist unchanged)" is working correctly, not skipping work. The Linux side
+  mirrors this with `systemctl --user`; there is no BTM equivalent to worry
+  about, but a byte-identical unit still skips the rewrite.
+- **`source` triggers an atomic binary swap, not a plain copy.** Overwriting a
+  file a running daemon has mapped corrupts the running image (macOS refuses to
+  spawn the new file — `OS_REASON_CODESIGNING`; Linux hits `ETXTBSY`). With
+  `source` set, `install` stops the service, writes the new binary to a sibling
+  temp path (its own inode), ad-hoc re-signs it on macOS, and renames it into
+  place — and skips the whole thing if the source is byte-identical to what's
+  already installed and loaded, so a redeploy of unchanged code doesn't bounce
+  a live process. Without `source`, `program` is assumed already built in place
+  (the historical behavior — unaffected by this key existing).
+- **`inherit_path` writes the invoking shell's PATH into the plist/unit.**
+  launchd hands an agent `/usr/bin:/bin:/usr/sbin:/sbin` and nothing else, so a
+  process that shells out to anything from Homebrew or a language toolchain
+  starts fine and then fails on its first real unit of work. Leave it on unless
+  the program genuinely needs a pinned PATH.
 
 `${VAR}` placeholders resolve at run time and nest, so `${GOPATH_BIN:-${HOME}/go/bin}`
 means what it reads. A default is only expanded when it is actually used.
 
 Note `admin service install` is also usually a step inside `deploy`, since a
 deploy replaces the binary the agent is running.
+
+### Remote install over SSH — `service_deploy_remote`
+
+For pushing the same service to another machine (a home-lab box, a VPS) rather
+than running it here: call `service_deploy_remote(cfg, host, dist_dir, binary)`
+from a `deploy` action. It arch-detects the host, picks the matching binary out
+of a `[go_dist]`-built matrix (`<binary>-<os>-<arch>` + `VERSION`), and pushes
+it plus a portable POSIX-sh installer
+(`admin_lib/resources/install_service_remote.sh`) over scp — no Python or the
+admin tool needs to be installed on the remote host. That installer duplicates
+a small slice of the launchd/systemd rendering logic in shell rather than
+importing `admin_lib.launchd`, on purpose: the remote host is not assumed to
+have the tool.
+
+```toml
+[actions.deploy]
+kind = "python"
+run  = '''
+host = args[1] if len(args) > 1 else None
+if host:
+    build_go_dist(globals().get("_GO_DIST_CONFIG") or {})
+    service_deploy_remote(globals().get("_LAUNCHD_CONFIG") or {}, host,
+                           dist_dir="dist", binary="myserver")
+else:
+    launchd_service(globals().get("_LAUNCHD_CONFIG") or {}, ["install"])
+'''
+```
 
 ---
 
