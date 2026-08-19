@@ -49,7 +49,10 @@ is exactly the pressure to resist.
 
 7. **Screenshot it and look at it.** Every slide for a deck, both themes. A path is delivery, not
    verification.
-8. **Open it** — `open <absolute-path>`, on its own line, no trailing punctuation.
+8. **Run the critique pass** — [`../_artifacts/CRITIQUE.md`](../_artifacts/CRITIQUE.md). Press `c` in
+   both themes for the contrast number, read the screenshot against the fixed list, fix everything in
+   one batch, stop. One pass, not a loop — and not a design review with the user in it.
+9. **Open it** — `open <absolute-path>`, on its own line, no trailing punctuation.
 
 **Every path absolute.** Resolve the repo root in its own Bash call (`git rev-parse --show-toplevel`,
 falling back to absolute `pwd`). A path that doesn't start with `/` is the bug.

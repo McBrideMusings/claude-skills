@@ -60,16 +60,31 @@ Tokens on `:root`, reassigned for `prefers-color-scheme: dark`, then again under
 tokens; never hardcode a hex in markup.
 
 ```
---f-2xl --f-xl --f-lg --f-md --f-sm          type scale
---s-1 … --s-6                                spacing scale
---radius --maxw
+--f-3xl --f-2xl --f-xl --f-lg --f-md --f-sm  type scale (root is 17px, so 1rem = 17px)
+--s-1 … --s-7                                spacing scale (--s-7 is the section step)
+--radius --maxw --maxw-wide
 --font-sans --font-mono
 --bg --surface --ink --ink-soft --line --c-muted --c-accent
 ```
 
+`--f-3xl` is the display step: one per artifact, on the title, never on a section heading.
+
 Utilities: `.scroll-x` (overflow container), `.stack` (vertical flex + gap), `.row` (horizontal flex +
-gap), `.nums` (tabular numerals), `.vh` (visually hidden). Focus rings and `prefers-reduced-motion` are
-already handled — don't re-declare them.
+gap), `.nums` (tabular numerals — the same class name on a `<td>` also right-aligns it), `.vh`
+(visually hidden). Focus rings, `prefers-reduced-motion`, text selection, the caret, scrollbars and
+link underline offset are already themed — don't re-declare them.
+
+**The measure grid.** In `explainer` and `page`, `main` is a two-width grid: prose sits at `--maxw`
+(68ch) and `figure`, `table`, `.scroll-x`, `.code` and `.compare` automatically break out to
+`--maxw-wide` (96ch). Add `class="wide"` to send anything else out to the wide track. A diagram or a
+ten-row table squeezed into a reading measure is the single most common way an artifact looks cramped,
+and it is already handled — don't re-center things by hand. `deck`, `prototype` and `wireframe` take
+the full viewport instead.
+
+**Never a coloured `border-left` thicker than 1px** on a callout, card, list item or alert. It is the
+most recognisable machine-made accent there is, and the tinted ground plus a coloured label already
+say what it would say. Every kind's stylesheet has been cleared of them; don't reintroduce one in a
+fragment.
 
 ## `explainer` — house look
 
@@ -92,8 +107,13 @@ Classes:
   be able to do after)
 - `.callout` + `.callout--data` / `--flow` / `--happy` / `--danger` / `--warn`, each with a
   `<span class="label">`
-- `.diagram` — `<figure>` around inline SVG, `<figcaption>` required
-- `.legend` with `.dot` swatches
+- `.diagram` — `<figure>` around inline SVG, `<figcaption>` required. The sheet ships the node and edge
+  vocabulary, so a diagram is marked up, not restyled: `<g class="node node--flow">` around a `rect` /
+  `circle` / `ellipse`, `.node-t` for a node's label and `.node-s` for its second line, `.edge` (plus
+  `.edge--dashed`) for connectors and `.edge-t` for an edge label. Role modifiers are the same five as
+  everywhere else: `--data --flow --happy --danger --warn`.
+- `.legend` with `.dot` swatches — `.dot--data` / `--flow` / `--happy` / `--danger` / `--warn` carry the
+  colour; a bare `.dot` is muted grey
 - `.steps` — `<ol>`, numbered rail, the Process backbone
 - `.compare` (add `.three` for three columns) with `.col` children
 - `.code` — `<pre>` inside; hand-coloured spans `.tok-key` `.tok-val` `.tok-str` `.tok-com` `.ann`. No
@@ -285,8 +305,11 @@ colour/type/layout plan before any markup. Classes: `.page-hero`, `.page-section
 2. **Screenshot it and look at it.** Every variant for a picker, every slide for a deck, both themes if
    it themes. A path is delivery, not verification — a font falling back, an overlap, or a blank
    variant is invisible in source.
-3. `open <absolute-path>`, printed on its own line with no trailing punctuation.
-4. Say which keys the artifact answers to: `a` to comment on anything, `c` to check contrast, and the
+3. **Run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md). One batched round: the artifact's own
+   contrast check in both themes, then the screenshot read against a fixed list. Fix what it finds in
+   one batch and stop; it is a pass, not a loop.
+4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
+5. Say which keys the artifact answers to: `a` to comment on anything, `c` to check contrast, and the
    device switcher along the top when it is a prototype or a wireframe.
 
 ## Getting comments back

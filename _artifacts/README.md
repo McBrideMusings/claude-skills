@@ -14,6 +14,7 @@ sit on a layout. None of them should be re-authoring a reset, a theme block, or 
 README.md         <- this file
 DIRECTION.md      <- creative direction: register, palette, type, the originality bar
 CONTRACT.md       <- the five kinds, their class vocabulary, and the body-fragment rules
+CRITIQUE.md       <- the one batched pass between building an artifact and handing it over
 kinds/
   _base.css       <- reset, theme plumbing, layout + overflow primitives, focus, print
   explainer.css   <- house look: semantic colour, type scale, callouts, steps, diagrams, cites
@@ -68,6 +69,8 @@ The tool that assembles all of it: `~/.claude/tools/artifact`.
 | `prototype` (UI shape, and COMPARE's visual branch) | `prototype` | `CONTRACT.md` |
 | `ui-design` (sketch mode, escalated) | `wireframe` | `CONTRACT.md` |
 | `artifact` | `page`, `deck` | `CONTRACT.md` + `DIRECTION.md` |
+
+`CRITIQUE.md` is read by all four, at the same point: after the build, before `open`.
 
 `DIRECTION.md` is read only for the **identity-first** kinds — `page` and `deck` — where palette and
 typefaces are open decisions. `explainer` has a house look already, `prototype` copies the project's
