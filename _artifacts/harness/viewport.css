@@ -1,13 +1,180 @@
-/* viewport.css — the device-size switcher. Chrome, not design.
+/* viewport.css — the device stage: bezel, outside-the-viewport chrome, and the
+   floating size bar used when there is no rail to put the controls in.
 
-   Same fixed-spec rule as picker.css: dark glass, never theme-aware, never restyled with
-   project tokens. It sits top-centre because the picker owns bottom-centre. */
+   Fixed spec, same rule as rail.css: this is harness chrome, never restyled with project
+   tokens, never theme-aware. It has to read as "the thing holding the design" against a
+   light prototype and a dark one alike. */
+
+/* --- the stage --- */
+
+html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-notes-layer):not(.at-panel):not(.at-toast) {
+  display: none !important;
+}
+
+.at-vp-host {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--at-rail-w, 0px);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: auto;
+  background:
+    radial-gradient(120% 100% at 50% 0%, #16181d 0%, #0a0b0d 70%);
+}
+
+html:not([data-at-rail]) .at-vp-host { left: 0; }
+
+/* --- the shell: bezel + whatever chrome sits OUTSIDE the viewport --- */
+
+.at-vp-shell {
+  position: relative;
+  flex: 0 0 auto;
+  transform-origin: top left;
+  overflow: hidden;
+  background: #000;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 24px 70px rgba(0, 0, 0, 0.62);
+}
+
+/* A phone/tablet gets a real bezel; a window does not — its edge IS the window edge. */
+.at-vp-shell[data-chrome="ios"] {
+  padding: 9px;
+  background: #1b1d21;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.13),
+    0 0 0 9px #0e0f11,
+    0 28px 80px rgba(0, 0, 0, 0.7);
+}
+
+.at-vp-frame {
+  display: block;
+  border: 0;
+  background: #fff;
+  border-radius: inherit;
+}
+
+.at-vp-shell[data-chrome="ios"] .at-vp-frame {
+  border-radius: 38px;
+}
+
+.at-vp-shell[data-chrome="ios"][style*="border-radius: 20px"] .at-vp-frame {
+  border-radius: 14px;
+}
+
+/* The notch is bezel furniture, not page content: it sits over the frame's top edge. */
+.at-vp-notch {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 122px;
+  height: 34px;
+  background: #000;
+  border-radius: 0 0 20px 20px;
+  z-index: 3;
+}
+
+/* --- macOS window title bar (OUTSIDE the viewport) --- */
+
+.at-oc {
+  display: flex;
+  align-items: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.at-oc-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: 0 0 12px;
+}
+
+.at-oc-macos {
+  height: 38px;
+  gap: 8px;
+  padding: 0 14px;
+  background: linear-gradient(#3a3f46, #2e3238);
+  border-bottom: 1px solid #22252a;
+}
+
+.at-oc-macos .at-oc-title {
+  flex: 1;
+  text-align: center;
+  margin-right: 52px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cdd2d9;
+}
+
+/* --- browser chrome (OUTSIDE the viewport) --- */
+
+.at-oc-browser {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  background: #2e3238;
+  border-bottom: 1px solid #22252a;
+}
+
+.at-oc-browser .at-oc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+}
+
+.at-oc-browser .at-oc-tab {
+  margin-left: 10px;
+  width: 190px;
+  height: 26px;
+  border-radius: 8px 8px 0 0;
+  background: #3f444c;
+}
+
+.at-oc-browser .at-oc-url {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 8px;
+}
+
+.at-oc-browser .at-oc-lock {
+  font-size: 9px;
+  color: #7f8792;
+}
+
+.at-oc-browser .at-oc-addr {
+  flex: 1;
+  height: 28px;
+  border-radius: 999px;
+  background: #22252a;
+}
+
+/* --- size readout --- */
+
+.at-vp-size {
+  font-size: 11px;
+  color: #5c636d;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 2px 0;
+}
+
+/* --- the floating bar, used only when no rail exists (non-prototype kinds) --- */
 
 .at-vp {
   position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 24px;
+  bottom: 24px;
   z-index: 2147483646;
   display: flex;
   align-items: center;
@@ -21,100 +188,33 @@
     0 0 0 1px rgba(255, 255, 255, 0.08) inset,
     0 8px 24px rgba(0, 0, 0, 0.24);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
-  -webkit-font-smoothing: antialiased;
   user-select: none;
-  -webkit-user-select: none;
 }
 
-/* The picker sits top-centre when a variant asked for it; step out of its way. */
-.proto-picker[data-position="top"] ~ .at-vp,
-:root[data-at-picker-top] .at-vp {
-  top: auto;
-  bottom: 16px;
-  left: 16px;
-  transform: none;
-}
+.at-vp .at-vp-size { padding: 0 8px 0 4px; }
 
 .at-vp-item {
   display: flex;
   align-items: center;
-  height: 28px;
-  padding: 0 12px;
+  height: 26px;
+  padding: 0 11px;
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: rgba(255, 255, 255, 0.55);
   font: inherit;
   cursor: pointer;
-  transition: color 150ms ease-out, background-color 150ms ease-out;
 }
 
-.at-vp-item:hover { color: rgba(255, 255, 255, 0.85); }
-.at-vp-item:active { transform: scale(0.97); }
-.at-vp-item:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 2px; }
-
-.at-vp-item[data-active] {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-}
+.at-vp-item:hover { color: #fff; background: rgba(255, 255, 255, 0.1); }
+.at-vp-item[data-active] { color: #fff; background: rgba(255, 255, 255, 0.14); }
+.at-vp-item[disabled] { opacity: 0.3; cursor: default; }
 
 .at-vp-divider {
   width: 1px;
-  height: 16px;
+  height: 14px;
   margin: 0 4px;
   background: rgba(255, 255, 255, 0.12);
-}
-
-.at-vp-rotate { padding: 0 10px; font-size: 14px; }
-
-.at-vp-size {
-  padding: 0 10px 0 6px;
-  color: rgba(255, 255, 255, 0.4);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-}
-
-/* --- the framed page ------------------------------------------------------- */
-
-.at-vp-host {
-  position: fixed;
-  inset: 64px 0 64px 0;
-  z-index: 1;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  overflow: auto;
-  background:
-    repeating-conic-gradient(rgba(128, 128, 128, 0.10) 0% 25%, transparent 0% 50%)
-    50% / 22px 22px;
-}
-
-.at-vp-frame {
-  display: block;
-  border: 0;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow:
-    0 0 0 1px rgba(128, 128, 128, 0.35),
-    0 18px 50px rgba(0, 0, 0, 0.28);
-  transform-origin: top center;
-}
-
-/* Everything the page itself drew is hidden while a device frame is up; the frame is
-   showing a full copy of it at the chosen viewport. Harness chrome stays. */
-:root[data-at-vp] body > *:not(.at-vp):not(.at-vp-host):not(.at-notes-layer):not(.at-panel):not(.at-toast):not(.proto-picker):not(template):not(script) {
-  display: none !important;
-}
-
-/* Inside the frame the page is the whole point — no nested chrome, no nested frames. */
-:root[data-at-embedded] .at-vp,
-:root[data-at-embedded] .proto-picker,
-:root[data-at-embedded] .at-theme {
-  display: none !important;
-}
-
-@media print {
-  .at-vp { display: none !important; }
 }

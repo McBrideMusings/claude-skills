@@ -102,14 +102,16 @@ Classes:
   file, you can't draw it.
 - `details.reveal` — layered "go deeper". Native `<details>`, no JS.
 
-## `prototype` — variants behind a picker
+## `prototype` — variants, state axes and devices, behind one rail
 
 Build with `--picker switch` (one at a time, full size — the default) or `--picker list` (each stacked
 full size, one per screenful). **Never a grid of thumbnails**: small side-by-side comparison distorts
 spacing and scale, and judging UI at postage-stamp size is the failure the picker exists to prevent.
 
-Each variant is a `<template>`. The tool generates the nav, the keyboard wiring, the URL persistence,
-and the replay button. **Write no picker code.**
+In switch mode every control lives in **one left rail**: round, variant, each state axis, and the
+device frame. They are all the same question — *what am I looking at* — and they are ordered coarse to
+fine. The tool generates the rail, the keyboard wiring, and the URL persistence. **Write no rail
+code.**
 
 ```html
 <style>
@@ -117,28 +119,97 @@ and the replay button. **Write no picker code.**
   :root { --brand: #2f6df6; --radius-card: 10px; }
 </style>
 
-<template data-variant="Quiet" data-axis="Minimal motion, borders over shadows">
+<nav data-axis="screen" data-label="Screen">
+  <button data-value="home">Home<em>the session list</em></button>
+  <button data-value="chat">Agent chat<em>ACP transcript</em></button>
+</nav>
+
+<aside data-rail-note><b>Scope.</b> Resume-only. No terminal view.</aside>
+
+<template data-variant="Quiet" data-caption="Minimal motion, borders over shadows">
   <div class="proto-frame">…the variant, in realistic surrounding context…</div>
 </template>
 
-<template data-variant="Editorial" data-axis="Large type, generous whitespace">
+<template data-variant="Editorial" data-caption="Large type, generous whitespace">
   <div class="proto-frame">…</div>
 </template>
+
+<script>
+  // See "State axes" — every axis is event-driven, and this is the whole boilerplate.
+  addEventListener('at:axis', function (e) {
+    if (e.detail.axis !== 'screen') return;
+    document.querySelectorAll('[data-screen]').forEach(function (el) {
+      el.hidden = el.dataset.screen !== e.detail.value;
+    });
+  });
+</script>
 ```
 
-- `data-variant` is the picker label — a direction ("Quiet", "Dense"), never "Variant A".
-- `data-axis` is optional; `list` mode prints it under the heading.
+- `data-variant` is the rail label — a direction ("Quiet", "Dense"), never "Variant A".
+- `data-caption` is optional; `list` mode prints it under the heading. It is **not** `data-axis` —
+  see below, those are two different things.
 - **Never write `data-round` yourself.** `--round N` stamps it. See "Rounds" below.
 - Add `data-motion` to the fragment's first `<template>` if any variant has an entrance animation worth
   re-triggering — the tool then renders the replay button.
-- Add `data-picker-position="top"` on a template when a variant occupies the bottom-centre of the
-  screen (a toast stack, a bottom sheet, a dock) so the picker never covers the work.
-- The picker is chrome. It is never restyled with the project's tokens, and `prototype.css` supplies no
+- The rail is chrome. It is never restyled with the project's tokens, and `prototype.css` supplies no
   palette of its own — every colour in the output comes from your fragment.
 - Each variant renders in realistic surrounding context: a toast needs a page behind it, a card needs
   siblings, a button needs a form.
-- The variant swap is instant. Flipping is a 100+/session action; it gets no animation. (The picker's
-  own highlight slides — that's specified in `harness/picker.css` and is not yours to change.)
+- The variant swap is instant. Flipping is a 100+/session action; it gets no animation.
+- **Every control in the prototype is live.** Not the happy path only: each tab switches, each toggle
+  toggles, each row opens something, each dangerous button shows what it would do. A dead control is
+  worse than an absent one — it reads as a bug and stops the conversation the prototype exists to
+  have. If a control genuinely goes nowhere in this round, it does not go in this round.
+
+### State axes — which screen, which state, which error
+
+An **axis** is a control the rail renders and your fragment interprets. It is orthogonal to round and
+variant on purpose: flipping variant must not reset which screen is showing, because comparing one
+screen across two directions is the entire job.
+
+```html
+<nav data-axis="conn" data-label="Connection">
+  <button data-value="up">Connected</button>
+  <button data-value="down">Server unreachable<em>what the list does with no data</em></button>
+</nav>
+```
+
+- Declared at the **top level** of the fragment — never inside a `<template data-variant>`, which is
+  not in the document until it is mounted.
+- The first `<button>` is the default. `<em>` inside a button is a second, dimmer line.
+- Clicking one dispatches on `window`:
+  `new CustomEvent('at:axis', {detail: {axis, value, index, label}})`.
+- **The rail re-emits every live axis right after each mount.** So a listener never has to re-apply
+  state after a variant switch — it just handles the event again. Don't write re-apply code.
+- Your listener must be a **top-level `<script>`** in the fragment. A `<script>` cloned out of a
+  `<template>` does not execute — this is the one trap in the whole contract.
+- Every round's top-level markup is carried forward, so **scope selectors to what your round owns**
+  and guard on existence; round 1's script and round 3's script both run.
+- Axes are round-scoped: `--round 3` can declare screens round 1 never had, and the rail shows only
+  the current round's.
+- Axis state persists in the URL as `?screen=chat`, alongside `?r=` and `?v=`.
+
+### Devices — named per prototype, never defaulted into
+
+`--devices fit,phone,tablet,desktop,web`. Choosing these is a judgement about **this** design, and it
+is yours to make: offering a frame the design was never meant for invites a verdict on a layout nobody
+drew. A phone-only chat surface gets `fit,phone`. A pane-tree editor gets `fit,desktop`. `fit` is
+always included and is the default view.
+
+Chrome sits on whichever side of the viewport it really sits on, and the harness draws all of it:
+
+| Frame | Chrome | Where |
+| --- | --- | --- |
+| `phone`, `tablet` | status bar, notch, home indicator | **inside** the viewport — content scrolls under it |
+| `desktop` | macOS title bar + traffic lights | **outside** — a page cannot see its own window |
+| `web` | tab strip + URL bar | **outside** |
+
+Never draw your own status bar or window chrome in the fragment. Reserve the space instead: the frame
+publishes `--at-safe-top` and `--at-safe-bottom`, and pads `body` by them automatically. Set
+`data-at-safe="none"` on your root element if your layout wants to paint under the status bar itself.
+
+Each frame is a real `<iframe>`, so `@media (max-width: 640px)` fires inside it for real — which a
+width-constrained `<div>` can never do, and is why device frames are the harness's job.
 
 ### Rounds — one canonical file per topic
 
@@ -158,17 +229,17 @@ and nothing else. Each round's non-template markup — its `<style>` of project 
 `<!--at:round N-->…<!--/at:round N-->` and carried forward too, newest last, so a later round's
 redefinition of a class wins by ordinary cascade while v1 keeps the rules it was built against.
 
-The two axes never share a letter:
+The controls never share a letter:
 
 | | URL | Control | Keys |
 | --- | --- | --- | --- |
-| **Round** — a whole rebuild of the design | `?r=2` | dimmed `v2` chip, bottom-right corner; click to expand the list | `[` `]`, `Esc` to close |
-| **Variant** — a direction within one round | `?v=3` | the centre pill: named buttons, sliding highlight | `1`–`N`, `←`/`→` |
+| **Round** — a whole rebuild of the design | `?r=2` | rail, top: `v1 v2 v3` chips | `[` `]` |
+| **Variant** — a direction within one round | `?v=3` | rail: named buttons | `1`–`N`, `←`/`→` |
+| **Axis** — which state of the thing | `?screen=chat` | rail: one group per axis | — |
+| **Device** — which frame it renders in | — | rail, below the axes | — |
 
-The round control is **not** in the pill and is not supposed to be noticed. Changing round is a
-once-a-session act; changing variant is a hundred-times-a-session one, so the round chip sits alone in
-the corner at 40% opacity, collapsed to the current round's label, and only expands on click. It is
-omitted entirely while a topic has one round.
+Ordered coarse to fine down the rail, so the thing you change once a session sits above the thing you
+change a hundred times. The round group is omitted entirely while a topic has one round.
 
 Opening the file bare shows the newest round's first variant. Stepping rounds keeps the variant slot,
 so `]` compares the same position across versions. An out-of-range `r` or `v` falls back rather than

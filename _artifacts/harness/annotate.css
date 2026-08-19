@@ -1,6 +1,6 @@
 /* annotate.css — the comment layer. Chrome, not design.
 
-   Same rule as picker.css: deliberately NOT theme-aware, never restyled with project
+   Same rule as rail.css: deliberately NOT theme-aware, never restyled with project
    tokens. Dark glass reads as harness on top of any page, light or dark.
 
    Dormant by default — nothing here renders until annotate.js sets data-at-annotate on
@@ -38,7 +38,7 @@
 :root[data-at-annotate] .at-panel button,
 :root[data-at-annotate] .at-composer button,
 :root[data-at-annotate] .at-theme,
-:root[data-at-annotate] .proto-picker button,
+:root[data-at-annotate] .at-rail button,
 :root[data-at-annotate] .at-vp button { cursor: pointer !important; }
 
 /* --- a pinned comment ------------------------------------------------------ */

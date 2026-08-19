@@ -65,7 +65,7 @@
      theme toggle are the harness, and flipping variants or sizes mid-review has to keep
      working. */
   var CHROME = '.at-panel, .at-composer, .at-notes-layer, .at-toast, ' +
-    '.proto-picker, .at-vp, .at-vp-host, .at-theme, .at-cx-layer';
+    '.at-rail, .at-vp, .at-vp-host, .at-theme, .at-cx-layer';
 
   function snippetOf(el) {
     return (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 90);

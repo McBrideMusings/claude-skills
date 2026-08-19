@@ -117,4 +117,26 @@ If a written record is useful at the end, offer it — don't assume:
 
 Glossary entries and ADRs are captured *inline* during the session — no end-of-session sweep needed.
 
-Never auto-commit any artifact. Never chain into another skill.
+## Never build by hand what another skill owns
+
+"Never chain into another skill" (below) means **never chain into another interview**. It does not
+mean build things yourself. The moment the conversation asks for an artifact — a prototype, a spec, a
+diagram, a plan, tickets — **invoke the skill that owns it**, then come back here. Reading a request
+as a direct instruction and starting to write is the failure this rule exists to stop: skills carry
+naming, versioning, and format conventions that hand-written output silently breaks, and the cost
+lands later, on the user, as a file in the wrong place under the wrong name that can't be iterated on.
+
+| The user asks for | Invoke |
+| --- | --- |
+| a prototype, mockup, variants, "show me a few options" | `prototype` |
+| a spec or PRD | `to-spec` |
+| tickets or issues from what was decided | `to-tickets` |
+| a diagram or a visual explanation | `show-me` / `explain` |
+| an ASCII layout sketch for one arrangement | `ui-design` |
+
+This is not optional and it is not a judgement call. **If a skill's description covers the artifact,
+that skill builds it** — even when the request is one sentence, even when you can see exactly what to
+write, and especially when you can, because that is when skipping it feels most reasonable.
+
+Never auto-commit any artifact. Never chain into another *interview* skill — but always hand a build
+to the skill that owns it, per "Never build by hand what another skill owns" above.

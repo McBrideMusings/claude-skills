@@ -7,6 +7,19 @@ description: "Build a throwaway prototype to flesh out a design before committin
 
 A prototype is **throwaway code that answers a question**. The question decides the shape.
 
+## Load this whenever a prototype is being built — including mid-conversation
+
+This skill owns every prototype, however the request arrives. Load it when the user says *prototype,
+mockup, wireframe, "show me a few options", "what should this look like", "spike it", "which approach"*
+— and equally when that request lands in the middle of something else, which is the case it gets
+missed in. `grill-me` in particular ends with "and then make an HTML prototype": that sentence is an
+instruction to invoke this skill, not to start writing HTML.
+
+Hand-writing a prototype instead of loading this skill loses the slug and round scheme (so round 2 has
+nowhere to go), the rail and its state axes, the device frames, and the `--devices` judgement call.
+None of that is visible as an error — the file just quietly can't be iterated on. **If you can see
+exactly what to write, that is when to load this, not when to skip it.**
+
 ## Pick a shape
 
 Identify which question is being answered — from the prompt, the surrounding code, or by asking if the
@@ -104,8 +117,16 @@ being compared at once; the version numbers the rounds.
 5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the
    full relevant state so the user can see what changed.
 6. **Realistic content, always.** Product-shaped copy, plausible names and numbers, real-sized data. No
-   lorem ipsum, no `foo`/`bar`, no dead buttons, no "imagine this part here".
-7. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a
+   lorem ipsum, no `foo`/`bar`, no "imagine this part here".
+7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something,
+   every destructive button shows what it would do — the reject path as much as the approve path. A
+   dead control reads as a bug and derails the conversation the prototype exists to have. A control
+   with nowhere to go this round does not go in this round.
+8. **Name the devices deliberately** (UI shape). `--devices` is a judgement about this design, made
+   fresh each time: `fit,phone` for a phone surface, `fit,desktop` for a desktop one, more only when
+   the thing genuinely ships on more. Never accept a default list, and never draw device chrome by
+   hand — the harness owns the status bar, notch, window title bar and browser chrome.
+9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a
    direction wins, implement it properly in the project's stack and conventions, then delete the
    prototype. Never move the file into the codebase.
 

@@ -22,16 +22,17 @@ kinds/
   deck.css        <- slide sections
   page.css        <- generic fallback; palette and type left empty for the model to choose
 harness/
-  picker.css      <- the variant picker, fixed spec, never restyled
-  picker.js       <- picker wiring, driven by <template data-variant>
+  rail.css        <- the prototype control rail, fixed spec, never restyled
+  rail.js         <- rounds, variants, state axes; driven by <template data-variant>
+                     and <nav data-axis>; other widgets add groups via window.__atRail
   deck.js         <- slide keyboard navigation
   theme.js        <- light/dark toggle
   annotate.css    <- the comment layer
   annotate.js     <- comment on elements, export the comments as markdown
   contrast.css    <- the WCAG check's badges
   contrast.js     <- flag text that fails AA against its backdrop
-  viewport.css    <- the device-size switcher
-  viewport.js     <- frames the page in a real viewport per device size
+  viewport.css    <- device bezel + the chrome that sits outside the viewport
+  viewport.js     <- real iframe per device; --devices names which frames exist
 ```
 
 ## Widgets

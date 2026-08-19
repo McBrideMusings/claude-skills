@@ -85,7 +85,7 @@
 
     for (var i = 0; i < all.length; i++) {
       var el = all[i];
-      if (el.closest('.at-cx-layer, .at-panel, .at-notes-layer, .at-toast, .at-vp, .proto-picker')) continue;
+      if (el.closest('.at-cx-layer, .at-panel, .at-notes-layer, .at-toast, .at-vp, .at-rail')) continue;
       if (!hasOwnText(el)) continue;
 
       var cs = getComputedStyle(el);
