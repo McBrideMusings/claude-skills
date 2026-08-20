@@ -2,10 +2,17 @@
 
 Roblox/Luau/Rojo work has a full knowledge store of its own. This cell exists so the
 game engines (`game-dev`, `review`, `diagnose`, `profiling`, `prototype`, `testing`)
-can find it without the catalog paying for a description every turn.
+can find it without the global catalog paying for a description every turn.
 
-**The store:** `~/.claude/skills/roblox/` — hidden from model invocation (2026-08-20),
-reachable by typing `/roblox` or by reading the files directly.
+**The store moved out of the global catalog on 2026-08-20.** It now lives per-project,
+model-invocable inside each Roblox repo and costing nothing anywhere else:
+
+- `~/Projects/roblox-shooter/.claude/skills/roblox/`
+- `~/Projects/roblox-plants/.claude/skills/roblox/`
+
+Outside those two repos there is no `roblox` skill — this cell is the whole of it.
+The routing table below points at the project copy; read it from whichever repo you
+are in. If a third Roblox project appears, copy the skill directory into it too.
 
 ## The one rule that shapes everything
 
@@ -30,13 +37,13 @@ server-side.
 
 | Task | Read |
 |---|---|
-| Studio MCP / driving Studio / playtest | `~/.claude/skills/roblox/references/studio-mcp.md` |
-| Rojo setup, project.json, packages, LSP types | `~/.claude/skills/roblox/references/rojo-tooling.md` |
-| Runtime error / crash / unexpected behavior | `~/.claude/skills/roblox/workflows/debug-loop.md` |
-| Bugs, leaks, footguns | `~/.claude/skills/roblox/references/sharp-edges.md` |
-| Remote validation, exploits, server-authority | `~/.claude/skills/roblox/references/security.md` |
-| Luau idioms, `task` library, typed Luau | `~/.claude/skills/roblox/references/luau-idioms.md` |
-| Exact API type / enum / class members | `~/.claude/skills/roblox/scripts/api-dump.js` |
+| Studio MCP / driving Studio / playtest | `.claude/skills/roblox/references/studio-mcp.md` |
+| Rojo setup, project.json, packages, LSP types | `.claude/skills/roblox/references/rojo-tooling.md` |
+| Runtime error / crash / unexpected behavior | `.claude/skills/roblox/workflows/debug-loop.md` |
+| Bugs, leaks, footguns | `.claude/skills/roblox/references/sharp-edges.md` |
+| Remote validation, exploits, server-authority | `.claude/skills/roblox/references/security.md` |
+| Luau idioms, `task` library, typed Luau | `.claude/skills/roblox/references/luau-idioms.md` |
+| Exact API type / enum / class members | `.claude/skills/roblox/scripts/api-dump.js` |
 
 ## Top sharp edges
 
