@@ -60,7 +60,7 @@
 }
 
 .at-dock:hover { opacity: 1; color: var(--at-c-ink); }
-.at-dock:focus-visible { opacity: 1; outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
+.at-dock:focus-visible { opacity: 1; outline: 2px solid var(--at-c-mark); outline-offset: 2px; }
 .at-dock[data-dragging] { opacity: 1; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45); }
 
 /* Active is the one state that overrides the resting transparency: amber, the same

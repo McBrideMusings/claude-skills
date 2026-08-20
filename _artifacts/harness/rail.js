@@ -293,6 +293,7 @@
 
   function setCollapsed(on) {
     root.toggleAttribute('data-at-rail-collapsed', on);
+    paintToggle();
     try {
       var url = new URL(location);
       if (on) url.searchParams.set('rail', '0');
@@ -302,14 +303,25 @@
     window.dispatchEvent(new Event('at:relayout'));
   }
 
+  /* A toggle, not an opener. It is on screen whether the rail is open or shut, and it
+     says which — amber when the rail is showing, dark when it is not, exactly like the
+     comment button and its panel. Same object, same states, same CSS. */
   var reopen = document.createElement('button');
   reopen.className = 'at-rail-reopen';
   reopen.type = 'button';
-  reopen.setAttribute('aria-label', 'Show the controls');
-  reopen.setAttribute('title', 'Show the controls  (\\)');
-  reopen.textContent = '›';
-  reopen.addEventListener('click', function () { setCollapsed(false); });
+  reopen.addEventListener('click', function () {
+    setCollapsed(!root.hasAttribute('data-at-rail-collapsed'));
+  });
   document.body.appendChild(reopen);
+
+  function paintToggle() {
+    var open = !root.hasAttribute('data-at-rail-collapsed');
+    reopen.toggleAttribute('data-active', open);
+    reopen.setAttribute('aria-pressed', open ? 'true' : 'false');
+    reopen.setAttribute('aria-label', open ? 'Hide the controls' : 'Show the controls');
+    reopen.setAttribute('title', (open ? 'Hide the controls' : 'Show the controls') + '  (\\)');
+    reopen.textContent = open ? '‹' : '›';
+  }
   // rail.js is inlined before the widget scripts, so the dock helper does not exist yet.
   // A timeout runs after every inline script has executed.
   setTimeout(function () {
@@ -438,6 +450,7 @@
   }
 
   if (q.get('rail') === '0') root.setAttribute('data-at-rail-collapsed', '');
+  paintToggle();
 
   var r0 = root.getAttribute('data-at-round-init') || q.get('r') || round;
   if (rounds.indexOf(r0) < 0) r0 = round;

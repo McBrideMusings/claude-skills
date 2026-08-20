@@ -335,10 +335,13 @@
 
 html[data-at-rail-collapsed] .at-rail { display: none; }
 
-/* The reopen chevron is one of the docked floating buttons: geometry, opacity and
-   dragging all come from .at-dock in chrome.css. Only its visibility is local. */
-html[data-at-rail-collapsed] .at-rail-reopen { display: grid; }
-.at-rail-reopen { display: none; }
+/* The rail toggle is one of the docked floating buttons: everything about how it looks
+   comes from .at-dock in chrome.css. It is always on screen — it used to try to hide
+   itself while the rail was open, but .at-dock's own display won that fight, so it was
+   visible the whole time anyway. Now that is the design rather than the accident: it
+   shows the rail's state instead of only offering a way back.
+
+   `display: none !important` inside a frame stays: the host's copy drives everything. */
 
 html[data-at-embedded] .at-rail-reopen { display: none !important; }
 
