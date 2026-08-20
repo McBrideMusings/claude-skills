@@ -34,21 +34,34 @@
     try { localStorage.setItem(KEY, JSON.stringify(out)); } catch (e) {}
   }
 
-  /* The free edges, which move as the two panels open and close. */
+  /* The free edges, from the same two tokens the stage and the device host read, rather
+     than from the rail's and the panel's own rects — one description of the layout
+     instead of three.
+
+     Through a probe rather than getPropertyValue, because a custom property whose value
+     is itself a var() comes back from getComputedStyle UNRESOLVED: --at-inset-l reads as
+     the literal string "var(--at-rail-w, 272px)", parseFloat gives NaN, and every edge
+     silently collapses to the window's. Laying out a zero-height element with those
+     insets makes the browser resolve them, and its rect is the answer. */
+  var probe = document.createElement('div');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.cssText = 'position:fixed;top:0;height:0;pointer-events:none;visibility:hidden;' +
+    'left:var(--at-inset-l,0px);right:var(--at-inset-r,0px)';
+  document.body.appendChild(probe);
+
+  function free() {
+    var r = probe.getBoundingClientRect();
+    return { left: r.left, right: r.right };
+  }
+
   function leftEdge() {
-    var rail = document.querySelector('.at-rail');
-    if (rail && getComputedStyle(rail).display !== 'none') {
-      return rail.getBoundingClientRect().right + GAP;
-    }
-    return GAP;
+    var l = free().left;
+    return l + (l ? GAP : GAP);
   }
 
   function rightEdge(w) {
-    var panel = document.querySelector('.at-panel');
-    if (panel && getComputedStyle(panel).display !== 'none') {
-      return panel.getBoundingClientRect().left - GAP - w;
-    }
-    return window.innerWidth - GAP - w;
+    var r = free().right;
+    return r - GAP - w;
   }
 
   function place(d, animate) {

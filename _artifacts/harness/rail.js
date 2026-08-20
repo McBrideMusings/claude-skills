@@ -337,8 +337,22 @@
     if (window.__atDock) window.__atDock(reopen, 'rail-reopen', 'left', 0);
   }, 0);
 
-  var collapseBtn = rail.querySelector('.at-rail-collapse');
-  if (collapseBtn) collapseBtn.addEventListener('click', function () { setCollapsed(true); });
+  /* When a file was built. Several confusing sessions came down to looking at an
+     artifact from before a fix and reasoning about behaviour that no longer existed;
+     the answer was in a meta tag nothing displayed. */
+  (function () {
+    var m = document.querySelector('meta[name="artifact-built"]');
+    if (!m || !m.content) return;
+    var el = document.createElement('div');
+    el.className = 'at-rail-built';
+    el.textContent = 'built ' + m.content;
+    var note = rail.querySelector('.at-rail-note');
+    if (note) { note.appendChild(el); return; }
+    // With no scope note there is nothing pinning the bottom of the rail, so the stamp
+    // takes that job itself rather than floating under the last control group.
+    el.classList.add('at-rail-built--alone');
+    rail.appendChild(el);
+  })();
 
   function toggleLegend() {
     rail.toggleAttribute('data-legend');

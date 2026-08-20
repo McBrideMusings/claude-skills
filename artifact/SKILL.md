@@ -54,6 +54,12 @@ is exactly the pressure to resist.
    one batch, stop. One pass, not a loop — and not a design review with the user in it.
 9. **Open it** — `open <absolute-path>`, on its own line, no trailing punctuation.
 
+**Getting comments back.** Every artifact carries the comment layer: they press the speech-bubble
+button (or `a`), mark things up, and press **Copy comments**. The markdown starts with
+`<!-- artifact-feedback: <slug> -->`, so you can either ask them to paste it, or wait for it —
+`CONTRACT.md` § Getting comments back has the `pbpaste` watcher. Say which you are doing; the watcher
+reads whatever else they copy meanwhile.
+
 **Every path absolute.** Resolve the repo root in its own Bash call (`git rev-parse --show-toplevel`,
 falling back to absolute `pwd`). A path that doesn't start with `/` is the bug.
 
