@@ -15,4 +15,9 @@
   btn.addEventListener('click', function () {
     root.setAttribute('data-theme', current() === 'dark' ? 'light' : 'dark');
   });
+
+  // The theme toggle is the third instance of the same floating button, so it docks and
+  // drags like the other two rather than being pinned by its own CSS rule.
+  var themeBtn = document.querySelector('.at-theme');
+  if (themeBtn && window.__atDock) window.__atDock(themeBtn, 'theme', 'right', 1);
 })();

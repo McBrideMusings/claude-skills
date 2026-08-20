@@ -310,6 +310,11 @@
   reopen.textContent = '›';
   reopen.addEventListener('click', function () { setCollapsed(false); });
   document.body.appendChild(reopen);
+  // rail.js is inlined before the widget scripts, so the dock helper does not exist yet.
+  // A timeout runs after every inline script has executed.
+  setTimeout(function () {
+    if (window.__atDock) window.__atDock(reopen, 'rail-reopen', 'left', 0);
+  }, 0);
 
   var collapseBtn = rail.querySelector('.at-rail-collapse');
   if (collapseBtn) collapseBtn.addEventListener('click', function () { setCollapsed(true); });

@@ -1,0 +1,138 @@
+/* dock.js — the floating harness buttons: one style, draggable, snapping to an edge.
+
+   The reopen chevron, the comment toggle and the theme toggle are all the same object:
+   a small round control parked over the artifact. They used to be positioned by three
+   separate CSS rules that each knew about the others — a `:has()` offset here, a
+   `calc(--at-panel-w …)` there — which is the shape a layout takes right before one of
+   them lands on top of another.
+
+   They are now one thing. Same size, same partial opacity, same hover. Drag one and it
+   follows the pointer; let go and it slides to whichever vertical edge it is nearest,
+   because the reason to move it is that it is covering the one element you are trying to
+   look at, and the fix for that is "put it on the other side" rather than "put it 40px
+   left". Where each one sits is remembered per artifact.
+
+   A docked button never has to be told about the comments panel: it stores a SIDE, not
+   an x, so the panel opening simply changes where the right-hand edge is. */
+
+(function () {
+  var root = document.documentElement;
+  if (root.hasAttribute('data-at-embedded')) return;
+
+  var GAP = 12;
+  var SLOT = 38;            // vertical pitch when several share an edge
+  var DRAG_SLOP = 4;        // movement below this is a click, not a drag
+  var KEY = 'at:dock:' + (root.getAttribute('data-at-key') || location.pathname);
+
+  var docks = [];
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+
+  function save() {
+    var out = {};
+    docks.forEach(function (d) { out[d.id] = { side: d.side, top: d.top }; });
+    try { localStorage.setItem(KEY, JSON.stringify(out)); } catch (e) {}
+  }
+
+  /* The free edges, which move as the two panels open and close. */
+  function leftEdge() {
+    var rail = document.querySelector('.at-rail');
+    if (rail && getComputedStyle(rail).display !== 'none') {
+      return rail.getBoundingClientRect().right + GAP;
+    }
+    return GAP;
+  }
+
+  function rightEdge(w) {
+    var panel = document.querySelector('.at-panel');
+    if (panel && getComputedStyle(panel).display !== 'none') {
+      return panel.getBoundingClientRect().left - GAP - w;
+    }
+    return window.innerWidth - GAP - w;
+  }
+
+  function place(d, animate) {
+    var r = d.el.getBoundingClientRect();
+    var w = r.width || 30;
+    var h = r.height || 30;
+    d.el.style.transition = animate
+      ? 'left 240ms cubic-bezier(.22,1,.36,1), top 240ms cubic-bezier(.22,1,.36,1), opacity 150ms ease-out'
+      : 'none';
+    d.el.style.left = (d.side === 'left' ? leftEdge() : rightEdge(w)) + 'px';
+    d.el.style.top = Math.max(GAP, Math.min(d.top, window.innerHeight - h - GAP)) + 'px';
+    d.el.style.right = 'auto';
+  }
+
+  function placeAll(animate) {
+    docks.forEach(function (d) { place(d, animate); });
+  }
+
+  function drag(d) {
+    d.el.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      var r = d.el.getBoundingClientRect();
+      var offX = e.clientX - r.left;
+      var offY = e.clientY - r.top;
+      var moved = false;
+      d.el.setPointerCapture(e.pointerId);
+
+      function move(ev) {
+        if (!moved && Math.abs(ev.clientX - e.clientX) + Math.abs(ev.clientY - e.clientY) < DRAG_SLOP) {
+          return;
+        }
+        moved = true;
+        d.el.setAttribute('data-dragging', '');
+        d.el.style.transition = 'none';
+        d.el.style.left = (ev.clientX - offX) + 'px';
+        d.el.style.top = (ev.clientY - offY) + 'px';
+        d.el.style.right = 'auto';
+      }
+
+      function up() {
+        d.el.removeEventListener('pointermove', move);
+        d.el.removeEventListener('pointerup', up);
+        d.el.removeEventListener('pointercancel', up);
+        d.el.removeAttribute('data-dragging');
+        if (!moved) return;                       // a plain click: let it through
+        // Snap to whichever edge the button's own centre is nearer.
+        var rect = d.el.getBoundingClientRect();
+        d.side = (rect.left + rect.width / 2) < window.innerWidth / 2 ? 'left' : 'right';
+        d.top = rect.top;
+        place(d, true);
+        save();
+        // Swallow the click that a pointerup would otherwise fire on the button.
+        d.el.addEventListener('click', function stop(c) {
+          c.stopPropagation(); c.preventDefault();
+          d.el.removeEventListener('click', stop, true);
+        }, true);
+      }
+
+      d.el.addEventListener('pointermove', move);
+      d.el.addEventListener('pointerup', up);
+      d.el.addEventListener('pointercancel', up);
+    });
+  }
+
+  /* Registration. `side` and `slot` are only defaults: a stored position wins, and the
+     slot keeps two buttons on the same edge from landing on each other. */
+  window.__atDock = function (el, id, side, slot) {
+    var d = {
+      el: el,
+      id: id,
+      side: (saved[id] && saved[id].side) || side || 'right',
+      top: (saved[id] && typeof saved[id].top === 'number')
+        ? saved[id].top : GAP + (slot || 0) * SLOT
+    };
+    el.classList.add('at-dock');
+    docks.push(d);
+    drag(d);
+    requestAnimationFrame(function () { place(d, false); });
+    return d;
+  };
+
+  window.addEventListener('resize', function () { placeAll(false); });
+  // The panels move the edges, so a docked button follows them.
+  window.addEventListener('at:relayout', function () { placeAll(true); });
+  new MutationObserver(function () { placeAll(true); })
+    .observe(root, { attributes: true, attributeFilter: ['data-at-annotate', 'data-at-rail-collapsed'] });
+})();

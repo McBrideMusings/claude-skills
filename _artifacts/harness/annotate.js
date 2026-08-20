@@ -410,6 +410,7 @@
     'd="M2 3.6h12v7.2H7.2L4.2 13.4v-2.6H2z"/></svg>';
   toggleBtn.addEventListener('click', function () { setMode(!open); });
   document.body.appendChild(toggleBtn);
+  if (window.__atDock) window.__atDock(toggleBtn, 'annotate', 'right', 0);
 
   function setMode(on) {
     open = on;

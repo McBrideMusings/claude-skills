@@ -27,6 +27,55 @@
   --at-inset-r: 0px;
 }
 
+/* --- the floating buttons ---
+
+   One object with three instances: reopen the rail, comment, switch theme. Partially
+   opaque so they sit over the artifact without competing with it, solid on hover, and
+   draggable to either edge — see dock.js. Positioned entirely from script, so nothing
+   here sets left/right/top. */
+
+.at-dock {
+  position: fixed;
+  z-index: 2147483646;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: var(--at-c-panel);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  backdrop-filter: blur(10px) saturate(1.3);
+  color: var(--at-c-dim);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0.55;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.at-dock:hover { opacity: 1; color: var(--at-c-ink); }
+.at-dock:focus-visible { opacity: 1; outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
+.at-dock[data-dragging] { opacity: 1; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45); }
+
+/* Active is the one state that overrides the resting transparency: comment mode is on,
+   and you should be able to tell from across the room. */
+.at-dock[data-active] {
+  opacity: 1;
+  background: var(--at-c-mark);
+  border-color: var(--at-c-mark);
+  color: var(--at-c-mark-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .at-dock { transition: none !important; }
+}
+
 html[data-at-rail]:not([data-at-embedded]) {
   --at-inset-l: calc(var(--at-rail-w, 272px) + var(--at-gap) * 2);
 }

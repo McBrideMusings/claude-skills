@@ -340,29 +340,11 @@
 
 html[data-at-rail-collapsed] .at-rail { display: none; }
 
-.at-rail-reopen {
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 2147483646;
-  display: none;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid var(--at-c-edge);
-  border-radius: 7px;
-  background: var(--at-c-bg);
-  color: var(--at-c-dim);
-  font: inherit;
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.at-rail-reopen:hover { color: var(--at-c-ink); border-color: var(--at-c-edge-hi); }
-
+/* The reopen chevron is one of the docked floating buttons: geometry, opacity and
+   dragging all come from .at-dock in chrome.css. Only its visibility is local. */
 html[data-at-rail-collapsed] .at-rail-reopen { display: grid; }
+.at-rail-reopen { display: none; }
+
 html[data-at-embedded] .at-rail-reopen { display: none !important; }
 
 /* A round's top-level markup, hidden by rail.js when its round is not on screen. */
