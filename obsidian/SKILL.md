@@ -1,5 +1,6 @@
 ---
 name: obsidian
+disable-model-invocation: true
 description: "Use the Obsidian CLI to read, search, create, and modify notes in the user's vault headlessly — daily notes, tasks, searches, note creation."
 user_invocable: true
 ---

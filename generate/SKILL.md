@@ -1,5 +1,6 @@
 ---
 name: generate
+disable-model-invocation: true
 description: "Single front door for generating game/app assets — 3D models, images, video, textures, music, sound effects, voice — picking a health-gated backend (local ComfyUI, or cloud Tripo/Gemini/ElevenLabs) per asset type. Use for any asset-generation request; per-type backends and prompts live in the _generate/ axis."
 ---
 

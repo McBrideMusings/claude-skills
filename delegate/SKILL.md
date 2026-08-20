@@ -1,5 +1,6 @@
 ---
 name: delegate
+disable-model-invocation: true
 description: "Owner of the delegation-target ladder every skill picks from — Claude agent by default, escalating to a live herdr tab or a Terminal.app window — plus the router behind it: resolver verbs (agent/transport/check/exec), CLAUDE_DELEGATE_AGENT vendor selection (Codex, Reasonix/DeepSeek, or another Claude), and auth health-gating. Read when wiring, debugging, or extending any delegated work."
 ---
 

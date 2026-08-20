@@ -1,5 +1,6 @@
 ---
 name: term-server-ctl
+disable-model-invocation: true
 description: Control the term terminal multiplexer from inside one of its panes — read other panes, split, open tabs, run commands and collect their exit codes, and report your own working/awaiting/done/error state so it shows on the user's sidebar. Use when running inside a term pane (the $TERM_CONTROL_SOCKET environment variable is set).
 ---
 

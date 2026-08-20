@@ -1,5 +1,6 @@
 ---
 name: skill-audit
+disable-model-invocation: true
 description: "Explicit-only meta-audit of Claude Code skills. Bare invocation scans a conversation transcript for which skills fired and proactively looks for improvements — papercuts, non-standardized output formatting, drift from the org's output-style guide. `skill-audit fix <what>` skips the scan and fixes one named problem in the relevant skill file immediately. Never auto-triggers — only runs when explicitly invoked."
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: artifact
+disable-model-invocation: true
 description: "Build a self-contained HTML deliverable that no other verb owns — a page, a report, a plan, a deck. Thin front door over the `_artifacts/` store and the `artifact` assembler; explainers go to `explain`, UI variants to `prototype`, layout sketches to `ui-design`."
 ---
 

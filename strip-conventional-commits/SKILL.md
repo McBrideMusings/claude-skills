@@ -1,5 +1,6 @@
 ---
 name: strip-conventional-commits
+disable-model-invocation: true
 description: Rewrite git history on the current branch to strip conventional commit prefixes (feat:, fix:, chore:, etc.) from commit messages. Shows a preview table and waits for confirmation before rewriting. Asks before force-pushing.
 user-invocable: true
 allowed-tools:

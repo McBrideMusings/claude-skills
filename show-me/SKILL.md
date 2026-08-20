@@ -1,5 +1,6 @@
 ---
 name: show-me
+disable-model-invocation: true
 description: Show a compact visual instead of a wall of prose when explaining logic, control flow, UI structure, a refactor, or a diff in an ordinary chat reply — pseudocode, a call tree, a component tree, a shallow file tree, a Mermaid diagram, or a scoped diff. Use whenever a normal answer is about to describe a shape in paragraphs instead of drawing it.
 ---
 

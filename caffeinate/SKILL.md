@@ -1,5 +1,6 @@
 ---
 name: caffeinate
+disable-model-invocation: true
 description: "Keep the Mac awake with macOS caffeinate — manual holds for a duration, while a process runs, or with the display on — plus status/cleanup/doctor for the automatic turn-bound keep-awake hook. Use for any request to keep the Mac or screen awake or to check or clean up caffeinate state."
 user_invocable: true
 ---
