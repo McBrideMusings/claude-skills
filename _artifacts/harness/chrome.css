@@ -63,18 +63,19 @@
 .at-dock:focus-visible { opacity: 1; outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
 .at-dock[data-dragging] { opacity: 1; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45); }
 
-/* Active is the one state that overrides the resting transparency. It is the SAME
-   selected-blue every other live control in the harness uses — the rail's chosen variant,
-   the chosen device, the focused axis. The comment button used to go amber here, which
-   made one button's "on" look like a different kind of state from every other "on" in
-   the artifact. Amber stays annotate's own colour for pins and the send button, inside
-   the panel, where it means "a mark you left" rather than "this control is engaged". */
+/* Active is the one state that overrides the resting transparency: amber, the same
+   colour the pins and the send button use, so "the review layer is on" is one signal
+   wherever it appears. Blue belongs to the rail, where it means "this is the option
+   currently selected out of several" — a different question from "this mode is engaged",
+   and the floating buttons are never one of several. */
 .at-dock[data-active] {
   opacity: 1;
-  background: var(--at-c-sel);
-  border-color: var(--at-c-sel-edge);
-  color: var(--at-c-sel-ink);
+  background: var(--at-c-mark);
+  border-color: var(--at-c-mark);
+  color: var(--at-c-mark-ink);
 }
+
+.at-dock[data-active]:hover { background: var(--at-c-mark-hi); border-color: var(--at-c-mark-hi); }
 
 @media (prefers-reduced-motion: reduce) {
   .at-dock { transition: none !important; }
