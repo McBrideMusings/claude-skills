@@ -40,6 +40,7 @@ A cache that regenerates isn't worth deleting on its own — find what regenerat
 Targeted `du -sh … | sort -hr` — not a full scan of `~`. The usual big ones:
 
 - **Build artifacts** — `target/` (every worktree too), `node_modules/`, Xcode DerivedData
+  - For DerivedData, `~/.claude/tools/prune-derived-data` first. Xcode keys each tree by the project's absolute path, so every git worktree leaves one behind and worktree teardown never removes it. The tool reads each tree's `info.plist` `WorkspacePath` and names the ones whose checkout is gone — exact, not a heuristic. Measured 2026-08-20: 134 orphans, 36.2 GB, against 14 live trees at 21.4 GB. Add `--delete` once the user has said yes to the tier.
 - **Package-manager caches** — go-build, Homebrew, pnpm/npm/pip stores
 - **Large media** — CapCut, Screen Studio, `~/Movies`, `~/Downloads`
 - **App caches / Application Support** — size only, never a delete candidate

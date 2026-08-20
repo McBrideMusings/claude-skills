@@ -152,6 +152,32 @@ xcrun simctl shutdown <udid> && xcrun simctl delete <udid>
 Skip it and a long run ends with one booted simulator per issue, each holding memory. It survives
 its worker; nothing else cleans it up.
 
+## Prune DerivedData in step 7, and never share one tree between workers
+
+Each worker's git worktree is a different absolute path, so Xcode builds it a DerivedData tree of
+its own — 6.2–6.9 GB on iptv-mac. Worktree teardown removes the worktree; nothing removes the tree.
+Thirteen of them took a 926 GB disk to 6.1 GiB free on 2026-08-20 and killed a round with `ENOSPC`.
+So, after retiring the worktrees:
+
+```bash
+~/.claude/tools/prune-derived-data --delete        # or --repo <name> for one project
+```
+
+It deletes only trees whose `info.plist` `WorkspacePath` no longer exists, so a live worker's tree
+is never a candidate.
+
+**Do not "fix" this by pointing every worker at one `-derivedDataPath`.** Measured 2026-08-20, two
+worktrees building the same scheme at once into one tree: the loser dies with `unable to attach DB:
+… build.db: database is locked`, rc 65 — xcodebuild fails outright rather than waiting its turn the
+way cargo does. And both write the same `Build/Products/<Config>/<app>`, so the winner's binary
+silently replaces the loser's while the loser prints `BUILD SUCCEEDED`. It is racy, so a swarm sees
+it intermittently.
+
+What *is* safe to share is the SwiftPM clone directory: same test, per-worktree DerivedData plus one
+`-clonedSourcePackagesDirPath`, both workers rc 0 with their own products, 2.1 GB held once instead
+of per worktree and the second worker's cold build 55s → 19s. `admin` does this automatically for
+every Apple project — see `shared_spm_clone_dir()` in `admin_lib/apple.py`.
+
 ## A sleeping display makes a macOS GUI worker unverifiable, and no worker can wake it
 
 An unattended run happens late, on an idle machine, which is exactly when the display sleeps. A
