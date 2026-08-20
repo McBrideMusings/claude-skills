@@ -32,7 +32,7 @@
      rail's own step buttons and the comment panel's chrome — which is how the first run
      of the tap-target check confidently failed a prototype for the size of MY buttons. */
   var CHROME = '.at-rail, .at-rail-reopen, .at-panel, .at-composer, .at-notes-layer, ' +
-    '.at-toast, .at-cx-layer, .at-vp, .at-vp-host, .at-theme, .at-annotate-toggle';
+    '.at-cx-layer, .at-vp, .at-vp-host, .at-theme, .at-annotate-toggle';
 
   function mine(el) { return !el.closest(CHROME); }
 

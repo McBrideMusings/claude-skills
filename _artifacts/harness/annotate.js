@@ -45,7 +45,6 @@
   var composing = null;
   var selected = null;
   var placements = [];
-  var hinted = false;
 
   // --- storage --------------------------------------------------------------
 
@@ -64,7 +63,7 @@
      don't fire while you are commenting — but the picker, the device switcher and the
      theme toggle are the harness, and flipping variants or sizes mid-review has to keep
      working. */
-  var CHROME = '.at-panel, .at-composer, .at-notes-layer, .at-toast, ' +
+  var CHROME = '.at-panel, .at-composer, .at-notes-layer, ' +
     '.at-rail, .at-rail-reopen, .at-vp, .at-vp-host, .at-theme, .at-cx-layer, ' +
     '.at-annotate-toggle';
 
@@ -106,6 +105,17 @@
 
   // --- chrome ---------------------------------------------------------------
 
+
+  var ICON = {
+    copy: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">' +
+      '<rect x="5.5" y="5.5" width="8" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/>' +
+      '<path d="M10.5 3.5H3.9c-.8 0-1.4.6-1.4 1.4v6.6" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+    clear: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">' +
+      '<path d="M3 4.5h10M6.5 4.5V3.2c0-.4.3-.7.7-.7h1.6c.4 0 .7.3.7.7v1.3M4.4 4.5l.6 8.2c0 .5.4.8.9.8h4.2c.5 0 .9-.3.9-.8l.6-8.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    done: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">' +
+      '<path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>'
+  };
+
   var layer = document.createElement('div');
   layer.className = 'at-notes-layer';
 
@@ -114,29 +124,25 @@
   panel.innerHTML =
     '<header class="at-panel-head">' +
     '<span class="at-panel-title">Comments</span>' +
-    '<button class="at-btn at-clear" type="button">Clear</button>' +
-    '<button class="at-btn at-close" type="button" aria-label="Leave annotate mode">Done</button>' +
+    '<button class="at-btn at-btn--icon at-clear" type="button" ' +
+    'title="Delete every comment" aria-label="Delete every comment">' + ICON.clear + '</button>' +
+    '<button class="at-btn at-btn--icon at-close" type="button" ' +
+    'title="Leave comment mode  (a)" aria-label="Leave comment mode">' + ICON.done + '</button>' +
     '</header>' +
     '<div class="at-panel-list"></div>' +
     '<footer class="at-panel-foot">' +
-    '<button class="at-btn at-copy" type="button">Copy</button>' +
+    '<p class="at-panel-status" hidden></p>' +
+    '<div class="at-panel-actions">' +
+    '<button class="at-btn at-btn--icon at-copy" type="button" ' +
+    'title="Copy every comment as markdown" aria-label="Copy every comment as markdown">' +
+    ICON.copy + '</button>' +
     '<button class="at-btn at-btn--primary at-send" type="button">Send to Claude</button>' +
-    '</footer>';
+    '</div></footer>';
 
   document.body.appendChild(layer);
   document.body.appendChild(panel);
 
   var list = panel.querySelector('.at-panel-list');
-
-  function toast(html, ms) {
-    var t = document.querySelector('.at-toast');
-    if (t) t.remove();
-    t = document.createElement('div');
-    t.className = 'at-toast';
-    t.innerHTML = html;
-    document.body.appendChild(t);
-    setTimeout(function () { if (t.parentNode) t.remove(); }, ms || 3200);
-  }
 
   // --- rendering ------------------------------------------------------------
 
@@ -197,6 +203,16 @@
     });
 
     renderList(placements);
+    paintActions();
+  }
+
+  /* A control that would do nothing says so by being disabled, which is why neither of
+     these needs a message explaining that there is nothing to send. */
+  function paintActions() {
+    var any = notes.length > 0;
+    panel.querySelector('.at-copy').disabled = !any;
+    panel.querySelector('.at-send').disabled = !any;
+    panel.querySelector('.at-clear').disabled = !any;
   }
 
   function renderList(rows) {
@@ -333,14 +349,26 @@
     return out.join('\n');
   }
 
+  /* An icon button has no word to swap, so the confirmation is the state alone. */
   function flash(btn, word) {
-    var was = btn.textContent;
-    btn.textContent = word;
+    var icon = btn.classList.contains('at-btn--icon');
+    var was = icon ? null : btn.textContent;
+    if (!icon) btn.textContent = word;
     btn.setAttribute('data-done', '');
     setTimeout(function () {
-      btn.textContent = was;
+      if (!icon) btn.textContent = was;
       btn.removeAttribute('data-done');
     }, 1400);
+  }
+
+  /* Where "wrote the file" now lives. A toast said it for five seconds from the corner
+     of the window the rail occupies; this is in the panel, next to the button that did
+     it, and stays until you do something else. */
+  var status = panel.querySelector('.at-panel-status');
+
+  function setStatus(html) {
+    status.innerHTML = html || '';
+    status.hidden = !html;
   }
 
   panel.querySelector('.at-copy').addEventListener('click', function () {
@@ -365,7 +393,7 @@
   }
 
   panel.querySelector('.at-send').addEventListener('click', function () {
-    if (!notes.length) { toast('Nothing to send yet.'); return; }
+    if (!notes.length) return;   // the button is disabled in this state anyway
     var name = 'artifact-feedback--' + SLUG + '.md';
     var blob = new Blob([markdown()], { type: 'text/markdown' });
     var url = URL.createObjectURL(blob);
@@ -377,7 +405,7 @@
     a.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
     flash(this, 'Sent');
-    toast('Wrote <code>~/Downloads/' + name + '</code> — a waiting agent picks it up.', 5000);
+    setStatus('Wrote <code>~/Downloads/' + name + '</code> — a waiting agent picks it up.');
   });
 
   panel.querySelector('.at-clear').addEventListener('click', function () {
@@ -415,15 +443,13 @@
   function setMode(on) {
     open = on;
     closeComposer();
+    paintActions();
+    if (!on) setStatus('');
     toggleBtn.toggleAttribute('data-active', on);
     toggleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     if (on) {
       root.setAttribute('data-at-annotate', '');
       render();
-      if (!hinted) {
-        hinted = true;
-        toast('Annotate mode. Click anything to comment on it. <code>a</code> to leave.');
-      }
     } else {
       root.removeAttribute('data-at-annotate');
       if (aimed) { aimed.classList.remove('at-aim'); aimed = null; }
@@ -518,7 +544,7 @@
     for (var i = 0; i < records.length; i++) {
       var t = records[i].target;
       var el = t.nodeType === 1 ? t : t.parentElement;
-      if (el && el.closest('.at-notes-layer, .at-panel, .at-toast')) continue;
+      if (el && el.closest('.at-notes-layer, .at-panel')) continue;
       reflow();
       return;
     }

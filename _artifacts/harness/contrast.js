@@ -78,12 +78,12 @@
     return false;
   }
 
-  /* `c` checks the artifact; `C` checks the harness furniture around it.
-     The chrome is normally excluded because it is not the design under review, and
-     flagging the rail to someone judging their own UI is noise. But excluded means
-     unchecked: the rail's labels, second lines and scope note all shipped at 2.0-3.9:1
-     and nothing here would ever have said so. Two modes, one instrument. */
-  var CHROME = '.at-panel, .at-notes-layer, .at-toast, .at-vp, .at-rail, .at-rail-reopen, ' +
+  /* `c` checks the artifact. The harness's own chrome is excluded — it is not the design
+     under review — but excluded means unchecked, and the rail shipped text at 2.0-3.9:1
+     with nothing to say so. window.atContrast.check(true) audits the chrome; it has no
+     key because its result is for whoever maintains the harness, not for whoever is
+     judging a prototype. */
+  var CHROME = '.at-panel, .at-notes-layer, .at-vp, .at-rail, .at-rail-reopen, ' +
     '.at-composer, .at-theme, .at-oc, .at-vp-size';
 
   function check(chromeOnly) {
@@ -143,16 +143,6 @@
     return { tested: tested, failed: failed, skipped: skipped, items: items };
   }
 
-  function toast(text) {
-    var t = document.querySelector('.at-toast');
-    if (t) t.remove();
-    t = document.createElement('div');
-    t.className = 'at-toast';
-    t.textContent = text;
-    document.body.appendChild(t);
-    setTimeout(function () { if (t.parentNode) t.remove(); }, 4200);
-  }
-
   function setMode(next, chromeOnly) {
     on = next;
     if (!on) {
@@ -161,19 +151,13 @@
       return;
     }
     root.setAttribute('data-at-contrast', '');
-    var r = check(chromeOnly);
-    var what = chromeOnly ? ' harness chrome elements' : ' text elements';
-    var skip = r.skipped ? ' (' + r.skipped + ' skipped: text over an image or gradient)' : '';
-    toast(r.failed
-      ? r.failed + ' of ' + r.tested + what + ' fail WCAG AA' + skip
-      : 'All ' + r.tested + what + ' pass WCAG AA' + skip);
+    check(chromeOnly);
   }
 
   document.addEventListener('keydown', function (e) {
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === 'c') { e.preventDefault(); setMode(!on, false); }
-    else if (e.key === 'C') { e.preventDefault(); setMode(true, true); }
+    if (e.key === 'c' || e.key === 'C') { e.preventDefault(); setMode(!on, false); }
     else if (e.key === 'Escape' && on) setMode(false);
   });
 
