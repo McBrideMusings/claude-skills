@@ -54,23 +54,33 @@ Otherwise, build 2–3 candidates. Rank them on all four of these, not just the 
 
 ## Step 2 — the proposal
 
-One message. Every line carries its default. Numbered so a reply can be terse.
+One message. **Every default rides on the item it belongs to, and the ask is one
+sentence.** Numbered so a reply can be terse.
 
-```
-Follow-ups
-  1  <title>                                   [fix now]
-  2  <title>                                   [file]
-  3  <title>                                   [skip]
+> ⛔ **Never close with a block that restates the sections as a question.** Repeating
+> *"Follow-ups — … / Next work — … / Relay — …"* under headings the reader just read is
+> the same content twice, and a terminal renders the block-quote glyph so it looks like
+> the message is quoting itself. The lists say what the choices are; the ask only says
+> how to answer.
 
-Next work
-  A  <title> — <one line: why this one>        [default]
-  B  <title> — <one line>
-  C  <title> — <one line>
+Plain markdown, no fenced block — a code fence renders as literal text and reads like
+output rather than a question:
 
-Relay  yes — clear this pane and start A in a fresh context   [default]
+**Follow-ups**
+1. **&lt;title&gt;** — one line. *[fix now]*
+2. **&lt;title&gt;** — one line. *[file]*
+3. **&lt;title&gt;** — one line. *[skip]*
 
-Reply `go` for all defaults, or override (e.g. `B, 2 fix now, no relay`).
-```
+**Next work**
+- **A** *(default)* — &lt;title&gt;. &lt;one line: why this one&gt;
+- **B** — &lt;title&gt;. &lt;one line&gt;
+- **C** — &lt;title&gt;. &lt;one line&gt;
+
+Then one sentence: *Reply* `go` *for the defaults — A, relay on — or override: e.g.*
+`fix 1, B, no relay`.
+
+Add a **Relay** line only when the default is not yes — relay unavailable, or you are
+recommending against it. A yes-by-default relay is already named in that sentence.
 
 `go` accepts everything. Anything else is a free-text override; apply it and, when
 the override changes what the next prompt should say, restate the resulting plan in

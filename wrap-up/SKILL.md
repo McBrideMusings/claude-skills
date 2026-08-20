@@ -194,15 +194,21 @@ Invoke the `followups` skill in Generate mode to surface candidates from this se
 
 *Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work and whether to relay into it. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the whole question fits in this one message. When relay is unavailable, drop its two lines and ask only the dispositions.
+Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the whole question fits in this one message. When relay is unavailable, drop the Next-work section and ask only the dispositions.
 
-> Follow-ups — **fix now / file / skip** per item, free-text by number (`fix 2, file 1 3`). Unmentioned items I'll **skip**.
->
-> Next work — **A** *(default)*, **B**, or **C** from the list above.
->
-> Relay — **yes** *(default)*: clear this pane after landing and start the pick in a fresh context.
->
-> Reply `go` to take every default, or override any line.
+**Every default is carried by the item it belongs to. The ask itself is ONE line.**
+
+> ⛔ **Do not restate the sections as a question.** A trailing block that repeats *"Follow-ups — … / Next work — … / Relay — …"* under headings the reader just read is the same content twice, and in a terminal the block-quote glyph makes it read as a pulled quote of the message it is part of. The lists already say what the choices are; the ask only has to say how to answer.
+
+Shape — three plain sections, then one sentence:
+
+- **Follow-ups** — the numbered candidate list. Each item's own line ends with its default in brackets: `[fix now]`, `[file]`, `[skip]`.
+- **Next work** — `A` / `B` / `C`, one line each, the recommended one marked `(default)`. Omit when relay is unavailable.
+- **Relay** — one line only when the default is *not* yes (unavailable, or you are recommending against it). A yes-by-default relay needs no line; the closing sentence already names it.
+
+Then exactly one sentence, no block-quote, no heading:
+
+`Reply` **`go`** `for the defaults — A, relay on — or override: e.g.` **`fix 1, B, no relay`**`.`
 
 `go` accepts all defaults. `no relay` keeps the pane and ends the turn normally after Step C.
 
