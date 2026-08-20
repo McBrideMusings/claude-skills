@@ -23,6 +23,9 @@ kinds/
   deck.css        <- slide sections
   page.css        <- generic fallback; palette and type left empty for the model to choose
 harness/
+  chrome.css      <- the one palette every piece of harness furniture consumes, plus the
+                     insets that describe how much of the window the artifact actually gets
+  dock.js         <- the floating buttons: one style, draggable, snapping to an edge
   rail.css        <- the prototype control rail, fixed spec, never restyled
   rail.js         <- rounds, variants, state axes; driven by <template data-variant>
                      and <nav data-axis>; other widgets add groups via window.__atRail
@@ -32,6 +35,8 @@ harness/
   annotate.js     <- comment on elements, export the comments as markdown
   contrast.css    <- the WCAG check's badges
   contrast.js     <- flag text that fails AA against its backdrop
+  checks.css      <- the standing verdict rows in the rail
+  checks.js       <- eight checks that run themselves and report in the rail
   viewport.css    <- device bezel + the chrome that sits outside the viewport
   viewport.js     <- real iframe per device; --devices names which frames exist
 ```
@@ -49,6 +54,10 @@ get it by default, `--without NAME` drops one.
 | `annotate` | every kind | press `a`: comment on elements, export the comments as markdown |
 | `contrast` | every kind | press `c`: flag text failing WCAG AA against its backdrop |
 | `viewport` | never — opt in with `--with viewport` | device-size switcher (Fit / Phone / Tablet / Desktop), in a real viewport |
+| `checks` | `prototype` | eight standing checks in the rail: contrast, overflow, tap targets, text size, dead links, image alt, duplicate ids, hermetic |
+
+`chrome.css` and `dock.js` are not widgets: they load whenever any widget does, because a palette
+and a button behaviour that only half the chrome shares is how two surfaces drift apart.
 
 `annotate` and `contrast` are on everywhere because they are **dormant**: they render
 nothing at all until their key is pressed, so an artifact you hand to someone else looks

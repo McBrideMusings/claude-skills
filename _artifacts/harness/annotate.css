@@ -294,22 +294,6 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 .at-panel-actions .at-copy { flex: 1; gap: 7px; }
 .at-panel-actions .at-copy svg { flex: 0 0 auto; }
 
-/* Where "wrote the file" lives now that there is no toast: beside the button that did
-   it, and it stays put until the mode is left. */
-.at-panel-status {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.at-panel-status code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10.5px;
-  color: var(--at-c-mark);
-  word-break: break-all;
-}
-
 /* An icon button: square, no label, the glyph carries it. Clear and Done sit in the
    header, where a word would crowd the title. */
 .at-btn--icon {

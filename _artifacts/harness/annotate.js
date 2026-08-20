@@ -139,7 +139,6 @@
     '</header>' +
     '<div class="at-panel-list"></div>' +
     '<footer class="at-panel-foot">' +
-    '<p class="at-panel-status" hidden></p>' +
     '<div class="at-panel-actions">' +
     '<button class="at-btn at-btn--primary at-copy" type="button">' +
     ICON.copy + '<span>Copy comments</span></button>' +
@@ -367,16 +366,6 @@
     }, 1600);
   }
 
-  /* Where "wrote the file" now lives. A toast said it for five seconds from the corner
-     of the window the rail occupies; this is in the panel, next to the button that did
-     it, and stays until you do something else. */
-  var status = panel.querySelector('.at-panel-status');
-
-  function setStatus(html) {
-    status.innerHTML = html || '';
-    status.hidden = !html;
-  }
-
   panel.querySelector('.at-copy').addEventListener('click', function () {
     var btn = this;
     var text = markdown();
@@ -434,7 +423,6 @@
     open = on;
     closeComposer();
     paintActions();
-    if (!on) setStatus('');
     toggleBtn.toggleAttribute('data-active', on);
     toggleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     if (on) {

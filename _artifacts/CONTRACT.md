@@ -288,6 +288,26 @@ remembers it), `?` (show the key list), `r` (replay), and `Escape` (blur). Press
 device frame has focus works: the frame forwards the keys the host owns and keeps `a` and `c` for
 itself.
 
+### Checks — eight verdicts the rail keeps up to date
+
+The bottom of the rail carries a standing pass/fail row per check, recomputed whenever the artifact
+changes and read from the device frame's document when one is up. Click a row for what it found.
+Nothing here is a judgement call — every one is arithmetic on the DOM:
+
+| Check | What fails it |
+|---|---|
+| Contrast | text under 4.5:1, or 3:1 at large sizes (WCAG 2.1 SC 1.4.3) |
+| Overflow | anything pushing the stage sideways |
+| Tap targets | interactive elements under 24×24 (WCAG 2.2 SC 2.5.8); links inline in a sentence are exempt, as that rule allows |
+| Text size | text under 12px — a **house floor**, not a standard: WCAG sets no minimum size |
+| Dead links | `href="#"`, `href=""`, or no `href`. A button whose handler does nothing is not detectable from here |
+| Image alt | an `<img>` with no `alt` attribute at all |
+| Duplicate ids | one id used twice, which breaks `<label for>` and every aria reference |
+| Hermetic | a remote `src` or `@import`. The builder already refuses these, so this is a backstop for anything injected at runtime |
+
+Harness chrome is excluded from all of them — the rail is not the design under review.
+`window.atContrast.check(true)` audits the chrome itself when that is what you need.
+
 Ordered coarse to fine down the rail, so the thing you change once a session sits above the thing you
 change a hundred times. The round group is omitted entirely while a topic has one round.
 
