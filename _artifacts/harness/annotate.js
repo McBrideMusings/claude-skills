@@ -20,9 +20,15 @@
    inherits the host's key through data-at-key on :root, so pins made inside a device
    frame are the same pins.
 
-   Output is one markdown blob: Copy puts it on the clipboard, Send writes
-   ~/Downloads/artifact-feedback--<slug>.md, which is the file a waiting agent watches
-   for. */
+   Output is one markdown blob on the clipboard, and that is the only channel. It used
+   to also write a file into ~/Downloads for an agent to watch; a download is a worse
+   handoff than a copy in every respect that matters here — it needs a directory nobody
+   asked about, it collides with itself on the second send, and it leaves litter.
+
+   The clipboard is still a real channel back to a waiting agent, with no server and no
+   file: the markdown opens with an HTML comment naming the artifact, so an agent can
+   poll `pbpaste`, recognise that marker, and pick the comments up the moment you press
+   the button. See CONTRACT.md. */
 
 (function () {
   var root = document.documentElement;
@@ -37,6 +43,8 @@
   var OUT = meta('artifact-out');
   var FRAGMENT = meta('artifact-fragment');
   var SLUG = (OUT.split('/').pop() || 'artifact').replace(/\.html?$/i, '') || 'artifact';
+  /* The marker a watching agent greps the clipboard for. */
+  var MARK = '<!-- artifact-feedback: ' + SLUG + ' -->';
 
   var notes = load();
   var seq = notes.reduce(function (n, p) { return Math.max(n, p.n || 0); }, 0);
@@ -133,10 +141,8 @@
     '<footer class="at-panel-foot">' +
     '<p class="at-panel-status" hidden></p>' +
     '<div class="at-panel-actions">' +
-    '<button class="at-btn at-btn--icon at-copy" type="button" ' +
-    'title="Copy every comment as markdown" aria-label="Copy every comment as markdown">' +
-    ICON.copy + '</button>' +
-    '<button class="at-btn at-btn--primary at-send" type="button">Send to Claude</button>' +
+    '<button class="at-btn at-btn--primary at-copy" type="button">' +
+    ICON.copy + '<span>Copy comments</span></button>' +
     '</div></footer>';
 
   document.body.appendChild(layer);
@@ -211,7 +217,6 @@
   function paintActions() {
     var any = notes.length > 0;
     panel.querySelector('.at-copy').disabled = !any;
-    panel.querySelector('.at-send').disabled = !any;
     panel.querySelector('.at-clear').disabled = !any;
   }
 
@@ -328,7 +333,7 @@
       var v = p.variant || '';
       (byVariant[v] = byVariant[v] || []).push(p);
     });
-    var out = ['# Artifact feedback', ''];
+    var out = [MARK, '', '# Artifact feedback', ''];
     if (OUT) out.push('Artifact: ' + OUT);
     if (FRAGMENT) out.push('Fragment: ' + FRAGMENT + '  <- edit this, not the artifact');
     if (BUILD) out.push('Build: ' + BUILD);
@@ -349,16 +354,17 @@
     return out.join('\n');
   }
 
-  /* An icon button has no word to swap, so the confirmation is the state alone. */
+  /* The confirmation is the button itself: its label becomes what just happened. An
+     icon-only button has no label to swap, so for those the state is the whole signal. */
   function flash(btn, word) {
-    var icon = btn.classList.contains('at-btn--icon');
-    var was = icon ? null : btn.textContent;
-    if (!icon) btn.textContent = word;
+    var label = btn.querySelector('span');
+    var was = label ? label.textContent : null;
+    if (label) label.textContent = word;
     btn.setAttribute('data-done', '');
     setTimeout(function () {
-      if (!icon) btn.textContent = was;
+      if (label) label.textContent = was;
       btn.removeAttribute('data-done');
-    }, 1400);
+    }, 1600);
   }
 
   /* Where "wrote the file" now lives. A toast said it for five seconds from the corner
@@ -391,22 +397,6 @@
     try { document.execCommand('copy'); flash(btn, 'Copied'); } catch (e) {}
     ta.remove();
   }
-
-  panel.querySelector('.at-send').addEventListener('click', function () {
-    if (!notes.length) return;   // the button is disabled in this state anyway
-    var name = 'artifact-feedback--' + SLUG + '.md';
-    var blob = new Blob([markdown()], { type: 'text/markdown' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
-    flash(this, 'Sent');
-    setStatus('Wrote <code>~/Downloads/' + name + '</code> — a waiting agent picks it up.');
-  });
 
   panel.querySelector('.at-clear').addEventListener('click', function () {
     if (!notes.length) return;

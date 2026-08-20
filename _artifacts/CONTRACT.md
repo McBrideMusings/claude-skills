@@ -350,21 +350,29 @@ Comments survive reload, and survive a rebuild — a pin reattaches by the fragm
 against, falls back to matching the element's text (flagged `MOVED`), and is kept and flagged `STALE`
 rather than dropped when the element is gone.
 
-Two ways out of the browser, both producing the same markdown:
+One way out of the browser: **Copy comments** puts the whole set on the clipboard as markdown.
 
-- **Copy** — clipboard, to paste into the conversation.
-- **Send to Claude** — writes `~/Downloads/artifact-feedback--<artifact-basename>.md`.
+There used to be a second button that wrote `~/Downloads/artifact-feedback--<slug>.md` for an agent
+to watch. It is gone. A download is a worse handoff than a copy in every respect that matters: it
+needs a directory nobody asked about, Chrome renames the second one to ` (1)` so the watcher matches
+a stale file, and it leaves litter behind on a machine that never asked for a file.
 
-**Wait for that file instead of asking whether they're done.** After `open`, start a bounded watcher
-in the background; the harness re-invokes you when it exits:
+**The clipboard is still a channel back to you, with no server and no file.** The markdown opens with
+`<!-- artifact-feedback: <slug> -->`, so you can wait on the clipboard instead of asking whether
+they're done. After `open`, start a bounded watcher in the background; the harness re-invokes you
+when it exits:
 
 ```bash
-F="$HOME/Downloads/artifact-feedback--<artifact-basename>.md"
-for i in $(seq 1 900); do [ -f "$F" ] && break; sleep 2; done; [ -f "$F" ] && cat "$F"
+for i in $(seq 1 900); do
+  pbpaste 2>/dev/null | head -1 | grep -q 'artifact-feedback: <slug>' && break
+  sleep 2
+done
+pbpaste
 ```
 
-Then delete the file once you have read it — Chrome appends ` (1)` to the name of a download that
-collides with one already on disk, and the watcher would keep matching the stale one.
+Say you are doing this, because polling `pbpaste` reads whatever else they copy in the meantime.
+When that is not wanted, just ask them to paste it — the button is right there and the artifact
+needs nothing from you.
 
 Each comment names a line of the **fragment**, not of the built artifact. Edit the fragment and
 rebuild to the same `--out`; do not hand-edit the HTML.

@@ -291,7 +291,8 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 }
 
 .at-panel-actions { display: flex; gap: 6px; }
-.at-panel-actions .at-send { flex: 1; }
+.at-panel-actions .at-copy { flex: 1; gap: 7px; }
+.at-panel-actions .at-copy svg { flex: 0 0 auto; }
 
 /* Where "wrote the file" lives now that there is no toast: beside the button that did
    it, and it stays put until the mode is left. */
@@ -310,8 +311,7 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 }
 
 /* An icon button: square, no label, the glyph carries it. Clear and Done sit in the
-   header where a word would crowd the title, and Copy sits beside a primary action whose
-   own label already says what the pair is for. */
+   header, where a word would crowd the title. */
 .at-btn--icon {
   width: 28px;
   padding: 0;
@@ -321,6 +321,8 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 
 .at-btn:disabled { opacity: 0.35; cursor: default; }
 .at-btn:disabled:hover { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.88); }
+
+.at-btn--primary { display: flex; align-items: center; justify-content: center; }
 
 .at-btn {
   height: 28px;
