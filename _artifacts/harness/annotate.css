@@ -318,12 +318,20 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 
 /* --- the toast ------------------------------------------------------------- */
 
+/* Centred in the space between the two sidebars, not pinned to a window corner. The
+   bottom-left corner is where the rail is, so the one message that explains a mode you
+   have just entered was landing behind the rail with a floating button on top of it —
+   an instruction you cannot read is worse than no instruction. The insets describe the
+   free area exactly, and auto margins centre it there. */
 .at-toast {
   position: fixed;
   bottom: 24px;
-  left: 24px;
+  left: var(--at-inset-l, 0px);
+  right: var(--at-inset-r, 0px);
+  margin-inline: auto;
+  width: max-content;
   z-index: 2147483642;
-  max-width: 340px;
+  max-width: min(340px, 80vw);
   padding: 9px 13px;
   border-radius: 9px;
   background: var(--at-c-panel);
