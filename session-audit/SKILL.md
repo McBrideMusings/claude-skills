@@ -65,21 +65,30 @@ Run every applicable lens unless the invocation names a subset. Each is a file i
 token count. Negative-space finds the rule you wrote, deployed, and never saw obeyed —
 which no cost metric will ever surface, because not doing the work is *cheaper*.
 
-## RULE — every finding answers the hook question
+## RULE — every finding is tested against both fix shapes
 
-An instruction is re-decided every turn by a stochastic process. A hook is the harness
-running code: it fires every time or never. So **no finding is complete until its `Fix:`
-line says whether a hook could have enforced it** — with the event and predicate if yes,
-with the reason if no. [HOOKS.md](HOOKS.md) carries the event map and the decision.
+A lens finds what went wrong. The **fix shapes** are the two structural answers worth
+reaching for before the lazy one — *"write the instruction more forcefully"*. No finding is
+complete until it has been tested against both.
 
-This binds every lens, not just `negative-space`. It is the most common right answer to
-"the rule was written and ignored", to a guard tripping repeatedly, and to a tool that keeps
-not being reached for.
+**[HOOKS.md](HOOKS.md) — could this have been enforced?** An instruction is re-decided every
+turn by a stochastic process. A hook is the harness running code: it fires every time or
+never. Name the event and predicate if yes, the reason if no.
 
-**But simulate before proposing.** A `Stop` hook for the `plan-format` rule was simulated
-against 13 months of transcripts and fired 62 times at **10% precision**. A hook proposed
-without a fires-count and a precision sample is a guess, and a low-precision hook is worse
-than none — it trains the user to ignore it. The gate is in [HOOKS.md](HOOKS.md).
+> Simulate before proposing. A `Stop` hook for the `plan-format` rule fired 62 times over 13
+> months at **10% precision**. A hook without a fires-count and a precision sample is a
+> guess, and a low-precision hook is worse than none — it trains the user to ignore it.
+
+**[SKILL-SHAPE.md](SKILL-SHAPE.md) — is the skill the right shape, or the right thing at
+all?** Never treat the existing skill set as gospel. Walk the ladder in order and stop at
+the first rung that fits: delete → hide or relocate → reword the description → combine or
+embed → split or disclose → add a load trigger.
+
+> The rung most often skipped is the last. A skill can be well-written and still never fire
+> because nothing points at it at the moment it applies.
+
+Both bind every lens, not just `negative-space`. When both offer an answer, the cheaper and
+more reversible one wins — and say which of the two you rejected, and why.
 
 ## Phases
 

@@ -91,4 +91,7 @@ were wrap-up summaries, research briefs, and agent reports that merely contained
 
 Axis tag: `negative-space`.
 
-**Enforceable?** Before writing the `Fix:` line, answer the hook question — see [../HOOKS.md](../HOOKS.md). If a hook could enforce this deterministically, name the event and predicate plus its simulated fires/precision; if not, say why (trigger needs judgment, or a load trigger removes the condition instead).
+**Before writing the `Fix:` line, test it against both fix shapes.**
+**Enforceable?** — [../HOOKS.md](../HOOKS.md). Name the event and predicate plus simulated fires/precision if a hook could enforce this; if not, say why.
+**Right shape?** — [../SKILL-SHAPE.md](../SKILL-SHAPE.md). If the finding is about a skill, walk the ladder (delete → hide/relocate → reword → combine/embed → split/disclose → load trigger) and name the rung.
+Say which shape you rejected and why. Prefer the fix that removes the condition over one that guards it.
