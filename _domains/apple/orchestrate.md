@@ -160,11 +160,21 @@ Thirteen of them took a 926 GB disk to 6.1 GiB free on 2026-08-20 and killed a r
 So, after retiring the worktrees:
 
 ```bash
-~/.claude/tools/prune-derived-data --delete        # or --repo <name> for one project
+~/.claude/tools/prune-derived-data --delete --root ~/.worktrees/<repo>
 ```
 
 It deletes only trees whose `info.plist` `WorkspacePath` no longer exists, so a live worker's tree
-is never a candidate.
+is never a candidate. `--root` matters whenever a worker passed an explicit `-derivedDataPath`
+beside its worktree: those trees carry the same plist and leak the same way, but they are nowhere
+near `~/Library/Developer/Xcode/DerivedData` and nothing else would ever find them. Two such trees,
+8.1 GB, sat under `~/.worktrees/iptv-mac/` for two days after their worktrees were gone.
+
+A worker's own `xcodebuild` should pass the shared clone directory, since `admin` is usually not
+reachable from a worktree — its `admin.toml` is untracked, so a fresh worktree has none:
+
+```bash
+xcodebuild … -clonedSourcePackagesDirPath ~/Library/Developer/Xcode/SharedSourcePackages/<repo>
+```
 
 **Do not "fix" this by pointing every worker at one `-derivedDataPath`.** Measured 2026-08-20, two
 worktrees building the same scheme at once into one tree: the loser dies with `unable to attach DB:
