@@ -169,8 +169,12 @@ beside its worktree: those trees carry the same plist and leak the same way, but
 near `~/Library/Developer/Xcode/DerivedData` and nothing else would ever find them. Two such trees,
 8.1 GB, sat under `~/.worktrees/iptv-mac/` for two days after their worktrees were gone.
 
-A worker's own `xcodebuild` should pass the shared clone directory, since `admin` is usually not
-reachable from a worktree — its `admin.toml` is untracked, so a fresh worktree has none:
+A worker that builds through `admin` needs nothing extra: `hooks/worktree-link-locals.sh` symlinks
+`admin.toml` back to the main checkout (its patterns live in `~/.config/wtree/config.toml`), so the
+worktree runs the same manifest and gets the shared clone directory for free. Verified 2026-08-20 on
+a fresh iptv-mac worktree.
+
+A worker that calls `xcodebuild` directly bypasses all of that and has to pass the flag itself:
 
 ```bash
 xcodebuild … -clonedSourcePackagesDirPath ~/Library/Developer/Xcode/SharedSourcePackages/<repo>
