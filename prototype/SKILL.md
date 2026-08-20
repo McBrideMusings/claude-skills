@@ -148,6 +148,11 @@ Picking a winner needs no verb — say it in chat ("go with Dense") and the prom
 
 ## When done
 
+**Load [`plan-format`](../plan-format/SKILL.md) via the Skill tool before writing up which version
+won and what to build from it.** The verdict is a plan — it says what the real implementation should
+look like — and it is worth more when it carries the winning version's actual signatures and call
+shape than when it says "version B felt better".
+
 The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in
 `docs/adr/`, a tracked issue) along with the question it was answering and which version won — if the
 user is around, that's a quick conversation; if not, leave `NOTES.md` in

@@ -22,6 +22,10 @@ The loop is identical for both. Only the write step differs. An issue that fails
 
 ## Plan, don't do
 
+**Load [`plan-format`](../plan-format/SKILL.md) via the Skill tool before writing the resolved plan
+onto an issue.** An ironed-out issue states a concrete plan by definition — that is the gate it has
+to pass — so every issue body this skill writes is a plan, and prose is not the format for one.
+
 This skill writes issue bodies and answers. It never writes code. The pull to just go build the thing is the signal that the scope is already clear — that's the exit, not a step. Assets produced along the way (a research doc, a prototype) are **linked** from the issue, never pasted in.
 
 ## Refer by name

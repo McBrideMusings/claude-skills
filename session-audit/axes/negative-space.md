@@ -34,7 +34,7 @@ and the **conversation** leaves unmet.
    what makes the finding fixable. The usual causes, in the order worth checking:
 
    - **The rule points at a file that is never loaded.** A `CLAUDE.md` line saying
-     "format lives in `~/.claude/skills/_plan-format.md`" only works if something reads it.
+     "format lives in `~/.claude/skills/plan-format/SKILL.md`" only works if something reads it.
      Nothing autoloads a bare `_`-prefixed file. This is the single most common cause and
      it looks exactly like disobedience.
    - **The rule sits below the fold** in a long `CLAUDE.md`, or in a section whose heading
@@ -51,18 +51,26 @@ and the **conversation** leaves unmet.
 
 > Plans are structured pseudocode, not prose — types, signatures, call stacks, component
 > trees, file:line labels, call-stack diffs. Format and worked examples:
-> `~/.claude/skills/_plan-format.md`.
+> `~/.claude/skills/plan-format/SKILL.md`.
 
 Audit shape:
 - **Obligation:** any plan is pseudocode/call-stack/component-tree, not prose.
 - **Trigger:** every turn that presents a plan, an approach, or an option set.
 - **Compliance:** count turns containing pseudocode, a call stack, a tree, or `file:line`
   labels, versus turns presenting a plan in prose or a table.
-- **Suspected cause, to be confirmed:** `_plan-format.md` is never loaded. It is not a
-  skill, nothing points at it at plan time, and the `_` prefix keeps it out of the catalog.
-  If so the fix is a load trigger, not a stronger sentence.
+- **Suspected cause, since confirmed:** the format was never loaded. It lived at
+  `skills/_plan-format.md`, whose `_` prefix kept it out of the catalog, and nothing pointed
+  at it at plan time — 14 tool opens in 9,243 transcripts. The fix was a load trigger, not a
+  stronger sentence: it became the `plan-format` skill on 2026-08-20, with `grill-me`,
+  `iron-out` and `prototype` loading it at the point they write a plan.
 
 State the suspected cause as a hypothesis with its evidence. Do not assert it.
+
+**This example also carries the trap.** The obvious fix — a `Stop` hook that inspects the
+final reply and complains when a plan has no structure — was simulated against the corpus
+before being built: it fired 62 times in 13 months at **10% precision** (22 of a 30-sample
+were wrap-up summaries, research briefs, and agent reports that merely contained the word
+"approach"). Simulate a proposed enforcement hook against the history before writing it.
 
 ## What is not a finding here
 
@@ -77,8 +85,8 @@ State the suspected cause as a hypothesis with its evidence. Do not assert it.
 > **`<clause, quoted, ≤15 words>`** — `CLAUDE.md:65`
 > Obeyed in **0 of 23** turns that presented a plan (sessions 2026-08-04 → 2026-08-20).
 > Example miss: `<session>:<timestamp>` — options given as a prose table.
-> **Suspected cause:** `_plan-format.md` has no load trigger; nothing reads it at plan time.
-> **Fix (design call):** point `plan`/`grill-me`/`to-spec` at it explicitly, or inline the
+> **Suspected cause:** the format has no load trigger; nothing reads it at plan time.
+> **Fix (design call):** point the skills that already fire at it explicitly, or inline the
 > three-line skeleton into `CLAUDE.md` so it needs no second file.
 
 Axis tag: `negative-space`.

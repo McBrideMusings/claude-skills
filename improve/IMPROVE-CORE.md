@@ -61,7 +61,7 @@ The budget is **per finding with a count limit**, not one cap across the respons
 
 **The shape rule.** Forward verbatim:
 
-> *Write the proposed fix as the shape of the change — a type signature, a component tree, a call-stack diff, a before/after module layout — not a name for the outcome. "Make the intake module deep" is a name. "Collapse `parseOrder` / `validateOrder` / `normalizeOrder` behind `intake(raw): Order`, three call sites in `routes/orders.ts` become one" is a shape. See `~/.claude/skills/_plan-format.md`.*
+> *Write the proposed fix as the shape of the change — a type signature, a component tree, a call-stack diff, a before/after module layout — not a name for the outcome. "Make the intake module deep" is a name. "Collapse `parseOrder` / `validateOrder` / `normalizeOrder` behind `intake(raw): Order`, three call sites in `routes/orders.ts` become one" is a shape. See `~/.claude/skills/plan-format/SKILL.md`.*
 
 **The grounding rule.** Forward verbatim:
 
