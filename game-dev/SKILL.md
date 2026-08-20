@@ -1,7 +1,6 @@
 ---
 name: game-dev
-description: "Orchestrator for building and iterating a game end-to-end — design, scaffold, playable loop, assets, polish/feel, verify, ship — delegating each phase to the right skill. Use to conduct a whole build or jump to a named phase; one-off game asks (review/profile/generate) fire their own skills directly."
-disable-model-invocation: true
+description: "Conduct a game build end-to-end — design, scaffold, playable loop, assets, feel, ship — routing each phase to the owning skill. Use for whole builds or a named phase."
 ---
 
 # Game Dev

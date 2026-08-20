@@ -23,7 +23,23 @@ Then offer the upgrade in one line: *"Want this as a visual HTML explainer?"*
 
 **Anything larger builds the file.** Multiple findings, a flow, an architecture, X vs Y, a concept with layers, or an explicit "make me an explainer / as HTML / visual / diagram this" — go straight to the artifact. When unsure, build it.
 
-> `explain` overlaps `zoom-out`, but they answer different questions: `zoom-out` maps *where you are* in unfamiliar code (relevant modules + callers); `explain` makes you *understand how X works*. Reach for `zoom-out` when lost, `explain` when curious.
+## `map` mode — where am I?
+
+Folded in from the `zoom-out` skill on 2026-08-20. Two different questions live here:
+**map** answers *where you are* in unfamiliar code; the rest of this skill answers
+*how X works*. Map when lost, explain when curious.
+
+Triggers: "zoom out", "give me the bigger picture", "map this area", "go up a level",
+"I don't know this area", "show me how this fits".
+
+Procedure — answer in chat, no artifact unless the user asks:
+
+> Go up a layer of abstraction. Give a map of all the relevant modules and callers,
+> using the vocabulary in `docs/CONTEXT.md`.
+>
+> If `docs/adr/` exists and any ADRs cover this area, surface them.
+
+A map that grows past a screenful of prose is the signal to build the artifact instead.
 
 ---
 
@@ -115,7 +131,7 @@ Don't auto-keep; wait for the user to ask.
 
 ## When NOT to use
 
-- The user wants a quick map of *where they are* in unfamiliar code → use `zoom-out`.
+- The user wants a quick map of *where they are* in unfamiliar code → use this skill's `map` mode (above).
 - The user wants the code *changed*, reviewed, or debugged → that's `review` / `diagnose`, not an explainer.
 - A one-line answer suffices → just answer in chat.
 

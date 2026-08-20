@@ -1,5 +1,6 @@
 ---
 name: roblox
+disable-model-invocation: true
 description: >-
   Build and interact with Roblox games — driving Roblox Studio live via the
   official Studio MCP server (read the data model, run Luau, playtest, read

@@ -18,7 +18,7 @@ Buckets:
 
 - **Copy whole** — a gap, self-contained, fits your workflow. Take the skill as-is, adapting frontmatter and paths to your conventions.
 - **Merge into mine** — overlaps one of yours and does *one named part* better. Port that part into your existing skill; do not add a second skill (that would be an alias by another name). **Never propose replacing or rewriting one of your skills to match theirs.** The unit of a merge is a specific rule, section, or check you can quote from their file and point at the exact place in yours it would go — "add their unshipped-code rule to the compatibility-cruft entry in `review/axes/slop.md`", never "their version is better, adopt it". If you can't name the part and its destination file, it isn't a merge; it's a rewrite, and rewrites are out of scope for a harvest.
-- **Fold as axis** — their skill is one context of a process an engine of yours already runs (a platform, a domain, an asset type). Drop it into the matching `_axis/` directory as a new file, not a new skill. This is the **axis split**; mechanics live in `writing-skills`. (`_generate/` was folded in from `majidmanzarpour/threejs-game-skills` this way.)
+- **Fold as axis** — their skill is one context of a process an engine of yours already runs (a platform, a domain, an asset type). Drop it into the matching `_axis/` directory as a new file, not a new skill. This is the **axis split**; mechanics live in [`../improve/WRITING-SKILLS.md`](../improve/WRITING-SKILLS.md). (`_generate/` was folded in from `majidmanzarpour/threejs-game-skills` this way.)
 - **I have better** — you already do it as well or better. Note it, take nothing.
 - **Reject** — doesn't fit your workflow, or is scope/tooling-specific to their setup. One line each.
 
