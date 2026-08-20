@@ -156,10 +156,10 @@ directory, every version with it.
 
 ## Not this skill
 
-- Judging or improving an interface that already exists → `ui-design` critique mode.
+- Judging or improving an interface that already exists → `design` critique mode.
 - Deciding whether a *layout* is right, when there's one design and the question is arrangement →
-  `ui-design` sketch mode (cheaper: ASCII in chat). Come here when the question is *which direction*,
+  `design` sketch mode (cheaper: ASCII in chat). Come here when the question is *which direction*,
   and the axes in play are density, motion, personality, or interaction model — the things ASCII can't
   show.
-- Picking a library for a web task → `_domains/gui/libraries.md` via `ui-design`. Don't burn a prototype
+- Picking a library for a web task → `_domains/gui/libraries.md` via `design`. Don't burn a prototype
   on a question a curated list already answers.

@@ -8,7 +8,7 @@ visually if the ASCII proposal isn't quite right.
 
 - The user describes a UI change, layout, modal, panel, dialog, form, or component.
 - A plan file is being written and design decisions came up in conversation.
-- The user says "sketch this", "design this", "lay this out", or invokes `/ui-design`.
+- The user says "sketch this", "design this", "lay this out", or invokes `/design`.
 - A code change is touching layout-relevant code (CSS grid, flexbox, modal markup, dialog components).
 
 ## What to produce
@@ -77,7 +77,7 @@ Write an empty Monodraw canvas to `<repo-root>/tmp/claude/sketches/<YYYY-MM-DD>-
 
 ```bash
 mkdir -p <repo-root>/tmp/claude/sketches
-cp ~/.claude/skills/ui-design/seed.monojson \
+cp ~/.claude/skills/design/seed.monojson \
    <repo-root>/tmp/claude/sketches/$(date +%Y-%m-%d-%H%M)-<slug>.monojson
 ```
 

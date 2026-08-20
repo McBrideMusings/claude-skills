@@ -80,26 +80,26 @@ this store and sets the `game` marker on scaffold.
 `gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +
 `review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
 accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
-sweep, and the required rejected-candidates section, read by `ui-design` critique mode, which is what
+sweep, and the required rejected-candidates section, read by `design` critique mode, which is what
 `improve`'s `ui` aspect loads) + `slop.md` (objective AI-slop banned-patterns catalog, read by
-`ui-design` critique mode and the `review`/`verify` engines; harvested from pbakaus/impeccable +
+`design` critique mode and the `review`/`verify` engines; harvested from pbakaus/impeccable +
 Leonxlnx/taste-skill) + `fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
 `prototype.md` (the craft bar and divergence axes for `prototype`'s UI shape) + `vocabulary.md` (a
-reference — the reverse motion-term glossary, read by `ui-design` and `explain`, not an engine cell) +
-`libraries.md` (a reference — curated web/React library picks, read by `ui-design` and `implement`).
-Seeded from emilkowalski/skills. The `ui-design` skill is the planning orchestrator over this store;
+reference — the reverse motion-term glossary, read by `design` and `explain`, not an engine cell) +
+`libraries.md` (a reference — curated web/React library picks, read by `design` and `implement`).
+Seeded from emilkowalski/skills. The `design` skill is the planning orchestrator over this store;
 the implementation-level values live in `web/review.md` and `apple/review.md`.
 
 The `review` / `improve` line inside `gui/`: **`review.md` is what's broken, `opportunities.md` is
 what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
 improvement pass.
 
-`product-design/layers/` — the six problem-space and solution-space design layers that used to live
+`design/layers/` — the six problem-space and solution-space design layers that used to live
 here as `product/`, now outside this store entirely (it was never a label a repo carries):
 `observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
-`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `product-design` orchestrator
-conducts the layer work over that directory; `interaction-flow.md` hands its breadboard off to the
-`ui-design` sketch mode, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
+`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `design` orchestrator
+conducts the layer work over that directory; `interaction-flow.md` hands its breadboard to that same
+skill's sketch mode, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
 
 Add labels as new kinds of software or new stacks appear.
 

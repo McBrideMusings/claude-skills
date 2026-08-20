@@ -1,16 +1,16 @@
 # Interaction structure & flow layer (layer 6)
 
-Read by the `product-design` orchestrator when flow decisions are live. A library of techniques, not a
-script — see "How to apply a layer cell" in `product-design`. Adapted from jamiemill/layers-skills (MIT).
+Read by the `design` orchestrator when flow decisions are live. A library of techniques, not a
+script — see "How to apply a layer cell" in `design`. Adapted from jamiemill/layers-skills (MIT).
 
-**This is the bridge into the surface.** A settled breadboard is the input to `ui-design` sketch mode:
+**This is the bridge into the surface.** A settled breadboard is the input to `design` sketch mode:
 breadboard (structure — places, affordances, content) → ASCII layout sketch (visual arrangement) → craft
 lenses. Get the structure right here *before* the surface makes changes expensive.
 
 The interaction structure and flow layer defines how a person interacts with the product: the places they
 navigate, the affordances available, the content presented, and the flow between states. It sits above
 the conceptual model (which defines *what exists*, `conceptual-model.md`) and below the surface (which
-defines *how it looks*, `ui-design`).
+defines *how it looks*, `_domains/gui/`).
 
 A breadboard is always for a particular user in a particular situation doing a particular job. Know which
 job story before you start.
@@ -110,4 +110,4 @@ states), a flow diagram if it aids orientation, the open decisions (gaps and unr
 risks that depend on unsettled lower-layer decisions.
 
 A breadboard defines interaction logic without committing to visual form. Before moving to surface, make
-sure the conceptual model beneath is stable — then hand the breadboard to `ui-design` sketch mode.
+sure the conceptual model beneath is stable — then hand the breadboard to `design` sketch mode.

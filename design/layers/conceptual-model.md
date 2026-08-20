@@ -1,8 +1,8 @@
 # Conceptual model layer (layer 5)
 
-Read by the `product-design` orchestrator (and by `grill-me`/`to-spec` when the objects are the live
+Read by the `design` orchestrator (and by `grill-me`/`to-spec` when the objects are the live
 question). A library of techniques, not a script — see the "How to apply a layer cell" section in
-`product-design`. Adapted from jamiemill/layers-skills (MIT).
+`design`. Adapted from jamiemill/layers-skills (MIT).
 
 The conceptual model is the most neglected load-bearing layer. It defines the objects the product
 recognises, how they relate, what states they can be in, and the vocabulary for all of it — a
@@ -73,7 +73,7 @@ Pick the one that fits the live decision — don't run them all.
 | **Card sorting** | Vocabulary is unclear or contested across users or teams. |
 | **Walking the existing product** | Redesign: the current UI reveals the implicit model — compare it to how users actually think. |
 
-Also probe the **temporal decisions** from `product-design` — intermediate action states, read-model
+Also probe the **temporal decisions** from `design` — intermediate action states, read-model
 lag, relationship temporality, deletion semantics, history — for any object where they bite.
 
 ## Working the layer

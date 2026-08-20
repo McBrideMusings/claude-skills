@@ -92,19 +92,19 @@ that same hard rule. No design axis for the domain → skip silently.
 ## Product-design elicitation discipline
 
 When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and
-butter of Shape and Backfill — pull the matching `product-design` cell for the discipline that keeps the
+butter of Shape and Backfill — pull the matching `design` cell for the discipline that keeps the
 questions honest, then interrogate with it:
 
-- **User needs / job stories** → [`../product-design/layers/user-needs.md`](../product-design/layers/user-needs.md):
+- **User needs / job stories** → [`../design/layers/user-needs.md`](../design/layers/user-needs.md):
   need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark
   confidence (observed/inferred/assumed).
-- **Domain terminology** → [`../product-design/layers/domain.md`](../product-design/layers/domain.md): record
+- **Domain terminology** → [`../design/layers/domain.md`](../design/layers/domain.md): record
   synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/
   instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
 
-These are the same disciplines the `product-design` orchestrator uses; grill-me reads the cells rather
+These are the same disciplines the `design` orchestrator uses; grill-me reads the cells rather
 than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding),
-route to `product-design`.
+route to `design`.
 
 ## Terminal state
 
@@ -132,7 +132,7 @@ lands later, on the user, as a file in the wrong place under the wrong name that
 | a spec or PRD | `to-spec` |
 | tickets or issues from what was decided | `to-tickets` |
 | a diagram or a visual explanation | `show-me` / `explain` |
-| an ASCII layout sketch for one arrangement | `ui-design` |
+| an ASCII layout sketch for one arrangement | `design` |
 
 This is not optional and it is not a judgement call. **If a skill's description covers the artifact,
 that skill builds it** — even when the request is one sentence, even when you can see exactly what to

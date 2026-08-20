@@ -1,6 +1,6 @@
 # UI design axis
 
-Read by **planning** skills (`ui-design`, `grill-me`, `iron-out`) when the domain is `gui`. Design-time
+Read by **planning** skills (`design`, `grill-me`, `iron-out`) when the domain is `gui`. Design-time
 critique lenses for interactive interfaces — not a code engine. Loaded on top of whatever the planning
 skill already does, the same way the engines layer platform + domain.
 
@@ -11,8 +11,7 @@ Sources: **Emil Kowalski's design engineering** (animations.dev) — Sonner/Vaul
 
 ## The one rule — judge craft, always anchor to a concrete reason
 
-Design craft is the carved exception to the global subjective-ban (see `~/.claude/CLAUDE.md`). This
-cell MAY rank designs and call craft quality: a layout is stronger, a palette is off, a motion is
+This cell ranks designs and calls craft quality: a layout is stronger, a palette is off, a motion is
 decoration, an interface reads as AI-slop. **The catch: every verdict is anchored to a concrete
 reason** — a named principle from these lenses, a specific slop tell from `slop.md`, or a measured
 value (contrast ratio, tracking, duration, a spacing value off the scale). Allowed: "`ease-in` delays
@@ -169,7 +168,7 @@ The reverse glossary of motion terms is `vocabulary.md` in this directory.
 ## The rest of this directory
 
 - `opportunities.md` — where motion is **missing or weak**: the four-question gate, the hunt-seam
-  sweep, the required rejected-candidates section. Run by `ui-design` critique, which is `improve`'s
+  sweep, the required rejected-candidates section. Run by `design` critique, which is `improve`'s
   `ui` aspect.
 - `review.md` — where motion is **broken**: jank, interruptibility and stranded state, accessibility.
   Run by the `review` engine. Craft calls never go here.

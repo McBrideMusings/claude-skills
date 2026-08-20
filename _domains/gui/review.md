@@ -9,7 +9,7 @@ tag: `gui`. Do not nitpick style or invent issues.
 break for a user with reduced motion, does it strand state under real input. Craft questions — should
 this animate at all, is the easing the right *choice*, is there a spatial story, does the motion match
 the product's personality — are **not** defects and do not belong in a review. Those live in
-[`opportunities.md`](opportunities.md), which `improve`'s `ui` aspect runs through `ui-design` critique
+[`opportunities.md`](opportunities.md), which `improve`'s `ui` aspect runs through `design` critique
 mode. If a finding here is really "this would be nicer as X", it is out of scope; drop it.
 
 This lens flags the **principle**; the exact curve/duration/GPU-property values and the

@@ -48,8 +48,8 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
-| `gui` | [aspects/gui.md](aspects/gui.md) | `ui-design` critique mode | UI surface exists |
-| `product` | [aspects/product.md](aspects/product.md) | `product-design` orient mode | always |
+| `gui` | [aspects/gui.md](aspects/gui.md) | `design` critique mode | UI surface exists |
+| `product` | [aspects/product.md](aspects/product.md) | `design` orient mode | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
 | `game` | [aspects/game.md](aspects/game.md) | `_domains/game/` cells | `.claude/domain` marker includes `game` |
 | `docs` | [aspects/docs.md](aspects/docs.md) | `docs` audit branch | `docs/` + `.vitepress/` exist |
@@ -59,7 +59,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 
 **Improving a skill itself** — when the target under improvement is a `SKILL.md` rather than project code, read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, and description discipline. Folded in from the standalone `writing-skills` skill on 2026-08-20. The meta-audit *pass* itself is `skill-audit`, not this skill.
 
-Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, `ui-design`, and `product-design` (in its `ORIENT.md`). The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
+Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, and `design` (in its `SKILL.md` for critique and its `ORIENT.md` for orient). The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
 
 ## Routing
 

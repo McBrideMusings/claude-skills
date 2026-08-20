@@ -1,8 +1,8 @@
-# Aspect brief: `product` (delegated → `product-design`)
+# Aspect brief: `product` (delegated → `design`)
 
 Axis tag: `product`. Applicability: always.
 
-**Read:** `../../product-design/ORIENT.md` — the whole file, and its **Findings-only invocation** section is your contract. Do not read `product-design/SKILL.md`; ORIENT.md is the mode you are running.
+**Read:** `../../design/ORIENT.md` — the whole file, and its **Findings-only invocation** section is your contract. Do not read `design/SKILL.md`; ORIENT.md is the mode you are running.
 
 Audit the layers beneath the visual surface — observed behaviour, domain vocabulary, user needs and job stories, product strategy, conceptual model, interaction structure — and name the bottleneck layer.
 

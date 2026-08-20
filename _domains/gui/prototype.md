@@ -50,17 +50,17 @@ variant.
 - **States**: at minimum the loaded state, plus whichever of empty / loading / error / overflow the
   brief turns on. A variant that only exists in its best state hides where it breaks.
 
-## Judging is allowed here — with a reason attached
+## Judging — with a reason attached
 
-This is the carved design-craft exception (see `design.md`, "the one rule"). When the user asks which
+Same contract as `design.md`, "the one rule". When the user asks which
 variant is stronger, answer — anchored to a named principle, a slop tell, or a measured value, and to
 the product's personality and how often the piece is seen. Never a bare "this one feels better", and
 never a pre-picked favourite in the presentation table.
 
 ## Handoffs
 
-- One design, question is arrangement → `ui-design` sketch mode (ASCII in chat) is cheaper.
-- Interface already exists and the question is "what's weak" → `ui-design` critique mode with
+- One design, question is arrangement → `design` sketch mode (ASCII in chat) is cheaper.
+- Interface already exists and the question is "what's weak" → `design` critique mode with
   `design.md` + `slop.md` + `fidelity.md`.
 - Where should motion be *added* to an existing surface → `opportunities.md`.
 - Need a library rather than a hand-rolled component → `libraries.md`.

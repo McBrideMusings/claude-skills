@@ -1,7 +1,7 @@
 # Observed behaviour layer (layer 1)
 
-Read by the `product-design` orchestrator when user-research decisions are live. A library of techniques,
-not a script — see "How to apply a layer cell" in `product-design`. Adapted from jamiemill/layers-skills
+Read by the `design` orchestrator when user-research decisions are live. A library of techniques,
+not a script — see "How to apply a layer cell" in `design`. Adapted from jamiemill/layers-skills
 (MIT).
 
 The observed behaviour layer is the closest we can get to reality — what users actually do, not what we

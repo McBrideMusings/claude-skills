@@ -1,6 +1,6 @@
 # Motion & animation vocabulary (reverse glossary)
 
-A reference, not an engine cell. Read by `ui-design` (and `explain` when a motion term is the subject) to
+A reference, not an engine cell. Read by `design` (and `explain` when a motion term is the subject) to
 turn a **vague description of a motion effect into its precise term**, so the user knows what to ask a
 designer or an AI for. For *naming* an effect, not designing or building one.
 

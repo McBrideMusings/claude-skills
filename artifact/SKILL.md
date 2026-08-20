@@ -1,7 +1,7 @@
 ---
 name: artifact
 disable-model-invocation: true
-description: "Build a self-contained HTML deliverable that no other verb owns — a page, a report, a plan, a deck. Thin front door over the `_artifacts/` store and the `artifact` assembler; explainers go to `explain`, UI variants to `prototype`, layout sketches to `ui-design`."
+description: "Build a self-contained HTML deliverable that no other verb owns — a page, a report, a plan, a deck. Thin front door over the `_artifacts/` store and the `artifact` assembler; explainers go to `explain`, UI variants to `prototype`, layout sketches to `design`."
 ---
 
 # artifact
@@ -10,7 +10,7 @@ The front door for a visual HTML deliverable that **no verb already owns**. "Mak
 X", "turn this into a deck" — the noun is the request, so nothing else picks it up.
 
 This skill is deliberately thin. The substrate lives in [`../_artifacts/`](../_artifacts/README.md)
-and is shared: `explain`, `prototype`, and `ui-design` call the same tool for their own kinds. What
+and is shared: `explain`, `prototype`, and `design` call the same tool for their own kinds. What
 this skill adds is a caller for `page` and `deck`.
 
 ## Not this skill
@@ -19,7 +19,7 @@ this skill adds is a caller for `page` and `deck`.
 |---|---|
 | Explaining how something works | `explain` — its Tier 2 builds `--kind explainer` |
 | Several different takes on one piece of UI | `prototype` — `--kind prototype` behind a picker |
-| Where things sit in a layout | `ui-design` — ASCII first, `--kind wireframe` when it escalates |
+| Where things sit in a layout | `design` — ASCII first, `--kind wireframe` when it escalates |
 | A chart or dashboard as the point of the page | Still here, but read `_domains/gui/design.md` too |
 | Exploring, investigating, or brainstorming | **Nothing.** Answer in chat. A file is not the deliverable unless one was asked for. |
 

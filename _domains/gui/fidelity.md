@@ -1,6 +1,6 @@
 # UI structural-fidelity audit
 
-Read by `ui-design` critique/audit mode (and the `review`/`verify` engines when the domain is `gui`).
+Read by `design` critique/audit mode (and the `review`/`verify` engines when the domain is `gui`).
 The **structural** half of a surface audit — does the interface honour the decisions made in the layers
 below it? — complementary to the **craft** half in `design.md` (motion/type/colour/layout/slop). Adapted
 from jamiemill/layers-skills (MIT), the Surface layer.
@@ -8,7 +8,7 @@ from jamiemill/layers-skills (MIT), the Surface layer.
 The surface is where everything decided below becomes something a person encounters. **Surface problems
 are often symptoms of deeper ones.** The central discipline: tell apart issues you fix at the surface
 from issues whose root is in the conceptual model or interaction flow — route those back to the matching
-`../../product-design/layers/` cell rather than patching the symptom. (This audit judges *fidelity to the decisions
+`../../design/layers/` cell rather than patching the symptom. (This audit judges *fidelity to the decisions
 below*; `design.md` judges *craft quality*. Run both in a critique.)
 
 ## The decisions this audit checks
@@ -24,14 +24,14 @@ below*; `design.md` judges *craft quality*. Run both in a critique.)
 
 - **Surface fix vs deeper-layer issue.** The key judgement: is this a copy/layout fix, or a symptom whose
   root is in the conceptual model or interaction flow? Wrong vocabulary may be a rewrite — or a model that
-  never settled the term. Route deeper issues to `../../product-design/layers/conceptual-model.md` or
-  `interaction-flow.md` (via `product-design`), not to a surface patch.
+  never settled the term. Route deeper issues to `../../design/layers/conceptual-model.md` or
+  `interaction-flow.md` (via `design`), not to a surface patch.
 - **Terms match the ubiquitous language.** Flag direct violations (a model term used inconsistently),
   unlisted terms (surface words not in the model — add to model, or remove as noise), and tone
   misalignments.
 - **Object consistency.** No shapeshifters (same object in significantly different forms across
   contexts), no masked objects (a form where the user can't recognise the object type). (These are the
-  OOUX failure modes from `product-design`; at the surface they're visible symptoms.)
+  OOUX failure modes from `design`; at the surface they're visible symptoms.)
 - **Completeness both ways.** Every breadboard affordance is present; no surface element exists with no
   model or flow behind it (those are interaction decisions that slipped through → `interaction-flow.md`).
 - **Errors diagnose, explain, recover.** "Something went wrong" fails all three. Flag every error state
@@ -60,9 +60,9 @@ Auditing existing surface against the layers below. Use whichever the concern ca
 
 ## In a critique
 
-When `ui-design` runs a post-code critique/audit, run this fidelity pass **alongside** the `design.md`
+When `design` runs a post-code critique/audit, run this fidelity pass **alongside** the `design.md`
 craft lenses and the `slop.md` catalog. Tag each finding: **surface-fix** (fix here) or **deeper-layer**
-(route to the named `../../product-design/layers/` cell). A finding is still a verdict-plus-reason — the reason here
+(route to the named `../../design/layers/` cell). A finding is still a verdict-plus-reason — the reason here
 is a named discipline above (e.g. "this is a Broken object: the invoice's actions are split across two
 screens with no cross-link"), not a measured craft value. Report the cross-layer issues first: they're
 the ones a surface patch would only mask.

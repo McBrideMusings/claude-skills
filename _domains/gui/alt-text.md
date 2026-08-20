@@ -1,6 +1,6 @@
 # Alt text (image description rules)
 
-A reference, not an engine cell. Read by `ui-design` when writing or reviewing the alt text on an
+A reference, not an engine cell. Read by `design` when writing or reviewing the alt text on an
 image — in a component, a doc, a README, a slide. For *writing the line*, not for auditing a page's
 accessibility (that's a11y testing, a different job). Adapted from bholmesdev/skills `alt-text`.
 
