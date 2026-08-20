@@ -64,6 +64,23 @@
     web:     { label: 'Web',     w: 1440, h: 900,  chrome: 'browser', rotates: false, radius: 10 }
   };
 
+  /* Which parts of the macOS window the desktop frame draws. Build-time, from --window,
+     because whether the design owns its own title area is a property of the thing being
+     prototyped rather than something to flip while looking at it. Default is neither:
+     a full-size-content-view app draws its own top area, and a generic title bar stapled
+     over it is chrome nobody designed. */
+  var win = (root.getAttribute('data-at-window') || '')
+    .split(',').map(function (s) { return s.trim(); });
+  var WIN_BAR = win.indexOf('bar') >= 0;
+  var WIN_LIGHTS = win.indexOf('lights') >= 0;
+
+  // Declared here because both the title bar (outside the viewport) and the
+  // full-size-content-view overlay (inside it) build markup from it.
+  var LIGHTS =
+    '<span class="at-oc-dot" style="background:#ff5f57"></span>' +
+    '<span class="at-oc-dot" style="background:#febc2e"></span>' +
+    '<span class="at-oc-dot" style="background:#28c840"></span>';
+
   var names = (root.getAttribute('data-at-devices') || 'fit,phone,tablet,desktop')
     .split(',').map(function (s) { return s.trim(); }).filter(function (s) { return CATALOG[s]; });
   if (names.indexOf('fit') < 0) names.unshift('fit');
@@ -200,7 +217,20 @@
 
   var HOME_BAR = '<div class="at-dc at-dc-home" aria-hidden="true"><span></span></div>';
 
+  /* Traffic lights with no title bar are the full-size-content-view shape: the window has
+     no chrome of its own and the lights float over the app's own top area. They are
+     therefore INSIDE the viewport, like an iOS status bar and unlike a title bar. The
+     frame publishes their footprint and reserves nothing — drawing under them is the
+     whole point of that window style; a layout that wants to keep clear of them uses
+     --at-lights-w / --at-lights-h itself. */
+  var LIGHTS_OVERLAY =
+    '<div class="at-dc at-dc-lights" aria-hidden="true">' + LIGHTS + '</div>';
+
   function insideChrome(d, land) {
+    if (d.chrome === 'macos') {
+      if (!WIN_LIGHTS || WIN_BAR) return { markup: '', top: 0, bottom: 0 };
+      return { markup: LIGHTS_OVERLAY, top: 0, bottom: 0, lights: true };
+    }
     if (d.chrome !== 'ios') return { markup: '', top: 0, bottom: 0 };
     // Landscape phones shrink the bar; tablets keep a slim one either way.
     var top = d.notch ? (land ? 24 : 54) : 24;
@@ -232,7 +262,20 @@
     clone.removeAttribute('data-at-annotate');
 
     var ch = insideChrome(d, land);
-    if (ch.markup) {
+    if (ch.markup && ch.lights) {
+      // Lights only: publish the footprint, reserve nothing, pad nothing.
+      var lstyle = clone.ownerDocument.createElement('style');
+      lstyle.textContent =
+        ':root{--at-lights-w:78px;--at-lights-h:28px}' +
+        '.at-dc-lights{position:fixed;top:0;left:0;z-index:2147483000;pointer-events:none;' +
+        'display:flex;align-items:center;gap:8px;height:var(--at-lights-h);padding:0 14px}' +
+        '.at-dc-lights .at-oc-dot{width:12px;height:12px;border-radius:50%;flex:0 0 12px}';
+      clone.querySelector('head').appendChild(lstyle);
+      var lholder = clone.ownerDocument.createElement('div');
+      lholder.innerHTML = ch.markup;
+      var lbody = clone.querySelector('body');
+      while (lholder.firstChild) lbody.appendChild(lholder.firstChild);
+    } else if (ch.markup) {
       var reserve = clone.getAttribute('data-at-safe') !== 'none';
       var style = clone.ownerDocument.createElement('style');
       style.textContent =
@@ -262,9 +305,7 @@
 
   var MACOS_BAR =
     '<div class="at-oc at-oc-macos" aria-hidden="true">' +
-    '<span class="at-oc-dot" style="background:#ff5f57"></span>' +
-    '<span class="at-oc-dot" style="background:#febc2e"></span>' +
-    '<span class="at-oc-dot" style="background:#28c840"></span>' +
+    (WIN_LIGHTS ? LIGHTS : '<span class="at-oc-nolights"></span>') +
     '<span class="at-oc-title"></span></div>';
 
   var BROWSER_BAR =
@@ -278,7 +319,8 @@
     '</div>';
 
   function outsideChrome(d) {
-    if (d.chrome === 'macos') return MACOS_BAR;
+    // A bare desktop frame is a window with no chrome at all — the default.
+    if (d.chrome === 'macos') return WIN_BAR ? MACOS_BAR : '';
     if (d.chrome === 'browser') return BROWSER_BAR;
     return '';
   }

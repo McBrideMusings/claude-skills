@@ -118,6 +118,9 @@ html[data-at-rail-collapsed] .at-vp-host { left: 0; }
   border-bottom: 1px solid #22252a;
 }
 
+/* A title bar built without traffic lights still balances its centred title. */
+.at-oc-macos .at-oc-nolights { width: 52px; flex: 0 0 52px; }
+
 .at-oc-macos .at-oc-title {
   flex: 1;
   text-align: center;

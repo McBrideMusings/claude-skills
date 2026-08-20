@@ -221,8 +221,27 @@ Chrome sits on whichever side of the viewport it really sits on, and the harness
 | Frame | Chrome | Where |
 | --- | --- | --- |
 | `phone`, `tablet` | status bar, notch, home indicator | **inside** the viewport — content scrolls under it |
-| `desktop` | macOS title bar + traffic lights | **outside** — a page cannot see its own window |
+| `desktop` | none by default; `--window` adds it | see below |
 | `web` | tab strip + URL bar | **outside** |
+
+### `--window` — what kind of window the desktop frame is
+
+A build-time decision, like `--devices`, and for the same reason: whether the design owns its own
+title area is a property of the thing being prototyped, not something to flip while looking at it.
+**The default is a bare window** — a desktop app with a full-size content view draws its own top
+area, and a generic macOS title bar stapled over it is chrome nobody designed.
+
+| `--window` | What you get | Where the chrome sits |
+| --- | --- | --- |
+| *(omitted)* | bare viewport, bezel only | — |
+| `bar` | title bar, no lights | **outside** the viewport |
+| `bar,lights` | the standard macOS window | **outside** the viewport |
+| `lights` | full-size content view: lights float over the app's own top area | **inside** the viewport |
+
+`--window lights` is the only one that reaches into the viewport, so it is the only one your layout
+has to know about. It reserves nothing — drawing under the lights is the entire point of that window
+style — and publishes `--at-lights-w` (78px) and `--at-lights-h` (28px) so a layout that wants to
+keep its own controls clear of them can. `--window` is refused unless `desktop` is in `--devices`.
 
 Never draw your own status bar or window chrome in the fragment. Reserve the space instead: the frame
 publishes `--at-safe-top` and `--at-safe-bottom`, and pads `body` by them automatically. Set
