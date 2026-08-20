@@ -193,6 +193,24 @@ mac_asset_dir = "App/Assets.xcassets/AppIcon.appiconset"
 - The dev build auto-gets: DEV banner (overlaid → flattened to RGB → restored
   after build) and the renamed `.app`.
 
+## Signature check as a scheme build post-action
+
+Every apple-archetype project can wire the same shared script as a scheme
+build post-action to warn (ad-hoc → TCC re-prompts every rebuild) or fail
+(ad-hoc + embedded code → hardened runtime refuses to launch) on a bad
+signature, instead of a silent `BUILD SUCCEEDED` on an app that dies on
+double-click:
+
+```yaml
+postBuildScripts:
+  - name: Assert code signature
+    script: '"$HOME/.admin/admin_lib/resources/assert-mac-signature.sh"'
+```
+
+It reads `CODESIGNING_FOLDER_PATH` from the Xcode build environment (or takes
+a path as `$1` when run by hand) — no per-project config. Fully generic;
+**never fork a per-project copy** of this script.
+
 ## tvOS: `dev tv` is the simulator, `deploy tv` is the Apple TV
 
 `tv_scheme` in `[apple]` turns on all three — `build tv`, `dev tv` (tvOS
