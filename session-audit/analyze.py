@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+"""Mechanical extraction pass for `session-audit`.
+
+Turns a corpus of Claude Code transcripts into the facts the lenses judge.
+The lenses never eyeball raw JSONL — they read this output.
+
+Usage:
+    python3 analyze.py <corpus-path> [--since YYYY-MM-DD] [--json]
+
+<corpus-path> is either
+    a single  <session-id>.jsonl
+    a project dir  ~/.claude/projects/<encoded-cwd>/
+    ALL          every project dir
+
+Validated 2026-08-20 against 4.3 GB of transcripts.
+
+Two traps this encodes, both learned the hard way:
+  * Forked sessions copy prior history into a new file. Dedupe by message uuid
+    or every fork double-counts (2,422 duplicate turns in one project).
+  * Sub-agent transcripts live in <session-id>/subagents/**.jsonl, NOT beside
+    the parent .jsonl. Miss them and sub-agent cost reads as zero.
+"""
+import os, sys, json, glob, datetime, argparse
+from collections import Counter, defaultdict
+
+ROOT = os.path.expanduser("~/.claude/projects")
+
+# $/Mtok: (input, cache-write, cache-read, output)
+PRICE = {"opus": (15.0, 18.75, 1.50, 75.0),
+         "sonnet": (3.0, 3.75, 0.30, 15.0),
+         "haiku": (1.0, 1.25, 0.10, 5.0)}
+
+def tier(model):
+    m = (model or "").lower()
+    return "opus" if "opus" in m else ("haiku" if "haiku" in m else "sonnet")
+
+def ts(s):
+    try: return datetime.datetime.fromisoformat((s or "").replace("Z", "+00:00"))
+    except Exception: return None
+
+
+def corpus_files(path):
+    """Return (main_files, sub_files) for a session file, a project dir, or ALL."""
+    if path == "ALL":
+        dirs = [os.path.join(ROOT, d) for d in os.listdir(ROOT)
+                if os.path.isdir(os.path.join(ROOT, d)) and not d.startswith("-private")]
+    elif os.path.isdir(path):
+        dirs = [path]
+    elif os.path.isfile(path):
+        sid = os.path.basename(path)[:-6]
+        d = os.path.dirname(path)
+        return [path], (glob.glob(os.path.join(d, sid, "subagents", "*.jsonl"))
+                        + glob.glob(os.path.join(d, sid, "subagents", "*", "*.jsonl")))
+    else:
+        sys.exit(f"no such corpus: {path}")
+    main, sub = [], []
+    for d in dirs:
+        main += glob.glob(os.path.join(d, "*.jsonl"))
+        sub += glob.glob(os.path.join(d, "*", "subagents", "*.jsonl"))
+        sub += glob.glob(os.path.join(d, "*", "subagents", "*", "*.jsonl"))
+    return main, sub
+
+
+class Facts:
+    def __init__(self):
+        self.cost = Counter(); self.tok = Counter(); self.turns = Counter()
+        self.tools = Counter(); self.tool_cost = Counter(); self.tool_errors = Counter()
+        self.skills = Counter(); self.skill_args = defaultdict(list)
+        self.agents = Counter()
+        self.bash = Counter(); self.bash_blocked = Counter()
+        self.dup_reads = Counter(); self.dup_bash = Counter()
+        self.user_msgs = []          # (timestamp, text) — the steering signal
+        self.ctx_bucket = Counter()
+        self.first_ctx = []
+        self.sessions = 0; self.dupe_turns = 0
+        self.tool_wait = 0.0; self.human_wait = 0.0
+        self.slow_tools = Counter()
+        self.seen = set()
+
+
+def scan(path, F, side, since=None):
+    reads, bashes = Counter(), Counter()
+    err_ids = set()
+    first_seen = False
+    prev_t, prev_tools = None, None
+    try: lines = open(path, errors="replace").readlines()
+    except Exception: return
+    if side == "main": F.sessions += 1
+
+    for line in lines:                       # pre-pass: which tool_uses errored
+        if '"is_error":true' not in line: continue
+        try: r = json.loads(line)
+        except Exception: continue
+        for b in ((r.get("message") or {}).get("content") or []):
+            if isinstance(b, dict) and b.get("type") == "tool_result" and b.get("is_error"):
+                err_ids.add(b.get("tool_use_id"))
+
+    for line in lines:
+        try: r = json.loads(line)
+        except Exception: continue
+        t = ts(r.get("timestamp"))
+        if since and t and t.date().isoformat() < since: return
+
+        if r.get("type") == "user":
+            m = r.get("message") or {}
+            c = m.get("content")
+            if isinstance(c, str) and c.strip():
+                F.user_msgs.append((r.get("timestamp", "")[:19], c.strip()))
+            elif isinstance(c, list):
+                for b in c:
+                    if isinstance(b, dict) and b.get("type") == "text" and b.get("text", "").strip():
+                        F.user_msgs.append((r.get("timestamp", "")[:19], b["text"].strip()))
+                    if isinstance(b, dict) and b.get("type") == "tool_result" and b.get("is_error"):
+                        txt = b.get("content")
+                        txt = txt if isinstance(txt, str) else json.dumps(txt)[:300]
+                        if "Blocked:" in txt:
+                            F.bash_blocked[txt.split("\n")[0][:120]] += 1
+            if prev_t and t:
+                d = (t - prev_t).total_seconds()
+                if d >= 0:
+                    if prev_tools:
+                        F.tool_wait += d
+                        if d > 60:
+                            for tl in prev_tools: F.slow_tools[tl] += d / len(prev_tools)
+                    else:
+                        F.human_wait += d
+                prev_t, prev_tools = None, None
+            continue
+
+        if r.get("type") != "assistant": continue
+        m = r.get("message") or {}
+        u = m.get("usage") or {}
+        if not u: continue
+        uid = r.get("uuid") or m.get("id")
+        if uid and uid in F.seen:
+            F.dupe_turns += 1; continue
+        if uid: F.seen.add(uid)
+
+        tr = tier(m.get("model")); p = PRICE[tr]
+        i = u.get("input_tokens") or 0
+        cw = u.get("cache_creation_input_tokens") or 0
+        cr = u.get("cache_read_input_tokens") or 0
+        o = u.get("output_tokens") or 0
+        cost = (i*p[0] + cw*p[1] + cr*p[2] + o*p[3]) / 1e6
+        F.cost[side] += cost; F.cost[tr] += cost; F.turns[side] += 1
+        for k, v in (("in", i), ("cw", cw), ("cr", cr), ("out", o)):
+            F.tok[(side, k)] += v
+        ctx = i + cw + cr
+        F.ctx_bucket[min(int(ctx // 50000) * 50, 500)] += 1
+        if side == "main" and not first_seen and ctx > 5000:
+            F.first_ctx.append(ctx); first_seen = True
+
+        tools_this_turn = []
+        for b in (m.get("content") or []):
+            if not (isinstance(b, dict) and b.get("type") == "tool_use"): continue
+            n = b.get("name", "?"); inp = b.get("input") or {}
+            tools_this_turn.append(n)
+            F.tools[n] += 1; F.tool_cost[n] += cost
+            if b.get("id") in err_ids: F.tool_errors[n] += 1
+            if n == "Skill":
+                s = inp.get("skill", "?")
+                F.skills[s] += 1
+                if inp.get("args"): F.skill_args[s].append(str(inp["args"])[:120])
+            elif n in ("Task", "Agent"):
+                F.agents[inp.get("subagent_type", "?")] += 1
+            elif n == "Bash":
+                cmd = (inp.get("command") or "").strip()
+                if cmd:
+                    head = cmd.split()[0]
+                    F.bash[head] += 1
+                    bashes[cmd] += 1
+                    if bashes[cmd] > 1: F.dup_bash[head] += 1
+            elif n == "Read":
+                fp = inp.get("file_path")
+                if fp:
+                    reads[fp] += 1
+                    if reads[fp] > 1: F.dup_reads[fp] += 1
+        prev_t, prev_tools = t, tools_this_turn
+
+
+def report(F, args):
+    tot = F.cost["main"] + F.cost["sub"]
+    cr = sum(v for k, v in F.tok.items() if k[1] == "cr")
+    out = sum(v for k, v in F.tok.items() if k[1] == "out")
+    tt = F.turns["main"] + F.turns["sub"]
+    P = print
+    P("=" * 72)
+    P(f"CORPUS  {args.corpus}")
+    P(f"  sessions {F.sessions}   assistant turns {tt:,} "
+      f"(main {F.turns['main']:,} / sub {F.turns['sub']:,})")
+    P(f"  deduped forked turns skipped: {F.dupe_turns:,}")
+    P("")
+    P("SPEND (Anthropic list-price equivalent, not a bill)")
+    P(f"  total ${tot:,.2f}   main ${F.cost['main']:,.2f}   sub ${F.cost['sub']:,.2f}"
+      f"  ({100*F.cost['sub']/tot:.0f}% sub)" if tot else "  no spend")
+    if tt:
+        P(f"  cache-read {cr:,} tok vs output {out:,} tok  "
+          f"= {cr/max(out,1):.0f} re-read per token produced")
+        P(f"  avg context/turn: main {sum(v for k,v in F.tok.items() if k[0]=='main' and k[1] in ('in','cw','cr'))//max(F.turns['main'],1):,}"
+          f"   sub {sum(v for k,v in F.tok.items() if k[0]=='sub' and k[1] in ('in','cw','cr'))//max(F.turns['sub'],1):,}")
+    if F.first_ctx:
+        s = sorted(F.first_ctx)
+        P(f"  first-turn context (the fixed preamble): median {s[len(s)//2]:,}  n={len(s)}")
+    P("  spend by context band:")
+    for b in sorted(F.ctx_bucket):
+        P(f"    {b:>4}k+  {F.ctx_bucket[b]:>7,} turns")
+    P("")
+    P("TIME")
+    P(f"  waiting on tools {F.tool_wait/3600:8.1f} h     waiting on the human {F.human_wait/3600:8.1f} h")
+    if F.slow_tools:
+        P("  hours lost to single calls over 60s:")
+        for t_, v in F.slow_tools.most_common(6):
+            P(f"    {v/3600:6.1f} h  {t_}")
+    P("")
+    P("SKILLS FIRED")
+    if F.skills:
+        for s, n in F.skills.most_common(40): P(f"  {n:5d}  {s}")
+    else:
+        P("  none")
+    P("")
+    P("AGENTS SPAWNED")
+    for a, n in F.agents.most_common(12): P(f"  {n:5d}  {a}")
+    P("")
+    P("TOOLS  (cost = spend on turns that issued the tool)")
+    for t_, n in F.tools.most_common(15):
+        P(f"  {n:6d}  ${F.tool_cost[t_]:9,.2f}  err {F.tool_errors[t_]:4d}  {t_}")
+    P("")
+    P("FRICTION")
+    P(f"  repeated identical Bash commands: {sum(F.dup_bash.values()):,}")
+    P(f"  repeated Read of the same path:   {sum(F.dup_reads.values()):,}")
+    for f_, n in F.dup_reads.most_common(5): P(f"    {n:4d}x  {f_}")
+    if F.bash_blocked:
+        P("  blocked / rejected tool calls:")
+        for b, n in F.bash_blocked.most_common(8): P(f"    {n:4d}x  {b}")
+    P("")
+    P(f"USER MESSAGES: {len(F.user_msgs)} captured "
+      f"(the steering corpus — the lenses read these against CLAUDE.md)")
+    P("=" * 72)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("corpus")
+    ap.add_argument("--since")
+    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--dump-user-messages", action="store_true")
+    args = ap.parse_args()
+
+    main_files, sub_files = corpus_files(args.corpus)
+    F = Facts()
+    for f in main_files: scan(f, F, "main", args.since)
+    for f in sub_files: scan(f, F, "sub", args.since)
+
+    if args.dump_user_messages:
+        for t, m in F.user_msgs: print(f"--- {t}\n{m}\n")
+        return
+    if args.json:
+        print(json.dumps({
+            "sessions": F.sessions,
+            "turns": dict(F.turns), "cost": {k: round(v, 2) for k, v in F.cost.items()},
+            "skills": dict(F.skills), "agents": dict(F.agents),
+            "tools": dict(F.tools.most_common(20)),
+            "tool_errors": dict(F.tool_errors),
+            "blocked": dict(F.bash_blocked),
+            "dup_reads": sum(F.dup_reads.values()),
+            "dup_bash": sum(F.dup_bash.values()),
+            "tool_wait_h": round(F.tool_wait/3600, 1),
+            "human_wait_h": round(F.human_wait/3600, 1),
+            "first_ctx_median": sorted(F.first_ctx)[len(F.first_ctx)//2] if F.first_ctx else None,
+        }, indent=1))
+        return
+    report(F, args)
+
+
+if __name__ == "__main__":
+    main()

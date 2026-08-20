@@ -57,7 +57,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 
 **The brief column is what a survey sub-agent gets** — a short file naming exactly what to read and what this aspect asks, so no agent burns a read of a 300-line `SKILL.md` hunting for one section. The owner column is what an *interactive* single-aspect run loads, in full, grilling loop included.
 
-**Improving a skill itself** — when the target under improvement is a `SKILL.md` rather than project code, read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, and description discipline. Folded in from the standalone `writing-skills` skill on 2026-08-20. The meta-audit *pass* itself is `skill-audit`, not this skill.
+**Improving a skill itself** — when the target under improvement is a `SKILL.md` rather than project code, read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, and description discipline. Folded in from the standalone `writing-skills` skill on 2026-08-20. The meta-audit *pass* itself is `session-audit`, not this skill.
 
 Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, and `design` (in its `SKILL.md` for critique and its `ORIENT.md` for orient). The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
 
