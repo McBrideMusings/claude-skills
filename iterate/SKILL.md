@@ -159,6 +159,23 @@ Print a compact report:
 
 For merges, the user can review with `git log --oneline origin/<default>..<default>`; for PRs, the list of opened PRs. They decide whether to start another loop (e.g. re-run over just the skipped items).
 
+### Then relay into the next run
+
+A finished run has burned this context on 20 passes of orchestration. Rather than
+asking "want me to do another round?" and doing it in the same window, hand the next
+run forward: invoke `relay auto` after printing the report.
+
+**Relay between runs, never between passes.** A pass is a `workflow('implement', …)`
+call inside the script's own `for` loop — clearing the context mid-loop kills the
+driver. The workflow already keeps each pass's output out of this context, so
+per-pass relaying would buy nothing and break the harness.
+
+Relay's stop conditions are what end the chain, and they are the same ones that ended
+this run: an empty queue or an all-HITL remainder means no next run, so `relay`
+declines and the pane stays. Skip the relay entirely when the run ended on an
+**environment stop** — a dirty tree or a non-fast-forward needs the user to reconcile
+before anything else starts, and a fresh context would just hit the same wall.
+
 ---
 
 ## Notes

@@ -453,12 +453,27 @@ Landing a round leaves this session holding everything it read while doing it �
 
 **When `HERDR_ENV=1` and a round has just landed, propose rotating to a fresh pane for the next one — do not do it silently.** State the proposal in one line and wait: *"Round N landed. Dispatch round N+1 from a fresh pane so it starts with no round-1 context, and close this one once it's running?"* A "no" or no response keeps the swarm in this session exactly as before this section existed — rotation is an offer, not a new default, because closing the calling pane ends this session and that is the kind of hard-to-reverse action this project's global instructions require confirming first.
 
-On a "yes":
+On a "yes", **relay this pane — do not split a new one.** The next round runs in the
+same repo at the same path, so there is nothing for a second pane to do that clearing
+this one does not do better: no window where the old pane is closed and the new one
+never started, and no second pane to leave behind if the brief fails to land.
 
-1. **Split, in the current tab, without stealing focus** — `herdr pane split --current --direction right --cwd "$PWD" --no-focus` (or `down`, by `herdr pane layout`'s own rule). Read the new pane id from `.result.pane.pane_id`.
-2. **Start a `claude` agent in it** — `herdr agent start orch-r<N+1> --kind claude --pane <pane-id>`.
-3. **Prompt it with a self-contained brief**, since it starts with none of this session's context: the repo path, that this is `/orchestrate` continuing an existing swarm, that round `N` just landed (name the issues and commits), and to run its own pre-flight — rebuilding the frontier itself rather than trusting a stale list handed across the rotation. `herdr agent prompt orch-r<N+1> "<brief>" --wait --timeout 120000` — the wait is what confirms it actually started rather than merely being told to.
-4. **Only after that wait returns** `idle`/`working`/`done` — never before — stop this session's own loop (`ScheduleWakeup({stop: true})`) and close this pane: `herdr pane close "$HERDR_PANE_ID"`. Confirming first is the whole point: a pane closed before the new one is confirmed running strands the round with nobody watching it, which is the exact failure the loop's wake signal exists to prevent.
+1. **Stop this session's loop** — `ScheduleWakeup({stop: true})`. A relay ends this
+   context; a live wake obligation pointed at it would fire into a session that is gone.
+2. **Invoke `relay`** with a self-contained brief for round `N+1`, since it starts with
+   none of this session's context: the repo path, that this is `/orchestrate` continuing
+   an existing swarm, that round `N` just landed (name the issues and commits), and to
+   run its own pre-flight — rebuilding the frontier itself rather than trusting a stale
+   list handed across the rotation.
+3. **End the turn.** `relay` writes the marker; the `Stop` hook clears this pane and
+   delivers the brief to the fresh session. Do not call `herdr` yourself, and do not
+   close the pane — there is no pane to close, and input sent while this session is
+   still busy is dropped.
+
+If the clear fails, the relay sender delivers the brief into this existing context
+instead and logs why, so the round continues either way. That fallback is why relay has
+no equivalent of the old "confirm the new pane started before closing this one" step —
+nothing is ever closed.
 
 **Do not rotate mid-round.** This applies only between rounds, at the same point step 8 already re-dispatches — a round in flight has a live `wake()` obligation that a closed pane cannot honor.
 

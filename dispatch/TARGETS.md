@@ -1,5 +1,12 @@
 # Delegation targets — the ladder
 
+> **Not this file: handing work *forward*.** Everything below is a **sideways** handoff —
+> another agent or process runs the work while you keep your seat. Handing the *next* body
+> of work forward into a clean context in the **same** pane, so this session ends and the
+> next one begins where it left off, is `relay`. It shares no mechanism with this ladder.
+> The one seam: when relay's next work needs a different checkout, relay calls `dispatch`,
+> because a pane's cwd is fixed for its lifetime.
+
 Every skill that hands work to another agent picks from the **same three targets**, in the
 same order. This file is the single owner of that order. `review dual`, `implement delegate`,
 `orchestrate`, and `iron-out` link here rather than each inventing a menu.

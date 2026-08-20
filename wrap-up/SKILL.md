@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking, update docs, run review + simplify, commit, push, resolve follow-ups (fix now / file / skip), summarize, and land the branch — merge on an owned repo, PR on a collaborative one. Also invoked by implement as its final phase."
+description: "Close out the current session: assess changes, update tracking, update docs, run review + simplify, commit, push, resolve follow-ups (fix now / file / skip), summarize, land the branch — merge on an owned repo, PR on a collaborative one — and relay the next body of work into a fresh context. Also invoked by implement as its final phase."
 ---
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
@@ -14,7 +14,7 @@ The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 a
 - **A quality check that finds nothing is a GREEN LIGHT to commit, not a stopping point.** Phase 4 returning `(none)` means proceed *immediately* to Phase 5. A clean review is the single most common false finish line — do not fall for it.
 - **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (a 75+ review issue you cannot auto-fix, a failed push, a merge conflict) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
-- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run, and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
+- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run through Step D (relay proposed, then fired or declined), and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
 
 When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
 
@@ -171,9 +171,9 @@ Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md]
 
 ---
 
-## Phase 6: Follow-ups → summary → land
+## Phase 6: Follow-ups → summary → land → relay
 
-Three steps, strictly in order. The follow-up step can create new changes, so it must fully settle before the summary can honestly describe the branch's final state, and before the branch lands.
+Four steps, strictly in order. The follow-up step can create new changes, so it must fully settle before the summary can honestly describe the branch's final state, and before the branch lands.
 
 Open with a brief recap: what was accomplished, and what tracking/docs were updated.
 
@@ -192,11 +192,21 @@ Invoke the `followups` skill in Generate mode to surface candidates from this se
 
 *Present pass* — one message, every candidate as a single numbered markdown list in a stable order. For each: title, one-line finding, and the exact slice of diff/code/PR it refers to as a `> file:line` block-quote so the user sees precisely what it is.
 
-*Ask pass* — one plain-text question under the list:
+*Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work and whether to relay into it. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-> For each, tell me what to do — **fix now / file / skip**. Reply free-text by number, e.g. `fix 2, file 1 3, skip 4` (or "file all", "skip rest"). Anything you don't mention I'll **skip**.
+Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the whole question fits in this one message. When relay is unavailable, drop its two lines and ask only the dispositions.
 
-Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice before acting.
+> Follow-ups — **fix now / file / skip** per item, free-text by number (`fix 2, file 1 3`). Unmentioned items I'll **skip**.
+>
+> Next work — **A** *(default)*, **B**, or **C** from the list above.
+>
+> Relay — **yes** *(default)*: clear this pane after landing and start the pick in a fresh context.
+>
+> Reply `go` to take every default, or override any line.
+
+`go` accepts all defaults. `no relay` keeps the pane and ends the turn normally after Step C.
+
+Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
 *Act pass* — only after every disposition is recorded, execute by group:
 1. **Fix now** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change.
@@ -230,3 +240,23 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 - **Continuous pass authorized by `/iterate`** → **create the PR autonomously.** Starting an `/iterate` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the loop's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
 
   > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy `/iterate`'s "PR on collaborative repos" contract. A raw `/loop /implement continuous` that did **not** come through `/iterate` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the loop authorized publishing, treat the pass as interactive and offer rather than create.
+
+### Step D — Relay into the next body of work
+
+Runs **last**, after the branch has landed and `git status` is clean. A relay clears
+this context; anything uncommitted at this point is gone, so Step C completing is the
+precondition, not a nicety.
+
+- **Interactive pass** — the user already answered this in Step A's single ask. `yes`
+  (or `go`) → invoke `relay` and hand it the chosen next work; it writes the marker and
+  you end the turn. `no relay`, or relay was unavailable → stop here as normal.
+- **Continuous pass** — invoke `relay auto`. `/iterate` relays between passes rather
+  than looping inside one context, so this is how the next pass gets a clean window.
+- **Outside herdr** (`HERDR_ENV` unset) — skip silently. There is no pane to clear.
+
+Do not clear the pane, send keys, or call `herdr` yourself. `relay` writes a marker;
+the `Stop` hook does the rest after your turn ends. Doing it inline sends input into a
+session that is still busy and Claude Code drops it.
+
+**This is the last thing in the pass.** After `relay` writes its marker, say one line
+naming what the next session picks up, and end the turn. No recap after it.
