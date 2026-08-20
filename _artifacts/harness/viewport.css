@@ -176,14 +176,50 @@ html[data-at-rail-collapsed] .at-vp-host { left: 0; }
   background: #22252a;
 }
 
-/* --- size readout --- */
+/* --- size readout, and the two controls that change it ---
+
+   Rotate and 1:1 belong here rather than among the device chips: the chips answer "which
+   frame", these two answer "how is it shown". Wearing the same chip treatment they read
+   as two more frames in the list, which is the one thing they are not. Ghost buttons on
+   the readout line — attached to the numbers they change, subordinate to the chips. */
+
+.at-vp-readout {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+  padding-left: 2px;
+}
 
 .at-vp-size {
+  flex: 1;
+  min-width: 0;
   font-size: 11px;
-  color: #5c636d;
+  color: var(--at-c-fainter);
   font-variant-numeric: tabular-nums;
-  padding: 2px 2px 0;
 }
+
+.at-vp-mod {
+  flex: 0 0 auto;
+  height: 22px;
+  min-width: 24px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--at-c-faint);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.at-vp-mod:hover { background: var(--at-c-edge); color: var(--at-c-ink); }
+.at-vp-mod[data-active] { background: var(--at-c-sel); color: var(--at-c-sel-ink); }
+.at-vp-mod:disabled { opacity: 0.3; cursor: default; }
+.at-vp-mod:disabled:hover { background: transparent; color: var(--at-c-faint); }
+.at-vp-mod:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
 /* --- the floating bar, used only when no rail exists (non-prototype kinds) --- */
 

@@ -135,12 +135,33 @@
     names.forEach(function (n, i) {
       deviceBtns.push(rail.item(row, CATALOG[n].label, function () { select(i); }));
     });
-    var row2 = rail.row(g);
-    rotateBtn = rail.item(row2, '↻  Rotate', toggleRotate);
-    actualBtn = rail.item(row2, '1:1', toggleActual);
-    sizeLabel = document.createElement('div');
+    /* Rotate and 1:1 are not devices — they change how the chosen frame is shown, not
+       which frame it is. Given the same chip treatment they read as two more frames in
+       the list. They sit on the readout line instead, with the numbers they change. */
+    var readout = document.createElement('div');
+    readout.className = 'at-vp-readout';
+    sizeLabel = document.createElement('span');
     sizeLabel.className = 'at-vp-size';
-    g.appendChild(sizeLabel);
+    readout.appendChild(sizeLabel);
+
+    rotateBtn = document.createElement('button');
+    rotateBtn.className = 'at-vp-mod';
+    rotateBtn.type = 'button';
+    rotateBtn.title = 'Rotate';
+    rotateBtn.setAttribute('aria-label', 'Rotate');
+    rotateBtn.innerHTML = '&#8635;';
+    rotateBtn.addEventListener('click', toggleRotate);
+
+    actualBtn = document.createElement('button');
+    actualBtn.className = 'at-vp-mod';
+    actualBtn.type = 'button';
+    actualBtn.title = 'Show at actual size';
+    actualBtn.textContent = '1:1';
+    actualBtn.addEventListener('click', toggleActual);
+
+    readout.appendChild(rotateBtn);
+    readout.appendChild(actualBtn);
+    g.appendChild(readout);
   } else {
     var bar = document.createElement('nav');
     bar.className = 'at-vp';
