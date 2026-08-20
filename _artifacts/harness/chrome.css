@@ -14,8 +14,8 @@
 
 /* --- the space the artifact gets ---
 
-   Both side panels float, so the artifact's usable area is the window minus whichever
-   of them is open. One pair of tokens rather than each surface working it out for
+   Both side panels run edge to edge, so the artifact's usable area is the window minus
+   whichever of them is open. One pair of tokens rather than each surface working it out for
    itself: the stage and the device host both read these, which is what makes a device
    frame stay centred in the space that is actually free — with the rail open or shut,
    with the comments panel open or shut. Before this the host only knew about the rail,
@@ -63,13 +63,17 @@
 .at-dock:focus-visible { opacity: 1; outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
 .at-dock[data-dragging] { opacity: 1; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45); }
 
-/* Active is the one state that overrides the resting transparency: comment mode is on,
-   and you should be able to tell from across the room. */
+/* Active is the one state that overrides the resting transparency. It is the SAME
+   selected-blue every other live control in the harness uses — the rail's chosen variant,
+   the chosen device, the focused axis. The comment button used to go amber here, which
+   made one button's "on" look like a different kind of state from every other "on" in
+   the artifact. Amber stays annotate's own colour for pins and the send button, inside
+   the panel, where it means "a mark you left" rather than "this control is engaged". */
 .at-dock[data-active] {
   opacity: 1;
-  background: var(--at-c-mark);
-  border-color: var(--at-c-mark);
-  color: var(--at-c-mark-ink);
+  background: var(--at-c-sel);
+  border-color: var(--at-c-sel-edge);
+  color: var(--at-c-sel-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -77,7 +81,7 @@
 }
 
 html[data-at-rail]:not([data-at-embedded]) {
-  --at-inset-l: calc(var(--at-rail-w, 272px) + var(--at-gap) * 2);
+  --at-inset-l: var(--at-rail-w, 272px);
 }
 
 /* Written to outweigh the rule above rather than relying on order: that one carries two
@@ -86,7 +90,7 @@ html[data-at-rail]:not([data-at-embedded]) {
 html[data-at-rail][data-at-rail-collapsed]:not([data-at-embedded]) { --at-inset-l: 0px; }
 
 :root[data-at-annotate]:not([data-at-embedded]) {
-  --at-inset-r: calc(var(--at-panel-w, 300px) + var(--at-gap) * 2 + 8px);
+  --at-inset-r: var(--at-panel-w, 300px);
 }
 
 :root {

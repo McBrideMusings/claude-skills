@@ -24,30 +24,25 @@
   --at-rail-w: 272px;
 }
 
-/* A floating card, the same object as the comments panel on the other side: inset from
-   the window, rounded, its own ground. A flush full-height sidebar reads as part of the
-   window the prototype lives in; a card reads as something laid on top of it, which is
-   what it is. */
+/* Edge to edge, full height, flush against the window. Tried as an inset floating card
+   and it was worse: the card's own margin exposed a band of empty ground down the side
+   of the artifact, and rounded corners on something anchored to the window edge read as
+   a mistake rather than a decision. A sidebar is furniture, not an overlay. */
 .at-rail {
   position: fixed;
-  top: var(--at-gap);
-  bottom: var(--at-gap);
-  left: var(--at-gap);
+  top: 0;
+  bottom: 0;
+  left: 0;
   width: var(--at-rail-w);
   z-index: 2147483646;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 18px 16px 22px;
+  padding: 20px 16px 24px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-radius: 12px;
-  background: var(--at-c-panel);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-    0 16px 40px rgba(0, 0, 0, 0.42);
+  background: var(--at-c-bg);
+  border-right: 1px solid var(--at-c-line);
   color: var(--at-c-ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;

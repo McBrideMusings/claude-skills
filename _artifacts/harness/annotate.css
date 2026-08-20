@@ -152,22 +152,18 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
    same corner and moves with it. */
 :root[data-at-annotate]:not([data-at-rail]) body { padding-right: calc(var(--at-panel-w) + 32px); }
 
+/* Edge to edge and full height, the mirror of the rail on the other side. */
 .at-panel {
   position: fixed;
-  top: 16px;
-  right: 16px;
-  bottom: 16px;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: var(--at-panel-w);
   z-index: 2147483641;
   display: none;
   flex-direction: column;
-  border-radius: 12px;
-  background: var(--at-c-panel);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-    0 16px 40px rgba(0, 0, 0, 0.42);
+  background: var(--at-c-bg);
+  border-left: 1px solid var(--at-c-line);
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
