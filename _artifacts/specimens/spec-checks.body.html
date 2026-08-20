@@ -1,0 +1,29 @@
+<style>
+  .b { min-height: 100%; background: #12141a; color: #e6e8ee; font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 24px; }
+  .tiny { font-size: 9px; color: #9aa0ac; }
+  .pin { width: 16px; height: 16px; border: 0; border-radius: 4px; background: #2f6df6; color: #fff; font-size: 9px; cursor: pointer; }
+  .wide { width: 1800px; height: 40px; background: linear-gradient(90deg, #23304a, #1a2033); border-radius: 6px; margin: 14px 0; }
+  a { color: #6ea8fe; }
+</style>
+
+<template data-variant="Broken" data-caption="one of each defect, on purpose">
+  <div class="b">
+    <h1 id="title">Every check, failing</h1>
+    <p class="tiny">This caption is 9px, under the 12px house floor.</p>
+    <p><a href="#">A link that goes nowhere</a> and <a>one with no href at all</a>.</p>
+    <p><button class="pin">×</button> a 16×16 tap target, under the 24px floor.</p>
+    <div class="wide"></div>
+    <p id="title">A second element reusing the id "title".</p>
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="40" height="40" />
+  </div>
+</template>
+
+<template data-variant="Clean" data-caption="the same screen with every defect fixed">
+  <div class="b">
+    <h1 id="clean-title">Every check, passing</h1>
+    <p style="font-size:13px;color:#aeb4c0">This caption is 13px.</p>
+    <p><a href="https://localhost/somewhere">A link that goes somewhere</a>.</p>
+    <p><button class="pin" style="width:28px;height:28px">×</button> a 28×28 tap target.</p>
+    <p id="clean-body">Nothing overflows, no remote assets.</p>
+  </div>
+</template>

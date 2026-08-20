@@ -38,5 +38,12 @@ mkdir -p "$OUT"
   --devices fit,phone,tablet,desktop,web \
   --fragment "$HERE/proto-r2.body.html" --out "$OUT/prototype.html"
 
+# The check fixture: one of each detectable defect planted, plus a clean twin. This is
+# how you tell a check that works from a check that always says pass.
+"$A" build --kind prototype --picker switch \
+  --title "Check harness" --subtitle "one of each defect, on purpose" \
+  --devices fit,phone \
+  --fragment "$HERE/spec-checks.body.html" --out "$OUT/checks.html"
+
 echo
 echo "specimens in $OUT"
