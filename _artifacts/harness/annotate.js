@@ -65,7 +65,8 @@
      theme toggle are the harness, and flipping variants or sizes mid-review has to keep
      working. */
   var CHROME = '.at-panel, .at-composer, .at-notes-layer, .at-toast, ' +
-    '.at-rail, .at-vp, .at-vp-host, .at-theme, .at-cx-layer';
+    '.at-rail, .at-rail-reopen, .at-vp, .at-vp-host, .at-theme, .at-cx-layer, ' +
+    '.at-annotate-toggle';
 
   function snippetOf(el) {
     return (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 90);
@@ -391,9 +392,30 @@
 
   // --- mode -----------------------------------------------------------------
 
+  /* A visible way in. `a` is fine once you know it, but a key is not an affordance:
+     nothing on the page said the comment layer existed, so it was found by accident and
+     — since the same key leaves — left by accident too. The button says what it is,
+     shows whether it is on, and carries the shortcut in its tooltip. It sits beside the
+     theme toggle rather than in the rail because every kind has annotate and only
+     prototypes have a rail. */
+  var toggleBtn = document.createElement('button');
+  toggleBtn.className = 'at-annotate-toggle';
+  toggleBtn.type = 'button';
+  toggleBtn.title = 'Comment on anything  (a)';
+  toggleBtn.setAttribute('aria-label', 'Comment mode');
+  toggleBtn.setAttribute('aria-pressed', 'false');
+  toggleBtn.innerHTML =
+    '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">' +
+    '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" ' +
+    'd="M2 3.6h12v7.2H7.2L4.2 13.4v-2.6H2z"/></svg>';
+  toggleBtn.addEventListener('click', function () { setMode(!open); });
+  document.body.appendChild(toggleBtn);
+
   function setMode(on) {
     open = on;
     closeComposer();
+    toggleBtn.toggleAttribute('data-active', on);
+    toggleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
     if (on) {
       root.setAttribute('data-at-annotate', '');
       render();

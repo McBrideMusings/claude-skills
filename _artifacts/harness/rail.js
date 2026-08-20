@@ -51,7 +51,9 @@
   if (!rail || !stage || !all.length) return;
 
   var variantBtns = [].slice.call(rail.querySelectorAll('.at-rail-variant'));
-  var roundBtns = [].slice.call(rail.querySelectorAll('.at-rail-round'));
+  var stepBtns = [].slice.call(rail.querySelectorAll('.at-rail-step'));
+  var roundNow = rail.querySelector('.at-rail-round-now');
+  var roundCount = rail.querySelector('.at-rail-step-count');
   var axisGroups = [].slice.call(rail.querySelectorAll('.at-rail-axis'));
   var replay = rail.querySelector('.at-rail-replay');
 
@@ -183,11 +185,10 @@
       if (active) el.setAttribute('aria-current', 'true');
       else el.removeAttribute('aria-current');
     });
-    roundBtns.forEach(function (el) {
-      var active = roundOf(el) === round;
-      el.toggleAttribute('data-active', active);
-      el.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
+    if (roundNow) roundNow.textContent = 'v' + round;
+    if (roundCount) {
+      roundCount.textContent = (rounds.indexOf(round) + 1) + ' of ' + rounds.length;
+    }
     axisGroups.forEach(function (g) {
       var gr = g.getAttribute('data-round');
       g.toggleAttribute('hidden', !!gr && gr !== round);
@@ -222,12 +223,11 @@
     });
   });
 
-  roundBtns.forEach(function (el) {
-    // Landing on a round keeps the variant slot when that round has one, so stepping
-    // rounds compares the same direction across versions instead of resetting to 1.
+  // Stepping a round keeps the variant slot when the destination round has one, so
+  // stepping compares the same direction across versions instead of resetting to 1.
+  stepBtns.forEach(function (el) {
     el.addEventListener('click', function () {
-      var r = roundOf(el);
-      setActive(r, Math.min(current, inRound(r).length - 1));
+      stepRound(parseInt(el.getAttribute('data-step'), 10) || 1);
     });
   });
 

@@ -38,6 +38,8 @@
 :root[data-at-annotate] .at-panel button,
 :root[data-at-annotate] .at-composer button,
 :root[data-at-annotate] .at-theme,
+:root[data-at-annotate] .at-annotate-toggle,
+:root[data-at-annotate] .at-rail-reopen,
 :root[data-at-annotate] .at-rail button,
 :root[data-at-annotate] .at-vp button { cursor: pointer !important; }
 
@@ -129,6 +131,52 @@
   color: rgba(255, 255, 255, 0.35);
   font-size: 11px;
 }
+
+/* --- the way in ------------------------------------------------------------
+
+   Dormant chrome still needs one visible affordance, or it is chrome nobody knows is
+   there. Same size and weight as the theme toggle, and it steps aside for it when both
+   are present. Never inside a device frame: the host's button drives the whole thing. */
+
+.at-annotate-toggle {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 2147483646;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.16));
+  border-radius: 999px;
+  background: var(--surface, #1b1c22);
+  color: var(--ink-soft, #a9abb4);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.at-annotate-toggle:hover { opacity: 1; }
+
+.at-annotate-toggle[data-active] {
+  opacity: 1;
+  background: var(--at-c-mark);
+  border-color: var(--at-c-mark);
+  color: var(--at-c-mark-ink);
+}
+
+/* The theme toggle owns the corner; the comment button sits inboard of it. */
+body:has(.at-theme) .at-annotate-toggle { right: 50px; }
+
+/* Both step aside for the comments panel. */
+:root[data-at-annotate] .at-annotate-toggle { right: calc(var(--at-panel-w) + 28px); }
+:root[data-at-annotate] body:has(.at-theme) .at-annotate-toggle {
+  right: calc(var(--at-panel-w) + 66px);
+}
+
+html[data-at-embedded] .at-annotate-toggle { display: none; }
 
 /* --- the panel ------------------------------------------------------------- */
 
@@ -338,5 +386,5 @@
 }
 
 @media print {
-  .at-notes-layer, .at-panel, .at-toast { display: none !important; }
+  .at-notes-layer, .at-panel, .at-toast, .at-annotate-toggle { display: none !important; }
 }

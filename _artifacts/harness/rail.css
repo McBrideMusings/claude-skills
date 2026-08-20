@@ -232,7 +232,54 @@
 
 .at-rail-item[hidden] { display: none; }
 
-/* --- inline row groups (rounds, orientation): several small items on one line --- */
+/* --- the round stepper ---
+
+   One row whatever the round count. A chip per round wrapped to three lines by v10 and
+   pushed the variants and axes — the controls you actually touch — off the rail. */
+
+.at-rail-stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.at-rail-step {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--at-c-edge);
+  border-radius: 7px;
+  background: var(--at-c-surface);
+  color: var(--at-c-dim);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.at-rail-step:hover { color: var(--at-c-ink); border-color: var(--at-c-edge-hi); }
+.at-rail-step:active { transform: scale(0.96); }
+.at-rail-step:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
+
+.at-rail-round-now {
+  min-width: 34px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--at-c-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.at-rail-step-count {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--at-c-fainter);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- inline row groups (orientation and other compact enumerations) --- */
 
 .at-rail-row {
   display: flex;
