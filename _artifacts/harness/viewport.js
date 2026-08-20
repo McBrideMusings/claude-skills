@@ -248,10 +248,14 @@
     '<div class="at-dc at-dc-lights" aria-hidden="true">' + LIGHTS + '</div>';
 
   function insideChrome(d, land) {
-    if (d.chrome === 'macos') {
+    // Keyed on the device itself, not just its chrome family: traffic lights belong to
+    // the desktop window and nothing else, so a phone can never inherit them however
+    // this is called.
+    if (names[current] === 'desktop' && d.chrome === 'macos') {
       if (!WIN_LIGHTS || WIN_BAR) return { markup: '', top: 0, bottom: 0 };
       return { markup: LIGHTS_OVERLAY, top: 0, bottom: 0, lights: true };
     }
+    if (d.chrome === 'macos') return { markup: '', top: 0, bottom: 0 };
     if (d.chrome !== 'ios') return { markup: '', top: 0, bottom: 0 };
     // Landscape phones shrink the bar; tablets keep a slim one either way.
     var top = d.notch ? (land ? 24 : 54) : 24;
@@ -266,8 +270,11 @@
     // The rail STAYS in the clone. rail.js needs it to exist to mount a variant at all —
     // removing it makes the frame render an empty stage. rail.css hides it under
     // html[data-at-embedded], which is the right mechanism: present, not visible.
+    // .at-dc is device chrome injected into a PREVIOUS frame's document. It should never
+    // be on the host, but stripping it here means no frame can inherit another frame's
+    // furniture even if it somehow is.
     [].slice.call(clone.querySelectorAll(
-      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-rail-reopen'
+      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-rail-reopen, .at-dc'
     )).forEach(function (n) { n.remove(); });
     var stage = clone.querySelector('#at-stage');
     if (stage) stage.innerHTML = '';

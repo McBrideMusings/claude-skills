@@ -196,6 +196,11 @@
     if (roundCount) {
       roundCount.textContent = (rounds.indexOf(round) + 1) + ' of ' + rounds.length;
     }
+    stepBtns.forEach(function (el) {
+      var delta = parseInt(el.getAttribute('data-step'), 10) || 1;
+      var i = rounds.indexOf(round) + delta;
+      el.disabled = i < 0 || i >= rounds.length;
+    });
     axisGroups.forEach(function (g) {
       var gr = g.getAttribute('data-round');
       g.toggleAttribute('hidden', !!gr && gr !== round);
@@ -240,9 +245,13 @@
 
   if (replay) replay.addEventListener('click', mount);
 
+  /* Clamped, not wrapped. Rounds are a history: v4 is not "next to" v1, and stepping off
+     the end of one into the other is a jump, not a step. The buttons disable at the ends
+     so the wall is visible before you hit it. */
   function stepRound(delta) {
-    var i = rounds.indexOf(round);
-    var r = rounds[(i + delta + rounds.length) % rounds.length];
+    var i = rounds.indexOf(round) + delta;
+    if (i < 0 || i >= rounds.length) return;
+    var r = rounds[i];
     setActive(r, Math.min(current, inRound(r).length - 1));
   }
 

@@ -263,8 +263,9 @@
   transition: color 120ms ease-out, border-color 120ms ease-out;
 }
 
-.at-rail-step:hover { color: var(--at-c-ink); border-color: var(--at-c-edge-hi); }
-.at-rail-step:active { transform: scale(0.96); }
+.at-rail-step:hover:not(:disabled) { color: var(--at-c-ink); border-color: var(--at-c-edge-hi); }
+.at-rail-step:disabled { opacity: 0.3; cursor: default; }
+.at-rail-step:active:not(:disabled) { transform: scale(0.96); }
 .at-rail-step:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
 
 .at-rail-round-now {
