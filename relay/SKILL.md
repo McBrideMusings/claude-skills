@@ -149,9 +149,17 @@ the work, and logs why to `<root>/tmp/claude/relay/relay.log`.
 
 ## `relay auto`
 
-Passed by `iterate`, which relays between passes instead of looping inside one
-context. Skips Step 2 entirely: takes the top-ranked next work, files every
-follow-up (never fix-now, never skip), writes the marker, ends the turn.
+Skips Step 2 entirely: no proposal, no halt. Files every follow-up (never fix-now,
+never skip), writes the marker, ends the turn.
 
-The Step 1 stop conditions still apply, and they are how an `auto` chain terminates.
-An empty tracker or an all-HITL remainder ends the chain — it does not invent work.
+Two callers, and they differ in who writes the prompt:
+
+- **`iterate` and `orchestrate` hand you the brief.** They know what the next chunk or
+  round is — the remaining queue, the iteration count, the frontier — and none of it is
+  rediscoverable from the tracker. Write their brief through to the marker; do **not**
+  run Step 1's ranking and do not substitute your own pick.
+- **Everyone else** — run Step 1, take the top-ranked candidate, write it up per Step 4.
+
+The Step 1 stop conditions still apply either way, and they are how an `auto` chain
+terminates. An empty tracker or an all-HITL remainder ends the chain — it does not
+invent work. A caller-supplied brief that says the run is over ends it too.

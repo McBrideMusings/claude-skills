@@ -1,11 +1,13 @@
 ---
 name: iterate
-description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, always sequential. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Every pass runs as a staged `/implement` workflow. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
+description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, always sequential, worked in chunks of 5 with a `relay` into a fresh context between chunks. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Every pass runs as a staged `/implement` workflow. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
 ---
 
 # /iterate — Continuous autonomous iteration harness
 
 The outer harness around `/implement`. You start it once and walk away; it works item after item, each on its own branch, landing each before starting the next — until the work group empties, the run hits a stopping condition, or the iteration cap is hit.
+
+It works in **chunks of 5 items**, relaying into a fresh context between them, so a long run does not accumulate context in one window. You start it once; the relay chain is what keeps it going without you.
 
 **What loops is this harness, not `implement`.** Two nested loops: the *inner* loop is a single `/implement` pass working one item end-to-end; the *outer* loop is the branch choreography below — cut a branch, run a pass, land it, repeat. `/iterate` drives the **outer** loop. It never tells `implement` to loop; `implement` stays a strict single pass. This separation is the whole reason the two skills are distinct.
 
@@ -89,7 +91,16 @@ If a selector is present, resolve it to an **ordered, frozen list of concrete it
 
 **The workflow script drives the repetition** — its own `for … of` over the queue. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) for that mechanism; the steps below are what each turn of it does.
 
-The **maximum is 20 iterations** regardless of mode; even if a queue is longer or a backlog keeps refilling, 20 is the safety valve that forces a human review point.
+### Two caps, and they do different jobs
+
+- **A run is at most 20 iterations.** The safety valve that forces a human review point, regardless of mode or how long the queue is.
+- **A chunk is at most 5 iterations.** One workflow call works 5 items, then this session **relays** and a fresh context works the next 5. A 20-item queue is 4 chunks, not one 20-agent workflow.
+
+The chunk cap is what keeps context flat. Nothing enters this window *between* iterations — the loop runs inside the workflow — but a run's own scaffolding does accumulate: pre-flight git reads, the resolved queue, the triage read, the outcomes array, the report. Chunking bounds that at 5 items' worth however long the queue is, and relaying discards it before the next chunk starts.
+
+It also resolves the workflow size guideline honestly. A cap of 20 exceeds this session's `medium` guideline of 15 agents; a chunk of 5 does not, so there is nothing to quietly ship over budget.
+
+**Do not relay between individual passes.** Resume (`resumeFromRunId`) only works within the session that launched the run, so the relay boundary and the workflow boundary have to be the same boundary. Per-pass relaying would trade all resumability for context that is already flat.
 
 **Iterations are strictly sequential.** Step 1 branches from the *current* head of the default line, which only exists once the previous iteration has landed. Two passes running at once would branch from the same head and race each other into the default branch. There is no version of this harness that fans out — that is `/orchestrate`, which pays for concurrency with a worktree per worker.
 
@@ -108,7 +119,7 @@ Each iteration:
    Exactly one item, worked end-to-end. `implement` implements, then invokes `wrap-up`.
 5. **Land it — handled inside the pass.** `wrap-up` lands the branch per the ownership verdict: **merge** into the default branch and delete the feature branch on a repo you own; **open a PR** on a collaborative repo. After a merge the pass leaves you back on a clean default branch — exactly what step 1 of the next iteration expects. Confirm the branch actually landed before continuing.
 6. **Record the outcome and decide whether to continue** — see below.
-7. **Repeat.**
+7. **Repeat**, until the chunk's 5 items are done or a stopping condition fires. Then the workflow returns and this session takes over again — see "When a chunk ends".
 
 ---
 
@@ -140,41 +151,67 @@ Stop, leave the repo as-is, and surface exactly what's wrong for the user to rec
 
 ## Stopping conditions (summary)
 
-The run ends and hands back to the user when any of these fire:
+A **chunk** ends after 5 iterations, or on any run-ending condition below. Five items done with the queue still full is not the end of the run — relay and keep going.
+
+The **run** ends and hands back to the user when any of these fire:
 
 - **SCOPED:** the frozen queue is empty (normal completion), OR an environment stop fires.
 - **BACKLOG-WIDE:** any pass halts (first halt wins), OR an environment stop fires.
-- **Either:** 20 iterations reached — stop and force a human review even if items remain.
+- **Either:** 20 iterations reached **across all chunks** — stop and force a human review even if items remain. Carry the running total across relays; a chunk that starts fresh must not reset the count to zero.
 
 ---
 
+## When a chunk ends
+
+The workflow returns its `outcomes` array. Fold it into the running totals, then take
+exactly one of three branches.
+
+**1. Queue still has items, no run-ending condition, under 20 total — relay to the next chunk.**
+
+Print a one-line chunk line (`chunk 2/4: #31 landed, #33 skipped (no diff)`) — not the
+full report; that is for the end of the run. Then invoke **`relay auto`** with a brief
+carrying everything the next context cannot rediscover:
+
+- The repo path, and that this is `/iterate` resuming a run already in progress.
+- **The remaining queue, verbatim and in order.** A fresh context must not re-resolve
+  the selector — the backlog moved while this run was landing branches, so re-resolving
+  would silently produce a different queue than the one the user approved.
+- **Running totals: iterations used so far, and the 20 cap.** Without this the next
+  chunk restarts at zero and the safety valve never fires.
+- Landed and skipped so far, one line each, so the final report is complete.
+- Ownership verdict, model, and mode, so the next chunk does not re-derive them.
+
+Then end the turn. `relay` writes the marker; the `Stop` hook clears the pane and
+delivers the brief.
+
+**2. An environment stop fired — do not relay.** Print the full report and stop. A
+dirty tree or a diverged default line needs the user to reconcile; a fresh context
+would hit the same wall with less information about how it got there.
+
+**3. Queue empty, or 20 iterations used — the run is over.** Print the full report
+below, then hand forward per "When the run ends".
+
 ## When the run ends
 
-Print a compact report:
+Print a compact report covering **every chunk**, not just the last one — this is why
+each relay brief carries the landed/skipped lines forward:
 
 - **Landed** — each item that merged / opened a PR, with its issue number or one-line description.
 - **Skipped** (scoped) — each item skipped, with the reason (gate fail / no diff / unfixable tests / …). These are the items still needing attention.
 - **Remaining** (scoped) — any queue items never reached because the cap or an environment stop ended the run early.
 - **Why it stopped** — queue empty / cap hit / environment stop (+ what to reconcile).
 
-For merges, the user can review with `git log --oneline origin/<default>..<default>`; for PRs, the list of opened PRs. They decide whether to start another loop (e.g. re-run over just the skipped items).
+For merges, the user can review with `git log --oneline origin/<default>..<default>`; for PRs, the list of opened PRs.
 
 ### Then relay into the next run
 
-A finished run has burned this context on 20 passes of orchestration. Rather than
-asking "want me to do another round?" and doing it in the same window, hand the next
-run forward: invoke `relay auto` after printing the report.
+Rather than asking "want me to do another round?" and doing it in this window, hand the
+next run forward: invoke `relay auto` after printing the report.
 
-**Relay between runs, never between passes.** A pass is a `workflow('implement', …)`
-call inside the script's own `for` loop — clearing the context mid-loop kills the
-driver. The workflow already keeps each pass's output out of this context, so
-per-pass relaying would buy nothing and break the harness.
-
-Relay's stop conditions are what end the chain, and they are the same ones that ended
-this run: an empty queue or an all-HITL remainder means no next run, so `relay`
-declines and the pane stays. Skip the relay entirely when the run ended on an
-**environment stop** — a dirty tree or a non-fast-forward needs the user to reconcile
-before anything else starts, and a fresh context would just hit the same wall.
+Relay's own stop conditions are what end the chain, and they are usually the same ones
+that ended this run: an empty tracker or an all-HITL remainder means there is no next
+run, so `relay` declines and the pane stays. As at a chunk boundary, an **environment
+stop** skips the relay entirely.
 
 ---
 
