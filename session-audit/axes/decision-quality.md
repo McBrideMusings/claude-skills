@@ -64,3 +64,5 @@ through the arrow-key selector in a context that bans it is a finding on both co
 > **Fix:** `<the specific element to add, and to which skill or doc>`.
 
 Axis tag: `decision-quality`.
+
+**Enforceable?** Before writing the `Fix:` line, answer the hook question — see [../HOOKS.md](../HOOKS.md). If a hook could enforce this deterministically, name the event and predicate plus its simulated fires/precision; if not, say why (trigger needs judgment, or a load trigger removes the condition instead).

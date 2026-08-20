@@ -52,3 +52,5 @@ noise. Rank by that, not by count.
 > **Fix:** narrow to `<proposed clause>`, or set `disable-model-invocation: true`.
 
 Axis tag: `skill-misfire`.
+
+**Enforceable?** Before writing the `Fix:` line, answer the hook question — see [../HOOKS.md](../HOOKS.md). If a hook could enforce this deterministically, name the event and predicate plus its simulated fires/precision; if not, say why (trigger needs judgment, or a load trigger removes the condition instead).

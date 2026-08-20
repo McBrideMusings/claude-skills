@@ -58,3 +58,5 @@ forty is the headline.
 > **Fix:** `<add trigger phrasing / unhide / narrow the competitor>`.
 
 Axis tag: `skill-miss`.
+
+**Enforceable?** Before writing the `Fix:` line, answer the hook question — see [../HOOKS.md](../HOOKS.md). If a hook could enforce this deterministically, name the event and predicate plus its simulated fires/precision; if not, say why (trigger needs judgment, or a load trigger removes the condition instead).

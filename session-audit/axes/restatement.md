@@ -61,3 +61,5 @@ rule that is missing, unclear, or ignored. Always report the denominator.
 > **Fix:** `<the rule to add or the format to change>`.
 
 Axis tag: `restatement`.
+
+**Enforceable?** Before writing the `Fix:` line, answer the hook question — see [../HOOKS.md](../HOOKS.md). If a hook could enforce this deterministically, name the event and predicate plus its simulated fires/precision; if not, say why (trigger needs judgment, or a load trigger removes the condition instead).

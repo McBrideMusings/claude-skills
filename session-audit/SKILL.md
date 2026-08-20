@@ -65,6 +65,22 @@ Run every applicable lens unless the invocation names a subset. Each is a file i
 token count. Negative-space finds the rule you wrote, deployed, and never saw obeyed —
 which no cost metric will ever surface, because not doing the work is *cheaper*.
 
+## RULE — every finding answers the hook question
+
+An instruction is re-decided every turn by a stochastic process. A hook is the harness
+running code: it fires every time or never. So **no finding is complete until its `Fix:`
+line says whether a hook could have enforced it** — with the event and predicate if yes,
+with the reason if no. [HOOKS.md](HOOKS.md) carries the event map and the decision.
+
+This binds every lens, not just `negative-space`. It is the most common right answer to
+"the rule was written and ignored", to a guard tripping repeatedly, and to a tool that keeps
+not being reached for.
+
+**But simulate before proposing.** A `Stop` hook for the `plan-format` rule was simulated
+against 13 months of transcripts and fired 62 times at **10% precision**. A hook proposed
+without a fires-count and a precision sample is a guess, and a low-precision hook is worse
+than none — it trains the user to ignore it. The gate is in [HOOKS.md](HOOKS.md).
+
 ## Phases
 
 1. **Resolve the corpus** — [CORPUS.md](CORPUS.md). State it in one line.

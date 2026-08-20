@@ -52,3 +52,5 @@ about nine turns of full-window re-read. Say that number.
 > **Fix:** `<the shape that would have passed, with a concrete example>`.
 
 Axis tag: `friction`.
+
+**Enforceable?** Before writing the `Fix:` line, answer the hook question — see [../HOOKS.md](../HOOKS.md). If a hook could enforce this deterministically, name the event and predicate plus its simulated fires/precision; if not, say why (trigger needs judgment, or a load trigger removes the condition instead).
