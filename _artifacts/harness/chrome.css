@@ -12,6 +12,34 @@
 
    Every ink value here clears 4.5:1 against --at-c-bg, and must keep clearing it. */
 
+/* --- the space the artifact gets ---
+
+   Both side panels float, so the artifact's usable area is the window minus whichever
+   of them is open. One pair of tokens rather than each surface working it out for
+   itself: the stage and the device host both read these, which is what makes a device
+   frame stay centred in the space that is actually free — with the rail open or shut,
+   with the comments panel open or shut. Before this the host only knew about the rail,
+   so opening comments pushed the phone off-centre by half the panel's width. */
+
+:root {
+  --at-gap: 12px;
+  --at-inset-l: 0px;
+  --at-inset-r: 0px;
+}
+
+html[data-at-rail]:not([data-at-embedded]) {
+  --at-inset-l: calc(var(--at-rail-w, 272px) + var(--at-gap) * 2);
+}
+
+/* Written to outweigh the rule above rather than relying on order: that one carries two
+   attribute selectors, so a single-attribute reset silently lost and the stage kept the
+   rail's width reserved after the rail was gone. */
+html[data-at-rail][data-at-rail-collapsed]:not([data-at-embedded]) { --at-inset-l: 0px; }
+
+:root[data-at-annotate]:not([data-at-embedded]) {
+  --at-inset-r: calc(var(--at-panel-w, 300px) + var(--at-gap) * 2 + 8px);
+}
+
 :root {
   --at-c-bg: #101114;          /* the rail's ground */
   --at-c-panel: rgba(18, 18, 18, 0.93);  /* floating surfaces, over an artifact */

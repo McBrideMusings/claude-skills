@@ -24,21 +24,30 @@
   --at-rail-w: 272px;
 }
 
+/* A floating card, the same object as the comments panel on the other side: inset from
+   the window, rounded, its own ground. A flush full-height sidebar reads as part of the
+   window the prototype lives in; a card reads as something laid on top of it, which is
+   what it is. */
 .at-rail {
   position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
+  top: var(--at-gap);
+  bottom: var(--at-gap);
+  left: var(--at-gap);
   width: var(--at-rail-w);
   z-index: 2147483646;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px 16px 28px;
+  padding: 18px 16px 22px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  background: var(--at-c-bg);
-  border-right: 1px solid var(--at-c-line);
+  border-radius: 12px;
+  background: var(--at-c-panel);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 16px 40px rgba(0, 0, 0, 0.42);
   color: var(--at-c-ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
@@ -378,19 +387,10 @@ html[data-at-rail]:not([data-at-embedded]) #at-stage {
   position: fixed;
   top: 0;
   bottom: 0;
-  left: var(--at-rail-w);
-  right: 0;
+  left: var(--at-inset-l);
+  right: var(--at-inset-r);
   overflow: auto;
   transform: translateZ(0);
-}
-
-html[data-at-rail-collapsed]:not([data-at-embedded]) #at-stage { left: 0; }
-
-/* Annotate's panel gets the same treatment for the same reason: it used to reserve its
-   width with `body { padding-right }`, which a fixed prototype also walked straight
-   under. */
-:root[data-at-annotate][data-at-rail]:not([data-at-embedded]) #at-stage {
-  right: calc(var(--at-panel-w, 300px) + 32px);
 }
 
 /* An embedded copy has no rail to sit beside, so its stage is the whole frame. */

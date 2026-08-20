@@ -15,12 +15,16 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-rai
   display: none !important;
 }
 
+/* Centred in the space that is actually free, not in the window: both side panels float
+   and either can be open, so the host reads the shared insets rather than knowing about
+   the rail alone. Opening comments used to leave the frame centred on the old bounds,
+   sitting half a panel's width off to the right. */
 .at-vp-host {
   position: fixed;
   top: 0;
-  right: 0;
+  right: var(--at-inset-r, 0px);
   bottom: 0;
-  left: var(--at-rail-w, 0px);
+  left: var(--at-inset-l, 0px);
   z-index: 40;
   display: flex;
   align-items: center;
@@ -31,8 +35,7 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-rai
     radial-gradient(120% 100% at 50% 0%, #16181d 0%, #0a0b0d 70%);
 }
 
-html:not([data-at-rail]) .at-vp-host { left: 0; }
-html[data-at-rail-collapsed] .at-vp-host { left: 0; }
+/* The insets already collapse to 0 without a rail, or with it hidden. */
 
 /* 1:1 — the frame keeps its real pixel size and the host scrolls to the rest of it.
    Centring a frame that is wider than the host would cut off its left edge with no way
