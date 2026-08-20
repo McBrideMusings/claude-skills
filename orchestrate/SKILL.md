@@ -325,9 +325,9 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 | State | Do |
 |---|---|
 | `working` | leave alone |
-| `done`/`idle`, verdict `PASS`/`SKIP`, branch has ≥1 commit past the base, `commit` == branch head, tree clean | land it (step 6) |
+| `done`/`idle`, verdict `PASS`/`SKIP`, branch has ≥1 commit past the base, `verified_parent` == branch head's parent, tree clean | land it (step 6) |
 | verdict `PASS`/`SKIP` but the branch has **no commits past the base** | **not a pass — it is empty.** The verdict describes code in no commit. Keep the worktree, [recover it](#recovering-a-stranded-worker); never land, never tear down |
-| `done`/`idle`, verdict `PASS`/`SKIP` but `commit` **behind** the head, or the tree is dirty | **stale** — escalate; the tip commits or the uncommitted edits shipped unverified |
+| `done`/`idle`, verdict `PASS`/`SKIP` but `verified_parent` is **not** the branch head's parent, or the tree is dirty | **stale** — escalate; the tip commits or the uncommitted edits shipped unverified |
 | `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `haiku` | retire it, tear the worktree down, and re-dispatch the issue **once** on `model` (sonnet) through step 3; name the retry in the report |
 | `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `sonnet` | report it, retire it, leave the issue open. No escalation above sonnet exists — a second failure is work for `iron-out`, not a bigger model |
 | `blocked` (herdr: an approval prompt) | escalate to the human; never auto-approve |
@@ -354,9 +354,17 @@ Copy it at read time, not at teardown time. A worker can be retired for reasons 
 
 **And the reverse also holds: a notification is not a death.** On the subagent transport one fires whenever an agent stops with no live background children, so an agent that left a build running notifies, then resumes when the build ends. Judge by whether the worktree is changing — new commits, a verdict file, touched sources — not by the notification. Observed in one round: four workers were each declared dead on their first notification and three recovery dispatches were fired into worktrees whose original workers were still alive, briefly putting two agents in the same tree. The tell that they were not dead was `ListAgents` showing them `running` again after being reported `completed`.
 
-**Check the verdict's `commit` against the branch head** (`git -C <worktree> rev-parse HEAD`) before trusting a `PASS`. implement already forbids handing forward a verdict whose `commit` is behind the head; this is orchestrate checking that it held, because orchestrate is the one that ships the result. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
+**Check the verdict's `verified_parent` against the branch head's parent** before trusting a `PASS`:
 
-**A verdict naming the base commit is the other tell, and it is not staleness — it is emptiness.** If the verdict's `commit` equals the commit the branch was cut from, the worker wrote its verdict before committing anything. Observed: a `PASS` verdict whose `commit` was the base `main` commit, on a branch with zero commits and five files of uncommitted work. Nothing about that reads as wrong until you look. `git -C <worktree> log --oneline <default-branch>..<branch>` returning empty is the check to run, because it is true even when the verdict omits `commit` entirely — and a comparison phrased only as "behind the head" lets this straight through.
+```bash
+git -C <worktree> rev-parse <branch>^     # must equal the verdict's verified_parent
+```
+
+`verify` runs before anything is committed, so the only sha it can honestly record is the parent of the commit its work becomes. Wrap then makes exactly one commit. On an honest pass those match; when they don't, something was committed after the verdict was written and is shipping unverified. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
+
+**Do not expect a `commit` field, and never ask anyone to add one.** Earlier versions had `verify` write `commit` (meaning the parent) and a later `restamp` stage rewrite it to the wrap sha. That stage was refused by the safety classifier on all twelve workers of one swarm (iptv-mac, 2026-08-20) as audit tampering — correctly, since it asked an agent to write "this commit was verified" about a commit no stage had verified. The field is named for what it truthfully holds so that nothing has to correct it afterwards.
+
+**A verdict whose `verified_parent` is the base commit is a different failure — emptiness, not staleness.** It means the worker wrote its verdict before committing anything. Observed: a `PASS` verdict naming the base `main` commit, on a branch with zero commits and five files of uncommitted work. Nothing about that reads as wrong until you look. `git -C <worktree> log --oneline <default-branch>..<branch>` returning empty is the check to run, because it holds even when the verdict omits the sha entirely — and a comparison phrased only in terms of the head's parent lets this straight through.
 
 #### `read(handle)` on EVERY wake
 
@@ -373,7 +381,7 @@ From the **primary checkout**, one worker at a time:
 3. **Moved** → another branch landed since this worker forked. Merge, then **re-run `verify` on the merged result** before pushing. Two branches can each pass alone and break together.
 4. **Conflict** → abort the merge, leave the worktree and branch intact, escalate. Never force-resolve.
 
-Then **write the verdict's `index_entries`** into the shared index files the brief told the worker not to touch ([BRIEF.md](BRIEF.md)), and commit them with the merge or immediately after. This is the orchestrator's half of that trade and it is not optional: suppressing the edits without making them swaps a loud merge conflict for a silently stale index, which is the failure those files exist to prevent. A landed `PASS` whose worker added a file and named no entry gets that gap recorded in the report, not skipped.
+Then **write the returned object's `index_entries`** into the shared index files the brief told the worker not to touch ([BRIEF.md](BRIEF.md)), and commit them with the merge or immediately after. They come back in the round's result array, not in the verdict file — a Wrap stage that wrote them to the verdict path would destroy the verdict. This is the orchestrator's half of that trade and it is not optional: suppressing the edits without making them swaps a loud merge conflict for a silently stale index, which is the failure those files exist to prevent. A landed `PASS` whose worker added a file and named no entry gets that gap recorded in the report, not skipped.
 
 Close the issue with what shipped.
 

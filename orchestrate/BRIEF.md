@@ -34,7 +34,9 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 >
 > **Read the tracker; never write to it.** No `bd update`, no `bd close`, no `gh issue close`, no comments. On beads the embedded database takes one writer at a time and your sibling workers are competing for it; on either backend the orchestrator records the outcome from the primary checkout once your verdict file lands. Your verdict file is how you report — that is the whole channel.
 >
-> **Do not edit `<shared-index-files>`.** Every worker appends to the same lines of those files, so every branch after the first conflicts on them and none of it is about the code. Instead, put the exact text you would have written into your verdict file under `index_entries`, as `{"file": "<path>", "entry": "<the full replacement line or row>"}`. The orchestrator writes them from the primary checkout after your branch lands.
+> **Do not edit `<shared-index-files>`.** Every worker appends to the same lines of those files, so every branch after the first conflicts on them and none of it is about the code. Instead, **return** the exact text you would have written in your Wrap stage's `index_entries` field, as `{"file": "<path>", "entry": "<the full replacement line or row>"}`. The orchestrator writes them from the primary checkout after your branch lands.
+>
+> **`index_entries` is a returned field, never a file you write.** Do not put it in your verdict file: that file is the Verify stage's, it already exists by the time you have index rows to report, and writing yours into it replaces the verdict with a file holding nothing else. Observed on iptv-mac 2026-08-20 — 7 of 12 workers across four rounds destroyed their own verdict that way, and orchestrate's rule is that a `PASS` with no verdict file on disk is not a pass.
 >
 > **What needs an entry is not "files I created" — it is every line of those indexes your change made untrue.** Before writing the list, open each index and read the entries for every file in your diff, including ones you only edited. If an entry describes behaviour you changed, a count you changed, or a rule you added a condition to, it needs a replacement line even though the file already existed. Return `[]` only after looking, never by assuming an edit-only change cannot have stranded a description. Observed: a worker changed when playback resumes and returned `[]`, leaving three entries describing the old rule — and because nothing conflicted, nothing announced it.
 
@@ -64,7 +66,7 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 
 If a repo has none, drop the clause. It is a no-op there, and the rule below applies.
 
-**The orchestrator owes the other half of this trade.** Writing the entries after landing is part of step 6, not an optional tidy-up — a swarm that suppresses the edits and then forgets to make them has traded a loud conflict for a silent staleness, which is worse. Read every landed verdict's `index_entries`, write them in the primary checkout, and commit them with the merge or immediately after.
+**The orchestrator owes the other half of this trade.** Writing the entries after landing is part of step 6, not an optional tidy-up — a swarm that suppresses the edits and then forgets to make them has traded a loud conflict for a silent staleness, which is worse. Read `index_entries` off every landed worker's **returned object**, write them in the primary checkout, and commit them with the merge or immediately after.
 
 ## Adding to the brief
 
