@@ -24,10 +24,6 @@
   --at-rail-w: 272px;
 }
 
-html[data-at-rail] body {
-  padding-left: var(--at-rail-w);
-}
-
 .at-rail {
   position: fixed;
   top: 0;
@@ -287,7 +283,6 @@ html[data-at-rail] body {
    the width back; the reopen chevron is the only thing left on screen. */
 
 html[data-at-rail-collapsed] .at-rail { display: none; }
-html[data-at-rail-collapsed][data-at-rail] body { padding-left: 0; }
 
 .at-rail-reopen {
   position: fixed;
@@ -317,12 +312,42 @@ html[data-at-embedded] .at-rail-reopen { display: none !important; }
 /* A round's top-level markup, hidden by rail.js when its round is not on screen. */
 .at-shell[hidden] { display: none !important; }
 
-/* --- the stage the rail drives --- */
+/* --- the stage the rail drives ---
 
-html[data-at-rail] #at-stage {
-  min-height: 100vh;
+   The stage is the prototype's VIEWPORT, not a padded region of the page. It used to be
+   the latter: the rail reserved its width with `body { padding-left }`, which only moves
+   content that is in normal flow. A prototype pinned to the viewport — `position: fixed;
+   inset: 0`, the shape every app shell, menubar panel and mobile screen takes — ignored
+   that padding completely and ran the full 272px underneath the rail, with its left edge
+   unreadable. So did anything sized `100vw`.
+
+   Positioning the stage and giving it a transform fixes both: the transform makes it the
+   containing block for its `position: fixed` descendants, so a prototype's own fixed
+   header pins to the stage rather than to the window, and the stage's own bounds are the
+   only space it can occupy. A `100vw` child now overflows into the stage's own scroller
+   instead of over the chrome. Nothing in a fragment has to know any of this. */
+
+html[data-at-rail]:not([data-at-embedded]) #at-stage {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: var(--at-rail-w);
+  right: 0;
+  overflow: auto;
+  transform: translateZ(0);
 }
+
+html[data-at-rail-collapsed]:not([data-at-embedded]) #at-stage { left: 0; }
+
+/* Annotate's panel gets the same treatment for the same reason: it used to reserve its
+   width with `body { padding-right }`, which a fixed prototype also walked straight
+   under. */
+:root[data-at-annotate][data-at-rail]:not([data-at-embedded]) #at-stage {
+  right: calc(var(--at-panel-w, 300px) + 32px);
+}
+
+/* An embedded copy has no rail to sit beside, so its stage is the whole frame. */
+html[data-at-embedded] #at-stage { min-height: 100vh; }
 
 /* An embedded copy (inside a viewport frame) renders no rail and reclaims the width. */
 html[data-at-embedded] .at-rail { display: none; }
-html[data-at-embedded][data-at-rail] body { padding-left: 0; }
