@@ -1,54 +1,7 @@
 /* contrast.css — the text-contrast check. Chrome, not design.
 
-   The verdict is always on: a prototype's rail carries a pass/fail row that recomputes
-   whenever the artifact changes. The overlay below it is the detail view — dormant until
-   `c`, or until the verdict row is clicked. */
-
-/* --- the standing verdict in the rail ---
-
-   Green tick when the artifact clears AA, amber count when it does not, and when it does
-   not the row is the way into the overlay that names the elements. A check nobody
-   remembers to press is a check nobody runs. */
-
-.at-check {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  width: 100%;
-  padding: 8px 11px;
-  border: 1px solid var(--at-c-edge);
-  border-radius: 8px;
-  background: var(--at-c-surface);
-  color: var(--at-c-dim);
-  font: inherit;
-  font-size: 12px;
-  text-align: left;
-  cursor: pointer;
-}
-
-.at-check:disabled { cursor: default; }
-.at-check:not(:disabled):hover { border-color: var(--at-c-edge-hi); color: var(--at-c-ink); }
-.at-check:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
-
-.at-check-mark {
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.at-check[data-state="pass"] .at-check-mark { background: rgba(63, 185, 80, 0.16); color: var(--at-c-ok); }
-.at-check[data-state="fail"] .at-check-mark { background: rgba(245, 165, 36, 0.18); color: var(--at-c-mark); }
-
-.at-check-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.at-check-name { color: var(--at-c-ink); font-weight: 600; }
-.at-check-note { font-size: 10.5px; color: var(--at-c-faint); }
-.at-check[data-state="fail"] .at-check-note { color: var(--at-c-mark); }
+   The overlay is the detail view: dormant until `c`, or until the rail's Contrast row is
+   clicked. The standing verdict itself lives in checks.js, which owns every row. */
 
 .at-cx-layer {
   position: fixed;

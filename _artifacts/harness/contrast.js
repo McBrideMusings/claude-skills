@@ -167,7 +167,6 @@
     toast(r.failed
       ? r.failed + ' of ' + r.tested + what + ' fail WCAG AA' + skip
       : 'All ' + r.tested + what + ' pass WCAG AA' + skip);
-    if (!chromeOnly) paintVerdict();
   }
 
   document.addEventListener('keydown', function (e) {
@@ -177,87 +176,6 @@
     else if (e.key === 'C') { e.preventDefault(); setMode(true, true); }
     else if (e.key === 'Escape' && on) setMode(false);
   });
-
-  /* --- the standing verdict in the rail ---
-
-     A check you have to remember to run is a check that does not get run. The ratio is
-     arithmetic and the DOM is right there, so the rail carries the answer at all times
-     and the overlay becomes the detail view you open when the answer is bad.
-
-     It re-runs whenever what is on screen changes — a variant swap, an axis flip, a new
-     device frame — because each of those is different markup with different colours. When
-     a device frame is up the artifact lives inside the iframe, so the check runs against
-     that document and reports here. */
-
-  var railRow = null;
-
-  function frameDoc() {
-    if (!root.hasAttribute('data-at-vp')) return null;
-    var f = document.querySelector('.at-vp-frame');
-    try {
-      return f && f.contentWindow && f.contentWindow.atContrast ? f.contentWindow : null;
-    } catch (e) { return null; }
-  }
-
-  function verdict() {
-    var host = frameDoc();
-    return host ? host.atContrast.check(false) : runQuiet();
-  }
-
-  function runQuiet() {
-    var was = on;
-    if (!was) root.setAttribute('data-at-contrast', '');
-    var r = check(false);
-    if (!was) { root.removeAttribute('data-at-contrast'); layer.innerHTML = ''; }
-    return r;
-  }
-
-  function paintVerdict() {
-    if (!railRow) return;
-    var r;
-    try { r = verdict(); } catch (e) { return; }
-    var failed = r.failed;
-    railRow.setAttribute('data-state', failed ? 'fail' : 'pass');
-    railRow.querySelector('.at-check-mark').textContent = failed ? '!' : '✓';
-    railRow.querySelector('.at-check-name').textContent = 'Contrast';
-    railRow.querySelector('.at-check-note').textContent = failed
-      ? failed + ' of ' + r.tested + ' fail AA'
-      : 'all ' + r.tested + ' pass AA';
-    railRow.disabled = !failed && !on;
-    railRow.title = failed
-      ? 'Show which elements fail  (c)'
-      : 'Every text element clears WCAG AA';
-  }
-
-  if (window.__atRail) {
-    // Deferred so the device group, added by viewport.js, lands above this one: the
-    // rail runs coarse-to-fine down the column and a verdict is not a control.
-    setTimeout(function () {
-      var g = window.__atRail.group('Checks');
-      railRow = document.createElement('button');
-      railRow.className = 'at-check';
-      railRow.type = 'button';
-      railRow.innerHTML =
-        '<span class="at-check-mark"></span>' +
-        '<span class="at-check-body"><span class="at-check-name">Contrast</span>' +
-        '<span class="at-check-note">checking…</span></span>';
-      railRow.addEventListener('click', function () { setMode(!on, false); });
-      g.appendChild(railRow);
-      paintVerdict();
-    }, 0);
-
-    /* Both signals mean "there is now content to measure", which is the only moment
-       worth measuring at. Neither is a delay: at:variant and at:device fire before the
-       stage has been filled, so timing them was a guess that reported zero whenever it
-       guessed short. at:mounted comes from the host's own mount; the message comes from
-       a device frame's. */
-    window.addEventListener('at:mounted', paintVerdict);
-    window.addEventListener('message', function (e) {
-      if (e.data && e.data.at === 'mounted') paintVerdict();
-    });
-    // An axis flip changes state inside already-mounted markup, so nothing remounts.
-    window.addEventListener('at:axis', function () { requestAnimationFrame(paintVerdict); });
-  }
 
   /* Programmatic surface — same reason as annotate's: the check must be runnable
      without a keypress, by a test or by an agent auditing its own artifact. */
