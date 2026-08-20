@@ -80,42 +80,23 @@ Skip otherwise. See [ADR-FORMAT.md](ADR-FORMAT.md) for the template and qualifie
 
 ## Domain design lenses
 
-If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with
-its lenses. Detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md); if
-`../_domains/<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do
-the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the
-ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply
-them exactly like everything else here — name the structure, surface
-tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; the design axis carries
-that same hard rule. No design axis for the domain → skip silently.
+If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md); if `../_domains/<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
+tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; the design axis carries that same hard rule. No design axis for the domain → skip silently.
 
 ## Product-design elicitation discipline
 
-When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and
-butter of Shape and Backfill — pull the matching `design` cell for the discipline that keeps the
-questions honest, then interrogate with it:
+When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and butter of Shape and Backfill — pull the matching `design` cell for the discipline that keeps the questions honest, then interrogate with it:
 
-- **User needs / job stories** → [`../design/layers/user-needs.md`](../design/layers/user-needs.md):
-  need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark
-  confidence (observed/inferred/assumed).
-- **Domain terminology** → [`../design/layers/domain.md`](../design/layers/domain.md): record
-  synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/
-  instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
+- **User needs / job stories** → [`../design/layers/user-needs.md`](../design/layers/user-needs.md): need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark confidence (observed/inferred/assumed).
+- **Domain terminology** → [`../design/layers/domain.md`](../design/layers/domain.md): record synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/ instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
 
-These are the same disciplines the `design` orchestrator uses; grill-me reads the cells rather
-than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding),
-route to `design`.
+These are the same disciplines the `design` orchestrator uses; grill-me reads the cells rather than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding), route to `design`.
 
 ## Terminal state
 
 Shared understanding is the goal, not an artifact. Stop when there are no unresolved branches.
 
-**Whenever the interview resolves into a stated plan or decision — written down or said in chat —
-load [`plan-format`](../plan-format/SKILL.md) via the Skill tool first.** A resolved interview is the
-single most common way a plan reaches the user here, and the format is not optional because the
-answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a
-Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:138`), so an autonomous
-pass that hits a judgment call gets the format through this door.
+**Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`plan-format`](../plan-format/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call gets the format through this door.
 
 If a written record is useful at the end, offer it — don't assume:
 
@@ -126,12 +107,7 @@ Glossary entries and ADRs are captured *inline* during the session — no end-of
 
 ## Never build by hand what another skill owns
 
-"Never chain into another skill" (below) means **never chain into another interview**. It does not
-mean build things yourself. The moment the conversation asks for an artifact — a prototype, a spec, a
-diagram, a plan, tickets — **invoke the skill that owns it**, then come back here. Reading a request
-as a direct instruction and starting to write is the failure this rule exists to stop: skills carry
-naming, versioning, and format conventions that hand-written output silently breaks, and the cost
-lands later, on the user, as a file in the wrong place under the wrong name that can't be iterated on.
+"Never chain into another skill" (below) means **never chain into another interview**. It does not mean build things yourself. The moment the conversation asks for an artifact — a prototype, a spec, a diagram, a plan, tickets — **invoke the skill that owns it**, then come back here. Reading a request as a direct instruction and starting to write is the failure this rule exists to stop: skills carry naming, versioning, and format conventions that hand-written output silently breaks, and the cost lands later, on the user, as a file in the wrong place under the wrong name that can't be iterated on.
 
 | The user asks for | Invoke |
 | --- | --- |
@@ -141,9 +117,6 @@ lands later, on the user, as a file in the wrong place under the wrong name that
 | a diagram or a visual explanation | `show-me` / `explain` |
 | an ASCII layout sketch for one arrangement | `design` |
 
-This is not optional and it is not a judgement call. **If a skill's description covers the artifact,
-that skill builds it** — even when the request is one sentence, even when you can see exactly what to
-write, and especially when you can, because that is when skipping it feels most reasonable.
+This is not optional and it is not a judgement call. **If a skill's description covers the artifact, that skill builds it** — even when the request is one sentence, even when you can see exactly what to write, and especially when you can, because that is when skipping it feels most reasonable.
 
-Never auto-commit any artifact. Never chain into another *interview* skill — but always hand a build
-to the skill that owns it, per "Never build by hand what another skill owns" above.
+Never auto-commit any artifact. Never chain into another *interview* skill — but always hand a build to the skill that owns it, per "Never build by hand what another skill owns" above.
