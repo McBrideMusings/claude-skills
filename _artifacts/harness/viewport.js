@@ -355,6 +355,7 @@
       if (host) { host.remove(); host = null; frame = null; shell = null; }
       sizeLabel.textContent = '';
       paintControls();
+      window.dispatchEvent(new CustomEvent('at:device', { detail: { device: 'fit' } }));
       return;
     }
     var land = d.rotates && landscape;
@@ -392,7 +393,12 @@
     root.setAttribute('data-at-vp', '');
     // A change landing between here and the frame's first paint would arrive before
     // there is anything to receive it, so the fresh frame is synced once on load.
-    frame.addEventListener('load', syncFrame);
+    frame.addEventListener('load', function () {
+      syncFrame();
+      // Whatever watches the artifact — the contrast verdict, for one — is now looking
+      // at a different document and has to be told.
+      window.dispatchEvent(new CustomEvent('at:device', { detail: { device: names[current] } }));
+    });
     frame.srcdoc = srcdoc(d, land);
     fit();
   }

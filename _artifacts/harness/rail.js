@@ -167,6 +167,13 @@
       // Re-emit every live axis so the freshly mounted markup gets its state applied
       // without every fragment writing its own re-apply-on-mount code.
       activeAxes().forEach(emitAxis);
+      // The stage now has content. Anything that measures the artifact — the contrast
+      // verdict — would otherwise be guessing at a delay, and measuring an empty
+      // document whenever it guessed short.
+      window.dispatchEvent(new CustomEvent('at:mounted'));
+      if (root.hasAttribute('data-at-embedded')) {
+        try { parent.postMessage({ at: 'mounted' }, '*'); } catch (e) {}
+      }
     });
   }
 
