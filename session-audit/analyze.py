@@ -68,6 +68,8 @@ class Facts:
         self.skills = Counter(); self.skill_args = defaultdict(list)
         self.agents = Counter()
         self.bash = Counter(); self.bash_blocked = Counter()
+        self.denied = {}; self.denied_cmd = Counter()
+        self.cmd_prefix = Counter()
         self.dup_reads = Counter(); self.dup_bash = Counter()
         self.user_msgs = []          # (timestamp, text) — the steering signal
         self.ctx_bucket = Counter()
@@ -87,13 +89,20 @@ def scan(path, F, side, since=None):
     except Exception: return
     if side == "main": F.sessions += 1
 
-    for line in lines:                       # pre-pass: which tool_uses errored
+    denied_ids = set()
+    for line in lines:                       # pre-pass: which tool_uses errored or were denied
         if '"is_error":true' not in line: continue
         try: r = json.loads(line)
         except Exception: continue
         for b in ((r.get("message") or {}).get("content") or []):
-            if isinstance(b, dict) and b.get("type") == "tool_result" and b.get("is_error"):
-                err_ids.add(b.get("tool_use_id"))
+            if not (isinstance(b, dict) and b.get("type") == "tool_result" and b.get("is_error")):
+                continue
+            err_ids.add(b.get("tool_use_id"))
+            txt = b.get("content")
+            txt = txt if isinstance(txt, str) else json.dumps(txt)[:300]
+            if "doesn't want to proceed with this tool use" in txt:
+                denied_ids.add(b.get("tool_use_id"))
+                F.denied[b.get("tool_use_id")] = True
 
     for line in lines:
         try: r = json.loads(line)
@@ -166,8 +175,11 @@ def scan(path, F, side, since=None):
             elif n == "Bash":
                 cmd = (inp.get("command") or "").strip()
                 if cmd:
-                    head = cmd.split()[0]
+                    parts = cmd.split()
+                    head = parts[0]
                     F.bash[head] += 1
+                    F.cmd_prefix[" ".join(parts[:2])] += 1
+                    if b.get("id") in denied_ids: F.denied_cmd[" ".join(parts[:3])] += 1
                     bashes[cmd] += 1
                     if bashes[cmd] > 1: F.dup_bash[head] += 1
             elif n == "Read":
@@ -229,6 +241,12 @@ def report(F, args):
     P(f"  repeated identical Bash commands: {sum(F.dup_bash.values()):,}")
     P(f"  repeated Read of the same path:   {sum(F.dup_reads.values()):,}")
     for f_, n in F.dup_reads.most_common(5): P(f"    {n:4d}x  {f_}")
+    P(f"  permission denials (user said no): {len(F.denied):,}")
+    for c, n in F.denied_cmd.most_common(6): P(f"    {n:4d}x  {c}")
+    P("  NOTE: approved prompts leave NO trace. Denials undercount permission friction —")
+    P("        rank allowlist candidates by repeated command prefixes instead:")
+    for c, n in F.cmd_prefix.most_common(10):
+        if n >= 5: P(f"    {n:5d}x  {c}")
     if F.bash_blocked:
         P("  blocked / rejected tool calls:")
         for b, n in F.bash_blocked.most_common(8): P(f"    {n:4d}x  {b}")
@@ -264,6 +282,8 @@ def main():
             "blocked": dict(F.bash_blocked),
             "dup_reads": sum(F.dup_reads.values()),
             "dup_bash": sum(F.dup_bash.values()),
+            "permission_denials": len(F.denied),
+            "cmd_prefixes": dict(F.cmd_prefix.most_common(25)),
             "tool_wait_h": round(F.tool_wait/3600, 1),
             "human_wait_h": round(F.human_wait/3600, 1),
             "first_ctx_median": sorted(F.first_ctx)[len(F.first_ctx)//2] if F.first_ctx else None,

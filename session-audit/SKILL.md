@@ -65,11 +65,11 @@ Run every applicable lens unless the invocation names a subset. Each is a file i
 token count. Negative-space finds the rule you wrote, deployed, and never saw obeyed —
 which no cost metric will ever surface, because not doing the work is *cheaper*.
 
-## RULE — every finding is tested against both fix shapes
+## RULE — every finding is tested against the fix shapes
 
-A lens finds what went wrong. The **fix shapes** are the two structural answers worth
-reaching for before the lazy one — *"write the instruction more forcefully"*. No finding is
-complete until it has been tested against both.
+A lens finds what went wrong. The **fix shapes** are the structural answers worth reaching
+for before the lazy one — *"write the instruction more forcefully"*. No finding is complete
+until it has been tested against each one that applies.
 
 **[HOOKS.md](HOOKS.md) — could this have been enforced?** An instruction is re-decided every
 turn by a stochastic process. A hook is the harness running code: it fires every time or
@@ -87,8 +87,17 @@ embed → split or disclose → add a load trigger.
 > The rung most often skipped is the last. A skill can be well-written and still never fire
 > because nothing points at it at the moment it applies.
 
-Both bind every lens, not just `negative-space`. When both offer an answer, the cheaper and
-more reversible one wins — and say which of the two you rejected, and why.
+**[PERMISSIONS.md](PERMISSIONS.md) — should this have prompted at all?** The classifier is
+conservative; a prompt on a command that was always going to be approved is a stall on a
+full context window. Three shapes in order: allowlist rule → deny+allow pair → a narrow
+wrapper tool when the safe/unsafe split lives inside an argument the matcher can't parse.
+
+> Denials leave a trace; **approved prompts leave none**. Rank by repeated command prefixes,
+> not denial counts, and say it's inference. Any widening names what stays denied in the
+> same breath.
+
+These bind every lens, not just `negative-space`. When more than one offers an answer, the
+cheaper and more reversible one wins — and say which you rejected, and why.
 
 ## Phases
 
