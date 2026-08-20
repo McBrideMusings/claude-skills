@@ -68,4 +68,4 @@ denied  = []
 # `herdr agent start --kind` has no `reasonix` value and herdr ships no
 # detection manifest for it, so a reasonix pane reports no agent_status and the
 # wake/classify loop has nothing to read. Adding a block here will not work.
-# Reach it through the `delegate` router (/implement delegate) instead.
+# Reach it through the `dispatch` router (/implement delegate) instead.

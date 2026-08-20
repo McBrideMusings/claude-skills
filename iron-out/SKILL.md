@@ -158,7 +158,7 @@ Re-order what remains by leverage and continue at 3a.
 
 The pattern for `fact` and `artifact` items. The subagent does the expensive building; the user does the reacting, here, in this session.
 
-The **Agent tool** is the target for this, and it is also the default everywhere ([../delegate/TARGETS.md](../delegate/TARGETS.md)). Nothing here meets that ladder's bar for escalating to a separate process: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
+The **Agent tool** is the target for this, and it is also the default everywhere ([../dispatch/TARGETS.md](../dispatch/TARGETS.md)). Nothing here meets that ladder's bar for escalating to a separate process: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
 
 1. **Write the handoff.** Invoke the `handoff` skill with the issue as the argument. It captures what the subagent can't infer from the issue body alone — decisions already made this pass, alternatives ruled out and why, the destination from the milestone brief. Note its absolute path.
 2. **Spawn it.** Use the **Agent tool**, `run_in_background: true`, `model: "sonnet"` unless the work is genuinely heavy. The prompt: read the handoff at `<absolute-path>`, read issue `<url>`, run the `research` skill (for `fact`) or the `prototype` skill (for `artifact`), write the output under `<repo-root>/tmp/claude/`, and return its absolute path plus what it found. Tell it to **stop and report rather than guess** if it hits a decision the user owns.

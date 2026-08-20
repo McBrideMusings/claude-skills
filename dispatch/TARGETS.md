@@ -11,8 +11,8 @@ same order. This file is the single owner of that order. `review dual`, `impleme
 | Watchable | no | yes, live | yes, output tees to the window |
 | You can type at it | no | **yes** — switch to the tab and take it over | no |
 | Survives this session dying | no | **yes** | the window survives; the run does not |
-| Cross-vendor | no — Claude only | yes, any kind in herdr's `--kind` enum | yes, any vendor `delegate` resolves |
-| Reached by | the `Agent` tool | `delegate exec` → `herdr-agent` | `delegate exec` → `terminal run` |
+| Cross-vendor | no — Claude only | yes, any kind in herdr's `--kind` enum | yes, any vendor `dispatch` resolves |
+| Reached by | the `Agent` tool | `dispatch exec` → `herdr-agent` | `dispatch exec` → `terminal run` |
 
 ## The order
 
@@ -36,7 +36,7 @@ one in the status line, so a run that escalated for no reason is visible:
 - **Inside herdr** (`HERDR_ENV=1`) **and herdr can start the vendor** → **a herdr tab**.
 - **Otherwise** → **a Terminal.app window**.
 
-Nobody implements step 3 by hand. `delegate exec` does it, and `delegate transport` prints
+Nobody implements step 3 by hand. `dispatch exec` does it, and `dispatch transport` prints
 the answer with its reason. Both surfaces take the same contract — prompt in a file, answer
 in `<outfile>` — so a skill never branches on which one ran.
 
@@ -70,7 +70,7 @@ isolating them buys nothing and a fresh worktree costs a checkout.
 agy, cline, omp, mastracode, opencode, copilot, kimi, kiro, droid, amp, grok, hermes, kilo,
 qodercli, maki`). **`reasonix` is not in it**, so a reasonix delegate can only ever run in
 Terminal.app. That is herdr's limitation, not a preference — and on the personal profile,
-where `CLAUDE_DELEGATE_AGENT=reasonix`, it is the common case. `delegate transport` says so
+where `CLAUDE_DELEGATE_AGENT=reasonix`, it is the common case. `dispatch transport` says so
 in as many words.
 
 `--headless` skips step 3 entirely and always runs a plain subprocess: cron, SSH, and
@@ -93,5 +93,5 @@ tabbing over to watch a delegate that was only ever an in-session agent.
 
 - The resolver, the vendors, and the auth gate → [SKILL.md](SKILL.md)
 - The herdr live-agent transport → `herdr-agent` in this directory
-- The Terminal.app transport → [../terminal/SKILL.md](../terminal/SKILL.md)
+- The Terminal.app transport → [TRANSPORT-TERMINAL.md](TRANSPORT-TERMINAL.md)
 - Swarms, which layer a `workflow` target and many parallel worktrees on top of this → [../orchestrate/SKILL.md](../orchestrate/SKILL.md)

@@ -18,7 +18,7 @@ terminal close <id>                       close the pane and forget <id>
 ## Calling pattern
 
 ```bash
-T="$HOME/.claude/skills/terminal/terminal"
+T="$HOME/.claude/skills/dispatch/terminal"
 
 "$T" open server
 
@@ -44,4 +44,4 @@ echo 'curl -s localhost:3000/health' > "$cmd"
 
 ## One-shot vs session — which to use
 
-Use **one-shot** (`run`, see [one-shot.md](one-shot.md)) when you have a single command and just want to see it run and read its result. Use **session** when you need the shell to persist — multiple commands sharing state, a long-running process you check on later, or an interactive flow you feed step by step.
+Use **one-shot** (`run`, see [TRANSPORT-TERMINAL-ONESHOT.md](TRANSPORT-TERMINAL-ONESHOT.md)) when you have a single command and just want to see it run and read its result. Use **session** when you need the shell to persist — multiple commands sharing state, a long-running process you check on later, or an interactive flow you feed step by step.

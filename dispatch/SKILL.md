@@ -1,5 +1,5 @@
 ---
-name: delegate
+name: dispatch
 disable-model-invocation: true
 description: "Owner of the delegation-target ladder every skill picks from — Claude agent by default, escalating to a live herdr tab or a Terminal.app window — plus the router behind it: resolver verbs (agent/transport/check/exec), CLAUDE_DELEGATE_AGENT vendor selection (Codex, Reasonix/DeepSeek, or another Claude), and auth health-gating. Read when wiring, debugging, or extending any delegated work."
 ---
@@ -10,9 +10,9 @@ How the delegate flavors — `review dual` (the delegate **reviews** the same di
 
 > ## ⛔ NEVER bypass the router — this is non-negotiable
 >
-> The delegate **always** runs through the `delegate exec` script. **NEVER** call a vendor binary directly — not from a Bash tool call, not "just this once," not because it seems quicker, not for any reason. The router is the whole point: it is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the delegate's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-delegate.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct.
+> The delegate **always** runs through the `dispatch exec` script. **NEVER** call a vendor binary directly — not from a Bash tool call, not "just this once," not because it seems quicker, not for any reason. The router is the whole point: it is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the delegate's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-delegate.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct.
 >
-> Calling a vendor binary directly runs it **headless in the background with no window** — silently defeating every one of those guarantees. The only correct invocation is `"$HOME/.claude/skills/delegate/delegate" exec [--headless] <prompt-file> <outfile>` — windowed (default) or `--headless`, both go **through the router** (the ban is on calling the vendor binary yourself, not on running without a window; `--headless` is the router's own no-GUI mode for cron/SSH). No exceptions. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `delegate`.)
+> Calling a vendor binary directly runs it **headless in the background with no window** — silently defeating every one of those guarantees. The only correct invocation is `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` — windowed (default) or `--headless`, both go **through the router** (the ban is on calling the vendor binary yourself, not on running without a window; `--headless` is the router's own no-GUI mode for cron/SSH). No exceptions. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
 
 > The smoke test showed `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.
 
@@ -22,36 +22,36 @@ How the delegate flavors — `review dual` (the delegate **reviews** the same di
 
 Three layers, kept separate on purpose:
 
-1. **The `delegate` resolver** (`delegate` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind four verbs.
-2. **The transport choice** — herdr tab or Terminal.app window. Resolved by `delegate`, never asked (see below). `delegate transport` prints the answer and its reason.
+1. **The `dispatch` resolver** (`dispatch` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind four verbs.
+2. **The transport choice** — herdr tab or Terminal.app window. Resolved by `dispatch`, never asked (see below). `dispatch transport` prints the answer and its reason.
 3. **The transports themselves** — `herdr-agent` in this directory for the live herdr tab, and the separate `terminal` skill for the Terminal.app window. Skills never touch a transport directly.
 
 ---
 
-## The `delegate` interface
+## The `dispatch` interface
 
 Call it by absolute path so it works from either profile (the `skills/` dir is the same real directory for both):
 
 ```
-$HOME/.claude/skills/delegate/delegate <verb>
+$HOME/.claude/skills/dispatch/dispatch <verb>
 ```
 
 ```
-delegate agent
+dispatch agent
     → prints the resolved agent: "codex" | "reasonix" | "claude"
     → exits nonzero if unset/unknown. Skills use it only to label output.
 
-delegate transport
+dispatch transport
     → prints the surface `exec` would use and why: "herdr (inside herdr and herdr can
       start claude)", "terminal (inside herdr, but 'reasonix' is not in herdr's --kind
       enum)", "terminal (not inside herdr)".
     → use it to name the target in a status line without running anything.
 
-delegate check
+dispatch check
     → is the resolved agent authenticated & reachable? exit 0 = ready, nonzero + message.
     → this IS the health gate — run it first; halt the skill on nonzero.
 
-delegate exec [--headless] <prompt-file> <outfile>
+dispatch exec [--headless] <prompt-file> <outfile>
     → run the resolved agent with the prompt in <prompt-file>; its answer lands in
       <outfile>. Blocks until the agent finishes, then returns. There is no "review" verb —
       a review is just an exec whose prompt asks for a review.
@@ -68,7 +68,7 @@ The review prompt, the verdict format (e.g. `MERGEABLE / BLOCK`), and any follow
 ### Calling pattern from a skill
 
 ```bash
-D="$HOME/.claude/skills/delegate/delegate"
+D="$HOME/.claude/skills/dispatch/dispatch"
 "$D" check || { echo "Cannot delegate — see message above"; halt; }   # hard gate
 # write the prompt (review instructions + the diff command to run) to a temp file
 prompt="$(mktemp -t delegate-prompt.XXXXXX)"
@@ -81,17 +81,17 @@ out="/tmp/<slug>-delegate.md"
 # when it returns, read "$out" for the findings
 ```
 
-Run `delegate exec` with the Bash tool's **background** mode: the agent can take minutes, and backgrounding keeps the Claude session free — the harness notifies you when the script (and thus the agent) exits, at which point you read `<outfile>`.
+Run `dispatch exec` with the Bash tool's **background** mode: the agent can take minutes, and backgrounding keeps the Claude session free — the harness notifies you when the script (and thus the agent) exits, at which point you read `<outfile>`.
 
 ---
 
 ## Selecting the vendor
 
-`delegate` resolves the agent from **`$CLAUDE_DELEGATE_AGENT`** (`codex` | `reasonix` | `claude`):
+`dispatch` resolves the agent from **`$CLAUDE_DELEGATE_AGENT`** (`codex` | `reasonix` | `claude`):
 
 - Set it per-profile in **`settings.local.json`**'s `env` block — the only per-profile spot, since `settings.json` is symlinked/shared. Personal → `reasonix`, work → `codex`. It's gitignored and holds only the agent *name*, never a key.
 - A single repo can override it in its own `.claude/settings.local.json`; Claude Code's settings merge gives project scope precedence over user scope, so the override is free.
-- **Unset or unknown is a hard error** — `delegate` never guesses a vendor (guessing means the wrong billing account). The error from `delegate check`/`agent` is the first line of the health gate.
+- **Unset or unknown is a hard error** — `dispatch` never guesses a vendor (guessing means the wrong billing account). The error from `dispatch check`/`agent` is the first line of the health gate.
 
 ### The `claude` vendor (Claude-to-Claude)
 
@@ -106,9 +106,9 @@ The delegate is a full Claude Code session: it reads the repo's CLAUDE.md, skill
 
 The resolver only ever *checks* auth — it never sees a key.
 
-- **Codex** — logged in via an OpenAI **API key** stored in `~/.codex` (`codex login`). `delegate check` runs `codex login status` (note: it prints to **stderr**) and looks for "logged in".
-- **Reasonix** — reads `DEEPSEEK_API_KEY` from the environment, referenced by `reasonix.toml`'s `api_key_env`. `delegate check` runs `reasonix doctor` and looks for `key:present`.
-- **Claude** — the normal Claude Code login (`claude auth login`). `delegate check` runs `claude auth status` and looks for `"loggedIn": true`.
+- **Codex** — logged in via an OpenAI **API key** stored in `~/.codex` (`codex login`). `dispatch check` runs `codex login status` (note: it prints to **stderr**) and looks for "logged in".
+- **Reasonix** — reads `DEEPSEEK_API_KEY` from the environment, referenced by `reasonix.toml`'s `api_key_env`. `dispatch check` runs `reasonix doctor` and looks for `key:present`.
+- **Claude** — the normal Claude Code login (`claude auth login`). `dispatch check` runs `claude auth status` and looks for `"loggedIn": true`.
 
 Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in Claude account (subscription or API, per the login) — same account the orchestrating session uses under that profile.
 
@@ -116,7 +116,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 ## The two transports
 
-`delegate exec` never spawns or watches a surface itself. It decides **which vendor command runs**, resolves **which surface** to run it in, and hands off. Both transports take the same contract — a prompt in a file, the answer in `<outfile>`, blocking until done — so no consuming skill branches on which one ran.
+`dispatch exec` never spawns or watches a surface itself. It decides **which vendor command runs**, resolves **which surface** to run it in, and hands off. Both transports take the same contract — a prompt in a file, the answer in `<outfile>`, blocking until done — so no consuming skill branches on which one ran.
 
 ### Resolution — automatic, and stated
 
@@ -127,7 +127,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 | anything else | **Terminal.app window** |
 | `DELEGATE_TRANSPORT=terminal\|herdr` | forces one; forcing `herdr` where it can't run is an error, not a fallback |
 
-`delegate exec` prints the resolved transport and its reason as its first line, and `delegate transport` prints the same without running anything. **Put that line in the status message** — a delegate the user is told to go watch, that was only ever a background subprocess, is the failure this exists to stop.
+`dispatch exec` prints the resolved transport and its reason as its first line, and `dispatch transport` prints the same without running anything. **Put that line in the status message** — a delegate the user is told to go watch, that was only ever a background subprocess, is the failure this exists to stop.
 
 **`reasonix` is not in herdr's `--kind` enum**, so a reasonix delegate always lands in Terminal.app even inside herdr. On the personal profile (`CLAUDE_DELEGATE_AGENT=reasonix`) that is the normal case, not an edge.
 
@@ -145,14 +145,14 @@ Completion is herdr's own agent lifecycle state, not a sentinel: herdr already t
 
 ### Terminal.app — a one-shot in a window (the `terminal` skill)
 
-`delegate` builds `cat <prompt-file> | <runner>` and hands it to:
+`dispatch` builds `cat <prompt-file> | <runner>` and hands it to:
 
 ```
-"$HOME/.claude/skills/terminal/terminal" run [--headless] <payload-file> <outfile>
+"$HOME/.claude/skills/dispatch/terminal" run [--headless] <payload-file> <outfile>
 ```
 
-That skill owns the whole Terminal.app transport — the visible window, the cold-start single-window guard, the `__TERMINAL_DONE__` sentinel and polling, and the window-left-open-at-an-idle-shell behavior. For its internals, the TCC/Automation grant, the secrets-on-a-pane caution, and its session mode (a persistent pane you send commands to over time), read `skills/terminal/SKILL.md` and its `one-shot.md` / `session.md`.
+That skill owns the whole Terminal.app transport — the visible window, the cold-start single-window guard, the `__TERMINAL_DONE__` sentinel and polling, and the window-left-open-at-an-idle-shell behavior. For its internals, the TCC/Automation grant, the secrets-on-a-pane caution, and its session mode (a persistent pane you send commands to over time), read `skills/dispatch/TRANSPORT-TERMINAL.md` and its `TRANSPORT-TERMINAL-ONESHOT.md` / `TRANSPORT-TERMINAL-SESSION.md`.
 
 ### Adding another agent
 
-Edit one place — the `case "$a"` blocks in `delegate` (its `KNOWN` list, the `check` command, and the `runner` string). Skills and this doc don't change.
+Edit one place — the `case "$a"` blocks in `dispatch` (its `KNOWN` list, the `check` command, and the `runner` string). Skills and this doc don't change.

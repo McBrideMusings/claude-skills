@@ -1,24 +1,25 @@
----
-name: terminal
-description: "Drive a visible Terminal.app window on the macOS desktop — spawn a window the user can watch, run commands in it, read output back (via AppleScript). ONE-SHOT mode is the transport `delegate` falls back to outside herdr; SESSION mode keeps a persistent pane over time. Use when the user should see a real terminal or watch a long-running process live."
----
+# Transport: Terminal.app — drive a visible window on the macOS desktop
 
-# terminal — drive a visible Terminal.app window
+> Not a standalone skill. This is one of `dispatch`'s two transports, folded in on
+> 2026-08-20. Spawn a window the user can watch, run commands in it, read output back
+> (via AppleScript). ONE-SHOT is the transport `dispatch` falls back to outside herdr;
+> SESSION keeps a persistent pane over time. Reached through `dispatch exec`, or
+> directly via `$HOME/.claude/skills/dispatch/terminal` for a window the user should watch.
 
 Spawn and control a Terminal.app window on the desktop. The user sees the window and watches the work live; Claude drives it through a stable AppleScript interface (`do script` to run, `history`/`contents` to read, `tty`/`busy` to track a pane).
 
 Call the executable by absolute path so it works from either profile (the `skills/` dir is the same real directory for both):
 
 ```
-$HOME/.claude/skills/terminal/terminal <verb>
+$HOME/.claude/skills/dispatch/terminal <verb>
 ```
 
 ## Two modes — load the reference file for the one you need
 
 | Mode | When | Reference |
 |---|---|---|
-| **One-shot** | Run one command in a visible window, wait for it, read its output. The window is left open at an idle shell for the user to read. This is one of `delegate exec`'s two transports — the one it falls back to outside herdr (see [../delegate/TARGETS.md](../delegate/TARGETS.md)). | [one-shot.md](one-shot.md) |
-| **Session** | Open a persistent pane, then send it commands repeatedly over time, read its scrollback, and close it when done. New, richer capability — the pane survives across commands. | [session.md](session.md) |
+| **One-shot** | Run one command in a visible window, wait for it, read its output. The window is left open at an idle shell for the user to read. This is one of `dispatch exec`'s two transports — the one it falls back to outside herdr (see [../dispatch/TARGETS.md](../dispatch/TARGETS.md)). | [TRANSPORT-TERMINAL-ONESHOT.md](TRANSPORT-TERMINAL-ONESHOT.md) |
+| **Session** | Open a persistent pane, then send it commands repeatedly over time, read its scrollback, and close it when done. New, richer capability — the pane survives across commands. | [TRANSPORT-TERMINAL-SESSION.md](TRANSPORT-TERMINAL-SESSION.md) |
 
 Don't load both unless the task spans both. The verbs:
 
@@ -32,7 +33,7 @@ terminal close <id>                              # session
 
 ## Why Terminal.app
 
-Among *desktop* terminals it's the one supported transport, because it can both **drive** and **read** a pane through a scripting interface — `do script` to run, `history`/`contents` to read, `tty` to address a specific pane, `busy` to detect activity. Ghostty can spawn and type but exposes no contents property, so it can't return output; that's why this skill (and `delegate` under it) uses Terminal.app rather than the user's everyday Ghostty terminal.
+Among *desktop* terminals it's the one supported transport, because it can both **drive** and **read** a pane through a scripting interface — `do script` to run, `history`/`contents` to read, `tty` to address a specific pane, `busy` to detect activity. Ghostty can spawn and type but exposes no contents property, so it can't return output; that's why this skill (and `dispatch` under it) uses Terminal.app rather than the user's everyday Ghostty terminal.
 
 ## Cautions (apply to both modes)
 

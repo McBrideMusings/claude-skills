@@ -22,9 +22,9 @@
 # A session is tracked by the pane's tty, stored in /tmp/terminal-session-<id>. The
 # pane persists across `send` calls until you `close` it (or close the window by hand).
 #
-# delegate's transport sits on top of this: `delegate exec` writes a cmd-file
+# dispatch's transport sits on top of this: `dispatch exec` writes a cmd-file
 # (cat <prompt> | <vendor>) and calls `terminal run`. terminal owns the window;
-# delegate owns which vendor command runs in it.
+# dispatch owns which vendor command runs in it.
 set -eu
 
 SENTINEL="__TERMINAL_DONE__"

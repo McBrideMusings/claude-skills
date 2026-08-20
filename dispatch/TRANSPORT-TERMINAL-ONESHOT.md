@@ -13,7 +13,7 @@ terminal run [--headless] <cmd-file> <outfile>
 ## Calling pattern
 
 ```bash
-T="$HOME/.claude/skills/terminal/terminal"
+T="$HOME/.claude/skills/dispatch/terminal"
 cmd="$(mktemp -t terminal-payload.XXXXXX)"
 cat > "$cmd" <<'PAYLOAD'
 npm run build

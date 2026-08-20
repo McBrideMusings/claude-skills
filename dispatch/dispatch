@@ -5,10 +5,10 @@
 # The delegate flavors (review dual, implement delegate) call only these three verbs
 # and never name a specific vendor:
 #
-#   delegate agent                       print the resolved agent (codex|reasonix|claude), or fail
-#   delegate transport                   print the transport `exec` would use, and why
-#   delegate check                       is the resolved agent authed & reachable? (exit 0/1)
-#   delegate exec [--headless] <prompt-file> <outfile>
+#   dispatch agent                       print the resolved agent (codex|reasonix|claude), or fail
+#   dispatch transport                   print the transport `exec` would use, and why
+#   dispatch check                       is the resolved agent authed & reachable? (exit 0/1)
+#   dispatch exec [--headless] <prompt-file> <outfile>
 #                                          run the agent with the prompt; output to <outfile>.
 #                                          default: in whichever watchable surface this session lives in —
 #                                          a herdr tab when we're inside herdr, else a Terminal.app window.
@@ -36,12 +36,12 @@ KNOWN="codex reasonix claude"
 resolve_agent() {
   local a="${CLAUDE_DELEGATE_AGENT:-}"
   if [ -z "$a" ]; then
-    echo "delegate: no delegate configured — set CLAUDE_DELEGATE_AGENT (codex|reasonix|claude) in settings.local.json" >&2
+    echo "dispatch: no delegate configured — set CLAUDE_DELEGATE_AGENT (codex|reasonix|claude) in settings.local.json" >&2
     return 1
   fi
   case " $KNOWN " in
     *" $a "*) printf '%s\n' "$a" ;;
-    *) echo "delegate: unknown agent '$a' (expected one of: $KNOWN)" >&2; return 1 ;;
+    *) echo "dispatch: unknown agent '$a' (expected one of: $KNOWN)" >&2; return 1 ;;
   esac
 }
 
@@ -68,13 +68,13 @@ resolve_transport() {
       terminal) printf 'terminal\tforced by DELEGATE_TRANSPORT\n'; return 0 ;;
       herdr)
         if [ "${HERDR_ENV:-}" != "1" ]; then
-          echo "delegate: DELEGATE_TRANSPORT=herdr but this session is not inside herdr (HERDR_ENV != 1)" >&2; return 1
+          echo "dispatch: DELEGATE_TRANSPORT=herdr but this session is not inside herdr (HERDR_ENV != 1)" >&2; return 1
         fi
         if [ -z "$kind" ]; then
-          echo "delegate: DELEGATE_TRANSPORT=herdr but '$a' is not in herdr's --kind enum" >&2; return 1
+          echo "dispatch: DELEGATE_TRANSPORT=herdr but '$a' is not in herdr's --kind enum" >&2; return 1
         fi
         printf 'herdr\tforced by DELEGATE_TRANSPORT\n'; return 0 ;;
-      *) echo "delegate: unknown DELEGATE_TRANSPORT '$forced' (expected terminal|herdr)" >&2; return 1 ;;
+      *) echo "dispatch: unknown DELEGATE_TRANSPORT '$forced' (expected terminal|herdr)" >&2; return 1 ;;
     esac
   fi
 
@@ -101,25 +101,25 @@ cmd_check() {
     codex)
       out="$(codex login status 2>&1 || true)"
       if printf '%s' "$out" | grep -qi "logged in"; then
-        echo "delegate: codex ready"
+        echo "dispatch: codex ready"
       else
-        echo "delegate: codex not authenticated — run 'codex login'" >&2; return 1
+        echo "dispatch: codex not authenticated — run 'codex login'" >&2; return 1
       fi
       ;;
     reasonix)
       out="$(reasonix doctor 2>&1 || true)"
       if printf '%s' "$out" | grep -q "key:present"; then
-        echo "delegate: reasonix ready"
+        echo "dispatch: reasonix ready"
       else
-        echo "delegate: reasonix not authenticated — set DEEPSEEK_API_KEY, then run 'reasonix setup'" >&2; return 1
+        echo "dispatch: reasonix not authenticated — set DEEPSEEK_API_KEY, then run 'reasonix setup'" >&2; return 1
       fi
       ;;
     claude)
       out="$(claude auth status 2>&1 || true)"
       if printf '%s' "$out" | grep -q '"loggedIn": *true'; then
-        echo "delegate: claude ready"
+        echo "dispatch: claude ready"
       else
-        echo "delegate: claude not authenticated — run 'claude auth login'" >&2; return 1
+        echo "dispatch: claude not authenticated — run 'claude auth login'" >&2; return 1
       fi
       ;;
   esac
@@ -131,9 +131,9 @@ cmd_exec() {
   if [ "${1:-}" = "--headless" ]; then headless=1; shift; fi
   local promptfile="${1:-}" outfile="${2:-}"
   if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
-    echo "usage: delegate exec [--headless] <prompt-file> <outfile>" >&2; return 2
+    echo "usage: dispatch exec [--headless] <prompt-file> <outfile>" >&2; return 2
   fi
-  [ -f "$promptfile" ] || { echo "delegate: prompt file not found: $promptfile" >&2; return 1; }
+  [ -f "$promptfile" ] || { echo "dispatch: prompt file not found: $promptfile" >&2; return 1; }
 
   # --headless has no surface to pick, so it never consults the transport resolver.
   local transport reason
@@ -143,7 +143,7 @@ cmd_exec() {
     local r; r="$(resolve_transport "$a")" || return 1
     transport="$(printf '%s' "$r" | cut -f1)"; reason="$(printf '%s' "$r" | cut -f2)"
   fi
-  echo "delegate: $a via $transport ($reason)"
+  echo "dispatch: $a via $transport ($reason)"
 
   local rc=0
 
@@ -157,7 +157,7 @@ cmd_exec() {
               [ -n "${CLAUDE_DELEGATE_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DELEGATE_MODEL") ;;
       codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac
-    "$HOME/.claude/skills/delegate/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
+    "$HOME/.claude/skills/dispatch/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
     return "$rc"
   fi
 
@@ -171,7 +171,7 @@ cmd_exec() {
     claude)   runner="claude -p --permission-mode ${CLAUDE_DELEGATE_PERMISSION_MODE:-acceptEdits}${CLAUDE_DELEGATE_MODEL:+ --model $CLAUDE_DELEGATE_MODEL}" ;; # print mode; prompt on stdin; edits auto-approved, other tools per the user's own allowlist rules
   esac
 
-  local terminal="$HOME/.claude/skills/terminal/terminal"
+  local terminal="$HOME/.claude/skills/dispatch/terminal"
   local payload; payload="$(mktemp -t delegate-payload.XXXXXX)"
   printf 'cat %q | %s\n' "$promptfile" "$runner" > "$payload"
 
@@ -183,7 +183,7 @@ cmd_exec() {
 
   rm -f "$payload"
   if [ "$rc" -eq 0 ]; then
-    echo "delegate: $a finished → $outfile"
+    echo "dispatch: $a finished → $outfile"
   fi
   return "$rc"
 }
@@ -193,5 +193,5 @@ case "${1:-}" in
   transport) cmd_transport ;;
   check)     cmd_check ;;
   exec)      shift; cmd_exec "$@" ;;
-  *) echo "usage: delegate {agent|transport|check|exec [--headless] <prompt-file> <outfile>}" >&2; exit 2 ;;
+  *) echo "usage: dispatch {agent|transport|check|exec [--headless] <prompt-file> <outfile>}" >&2; exit 2 ;;
 esac

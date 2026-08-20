@@ -10,7 +10,7 @@ If it's "does this state model hold up" → [LOGIC.md](LOGIC.md).
 transports, and picking the wrong one produces a confident answer to the wrong question:
 
 - **A number decides it** — latency, memory, rows/sec, lines of code, hard cases passed. That's this
-  file. Run it through the `terminal` skill's one-shot mode (the transport `delegate exec` sits on) so
+  file. Run it through the `terminal` skill's one-shot mode (the transport `dispatch exec` sits on) so
   the measurement happens in a visible window and the output comes back verbatim.
 - **A look decides it** — two or three approaches whose difference the user has to *see*, not read off
   a table. That's [UI.md](UI.md) with one `<template data-variant>` per approach, named for the

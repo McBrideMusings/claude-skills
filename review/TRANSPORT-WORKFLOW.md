@@ -15,7 +15,7 @@ Selected by the `workflow` token in the arguments: `review workflow`, `review re
 
 **RULE 0 is not weakened by this transport.** Nothing inside the workflow asks the user anything, because nothing inside it ever needed to — every question in a review pass happens before Phase 04 or after Phase 06. If a lens turns out to need the user, that is a Phase 03-shaped problem (find the spec, confirm the scope) and it gets resolved in the session before launching.
 
-`review dual`'s cross-vendor delegate runs in a Terminal window through the `delegate` router, **outside** the workflow, concurrently with it. Reconcile the two afterwards exactly as REVIEW-CORE.md says.
+`review dual`'s cross-vendor delegate runs in a Terminal window through the `dispatch` router, **outside** the workflow, concurrently with it. Reconcile the two afterwards exactly as REVIEW-CORE.md says.
 
 ## What it buys
 

@@ -147,14 +147,14 @@ Two things go in the chat explanation:
 
 When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor delegate on the **same** diff, then reconcile. (Dual applies to the self-review core, not the comment branch.)
 
-**Always go through the `delegate` router — never call a vendor binary directly.** Read [../delegate/SKILL.md](../delegate/SKILL.md) for the resolver and its transports. **Gate first:** run `delegate check`; if it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
+**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check`; if it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
-**Dual is the one flavor whose escalation is automatic.** [../delegate/TARGETS.md](../delegate/TARGETS.md) defaults all delegation to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
+**Dual is the one flavor whose escalation is automatic.** [../dispatch/TARGETS.md](../dispatch/TARGETS.md) defaults all delegation to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
 
-**Where the delegate runs is resolved, not chosen** — a live herdr tab inside herdr, else a Terminal.app window. `delegate exec` prints it; put that line in the status message so the user knows whether there is a tab to switch to.
+**Where the delegate runs is resolved, not chosen** — a live herdr tab inside herdr, else a Terminal.app window. `dispatch exec` prints it; put that line in the status message so the user knows whether there is a tab to switch to.
 
 ```bash
-D="$HOME/.claude/skills/delegate/delegate"
+D="$HOME/.claude/skills/dispatch/dispatch"
 "$D" check || { echo "Delegate unavailable — running solo review only"; }
 "$D" transport      # name the surface in the status line before you start it
 ```
@@ -165,7 +165,7 @@ D="$HOME/.claude/skills/delegate/delegate"
 
    **A source tag NEVER carries the name of a skill, a lens, an axis, or a process.** The tag answers "which reviewer said this," and the only valid answers are things a person could point at and name: a model (`[claude]`, `[codex]`, `[gpt-5]`), a harness or vendor (`[reasonix]`), or `[both]`. **`[review]` is wrong and is the specific mistake this rule exists to stop** — `review` is this skill's own name, it identifies no reviewer, and it has shipped to a real PR that way. Same ban on `[lens]`, `[bug-lens]`, `[self]`, `[internal]`, `[dual]`, and `[delegate]`.
 
-   Get the delegate name at runtime — `delegate agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[delegate]`). The skill never *presumes* which tool that is; it learns it from `delegate agent` after the run. "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
+   Get the delegate name at runtime — `dispatch agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[delegate]`). The skill never *presumes* which tool that is; it learns it from `dispatch agent` after the run. "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
 
    **Before posting or writing any source-tagged report, scan the body for a tag that isn't a model/harness/vendor name or `both`.** One found means the tagging is wrong throughout, not in one spot — fix every tag, not the one you noticed.
 4. Fold the delegate's findings into the matching axis sections of the report (its architecture findings into Architecture, its bug findings into Bugs, etc.) and carry the source tag through to the file format. Dual is still **read-only** — it reviews, never edits.
