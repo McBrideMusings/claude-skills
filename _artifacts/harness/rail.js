@@ -299,6 +299,7 @@
   reopen.className = 'at-rail-reopen';
   reopen.type = 'button';
   reopen.setAttribute('aria-label', 'Show the controls');
+  reopen.setAttribute('title', 'Show the controls  (\\)');
   reopen.textContent = '›';
   reopen.addEventListener('click', function () { setCollapsed(false); });
   document.body.appendChild(reopen);

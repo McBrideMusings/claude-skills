@@ -7,7 +7,11 @@
 
 /* --- the stage --- */
 
-html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-notes-layer):not(.at-panel):not(.at-toast) {
+/* .at-rail-reopen is exempt for a reason: it is the ONLY way back once the rail is
+   collapsed, and this rule's !important was beating its display, so collapsing the rail
+   while a device frame was up left no control on screen at all and no way to restore one
+   short of editing the URL. */
+html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-rail-reopen):not(.at-notes-layer):not(.at-panel):not(.at-toast) {
   display: none !important;
 }
 
