@@ -1,15 +1,15 @@
 ---
-name: artifact
+name: handout
 disable-model-invocation: true
-description: "Build a self-contained HTML deliverable that no other verb owns — a page, a report, a plan, a deck. Thin front door over the `_artifacts/` store and the `artifact` assembler; explainers go to `explain`, UI variants to `prototype`, layout sketches to `design`."
+description: "Build a self-contained HTML deliverable that no other verb owns — a page, a report, a plan, a deck. Thin front door over the `_handouts/` store and the `handout` assembler; explainers go to `explain`, UI variants to `prototype`, layout sketches to `design`."
 ---
 
-# artifact
+# handout
 
 The front door for a visual HTML deliverable that **no verb already owns**. "Make me a page showing
 X", "turn this into a deck" — the noun is the request, so nothing else picks it up.
 
-This skill is deliberately thin. The substrate lives in [`../_artifacts/`](../_artifacts/README.md)
+This skill is deliberately thin. The substrate lives in [`../_handouts/`](../_handouts/README.md)
 and is shared: `explain`, `prototype`, and `design` call the same tool for their own kinds. What
 this skill adds is a caller for `page` and `deck`.
 
@@ -30,34 +30,34 @@ is exactly the pressure to resist.
 
 1. **Pick the kind.** `page` for a document — a plan, a report, a one-off deliverable. `deck` for
    slides. If neither fits, one of the other skills owns it.
-2. **Read [`../_artifacts/CONTRACT.md`](../_artifacts/CONTRACT.md)** for the fragment rules and the
+2. **Read [`../_handouts/CONTRACT.md`](../_handouts/CONTRACT.md)** for the fragment rules and the
    class vocabulary.
-3. **Read [`../_artifacts/DIRECTION.md`](../_artifacts/DIRECTION.md).** Both these kinds are
+3. **Read [`../_handouts/DIRECTION.md`](../_handouts/DIRECTION.md).** Both these kinds are
    identity-first: palette and typefaces are open decisions, and the direction cell is where the
    authority order and the originality bar live.
 4. **Write the design plan first** — 4–6 named colours, the type roles, the organizing idea in a
    sentence. Then the fragment. Not the other way round.
-5. **Write the fragment** to `<repo-root>/tmp/claude/artifacts/<slug>.body.html`. Content only.
+5. **Write the fragment** to `<repo-root>/tmp/claude/handouts/<slug>.body.html`. Content only.
 6. **Build:**
 
 ```bash
-"$HOME/.claude/tools/artifact" build \
+"$HOME/.claude/tools/handout" build \
   --kind page \
   --title "Q3 migration plan" \
-  --fragment /abs/repo/tmp/claude/artifacts/q3-migration.body.html \
-  --out /abs/repo/tmp/claude/artifacts/q3-migration.html
+  --fragment /abs/repo/tmp/claude/handouts/q3-migration.body.html \
+  --out /abs/repo/tmp/claude/handouts/q3-migration.html
 ```
 
 7. **Screenshot it and look at it.** Every slide for a deck, both themes. A path is delivery, not
    verification.
-8. **Run the critique pass** — [`../_artifacts/CRITIQUE.md`](../_artifacts/CRITIQUE.md). Press `c` in
+8. **Run the critique pass** — [`../_handouts/CRITIQUE.md`](../_handouts/CRITIQUE.md). Press `c` in
    both themes for the contrast number, read the screenshot against the fixed list, fix everything in
    one batch, stop. One pass, not a loop — and not a design review with the user in it.
 9. **Open it** — `open <absolute-path>`, on its own line, no trailing punctuation.
 
-**Getting comments back.** Every artifact carries the comment layer: they press the speech-bubble
+**Getting comments back.** Every handout carries the comment layer: they press the speech-bubble
 button (or `a`), mark things up, and press **Copy comments**. The markdown starts with
-`<!-- artifact-feedback: <slug> -->`, so you can either ask them to paste it, or wait for it —
+`<!-- handout-feedback: <slug> -->`, so you can either ask them to paste it, or wait for it —
 `CONTRACT.md` § Getting comments back has the `pbpaste` watcher. Say which you are doing; the watcher
 reads whatever else they copy meanwhile.
 
@@ -71,7 +71,7 @@ Edit the fragment, re-run the build to the same `--out`. Never a new file per re
 ## Keeping it
 
 Ephemeral by default — `tmp/claude/` is age-pruned. If the user asks to keep it, move it to
-`<repo-root>/docs/` inside a repo, or `~/artifacts/` outside one. Don't auto-keep.
+`<repo-root>/docs/` inside a repo, or `~/handouts/` outside one. Don't auto-keep.
 
 ## Delivery
 

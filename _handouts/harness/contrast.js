@@ -78,7 +78,7 @@
     return false;
   }
 
-  /* `c` checks the artifact. The harness's own chrome is excluded — it is not the design
+  /* `c` checks the handout. The harness's own chrome is excluded — it is not the design
      under review — but excluded means unchecked, and the rail shipped text at 2.0-3.9:1
      with nothing to say so. window.atContrast.check(true) audits the chrome; it has no
      key because its result is for whoever maintains the harness, not for whoever is
@@ -184,7 +184,7 @@
   });
 
   /* Programmatic surface — same reason as annotate's: the check must be runnable
-     without a keypress, by a test or by an agent auditing its own artifact. */
+     without a keypress, by a test or by an agent auditing its own handout. */
   window.atContrast = {
     mode: function (next) { setMode(next === undefined ? !on : !!next); return on; },
     check: function (chromeOnly) {

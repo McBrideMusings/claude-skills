@@ -7,7 +7,7 @@ body { background: var(--bg); }
 /* Switch mode: one variant at a time, full size.
    The stage is a column and the mounted variant stretches to fill it. Without this the
    stage is 100vh but the variant is only as tall as its content, so the prototype's own
-   background stops partway down and the artifact's page background shows below it — a
+   background stops partway down and the handout's page background shows below it — a
    seam that reads as a rendering bug in every prototype whose content is short. */
 #at-stage {
   min-height: 100vh;

@@ -1,20 +1,20 @@
-# Critique — the pass between building an artifact and handing it over
+# Critique — the pass between building an handout and handing it over
 
 One pass. Build the whole thing, inspect it once in a batch, fix everything that round shows in one
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
 
 Adapted from Impeccable's craft floor (`pbakaus/impeccable`, Apache-2.0) and
-`_domains/gui/slop.md`, narrowed to what a hermetic single-file artifact can actually get wrong.
+`_domains/gui/slop.md`, narrowed to what a hermetic single-file handout can actually get wrong.
 Everything the kind stylesheets already handle is left out — this is only what a fragment decides.
 
 ## Measure first, then look
 
-The artifact carries its own instruments. Use them before your eyes.
+The handout carries its own instruments. Use them before your eyes.
 
 1. **Contrast, both themes.** Press `c`, read the toast, switch theme, press `c` again. The target is
    "All N text elements pass WCAG AA" twice. Any failure names its own ratio; fix the value, don't
    argue with the number.
-2. **Screenshot at 1280 wide, and at 390 if the artifact is meant to respond.** A deck gets every
+2. **Screenshot at 1280 wide, and at 390 if the handout is meant to respond.** A deck gets every
    slide; a picker gets every variant; anything themed gets both themes. This is one batched round,
    not a trip per surface.
 
@@ -40,7 +40,7 @@ a finding.
   saying "warning", is one signal wearing four costumes. Keep two.
 - **A table is not a ladder.** A rule under every row stops the header reading as a header. One rule
   under the header, one under the last row, zebra between if the rows are long.
-- **Every eyebrow earns its place.** One archetype label per document is the artifact's voice. One
+- **Every eyebrow earns its place.** One archetype label per document is the handout's voice. One
   above every section is machine grammar — delete them.
 - **Numbered markers only where order is information.** A real procedure or a dated sequence keeps
   them. "01 / 02 / 03" over three peers does not.
@@ -58,7 +58,7 @@ These never survive a critique, whatever the brief:
 - Emoji standing in for an icon system.
 - Same-size icon+heading+text cards as the page's structure; cards inside cards.
 - Fake-precise invented numbers. If it isn't real, don't print it.
-- A webfont, a CDN, or any network request. The artifact is hermetic — this one is also a build error.
+- A webfont, a CDN, or any network request. The handout is hermetic — this one is also a build error.
 
 ## Stop rule
 

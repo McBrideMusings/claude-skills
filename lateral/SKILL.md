@@ -1,6 +1,7 @@
 ---
 name: lateral
-description: "Lateral thinking toolkit router — when you're stuck, going in circles, need fresh ideas, or standard brainstorming keeps producing predictable results, this diagnoses the symptom and applies the right technique from the toolkit (random-stimulus, provocation, inversion, concept-fan, analogy, scamper, six-hats, worst-idea). Triggers include \"lateral thinking\", \"I'm stuck on a creative problem\", \"we're going in circles\", \"need fresh ideas\", \"try a different angle\", \"break out of the box\", \"ideas all feel the same\", \"predictable brainstorm\", and the technique names themselves — \"random stimulus\", \"random word\", \"force-fit\", \"de Bono\", \"po\", \"provocation\", \"invert\", \"flip the assumption\", \"concept fan\", \"what is this a way of doing\", \"forced analogy\", \"scamper\", \"give me variations\", \"six hats\", \"thinking hats\", \"worst idea\", \"reverse brainstorming\". Do NOT use for analytical work like debugging, code review, or implementation tasks."
+description: "Lateral thinking toolkit — diagnoses what kind of stuck you are and runs one technique inline (random-stimulus, provocation, inversion, concept-fan, analogy, scamper, six-hats, worst-idea). User-invoked only."
+disable-model-invocation: true
 ---
 
 # Lateral
@@ -42,6 +43,20 @@ lateral/
   references/       <- stimulus pools, domain pool, question bank, Po templates, hats guide
   examples/         <- one real worked session per technique
 ```
+
+## Other skills read `techniques/` directly
+
+This router is user-invoked (`disable-model-invocation: true`), so nothing auto-fires it. The techniques still reach work through three hosts that read the files here on demand — they do **not** invoke this skill, and they do not copy its content:
+
+| Host | Techniques it reads | Where |
+|---|---|---|
+| `improve` | the five generators — provocation, random-stimulus, analogy, scamper, worst-idea | [`../improve/LATERAL-LENS.md`](../improve/LATERAL-LENS.md), forwarded to every survey aspect |
+| `grill-me` | the two reframers — inversion, concept-fan | its "Assumption-breaking lenses" section |
+| `prototype` | scamper, random-stimulus | UI.md Phase 03, when the variant set collapses onto one axis |
+
+`six-hats` has no host: it converges a decision, and every host above diverges. It stays here.
+
+**Any change to a technique file changes those hosts too.** Keep the workflows self-contained — a host reads one `techniques/*.md` and nothing else from this skill unless that file names it.
 
 ## What NOT to do
 

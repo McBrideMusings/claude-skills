@@ -26,7 +26,7 @@
 
 /* Edge to edge, full height, flush against the window. Tried as an inset floating card
    and it was worse: the card's own margin exposed a band of empty ground down the side
-   of the artifact, and rounded corners on something anchored to the window edge read as
+   of the handout, and rounded corners on something anchored to the window edge read as
    a mistake rather than a decision. A sidebar is furniture, not an overlay. */
 .at-rail {
   position: fixed;

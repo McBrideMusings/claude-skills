@@ -1,11 +1,11 @@
-# Creative direction — identity-first artifacts
+# Creative direction — identity-first handouts
 
 Read this for the **`page` and `deck` kinds only**. Those are the two where palette and typefaces are
 open decisions. `explainer` already has a house look, `prototype` copies the host project's tokens, and
 `wireframe` withholds colour on purpose — none of them has a direction to choose, so none of them reads
 this file.
 
-Adapted from `design-artifact` (plannotator/effective-html, https://www.effectivehtml.com/docs/designing-artifacts).
+Adapted from `design-handout` (plannotator/effective-html, https://www.effectivehtml.com/docs/designing-handouts).
 
 Take the perspective of a creative director with range: every commission gets its own visual identity,
 scaled to whatever treatment the brief actually merits. Palette, type, and layout are conscious
@@ -46,10 +46,10 @@ makes a network request. `_base.css` ships system sans and system mono stacks; t
 with genuine character is a `@font-face` `data:` URI embedded in the fragment. If you don't have a face
 to embed, get your contrast from weight, width, size, and tracking rather than from a second family
 that isn't really there. Note what the platform sans as your *display* voice actually says: it is the
-face every page gets by not choosing, and on an identity-first artifact that reads as no decision made.
+face every page gets by not choosing, and on an identity-first handout that reads as no decision made.
 
 The scale is already built: `--f-3xl` down to `--f-sm` on a 17px root, and `--f-3xl` is the display
-step — one per artifact, on the title, never on a section heading. A title only a third larger than
+step — one per handout, on the title, never on a section heading. A title only a third larger than
 its body text is the single clearest sign nobody set a hierarchy. Prose stays at `--maxw` (68ch) and
 figures break out to `--maxw-wide`; don't re-centre things by hand. `text-wrap: balance` on headings,
 tracking tightening as size grows, a hint of letter-spacing on uppercase labels.
@@ -61,8 +61,8 @@ the subject wants them — the test is whether the neutral was selected or merel
 **Every colour you choose has to clear the contrast floor, and you check rather than assume.** Body and
 placeholder text at 4.5:1, large text at 3:1, against whatever is actually behind it. This is where
 chosen palettes fail most often and most invisibly: the base tokens themselves shipped with the muted
-grey at 3.2:1 and the accent at 2.96:1 — so every link on every artifact failed AA — and nobody saw it
-until the artifact's own `c` check was run in both themes. Light grey "for elegance" on a near-white
+grey at 3.2:1 and the accent at 2.96:1 — so every link on every handout failed AA — and nobody saw it
+until the handout's own `c` check was run in both themes. Light grey "for elegance" on a near-white
 ground is the specific reflex to distrust. Press `c`, read the number, fix the value.
 
 **Both themes, equal care.** `_base.css` wires the mechanism: tokens on `:root`, reassigned inside

@@ -106,7 +106,7 @@ question.
 When that's where you are, build a greybox wireframe:
 
 ```bash
-"$HOME/.claude/tools/artifact" build \
+"$HOME/.claude/tools/handout" build \
   --kind wireframe \
   --title "<what's being laid out>" \
   --fragment <repo-root>/tmp/claude/artifacts/<slug>.body.html \
@@ -114,7 +114,7 @@ When that's where you are, build a greybox wireframe:
 ```
 
 Class vocabulary — `.wf-region`, `.wf-label`, `.wf-ph`, `.wf-text`, `.wf-control`, `.wf-note`,
-`.wf-grid` — is in `../_artifacts/CONTRACT.md`.
+`.wf-grid` — is in `../_handouts/CONTRACT.md`.
 
 **It stays a sketch.** The `wireframe` kind withholds colour deliberately: no brand palette, no
 imagery, no type personality. The moment a wireframe looks designed, the feedback you get is about the

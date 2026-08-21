@@ -17,7 +17,7 @@ Hand-writing a prototype instead of loading this skill loses the slug and round 
 
 Identify which question is being answered — from the prompt, the surrounding code, or by asking if the user is around:
 
-- **"What should this look like?"** → [UI.md](UI.md). Several genuinely different working versions of one piece of UI, in a single standalone HTML file, flipped through with the picker. Built with `~/.claude/tools/artifact --kind prototype`.
+- **"What should this look like?"** → [UI.md](UI.md). Several genuinely different working versions of one piece of UI, in a single standalone HTML file, flipped through with the picker. Built with `~/.claude/tools/handout --kind prototype`.
 - **"Does this logic / state model hold up?"** → [LOGIC.md](LOGIC.md). Tiny interactive terminal app that pushes the state machine through cases hard to reason about on paper. Runs in a visible window via the `terminal` skill's session mode.
 - **"Which technical approach should we use?"** → [COMPARE.md](COMPARE.md). Two or three real implementations behind one interface, run against the same fixture. **Splits on what the answer is:** a number goes to `terminal` one-shot and gets measured; a look goes to the UI shape's picker with one variant per approach.
 
@@ -43,7 +43,7 @@ tmp/claude/prototypes/queue-backend/v1/run.ts              # logic & compare: on
 tmp/claude/prototypes/queue-backend/v2/run.ts
 ```
 
-For UI, the round lives **inside** the file, not in its name: `artifact build --round 2` stamps this round's variants, carries the earlier rounds forward, and adds a dimmed round chip in the bottom-right corner that expands into the version list on click. The file is opened at `<slug>.html` forever — the same URL every round, so a bookmark never goes stale and nothing has to be `ls`-ed to find the newest.
+For UI, the round lives **inside** the file, not in its name: `handout build --round 2` stamps this round's variants, carries the earlier rounds forward, and adds a dimmed round chip in the bottom-right corner that expands into the version list on click. The file is opened at `<slug>.html` forever — the same URL every round, so a bookmark never goes stale and nothing has to be `ls`-ed to find the newest.
 
 That leaves exactly two axes, and they never share a letter: **`?r=` is the round, `?v=` is the variant.** A file called `v1.html` read back as `?v=3` is the confusion this split exists to end — that URL meant round 1, variant 3, and read as "third iteration".
 
@@ -61,7 +61,7 @@ Variant names *inside* a round stay descriptive — "Quiet", "Editorial", "Dense
 
 1. **The artifact never lives in production files.** Everything is written under `<repo-root>/tmp/claude/prototypes/<slug>/` (gitignored). No new route, no edit to an existing page, no entry added to `package.json` or the task runner. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real file.
    Domain exception: a surface that can't be a file (a Roblox Place) uses the scratch surface named in its domain cell, under the same "throwaway, never production" rule.
-2. **One command, or one double-click.** UI opens directly in a browser — the `artifact` build step is agent-side, and what the user gets is still a single self-contained file. Logic and compare run with the project's existing runtime straight off the path — `bun tmp/claude/prototypes/queue/run.ts` — never by registering a script somewhere real.
+2. **One command, or one double-click.** UI opens directly in a browser — the `handout` build step is agent-side, and what the user gets is still a single self-contained file. Logic and compare run with the project's existing runtime straight off the path — `bun tmp/claude/prototypes/queue/run.ts` — never by registering a script somewhere real.
 3. **No persistence by default.** State is in memory. Persistence is what the prototype is *checking*, not something it depends on. If the question is about a DB, use a scratch file inside the prototype directory.
 4. **Skip the polish.** No tests, no error handling beyond what makes it runnable, no abstractions, no "what if we later want".
 5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the full relevant state so the user can see what changed.
