@@ -64,8 +64,16 @@ worktree grouped under the repo in the sidebar instead of detaching to top level
 `herdr workspace create --cwd <worktree-path>`, and never a custom `--label`.
 
 **The worktree lands its own work.** Tell it in the dispatch prompt: verify, build, merge
-into `main`, remove the worktree. A worktree that finishes and then waits for the
-orchestrator to merge it is a queue the user has to drain by hand.
+into `main`, then report that the worktree is ready to retire. A worktree that finishes and
+then waits for the orchestrator to merge it is a queue the user has to drain by hand.
+
+**It does not remove its own worktree — you do, from the main checkout.** Landing is the
+worker's job; teardown is not, because a session cannot outlive its own cwd. Delete the
+directory it is running in and every shell hook afterwards fails to spawn with `ENOENT` on
+`posix_spawn` before reaching its first line, so the PreToolUse, PostToolUse and Stop guards
+are silently skipped for the rest of that session — non-blocking failures, so nothing stops.
+It also kills the scratchpad, a symlink into `<cwd>/tmp/claude`. `no-self-delete-guard.py`
+refuses the command; this line is why.
 
 **The exception is work that only reads.** A build, a test run, a log tail, a probe, a
 review that reports findings — those belong in a pane on the main checkout, because
