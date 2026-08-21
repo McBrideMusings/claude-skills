@@ -1,9 +1,9 @@
 ---
-name: plan-format
+name: show-shape
 description: "How to WRITE DOWN any answer that describes a shape — an implementation plan, a design proposal, a PRD's Implementation Decisions section, an `improve` proposed fix, an architecture-change note, or an ordinary chat reply about to explain logic, control flow, UI structure, file responsibility, a refactor, or a diff — as structured pseudocode rather than prose. Load BEFORE writing any of those, including mid-conversation: 'make a plan', 'how would you implement this', 'what's your approach', 'here's what I'd do', a numbered slice list, a proposal weighing options, or a paragraph about to describe a call chain or component tree instead of drawing it. Supplies eight techniques (file:line labels, type signatures, component trees, call-stack diffs, generic diffs, pseudocode, shallow file trees, Mermaid) with worked examples. Not for prose answers with no structural shape."
 ---
 
-# Plan format — structured pseudocode instead of prose
+# Show the shape — structured pseudocode instead of prose
 
 How to *write down* anything whose subject is a **shape**: an implementation plan, a design proposal, a PRD's Implementation Decisions section, an `improve` proposed fix, an `explain` architecture-change note — or a plain chat answer that is about to describe logic, a call chain, a component tree, or a refactor in paragraphs. Write it so it reads as the shape of the code, not a description of it.
 
@@ -208,7 +208,7 @@ sequenceDiagram
 
 ## Skills that load this automatically
 
-These call `Skill(plan-format)` at the point they start writing a plan, so the format arrives without anyone remembering to ask for it:
+These call `Skill(show-shape)` at the point they start writing a plan, so the format arrives without anyone remembering to ask for it:
 
 - [`grill-me`](../grill-me/SKILL.md) — when an interview resolves into a stated plan or decision. This is also `implement`'s ambiguity path: `implement`'s Phase 0.5 objectivity failure routes to `grill-me` (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call picks up this format on the way through. `implement` itself stays uninstrumented on purpose — a pass that clears the gate is walk-away work and should not stop to format a plan for a human.
 - [`iron-out`](../iron-out/SKILL.md) — when writing the resolved plan onto an issue.

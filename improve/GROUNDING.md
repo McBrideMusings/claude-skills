@@ -19,7 +19,7 @@ These are the rules a scoring sub-agent applies to decide whether an opportunity
 ## What caps at 50 — real but unverifiable, so it does not reach the report
 
 - **Named but unconfirmable evidence.** The finding names a real file, but the claim about it can't be settled from the repo (a runtime behaviour nobody measured, a caller count that couldn't be enumerated). The lens should have marked it `Unknown`; treat it as such.
-- **A proposed fix with no shape.** The finding names an outcome ("make the intake module deep", "centralize validation") without saying what physically changes — which file, what signature, what moves where. A name for a change is not a change. See [../plan-format/SKILL.md](../plan-format/SKILL.md) for the shape a proposal has to reach.
+- **A proposed fix with no shape.** The finding names an outcome ("make the intake module deep", "centralize validation") without saying what physically changes — which file, what signature, what moves where. A name for a change is not a change. See [../show-shape/SKILL.md](../show-shape/SKILL.md) for the shape a proposal has to reach.
 - **Leverage asserted, not stated.** The finding says the change is better without naming what it buys in the aspect's own terms (locality, leverage, coverage, a removed footgun, a removed duplicate rule, a measured cost).
 
 ## The scale

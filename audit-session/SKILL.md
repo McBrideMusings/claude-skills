@@ -58,7 +58,7 @@ A lens finds what went wrong. The **fix shapes** are the structural answers wort
 
 **[HOOKS.md](HOOKS.md) — could this have been enforced?** An instruction is re-decided every turn by a stochastic process. A hook is the harness running code: it fires every time or never. Name the event and predicate if yes, the reason if no.
 
-> Simulate before proposing. A `Stop` hook for the `plan-format` rule fired 62 times over 13 months at **10% precision**. A hook without a fires-count and a precision sample is a guess, and a low-precision hook is worse than none — it trains the user to ignore it.
+> Simulate before proposing. A `Stop` hook for the `show-shape` rule fired 62 times over 13 months at **10% precision**. A hook without a fires-count and a precision sample is a guess, and a low-precision hook is worse than none — it trains the user to ignore it.
 
 **[SKILL-SHAPE.md](SKILL-SHAPE.md) — is the skill the right shape, or the right thing at all?** Never treat the existing skill set as gospel. Walk the ladder in order and stop at the first rung that fits: delete → hide or relocate → reword the description → combine or embed → split or disclose → add a load trigger.
 

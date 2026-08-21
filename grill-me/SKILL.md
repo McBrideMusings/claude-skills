@@ -109,7 +109,7 @@ These are the same disciplines the `design` orchestrator uses; grill-me reads th
 
 Shared understanding is the goal, not an artifact. Stop when there are no unresolved branches.
 
-**Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`plan-format`](../plan-format/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call gets the format through this door.
+**Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`show-shape`](../show-shape/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call gets the format through this door.
 
 If a written record is useful at the end, offer it — don't assume:
 

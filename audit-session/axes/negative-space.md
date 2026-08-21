@@ -56,7 +56,7 @@ and the **conversation** leaves unmet.
    what makes the finding fixable. The usual causes, in the order worth checking:
 
    - **The rule points at a file that is never loaded.** A `CLAUDE.md` line saying
-     "format lives in `~/.claude/skills/plan-format/SKILL.md`" only works if something reads it.
+     "format lives in `~/.claude/skills/show-shape/SKILL.md`" only works if something reads it.
      Nothing autoloads a bare `_`-prefixed file. This is the single most common cause and
      it looks exactly like disobedience.
    - **The rule sits below the fold** in a long `CLAUDE.md`, or in a section whose heading
@@ -73,7 +73,7 @@ and the **conversation** leaves unmet.
 
 > Plans are structured pseudocode, not prose — types, signatures, call stacks, component
 > trees, file:line labels, call-stack diffs. Format and worked examples:
-> `~/.claude/skills/plan-format/SKILL.md`.
+> `~/.claude/skills/show-shape/SKILL.md`.
 
 Audit shape:
 - **Obligation:** any plan is pseudocode/call-stack/component-tree, not prose.
@@ -83,7 +83,7 @@ Audit shape:
 - **Suspected cause, since confirmed:** the format was never loaded. It lived at
   `skills/_plan-format.md`, whose `_` prefix kept it out of the catalog, and nothing pointed
   at it at plan time — 14 tool opens in 9,243 transcripts. The fix was a load trigger, not a
-  stronger sentence: it became the `plan-format` skill on 2026-08-20, with `grill-me`,
+  stronger sentence: it became a skill on 2026-08-20 (`plan-format`, now `show-shape`), with `grill-me`,
   `iron-out` and `prototype` loading it at the point they write a plan.
 
 State the suspected cause as a hypothesis with its evidence. Do not assert it.

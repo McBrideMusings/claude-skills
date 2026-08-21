@@ -42,7 +42,7 @@ Each section is required. Leave a one-line `TBD — open question` placeholder o
 - Interfaces affected
 - Schema changes, API contracts, architectural decisions
 
-No file paths or code snippets — they go stale. Exception: a type/interface signature, component tree, or call-stack diff (see `../plan-format/SKILL.md`) that encodes a decision more precisely than prose — whether it came from a prototype run or was sketched fresh for the spec. Trim to the decision-rich parts.
+No file paths or code snippets — they go stale. Exception: a type/interface signature, component tree, or call-stack diff (see `../show-shape/SKILL.md`) that encodes a decision more precisely than prose — whether it came from a prototype run or was sketched fresh for the spec. Trim to the decision-rich parts.
 
 ## Testing Decisions
 - What makes a good test here (behavior through public interface, not implementation details — see `/tdd`)

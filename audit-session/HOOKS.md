@@ -17,7 +17,7 @@ one.** Silence on this question is itself a gap in the finding.
 **Simulate the hook against the corpus before recommending it.** This is not optional, and
 the reason is on the record in this account.
 
-The obvious fix for the `plan-format` finding was a `Stop` hook inspecting the final reply
+The obvious fix for the `show-shape` finding was a `Stop` hook inspecting the final reply
 and complaining when a plan had no structure. Simulated against 13 months of transcripts it
 fired **62 times at 10% precision** — 22 of a 30-sample were wrap-up summaries, research
 briefs, and agent reports that merely contained the word "approach".
@@ -58,7 +58,7 @@ Granularity, not habit. The full event list on this machine:
 
 - **The trigger needs judgment.** See the precision gate. Route it back to documentation, or
   to a skill that loads at the right moment.
-- **A load trigger would fix it instead.** The `plan-format` case: the real fix was pointing
+- **A load trigger would fix it instead.** The `show-shape` case: the real fix was pointing
   the skills that already fire at the format doc, not policing the output afterwards. Prefer
   the fix that removes the condition over one that guards it — and **label which one you are
   proposing.**

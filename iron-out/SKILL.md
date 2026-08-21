@@ -22,7 +22,7 @@ The loop is identical for both. Only the write step differs. An issue that fails
 
 ## Plan, don't do
 
-**Load [`plan-format`](../plan-format/SKILL.md) via the Skill tool before writing the resolved plan
+**Load [`show-shape`](../show-shape/SKILL.md) via the Skill tool before writing the resolved plan
 onto an issue.** An ironed-out issue states a concrete plan by definition — that is the gate it has
 to pass — so every issue body this skill writes is a plan, and prose is not the format for one.
 
