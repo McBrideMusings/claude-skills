@@ -37,24 +37,9 @@
      same-origin, so it forwards what it is not going to use itself up to the host, which
      re-dispatches it as if the host had focus. A key typed into one of the prototype's
      own fields is left alone. */
-  if (root.hasAttribute('data-at-embedded')) {
-    document.addEventListener('keydown', function (e) {
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      // Only the keys the HOST owns. `a` and `c` stay in the frame: annotating and the
-      // contrast check are about the framed document, and comments made inside it land
-      // in the same bucket anyway.
-      if (!/^([0-9]|[xXrRdD]|\[|\]|,|\.|<|>|\\|\?)$/.test(e.key) &&
-          e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-      try { parent.postMessage({ at: 'key', key: e.key }, '*'); } catch (err) {}
-    });
-    return;
-  }
-
-  window.addEventListener('message', function (e) {
-    if (!e.data || e.data.at !== 'key') return;
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: e.data.key, bubbles: true }));
-  });
+  // Nothing to forward any more: the host owns no keys, so a key typed inside the frame
+  // belongs entirely to the design being framed.
+  if (root.hasAttribute('data-at-embedded')) return;
 
   var CATALOG = {
     fit:     { label: 'Fit',     w: 0,    h: 0,    chrome: null,      rotates: false },
@@ -460,15 +445,6 @@
   }
   window.addEventListener('at:variant', syncFrame);
   window.addEventListener('at:axis', syncFrame);
-
-  /* `d` steps the frame, `D` steps back. Same guard as the rail's own keys: a prototype's
-     inputs are real, so typing in one never moves the device. */
-  document.addEventListener('keydown', function (e) {
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === 'd') stepDevice(1);
-    else if (e.key === 'D') stepDevice(-1);
-  });
 
   var params = new URLSearchParams(location.search);
   actual = params.get('zoom') === '1';

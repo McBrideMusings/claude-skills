@@ -77,46 +77,7 @@
   line-height: 1.25;
 }
 
-.at-rail-keys {
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--at-c-fainter);
-  font: inherit;
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.at-rail-keys:hover { background: var(--at-c-edge); color: var(--at-c-ink); }
-
 /* --- the key list: the shortcuts do not exist until they are discoverable --- */
-
-.at-rail-legend {
-  display: none;
-  grid-template-columns: auto 1fr;
-  gap: 4px 10px;
-  margin: 0;
-  padding: 12px 0 0;
-  border-top: 1px solid var(--at-c-line);
-  font-size: 11px;
-  line-height: 1.35;
-}
-
-.at-rail[data-legend] .at-rail-legend { display: grid; }
-
-.at-rail-legend dt {
-  color: var(--at-c-ink);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10.5px;
-  white-space: nowrap;
-}
-
-.at-rail-legend dd { margin: 0; color: var(--at-c-faint); }
 
 .at-rail-sub {
   font-size: 11px;
@@ -144,15 +105,6 @@
   text-transform: uppercase;
   letter-spacing: 0.9px;
   color: var(--at-c-faint);
-}
-
-.at-rail-label .at-rail-hint {
-  margin-left: auto;
-  font-size: 9.5px;
-  letter-spacing: 0.4px;
-  text-transform: none;
-  color: var(--at-c-fainter);
-  font-variant-numeric: tabular-nums;
 }
 
 .at-rail-replay {

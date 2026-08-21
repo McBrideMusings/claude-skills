@@ -130,7 +130,7 @@ spacing and scale, and judging UI at postage-stamp size is the failure the picke
 
 In switch mode every control lives in **one left rail**: round, variant, each state axis, and the
 device frame. They are all the same question — *what am I looking at* — and they are ordered coarse to
-fine. The tool generates the rail, the keyboard wiring, and the URL persistence. **Write no rail
+fine. The tool generates the rail and the URL persistence. **Write no rail
 code.**
 
 ```html
@@ -276,17 +276,19 @@ redefinition of a class wins by ordinary cascade while v1 keeps the rules it was
 
 The controls never share a letter:
 
-| | URL | Control | Keys |
-| --- | --- | --- | --- |
-| **Round** — a whole rebuild of the design | `?r=2` | rail, top: `v1 v2 v3` chips | `[` `]` |
-| **Variant** — a direction within one round | `?v=3` | rail: named buttons | `1`–`N`, `←`/`→` |
-| **Axis** — which state of the thing | `?screen=chat` | rail: one group per axis | `x` focuses the next axis, `,` / `.` step it |
-| **Device** — which frame it renders in | `?d=phone-landscape` | rail, below the axes | `d` / `D` |
+| | URL | Control |
+| --- | --- | --- |
+| **Round** — a whole rebuild of the design | `?r=2` | rail, top: a `‹ v3 ›` stepper |
+| **Variant** — a direction within one round | `?v=3` | rail: named buttons |
+| **Axis** — which state of the thing | `?screen=chat` | rail: one group per axis |
+| **Device** — which frame it renders in | `?d=phone-landscape` | rail, below the axes |
 
-The rail also answers `\` (collapse — it costs 272px the design does not get, and `?rail=0`
-remembers it), `?` (show the key list), `r` (replay), and `Escape` (blur). Pressing a key while a
-device frame has focus works: the frame forwards the keys the host owns and keeps `a` and `c` for
-itself.
+**A prototype answers no harness keys at all.** Every control above is a button, collapse is the
+`‹` toggle at the rail's edge (`?rail=0` remembers it), and comment mode and the contrast check are
+the two docked buttons on the right. This is not an oversight to fix: a prototype is a working
+interface with keys of its own, and the harness used to claim `[ ] 1-9 ← → x , . d D r \ ? a c`
+and `Escape` — most of a keyboard — so a prototype of anything keyboard-driven could not be driven
+at all. The other kinds are documents and still answer `a` and `c`.
 
 ### Checks — eight verdicts the rail keeps up to date
 
@@ -359,8 +361,10 @@ colour/type/layout plan before any markup. Classes: `.page-hero`, `.page-section
    contrast check in both themes, then the screenshot read against a fixed list. Fix what it finds in
    one batch and stop; it is a pass, not a loop.
 4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
-5. Say which keys the artifact answers to: `a` to comment on anything, `c` to check contrast, and the
-   device switcher along the top when it is a prototype or a wireframe.
+5. Say how to drive it. On a **prototype**: every control is a button — the rail on the left for
+   round, variant, axes and device, and the two docked buttons on the right for comment mode and
+   the contrast check. No keys, so the prototype's own keyboard is entirely its own. On the other
+   kinds: `a` to comment on anything, `c` to check contrast.
 
 ## Getting comments back
 

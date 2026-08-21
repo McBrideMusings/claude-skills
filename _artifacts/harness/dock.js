@@ -1,5 +1,11 @@
 /* dock.js — the floating harness buttons: one style, draggable, snapping to an edge.
 
+   Also the one place that answers "may the harness take this keypress". A prototype is a
+   working interface with keys of its own, and every key the harness claims is a key the
+   design cannot use, so on kind=prototype the answer is always no and every harness
+   control is a button. Other kinds are documents — nothing in a page or an explainer
+   competes for `a` or `c`, so those keep answering.
+
    The reopen chevron, the comment toggle and the theme toggle are all the same object:
    a small round control parked over the artifact. They used to be positioned by three
    separate CSS rules that each knew about the others — a `:has()` offset here, a
@@ -16,6 +22,16 @@
    an x, so the panel opening simply changes where the right-hand edge is. */
 
 (function () {
+  /* True when the harness may act on a bare keypress. annotate.js and contrast.js are
+     the only callers: rail.js and viewport.js are prototype-only and now bind no keys
+     at all. Called with no argument to ask only "does this kind take keys". */
+  window.__atHotkeys = function (e) {
+    if (document.documentElement.getAttribute('data-at-kind') === 'prototype') return false;
+    if (!e) return true;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return false;
+    return !(e.metaKey || e.ctrlKey || e.altKey);
+  };
+
   var root = document.documentElement;
   if (root.hasAttribute('data-at-embedded')) return;
 

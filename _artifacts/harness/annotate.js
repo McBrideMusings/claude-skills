@@ -436,8 +436,7 @@
   }
 
   document.addEventListener('keydown', function (e) {
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!window.__atHotkeys || !window.__atHotkeys(e)) return;
     if (e.key === 'a' || e.key === 'A') { e.preventDefault(); setMode(!open); }
     else if (e.key === 'Escape' && open) {
       if (composing) closeComposer();

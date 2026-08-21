@@ -145,6 +145,7 @@
 
   function setMode(next, chromeOnly) {
     on = next;
+    paintBtn();
     if (!on) {
       root.removeAttribute('data-at-contrast');
       layer.innerHTML = '';
@@ -154,9 +155,30 @@
     check(chromeOnly);
   }
 
+  /* A docked button, not only a key. `c` was this check's only human affordance, so on
+     a prototype — where the harness answers no keys — it would have had none at all. */
+  var btn = document.createElement('button');
+  btn.className = 'at-dock-btn';
+  btn.type = 'button';
+  btn.textContent = '◐';
+  function paintBtn() {
+    btn.toggleAttribute('data-active', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var label = on ? 'Hide the contrast check' : 'Check contrast';
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('title', label);
+  }
+  btn.addEventListener('click', function () { setMode(!on, false); });
+  document.body.appendChild(btn);
+  paintBtn();
+  // dock.js is inlined first, but __atDock is registered inside its own IIFE; a timeout
+  // runs after every inline script has executed. Same dance rail.js does.
+  setTimeout(function () {
+    if (window.__atDock) window.__atDock(btn, 'contrast', 'right', 1);
+  }, 0);
+
   document.addEventListener('keydown', function (e) {
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!window.__atHotkeys || !window.__atHotkeys(e)) return;
     if (e.key === 'c' || e.key === 'C') { e.preventDefault(); setMode(!on, false); }
     else if (e.key === 'Escape' && on) setMode(false);
   });

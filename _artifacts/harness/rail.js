@@ -13,21 +13,15 @@
      must not reset which screen you were looking at, because the whole point is
      comparing the same screen across two directions.
 
-   Keyboard, coarse to fine, matching the order of the rail itself:
-
-     [ ]        step round
-     1-N ← →    switch variant
-     x          focus the next axis group     , .   step the focused axis
-     d D        step device (viewport.js)
-     r          replay the entrance animation
-     \          collapse the rail
-     ?          show this list in the rail
-     Escape     blur
-
-   Ignored while focus is in a field or a modifier is held — a prototype's own inputs are
-   real and typing in them must work. Axes and devices get keys because they are the
-   controls that move most: a variant is chosen a few times, a state is flipped all
-   session.
+   THE RAIL ANSWERS NO KEYS, and neither does any other harness widget on a prototype.
+   Every control here is a button. The rail used to own [ ] 1-N ← → x , . d D r \ ? and
+   Escape, which is most of a keyboard, and a prototype of a keyboard-driven interface
+   — a TUI, an editor, anything carrying its own shortcuts — could not be driven at all:
+   pressing `d` for the design's own detail view stepped the device frame instead.
+   Guarding on "is focus in a field" never fixed it, because a canvas or a
+   document-level handler is not a field. The design under judgement gets the whole
+   keyboard; the harness gets the mouse. __atHotkeys in dock.js is the one place that
+   says which kinds still take keys.
 
    AXES ARE EVENT-DRIVEN. The rail owns no opinion about what an axis means: clicking an
    option dispatches
@@ -328,7 +322,7 @@
     reopen.toggleAttribute('data-active', open);
     reopen.setAttribute('aria-pressed', open ? 'true' : 'false');
     reopen.setAttribute('aria-label', open ? 'Hide the controls' : 'Show the controls');
-    reopen.setAttribute('title', (open ? 'Hide the controls' : 'Show the controls') + '  (\\)');
+    reopen.setAttribute('title', open ? 'Hide the controls' : 'Show the controls');
     reopen.textContent = open ? '‹' : '›';
   }
   // rail.js is inlined before the widget scripts, so the dock helper does not exist yet.
@@ -353,34 +347,6 @@
     el.classList.add('at-rail-built--alone');
     rail.appendChild(el);
   })();
-
-  function toggleLegend() {
-    rail.toggleAttribute('data-legend');
-  }
-  var legendBtn = rail.querySelector('.at-rail-keys');
-  if (legendBtn) legendBtn.addEventListener('click', toggleLegend);
-
-  document.addEventListener('keydown', function (e) {
-    // An embedded copy is driven by its host: acting locally as well would apply the
-    // same keypress twice and leave the frame describing a state the rail does not show.
-    if (root.hasAttribute('data-at-embedded')) return;
-    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
-    if (e.key === 'Escape') { if (document.activeElement) document.activeElement.blur(); return; }
-    if (e.metaKey || e.ctrlKey || e.altKey) return;
-    var n = inRound(round).length;
-    var num = parseInt(e.key, 10);
-    if (num >= 1 && num <= n) setActive(round, num - 1);
-    else if (e.key === 'ArrowRight') setActive(round, (current + 1) % n);
-    else if (e.key === 'ArrowLeft') setActive(round, (current - 1 + n) % n);
-    else if (e.key === ']') stepRound(1);
-    else if (e.key === '[') stepRound(-1);
-    else if (e.key === 'x' || e.key === 'X') focusNextAxis();
-    else if (e.key === ',' || e.key === '<') stepAxis(-1);
-    else if (e.key === '.' || e.key === '>') stepAxis(1);
-    else if (e.key === '\\') setCollapsed(!root.hasAttribute('data-at-rail-collapsed'));
-    else if (e.key === '?') toggleLegend();
-    else if (e.key === 'r' || e.key === 'R') mount();
-  });
 
   /* ---------------- driven from outside ----------------
 
@@ -412,18 +378,12 @@
      scope note when there is one. */
 
   window.__atRail = {
-    group: function (label, hint) {
+    group: function (label) {
       var g = document.createElement('div');
       g.className = 'at-rail-group';
       var l = document.createElement('div');
       l.className = 'at-rail-label';
       l.textContent = label;
-      if (hint) {
-        var h = document.createElement('span');
-        h.className = 'at-rail-hint';
-        h.textContent = hint;
-        l.appendChild(h);
-      }
       g.appendChild(l);
       var note = rail.querySelector('.at-rail-note');
       if (note) rail.insertBefore(g, note);

@@ -111,7 +111,7 @@ error, which empty case) and a top-level `<script>` listening for `at:axis`. The
 isn't `<N>`, and adds the round chips at the top of the rail. The title is the topic and nothing
 else — no version, no adjective; the chips already say which round is showing.
 
-The rail's markup, styles, keyboard wiring, and URL persistence all come from the tool.
+The rail's markup, styles and URL persistence all come from the tool. It binds no keys: on a prototype the whole keyboard belongs to the design being shown, so every harness control is a button.
 **Write none of it**, and never restyle it — it stays identical across every project so it reads as
 harness chrome rather than part of the design being judged.
 
