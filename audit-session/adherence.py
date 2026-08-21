@@ -5,10 +5,10 @@
 negative-space lens needs and could not previously get: **of the turns where a rule should
 have applied, how many complied?**
 
-    python3 ~/.claude/skills/session-audit/adherence.py --list
-    python3 ~/.claude/skills/session-audit/adherence.py --rule options-format
-    python3 ~/.claude/skills/session-audit/adherence.py --rule plan-pseudocode --all-history
-    python3 ~/.claude/skills/session-audit/adherence.py --rule options-format --dump-misses 20
+    python3 ~/.claude/skills/audit-session/adherence.py --list
+    python3 ~/.claude/skills/audit-session/adherence.py --rule options-format
+    python3 ~/.claude/skills/audit-session/adherence.py --rule plan-pseudocode --all-history
+    python3 ~/.claude/skills/audit-session/adherence.py --rule options-format --dump-misses 20
 
 A rule is a (trigger, compliance) pair plus the date its current wording landed. Adding a
 rule means adding one entry to RULES below — not writing a new scanner.
