@@ -67,6 +67,12 @@ The budget is **per finding with a count limit**, not one cap across the respons
 
 > *Every finding cites something you actually read in this repo — named files, named modules, real friction you hit. A suggestion that could be pasted into any project in this language, with nothing anchoring it to code you opened, is slop: drop it rather than padding the list. If you cannot name the files and the friction, you do not have a finding yet.*
 
+**The lateral lens.** Forward verbatim, with `<technique>` resolved from the table in [LATERAL-LENS.md](LATERAL-LENS.md):
+
+> *Before you write your findings, read `~/.claude/skills/lateral/techniques/<technique>.md` and run its workflow once against this aspect's surface. Read that one file only. It generates candidates; it does not lower the bar — the grounding rule below still drops anything you cannot anchor to code you opened. Do not report the technique's scratch output: the provocations, stimulus words, and abandoned branches are working material, not findings. If it produces nothing that survives grounding, say so in one line and return the findings you have.*
+
+Rationale, the per-aspect mapping, and why `review` gets no equivalent: [LATERAL-LENS.md](LATERAL-LENS.md).
+
 **The boundary rule.** Forward verbatim:
 
 > *Improve finds opportunities where nothing is broken. If you find something wrong today — a wrong value, a crash, an unhandled path, an exploitable weakness — do not develop it. Return it in one line tagged `review-territory` and move on. That is `review`'s work, not this pass's.*

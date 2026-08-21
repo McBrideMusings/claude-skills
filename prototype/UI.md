@@ -89,6 +89,22 @@ direction — replace one with a real alternative (different layout, different i
 different motion story). Sharing the project's tokens is *not* convergence; every variant should look
 like it could ship in this product tomorrow.
 
+**When the set collapses** — you cannot fill three real axis positions, or the replacement you just
+wrote is the same idea again — the problem is that every direction came from the same place. Read one
+file from [`../lateral/techniques/`](../lateral/techniques/) and run it inline to generate the missing
+directions. Don't invoke `lateral` as a skill, and run one technique, not both:
+
+- [`scamper`](../lateral/techniques/scamper.md) — there is one direction you like and the others are
+  weak imitations of it. Systematic variation over that one: substitute the interaction model,
+  eliminate an element, reverse the order, combine two states into one screen.
+- [`random-stimulus`](../lateral/techniques/random-stimulus.md) — every direction is a variation of
+  the screen as it already exists, or of the obvious pattern for this component. Force-fit an
+  unrelated object onto it to break the default arrangement.
+
+**A technique's output is not a variant.** It produces raw material; a direction still needs a name, a
+stated axis, and a version that could ship in this product tomorrow. Anything that fails that bar
+gets dropped, same as a hand-written direction would.
+
 **Done when:** every variant has a name and a stated axis, and no two sit at the same axis position.
 
 ### Phase 04 — Build

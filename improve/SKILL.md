@@ -33,6 +33,12 @@ This rule matters more here than in `review`, because every single thing improve
 
 Improve finds things that work today and could be better. If something is wrong *now* — a wrong value, a crash, an unhandled path, an exploitable weakness — it is `review`'s, and it leaves this pass as a one-line `review-territory` pointer, never as a card. The boundary runs through the `security` aspect most sharply: posture gaps are improve's, exploitable-today weaknesses are `review`'s.
 
+## The lateral lens — every aspect runs one divergence technique
+
+An opportunity has no failing input to follow, so an aspect walk goes predictable: the same five findings any competent agent returns for any repo in this language. Each aspect therefore runs exactly one lateral technique against its surface before writing findings — `provocation` for `architecture`, `worst-idea` for `interface-safety`, `analogy` for `product`, and so on.
+
+Mapping, rules, and why `review` has no equivalent: [LATERAL-LENS.md](LATERAL-LENS.md). It generates candidates and changes nothing about what survives — grounding and the Phase 05 citation gate are unchanged.
+
 ## RULE 3 — improve writes tickets, never code
 
 **No route through this skill edits a source file, and no route implements a finding.** The deliverable of an improve pass is a set of tickets on the repo's issue backend, each one ready for `implement` / `iterate` / `orchestrate` to pick up later. That holds for a full survey, for a two-aspect survey, and for a single-aspect interactive run.

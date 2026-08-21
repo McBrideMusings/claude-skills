@@ -78,6 +78,19 @@ Offer to create an ADR only when **all three** are true:
 
 Skip otherwise. See [ADR-FORMAT.md](ADR-FORMAT.md) for the template and qualifiers.
 
+## Assumption-breaking lenses
+
+Two symptoms in an interview are not "ask a better question" problems — they are the interview accepting a frame nobody has examined. Each has a technique that attacks the frame, in [`../lateral/techniques/`](../lateral/techniques/). Read the one file and run its workflow inline, as a stretch of the interview; do not invoke `lateral` as a skill and do not run both in one session.
+
+| What you notice | Lens |
+|---|---|
+| A requirement is being treated as given — the human says "obviously it has to X", or every option you can write shares an unstated premise | [`inversion`](../lateral/techniques/inversion.md) — flip the assumption and ask what design the opposite implies |
+| The effort might be solving the wrong problem — the stated need arrives already shaped as a solution ("we need a dashboard"), or three rounds have refined a mechanism nobody has justified | [`concept-fan`](../lateral/techniques/concept-fan.md) — "what is this a way of doing?", widen, then come back down |
+
+**These stay inside the interview's rules.** The output of a lens is options and a recommendation in the standard format, one question per message, waiting for the human. It is never a verdict, and it never advances on an answer you supplied yourself. `concept-fan` in particular widens the scope — if it lands somewhere the current effort doesn't cover, that is a scope-check finding to surface, not a licence to re-plan the project.
+
+**Don't reach for either on a settled question.** A human who has already justified a constraint is not stuck; inverting it there wastes a turn and reads as contrarianism.
+
 ## Domain design lenses
 
 If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md); if `../_domains/<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
