@@ -25,10 +25,32 @@ and the **conversation** leaves unmet.
    situation arise where the rule *should* have applied? That denominator is the whole
    finding. A rule that never had an opportunity to fire is not being ignored.
 
-3. **Count compliance.** Search the assistant messages for the trace the rule demands.
+3. **Count compliance with [`../adherence.py`](../adherence.py), not a hand-rolled grep.**
+
+   ```bash
+   python3 ~/.claude/skills/audit-session/adherence.py --list
+   python3 ~/.claude/skills/audit-session/adherence.py --rule <name> [--dump-misses 20]
+   ```
+
+   A rule is a `(trigger, compliance, since)` entry in that file's `RULES` dict — auditing a
+   new clause means adding one entry, not writing a scanner. It already carries the four
+   exclusions that each produced a published wrong number: subagent transcripts, machine
+   payloads, turns predating the wording, and tool-result records that look like user turns.
+   A hand-rolled count misses at least one of them; every previous one did.
+
+   **It measures shape, not judgement.** Its miss list is the input to hand-labelling, never
+   the finding itself. On 2026-08-21, 19 of 26 sampled options-rule "misses" turned out to
+   be turns that owed no options block at all — a status report, a research brief, a factual
+   answer. Label a sample before reporting a ratio.
 
 4. **Report the ratio, not the impression.** `0 of 23 opportunities` is a finding.
    "It seems like this doesn't happen much" is not.
+
+   **Scope the count to the date the clause's current wording landed.** `git log --follow -p
+   -- CLAUDE.md` gives it; `adherence.py` stores it per rule and applies it by default.
+   Measuring across history that predates the wording reports the *old* rule's failure as
+   the new one's: the options clause reads 3.4% before 2026-08-15 and 35.3% after — same
+   rule, same corpus, same scanner.
 
 5. **Ask why it failed.** A rule ignored at scale usually has a cause, and naming it is
    what makes the finding fixable. The usual causes, in the order worth checking:

@@ -14,6 +14,8 @@ Reviews **conversations**, not code. `review` judges a diff; this judges the tra
 
 Transcripts are enormous. Reading them directly burns the context this skill exists to protect, and eyeballing produces vibes instead of findings. **Always run [analyze.py](analyze.py) first** and hand its output to the lenses. A lens that needs raw text asks `analyze.py --dump-user-messages`, never `cat`.
 
+**Two extractors, different questions.** [analyze.py](analyze.py) answers *where did the effort go* — spend, skills fired, friction. [adherence.py](adherence.py) answers *was this rule obeyed* — the ratio `negative-space` exists to produce. Never hand-roll the second one: it carries four exclusions that each produced a published wrong number, and every hand-rolled count so far has missed at least one.
+
 Corollary, learned the hard way: **validate the instrument before trusting the number.** A measurement that disagrees with a second method is not a finding until one of them is explained. See [CORPUS.md](CORPUS.md) § Measurement traps.
 
 ## Modes
