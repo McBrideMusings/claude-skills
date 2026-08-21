@@ -23,7 +23,7 @@ the file does not exist) and a later session will not find it. Ensure `tmp/` is 
 | **claim** | *no equivalent* — a single-user file has no assignees |
 | **close** | move the item into the `## Resolved` section at the bottom — **never delete it** |
 | **comment** | append an indented line beneath the item |
-| **label** | a `[tag]` prefix in the title, by convention only |
+| **label** | a `[tag]` prefix in the title, by convention only — same vocabulary as [`labels.md`](labels.md), e.g. `[area:ui]` |
 | **count open** | count unchecked items above `## Resolved` |
 | **link** | prose only (`blocked by: <other item's title>`) |
 

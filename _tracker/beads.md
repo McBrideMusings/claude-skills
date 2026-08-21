@@ -55,8 +55,9 @@ don't route around the allow by asking in chat first.
 | **update** | `bd update <id> -s <status> -p <0-4> -a <who> --title "<t>" -d "<body>"` |
 | **close** | `bd close <id> -r "<reason>"` — add `--suggest-next` to see what just unblocked |
 | **comment** | `bd comment <id> "<text>"` (`--file <path>` / `--stdin`) |
-| **label add / remove** | `bd label add <id> <label>` / `bd label remove <id> <label>` |
+| **label add / remove** | `bd label add <id> <label>` / `bd label remove <id> <label>` — which label: [`labels.md`](labels.md) |
 | set labels wholesale | `bd update <id> --set-labels a,b` |
+| audit label drift | `bd label list-all` — anything without an `area:`/`mode:`/`platform:` prefix is drift |
 | **assign** | `bd update <id> -a <who>` |
 | **count open** | `bd count --status open` (`--by-label`, `--by-priority`, `--by-status`) |
 | **link** (dependency) | `bd dep add <id> <blocker-id> -t blocks` |
@@ -92,8 +93,10 @@ Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has
 - **An epic is a body of work that *completes*.** It has an end state, so `bd epic status`
   reports a fraction and `bd epic close-eligible` closes it once every child is done.
   "M9: Native App", "Auth rewrite", a release — these are epics.
-- **A label is a cross-cutting attribute that never completes.** `tech-debt`, `ios`,
-  `needs-design`, `enhancement`. Nothing ever finishes being tech debt.
+- **A label is a cross-cutting attribute that never completes.** `area:ui`, `platform:ios`,
+  `mode:hitl`. Nothing ever finishes being presentation work. The permitted vocabulary is
+  [`labels.md`](labels.md) — and note that a label restating `issue_type` (`enhancement`,
+  `bug`) is a duplicate field, not an attribute.
 
 Everything group-aware in `bd` keys off parent-child, not labels: `bd epic status`,
 `bd epic close-eligible`, `bd ready --parent`, `bd list --parent`, `bd children`,

@@ -16,10 +16,18 @@ holds its *process* once and stays backend-agnostic: it resolves the backend via
 ```
 _tracker/
   _detect.md    <- how every skill decides which backend is in scope
+  labels.md     <- the label schema, backend-independent: area: / mode: / platform:
   beads.md      <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   github.md     <- verb table for GitHub (`gh`)
   local.md      <- verb table for the no-remote markdown fallback
 ```
+
+## Labels are backend-independent
+
+The verb tables say *how* to attach a label. [`labels.md`](labels.md) says *which* — one
+vocabulary across every backend and every repo, on three prefixed axes (`area:`, `mode:`,
+`platform:`). Any skill that labels an issue reads it before picking a label, and never
+invents a bare one.
 
 ## Who reads what
 

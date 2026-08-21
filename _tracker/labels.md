@@ -1,0 +1,106 @@
+# Label schema — every tracker, every repo
+
+One vocabulary for issue labels, backend-independent. Read this before adding a label to any
+issue, and before inventing a new label anywhere.
+
+**The rule that makes the rest work: a label carries an attribute the tracker's own fields do
+not already carry.** `bd` has `issue_type` (feature/task/bug/epic/decision), `priority`,
+`status`, and `parent`. GitHub has type, milestone, assignee, state. A label named
+`enhancement`, `bug`, or `p1` is a second copy of a field that already exists, and second
+copies drift. Delete them.
+
+## The three axes
+
+Every label belongs to exactly one axis and carries its axis as a prefix. The prefix is not
+decoration — it is what lets `area:` be swept, counted, and grepped without matching a mode or
+a platform by accident, and what stops the next label from landing on the wrong axis.
+
+| Axis | Prefix | Answers |
+| --- | --- | --- |
+| Area | `area:` | Which part of the product does this touch? |
+| Mode | `mode:` | Can an agent do this alone? |
+| Platform | `platform:` | Which build does this ship in? |
+
+An issue carries **zero or more `area:`**, **at most one `mode:`**, **zero or more
+`platform:`**. Nothing else. No bare labels.
+
+## `area:` — the nine
+
+Fixed and global. These nine exist in every software product; do not rename them per repo.
+
+| Label | Owns | The test |
+| --- | --- | --- |
+| `area:ui` | Presentation: layout, theme, typography, colour, icons, chrome, spacing. | Pixels change. |
+| `area:ux` | Interaction and flow: shortcuts, navigation, defaults, empty states, affordances. | Behaviour changes, no visual redesign. |
+| `area:data` | Model, storage, persistence, migration, sync, conflict resolution. | Something written down changes shape. |
+| `area:api` | Any contract someone else calls: public interfaces, protocols, CLI, endpoints, the agentic control surface. | Breaking it breaks a caller you don't own. |
+| `area:perf` | Time, memory, battery, bandwidth, cost. | The complaint is a number. |
+| `area:reliability` | Crashes, error handling, retries, degraded states, correctness under failure. | It works until something goes wrong. |
+| `area:security` | Auth, secrets, permissions, sandboxing, privacy, entitlements. | Getting it wrong leaks or grants. |
+| `area:infra` | Build, CI, tooling, release, deploy, dev environment, scripts. | Ships to developers, not users. |
+| `area:docs` | Documentation, ADRs, READMEs, comments. | The deliverable is words. |
+
+**`area:ui` vs `area:ux`** is the pair that gets confused, so: `area:ui` means the pixels
+change — a theme, a layout, an icon. `area:ux` means the flow changes without a visual
+redesign — a hotkey, a default, where focus lands. **Both when both**, which is common and
+correct. "Presentation of the app at a glance" is `bd list --label-any area:ui,area:ux`.
+
+An issue with no `area:` is unclassified, not neutral. Sweep it.
+
+## `mode:` — two values
+
+| Label | Meaning |
+| --- | --- |
+| `mode:afk` | An agent can carry this start→finish unattended. |
+| `mode:hitl` | Needs a human: hardware, an account, a physical device, a judgement call, an offline step. Autonomous passes must skip it. |
+
+At most one. **Unlabelled is not a third value** — every issue gets one of these two, because
+"is this AFK-able" is exactly the question an unattended pass has to answer without reading
+prose.
+
+## `platform:` — the axis is global, the values are per repo
+
+Only for repos that genuinely ship more than one build. The prefix is fixed; the values are
+declared in that repo's `CLAUDE.md` and nowhere else. Typical: `platform:macos`,
+`platform:ios`, `platform:web`, `platform:android`, `platform:server`, `platform:cli`.
+
+A single-platform repo uses no `platform:` label at all. Labelling every issue with the one
+platform you have is noise.
+
+## Extending
+
+- **The nine `area:` values do not grow globally.** A repo that needs a tenth — a subsystem
+  that genuinely doesn't map — declares it in its own `CLAUDE.md` under a "Labels" heading,
+  with one line saying what it owns. Undocumented labels are drift, not vocabulary.
+- **New axes need a real question they answer**, one the existing three don't. Adding an axis
+  means editing this file, not a repo.
+- **Never label from the ticket title alone.** Read what the issue actually changes.
+
+## Setting it up in a repo
+
+```bash
+# beads — labels are free-form; nothing to create up front.
+bd label add <id> area:ui
+bd label remove <id> enhancement
+bd list --label-any area:ui,area:ux --status open      # the presentation sweep
+bd label list-all                                      # audit for drift / bare labels
+
+# GitHub — labels must exist before use.
+gh label create area:ui --description "Presentation: layout, theme, typography, icons, chrome" --color 1D76DB
+gh issue edit <n> --add-label area:ui --remove-label enhancement
+gh issue list --label area:ui --state open
+```
+
+Colour convention on GitHub, so the axis reads at a glance in the issue list:
+
+| Axis | Colour |
+| --- | --- |
+| `area:` | `1D76DB` (blue) |
+| `mode:` | `0E8A16` for `afk`, `B60205` for `hitl` |
+| `platform:` | `5319E7` (purple) |
+
+## What to delete on adoption
+
+`enhancement`, `bug`, `documentation`, `question`, `duplicate`, `invalid`, `wontfix`,
+`good first issue`, `help wanted` — every one restates `issue_type`, `status`, a close reason,
+or an assignee. GitHub ships them by default; that is not a reason to keep them.
