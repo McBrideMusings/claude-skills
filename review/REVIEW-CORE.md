@@ -105,7 +105,7 @@ Use a Haiku agent to locate the root `CLAUDE.md` and any `CLAUDE.md` files in di
 
 - Issue references in the commit messages (`#123`, `Closes #45`, `Fixes #67`, or a beads ID like `myproj-zb8`) — fetch via `bd show <id> --json` or `gh issue view <N>`, per [`../_tracker/_detect.md`](../_tracker/_detect.md).
 - A path passed as a second argument or in the conversation context.
-- A PRD / plan / spec file matching the branch name or feature, in: `docs/PRD.md`, `docs/PRD-*.md`, `docs/specs/`, `~/.claude/plans/*<branch-slug>*.md`, `.scratch/`.
+- A PRD / plan / spec file matching the branch name or feature, in: `docs/PRD.md`, `docs/PRD-*.md`, `docs/specs/`, `tmp/claude/plans/*<branch-slug>*.md`, `.scratch/`.
 - If nothing found, briefly ask the user where the spec is. If they say "no spec", the Spec sub-agent will skip and report "no spec available".
 
 ### Phase 03b — Detect Draft-PR Status

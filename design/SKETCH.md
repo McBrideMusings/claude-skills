@@ -136,7 +136,7 @@ When the user says "I edited it" / "take a look" / "I drew it":
 
 ## Inline-in-plan rule
 
-When writing or editing a plan file (under `~/.claude/plans/` or a project's `docs/`) and the conversation included design decisions, embed the ASCII sketch directly in the plan under a `## Design` or `### Layout` heading. Plan files for design work must visually communicate what was decided, not just describe it.
+When writing or editing a plan file (under `<repo-root>/tmp/claude/plans/` or a project's `docs/`) and the conversation included design decisions, embed the ASCII sketch directly in the plan under a `## Design` or `### Layout` heading. Plan files for design work must visually communicate what was decided, not just describe it.
 
 The `.monojson` stub does NOT go into the plan — only the ASCII rendering. Reference the stub path in a "Working files" or "Artifacts" section if relevant.
 
