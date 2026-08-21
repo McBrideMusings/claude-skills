@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mechanical extraction pass for `session-audit`.
+"""Mechanical extraction pass for `audit-session`.
 
 Turns a corpus of Claude Code transcripts into the facts the lenses judge.
 The lenses never eyeball raw JSONL — they read this output.

@@ -1,4 +1,4 @@
-# Fix mode — `session-audit fix <what>`
+# Fix mode — `audit-session fix <what>`
 
 The user already knows the problem. No corpus, no lenses, no ticket — fix it this turn.
 Absorbed from the retired `skill-audit` Mode B on 2026-08-20.
@@ -47,7 +47,7 @@ A rule is not fixed because the sentence changed. It is fixed when the behaviour
 - Structural claims are checkable now: does the file exist, does the link resolve, does the
   frontmatter parse, does the description still contain the trigger phrase.
 - Behavioural claims need a later corpus. Note the fix date, then re-run
-  `session-audit negative-space --since <that date>` after real work has happened. Say this
+  `audit-session negative-space --since <that date>` after real work has happened. Say this
   out loud rather than declaring victory.
 
 ## Scope boundary

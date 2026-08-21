@@ -19,7 +19,7 @@ don't, which is how sub-agent cost reads as zero.
 1. **An explicit path argument** wins over everything.
 2. **The current session already has conversation in it** → audit just this session:
    `~/.claude/projects/<encoded-cwd>/<current-session-id>.jsonl`. A user who has been
-   talking to you for twenty turns and then types `session-audit` means *this*, not their
+   talking to you for twenty turns and then types `audit-session` means *this*, not their
    entire history.
 3. **cwd is `~/.claude`** → `ALL`. This is the profile repo; auditing it means auditing
    everything.
@@ -34,9 +34,9 @@ Always print the resolved corpus and its size before starting:
 ## Running the extractor
 
 ```bash
-python3 ~/.claude/skills/session-audit/analyze.py <corpus> [--since YYYY-MM-DD]
-python3 ~/.claude/skills/session-audit/analyze.py <corpus> --json
-python3 ~/.claude/skills/session-audit/analyze.py <corpus> --dump-user-messages
+python3 ~/.claude/skills/audit-session/analyze.py <corpus> [--since YYYY-MM-DD]
+python3 ~/.claude/skills/audit-session/analyze.py <corpus> --json
+python3 ~/.claude/skills/audit-session/analyze.py <corpus> --dump-user-messages
 ```
 
 `<corpus>` is a `.jsonl`, a project dir, or the literal `ALL`.
