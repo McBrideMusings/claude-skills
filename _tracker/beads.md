@@ -1,6 +1,6 @@
 # Backend: beads (`bd`)
 
-Dolt-backed local issue tracker. Verified against `bd version 1.1.2`. IDs are
+Dolt-backed local issue tracker. Verified against `bd version 1.2.2`. IDs are
 `<prefix>-<hash>` — the prefix defaults to the directory name at `bd init` (`bd where --json`
 prints it), the suffix is hashed so concurrent agents don't collide. A repo initialised with
 `--prefix myproj` produces IDs like `myproj-zb8`. Add `--json` (a global flag) to any read
@@ -21,12 +21,15 @@ Add them under `permissions` once:
 
 ```jsonc
 "allow": [ "Bash(bd *)" ],
-"ask":   [ "Bash(bd delete:*)", "Bash(bd prune:*)", "Bash(bd purge:*)",
-           "Bash(bd flatten:*)", "Bash(bd admin reset:*)" ]
+"ask":   [ ]
 ```
 
-`ask` wins over `allow`, so the five destructive verbs still surface a prompt. Everything else —
-every read, every `create`/`update`/`close`, `dolt push`, `export` — runs without one.
+**Every `bd` verb runs unprompted, destructive ones included.** There is no `ask` gate on
+`bd delete`, `prune`, `purge`, `flatten`, or `admin reset`. Those five were gated until
+2026-08-21; Pierce removed them, and the reason is worth carrying: beads writes land in a repo,
+git is the undo, and a prompt on every `bd delete` breaks unattended `implement` / `iterate` /
+`orchestrate` runs for no safety that git doesn't already provide. Don't reinstate them, and
+don't route around the allow by asking in chat first.
 
 ## Verb table
 
@@ -80,6 +83,72 @@ every read, every `create`/`update`/`close`, `dolt push`, `export` — runs with
 
 Prefer the structured fields over stuffing everything into the description — `--acceptance` is
 what `implement` checks against, and `bd ready` only works if blockers are real edges.
+
+## Grouping: epic or label
+
+Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has no
+`--milestone` filter. Two primitives, and the choice between them is not a matter of taste:
+
+- **An epic is a body of work that *completes*.** It has an end state, so `bd epic status`
+  reports a fraction and `bd epic close-eligible` closes it once every child is done.
+  "M9: Native App", "Auth rewrite", a release — these are epics.
+- **A label is a cross-cutting attribute that never completes.** `tech-debt`, `ios`,
+  `needs-design`, `enhancement`. Nothing ever finishes being tech debt.
+
+Everything group-aware in `bd` keys off parent-child, not labels: `bd epic status`,
+`bd epic close-eligible`, `bd ready --parent`, `bd list --parent`, `bd children`,
+`bd list --pretty` (tree), `bd list --no-parent`, and the whole `bd swarm` family, which is
+defined as "an epic and its children". Labels only get you filtering — `-l` (AND),
+`--label-any` (OR), `--label-pattern`, `--label-regex`.
+
+**Children inherit their parent's labels by default** (`--no-inherit-labels` opts out). So an
+epic already gives you the label-style grouping for free. A `milestone:<name>` label *alongside*
+an epic of the same name is duplication — drop the label.
+
+Child IDs are hierarchical: a child of `oa-4mm` is `oa-4mm.1`, then `.2`. Membership is
+readable straight off the ID, and `id.rsplit('.', 1)[0]` recovers the epic.
+
+```bash
+EPIC=$(bd create "M9: Native App" -t epic -d "<what done looks like>" --silent)
+bd create "Wire the settings sheet" -t task --parent "$EPIC"
+bd ready --parent "$EPIC" --json     # unblocked work inside this epic only
+bd epic status                       # rollup across every epic
+bd epic close-eligible --dry-run     # then without --dry-run
+```
+
+## Bulk import from GitHub
+
+For a whole tracker, not a single issue. `bd import` beats `bd github sync --pull-only` here —
+sync establishes an ongoing two-way link, which is wrong when you're migrating *off* GitHub.
+Two passes, because children need their epic's real ID:
+
+1. **Epics first.** One `bd create -t epic --silent` per milestone; keep the title→ID map.
+2. **Issues as JSONL, one row each**, then a single `bd import file.jsonl`. Set
+   `"id": "<epic-id>.<n>"` yourself and add the edge explicitly — `--parent` has no JSONL
+   equivalent:
+
+```json
+{"_type":"issue","id":"oa-imy.3","title":"…","description":"…","status":"closed",
+ "issue_type":"task","labels":["enhancement"],"external_ref":"gh-142","source_system":"github",
+ "created_at":"…","updated_at":"…","closed_at":"…","metadata":{"github_url":"…"},
+ "dependencies":[{"issue_id":"oa-imy.3","depends_on_id":"oa-imy","type":"parent-child"}]}
+```
+
+Verified on 1.2.2: explicit dotted IDs, `status: closed`, preserved `created_at`/`closed_at`,
+labels, and `external_ref` all survive the round trip. Rows with no `id` get one generated —
+use that for issues with no milestone. Always `bd import --dry-run` first.
+
+Non-negotiables:
+
+- **`external_ref: gh-<n>` on every row.** It is the only link back once the GitHub issues are
+  gone, and it's what makes the import verifiable.
+- **Verify before deleting anything upstream** — match every GitHub number to exactly one bead
+  and compare title, state, epic, and the longest bodies byte-for-byte. Deleting a GitHub issue
+  is permanent.
+- **Write the `#N → bead-id` map to a file** and keep it; commit references like `#123` in
+  history become unresolvable otherwise.
+- Drop labels that merely restate the milestone; keep genuinely cross-cutting ones.
+- Finish with `bd epic close-eligible` so completed milestones land as closed rollups.
 
 ## Priority
 
