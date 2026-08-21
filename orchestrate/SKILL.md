@@ -487,7 +487,7 @@ nothing is ever closed.
 
 ### The report
 
-The only other moment the human is involved. Name all of it:
+The only other moment the human is involved. This list is **additive to** `CLAUDE.md` §Finishing work, not a replacement for it — a swarm run is a coding task, so it closes with **Files changed / Unchanged / Follow-up needed** and with **Run:** / **Look for:** steps, once for the run as a whole rather than once per issue. Measured 2026-08-20/21 on `stash-mobile`: 830 turns, ~20 issues landed, neither block appeared once, because this list reads complete and gets filled instead. Then name all of it:
 
 - **Transport** used, and the concurrency it ran at.
 - **Models** — `slug → sonnet|haiku` for every dispatch, or a count per tier when the swarm is large, plus every issue that was re-dispatched from haiku to sonnet after a failure. A tier split nobody can see is a tier split nobody can correct.

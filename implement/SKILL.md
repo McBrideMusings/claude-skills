@@ -26,6 +26,8 @@ Pass it explicitly on a standalone pass that runs in a worktree. That case is th
 - **Never run a build, test, lint or typecheck directly.** Dispatch the `build-runner` subagent, which returns only the failures. Raw build output was the largest single source of growth inside a pass.
 - **Never read a screenshot to check something.** Dispatch `screenshot-checker`. Images were 84% of all tool-result bytes in the measured day, and an image stays in context for every turn after it lands.
 
+**When the session forbids subagents, it wins.** Some sessions carry a harness-injected "do not call the Agent tool unless the user requested it" instruction. It cannot be edited from this repo, so neither rule above overrides it. Fall back to running the command directly and truncating the output — `… 2>&1 | tail -40` for a build, `screenshot-checker`'s question answered by reading the one image and not keeping others.
+
 **Nesting is one level deep.** When `/orchestrate` or `/iterate` calls `workflow('implement')`, this script is already a child — its stages are plain agents and cannot open a further workflow. That is why the Wrap phase inlines wrap-up's phases rather than calling `workflow('wrap-up')`.
 
 **Running the phases inline is still correct in one case:** a pass already executing inside a subagent that has no `Workflow` tool. Follow the phases in order, in context, and keep the two rules above.
@@ -256,6 +258,8 @@ Invoke the `wrap-up` skill via the Skill tool with these overrides:
 ---
 
 ## Output
+
+**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The three sections (**Files changed / Unchanged / Follow-up needed**) and the **Run:** / **Look for:** steps still close the pass; the status line and snapshot below go after them.
 
 End the pass with a status line followed by a backlog snapshot:
 

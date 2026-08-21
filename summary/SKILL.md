@@ -175,7 +175,7 @@ Resolve a **diff base** — the ref the change list is computed against — then
 
 ### Phase 04 — Off-load Git Digest to a Haiku Sub-Agent
 
-When there's a git component, spawn a Haiku sub-agent via the Agent tool with the brief below. The git outputs and file samples can be large — keeping them in the sub-agent's context instead of the parent's is the point.
+When there's a git component, spawn a Haiku sub-agent via the Agent tool with the brief below — **unless the session forbids subagents**, in which case gather the same digest yourself with truncated Bash (`git ... | head -N`) and carry on; a harness-injected "do not call the Agent tool" instruction cannot be edited from this repo and wins over this step. The git outputs and file samples can be large — keeping them in the sub-agent's context instead of the parent's is the point.
 
 Brief (substitute the `<diff-base>` resolved in Phase 03 — usually `origin/<base>`, or the session-start sha when commits went straight to the base branch — everywhere the brief says `<diff-base>`):
 

@@ -64,7 +64,7 @@ Phases 1–4 are near-pure fan-out with compact returns, so they run staged — 
 Two rules that apply to every phase, on either path:
 
 - **Open the repo with `~/.claude/tools/repo-snapshot <dir>`** — one call for branch, upstream position, working tree, recent commits and diff stat, instead of four to six serial `git -C` calls.
-- **Route every build, test, lint and typecheck through the `build-runner` subagent**, which returns only failures.
+- **Prefer the `build-runner` subagent for every build, test, lint and typecheck**, which returns only failures. **Unless the session forbids subagents** — some sessions carry a "do not call the Agent tool unless the user requested it" instruction, and that instruction wins, because it is injected by the harness and cannot be edited here. Then run the command directly and pipe it, e.g. `… 2>&1 | tail -40`, to keep the raw log out of context.
 
 ---
 
@@ -162,9 +162,9 @@ Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md]
 ## Phase 5: Commit and push
 
 1. Stage and commit all remaining changes (docs, tracking, quality fixes, straggling code).
-   - Use the project's commit conventions (check CLAUDE.md).
-   - If none exist: one short sentence describing what changed.
-   - Do NOT use conventional-commit prefixes (`feat:`, `fix:`, etc.) — global rule.
+   - Use the project's commit conventions (check its CLAUDE.md), then the global rule in `~/.claude/CLAUDE.md` §Git & GitHub, which requires **Conventional Commits** — `type(scope): message`, ≤72 chars, imperative, no trailing period.
+   - Two exceptions the global rule names: `~/.claude/` itself uses a plain one-sentence message with no prefix, and a repo whose own CLAUDE.md states a different convention wins.
+   - This step used to say the opposite — "do NOT use conventional-commit prefixes — global rule". That line landed `bf6ee22`, 2026-05-22, 80 days before the global rule it cited (`d9e2ca8`, 2026-08-10), and attributed itself to the rule that requires the prefixes. Do not reinstate it.
 2. Confirm `git status` is clean.
 3. Push: `git push origin $(git branch --show-current)`. First push on a new branch: `git push -u origin $(git branch --show-current)` (match the branch's own name — never `main`).
 4. Do NOT land here — the merge/PR is Phase 6 Step C, after follow-ups and the summary settle. Leave the branch pushed.
@@ -222,6 +222,8 @@ Parse the reply into per-item dispositions; **unmentioned items default to skip.
 **⛔ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or skipped, and `git status` is clean.**
 
 ### Step B — Summarize
+
+**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat with **Files changed / Unchanged / Follow-up needed** and **Run:** / **Look for:** steps.
 
 Invoke the `summary` skill **with the `write` token** — `summary write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong mode here.)
 

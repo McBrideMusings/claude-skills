@@ -135,6 +135,8 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 `herdr tab create` (never a split — splitting squeezes the pane the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`.
 
+**Never write `/<skill>` into a dispatched prompt.** Slash expansion is an interactive-input feature: text delivered by `herdr agent prompt`, by `--exec`, or by a relay arrives as plain user text, and the harness does not expand it. Write "call `Skill(<name>)` first, then …" instead. Measured across the transcript corpus: 1526 slash commands arrived expanded, 68 arrived raw, and 9 of the raw ones were `/implement` in a dispatched brief — a 23% failure rate for that one command, against a stray leading space for every other skill's raw case. A brief whose skill never loads improvises the phases that skill owned; on 2026-08-20 that improvisation deleted the worker's own working directory.
+
 What runs is the vendor's **real interactive TUI**, not a piped one-shot. Three consequences:
 
 - **It has no stdout to tee**, so `herdr-agent` appends a paragraph to the prompt telling the agent to write its complete answer to `<outfile>` itself. **That appended paragraph is the outfile contract** — remove it and every caller reads an empty file. If the agent finishes without writing it, `herdr-agent` scrapes `herdr pane read` into `<outfile>` and says on stderr that it did.

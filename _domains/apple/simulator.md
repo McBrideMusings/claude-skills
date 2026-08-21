@@ -38,7 +38,7 @@ Every script takes `--help` and speaks JSON on `--json`. Run them with `python3 
 
 It parses the `.xcresult` bundle (`xcode/xcresult.py`) rather than scraping stdout, which is why its failure list is trustworthy where a `grep` over raw `xcodebuild` output is not.
 
-**Still route it through the `build-runner` subagent.** `build_and_test.py` returns a parsed summary, but a full build's output is large enough that it should not land in a pass's context regardless.
+**Still prefer the `build-runner` subagent** (unless the session forbids subagents — see `implement`'s stage rules). `build_and_test.py` returns a parsed summary, but a full build's output is large enough that it should not land in a pass's context regardless.
 
 ### Driving the UI
 

@@ -44,6 +44,17 @@ ROOT = os.path.expanduser("~/.claude/projects")
 
 # --------------------------------------------------------------------------- rules
 
+# Shared trigger: a user message that asks for a code change. Deliberately conservative —
+# it wants an imperative on code, not any mention of a file. Even so it over-triggers on
+# questions phrased as requests, which is why --dump-misses is the input to hand-labelling
+# and never the finding.
+CODING_TASK = re.compile(
+    r"\b(implement|refactor|fix (?:the|this|that|it|a)\b"
+    r"|add (?:a|an|the)\s+\w+|write (?:a|the) (?:function|test|script|hook|component|class)"
+    r"|change (?:the|this)|update (?:the|this)|build (?:a|the)|wire (?:it|this|the)"
+    r"|hook (?:it|this) up|delete the|remove the|rename (?:the|it)"
+    r"|make (?:it|the) \w+)", re.I)
+
 RULES = {
     "options-format": {
         "clause": "Each option is a bolded numbered line ... its case as bullets beneath, "
@@ -78,6 +89,32 @@ RULES = {
         "near": {
             "any fenced block":  re.compile(r"```"),
             "file:line label":   re.compile(r"[\w/\.\-]+\.\w{1,5}:\d+"),
+        },
+    },
+    "finishing-sections": {
+        "clause": "End every coding task with three sections — Files changed / Unchanged / "
+                  "Follow-up needed",
+        "source": "CLAUDE.md §Finishing work",
+        "since": "2026-08-04",          # 53db7ac
+        "trigger": CODING_TASK,
+        "comply": re.compile(r"(?is)(?=.*files\s+changed)"
+                             r"(?=.*(?:^|\W)unchanged\b)"
+                             r"(?=.*follow[- ]?ups?\s+(?:needed|required))"),
+        "near": {
+            "Files changed only":   re.compile(r"(?i)files\s+changed"),
+            "some follow-up head":  re.compile(r"(?im)^\s*[-*#>\s]*\**follow[- ]?ups?\b"),
+        },
+    },
+    "manual-testing-steps": {
+        "clause": "Manual testing steps, always, unasked — **Run:** the exact commands, "
+                  "**Look for:** what a pass looks like",
+        "source": "CLAUDE.md §Finishing work",
+        "since": "2026-08-14",          # 3a7dcd3
+        "trigger": CODING_TASK,
+        "comply": re.compile(r"(?is)(?=.*\*\*Run:?\*\*)(?=.*\*\*Look for:?\*\*)"),
+        "near": {
+            "Run: without Look for": re.compile(r"\*\*Run:?\*\*"),
+            "any 'to test' prose":   re.compile(r"(?i)\bto (?:test|verify) (?:this|it|that)\b"),
         },
     },
 }
