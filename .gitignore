@@ -15,3 +15,7 @@ herdr
 
 # Installed from https://impeccable.style — third-party skill, theirs to update, not ours to track.
 impeccable/
+
+# Python bytecode from the audit-session scanners. Running adherence.py left the
+# submodule dirty on every invocation.
+__pycache__/
