@@ -78,6 +78,19 @@ These bind every lens, not just `negative-space`. When more than one offers an a
 6. **Report** in chat, in the shape [REPORT-FORMAT.md](REPORT-FORMAT.md) specifies. Ranked, most-recurrent first. Every finding carries a count — "3 of 12 sessions" beats "sometimes".
 7. **Offer dispositions** in one batched plain-text reply: fix now / file / skip per item. Never `AskUserQuestion`. Filing goes to `followups` for skill-quality items, to `papercut` for frictions, to `to-tickets` only if a finding is really project work.
 
+## RULE — a disposition list ALWAYS states that `go` accepts it
+
+**Every disposition block ends with the escape hatch, without exception.** Give your own pick for each item, then one line saying the whole set can be accepted as-is:
+
+> Type **`go`** to apply my dispositions exactly as described, or answer per item (`1 fix, 5 file, rest skip`).
+
+Two failure modes this closes, both real:
+
+- **A list with picks but no accept-all** makes the user re-type a decision you already made. They read eight findings, agree with all eight, and then have to enumerate them back.
+- **A list with no picks at all** is the `CLAUDE.md` violation one level up — *"a list with no pick is a non-answer"*. Dispositions are recommendations, so every item carries yours.
+
+The word is **`go`**, matching `improve`'s existing *"Type `go`, name a subset"*. Do not invent a synonym (`apply`, `yes`, `all`) — one keyword across every skill is the point. `go` means *your stated picks*, including the ones you marked skip; it never means "fix everything".
+
 ## RULE — effort never kills a finding
 
 Same as `review` and `improve`. How hard something is to fix is not a reason to drop it, downgrade it, or call it a follow-up. A steering rule being ignored across 40 sessions is a finding whether the fix is one line or a rewrite.

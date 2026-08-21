@@ -19,6 +19,8 @@ It covers every decision point, not just the ones spelled out: the Phase 02 conf
 
 **Do this instead.** Print the options as plain chat text — numbered or keyworded — and say what to type. *"Running: architecture, tests, ui, layout. Type `go`, name a subset, or `skip <aspect>`."*
 
+**`go` is the standing accept-all keyword, and every list that ends in recommendations must say so out loud.** That covers the aspect-list confirm above and, equally, the Phase 08 ticket slate: give your pick per item, then *"Type `go` to file these as described, or name the ones to drop."* Never leave a recommended set with no stated way to accept it whole — the user should not have to enumerate back a list they already agree with.
+
 ## RULE 1 — effort NEVER decides what gets improved
 
 **How much work a change is — its size, its difficulty, how many files it touches, how long it would "take" — is banned as a reason to skip it, defer it, downgrade it, or rank it lower.** It binds the scorers ([GROUNDING.md](GROUNDING.md)), the Phase 06b ranking, and every sub-agent in the pass.

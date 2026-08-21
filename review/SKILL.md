@@ -19,6 +19,12 @@ It covers **every** decision point, not just the ones spelled out below. Non-exh
 
 **Do this instead.** Print the options as plain chat text — numbered or keyworded, as many as actually exist — and say what to type. Keywords are good (`fix`, `post`, `approve`, `skip`, `all`, `1016 and 1018`); the point is that the answer is *typed*, not picked from a menu widget. On more than one finding, list each with its own line so the user can answer per finding (`1 fix, 2 post, 3 skip`).
 
+**Every such list carries your own recommendation per item, and ends with the accept-all line — always:**
+
+> Type **`go`** to apply my picks exactly as described, or answer per finding (`1 fix, 2 post, 3 skip`).
+
+A findings list with no recommendation is a non-answer (`CLAUDE.md`, Deciding & designing); one with recommendations but no way to accept them wholesale makes the user re-type a decision they already agree with. `go` means *the picks as stated*, skips included — never "fix everything".
+
 **Self-check before every question in a review.** If you are about to open a selector, stop — that is this rule firing. Rewrite the question as chat text and send that instead.
 
 ### Where it has actually broken — check these two by name

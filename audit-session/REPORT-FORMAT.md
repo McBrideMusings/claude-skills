@@ -70,12 +70,18 @@ All three relays this session logged `agent never went idle; prompting without c
 
 ## The closing dispositions block
 
-One line per finding, numbered to match, each ending in its default in brackets. No prose around it beyond a single lead-in sentence naming how to answer.
+One line per finding, numbered to match, each ending in its default in brackets. No prose around it beyond a single lead-in sentence naming how to answer — **and the `go` line, which is mandatory and always last.**
 
 ```
-Dispositions — reply with any mix, e.g. `fix 5, file 2 3, skip 7`:
+Dispositions — type `go` to apply all of these as written, or reply with any
+mix, e.g. `fix 5, file 2 3, skip 7`:
 
 1. relay never clears — [papercut]
 2. commit-prefix contradiction — [file]
 3. manual-testing rule never fires — [file]
 ```
+
+The bracketed default on each line is your recommendation, so `go` has something
+to mean. A block whose items carry no default is malformed: `go` would be
+ambiguous and the user is back to enumerating. Items you recommend skipping keep
+a `[skip]` bracket and stay in the list — `go` honours them as skips.
