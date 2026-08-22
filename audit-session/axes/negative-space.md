@@ -84,7 +84,7 @@ Audit shape:
   `skills/_plan-format.md`, whose `_` prefix kept it out of the catalog, and nothing pointed
   at it at plan time — 14 tool opens in 9,243 transcripts. The fix was a load trigger, not a
   stronger sentence: it became a skill on 2026-08-20 (`plan-format`, now `show-shape`), with `grill-me`,
-  `iron-out` and `prototype` loading it at the point they write a plan.
+  `iron-out` and `spike` loading it at the point they write a plan.
 
 State the suspected cause as a hypothesis with its evidence. Do not assert it.
 

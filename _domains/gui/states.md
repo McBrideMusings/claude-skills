@@ -1,6 +1,6 @@
 # States, edges and interface copy
 
-Read by `design` (critique/audit) and by the engines when the domain is `gui`. The parts of a surface
+Read by `gui` (critique/audit) and by the engines when the domain is `gui`. The parts of a surface
 that only exist when something goes wrong, hasn't happened yet, or is still loading — plus the words
 that carry them. Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0).
 

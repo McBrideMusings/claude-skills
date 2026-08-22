@@ -29,7 +29,7 @@ _domains/
     testing.md            <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)
     orchestrate.md        <- what N parallel workers must each get their own of, and how to pin to it
     design.md             <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
-    prototype.md           <- OPTIONAL: what a throwaway prototype answers for this label, read by `prototype`
+    prototype.md           <- OPTIONAL: what a throwaway prototype answers for this label, read by `spike`
 ```
 
 A cell may be absent — the engine then runs generic-only for that label. Add a label by adding a
@@ -80,28 +80,28 @@ this store and sets the `game` marker on scaffold.
 `gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +
 `review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
 accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
-sweep, and the required rejected-candidates section, read by `design` critique mode, which is what
-`improve`'s `ui` aspect loads) + `slop.md` (objective AI-slop banned-patterns catalog, read by
-`design` critique mode and the `review`/`verify` engines; harvested from pbakaus/impeccable +
+sweep, and the required rejected-candidates section, read by `gui` critique mode, which is what
+`improve`'s `gui` aspect loads) + `slop.md` (objective AI-slop banned-patterns catalog, read by
+`gui` critique mode and the `review`/`verify` engines; harvested from pbakaus/impeccable +
 Leonxlnx/taste-skill) + `direction.md` (choosing the visual world: the external-dice mechanism, the
 challenger deal, the comp discipline, and the single path to image generation via `generate`) +
 `amplitude.md` (volume changes on a shipped surface — bolder, quieter, distill, overdrive) +
 `states.md` (empty/error/loading/permission states, i18n, overflow, onboarding, interface copy) +
 `fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
-`prototype.md` (the craft bar and divergence axes for `prototype`'s UI shape) + `vocabulary.md` (a
-reference — the reverse motion-term glossary, read by `design` and `explain`, not an engine cell) +
-`libraries.md` (a reference — curated web/React library picks, read by `design` and `implement`).
-Seeded from emilkowalski/skills. The `design` skill is the planning orchestrator over this store;
+`prototype.md` (the craft bar and divergence axes for `spike`'s UI shape) + `vocabulary.md` (a
+reference — the reverse motion-term glossary, read by `gui` and `explain`, not an engine cell) +
+`libraries.md` (a reference — curated web/React library picks, read by `gui` and `implement`).
+Seeded from emilkowalski/skills. The `gui` skill is the planning orchestrator over this store;
 the implementation-level values live in `web/review.md` and `apple/review.md`.
 
 The `review` / `improve` line inside `gui/`: **`review.md` is what's broken, `opportunities.md` is
 what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
 improvement pass.
 
-`design/layers/` — the six problem-space and solution-space design layers that used to live
+`gui/layers/` — the six problem-space and solution-space design layers that used to live
 here as `product/`, now outside this store entirely (it was never a label a repo carries):
 `observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
-`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `design` orchestrator
+`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `gui` orchestrator
 conducts the layer work over that directory; `interaction-flow.md` hands its breadboard to that same
 skill's sketch mode, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
 

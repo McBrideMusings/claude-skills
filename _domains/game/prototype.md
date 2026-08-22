@@ -1,15 +1,15 @@
 # Game prototype overlay
 
-Read by the `prototype` skill (per `_domains/_detect.md`) when the domain is `game`, **on top of** the
+Read by the `spike` skill (per `_domains/_detect.md`) when the domain is `game`, **on top of** the
 shape file. Which shape applies depends on the question, and both are common here:
 
-- **Feel** ("does this jump/dash/recoil feel right") → [`prototype/UI.md`](../../prototype/UI.md)'s
+- **Feel** ("does this jump/dash/recoil feel right") → [`spike/UI.md`](../../spike/UI.md)'s
   build discipline, but driven by hand rather than flipped through — see below.
 - **Numbers** ("does this economy converge", "is this combat maths degenerate at level 40") →
-  [`prototype/LOGIC.md`](../../prototype/LOGIC.md). A terminal simulation answers this far faster than
+  [`spike/LOGIC.md`](../../spike/LOGIC.md). A terminal simulation answers this far faster than
   a playable build, and it's the shape people skip when they shouldn't.
 - **Engine or approach choice** ("client-authoritative or server-authoritative for this movement") →
-  [`prototype/COMPARE.md`](../../prototype/COMPARE.md).
+  [`spike/COMPARE.md`](../../spike/COMPARE.md).
 
 ## The one hard rule carries over
 

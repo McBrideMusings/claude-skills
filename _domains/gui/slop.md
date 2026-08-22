@@ -1,6 +1,6 @@
 # UI slop catalog
 
-Read by **planning** (`design` critique/audit mode) and the **engines** (`review`, `verify`) when the
+Read by **planning** (`gui` critique/audit mode) and the **engines** (`review`, `verify`) when the
 domain is `gui`. Objective banned-patterns and AI tells — the part that fixes "every AI frontend looks
 the same." Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0) and Taste Skill
 (`Leonxlnx/taste-skill`, MIT). Unlike the lenses, almost none

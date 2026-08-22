@@ -1,9 +1,9 @@
 ---
-name: design
-description: "Front door for design work at every layer — observed behaviour, domain vocabulary, user needs, strategy, conceptual model, breadboarding, and the visual surface (layout, typography, colour, motion, slop, empty/error states, UX copy). Default `orient` names the bottleneck layer; `sketch` gives an ASCII layout; `critique` audits an interface that exists; `direction` picks the visual world for a new one; `bolder`/`quieter` change its volume. Use for any what-to-build or how-it-looks decision."
+name: gui
+description: "Front door for design and UI/UX work at every layer — visual design, interface design, UX, GUI craft, layout, typography, colour, motion and AI-slop, plus the decisions beneath the screen: observed behaviour, domain vocabulary, user needs, product strategy, conceptual model and breadboarding. Default `orient` names the bottleneck layer; `sketch` gives an ASCII wireframe; `critique` reviews an interface that already exists; `direction` picks the visual world for a new one; `bolder`/`quieter` change its volume. Use for any what-to-build, how-it-looks, design-review, redesign, mockup or wireframe decision."
 ---
 
-# design
+# gui — design at every layer
 
 The front door for design work, **pre-code and post-code**, across all seven layers — from what users actually do up to the pixels they see. It orchestrates two knowledge stores:
 
@@ -90,13 +90,13 @@ When another skill (e.g. `improve`'s survey) invokes `critique` non-interactivel
 
 - **`grill-me`** — pulls `layers/user-needs.md` (job-story discipline) and `layers/domain.md` (terminology-conflict discipline) into its elicitation interviews. Overlapping techniques live in the cells; `grill-me` reads them rather than duplicating.
 - **`to-spec` / `to-tickets`** — consume the decisions this skill surfaces (needs, strategy, model) and turn them into a PRD / tickets. This skill does the *deciding*; those do the *writing-down and slicing*.
-- **`prototype`** — when the question is *which direction*, not *which arrangement*.
+- **`spike`** — when the question is *which direction*, not *which arrangement*.
 
 ## When NOT to use
 
 - Pure logic, backend, or data work — no design decision in play.
 - A bug fix that doesn't change layout or motion.
 - Reviewing or testing UI *code* — that's the `review` / `tdd` / `verify` engines (they read the UI cells themselves). This skill is the design-time decision, not the code pass.
-- **The question is *which direction*, not *which arrangement*** — several genuinely different takes on one piece, differing on density, motion, personality, or interaction model. Sketch mode can't show those, so it filters on the wrong information: that's `prototype` (working variants in one standalone HTML file behind a picker). Sketch stays the cheaper first reach when there's one design and the open question is where things sit.
+- **The question is *which direction*, not *which arrangement*** — several genuinely different takes on one piece, differing on density, motion, personality, or interaction model. Sketch mode can't show those, so it filters on the wrong information: that's `spike` (working variants in one standalone HTML file behind a picker). Sketch stays the cheaper first reach when there's one design and the open question is where things sit.
 - Writing the PRD or cutting tickets — that's `to-spec` / `to-tickets` (this skill feeds them).
 - Choosing a web library rather than designing the thing — `_domains/gui/libraries.md` answers it directly.

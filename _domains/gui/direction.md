@@ -1,6 +1,6 @@
 # Direction — choosing the visual world, and why the model can't
 
-Read by `design` when the question is **which world this surface lives in**, not how loud it is
+Read by `gui` when the question is **which world this surface lives in**, not how loud it is
 (`amplitude.md`) or whether it's well made (`design.md` + `slop.md`). Runs on a new surface, a
 replacement look, or any greenfield build. Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0).
 
@@ -103,11 +103,11 @@ When comping:
 
 ## Image generation goes through `generate`
 
-`design` has exactly one path to an image: the **`generate`** skill, which health-gates backends in
+`gui` has exactly one path to an image: the **`generate`** skill, which health-gates backends in
 `generate/backends.toml` and reads the image asset-type axis at `_generate/image.md`. Today that
 resolves to local ComfyUI.
 
-**`design` must never learn a second path.** Adding a cloud image backend later is a `backends.toml`
+**`gui` must never learn a second path.** Adding a cloud image backend later is a `backends.toml`
 change and nothing else — no branch in this cell, no API key read here, no direct HTTP call. If
 `generate` reports no working image backend, comps are unavailable: say so and build code-led. Don't
 improvise a fallback.

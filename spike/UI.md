@@ -5,7 +5,7 @@ file, flipped through with the picker, and let the user pick a winner.
 
 If the question is logic/state → [LOGIC.md](LOGIC.md). If it's "which technical approach" →
 [COMPARE.md](COMPARE.md). If there is one design and the open question is arrangement, this is too
-expensive — that's `design` sketch mode (ASCII in chat).
+expensive — that's `gui` sketch mode (ASCII in chat).
 
 Adapted from emilkowalski/skills `prototype` (MIT, © 2026 Emil Kowalski); the selection spec now lives
 as real code in `../_handouts/harness/rail.css` and `rail.js`, and the tool wires it — you never
@@ -202,7 +202,7 @@ with `?r=1` appended — the earlier rounds live in the same file precisely so t
 
 Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
 in the table. If the user asks which you'd choose, answer with a reason rooted in the product's
-personality and how often the piece is seen (`design` and `_domains/gui/design.md` are where that
+personality and how often the piece is seen (`gui` and `_domains/gui/design.md` are where that
 judgement is licensed and how it must be anchored). If two variants converged while you built them, cut
 one and say so: two truly distinct directions beat three padded ones.
 

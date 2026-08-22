@@ -1,7 +1,7 @@
 # UI prototype overlay
 
-Read by the `prototype` skill (per `_domains/_detect.md`) when the domain is `gui`, **on top of** the
-shape file — almost always [`prototype/UI.md`](../../prototype/UI.md), occasionally `LOGIC.md` when the
+Read by the `spike` skill (per `_domains/_detect.md`) when the domain is `gui`, **on top of** the
+shape file — almost always [`spike/UI.md`](../../spike/UI.md), occasionally `LOGIC.md` when the
 question is about interaction state rather than appearance. The shape file says how to build the
 harness; this cell says what makes the variants worth looking at.
 
@@ -59,8 +59,8 @@ never a pre-picked favourite in the presentation table.
 
 ## Handoffs
 
-- One design, question is arrangement → `design` sketch mode (ASCII in chat) is cheaper.
-- Interface already exists and the question is "what's weak" → `design` critique mode with
+- One design, question is arrangement → `gui` sketch mode (ASCII in chat) is cheaper.
+- Interface already exists and the question is "what's weak" → `gui` critique mode with
   `design.md` + `slop.md` + `fidelity.md`.
 - Where should motion be *added* to an existing surface → `opportunities.md`.
 - Need a library rather than a hand-rolled component → `libraries.md`.

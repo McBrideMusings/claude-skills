@@ -1,6 +1,6 @@
 # Amplitude — turning a surface up or down
 
-Read by `design` when the request is a **volume** change on a surface that already ships: *bolder*,
+Read by `gui` when the request is a **volume** change on a surface that already ships: *bolder*,
 *quieter*, *distill*, *overdrive*. Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0).
 
 Amplitude is not direction. The world is settled; the question is how loudly it speaks. If the world

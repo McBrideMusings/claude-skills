@@ -42,7 +42,7 @@ invents a bare one.
 | `papercut` | create | promotes a logged papercut to a tracked item |
 | `wrap-up` | close, comment, list | plus PR work, which is always `gh` |
 | `review` | comment, create | PR review flow is always `gh` (see below) |
-| `summary`, `debate`, `repo-analysis`, `prototype` | list, show | read-only references |
+| `summary`, `debate`, `repo-analysis`, `spike` | list, show | read-only references |
 
 ## Pull requests are always GitHub
 

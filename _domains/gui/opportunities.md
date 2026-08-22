@@ -1,6 +1,6 @@
 # UI motion opportunities
 
-Read by **planning** — `design` critique mode, which is what `improve`'s `ui` aspect loads. This is
+Read by **planning** — `gui` critique mode, which is what `improve`'s `gui` aspect loads. This is
 the *opportunity* half of UI motion: where motion is missing and would earn its place, and where
 existing motion is craft-weak (wrong easing, no spatial story, incoherent with the rest of the
 product). Defects — jank, missing reduced-motion, animations that strand state — are not here; they're

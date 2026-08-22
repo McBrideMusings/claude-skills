@@ -1,9 +1,9 @@
 ---
-name: prototype
-description: "Build a throwaway prototype to flesh out a design before committing — several working UI variations behind a picker, a runnable terminal app for state/logic questions, or competing technical approaches measured against one fixture. Use for spikes, mockup variants, and 'which approach should we use'."
+name: spike
+description: "Build a throwaway prototype to settle a design or technical question before committing — several working UI variations behind a picker, a runnable terminal app for state/logic questions, or competing technical approaches measured against one fixture. Use to prototype, mock up, try out, experiment, spike, or build a proof of concept; also for 'which approach should we use' and 'let me see it working first'."
 ---
 
-# Prototype
+# spike — throwaway builds that settle a question
 
 A prototype is **throwaway code that answers a question**. The question decides the shape.
 
@@ -92,6 +92,6 @@ The **answer** is the only thing worth keeping. Capture it somewhere durable (co
 
 ## Not this skill
 
-- Judging or improving an interface that already exists → `design` critique mode.
-- Deciding whether a *layout* is right, when there's one design and the question is arrangement → `design` sketch mode (cheaper: ASCII in chat). Come here when the question is *which direction*, and the axes in play are density, motion, personality, or interaction model — the things ASCII can't show.
-- Picking a library for a web task → `_domains/gui/libraries.md` via `design`. Don't burn a prototype on a question a curated list already answers.
+- Judging or improving an interface that already exists → `gui` critique mode.
+- Deciding whether a *layout* is right, when there's one design and the question is arrangement → `gui` sketch mode (cheaper: ASCII in chat). Come here when the question is *which direction*, and the axes in play are density, motion, personality, or interaction model — the things ASCII can't show.
+- Picking a library for a web task → `_domains/gui/libraries.md` via `gui`. Don't burn a prototype on a question a curated list already answers.

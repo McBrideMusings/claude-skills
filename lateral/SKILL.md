@@ -52,7 +52,7 @@ This router is user-invoked (`disable-model-invocation: true`), so nothing auto-
 |---|---|---|
 | `improve` | the five generators — provocation, random-stimulus, analogy, scamper, worst-idea | [`../improve/LATERAL-LENS.md`](../improve/LATERAL-LENS.md), forwarded to every survey aspect |
 | `grill-me` | the two reframers — inversion, concept-fan | its "Assumption-breaking lenses" section |
-| `prototype` | scamper, random-stimulus | UI.md Phase 03, when the variant set collapses onto one axis |
+| `spike` | scamper, random-stimulus | UI.md Phase 03, when the variant set collapses onto one axis |
 
 `six-hats` has no host: it converges a decision, and every host above diverges. It stays here.
 

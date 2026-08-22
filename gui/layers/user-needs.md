@@ -1,8 +1,8 @@
 # User needs layer (layer 3)
 
-Read by the `design` orchestrator and by `grill-me` (which pulls the job-story discipline into
+Read by the `gui` orchestrator and by `grill-me` (which pulls the job-story discipline into
 its elicitation interviews). A library of techniques, not a script — see "How to apply a layer cell" in
-`design`. Adapted from jamiemill/layers-skills (MIT).
+`gui`. Adapted from jamiemill/layers-skills (MIT).
 
 User needs are what we think users are trying to achieve, and why — an interpretation built on observed
 behaviour and domain knowledge, not a direct capture of reality. This layer sits between the messy raw

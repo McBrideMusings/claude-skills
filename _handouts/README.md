@@ -5,7 +5,7 @@ self-contained HTML file. The leading `_` and the absence of any `SKILL.md` keep
 registering as a skill (same mechanism as `_domains/` and `_domains/`).
 
 The principle: **the verb is the skill; this is what the verbs share.** `explain` decides what an
-explanation should say, `prototype` decides which directions diverge, `design` decides where things
+explanation should say, `spike` decides which directions diverge, `gui` decides where things
 sit on a layout. None of them should be re-authoring a reset, a theme block, or a picker to say it.
 
 ## What's here
@@ -75,8 +75,8 @@ The tool that assembles all of it: `~/.claude/tools/handout`.
 | Skill | Kind | Cells it reads |
 |---|---|---|
 | `explain` (Tier 2) | `explainer` | `CONTRACT.md` |
-| `prototype` (UI shape, and COMPARE's visual branch) | `prototype` | `CONTRACT.md` |
-| `design` (sketch mode, escalated) | `wireframe` | `CONTRACT.md` |
+| `spike` (UI shape, and COMPARE's visual branch) | `prototype` | `CONTRACT.md` |
+| `gui` (sketch mode, escalated) | `wireframe` | `CONTRACT.md` |
 | `handout` | `page`, `deck` | `CONTRACT.md` + `DIRECTION.md` |
 
 `CRITIQUE.md` is read by all four, at the same point: after the build, before `open`.

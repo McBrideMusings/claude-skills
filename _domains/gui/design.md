@@ -1,6 +1,6 @@
 # UI design axis
 
-Read by **planning** skills (`design`, `grill-me`, `iron-out`) when the domain is `gui`. Design-time
+Read by **planning** skills (`gui`, `grill-me`, `iron-out`) when the domain is `gui`. Design-time
 critique lenses for interactive interfaces — not a code engine. Loaded on top of whatever the planning
 skill already does, the same way the engines layer platform + domain.
 
@@ -230,11 +230,11 @@ The reverse glossary of motion terms is `vocabulary.md` in this directory.
 ## The rest of this directory
 
 - `opportunities.md` — where motion is **missing or weak**: the four-question gate, the hunt-seam
-  sweep, the required rejected-candidates section. Run by `design` critique, which is `improve`'s
-  `ui` aspect.
+  sweep, the required rejected-candidates section. Run by `gui` critique, which is `improve`'s
+  `gui` aspect.
 - `review.md` — where motion is **broken**: jank, interruptibility and stranded state, accessibility.
   Run by the `review` engine. Craft calls never go here.
-- `prototype.md` — the craft bar and divergence axes for building UI variants (`prototype`).
+- `prototype.md` — the craft bar and divergence axes for building UI variants (`spike`).
 - `libraries.md` — curated web/React library picks, so a solved component doesn't get hand-rolled.
 - `direction.md` — choosing the visual world, and the external-dice mechanism that stops every project
   in a category shipping the same design. Also the comp discipline and the one path to image generation.

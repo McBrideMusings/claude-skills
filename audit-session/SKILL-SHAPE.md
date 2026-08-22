@@ -55,7 +55,7 @@ every turn, and it is what routing actually reads.
 ### 4. Should it be combined, or embedded?
 
 **Combine** when two skills answer the same question at different depths and the seam
-between them is a coin-flip for the router. `product-design` + `ui-design` → `design`.
+between them is a coin-flip for the router. `product-design` + `ui-design` → `gui`.
 
 **Embed** when one is always used *inside* the other and never alone — it stops being a
 skill and becomes a reference file the parent loads at the right moment. `terminal` became
@@ -88,7 +88,7 @@ skills that *do* fire — not a change to the skill itself.
 
 Precedent: the plan-format rule was obeyed 0 times not because the doc was bad but because
 the doc was never opened — 14 tool opens across 9,243 transcripts. The fix was making it a
-skill and having `grill-me`, `iron-out` and `prototype` load it at the point they write a
+skill and having `grill-me`, `iron-out` and `spike` load it at the point they write a
 plan.
 
 ## What this is not
