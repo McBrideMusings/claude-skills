@@ -18,7 +18,9 @@ Workers are `workflow('implement', …)` child workflows inside a workflow scrip
 
 **One `Workflow` call for the whole ready batch.** Not one per issue — that would be a workflow of one, which is a subagent with extra steps.
 
-Pass the batch through `args` as real JSON — a list of `{issue, slug, worktree, branch, title, model}` objects, one per issue that cleared step 3. Never a JSON-encoded string; the script would receive one string and `args.map` would throw.
+Pass the batch through `args` as real JSON — a list of `{issue, slug, worktree, branch, title, model, item}` objects, one per issue that cleared step 3. Never a JSON-encoded string; the script would receive one string and `args.map` would throw.
+
+**`item` is the full record step 3 fetched and gated — id, title, body, acceptance criteria — and it must carry `id`.** The script hands it to the child as `resolved`, which is what lets the child skip its own Resolve and Gate stages; a batch that carries only the number leaves the worker with nothing to implement from, and a record whose id is spelled anything but `id` is the `undefined.json` failure below.
 
 The script's shape:
 
@@ -32,7 +34,7 @@ export const meta = {
 const results = await pipeline(
   args,
   item => workflow('implement', {
-    resolved: item.item,          // already fetched and gated by the scope gate
+    resolved: { ...item.item, id: String(item.issue) },  // fetched and gated in step 3; `id` is required
     worktree: item.worktree,
     branch:   item.branch,
     model:    item.model,
@@ -48,6 +50,9 @@ return results.filter(Boolean)
 - **Nesting is exactly one level.** This script is the parent, `implement.js` is the child, and the child's stages are plain `agent()` calls that **cannot** open a further workflow. That is why `implement.js` inlines wrap-up's phases instead of calling `workflow('wrap-up')`. A third level throws at runtime, mid-round.
 - **`pipeline()`, not `parallel()`.** There is no cross-item stage here, so a barrier would only make every item wait for the slowest.
 - **`resolved`** carries the item the scope gate already fetched and cleared, so the child skips its own Resolve and Gate stages instead of re-fetching an issue this skill has already read. Pass the whole record, not just the number.
+- **`resolved.id` is required, spelled `id`, and nothing else will do.** It is the key for the whole pass: the verdict is written to `<worktree>/tmp/claude/verify/<id>.json` and step 5 reads it back by that name. `resolved` is the one path into `implement.js` that no schema validates — the child's own Resolve stage is checked, this hand-assembled record is not. Recorded four times: a batch passed as `{number, …}` or `{issue, …}` produced `tmp/claude/verify/undefined.json` for every worker in the round, all colliding on one filename in the primary checkout, each verdict's `item` field reading `"undefined — <title>"`. Two of those rounds had to be renamed to `<issue>.json` by hand at preserve time; one silently overwrote a verdict with another worker's. That is why the script above spreads the record and sets `id` from `item.issue` explicitly rather than passing the record through untouched — the batch's own key is `issue`, and the child reads `id`.
+
+  `implement.js` halts at Resolve on a missing id rather than rendering one, so a round assembled with the wrong key fails on its first stage with nothing built yet — read the halt's `detail`, which prints the record it was handed.
 - **`model`** is **per item**, `"sonnet"` or `"haiku"`, resolved in step 3 by [SKILL.md](SKILL.md) → Picking the model per issue and carried in `args` — not one constant for the round. Do not omit it: with no `model` the child inherits the main-loop model, which is the orchestrator's own and frequently Opus. `opus` and `fable` are refused here like everywhere else.
 - **`land: 'caller'`** is what keeps a worker a worker. It does not subtract steps from the ordinary pass — it selects a different Wrap stage in `implement.js` entirely, one whose whole text is *format the touched files, add them by path, commit, report the sha*. There is no push, no merge, no landing and no tracker write in it to disobey. This skill lands and records the outcome afterwards, from the primary checkout, once it has re-verified against a base that may have moved; the worker's commits are already visible there because a linked worktree shares the object store. Omitting the argument happens to work — the child defaults to `'caller'` whenever a `worktree` is given — but write it anyway. The default is a safety net for old call sites, and a reader of this script should not have to know that to see that workers do not land.
 - **[BRIEF.md](BRIEF.md) still governs worker behaviour** — `implement.js` reads the implement and wrap-up SKILL.md files itself, and the worker clause is generated from the `land` argument. Do not paste the brief in as a prompt; pass the arguments and let the child assemble it.
