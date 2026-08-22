@@ -390,7 +390,8 @@ Close the issue with what shipped.
 Teardown is the orchestrator's job because it is **structurally impossible for the worker**: git refuses to delete a branch that a worktree still has checked out, and the worker is standing in it. Whatever created a resource retires it — this skill made the worktree and the branch, so this skill removes them, on every transport.
 
 ```bash
-test -f <repo>/tmp/claude/verify/<item>.json   # the verdict is already out — step 5
+ls <worktree>/tmp/claude/verify/*.json    # every verdict in there, by name
+test -f <repo>/tmp/claude/verify/<item>.json   # the one you copied out — step 5
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
 git -C <repo> worktree remove --force <worktree> \
@@ -399,7 +400,9 @@ git -C <repo> worktree remove --force <worktree> \
 
 **No `push origin --delete`.** Workers do not push, so a worker branch exists only locally and there is nothing on the remote to delete — the command fails with `remote ref does not exist` and, chained with `&&`, makes a clean teardown read as a failed one. Run it only if you pushed the branch yourself for some reason, and then only after `git -C <repo> ls-remote --exit-code origin <branch>` confirms it is there.
 
-**The first line is not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy from step 5 is missing, do it now rather than removing the worktree — this is the check that stops a whole swarm's evidence disappearing one worker at a time, each teardown looking perfectly clean as it goes.
+**The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy from step 5 is missing, do it now rather than removing the worktree — this is the check that stops a whole swarm's evidence disappearing one worker at a time, each teardown looking perfectly clean as it goes.
+
+**List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the worker wrote a differently-named file, and `--force` then deletes the only copy. Observed on `etv-station` #182, 2026-08-16: a worker left a complete `FAIL` verdict — naming the exact cause at `daemon.rs:2344` — at `tmp/claude/verify/undefined.json`, found by listing the directory rather than by looking for it. It survived only because the tree was also dirty, which forbids teardown for an unrelated reason. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the worker's issue and branch, then decide. Two workers in one round can both write `undefined.json`, and once copied to the primary checkout they are indistinguishable — so never copy one out under the name it already has.
 
 **Retire the worker's device too**, if step 3 gave it one — the platform cell you read there has the teardown commands. Whatever it is, it survives its worker and holds resources; a long run that skips this ends with one per issue still alive.
 

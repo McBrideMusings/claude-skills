@@ -197,12 +197,14 @@ Passing tests are not evidence the item works — they prove CI runs. Before wra
 **1. Persist the verdict.** `verify` reports inline in chat, which nothing outside this session can read — and when the pass runs in a pane, that transcript is often unrecoverable. Write the verdict to `<repo-root>/tmp/claude/verify/<item>.json`, taking `<repo-root>` from `git rev-parse --show-toplevel` in its own call:
 
 ```json
-{"item": "<issue number or followup text>", "verdict": "PASS|FAIL|BLOCKED|SKIP",
+{"item": "<the tracker id — never the title>", "verdict": "PASS|FAIL|BLOCKED|SKIP",
  "surface": "<what you drove>", "findings": ["…"],
- "branch": "<current branch>", "commit": "<HEAD sha>"}
+ "branch": "<current branch>", "verified_parent": "<HEAD sha, read now>"}
 ```
 
 Write it on **every** verdict, `SKIP` included. A missing file is not a pass — it is indistinguishable from a pass that never ran, which is exactly what a reader must never have to guess.
+
+**`<item>` is the tracker id, in the filename and in the `item` field, and a pass with no id stops rather than inventing one.** The id is the only key: a reader matches the file to the work by it, and the title is already on the issue. Observed on `etv-station` #182, 2026-08-16 — a worker wrote `tmp/claude/verify/undefined.json` (the string JS renders for a missing value) with the issue title in `item`, putting the id in neither place. Orchestrate read that worker as having stopped without a verdict, and its teardown check, phrased against one exact path, would have deleted a complete `FAIL` verdict along with the worktree. Do not substitute a slug, a title, or a branch name: a verdict that files neatly under a name nothing looks for is worse than one that never got written, because the second announces itself.
 
 **A verdict describes one tree, and touching the code voids it.** If you change anything after `verify` returns — fixing a finding, a last tidy-up, a review nit — the verdict no longer describes what you are about to land: **re-run `verify` and rewrite the file.** Observed: a worker verified `PASS`, committed one more change, and shipped it unverified under the earlier verdict.
 
