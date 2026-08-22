@@ -21,6 +21,40 @@ space together where A leans on size alone." Not allowed: a bare "B feels better
 line that still holds: this covers *interface craft*, never whether a game is fun. If a lens tempts a
 verdict, give the verdict **and** its concrete reason — don't stop at the mechanism.
 
+## Lens 0 — register: what does success look like on *this* surface?
+
+Every other lens is read through this one. Pick the register from **the requested surface, not the
+product**: a developer tool's landing page is still Persuade; a fashion house's documentation is still
+Read; a docs index is Read, not Persuade. (Impeccable, Apache-2.0.)
+
+| Register | The visitor… | What outranks what |
+| --- | --- | --- |
+| **Persuade** | decides and acts — landing, marketing, pricing | Design *is* the product. Earn attention and action. |
+| **Operate** | completes a task — app UI, dashboards, editors, admin, settings | Scanability, consistency and native expectation outrank expression. Brand lives in precise details. |
+| **Read** | understands something — docs, articles, guides, changelogs | Structure for comprehension first, then make the reading worth staying in. |
+| **Experience** | is inside the work — portfolios, galleries, showcases | The artifact leads from the first viewport; the interface recedes. |
+
+**Operate and Read have their own failure mode.** It isn't flatness, it's *strangeness without
+purpose*: over-decorated buttons, mismatched form controls, gratuitous motion, display fonts where
+labels should be, invented affordances for standard tasks. Familiarity is a feature here — the bar is
+*earned* familiarity, and the tool should disappear into the task. Concretely, on Operate/Read:
+
+- **One type family is usually right**, on a **fixed `rem` scale** (never `clamp()` — users view at
+  consistent DPI and a fluid `h1` that shrinks inside a sidebar looks worse) with a **tighter ratio,
+  1.125–1.2**. There are more type elements here than on a brand surface, so exaggerated contrast is
+  noise. Prose still caps at 65–75ch; tables can run to 120ch+.
+- **Restrained colour is the floor**, not a choice. A single surface can earn Committed. Standardise a
+  state-rich semantic vocabulary (hover/focus/active/disabled/selected/loading/error/warning/success/
+  info) and give panels and sidebars a second neutral layer.
+- **Motion is 150–250ms and conveys state only.** No orchestrated page-load sequences — users load into
+  a task, not a title card. Responsive behaviour is *structural* (collapsing sidebar, responsive table),
+  not fluid typography.
+- **Consistency over surprise.** If the save button looks different on two screens, one of them is
+  wrong. Delight is saved for moments, not spread across pages.
+
+Operate can afford what brand surfaces can't: system fonts, standard navigation patterns, and real
+density when users need it.
+
 ## Lens 1 — should this animate at all? (frequency)
 
 Motion cost scales with how often it's seen. This is a structural decision, not a taste call:
@@ -147,6 +181,34 @@ mismatch as a fact ("this crossfade is 500ms while every other transition here i
 "this feels off". When motion has no purpose (Lens 2) and is frequently seen (Lens 1), deleting it is
 a legitimate option to put on the table.
 
+## The craft floor — checks on the built result
+
+Load these when UI is actually being *edited*, not during planning. Each is a check on what shipped,
+not on an intention. (Impeccable, Apache-2.0.) Most are already stated as lenses above; these are the
+ones that get skipped:
+
+- **Depth.** A shadow carries an offset **and** a soft blur. A zero-offset coloured halo is decoration,
+  not depth. Pick a border or a defined shadow, never both as decoration (cf. the Codex ghost-card in
+  `slop.md`).
+- **Browser surfaces.** The parts you did not draw still carry the design: **text selection, the caret,
+  scrollbars, focus rings, underline offset, and the numerals in tabular data** all ship with browser
+  defaults belonging to no design system. Theme them from the palette. This is the cheapest signal that
+  a page was *built* rather than assembled, and the one models skip most reliably.
+- **One authored moment.** Motion is one deliberate moment per surface, not scattered effects and not
+  the same entrance animation on every section. Exponential ease-out from an already-visible default.
+  Reach past `transform` and `opacity` — `filter: blur`, `backdrop-filter`, `clip-path`, `mask` and
+  shadow belong to the palette when they stay smooth.
+- **Secondary text on a coloured surface is tinted from that hue or from the foreground, never gray.**
+- **States.** Hover, disabled, loading, error, empty — with real content and working controls. Full
+  treatment in `states.md`.
+- **Coverage.** Every requirement in the brief present and findable within seconds.
+
+**Verify in bounded passes, not a loop.** Build fully, inspect once in a batched round (desktop and
+mobile together, or the shipped device classes), fix everything that round shows in one batch, confirm
+with at most one more round, and stop. The checks share one render — don't take a separate screenshot
+trip per check. Open-ended self-QA burns the user's money doing worse what a real review pass does
+better.
+
 ## How a planning skill applies this
 
 1. Classify the surface and name what each animation's **purpose** is (Lens 2) and how **often** it's
@@ -174,6 +236,11 @@ The reverse glossary of motion terms is `vocabulary.md` in this directory.
   Run by the `review` engine. Craft calls never go here.
 - `prototype.md` — the craft bar and divergence axes for building UI variants (`prototype`).
 - `libraries.md` — curated web/React library picks, so a solved component doesn't get hand-rolled.
+- `direction.md` — choosing the visual world, and the external-dice mechanism that stops every project
+  in a category shipping the same design. Also the comp discipline and the one path to image generation.
+- `amplitude.md` — turning a shipped surface up or down: bolder, quieter, distill, overdrive.
+- `states.md` — the states only real data reveals: empty, error, loading, permission, i18n, overflow,
+  onboarding, and the interface copy that carries them.
 - `slop.md`, `fidelity.md`, `vocabulary.md` — AI-tell catalog, structural surface audit, motion glossary.
 
 ## Room for more lenses

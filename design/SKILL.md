@@ -1,6 +1,6 @@
 ---
 name: design
-description: "Front door for design work at every layer — observed behaviour, domain vocabulary, user needs, strategy, conceptual model, breadboarding, and the visual surface (layout, typography, colour, motion, slop). Default `orient` names the bottleneck layer; `sketch` gives an ASCII layout; `critique` audits an interface that already exists. Use for any what-to-build or how-it-looks decision."
+description: "Front door for design work at every layer — observed behaviour, domain vocabulary, user needs, strategy, conceptual model, breadboarding, and the visual surface (layout, typography, colour, motion, slop, empty/error states, UX copy). Default `orient` names the bottleneck layer; `sketch` gives an ASCII layout; `critique` audits an interface that exists; `direction` picks the visual world for a new one; `bolder`/`quieter` change its volume. Use for any what-to-build or how-it-looks decision."
 ---
 
 # design
@@ -8,11 +8,12 @@ description: "Front door for design work at every layer — observed behaviour, 
 The front door for design work, **pre-code and post-code**, across all seven layers — from what users actually do up to the pixels they see. It orchestrates two knowledge stores:
 
 - **`layers/`** — the six layers beneath the screen (problem space and solution space).
-- **`_domains/gui/`** — the surface: craft lenses, the AI-slop catalog, fidelity, motion vocabulary.
+- **`_domains/gui/`** — the surface: craft lenses and the register modes, the AI-slop catalog,
+  direction and comps, amplitude, states and copy, fidelity, motion vocabulary.
 
 Parallel to `game-dev` (which orchestrates `_domains/game/`). It does **not** own code *correctness*, tests, or verification — those are the engines (`review`, `tdd`, `verify`, `diagnose`), which gain UI competence by reading `_domains/gui/` and `_domains/{web,apple}/` when the `gui` label is in scope. The split: design judges whether the thing is *well designed*; the engines judge whether the code is *correct*. Don't reimplement the engines here.
 
-Layers 1–6 adapted from **jamiemill/layers-skills** (MIT) — the Layers of Product Design framework, itself inspired by Jesse James Garrett's *The Elements of User Experience* (2000).
+Layers 1–6 adapted from **jamiemill/layers-skills** (MIT) — the Layers of Product Design framework, itself inspired by Jesse James Garrett's *The Elements of User Experience* (2000). Layer-7 craft material adapted from **Impeccable** (`pbakaus/impeccable`, Apache-2.0) and **Taste Skill** (`Leonxlnx/taste-skill`, MIT); each cell carries its own attribution.
 
 ## The framework — seven layers, three zones
 
@@ -60,6 +61,20 @@ The job is to help the human make better decisions — **never to make them for 
 - **`sketch` (lowest fidelity, first reach for any layout question)** — an ASCII layout in chat, plus a blank `.monojson` canvas stub on disk only if asked. The fastest way to get a layout in front of the user and a yes/no back. Procedure in [SKETCH.md](SKETCH.md) — load it when entering sketch mode. When ASCII can't carry the layout — real proportions, a wrapping grid, a long scroll, anything where *how much space each region takes* is the actual question — escalate to a rendered greybox with `~/.claude/tools/handout build --kind wireframe` (see SKETCH.md). Still colourless, still structure only; the same decision at a fidelity ASCII can't reach.
 - **Design lenses** — when the decision is *should this animate*, *how should this gesture feel*, *which principle does this serve*, *is the spacing/type/colour right*: load `_domains/gui/design.md` and apply its lenses (frequency, motion purpose, fluid-interaction, layout, typography, colour, Apple's eight principles, cohesion). Set the `gui` label in `.claude/domain` (`_domains/_detect.md`) when a repo's work is UI-centric, so the engines pick up the GUI cells too.
 - **`critique` / `audit` (post-code)** — an interface already exists and the question is "is this good?" / "what's weak?" Apply the `_domains/gui/design.md` lenses, run the `_domains/gui/slop.md` catalog, run the `_domains/gui/opportunities.md` pass when motion is in scope (the four-question gate, the hunt-seam sweep, and its **required** rejected-candidates section — this is what `improve`'s `gui` aspect is asking for), **and** run the `_domains/gui/fidelity.md` structural pass (does the surface honour the decisions in the layers below — vocabulary, object consistency, breadboard completeness, error recovery, accessibility). Return ranked findings, each with its concrete reason and a proposed fix; tag each finding surface-fix or deeper-layer, and take the deeper ones into the matching `layers/` cell. It is *not* code correctness or a11y/perf testing; that's the `review` / `verify` engines reading the same cells.
+- **`direction` (new surface, or a replacement look)** — the question is *which visual world*, before
+  any arrangement question. Load `_domains/gui/direction.md`. It carries the one finding that makes
+  this a mode rather than a judgement call: a model's resonance ranking is deterministic (30 of 35 runs
+  produced identical concepts across 16 prompt framings), so the direction index is drawn from outside
+  the model, presented as one hand with a re-roll, and raised by fused challengers. The same cell owns
+  the comp discipline and the single path to image generation (the `generate` skill — never a direct
+  API call from here).
+- **`bolder` / `quieter` / `distill` / `overdrive` (the world is settled, the volume is wrong)** — load
+  `_domains/gui/amplitude.md`. Scope is sovereign in all four: touch only the named target and add no
+  colour, font, radius or primitive the surface doesn't already own.
+- **States, edges and interface copy** — empty states, error messages, loading, first-run, i18n,
+  overflow, destructive-action wording: `_domains/gui/states.md`. Run it as part of `critique` on any
+  Operate surface; a happy path at full craft with browser-default everything else is the most reliable
+  sign nobody used the thing.
 - **Naming a motion effect** — the user describes an effect loosely and wants the term ("the bouncy thing when a popover opens"): answer from `_domains/gui/vocabulary.md`. Lead with the term; add a competing alternate only if one genuinely applies. Naming, not building.
 - **Writing alt text for an image** — in a component, a doc, a README, a slide: answer from `_domains/gui/alt-text.md`. Return the line itself, nothing around it. Writing the description, not auditing a page's accessibility.
 

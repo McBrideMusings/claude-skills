@@ -36,6 +36,10 @@ comfy is the free/local first choice; gemini is the cloud fallback.
 - **Character/creature reference:** full-body T/A-pose or side view, symmetric, visible hands/feet,
   plain background, layered costume/anatomy, no weapon fused to hands.
 - **Logo/icon/UI:** transparent-friendly silhouette, high contrast at small size, no tiny text.
+- **UI comp (interface mockup):** name the surface's structure first (regions, hierarchy, density),
+  then the palette, type character and component character. Whole-screen composition, at the surface's
+  own aspect — portrait device size for a phone surface, desktop landscape otherwise. See "UI comps"
+  below; this is a different job from a logo or an icon.
 - **Sky/background:** wide plate, layered depth, readable horizon, no foreground subject.
 - Resolution: 1K drafts/icons, 2K default production reference, 4K hero/title/large plates.
 
@@ -72,6 +76,36 @@ and vice versa. Match the `loras/<family>/` folder to the checkpoint:
 Caveat: **Pony** and **Illustrious** LoRAs are SDXL-architecture but tuned to their own checkpoints —
 they load on base SDXL but usually degrade; pair them with a matching Pony/Illustrious checkpoint, not
 `sdXL_v10VAEFix`.
+
+## UI comps — the caller is `design`
+
+`design`'s `direction` mode (`_domains/gui/direction.md`) renders a UI direction as an image before any
+code exists, because comping produces bolder and less expected layouts than going straight to HTML.
+**`design` reaches image generation only through this engine** — it holds no API key, makes no direct
+HTTP call, and has no second path. Adding a cloud image backend is a `generate/backends.toml` edit and
+nothing else.
+
+Model pick for this job, from the roster above:
+
+- **Qwen-Image** is the right default. A UI comp is dense, cluttered composition full of legible text —
+  exactly what it was benched best at. Cost: ~128s at 1024², the slowest in the roster.
+- **FLUX.1 dev** when the comp is about layout, proportion and colour and the labels can be greeked.
+  ~25s, so three comps land in ~75s instead of ~6½ minutes.
+- Never SDXL here — the roster note marks it "NOT for text".
+
+Rules that come from the caller and must survive:
+
+- **Three comps per round**, at the surface's own viewport. One invites rubber-stamping.
+- **Embed the prompt in the PNG and write a `.json` sidecar beside it.** Provenance travels with the
+  file; a comp whose prompt was reconstructed from memory records an image that was never made.
+- Save under the project's `tmp/claude/` comps directory, not `assets/` — a comp is a decision
+  artifact, not a shipped asset.
+
+**Not yet supported: reference-image anchoring.** `direction.md` calls for screenshotting a
+representative existing page and passing it as a reference so palette, type and component character
+carry over exactly. No img2img / reference workflow exists in `comfy-image/` today, so on an
+established world say so and fall back to a prose description of the design system — knowing it drifts.
+Building that workflow belongs to the ComfyUI setup repo (`~/Projects/local-genai`), not here.
 
 ## Output + integration
 

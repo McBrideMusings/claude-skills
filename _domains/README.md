@@ -83,7 +83,11 @@ accessibility) + `opportunities.md` (the **opportunity** half: the four-question
 sweep, and the required rejected-candidates section, read by `design` critique mode, which is what
 `improve`'s `ui` aspect loads) + `slop.md` (objective AI-slop banned-patterns catalog, read by
 `design` critique mode and the `review`/`verify` engines; harvested from pbakaus/impeccable +
-Leonxlnx/taste-skill) + `fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
+Leonxlnx/taste-skill) + `direction.md` (choosing the visual world: the external-dice mechanism, the
+challenger deal, the comp discipline, and the single path to image generation via `generate`) +
+`amplitude.md` (volume changes on a shipped surface — bolder, quieter, distill, overdrive) +
+`states.md` (empty/error/loading/permission states, i18n, overflow, onboarding, interface copy) +
+`fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
 `prototype.md` (the craft bar and divergence axes for `prototype`'s UI shape) + `vocabulary.md` (a
 reference — the reverse motion-term glossary, read by `design` and `explain`, not an engine cell) +
 `libraries.md` (a reference — curated web/React library picks, read by `design` and `implement`).

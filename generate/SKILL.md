@@ -47,6 +47,14 @@ Apply the axis file's post-process (texture tiling/PBR bake, audio trim/normaliz
 write the game-ready output plus a manifest entry so the project can load it. Report the file path and
 the backend actually used.
 
+## Callers
+
+`design` is a caller, not a peer. Its `direction` mode renders UI comps through this engine and holds
+**no** image path of its own — no API key, no direct HTTP call, no per-provider branch. That contract
+is what makes adding a cloud image backend a one-line `backends.toml` edit: change the `[image]` order
+here and `design` picks it up with no change on its side. Preserve it. UI-comp specifics (model pick,
+three-comps rule, provenance sidecar) live in `_generate/image.md`.
+
 ## Relationship to the `comfy` skill
 
 `comfy` stays directly invocable for hands-on local ComfyUI work. `generate` is the routing layer that
