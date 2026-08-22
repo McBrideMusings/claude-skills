@@ -4,13 +4,15 @@ The prompt sent to each worker. A worker is a fresh session that knows nothing a
 
 **The brief does not redefine `/implement`.** It hands the worker one issue and states the four things a worktree changes. Everything about how the work gets done — the gate, the phases, the verify, the wrap-up — belongs to `/implement` and is not restated, overridden, or paraphrased here.
 
+**The task line names the tool, not a slash command, and that is not a style choice.** Slash expansion is an interactive-input feature: this brief is delivered programmatically, so `/implement` arrives as plain text and nothing loads. Measured across the transcript corpus — 1526 slash commands arrived expanded, 68 arrived raw, and 9 of those 68 were `/implement`, every one a dispatched brief. That is a 23% failure rate for this one command; every other skill's raw case is a stray leading space. A worker whose skill never loads improvises the phases that skill owned, and on 2026-08-20 that improvisation ran `git worktree remove --force` on its own working directory, killing every shell hook for the next 90 minutes.
+
 ## Template
 
 Substitute `<>` values. Keep every section — each one prevents a failure seen in practice. Exactly one clause is conditional, and it is marked: the device clause, which is dropped whole on a project whose verification touches no device. The subagent and workflow transports add one clause of their own (the worker does not start inside the worktree); see their files.
 
 > You are in a git worktree at `<worktree-path>` on branch `<branch>`, working the `<repo>` repo. A submodule-bearing repo needs `git -c protocol.file.allow=always submodule update --init --recursive` before its first build — the plain form fails in a worktree with `transport file not allowed`.
 >
-> **Your task: call `Skill(implement)` first, then work `<issue> continuous` — `<one-line issue title>`.** Call the tool; do not treat the words `/implement` as a command that will expand. This brief arrives as a programmatic prompt, not as something typed into an input box, and **slash expansion is an interactive-input feature**. Measured across the whole transcript corpus: 1526 slash commands arrived expanded, 68 arrived as raw text, and 9 of those 68 were `/implement` — every one of them a dispatched brief with an argument and a following paragraph, none of them typed. `/implement` alone fails to expand 9 times in 39 (23%); every other skill's raw case is a stray leading space. When it does not expand, no skill loads, and the pass improvises the phase that decides landing and worktree teardown. On 2026-08-20 that improvisation ran `git worktree remove --force` on the session's own working directory, and every shell hook failed to spawn for the next 90 minutes.
+> **Your task: call `Skill(implement)`, then work `<issue>` in `continuous` mode — `<one-line issue title>`.** Call the tool. Writing `/implement` will not load anything.
 >
 > **Nobody is watching and nobody can answer you.** Run in `continuous` mode and behave exactly as it specifies: if the item hides a decision you would have to invent an answer to, file the `needs human input` follow-up and halt. Do not ask — there is no channel to a human and your question would strand you. Do not guess to keep moving.
 >
