@@ -138,6 +138,8 @@ Not hookable when the rule turns on judgment: *significantly altering*, *unrelat
 
 Then apply the false-positive test from Phase 7 before promising the conversion. A rule that can't be pattern-matched without blocking legitimate work stays prose, and you say why.
 
+- **Forensics attached to a rule.** A session id, a "violated N times", a commit sha offered as justification, an incident retold to prove the rule earned its place. Cut all of it — the rule stays, the evidence goes to the commit message. This is a `Compress`, never a `Delete`: the behavior is fine, the proof is what's costing tokens on every turn. Applies to `docs/` too.
+
 **Never cut a truth rule.** "Only claim what you verified", "flag uncertainty", "never cite a source you haven't read" — those stop invented facts, they aren't severity filters. They stay whatever else goes.
 
 ## Phase 7 — Build every hook before deleting its prose
