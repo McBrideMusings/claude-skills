@@ -458,6 +458,8 @@ Landing a branch closes an issue, which may clear the last blocker on others. Re
 
 **The loop ends when** the frontier is empty and no worker is live.
 
+**An empty frontier is not an empty backlog, and the report must say which one you hit.** The frontier is only the issues that pass the AFK gate; on a large tracker it goes dry while most of the backlog is still open, and every issue the gate rejected is a decision waiting on the human, not a dead end. So ending the loop is the moment to name the **Next batch** — the gate failures, each with your pick, handed to `iron-out`. Observed 2026-08-23 on `etv-station`: three rounds landed 8 issues, the gate then rejected 5 of 5 candidates with ~90 issues still open, and the run reported "frontier empty" and stopped — filing those 5 under **Follow-up needed** as blockers, three of them with no recommendation at all.
+
 ### Pane rotation between rounds (optional, herdr only)
 
 Landing a round leaves this session holding everything it read while doing it — every worker's returned object, every re-verify, every conflict resolution. That accumulation is dead weight for the *next* round: it does not need to know how round 1 landed, only that it did. Running every round in the same session lets that weight build for the life of the swarm.
@@ -501,6 +503,13 @@ The only other moment the human is involved. This list is **additive to** `CLAUD
 - **Still blocked** — issue and the blocker it is waiting on.
 - **Index entries written**, and any landed branch that added a file and named none — that is a stale index in the making, and it is only visible here.
 - **Verdicts preserved** — one line listing the `tmp/claude/verify/<item>.json` files now in the primary checkout, and naming any landed issue that has none. A swarm that lands six slices should leave six verdicts behind; anything less means the evidence went out with a worktree and the next person to look will have to re-drive the result to learn what you already knew.
+- **Next batch** — the issues that failed the gate this run, each with **your pick** for what unblocks it, and the skill that does it (usually `iron-out`). Every other line above is backward-looking, and an empty frontier is not an empty backlog: the loop's terminal condition is "no issue passes the gate", which on a hundred-issue tracker means the gate is the bottleneck, not the work. A report that stops at **Still blocked** hands back a list of obstacles with nothing to answer.
+
+**Then close with the escape hatch, always** — this report ends in recommendations, so `CLAUDE.md` §Deciding & designing binds it exactly as it binds `review` and `wrap-up`:
+
+> Type `go` to apply my picks as described, or answer per item (`1 fix, 5 file, rest skip`).
+
+Give every item in **Next batch** and **Follow-up needed** its own pick first, so `go` has something to mean. Measured 2026-08-23 across every non-subagent transcript: of 244 replies whose `Follow-up needed` carried two or more real items, exactly **one** named a way to accept them — and the miss is always the last turn of a long run, the one where re-typing costs most. `hooks/go-hatch-check.py` catches it on `Stop`; this line is what stops it happening.
 
 ## Worker rules the brief must carry
 
