@@ -117,6 +117,31 @@ RULES = {
             "any 'to test' prose":   re.compile(r"(?i)\bto (?:test|verify) (?:this|it|that)\b"),
         },
     },
+    # The rule that binds every list ending in recommendations, including the
+    # "Follow-up needed" section §Finishing work mandates on EVERY coding task.
+    # So this trigger and `finishing-sections` fire on nearly the same turns —
+    # which is the point: a task-ending turn owes both shapes, and rendering the
+    # report shape alone is the failure mode this measures.
+    "escape-hatch": {
+        "clause": "Whenever a list ends in your own recommendations, close with the "
+                  "one-line escape hatch — state that typing `go` applies your picks "
+                  "exactly as written, and name the per-item alternative",
+        "source": "CLAUDE.md §Deciding & designing",
+        "since": "2026-08-15",          # landed with the options-format rewrite
+        # NOTE `run()` matches the trigger against the USER message (t[3]), never
+        # the reply. So this cannot trigger on "the reply contains a Follow-up
+        # section" — it triggers on the same CODING_TASK opportunity
+        # `finishing-sections` uses, which is sound because §Finishing work
+        # mandates a Follow-up list on every one of them, and every such list
+        # ends in recommendations that owe the hatch.
+        "trigger": CODING_TASK,
+        "comply": re.compile(r"(?i)`go`"),
+        "near": {
+            "'go' unbackticked":   re.compile(r"(?i)\btype\s+\*{0,2}go\*{0,2}\b"),
+            "per-item ask only":   re.compile(r"(?i)\b(?:answer|reply)\s+per\s+item\b"),
+            "bare 'let me know'":  re.compile(r"(?i)\b(?:let me know|say the word|want me to)\b"),
+        },
+    },
 }
 
 MIN_REPLY = 600   # chars; below this a reply is an acknowledgement, not an answer
