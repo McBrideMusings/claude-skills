@@ -23,7 +23,7 @@ Which one you're rebuilding changes what belongs in it. Establish this before Ph
 | --- | --- | --- |
 | Holds | Voice, judgment, permission gates, git policy, how to dispatch work, environment, a knowledge map | What the project is in two lines, the commands table, where things live, project-specific conventions, domain vocabulary, gotchas that have actually bitten |
 | Never holds | Anything about one project | **Anything the global file already says** |
-| Size threshold | ~3,000 words | ~1,200 words |
+| Size threshold | 4,000 words, watched by `hooks/claude-md-size-check.sh` | ~1,200 words, watched by nothing |
 | Audience | Just the user | On a collaborative repo, teammates and their agents too — so no personal preferences |
 | Structure owner | This file | `bootstrap` — defer to its layout rather than inventing a competing one |
 
@@ -36,6 +36,13 @@ A tracked `CLAUDE.md` is already archived: every version is in `git log`, with a
 So Phase 1 is only: **make sure the working tree is clean and the current file is committed** before editing. That's the whole safety requirement.
 
 `CLAUDE.md` is always supposed to be tracked. If it isn't, that's the bug — `git add` it and commit before starting, and say you did. Don't design around an untracked file and don't make a backup copy instead.
+
+**No pass may drop a behavioral specific — every pass so far has.** Both of the global file's rewrites lost a behavior, and both took a later commit to put back:
+
+- `cdec21d` cut 3269 words to 2911 and turned "distributes work to worktrees" into "dispatches to panes". The next dispatch committed on the main checkout. Fixed in `a82f09d`.
+- `3a7dcd3` deleted the shell-command-shape rules outright. Fixed in `82100ad`.
+
+So: compress wording, merge overlapping rules, move mechanics into a skill and link it. **When a cut would remove a behavior the file was covering, name that behavior and get the user's answer before making it.** Hitting the word target by deleting rules is the opposite of the job.
 
 ## Phase 2 — Measure
 
@@ -51,7 +58,9 @@ for p in re.split(r'\n(?=## )', t):
 
 The biggest section is almost always the one nobody defends. Lead the conversation with the table.
 
-**Thresholds.** Past ~3,000 words (~4,000 tokens) a file is due for a prune; past ~4,500, recommend a full rebuild rather than a trim. Claude offers this unprompted rather than waiting to be asked — that standing instruction belongs in the rebuilt `CLAUDE.md` itself, not only here, or it only fires when someone already suspected the problem.
+**Thresholds.** The global file's budget is 4,000 words, enforced by `~/.claude/hooks/claude-md-size-check.sh`, which fires at SessionStart and routes here. That hook is the only place the number lives — don't restate it. A project `CLAUDE.md` has no hook watching it; treat ~1,200 words as its ceiling and raise it unprompted.
+
+There is one remedy, and it is the rebuild below. A file over budget is not sorted into "trim this one, rebuild that one" — that fork existed in the hook until 2026-08-23 and disagreed with this file on the number, the remedy, and which direction was the dangerous one.
 
 ## Phase 3 — Inventory what already enforces behavior
 

@@ -8,7 +8,7 @@ Judge whether the `CLAUDE.md` is actually going to be read and obeyed. Distinct 
 
 ## What to do, read-only
 
-1. **Phase 2 — Measure.** Words and estimated tokens **per section**, never line count. Report the table; it is a finding in its own right when the file is past ~3,000 words (global) or ~1,200 (project).
+1. **Phase 2 — Measure.** Words and estimated tokens **per section**, never line count. Report the table; it is a finding in its own right when the file is past 4,000 words (global) or ~1,200 (project).
 2. **Phase 3 — Inventory what already enforces behavior.** `jq '.hooks' settings.json settings.local.json`, the auto-loaded skill descriptions, `MEMORY.md`, the session system prompt, `docs/`. Any rule already covered there is a delete.
 3. **Phase 5 — Read the file's own history.** `git log --follow --format='%h|%ad|%s' --date=short -- CLAUDE.md`. Carry-over across rewrites is the strongest evidence available: survived every rewrite → load-bearing; removed once and added back → the removal was wrong, mark it permanent; added once and gone since → safe to leave out.
 4. **Phase 6 — Triage** each rule to one of five verdicts: Keep / Compress / → hook / → doc or skill / Delete. Run the "Is it hookable?" test on every rule before assigning any other verdict.
