@@ -55,6 +55,17 @@ CODING_TASK = re.compile(
     r"|hook (?:it|this) up|delete the|remove the|rename (?:the|it)"
     r"|make (?:it|the) \w+)", re.I)
 
+# ---------------------------------------------------------------------------
+# READ THIS BEFORE ADDING A RULE.
+#
+# `trigger` is matched against the USER's message; `comply` against the reply
+# (see run(), which searches t[3] then t[4]). A trigger phrased as "the reply
+# contains X" therefore cannot work — it will scan the user's words for text
+# that only ever appears in yours, and report a confident 0%. That mistake was
+# made once, on `escape-hatch`, and the number survived until it was checked
+# against a reply known to comply. The trigger names the OPPORTUNITY the user
+# created; the compliance names what you owed them for it.
+# ---------------------------------------------------------------------------
 RULES = {
     "options-format": {
         "clause": "Each option is a bolded numbered line ... its case as bullets beneath, "
@@ -147,6 +158,19 @@ RULES = {
 MIN_REPLY = 600   # chars; below this a reply is an acknowledgement, not an answer
 MAX_ASK   = 3000  # chars; above this the user message is a pasted brief, not a question
 
+# A slash command reaches the transcript as TWO user messages: a short wrapper
+# carrying <command-name>/orchestrate</command-name> and the args, then the
+# whole skill body as its own message. The bodies are enormous — 55,561 / 8,561
+# / 7,622 chars in one measured session — so MAX_ASK alone discarded every
+# slash-command turn, which is most substantive work: /orchestrate, /implement,
+# /review, /wrap-up. Raising the cap on that session took its turn count from
+# 87 to 143, a 39% blind spot falling exactly where the finishing rules apply.
+# So the body is made TRANSPARENT instead: it neither becomes the user's ask nor
+# clears the wrapper that already is one. The wrapper stays the ask, because
+# "/orchestrate ui ios work" is what the user actually said.
+COMMAND_WRAPPER = re.compile(r"<command-name>")
+COMMAND_BODY    = re.compile(r"\A(?:Base directory for this skill:|# /\w[\w-]*\s)")
+
 # ----------------------------------------------------------------------- extraction
 
 def is_machine_payload(text):
@@ -173,6 +197,7 @@ def iter_turns():
                 continue
             proj = os.path.relpath(path, ROOT).split(os.sep)[0]
             cur_user, last_asst, out = None, None, []
+            prev_wrapper = False
             try:
                 fh = open(path, errors="replace")
             except OSError:
@@ -204,6 +229,13 @@ def iter_turns():
                         if (not t.strip() or "<system-reminder>" in t[:200]
                                 or t.startswith("Caveat")):
                             continue
+                        # exclusion 5 — a slash-command body is not the ask; the
+                        # wrapper before it is. Stay transparent so the wrapper
+                        # keeps the turn open (see COMMAND_BODY above).
+                        if COMMAND_BODY.match(t) or (prev_wrapper and len(t) >= MAX_ASK):
+                            prev_wrapper = False
+                            continue
+                        prev_wrapper = bool(COMMAND_WRAPPER.search(t))
                         if cur_user and last_asst and len(last_asst) > MIN_REPLY:
                             out.append((cur_user[0], proj, path, cur_user[1], last_asst))
                         cur_user = (date, t) if len(t) < MAX_ASK else None
