@@ -1,92 +1,147 @@
 # Domain detection
 
-Every engine that reads from `_domains/` decides which labels are in scope the same way. A label is
-a directory of engine cells — `apple`, `web`, `react`, `threejs`, `gui`, `game`, and any other name
-added to the vocabulary below. There is no split between "stack" labels and "mode" labels: both kinds
-stack the same way, in the same store.
+Every engine that reads from `_domains/` decides which labels are in scope the same way. A
+label is a directory of engine cells — `apple`, `web`, `react`, `threejs`, `gui`, `tui`,
+`api`, `game`, and any other name in the vocabulary below. There is no split between
+"stack" labels and "mode" labels: both kinds stack the same way, in the same store.
+
+## Where labels come from
+
+**One map, outside the project.** A private file keyed by main-checkout absolute path, with
+path-scoped label rules per repo. Nothing is written into a project repo.
 
 Resolve in this order, stop at the first that answers:
 
-1. **Explicit argument.** The invocation named a label (e.g. `review game`) → use it, skip the marker.
-2. **Marker.** A committed `.claude/domain` file in the repo root → resolve labels from it (grammar
-   below) and load every matched label's cell. This is the steady state — read the marker, zero
-   classification cost.
-3. **No marker → classify ONCE, then persist.** Read the files in scope (the diff / target dir / file
-   under discussion — never the whole repo) against the old `_platforms/_detect.md` file-signature
-   table below as a heuristic, plus `README.md`/`CLAUDE.md`/`docs/CONTEXT.md` prose for labels with no
-   file signature ("player", "levels", "score" → `game`; "component", "layout", "animation", "design
-   system" → `gui`). Write the result as a marker (grammar below) so this never runs again. If
-   confidence is low, ask one plain-chat question before writing. Do **not** re-classify a repo that
-   already has a marker.
-4. **No `_domains/<label>/` fits** the classified label → offer to author a stub:
-   `_domains/<label>/{review,diagnose,profiling,testing}.md` (seeded), then set the marker to it. This
-   is how new labels are born; don't silently fall back to generic-only without offering the stub.
-5. **No label / user declines → write an empty marker.** Nothing applies here — a plain-text config
-   repo, a docs-only repo. Write `.claude/domain` as an empty file (zero rules). This is a classified
-   state, not an unclassified one: an empty marker means "classified, no labels apply" and stops step 3
-   from ever re-running here, the same way a populated marker does. No overlay loaded either way.
-   Graceful, never blocks.
+1. **Explicit argument.** The invocation named a label (e.g. `review game`) → use it.
+2. **The map.** Look up the repo's main-checkout path; resolve labels for the paths in
+   scope using the grammar below. This is the steady state.
+3. **Repo absent from the map, or you disagree with its line** → classify the repo, propose
+   the line in plain chat, and add it once the user confirms. Do not silently re-classify a
+   repo the map already answers for.
+4. **No `_domains/<label>/` fits** a label you want → offer to author a stub, then add the
+   label. This is how new labels are born; don't fall back to generic-only without offering.
+5. **A repo whose line has an empty label set** is *classified, nothing applies* — not
+   unclassified. Generic-only, no overlay, and step 3 does not re-run for it.
 
-## Marker grammar
+**A per-repo `.claude/domain` marker is no longer used.** Five existed, four were committed
+into their project repos, and one disagreed with the code it described. They were removed on
+2026-08-23. Two reasons the central map replaces them: a marker naming a private label
+discloses that label to anyone who clones the repo, and a worktree needs its parent's labels
+rather than a copy that drifts.
 
-`.claude/domain`, committed, one rule per line, first-token glob, colon, comma-separated labels:
+## Map grammar
+
+One block per repo. Absolute main-checkout path, then indented rules — first-token glob,
+colon, comma-separated labels. `**` is the repo-wide rule.
 
 ```
-App/**:     apple, mobile, gui, game
-Server/**:  go, backend
-**:         cli
+/Users/pierce/Projects/wedding:
+  tui/**: go, tui
+  **: cloudflare, node, tui, web
 ```
-
-An **empty file (zero rules)** is itself a valid classified state — it means this repo was
-classified and no label applies, not "not yet classified". Step 2 (Marker) still matches on an empty
-file: the marker exists, so `labels(scope_paths)` resolves to the empty set and generic-only runs,
-without falling through to step 3's classify-once. Distinguish this from a *missing* `.claude/domain`
-file, which is what sends resolution to step 3.
 
 Resolution:
 
 ```
 labels(scope_paths) =
-  ⋃ { rule.labels | rule ∈ marker, any(p matches rule.glob for p in scope_paths) }
+  ⋃ { rule.labels | rule ∈ block, any(p matches rule.glob for p in scope_paths) }
 ```
 
-`scope_paths` is the diff / target dir / file under discussion, never the whole repo. A repo with
-several targets (e.g. a mac app + an iOS app + a web dashboard) resolves to the labels of the code
-actually being worked on.
+`scope_paths` is the diff / target dir / file under discussion, never the whole repo. A repo
+with several targets (a mac app + an iOS app + a web dashboard) resolves to the labels of the
+code actually being worked on. **The `**` rule always applies**, so a scope rule adds to it
+rather than replacing it.
+
+A **worktree resolves to its main checkout** — `git rev-parse --absolute-git-dir`, strip
+`/.git/worktrees/<name>`. Labels describe a project, not a checkout of it.
+
+## Two roots
+
+A label's cells may live in either of two stores, and both are loaded:
+
+- **Public** — the store this file is in. Generic, shareable, names no person, host, service
+  or account.
+- **Private** — a second root outside this repo, holding labels and cell halves that must
+  not be published.
+
+The public store does not name which private labels exist, or describe the private root.
+Naming one would disclose the thing the split exists to prevent. The resolver that reads both
+lives with the private store, not here.
 
 ## Stacking, not layering
 
-Load `_domains/<label>/<engine>.md` for **every** matched label — there is no "platform first, domain
-on top" order, because both kinds of label are the same kind of thing now. A missing cell for a
-matched label is a no-op (see step 4 above for a missing *directory*; a missing *file* inside an
-existing directory is just silently skipped).
+Load `_domains/<label>/<engine>.md` for **every** matched label — there is no "platform
+first, domain on top" order. A missing cell for a matched label is a no-op.
 
 ## No precedence
 
-If two matched labels' cells disagree (e.g. `apple/review.md` and `gui/review.md` both carry motion
-guidance), there is no tiebreak. The engine emits a finding naming both files — ranking the cells
-would guard a duplication that should be removed instead.
+If two matched labels' cells disagree, there is no tiebreak. The engine emits a finding
+naming both files — ranking them would guard a duplication that should be removed instead.
+
+Two deliberate exceptions where cells overlap and that is correct, not a finding:
+
+- `gui` and `tui` both state interface fundamentals (hierarchy, feedback, error states).
+  They are siblings; `tui` explicitly does not inherit `gui`'s pointer, hover and motion
+  guidance, which is wrong in a terminal.
+- `desktop` always implies `gui`. A desktop application necessarily has a graphical
+  interface; a server that happens to run on a Mac is `backend` and nothing else.
+
+## `context.md` — the injected cell
+
+Every label may carry a `context.md`, capped at **120 words** and enforced by
+`hooks/domain-context-size-check.sh`. It is injected in full at session start for every repo
+whose labels include it, so it is a routing table, not a knowledge store: the two or three
+facts that must be true before the first turn, plus links to the sibling files that hold the
+depth. A label with nothing worth injecting simply has no `context.md`.
+
+A label that is the default for its axis deliberately has no cell — `tracker:github` is the
+example. A cell there would fire in most repos and say only what was already assumed.
 
 ## Vocabulary
 
-`apple, android, web, react, threejs, python, go, mobile, desktop, gui, cli, tui, backend, game,
-library, data`
+`admin, api, app-store, apple, backend, cli, cloudflare, container, desktop, docs-site,
+game, go, gui, mobile, node, python, react, rust, threejs, tui, tvos, web`
+
+Plus private labels, which are not listed here.
 
 ## Adding a label
 
-Create `_domains/<name>/` with the engine files that apply; the detector picks it up via the marker.
-No code change needed — engines already read `_domains/<resolved>/<engine>.md` and no-op when absent.
+Create `_domains/<name>/` with the engine cells that apply, add a `context.md` if something
+must be known up front, then add the label to the repos it applies to. No code change — the
+engines already read `_domains/<resolved>/<engine>.md` and no-op when absent.
 
-## Classifier heuristic (former `_platforms/_detect.md` signature table)
+## Classifier heuristic
 
-Used only at classify-once time (step 3 above), never as a runtime step:
+Used only when classifying a repo that the map does not answer for (step 3), never as a
+runtime step. **Read a declaration, not free text.** Every generation of this table that
+grepped prose produced false positives — a lockfile mentioning `react`, the word `Expo` in a
+comment, archetype templates describing other projects, and the word *electron* in a Unity
+audio file all produced wrong labels.
 
-| Signal in scope | Label |
+| Signal | Label |
 | --- | --- |
-| `*.swift`, `*.xcodeproj`, `*.xcworkspace`, `Package.swift`, `Info.plist` | `apple` |
-| `package.json` with `react` / `vue` / `svelte` / `next` / `vite`, or `*.tsx`/`*.jsx` | `web` |
-| `package.json` with `react` or `next` (dep), or `*.tsx`/`*.jsx` in scope | `react` (also implies `web`) |
-| `package.json` with `three` (dep), or `import ... from 'three'` in scope | `threejs` (also implies `web`) |
-| `wrangler.toml`, `wrangler.jsonc` | `cloudflare-workers` |
-| `pyproject.toml`, `setup.py`, `*.py` | `python` |
-| `go.mod` | `go` |
+| `*.xcodeproj` / `*.xcworkspace` / `Package.swift` / `project.yml`, depth ≤ 2 | `apple` |
+| `IPHONEOS_DEPLOYMENT_TARGET` in `*.yml` / `*.pbxproj` / `*.xcconfig` | `mobile` |
+| `TVOS_DEPLOYMENT_TARGET`, `appletvos`, `import TVUIKit` | `tvos` |
+| `import SwiftUI` / `AppKit` / `UIKit` in `*.swift` | `gui` |
+| `import AppKit` / `NSApplication` in `*.swift`; `electron` / `tauri` as an npm dep | `desktop` (implies `gui`) |
+| `bubbletea` / `tview` / `lipgloss` in `go.mod`; `ratatui` / `crossterm` in `Cargo.toml` | `tui` |
+| `react` as a direct npm dep | `react` |
+| `three` as a direct npm dep | `threejs` |
+| `react` / `vue` / `svelte` / `next` / `vite` / `astro` npm dep, or `index.html` | `web` |
+| `wrangler.*` | `cloudflare` (implies `web`) |
+| `.vitepress/` or `vitepress` npm dep | `docs-site` (does **not** imply `web`) |
+| `go.mod` / `Cargo.toml` / `pyproject.toml` / `package.json` | `go` / `rust` / `python` / `node` |
+| `cobra` / `clap` / `commander` / `typer` in the manifest | `cli` |
+| `gin` / `axum` / `express` / `fastapi` in the manifest | `backend` |
+| `Dockerfile` / `docker-compose.y*ml` | `container` |
+| `admin.toml` | `admin` |
+| `.beads/` present / absent | `tracker:beads` / `tracker:github` |
+
+Exclude from every content search: lockfiles, `go.sum`, `vendor/`, `node_modules/`, `Pods/`,
+`dist/`, `build/`, `tmp/`, `docs/`, `scripts/`, `archetypes/`, `templates/`, `examples/`,
+`fixtures/`, `testdata/`, `tests/`, `test/`, `spec/`, `__tests__/`, and all markdown.
+
+**The heuristic cannot see intent.** A renderer that draws over a video stream declares no
+GUI toolkit and is not a GUI; a repo full of templates is not the things it describes. When
+the signals are ambiguous, ask rather than guess.
