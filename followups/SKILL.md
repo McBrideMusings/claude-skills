@@ -1,6 +1,6 @@
 ---
 name: followups
-description: "Capture follow-up items — quick 'add a followup' captures and session-end generation (also invoked by /wrap-up) — filing them as issues on the repo's tracker (beads or GitHub), or to a local file when it has neither. Browsing, picking, or working an existing follow-up is `triage`, not this skill."
+description: "Capture follow-up items — quick 'add a followup' captures and session-end generation (also invoked by /wrap-up) — filing them as issues on the repo's tracker (beads or GitHub); a repo with neither halts and is offered `bd init`. Browsing, picking, or working an existing follow-up is `triage`, not this skill."
 ---
 
 Use when the user asks to add a follow-up ("remember to …", "file as a followup") or to generate/surface new follow-ups from the session (also invoked by `/wrap-up`). To **browse, pick, or start** an existing item, that's `triage` — a follow-up is just another tracked item triage reads. This skill only **creates** items.
@@ -18,33 +18,21 @@ Use when the user asks to add a follow-up ("remember to …", "file as a followu
 
 ## Where followups live
 
-`<repo-root>/tmp/claude/followups.md` — one file per repo, inside the project itself (gitignored).
+**On the repo's issue tracker, always.** A follow-up is an issue: `bd create` on beads, `gh issue create` on GitHub. There is no file.
 
-**The path is ABSOLUTE from the repo root — never a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `tmp/claude/followups.md` would land the file under whatever subdir the shell is in — a different, wrong location a later session won't find. Resolve the root in **one Bash call** — `git rev-parse --show-toplevel` — and capture the absolute result; append `/tmp/claude/followups.md`. If that errors/empty (not a git repo), use the absolute output of `pwd` as the root. Never nest `$(...)`. Every `mkdir`/`Write`/path MUST be the absolute `<root>/tmp/claude/followups.md`; if it doesn't start with `/`, it's the bug.
-
-Before writing: ensure `tmp/` is in the root `.gitignore` (Read it; if `tmp/` is absent, Edit to add `tmp/` on its own line). Then `mkdir -p <root>/tmp/claude` as a separate Bash call.
-
-## File format
-
-```markdown
-## <branch-name> — YYYY-MM-DD-HH-MM
-
-- **Title** — One sentence description.
-```
-
-Append-only for new items. Existing items are only moved to a `## Resolved` section during explicit Cleanup mode — never edited or deleted in place.
+A repo with neither backend **halts** — see [`../_tracker/_detect.md`](../_tracker/_detect.md) step 6. Say the repo has no tracker, offer `bd init`, and file nothing. Never write the items to a markdown list instead: a list nobody maintains is where follow-ups go to be forgotten, and it puts a file that must survive inside a tree that gets deleted.
 
 ---
 
 ## Modes
 
-This skill **captures** follow-ups — it creates tracked items. *Browsing, picking, and starting* a follow-up is `triage`'s job (a follow-up is just another tracked item triage reads across GitHub issues and the local followups file). So this skill has three modes, all about creating or tidying items:
+This skill **captures** follow-ups — it creates tracked items. *Browsing, picking, and starting* a follow-up is `triage`'s job (a follow-up is just another tracked item on the repo's tracker). So this skill has three modes, all about creating or tidying items:
 
 | Invocation | Mode |
 |---|---|
 | "add a followup: …", "remember to …", "file as a followup" | Add |
 | Invoked by `/wrap-up`, or "generate followups from this session" | Generate |
-| "clean up resolved", "move resolved followups" | Cleanup (local-file only) |
+| "clean up resolved", "move resolved followups" | Cleanup |
 
 **"show / list my followups", "what followups do I have", "let's work on a followup", "pick a followup"** → that is **`triage`**, not this skill. Hand off to it; don't list or start items here.
 
@@ -52,15 +40,14 @@ If ambiguous, assume **Add** (capture) — unless the user clearly wants to see 
 
 ### Add
 
-First resolve the destination with the **same rule as Generate** (see Step 2 under Generate): **a tracker exists → the item is an issue in it; no tracker → the local file.** A quick "remember to …" on a tracked repo becomes an issue, not a file entry.
+First resolve the destination with the **same rule as Generate** (see Step 2 under Generate): **a tracker exists → the item is an issue in it; no tracker → halt and offer `bd init`.** A quick "remember to …" on a tracked repo becomes an issue.
 
 - **`beads`** → dedup first against `bd list --all --json` (skip if the core idea already appears), then `bd create "<title>" -t task -d "<body>" --silent` with a provenance line in the body. If the item was discovered while working another issue, wire that provenance as a real edge: `--deps discovered-from:<id>`.
 - **`github`** → file it as an issue. Dedup first against `gh issue list --repo OWNER/REPO --state all --limit 50` (skip if the core idea already appears), then `gh issue create --repo OWNER/REPO` with the body via HEREDOC (never an inline quoted `--body`), including a provenance line. Same mechanics as Generate's Step 5 GitHub branch.
-- **`local`** → append a new dated section to the followups file with the current branch and timestamp, skipping items whose title or core idea already appears.
 
-### Cleanup (only when explicitly asked; local-file only)
+### Cleanup (only when explicitly asked)
 
-Relevant only when the backend resolved to `local` and items live in `followups.md`: move completed items to a `## Resolved` section at the bottom — never delete. On a beads or GitHub repo there's nothing to clean here — follow-ups are issues, and closing them is `/wrap-up`'s job.
+There is nothing to clean — follow-ups are issues, and closing them is `/wrap-up`'s job. Say so and route there.
 
 ---
 
@@ -78,7 +65,7 @@ Orient yourself:
 
 ### Step 2: Determine destination
 
-**A real tracker whenever the repo has one — owned or not.** The followups file is only a fallback for when the repo has neither beads nor a GitHub remote (or it isn't a git repo). That is the *single* reason to use the file.
+**A real tracker whenever the repo has one — owned or not.** A repo with neither beads nor a GitHub remote has no destination: halt and offer `bd init`.
 
 Run the resolution in [`../_tracker/_detect.md`](../_tracker/_detect.md):
 
@@ -86,7 +73,6 @@ Run the resolution in [`../_tracker/_detect.md`](../_tracker/_detect.md):
 - **`github`** → the destination is a `github.com[:/]OWNER/REPO` remote from `git remote -v`.
   - **One GitHub remote** → that `OWNER/REPO`.
   - **Several** (e.g. your fork plus a read-only upstream) → prefer the one you own: resolve your login once with `gh api user --jq .login` and pick the remote whose `OWNER` matches; if none match you, use the remote named `origin`.
-- **`local`** → `<repo-root>/tmp/claude/followups.md`.
 
 ### Step 3: Compile suggestions
 

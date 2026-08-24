@@ -5,7 +5,7 @@ stop at the first that answers. This is cheap — three shell calls at most — 
 invocation and reuse the answer for the rest of the run.
 
 **The backend is a domain label.** It lives in the same map as every other label, spelled
-`tracker:beads` / `tracker:github` / `tracker:local`, and resolves through
+`tracker:beads` / `tracker:github`, and resolves through
 [`../_domains/_detect.md`](../_domains/_detect.md). There is one detection system, not two. The
 steps below are how that label is *derived* when the map has no answer for a repo — the
 classify-once bootstrap, not a parallel runtime path. Once the map answers, it wins.
@@ -34,9 +34,19 @@ classify-once bootstrap, not a parallel runtime path. Once the map answers, it w
 5. **GitHub remote.** `git remote -v` contains a `github.com` remote **and** `gh auth status`
    exits 0 → **`github`**, read [`github.md`](github.md).
 
-6. **Neither** → **`local`**, read [`local.md`](local.md).
+6. **Neither** → **stop and say the repo has no tracker.** There is no file-based fallback: a
+   markdown list of follow-ups is a tracker nobody maintains, and work filed into one is work
+   that never gets picked up again. Offer `bd init` — beads is the default for a repo that
+   needs a tracker and has no reason to prefer GitHub — and do nothing else until it exists.
 
-Whatever steps 3–6 resolve, write it back to the map as `tracker:<backend>` so this never
+   ```
+   This repo has no issue tracker: no .beads/, no authenticated GitHub remote.
+   Run `bd init` to start one, or add a GitHub remote. Nothing was filed.
+   ```
+
+   A bare `go` in reply means `bd init`.
+
+Whatever steps 3–5 resolve, write it back to the map as `tracker:<backend>` so this never
 runs again for that repo.
 
 ## Mirror mode (beads + GitHub together)
@@ -102,13 +112,13 @@ orchestrator records) or have the repo run `bd init --server`. Read paths are un
 
 Not every verb exists on every backend. Where a skill's process depends on one that doesn't:
 
-| Capability | beads | github | local |
-| --- | --- | --- | --- |
-| Dependency graph, blocked/ready computation | native (`bd dep`, `bd ready`) | none — approximate from "Blocked by #N" prose | none |
-| Parent/child hierarchy | native (`--parent`, epics) | milestones + task lists | headings |
-| Comment thread | yes | yes | append to entry |
-| Pull requests | **no** — always use `gh pr` | yes | no |
-| Works offline | yes | no | yes |
+| Capability | beads | github |
+| --- | --- | --- |
+| Dependency graph, blocked/ready computation | native (`bd dep`, `bd ready`) | none — approximate from "Blocked by #N" prose |
+| Parent/child hierarchy | native (`--parent`, epics) | milestones + task lists |
+| Comment thread | yes | yes |
+| Pull requests | **no** — always use `gh pr` | yes |
+| Works offline | yes | no |
 
 When a skill needs a capability the resolved backend lacks, say so in one line and degrade to the
 nearest thing the table offers — never silently drop the step.

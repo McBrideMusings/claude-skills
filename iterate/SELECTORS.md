@@ -16,8 +16,8 @@ Selector forms (all match against **open** work only; dedupe by issue ID / by te
 | `label:<name>` (quote if it has spaces) | `bd list -l "<name>" --status open --json` → ordered by priority, then created. | `gh issue list --label "<name>" --state open --json number,title` → ordered ascending by number. |
 | `milestone:<name>` | Milestones are epics: find it with `bd list -t epic --json`, then `bd list --parent <epic-id> --status open --json`. | `gh issue list --milestone "<name>" --state open --json number,title` → ordered ascending by number. |
 | `ready` | `bd ready --json` → only unblocked work, in the backend's own priority order. **Prefer this selector on beads** — it is the one thing a flat tracker can't give you. | *No equivalent.* |
-| `followups` | Read `<repo-root>/tmp/claude/followups.md`; each unresolved entry is one **local item**. `<repo-root>` = absolute `git rev-parse --show-toplevel`. | Same. |
-| `papercuts` | Read `<repo-root>/tmp/claude/papercuts.md`; each entry is one **local item**. | Same. |
+| `followups` | Issues labelled `followup` on the resolved backend. There is no local followups file. | Same. |
+| `papercuts` | Read the path `"$HOME/.claude/tools/papercut" --path` prints; each entry is one **local item**. | Same. |
 
 Multiple selectors may be combined (e.g. `iterate 133 label:RN`); union them, dedupe, preserve first-seen order.
 

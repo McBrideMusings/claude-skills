@@ -123,7 +123,7 @@ TBD
 - **Non-standard at root `ROADMAP.md` / `PLAN.md` / `TODO.md`:**
   1. Read to see if it's actual roadmap content.
   2. **Yes:** `git mv <old-path> docs/ROADMAP.md` (or `docs/roadmap.md` to match if the `docs` skill prefers lowercase locally).
-  3. **TODO.md of small tasks** rather than roadmap-shaped content: *"This looks more like a follow-ups list than a roadmap. Want me to move the items into `<repo-root>/tmp/claude/followups.md` instead?"*
+  3. **TODO.md of small tasks** rather than roadmap-shaped content: *"This looks more like a follow-ups list than a roadmap. Want me to file the items on the tracker instead?"*
 - **Non-standard at `docs/roadmap/` (folder):** the `docs` skill's Phase 03 audits this — collapses to `docs/roadmap.md` unless 3+ active initiatives. Defer to docs.
 
 ### Stub

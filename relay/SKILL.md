@@ -50,7 +50,7 @@ Otherwise, build 2–3 candidates. Rank them on all four of these, not just the 
 - **What just landed** — the natural next slice of the thing that was finished.
 - **Cheap unblocker first** — a small piece of X that makes Y faster, even when Y is
   the stated goal. Say so explicitly when you rank one of these first.
-- **Tracker state** — open issues, dependency frontier, `followups.md`.
+- **Tracker state** — open issues, dependency frontier.
 
 ## Step 2 — the proposal
 

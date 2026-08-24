@@ -119,12 +119,6 @@ Resolve the backend once via [`../_tracker/_detect.md`](../_tracker/_detect.md).
 - Do NOT post a comment on issues unless the user explicitly asks ("comment on #123 that this is done").
 - In the session summary, list matches as **"Issues resolved by this session (not closed — owned by `<owner>`): #12, #34"** so the user can hand them off.
 
-### Followups file
-- The followups file lives at `<repo-root>/tmp/claude/followups.md`. Get `<repo-root>` via `git rev-parse --show-toplevel` as a **separate Bash call** — never nest `$(...)` (triggers a permission prompt). Use the Read tool to check if the file exists; do NOT use `cat ... || echo ...` (compound triggers a permission prompt).
-- If the file exists, scan items in prior dated sections for any that this session's work **completed, reversed, or obsoleted** (same two cases as GitHub issues above).
-- For each match, propose moving the item to a `## Resolved` section at the bottom of the file (the followups file is append-only — items get sectioned, never deleted). Show the user the proposed moves and ask before applying.
-- If the file doesn't exist, skip silently.
-
 ### Roadmap / TODO documents
 - Check for roadmap or TODO files: `ROADMAP.md`, `TODO.md`, `docs/roadmap.md`, or similar
 - If found: mark completed items, update status, add notes on what was accomplished
@@ -216,7 +210,7 @@ Parse the reply into per-item dispositions; **unmentioned items default to skip.
 
 *Act pass* — only after every disposition is recorded, execute by group:
 1. **Fix now** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change.
-2. **File** — batch-file issues on the resolved backend (`bd create`, `gh issue create`, or `followups.md` appends when neither exists); capture the new IDs/URLs for Step B.
+2. **File** — batch-file issues on the resolved backend (`bd create` or `gh issue create`); capture the new IDs/URLs for Step B. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
 3. **Skip** — drop.
 
 **⛔ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or skipped, and `git status` is clean.**

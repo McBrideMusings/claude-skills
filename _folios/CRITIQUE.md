@@ -14,9 +14,23 @@ The folio carries its own instruments. Use them before your eyes.
 1. **Contrast, both themes.** Press `c`, read the toast, switch theme, press `c` again. The target is
    "All N text elements pass WCAG AA" twice. Any failure names its own ratio; fix the value, don't
    argue with the number.
-2. **Screenshot at 1280 wide, and at 390 if the folio is meant to respond.** A prototype gets every
-   slide; a picker gets every variant; anything themed gets both themes. This is one batched round,
-   not a trip per surface.
+2. **Screenshot at 1280 wide, and at 390 if the folio is meant to respond.** A picker gets every
+   variant; anything themed gets both themes. This is one batched round, not a trip per surface.
+
+   **Use headless Chrome, not Playwright's screenshot tool.** Two separate failures make Playwright
+   the wrong instrument here: it refuses `file://` outright, and on a freshly built folio served over
+   http its `browser_take_screenshot` times out at 5000ms — every attempt, always after logging
+   "fonts loaded", with the page rendering fine and the console clean. Chrome takes the same shot in
+   one call and needs no server:
+
+   ```bash
+   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
+     --screenshot="<abs-out>.png" --window-size=1280,900 --hide-scrollbars "<abs-url-or-file-path>"
+   ```
+
+   It prints two `task_policy_set` errors to stderr on macOS and writes the file anyway; the line to
+   check for is `N bytes written to file`. Drive a prototype's variants and state axes through the
+   URL (`?r=`, `?v=`, and one param per axis) so each shot is one command with no clicking.
 
 ## Then read the screenshot against these
 

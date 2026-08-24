@@ -1,11 +1,11 @@
 ---
 name: triage
-description: "Pick the next work item from the repo's issue backend (beads or GitHub) or prior-session follow-ups. Assesses project phase (early vs mature) and recommends one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', 'pick next issue', start-of-session planning."
+description: "Pick the next work item from the repo's issue backend (beads or GitHub). Assesses project phase (early vs mature) and recommends one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', 'pick next issue', start-of-session planning."
 ---
 
 # Triage
 
-Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads two sources: GitHub issues and `<repo-root>/tmp/claude/followups.md`.
+Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
 **Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (the top recommendation). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
 
@@ -27,7 +27,7 @@ User may pass a GitHub URL:
 | `github.com/owner/repo/issues` or `github.com/owner/repo` | All open issues |
 | `github.com/orgs/owner/projects/N` | Project board items |
 
-**No URL** → default to the current repo, whichever backend owns its issues (resolve via [`../_tracker/_detect.md`](../_tracker/_detect.md); on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). Also check `<repo-root>/tmp/claude/followups.md` for prior-session items. If detection fails, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
+**No URL** → default to the current repo, whichever backend owns its issues (resolve via [`../_tracker/_detect.md`](../_tracker/_detect.md); on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per [`../_tracker/_detect.md`](../_tracker/_detect.md) step 6. If detection fails for another reason, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
 
 **The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`triage label:auth`, `triage p0`), resolved against the `bd` flags in Phase 02.
 
@@ -71,15 +71,13 @@ On auth/repo-not-found errors (or `bd` missing with a `.beads/` present): report
 
 **Docs** (if in local repo): read `docs/PRD.md` (what the project is) and `docs/roadmap.md` (Now / Next / Later / Deferred). If neither default path exists, glob `**/PRD.md` and `**/roadmap.md` once before giving up. Use whichever exist; if both, use both as project-phase inputs.
 
-**Followups file** — if `<repo-root>/tmp/claude/followups.md` exists, read its unresolved items. Treat each unresolved item as a singleton candidate that enters Phase 06 scoring alongside GitHub issues (no labels, project-phase tilt applied as if bug/feature). Classify as `bug` if the item names a defect, regression, broken behavior, or starts with "fix"; otherwise classify as `feature`. Items already in the `## Resolved` section are ignored.
-
 ### Phase 03 — Off-load Analysis to a Haiku Sub-Agent
 
 Phases 04, 05, and 06 (project-phase assessment, grouping, scoring/ranking) are all mechanical — pure analysis on data the parent already has. Hand them to a Haiku sub-agent so the issue bodies, comments, and roadmap text stay out of parent context.
 
 Brief (treat the rules in Phases 04–06 below as the sub-agent's brief, not the parent's own work):
 
-> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees`) or beads' (`id, title, status, priority, issue_type, created_at, dependency_count, comment_count`; labels and body come from `bd show`). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; (b) the contents of `docs/PRD.md` and `docs/roadmap.md` if present; (c) the contents of `<repo-root>/tmp/claude/followups.md` if present.
+> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees`) or beads' (`id, title, status, priority, issue_type, created_at, dependency_count, comment_count`; labels and body come from `bd show`). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; (b) the contents of `docs/PRD.md` and `docs/roadmap.md` if present.
 >
 > Do three things and return a compact JSON result:
 >

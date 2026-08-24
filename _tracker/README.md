@@ -19,8 +19,11 @@ _tracker/
   labels.md     <- the label schema, backend-independent: area: / mode: / platform:
   beads.md      <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   github.md     <- verb table for GitHub (`gh`)
-  local.md      <- verb table for the no-remote markdown fallback
 ```
+
+There is deliberately no file-based fallback. A repo with neither backend stops and offers
+`bd init`; it does not get a markdown list. A tracker nobody maintains collects work that is
+never picked up again, and it puts a must-not-delete file inside a disposable tree.
 
 ## Labels are backend-independent
 
@@ -38,7 +41,7 @@ invents a bare one.
 | `implement` | show, claim, close, comment | one item start→finish |
 | `iterate` / `orchestrate` | list, ready, claim, close | selector resolution lives in `iterate/SELECTORS.md` |
 | `iron-out` | list, create, dep, label | files open questions, wires blockers |
-| `followups` | create, list | falls back to `local.md` only when neither backend resolves |
+| `followups` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |
 | `wrap-up` | close, comment, list | plus PR work, which is always `gh` |
 | `review` | comment, create | PR review flow is always `gh` (see below) |

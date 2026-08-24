@@ -86,14 +86,12 @@ their repo. Ask once:
 Same question, shorter, since there's nothing to migrate:
 
 > No issue tracker here. Beads works with no remote and no account, and gives a dependency-aware
-> ready queue. Run `bd init`? (yes / no — keep using `tmp/claude/followups.md`)
+> ready queue. Run `bd init`? (yes / no — this repo stays without a tracker)
 
 - **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`, then apply the JSONL export
-  standard above. If
-  `<repo-root>/tmp/claude/followups.md` exists with open items, offer to import them —
-  one `bd create "<title>" -t task` per unchecked item — and move each imported item into the
-  file's `## Resolved` section with the new bead ID appended, so nothing is tracked twice.
-- **no** → record `local`.
+  standard above.
+- **no** → record that the repo has no tracker. Every skill that files work will halt on it
+  until one exists; there is no file-based fallback.
 
 `--skip-agents` is deliberate: this repo's agent instructions live in `CLAUDE.md`, and the bd verb
 tables live in `_tracker/beads.md`. Don't let `bd init` drop an unasked-for `AGENTS.md` into a
@@ -114,7 +112,7 @@ One of these four bodies, **verbatim** — the wording is load-bearing:
 - ``beads (prefix <p>) — database syncs to the git origin (`refs/dolt/data`). GitHub Issues mirror: ON via `bd github sync`.``
 - ``beads (prefix <p>) — database syncs to the git origin (`refs/dolt/data`). GitHub Issues mirror: OFF.``
 - `GitHub issues via gh`
-- `Local markdown in <repo-root>/tmp/claude/followups.md (no GitHub remote / gh not authed at bootstrap time)`
+- `None — no beads database and no authenticated GitHub remote at bootstrap time; run bd init`
 
 ⛔ **Never write "local only" or a bare "no GitHub mirror" for a beads repo.** Both read as "keep
 the issue data off GitHub," which is the opposite of how beads works — the database always

@@ -34,7 +34,7 @@ Every issue has a title. In everything the user reads — the queue, an intervie
 
 ## Scope
 
-Selector forms are shared with `iterate` — one table, in [../iterate/SELECTORS.md](../iterate/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `iron-out` = every open issue in the current repo. Local items (followups / papercuts) are judged like issues; their "body" is the entry line, and resolving one rewrites that line in its source file.
+Selector forms are shared with `iterate` — one table, in [../iterate/SELECTORS.md](../iterate/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `iron-out` = every open issue in the current repo. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
 
 **Dependencies** are a `Blocked by #<n>` line in the body (one per blocker), plus GitHub's native `blockedBy`. An item is unblocked when every blocker is closed.
 

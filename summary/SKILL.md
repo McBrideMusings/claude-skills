@@ -181,12 +181,6 @@ Brief (substitute the `<diff-base>` resolved in Phase 03 — usually `origin/<ba
 
 > "Build a structured digest of the changes on this branch vs `<diff-base>`. Run: `git log --oneline <diff-base>..HEAD`, `git diff <diff-base> --stat`, `git diff <diff-base> -- '*.md' '*.json' | head -200`. Read a representative sample of changed files — focus on entry points, new modules, key types. Don't read every file; use the stat output to identify clusters. Return a structured list grouped by logical area of work (not by file or commit), naming real file paths. Aim for the level of detail a PR description needs. Under 600 words."
 
-Before spawning the sub-agent, resolve the followups path in **two separate Bash calls** — never nest `$(...)` (triggers a permission prompt):
-1. `git rev-parse --show-toplevel` → get the repo root path
-2. From that result, derive: `<repo-root>/tmp/claude/followups.md`
-
-Inject the resolved absolute path into the brief and ask the sub-agent to skim it for the most recent session section if the file exists.
-
 ### Phase 05 — Write the Summary
 
 Use your own session context + the sub-agent's digest + (in branch-scoped mode, if it exists) the prior summary file resolved in Phase 01.
