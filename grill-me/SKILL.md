@@ -113,7 +113,7 @@ Shared understanding is the goal, not an artifact. Stop when there are no unreso
 
 If a written record is useful at the end, offer it — don't assume:
 
-- Short-lived implementation plan → `<repo-root>/tmp/claude/plans/`
+- Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
 - Durable product spec → invoke `/to-spec` to synthesize a PRD (`docs/PRD.md`) from the conversation. (`/to-spec` owns spec generation; don't write the PRD by hand here.)
 
 Glossary entries and ADRs are captured *inline* during the session — no end-of-session sweep needed.

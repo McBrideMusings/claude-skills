@@ -72,7 +72,7 @@ worker's job; teardown is not, because a session cannot outlive its own cwd. Del
 directory it is running in and every shell hook afterwards fails to spawn with `ENOENT` on
 `posix_spawn` before reaching its first line, so the PreToolUse, PostToolUse and Stop guards
 are silently skipped for the rest of that session — non-blocking failures, so nothing stops.
-It also kills the scratchpad, a symlink into `<cwd>/tmp/claude`. `no-self-delete-guard.py`
+`no-self-delete-guard.py`
 refuses the command; this line is why.
 
 **The exception is work that only reads.** A build, a test run, a log tail, a probe, a

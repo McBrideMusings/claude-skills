@@ -11,8 +11,8 @@ Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The
 ```bash
 "$HOME/.claude/tools/explainer" build \
   --title "Architecture review — {repo name}" \
-  --fragment <repo-root>/tmp/claude/explainers/<slug>.body.html \
-  --out <repo-root>/tmp/claude/explainers/<slug>.html
+  --fragment /private/tmp/claude/<repo-slug>/explainers/<slug>.body.html \
+  --out /private/tmp/claude/<repo-slug>/explainers/<slug>.html
 ```
 
 (Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, so the hermetic rule is enforced rather than remembered. Every path absolute — resolve the repo root with `git rev-parse --show-toplevel` in its own Bash call.

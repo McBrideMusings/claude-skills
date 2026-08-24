@@ -51,14 +51,14 @@ The shape is the *mechanism*. The domain is the *mode of software* — it says w
 
 ## Naming and versions — every shape, every round
 
-A prototype topic gets **one kebab-case slug naming what the prototype is for**, chosen on the first round and never changed: `wheelhouse-nav`, `settings-screen`, `queue-backend`. Everything for that topic lives in `<repo-root>/tmp/claude/spikes/<slug>/`.
+A prototype topic gets **one kebab-case slug naming what the prototype is for**, chosen on the first round and never changed: `wheelhouse-nav`, `settings-screen`, `queue-backend`. Everything for that topic lives in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`.
 
 **UI prototypes are one canonical file, named for the slug, that accumulates rounds.** Logic and compare prototypes are code, so they keep one directory per round:
 
 ```
-tmp/claude/spikes/wheelhouse-nav/wheelhouse-nav.html   # UI: ONE file, every round inside it
-tmp/claude/spikes/queue-backend/v1/run.ts              # logic & compare: one dir per round
-tmp/claude/spikes/queue-backend/v2/run.ts
+/private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav/wheelhouse-nav.html   # UI: ONE file, every round inside it
+/private/tmp/claude/<repo-slug>/spikes/queue-backend/v1/run.ts              # logic & compare: one dir per round
+/private/tmp/claude/<repo-slug>/spikes/queue-backend/v2/run.ts
 ```
 
 For UI, the round lives **inside** the file, not in its name: `spike build --round 2` stamps this round's variants, carries the earlier rounds forward, and adds a dimmed round chip in the bottom-right corner that expands into the version list on click. The file is opened at `<slug>.html` forever — the same URL every round, so a bookmark never goes stale and nothing has to be `ls`-ed to find the newest.
@@ -77,9 +77,9 @@ Variant names *inside* a round stay descriptive — "Quiet", "Editorial", "Dense
 
 ## Rules for all three shapes
 
-1. **The artifact never lives in production files.** Everything is written under `<repo-root>/tmp/claude/spikes/<slug>/` (gitignored). No new route, no edit to an existing page, no entry added to `package.json` or the task runner. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real file.
+1. **The artifact never lives in production files.** Everything is written under `/private/tmp/claude/<repo-slug>/spikes/<slug>/` (gitignored). No new route, no edit to an existing page, no entry added to `package.json` or the task runner. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real file.
    Domain exception: a surface that can't be a file (a Roblox Place) uses the scratch surface named in its domain cell, under the same "throwaway, never production" rule.
-2. **One command, or one double-click.** UI opens directly in a browser — the `spike` build step is agent-side, and what the user gets is still a single self-contained file. Logic and compare run with the project's existing runtime straight off the path — `bun tmp/claude/spikes/queue/run.ts` — never by registering a script somewhere real.
+2. **One command, or one double-click.** UI opens directly in a browser — the `spike` build step is agent-side, and what the user gets is still a single self-contained file. Logic and compare run with the project's existing runtime straight off the path — `bun /private/tmp/claude/<repo-slug>/spikes/queue/run.ts` — never by registering a script somewhere real.
 3. **No persistence by default.** State is in memory. Persistence is what the prototype is *checking*, not something it depends on. If the question is about a DB, use a scratch file inside the prototype directory.
 4. **Skip the polish.** No tests, no error handling beyond what makes it runnable, no abstractions, no "what if we later want".
 5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the full relevant state so the user can see what changed.
@@ -106,18 +106,18 @@ Picking a winner needs no verb — say it in chat ("go with Dense") and the prom
 
 **Load [`show-shape`](../show-shape/SKILL.md) via the Skill tool before writing up which version won and what to build from it.** The verdict is a plan — it says what the real implementation should look like — and it is worth more when it carries the winning version's actual signatures and call shape than when it says "version B felt better".
 
-The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in `docs/adr/`, a tracked issue) along with the question it was answering and which version won — if the user is around, that's a quick conversation; if not, leave `NOTES.md` in `<repo-root>/tmp/claude/spikes/<slug>/` with the verdict blank. Then delete the whole topic directory, every version with it.
+The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in `docs/adr/`, a tracked issue) along with the question it was answering and which version won — if the user is around, that's a quick conversation; if not, leave `NOTES.md` in `/private/tmp/claude/<repo-slug>/spikes/<slug>/` with the verdict blank. Then delete the whole topic directory, every version with it.
 
 ## Keeping one
 
-Ephemeral by default — `tmp/claude/spikes/` is age-pruned. If the user asks to keep it,
+Ephemeral by default — `/private/tmp/claude/<repo-slug>/spikes/` is age-pruned. If the user asks to keep it,
 move it to `<repo-root>/docs/spikes/` inside a repo, or `~/spikes/` outside one. Don't
 auto-keep.
 
 **Never invent a second word for the store.** Everything this skill writes goes in
-`tmp/claude/spikes/`, kept builds in `docs/spikes/`. Not `prototypes/`, not `mockups/`,
+`/private/tmp/claude/<repo-slug>/spikes/`, kept builds in `docs/spikes/`. Not `prototypes/`, not `mockups/`,
 not `artifacts/`, not `folios/` — the tool is `spike`, so the directory is `spikes`,
-everywhere, no exceptions. (`explain` owns the parallel pair, `tmp/claude/explainers/`
+everywhere, no exceptions. (`explain` owns the parallel pair, `/private/tmp/claude/<repo-slug>/explainers/`
 and `docs/explainers/`.)
 
 ## Tickets from a prototype

@@ -79,9 +79,9 @@ vocabulary, one comment layer, two front doors.
 
 | Skill | Tool | Kind | Store |
 |---|---|---|---|
-| `explain` | `explainer` | `explainer` | `tmp/claude/explainers/`, kept in `docs/explainers/` |
+| `explain` | `explainer` | `explainer` | `/private/tmp/claude/<repo-slug>/explainers/`, kept in `docs/explainers/` |
 | `improve` (architecture review, survey report) | `explainer` | `explainer` | same as `explain` — it routes through that skill |
-| `spike` (UI shape, and COMPARE's visual branch) | `spike` | `prototype` | `tmp/claude/spikes/`, kept in `docs/spikes/` |
+| `spike` (UI shape, and COMPARE's visual branch) | `spike` | `prototype` | `/private/tmp/claude/<repo-slug>/spikes/`, kept in `docs/spikes/` |
 | `gui` (sketch mode, escalated) | `spike` | `wireframe` | same as `spike` — it routes through that skill |
 
 All four read `CONTRACT.md` for the class vocabulary, and `CRITIQUE.md` at the same point:

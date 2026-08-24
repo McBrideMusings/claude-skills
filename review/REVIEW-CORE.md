@@ -93,7 +93,7 @@ Reached only via explicit `review repo` or an accepted offer above. The target i
 **Repo mode also adds two things a diff review doesn't need — both scoped to repo mode only:**
 
 - **Dependency ordering.** A whole-codebase audit is a backlog to sequence, not a merge gate, so repo mode replaces the default severity-then-path order with **confidence-weighted impact, dependency-first**: a finding that other findings sit on top of (a structural condition several symptoms share, a contract others depend on) comes before the things it enables, and everything else falls in impact order. Forward *"note which other findings this one blocks or is blocked by, and whether it can proceed independently"* into each Phase 04 sub-agent, and carry a **Blocks / Independent** field on every finding — independent ones are the parallelizable set, so mark them as such. **Never rank by effort** — no S/M/L buckets, no hours, no `impact ÷ effort` (RULE 1 in [SKILL.md](SKILL.md) binds here too): ordering says what to do *first*, never what to skip, and an expensive fix outranks a cheap one whenever more depends on it. Diff mode ignores this entirely (severity-then-path stays).
-- **Considered-and-rejected ledger.** Because repo mode re-runs over the same codebase, persist deliberate rejections so a later run doesn't re-audit settled ground. The ledger lives at `<root>/tmp/claude/review-rejected.md` (resolve `<root>` absolute via `git rev-parse --show-toplevel`; append-only; **exempt from tmp age-pruning** — it's a ledger, not a scratch report). *Before* Phase 05, read it if present and drop any incoming finding already listed (match on file + one-line description). *After* the report, append the findings this run deliberately rejected (not every sub-75 drop — only the ones a future run would otherwise re-surface), one line each with the rationale. The rationale must be one of RULE 1's three reasons — **by design / correct as-is**, **divergent work (name the other concern)**, or **blocked on a decision** — never "not worth doing"; a finding rejected for size is not rejected, it is unfinished, and it stays out of the ledger. Diff mode never reads or writes this ledger.
+- **Considered-and-rejected ledger.** Because repo mode re-runs over the same codebase, persist deliberate rejections so a later run doesn't re-audit settled ground. The ledger lives at `<repo-root>/.claude/review-rejected.md` — **not** under `/private/tmp`, which deletes anything untouched for three days, and this ledger has to survive between runs weeks apart. Resolve `<repo-root>` absolute via `git rev-parse --show-toplevel`; append-only. *Before* Phase 05, read it if present and drop any incoming finding already listed (match on file + one-line description). *After* the report, append the findings this run deliberately rejected (not every sub-75 drop — only the ones a future run would otherwise re-surface), one line each with the rationale. The rationale must be one of RULE 1's three reasons — **by design / correct as-is**, **divergent work (name the other concern)**, or **blocked on a decision** — never "not worth doing"; a finding rejected for size is not rejected, it is unfinished, and it stays out of the ledger. Diff mode never reads or writes this ledger.
 
 ### Phase 02 — Find CLAUDE.md Context
 
@@ -105,7 +105,7 @@ Use a Haiku agent to locate the root `CLAUDE.md` and any `CLAUDE.md` files in di
 
 - Issue references in the commit messages (`#123`, `Closes #45`, `Fixes #67`, or a beads ID like `myproj-zb8`) — fetch via `bd show <id> --json` or `gh issue view <N>`, per [`../_tracker/_detect.md`](../_tracker/_detect.md).
 - A path passed as a second argument or in the conversation context.
-- A PRD / plan / spec file matching the branch name or feature, in: `docs/PRD.md`, `docs/PRD-*.md`, `docs/specs/`, `tmp/claude/plans/*<branch-slug>*.md`, `.scratch/`.
+- A PRD / plan / spec file matching the branch name or feature, in: `docs/PRD.md`, `docs/PRD-*.md`, `docs/specs/`, `/private/tmp/claude/<repo-slug>/plans/*<branch-slug>*.md`, `.scratch/`.
 - If nothing found, briefly ask the user where the spec is. If they say "no spec", the Spec sub-agent will skip and report "no spec available".
 
 ### Phase 03b — Detect Draft-PR Status
@@ -250,7 +250,7 @@ Never `git stash`, never `git checkout` in `<root>`, never write inside the repo
 
 **Targeted reproduction is the default, not the fallback.** Most repos this skill runs in have no suite, or one that never touches the changed path — and a suite that never exercises the finding's code reports "fine" for code it never ran. Go straight to the input the finding named:
 
-1. Write one throwaway script to `/private/tmp/claude-review-verify/<slug>/repro/repro-<n>.<ext>` — **never inside the repo, never under `<repo>/tmp/claude/`.** It invokes the real module from the worktree (`PYTHONPATH=<worktree>`, `NODE_PATH=<worktree>`, or a scoped subshell), feeds it the exact input from the Bites line, and prints the actual value next to the value the finding says it should be.
+1. Write one throwaway script to `/private/tmp/claude-review-verify/<slug>/repro/repro-<n>.<ext>` — **never inside the repo, never under `/private/tmp/claude/<repo-slug>/`.** It invokes the real module from the worktree (`PYTHONPATH=<worktree>`, `NODE_PATH=<worktree>`, or a scoped subshell), feeds it the exact input from the Bites line, and prints the actual value next to the value the finding says it should be.
 2. Run it against the **unmodified** worktree.
    - **Does not exhibit the claimed failure** → **`not-reproduced`**, score 0. This is the highest-yield rule in the phase: it kills the "under concurrent access this could double-count" class of finding that nobody can ever demonstrate.
    - **Exhibits it** → **`reproduced`**, floor 90. The printed values become the finding's **Verified** line.
@@ -315,9 +315,9 @@ Runs only for findings that came back `reproduced` in Phase 05b and got a mechan
 
 ### Phase 07 — Write the Report
 
-- Filename: `/Users/pierce/.claude-tmp/claude-review-YYYY-MM-DD-HHMMSS.md` using current local time. No `mkdir` needed — `/Users/pierce/.claude-tmp/` is a persistent directory. No pruning needed; files are tiny.
+- Filename: `/private/tmp/claude/reviews/claude-review-YYYY-MM-DD-HHMMSS.md` using current local time. `mkdir -p /private/tmp/claude/reviews` first. No pruning needed — macOS deletes anything under `/private/tmp` untouched for three days.
 - Write the review using the format below. **Carry the coverage line** — which lenses ran, which were gated off and why, which failed. Track this from Phase 04 onward; it cannot be reconstructed afterwards.
-- Print the full review body to chat, then follow with a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Review written to /Users/pierce/.claude-tmp/claude-review-2026-05-05-143022.md`
+- Print the full review body to chat, then follow with a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Review written to /private/tmp/claude/reviews/claude-review-2026-05-05-143022.md`
 
 ## File format
 

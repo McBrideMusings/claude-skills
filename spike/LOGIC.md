@@ -15,8 +15,8 @@ approaches should we use", where you want measurements rather than something to 
 
 ## The artifact
 
-`<repo-root>/tmp/claude/prototypes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
-the path with the project's existing runtime (`bun tmp/claude/prototypes/scheduler/v1/run.ts`). The
+`/private/tmp/claude/<repo-slug>/prototypes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
+the path with the project's existing runtime (`bun /private/tmp/claude/<repo-slug>/prototypes/scheduler/v1/run.ts`). The
 slug names what's being prototyped and never changes; each new round is the next `vN` and earlier
 rounds stay put (see SKILL.md "Naming and versions"). No production file is touched and no script is
 registered anywhere real; the whole `<slug>/` tree is deleted when the question is answered.
@@ -65,7 +65,7 @@ The whole frame fits one screen.
 ### Phase 05 — Make It Runnable in One Command
 
 One command, straight off the prototype path, using a runtime the project already has — `bun
-tmp/claude/prototypes/scheduler/run.ts`, `python tmp/claude/prototypes/scheduler/run.py`. Don't
+/private/tmp/claude/<repo-slug>/prototypes/scheduler/run.ts`, `python /private/tmp/claude/<repo-slug>/prototypes/scheduler/run.py`. Don't
 register it in `admin.toml`, `package.json`, a `Makefile`, or any other real file: the prototype is
 about to be deleted, and a stale task entry outlives it. Hand the user the full command; they don't
 need to remember it, they need to paste it once.

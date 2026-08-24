@@ -32,15 +32,15 @@ numbers and the shape of the code side by side.
 
 ## The artifact
 
-`<repo-root>/tmp/claude/prototypes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
-the path with the project's existing runtime (`bun tmp/claude/prototypes/queue/v1/run.ts`, `python
-tmp/claude/prototypes/queue/v1/run.py`). The slug names what's being compared and never changes; each
+`/private/tmp/claude/<repo-slug>/prototypes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
+the path with the project's existing runtime (`bun /private/tmp/claude/<repo-slug>/prototypes/queue/v1/run.ts`, `python
+/private/tmp/claude/<repo-slug>/prototypes/queue/v1/run.py`). The slug names what's being compared and never changes; each
 new round is the next `vN` and earlier rounds stay put (see SKILL.md "Naming and versions"). No script
 registered in `package.json` or the task runner, no production file touched, nothing in the repo
 importing it.
 
 ```
-tmp/claude/prototypes/<slug>/v<N>/
+/private/tmp/claude/<repo-slug>/prototypes/<slug>/v<N>/
   QUESTION.md      <- the question, the fixture, and what would settle it
   fixture.<ext>    <- the input both implementations see, identical
   a-<name>.<ext>   <- implementation A, named for the approach, not the letter

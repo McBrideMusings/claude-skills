@@ -46,15 +46,15 @@ For each reference:
 - If it's a URL, shallow clone to a scratch directory:
 
   ```bash
-  mkdir -p <repo-root>/tmp/claude/repo-analysis
-  git clone --depth 1 <url> <repo-root>/tmp/claude/repo-analysis/<name>
+  mkdir -p /private/tmp/claude/<repo-slug>/repo-analysis
+  git clone --depth 1 <url> /private/tmp/claude/<repo-slug>/repo-analysis/<name>
   ```
 - If it's a local path, use it directly. Don't copy.
 - For repos larger than ~500MB where only one subsystem matters, sparse-checkout:
 
   ```bash
-  git clone --depth 1 --filter=blob:none --sparse <url> <repo-root>/tmp/claude/repo-analysis/<name>
-  git -C <repo-root>/tmp/claude/repo-analysis/<name> sparse-checkout set <subdir>
+  git clone --depth 1 --filter=blob:none --sparse <url> /private/tmp/claude/<repo-slug>/repo-analysis/<name>
+  git -C /private/tmp/claude/<repo-slug>/repo-analysis/<name> sparse-checkout set <subdir>
   ```
 
 ### Phase 03 — Map subsystems
@@ -119,7 +119,7 @@ If a finding doesn't clearly fit one bucket, say so. Let the user decide.
 
 ### Phase 06 — Produce the report
 
-Write to `<root>/tmp/claude/repo-analysis-<ref-name>.md`, where `<ref-name>` is a short slug naming the reference repo(s) — e.g. `repo-analysis-cmux.md`, or `repo-analysis-hlsjs-shaka.md` for multiple references. Never write to a bare `repo-analysis.md`: each analysis gets its own file, so a later run against a different reference never overwrites an earlier report. If the exact target filename already exists (a re-run against the same reference), overwrite it. Resolve `<root>` to an absolute path via `git rev-parse --show-toplevel` in its own Bash call (fallback: absolute `pwd` if not a git repo) — every `mkdir`/`Write` path must start with `/` or it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent), then `mkdir -p <root>/tmp/claude` before writing. ALWAYS use this exact structure:
+Write to `/private/tmp/claude/<repo-slug>/repo-analysis-<ref-name>.md`, where `<ref-name>` is a short slug naming the reference repo(s) — e.g. `repo-analysis-cmux.md`, or `repo-analysis-hlsjs-shaka.md` for multiple references. Never write to a bare `repo-analysis.md`: each analysis gets its own file, so a later run against a different reference never overwrites an earlier report. If the exact target filename already exists (a re-run against the same reference), overwrite it. Resolve `<root>` to an absolute path via `git rev-parse --show-toplevel` in its own Bash call (fallback: absolute `pwd` if not a git repo) — every `mkdir`/`Write` path must start with `/` or it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent), then `mkdir -p /private/tmp/claude/<repo-slug>` before writing. ALWAYS use this exact structure:
 
 ```markdown
 # Cross-Repo Analysis: [user's subsystem] vs [reference(s)]

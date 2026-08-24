@@ -10,8 +10,8 @@ What you write is a **body fragment**: real content, nothing else. No `<!DOCTYPE
 ```bash
 "$HOME/.claude/tools/explainer" build \
   --title "How statusline auth works" \
-  --fragment /abs/repo/tmp/claude/explainers/statusline-auth.body.html \
-  --out /abs/repo/tmp/claude/explainers/statusline-auth.html
+  --fragment /private/tmp/claude/<repo-slug>/explainers/statusline-auth.body.html \
+  --out /private/tmp/claude/<repo-slug>/explainers/statusline-auth.html
 ```
 
 A prototype or a wireframe:
@@ -20,8 +20,8 @@ A prototype or a wireframe:
 "$HOME/.claude/tools/spike" build \
   --kind prototype \
   --title "Wheelhouse nav" \
-  --fragment /abs/repo/tmp/claude/spikes/wheelhouse-nav.body.html \
-  --out /abs/repo/tmp/claude/spikes/wheelhouse-nav.html
+  --fragment /private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav.body.html \
+  --out /private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav.html
 ```
 
 `explainer` takes no `--kind` — it has exactly one look. Everything below that mentions a
@@ -38,7 +38,7 @@ contingency that shells to `python3 -m http.server`; you almost never need it �
 inline modules and blob workers fine, and a hermetic folio never calls `fetch`.
 
 **Every path absolute.** Resolve the repo root in its own Bash call (`git rev-parse --show-toplevel`,
-falling back to absolute `pwd`) and build `<root>/tmp/claude/…` from it. A path that doesn't start with
+falling back to absolute `pwd`) and build `/private/tmp/claude/<repo-slug>/…` from it. A path that doesn't start with
 `/` is the bug.
 
 ## The three kinds
@@ -281,8 +281,8 @@ round is a rebuild of that same path with `--round N`:
 ```bash
 spike build --kind prototype --picker switch --round 2 \
   --title "Branches Pane" \
-  --fragment <root>/tmp/claude/folios/branches-pane-v2.body.html \
-  --out <root>/tmp/claude/prototypes/branches-pane/branches-pane.html
+  --fragment /private/tmp/claude/<repo-slug>/folios/branches-pane-v2.body.html \
+  --out /private/tmp/claude/<repo-slug>/prototypes/branches-pane/branches-pane.html
 ```
 
 The tool reads the file it is about to overwrite, keeps every round that is **not** N, stamps this

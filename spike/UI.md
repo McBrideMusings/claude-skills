@@ -19,7 +19,7 @@ write it.
 
 ## The artifact — always one standalone HTML file
 
-`<repo-root>/tmp/claude/spikes/<slug>/<slug>.html`, where `<slug>` names what the prototype is for
+`/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html`, where `<slug>` names what the prototype is for
 — one canonical file for the topic's whole life, every round inside it behind the rail's round chips
 (see SKILL.md "Naming and versions"). Self-contained, inline CSS and JS, opened directly
 in a browser. No dev server, no route, no framework, and **no edit to any production file**. This holds
@@ -55,7 +55,7 @@ One thing per run. If the description spans several components ("the dashboard")
 single highest-leverage piece, say which and why, offer the rest as later runs. Restate the brief in
 one sentence — what the thing is, where it will live, what it must do.
 
-Then fix the slug and the round. `ls <repo-root>/tmp/claude/spikes/`: an existing directory for
+Then fix the slug and the round. `ls /private/tmp/claude/<repo-slug>/spikes/`: an existing directory for
 this topic means this is its next round — reuse the slug, read the highest round already in the file
 (`grep -o 'data-round="[0-9]*"' <slug>.html | sort -u`) and add 1, and read the previous round's
 variants so this one diverges from them instead of repeating them. No directory means a new topic,
@@ -109,7 +109,7 @@ gets dropped, same as a hand-written direction would.
 
 ### Phase 04 — Build
 
-Write the fragment to `<repo-root>/tmp/claude/spikes/<slug>-v<N>.body.html`: one
+Write the fragment to `/private/tmp/claude/<repo-slug>/spikes/<slug>-v<N>.body.html`: one
 `<template data-variant="Name" data-caption="...">` per direction, plus the project's tokens in a
 `<style>`, plus a `<nav data-axis>` for each state the design has to be judged in (which screen, which
 error, which empty case) and a top-level `<script>` listening for `at:axis`. Then:
@@ -119,8 +119,8 @@ error, which empty case) and a top-level `<script>` listening for `at:axis`. The
   --kind prototype --picker switch --round <N> \
   --title "Wheelhouse Nav" --subtitle "<the question this round answers>" \
   --devices fit,phone \
-  --fragment <repo-root>/tmp/claude/spikes/<slug>-v<N>.body.html \
-  --out <repo-root>/tmp/claude/spikes/<slug>/<slug>.html
+  --fragment /private/tmp/claude/<repo-slug>/spikes/<slug>-v<N>.body.html \
+  --out /private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html
 ```
 
 `--out` is the same path every round. The tool reads it before overwriting, keeps every round that
@@ -214,7 +214,7 @@ the actual design. Treat it as a `riff`: run Phase 03 again around it and rebuil
 
 When a direction wins: capture the answer and why (commit message, ADR, issue), implement it properly
 in the project's stack and conventions — a rewrite, never a copy of prototype markup — then delete
-`<repo-root>/tmp/claude/spikes/<slug>/`, every version in it. Record which version and variant won.
+`/private/tmp/claude/<repo-slug>/spikes/<slug>/`, every version in it. Record which version and variant won.
 Keep the files only if the user asks.
 
 ## Anti-patterns

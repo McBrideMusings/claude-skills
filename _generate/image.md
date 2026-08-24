@@ -98,7 +98,7 @@ Rules that come from the caller and must survive:
 - **Three comps per round**, at the surface's own viewport. One invites rubber-stamping.
 - **Embed the prompt in the PNG and write a `.json` sidecar beside it.** Provenance travels with the
   file; a comp whose prompt was reconstructed from memory records an image that was never made.
-- Save under the project's `tmp/claude/` comps directory, not `assets/` — a comp is a decision
+- Save under the project's `/private/tmp/claude/<repo-slug>/` comps directory, not `assets/` — a comp is a decision
   artifact, not a shipped asset.
 
 **Not yet supported: reference-image anchoring.** `direction.md` calls for screenshotting a

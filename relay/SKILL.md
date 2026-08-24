@@ -103,9 +103,11 @@ The prompt is the artifact. **Do not write a handoff document** — that is the
 
 The marker is transport, not a record: written, consumed by the Stop hook, deleted.
 
-Resolve the repo root in its own Bash call — `git rev-parse --show-toplevel` — and
-build every path absolute from it. `mkdir -p <root>/tmp/claude/relay` as a separate
-call. Then `Write` to `<root>/tmp/claude/relay/next.md`.
+Resolve the repo root in its own Bash call — `git rev-parse --show-toplevel` — and take
+`<repo-slug>` as its last path segment. **It must match what `hooks/relay-stop.sh` computes
+(`${root##*/}`) or the hook never finds the marker and the relay silently does nothing.**
+`mkdir -p /private/tmp/claude/<repo-slug>/relay` as a separate call, then `Write` to
+`/private/tmp/claude/<repo-slug>/relay/next.md`.
 
 ### What goes in the prompt
 
@@ -155,7 +157,7 @@ doing it inline sends input into a session that is still busy, and Claude Code d
 it.
 
 If the clear fails, the sender prompts into the existing context instead of losing
-the work, and logs why to `<root>/tmp/claude/relay/relay.log`.
+the work, and logs why to `/private/tmp/claude/<repo-slug>/relay/relay.log`.
 
 ## `relay auto`
 

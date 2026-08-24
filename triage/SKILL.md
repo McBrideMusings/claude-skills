@@ -226,7 +226,7 @@ If the user rejects a presented candidate with a durable reason ("no, we decided
 - Read each chosen issue in full — `bd show <id> --json` on beads, `gh issue view <N>` on GitHub.
 - **Verify the claim** (bug issues only). Before exploring further, reproduce the bug from the reporter's steps. Report what happened: confirmed (with the code path it hits), failed to reproduce, or insufficient detail to try. A confirmed repro makes the rest of the implementation much more reliable; on failed/insufficient, stop and check with the user before proceeding rather than implementing a fix for an unconfirmed bug.
 - Explore relevant code areas.
-- If scope has 4+ issues or estimate >4 hours, ask if user wants a plan drafted to `<repo-root>/tmp/claude/plans/` first.
+- If scope has 4+ issues or estimate >4 hours, ask if user wants a plan drafted to `/private/tmp/claude/<repo-slug>/plans/` first.
 - Otherwise implement directly.
 
 For groups, mention all related issue numbers in commit messages (`Relates to #12, #15, #18`).

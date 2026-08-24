@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build every specimen. Output goes to tmp/claude/specimens/ in whatever repo you run it
+# Build every specimen. Output goes to /private/tmp/claude/<repo-slug>/specimens/ in whatever repo you run it
 # from — the fragments are the tracked thing, the built HTML is not.
 #
 #   bash ~/.claude/skills/_folios/specimens/build.sh [outdir]
@@ -12,7 +12,7 @@ set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 S="$HOME/.claude/tools/spike"
 E="$HOME/.claude/tools/explainer"
-OUT="${1:-$HOME/.claude/tmp/claude/specimens}"
+OUT="${1:-/private/tmp/claude/dot-claude/specimens}"
 mkdir -p "$OUT"
 
 "$E" build --title "How the folio tools assemble a hermetic file" \

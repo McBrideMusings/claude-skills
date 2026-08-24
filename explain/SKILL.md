@@ -90,13 +90,13 @@ Read `../_folios/CONTRACT.md` for the `explainer` class vocabulary, then **write
 
 Keep the explanation itself to the same standard the chat tier holds: one thing at a time, scoped tight, calibrated to what the listener already knows, with one primary source to go deeper.
 
-Write the fragment to `<repo>/tmp/claude/explainers/<slug>.body.html`, then build:
+Write the fragment to `/private/tmp/claude/<repo-slug>/explainers/<slug>.body.html`, then build:
 
 ```bash
 "$HOME/.claude/tools/explainer" build \
   --title "<the title>" \
-  --fragment <repo>/tmp/claude/explainers/<slug>.body.html \
-  --out <repo>/tmp/claude/explainers/<slug>.html
+  --fragment /private/tmp/claude/<repo-slug>/explainers/<slug>.body.html \
+  --out /private/tmp/claude/<repo-slug>/explainers/<slug>.html
 ```
 
 `explainer` has one look and no variants, so it takes no `--kind`, no picker, no rounds
@@ -104,7 +104,7 @@ and no device frames. That machinery belongs to `spike`, which shares the same
 `_folios/` substrate — the tokens, the type scale, the class vocabulary and the
 annotate/contrast/theme widgets are common to both.
 
-`<repo>` is the ABSOLUTE repo root and `<slug>` a kebab-case topic slug. **Never a cwd-relative `tmp/…`.** Resolve `<repo>` in its own Bash call — `git rev-parse --show-toplevel` (if it errors/empty, use the absolute output of `pwd`). The Bash working directory is NOT guaranteed to be the repo root; a bare `tmp/claude/explainers/…` lands the file under whatever subdir the shell is in, so the `open <path>` you print won't match where it landed. If the path doesn't start with `/`, it's the bug. (The tool rejects a relative path rather than guessing.)
+`<repo>` is the ABSOLUTE repo root and `<slug>` a kebab-case topic slug. **Never a cwd-relative `tmp/…`.** Resolve `<repo>` in its own Bash call — `git rev-parse --show-toplevel` (if it errors/empty, use the absolute output of `pwd`). The Bash working directory is NOT guaranteed to be the repo root; a bare `/private/tmp/claude/<repo-slug>/explainers/…` lands the file under whatever subdir the shell is in, so the `open <path>` you print won't match where it landed. If the path doesn't start with `/`, it's the bug. (The tool rejects a relative path rather than guessing.)
 
 ### 5. Verify, then open it
 
@@ -122,7 +122,7 @@ After it opens, offer cheap adjustments and **regenerate the same file in place*
 
 ### 7. Keep (on request)
 
-Ephemeral by default — `tmp/claude/explainers/` is age-pruned with the rest of `tmp/claude/`. If the user says keep it:
+Ephemeral by default — `/private/tmp/claude/<repo-slug>/explainers/` is age-pruned with the rest of `/private/tmp/claude/<repo-slug>/`. If the user says keep it:
 
 - **Inside a repo** → move to `<repo>/docs/explainers/<slug>.html` (committed on purpose, shareable with the team).
 - **Not in a repo** → move to `~/explainers/<slug>.html`.
@@ -131,7 +131,7 @@ Don't auto-keep; wait for the user to ask.
 
 ## Pruning
 
-`tmp/claude/explainers/` follows the account-wide tmp-file age policy — prune files older than the standard window when the skill runs, same as other `tmp/claude/...` writers.
+`/private/tmp/claude/<repo-slug>/explainers/` follows the account-wide tmp-file age policy — prune files older than the standard window when the skill runs, same as other `/private/tmp/claude/<repo-slug>/...` writers.
 
 ## When NOT to use
 

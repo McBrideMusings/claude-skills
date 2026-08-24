@@ -133,14 +133,14 @@ Determine the output path and whether this invocation is branch-scoped or timest
 
 Run these via Bash tool (as separate calls — never nest `$(...)`). **NEVER prefix these with `cd /path &&`** — that triggers an "untrusted hooks" permission prompt. If you're not already in the project directory, use `git -C /absolute/path <subcommand>` instead:
 
-1. `git rev-parse --show-toplevel 2>/dev/null` → the ABSOLUTE `<repo-root>`. If empty, not in a git repo → **timestamped mode**, and use the absolute output of `pwd` as `<repo-root>`. **`<repo-root>` MUST be absolute — every summary path is `<repo-root>/tmp/claude/…`, NEVER a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `tmp/claude/summaries/…` would land the file under whatever subdir the shell is in, not the repo root. If a path you pass to Bash doesn't start with `/`, it's the bug.
+1. `git rev-parse --show-toplevel 2>/dev/null` → the ABSOLUTE `<repo-root>`. If empty, not in a git repo → **timestamped mode**, and use the absolute output of `pwd` as `<repo-root>`. **`<repo-root>` MUST be absolute — every summary path is `/private/tmp/claude/<repo-slug>/…`, NEVER a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `/private/tmp/claude/<repo-slug>/summaries/…` would land the file under whatever subdir the shell is in, not the repo root. If a path you pass to Bash doesn't start with `/`, it's the bug.
 2. `git branch --show-current` → current branch name. If empty (detached HEAD), **timestamped mode**.
 3. `git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null` → e.g. `origin/main`. Strip the `origin/` prefix to get the base branch name. If empty, fall back to `main`.
 
 **Mode selection:**
 
-- **Timestamped mode** (not in a git repo, detached HEAD, or current branch == base): path is `<repo-root>/tmp/claude/summaries/claude-summary-<timestamp>.md`, where timestamp comes from `date '+%Y-%m-%d-%H%M%S'` run as its **own separate Bash tool call** — never chain it with mkdir or any other command. No prior file to read. Skip Phase 02.
-- **Branch-scoped mode** (any other branch): path is `<repo-root>/tmp/claude/summaries/<repo-basename>/<branch-sanitized>.md`, where:
+- **Timestamped mode** (not in a git repo, detached HEAD, or current branch == base): path is `/private/tmp/claude/<repo-slug>/summaries/claude-summary-<timestamp>.md`, where timestamp comes from `date '+%Y-%m-%d-%H%M%S'` run as its **own separate Bash tool call** — never chain it with mkdir or any other command. No prior file to read. Skip Phase 02.
+- **Branch-scoped mode** (any other branch): path is `/private/tmp/claude/<repo-slug>/summaries/<repo-basename>/<branch-sanitized>.md`, where:
   - `<repo-basename>` is the basename of the repo root path
   - `<branch-sanitized>` is the current branch with `/` replaced by `-`
   - If a file already exists at this path, treat it as the **prior summary** for this branch and read it in Phase 05.
@@ -149,7 +149,7 @@ Run these via Bash tool (as separate calls — never nest `$(...)`). **NEVER pre
 
 Branch-scoped mode only.
 
-For `<repo-root>/tmp/claude/summaries/<repo-basename>/`:
+For `/private/tmp/claude/<repo-slug>/summaries/<repo-basename>/`:
 
 1. If the directory doesn't exist yet, skip.
 2. List the live local branches: `git for-each-ref refs/heads/ --format='%(refname:short)'`.
@@ -158,7 +158,7 @@ For `<repo-root>/tmp/claude/summaries/<repo-basename>/`:
 
 This prunes files for branches that no longer exist locally (merged-and-deleted, manually deleted, worktree torn down). Don't try to detect "merged but not deleted" — branch deletion is the canonical signal and squash-merges make merge-detection unreliable.
 
-(Note: cross-skill age-based pruning across all `<repo-root>/tmp/claude/...` writers is a separate, future policy — out of scope for this skill.)
+(Note: cross-skill age-based pruning across all `/private/tmp/claude/<repo-slug>/...` writers is a separate, future policy — out of scope for this skill.)
 
 ### Phase 03 — Detect Git Component
 
@@ -166,7 +166,7 @@ Resolve a **diff base** — the ref the change list is computed against — then
 
 1. Start with `<diff-base>` = `origin/<base>` (the base branch name resolved in Phase 01). Run `git log --oneline origin/<base>..HEAD`.
 2. **If that is empty and the current branch *is* the base branch** — the session's commits were pushed straight to `<base>`, so `origin/<base>..HEAD` shows nothing — fall back to the session-start marker:
-   - Read `<repo-root>/tmp/claude/session-start-sha` (written by the git-sync SessionStart hook; holds HEAD as it stood when the session began).
+   - Read `/private/tmp/claude/<repo-slug>/session-start-sha` (written by the git-sync SessionStart hook; holds HEAD as it stood when the session began).
    - If the file exists and its sha is an ancestor of HEAD (`git merge-base --is-ancestor <sha> HEAD`), set `<diff-base>` = that sha. The range `<sha>..HEAD` is exactly the commits made during this session.
    - If the marker is missing or its sha is not an ancestor of HEAD (stale marker, history rewritten), keep the empty result.
 
@@ -217,4 +217,4 @@ Print the full summary to chat so the user can copy-paste it.
 
 ### Phase 08 — Report the File Path
 
-Report a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Written to <repo-root>/tmp/claude/summaries/<repo>/<branch>.md`
+Report a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Written to /private/tmp/claude/<repo-slug>/summaries/<repo>/<branch>.md`

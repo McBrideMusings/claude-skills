@@ -128,12 +128,12 @@ The ranking input is leverage and dependency order — what a change unblocks, w
 
 1. **Write the HTML report** per [HTML-REPORT.md](HTML-REPORT.md) — one `<section>` per aspect, one card per surviving finding, the Top recommendation section, and the coverage line. Title it "Improvement survey — {repo name}".
 
-   **⛔ Resolve `<root>` to an ABSOLUTE path** — run `git rev-parse --show-toplevel` in its own Bash call. Every `mkdir` / `Write` / `open` / printed path is the absolute `<root>/tmp/claude/explainers/…` (the report renders through `explain`, so it lands in that skill's store). If a path doesn't start with `/`, that's the bug. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
+   **⛔ Resolve `<root>` to an ABSOLUTE path** — run `git rev-parse --show-toplevel` in its own Bash call. Every `mkdir` / `Write` / `open` / printed path is the absolute `/private/tmp/claude/<repo-slug>/explainers/…` (the report renders through `explain`, so it lands in that skill's store). If a path doesn't start with `/`, that's the bug. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
 2. **Screenshot it and look at it** before handing it over. A path is not verification.
 3. **Summarize inline** — per aspect: finding count and the top finding's title, so the user can react without opening the file. Name any aspect that returned not-applicable and any sub-agent that died. A missing aspect reads as a clean bill of health for that aspect.
 4. **Do not ask what to work on.** The report is a reading surface, not a menu; the next step is Phase 08 for every route. The only thing to ask here is whether any card is wrong, and the answer changes the ticket, not the plan.
 
-`tmp/claude/` is age-pruned with the rest of the account-wide tmp policy; don't keep the report unless asked.
+`/private/tmp/claude/<repo-slug>/` is age-pruned with the rest of the account-wide tmp policy; don't keep the report unless asked.
 
 ## Phase 08 — Ticket the survivors
 
@@ -153,7 +153,7 @@ The ranking input is leverage and dependency order — what a change unblocks, w
    **Never compress the shape into a name on the way in.** "Make the intake module deep" is not a ticket; the three-function collapse with its three call sites is. A ticket whose body cannot be handed to `implement` without another survey has lost everything the pass paid for.
 3. **Classify each AFK or HITL**, per `to-tickets` — AFK where the shape is settled and a worker can land it unattended, HITL where a decision the survey marked `Assumed` or `Unknown` has to be made by a human first. A finding whose fix depends on an assumption is HITL, and the assumption goes in the body as the question to answer.
 4. **Carry the Phase 06b order in** as the dependency chain — `blocked-by` on beads, the stated prerequisite in the body on GitHub.
-5. **Hand off to `to-tickets`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. `to-tickets` writes the proposal to `<root>/tmp/claude/to-tickets.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine.
+5. **Hand off to `to-tickets`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. `to-tickets` writes the proposal to `/private/tmp/claude/<repo-slug>/to-tickets.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine.
 6. **Report back**: the ticket ids and titles in Phase 06b order, then one line naming what to run next — `implement <first-id>` for one, `iterate` or `orchestrate` for the slate.
 
 Findings that scored below 75 are already gone (Phase 06) and do not get filed. `review-territory` lines are not filed either — they stay the single `/review` pointer from Phase 06 step 3.

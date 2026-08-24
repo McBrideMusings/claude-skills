@@ -26,8 +26,8 @@ file touched. What that thing *is* depends on the engine:
 | Engine | Surface |
 | --- | --- |
 | Roblox | A scratch Place in Studio, driven through the `roblox` skill's Studio tools, named `<slug>-v<N>`. Never edit the real game's scripts; a prototype Place is the file-equivalent here. |
-| three.js / canvas / DOM | One self-contained HTML file at `<repo-root>/tmp/claude/prototypes/<slug>/<slug>.html`, rebuilt with `--round <N>` each round, exactly as `UI.md` specifies. |
-| Native (SpriteKit, SwiftUI, Unity) | A scratch target/scene inside a scratch project directory under `<repo-root>/tmp/claude/prototypes/<slug>/v<N>/` — never a new target in the real project file. |
+| three.js / canvas / DOM | One self-contained HTML file at `/private/tmp/claude/<repo-slug>/prototypes/<slug>/<slug>.html`, rebuilt with `--round <N>` each round, exactly as `UI.md` specifies. |
+| Native (SpriteKit, SwiftUI, Unity) | A scratch target/scene inside a scratch project directory under `/private/tmp/claude/<repo-slug>/prototypes/<slug>/v<N>/` — never a new target in the real project file. |
 
 Rounds are numbered the same way everywhere — stable slug, `v1`/`v2`/`v3`, older rounds kept. See
 SKILL.md "Naming and versions".

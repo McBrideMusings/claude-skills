@@ -131,7 +131,7 @@ If a thread has multiple comments (back-and-forth between reviewer and author), 
 
 Write a **single consolidated reply** the user copy-pastes as one PR comment. The reply is an ordered list where item N corresponds to issue N from the plan (Phase 07) — same numbering, same ordering.
 
-- Filename: `/Users/pierce/.claude-tmp/claude-pr-comments-<number>-<YYYY-MM-DD-HHMMSS>.md` using current local time. No `mkdir` needed — `/Users/pierce/.claude-tmp/` is a persistent directory. No pruning needed; files are tiny.
+- Filename: `/private/tmp/claude/reviews/claude-pr-comments-<number>-<YYYY-MM-DD-HHMMSS>.md` using current local time. `mkdir -p /private/tmp/claude/reviews` first. No pruning needed — macOS deletes anything under `/private/tmp` untouched for three days.
 
 ### Budget — hard caps, not guidance
 
@@ -277,7 +277,7 @@ Everything scored **below 50** is one table row, no block — the long tail is a
 
 ## Summary
 - address N · partial N · reply N · ignore N · N files touched
-- Response doc: /Users/pierce/.claude-tmp/claude-pr-comments-<number>-<timestamp>.md
+- Response doc: /private/tmp/claude/reviews/claude-pr-comments-<number>-<timestamp>.md
 - Paste as ONE PR comment. Do not split per thread.
 ```
 

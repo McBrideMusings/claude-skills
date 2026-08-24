@@ -6,7 +6,7 @@ Stop everything and leave no residue: no live agents, no worktrees, no branches 
 
 ## 1. Take stock before touching anything
 
-Build the full picture first — the run's returned array (or `/workflows` if a round is still going), `git worktree list`, and `ls <worktree>/tmp/claude/verify/*.json` for each worktree. You cannot decide what is safe to delete without it. **List that directory; never `test -f` the one name you expect** — a verdict written under any other name reads as no verdict and goes out with the worktree.
+Build the full picture first — the run's returned array (or `/workflows` if a round is still going), `git worktree list`, and `ls /private/tmp/claude/<repo-slug>/worktrees/<name>/verify/*.json` for each worktree. You cannot decide what is safe to delete without it. **List that directory; never `test -f` the one name you expect** — a verdict written under any other name reads as no verdict and goes out with the worktree.
 
 ## 2. Sort every worker
 

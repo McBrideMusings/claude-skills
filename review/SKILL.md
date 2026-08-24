@@ -147,7 +147,7 @@ Two things go in the chat explanation:
 
 **This is chat-only — it never enters the PR.** It's the user's orientation, not review output: it does not go in the report file, the review verdict body, or any posted comment. What gets posted is only the findings (see End of pass).
 
-**Skipping the summary document.** The summary skill writes a file to `<repo-root>/tmp/claude/summaries/…`. On a teammate's PR that file is usually noise. Default: run the skill for its analysis, present it in chat, and **skip the file write** — say "summary not written to disk" in one clause. Write the file when the user asks for it, or when the PR is mine and I'll want the text for the PR description; then print its absolute path as the last token on its line. If the user says `skip summary` at any point, drop this phase entirely and go straight to the review.
+**Skipping the summary document.** The summary skill writes a file to `/private/tmp/claude/<repo-slug>/summaries/…`. On a teammate's PR that file is usually noise. Default: run the skill for its analysis, present it in chat, and **skip the file write** — say "summary not written to disk" in one clause. Write the file when the user asks for it, or when the PR is mine and I'll want the text for the PR description; then print its absolute path as the last token on its line. If the user says `skip summary` at any point, drop this phase entirely and go straight to the review.
 
 ## Dual flavor (`review dual`)
 

@@ -21,7 +21,7 @@ Also probe:
 - GitHub remote: `git remote -v | grep github`
 - **`.gitignore` coverage.** Ask git, don't read the file — a pattern can arrive from a parent `.gitignore`, `.git/info/exclude`, or the global `~/.config/git/ignore`, and grepping misses all three:
   ```
-  git check-ignore -q tmp/claude/x.md   # scratch
+  git check-ignore -q /private/tmp/claude/<repo-slug>/x.md   # scratch
   git check-ignore -q .env              # secrets
   git check-ignore -q CLAUDE.local.md   # local notes
   ```

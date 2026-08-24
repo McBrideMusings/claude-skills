@@ -313,7 +313,7 @@ The transport file says how. Two rules hold for all three:
 ```bash
 git -C <worktree> log --oneline <default-branch>..<branch>   # commits: none means nothing landable
 git -C <worktree> status --short                             # dirty: work exists, uncommitted
-ls -l <worktree>/tmp/claude/verify/<item>.json               # verdict, and its mtime
+ls -l /private/tmp/claude/<repo-slug>/worktrees/<name>/verify/<item>.json               # verdict, and its mtime
 ```
 
   Read them together. **Commits + clean tree + verdict** is a worker that finished. **No commits + dirty tree** is a worker that did not — whatever the transport says, and whatever its closing message claims. A dirty tree whose mtimes are still advancing is mid-flight; the same tree unchanged across two sweeps is stranded, and stranded means [recovery](#recovering-a-stranded-worker), never teardown. The worker that just woke is the one you already know about; the sweep is for the others.
@@ -335,16 +335,16 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 
 **A `PASS` whose diff added tests and whose verdict has no `mutation` block is not a pass.** `/implement` Phase 1.5 requires the worker to strip its production change, re-run only the new tests, and record the real failure text; a verdict missing that — or carrying `discriminates: false` — is a pass that proved nothing about the test it shipped. Land it if the behavioural evidence stands on its own, but say so in the report and file the test as a follow-up. Observed 2026-08-16: three landed tests each rebuilt the production logic inside the test body, and all three passed with the fix reverted.
 
-The verdict is a file, not the worker's own words: `<worktree>/tmp/claude/verify/<item>.json`. **`/implement`'s Phase 1.5 owns that file** — its schema, when it is written, and what each verdict means. Orchestrate is only its reader; do not re-specify it here.
+The verdict is a file, not the worker's own words: `/private/tmp/claude/<repo-slug>/worktrees/<name>/verify/<item>.json`. **`/implement`'s Phase 1.5 owns that file** — its schema, when it is written, and what each verdict means. Orchestrate is only its reader; do not re-specify it here.
 
 **Copy the verdict into the primary checkout the moment you read it, before anything else happens to that worktree:**
 
 ```bash
-mkdir -p <repo>/tmp/claude/verify
-cp <worktree>/tmp/claude/verify/<item>.json <repo>/tmp/claude/verify/<item>.json
+mkdir -p /private/tmp/claude/<repo-slug>/verify
+cp /private/tmp/claude/<repo-slug>/worktrees/<name>/verify/<item>.json /private/tmp/claude/<repo-slug>/verify/<item>.json
 ```
 
-The verdict lives inside the worktree, `tmp/` is gitignored so it never rides the branch, and step 7 removes the worktree with `--force`. **Teardown therefore destroys the only copy of the evidence for every slice the swarm lands.** The work was verified and nothing records it: `tmp/claude/verify/` in the primary checkout stops at whatever the last non-swarm pass wrote, which reads from the outside exactly like a swarm that skipped verification entirely.
+The verdict lives inside the worktree, `tmp/` is gitignored so it never rides the branch, and step 7 removes the worktree with `--force`. **Teardown therefore destroys the only copy of the evidence for every slice the swarm lands.** The work was verified and nothing records it: `/private/tmp/claude/<repo-slug>/verify/` in the primary checkout stops at whatever the last non-swarm pass wrote, which reads from the outside exactly like a swarm that skipped verification entirely.
 
 Observed: a seven-issue run landed six slices, each driven at its surface by its own worker, each with a verdict the orchestrator read before merging — and left no verdict file behind for any of them. The reviewer afterwards could not tell "verified, evidence deleted" from "never verified", and had to re-drive the whole integrated result to find out.
 
@@ -390,8 +390,8 @@ Close the issue with what shipped.
 Teardown is the orchestrator's job because it is **structurally impossible for the worker**: git refuses to delete a branch that a worktree still has checked out, and the worker is standing in it. Whatever created a resource retires it — this skill made the worktree and the branch, so this skill removes them, on every transport.
 
 ```bash
-ls <worktree>/tmp/claude/verify/*.json    # every verdict in there, by name
-test -f <repo>/tmp/claude/verify/<item>.json   # the one you copied out — step 5
+ls /private/tmp/claude/<repo-slug>/worktrees/<name>/verify/*.json    # every verdict in there, by name
+test -f /private/tmp/claude/<repo-slug>/verify/<item>.json   # the one you copied out — step 5
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
 git -C <repo> worktree remove --force <worktree> \
@@ -402,7 +402,7 @@ git -C <repo> worktree remove --force <worktree> \
 
 **The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy from step 5 is missing, do it now rather than removing the worktree — this is the check that stops a whole swarm's evidence disappearing one worker at a time, each teardown looking perfectly clean as it goes.
 
-**List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the worker wrote a differently-named file, and `--force` then deletes the only copy. Observed on `etv-station` #182, 2026-08-16: a worker left a complete `FAIL` verdict — naming the exact cause at `daemon.rs:2344` — at `tmp/claude/verify/undefined.json`, found by listing the directory rather than by looking for it. It survived only because the tree was also dirty, which forbids teardown for an unrelated reason. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the worker's issue and branch, then decide. Two workers in one round can both write `undefined.json`, and once copied to the primary checkout they are indistinguishable — so never copy one out under the name it already has.
+**List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the worker wrote a differently-named file, and `--force` then deletes the only copy. Observed on `etv-station` #182, 2026-08-16: a worker left a complete `FAIL` verdict — naming the exact cause at `daemon.rs:2344` — at `/private/tmp/claude/<repo-slug>/verify/undefined.json`, found by listing the directory rather than by looking for it. It survived only because the tree was also dirty, which forbids teardown for an unrelated reason. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the worker's issue and branch, then decide. Two workers in one round can both write `undefined.json`, and once copied to the primary checkout they are indistinguishable — so never copy one out under the name it already has.
 
 **Retire the worker's device too**, if step 3 gave it one — the platform cell you read there has the teardown commands. Whatever it is, it survives its worker and holds resources; a long run that skips this ends with one per issue still alive.
 
@@ -502,7 +502,7 @@ The only other moment the human is involved. This list is **additive to** `CLAUD
 - **Escalated** — conflicts, stale verdicts, dirty worktrees left standing.
 - **Still blocked** — issue and the blocker it is waiting on.
 - **Index entries written**, and any landed branch that added a file and named none — that is a stale index in the making, and it is only visible here.
-- **Verdicts preserved** — one line listing the `tmp/claude/verify/<item>.json` files now in the primary checkout, and naming any landed issue that has none. A swarm that lands six slices should leave six verdicts behind; anything less means the evidence went out with a worktree and the next person to look will have to re-drive the result to learn what you already knew.
+- **Verdicts preserved** — one line listing the `/private/tmp/claude/<repo-slug>/verify/<item>.json` files now in the primary checkout, and naming any landed issue that has none. A swarm that lands six slices should leave six verdicts behind; anything less means the evidence went out with a worktree and the next person to look will have to re-drive the result to learn what you already knew.
 - **Next batch** — the issues that failed the gate this run, each with **your pick** for what unblocks it, and the skill that does it (usually `iron-out`). Every other line above is backward-looking, and an empty frontier is not an empty backlog: the loop's terminal condition is "no issue passes the gate", which on a hundred-issue tracker means the gate is the bottleneck, not the work. A report that stops at **Still blocked** hands back a list of obstacles with nothing to answer.
 
 **Then close with the escape hatch, always** — this report ends in recommendations, so `CLAUDE.md` §Deciding & designing binds it exactly as it binds `review` and `wrap-up`:

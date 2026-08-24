@@ -45,7 +45,7 @@ EOF
 )"
 ```
 
-or write the body to a file under `<repo-root>/tmp/claude/` and pass `--body-file`.
+or write the body to a file under `/private/tmp/claude/<repo-slug>/` and pass `--body-file`.
 
 ## Ownership
 

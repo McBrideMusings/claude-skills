@@ -29,5 +29,5 @@ visible in a diff; all of it is obvious in a screenshot.
   true and reads like something a person would write. No lorem, no `foo`.
 - **Add a class, add it here.** A class that ships without appearing in a specimen is a
   class nobody will look at again.
-- **The built HTML is not tracked.** `build.sh` writes to `tmp/claude/specimens/`, which is
+- **The built HTML is not tracked.** `build.sh` writes to `/private/tmp/claude/<repo-slug>/specimens/`, which is
   gitignored and age-pruned. The fragments are the folio.
