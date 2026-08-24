@@ -1,6 +1,6 @@
 ---
 name: papercut
-description: "Log and work small frictions hit while working in a repo — retried tool calls, confusing setup, flaky commands, misleading errors. Three modes: author one now (/papercut <message>), mine the session (/papercut review), or triage this repo's log (bare /papercut). Writes to <repo>/tmp/claude/papercuts.md; distinct from real bugs (issues) and follow-ups."
+description: "Log and work small frictions hit while working in a repo — retried tool calls, confusing setup, flaky commands, misleading errors. Three modes: author one now (/papercut <message>), mine the session (/papercut review), or triage this repo's log (bare /papercut). Writes to <repo>/.claude/papercuts.md; distinct from real bugs (issues) and follow-ups."
 ---
 
 Papercuts are small frictions logged **in the moment** — a tool call that missed and needed a retry, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha. One or two sentences: *what you were doing → what got in the way* (a guess at the cause/fix is a bonus). None are blocking; logged together they show where a repo needs sanding down.
@@ -9,7 +9,7 @@ Papercuts are small frictions logged **in the moment** — a tool call that miss
 
 ## The writer — always route through the CLI
 
-Every write goes through `"$HOME/.claude/tools/papercut"` so entries stay uniformly formatted (`<iso-utc> - <model> - <git-user>` header, blank line, message). Call it by that literal path even from the work profile — the tool lives in the personal profile only (`tools/` isn't symlinked into `~/.claude-work`), and the script resolves the repo root itself via git, so the path is correct regardless of `CLAUDE_CONFIG_DIR`. Never hand-edit or append to the log file directly; it writes to `<repo-root>/tmp/claude/papercuts.md`.
+Every write goes through `"$HOME/.claude/tools/papercut"` so entries stay uniformly formatted (`<iso-utc> - <model> - <git-user>` header, blank line, message). Call it by that literal path even from the work profile — the tool lives in the personal profile only (`tools/` isn't symlinked into `~/.claude-work`), and the script resolves the repo root itself via git, so the path is correct regardless of `CLAUDE_CONFIG_DIR`. Never hand-edit or append to the log file directly; it writes to `<repo-root>/.claude/papercuts.md`. **Not under `tmp/`** — a temp root means "safe to delete after three days" and this log is the one file that must outlive that.
 
 ```
 papercut -m "MODEL" "message"   # MODEL = the model that hit the friction
@@ -57,7 +57,7 @@ Get the log path from the tool — `"$HOME/.claude/tools/papercut" --path` — a
 
 The log always belongs to the MAIN checkout, so from inside a linked worktree it lives **outside the tree you are working in**. Two consequences, both of which have already bitten:
 
-- A relative `tmp/claude/papercuts.md` resolves to the worktree, where the file does not exist.
+- A relative `.claude/papercuts.md` resolves to the worktree, where the file does not exist.
 - Hunting for it (`find`, `ls`, a speculative `cd`) drags the shell's working directory into the main checkout, and every later edit in the session silently lands on the wrong branch.
 
 So: read it at the absolute path `--path` printed, and do not `cd` anywhere to do it. `--path` exits 4 when there is no log yet.
