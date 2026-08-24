@@ -228,9 +228,10 @@ screen across two directions is the entire job.
 
 ### Devices — named per prototype, never defaulted into
 
-`--devices fit,phone,tablet,desktop,web`. Choosing these is a judgement about **this** design, and it
-is yours to make: offering a frame the design was never meant for invites a verdict on a layout nobody
-drew. A phone-only chat surface gets `fit,phone`. A pane-tree editor gets `fit,desktop`. `fit` is
+`--devices fit,phone,tablet,desktop,panel,web,tv`. Choosing these is a judgement about **this** design,
+and it is yours to make: offering a frame the design was never meant for invites a verdict on a layout
+nobody drew. A phone-only chat surface gets `fit,phone`. A pane-tree editor gets `fit,desktop`. One
+design that ships on iOS and as a Mac menu bar extra gets `fit,phone,panel`. `fit` is
 always included and is the default view.
 
 Chrome sits on whichever side of the viewport it really sits on, and the harness draws all of it:
@@ -239,7 +240,13 @@ Chrome sits on whichever side of the viewport it really sits on, and the harness
 | --- | --- | --- |
 | `phone`, `tablet` | status bar, notch, home indicator | **inside** the viewport — content scrolls under it |
 | `desktop` | none by default; `--window` adds it | see below |
+| `panel` | menu bar strip with the status item lit | **outside** — the panel hangs from it |
 | `web` | tab strip + URL bar | **outside** |
+| `tv` | none drawn; tvOS overscan published as `--at-safe-*` | inset only |
+
+`panel` is 380×520 — a menu bar extra, not a small window. It has no title bar, no traffic lights and
+no resize, so `--window` is refused against it; the width is the whole design constraint, which is
+exactly what a 1440-wide `desktop` frame would hide.
 
 ### `--window` — what kind of window the desktop frame is
 

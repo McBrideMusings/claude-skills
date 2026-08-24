@@ -46,6 +46,12 @@
     phone:   { label: 'Phone',   w: 390,  h: 844,  chrome: 'ios',     rotates: true, notch: true, radius: 46 },
     tablet:  { label: 'Tablet',  w: 834,  h: 1194, chrome: 'ios',     rotates: true, notch: false, radius: 20 },
     desktop: { label: 'Desktop', w: 1440, h: 900,  chrome: 'macos',   rotates: false, radius: 10 },
+    /* A menu bar extra is not a small window. It has no title bar, no traffic lights and
+       no resize grip, and its width is the entire constraint the design is under — so a
+       `desktop` frame, which is 1440 wide and offers all three, answers a question this
+       design never asks. The panel hangs from the menu bar rather than containing it, so
+       the strip is drawn OUTSIDE the viewport like a title bar. */
+    panel:   { label: 'Panel',   w: 380,  h: 520,  chrome: 'menubar', rotates: false, radius: 10 },
     web:     { label: 'Web',     w: 1440, h: 900,  chrome: 'browser', rotates: false, radius: 10 },
     /* A television is the one frame whose furniture is entirely inset rather than drawn:
        there is no status bar and no title bar, but the outer ~5% of the panel is not
@@ -354,10 +360,24 @@
     '<div class="at-oc-url"><span class="at-oc-lock">●</span><span class="at-oc-addr"></span></div>' +
     '</div>';
 
+  /* The menu bar a panel hangs from. Outside the viewport, like a title bar: the panel
+     cannot draw a pixel into it. The status item is drawn centred and lit because the
+     panel is centred on it (NSStatusItem midX, less half the panel width) and is only
+     ever on screen while that item is active. */
+  var MENUBAR_BAR =
+    '<div class="at-oc at-oc-menubar" aria-hidden="true">' +
+    '<span class="at-oc-mb-apple"></span>' +
+    '<span class="at-oc-mb-item at-oc-mb-i1"></span>' +
+    '<span class="at-oc-mb-item at-oc-mb-i2"></span>' +
+    '<span class="at-oc-mb-item at-oc-mb-active"></span>' +
+    '<span class="at-oc-mb-clock"></span>' +
+    '</div>';
+
   function outsideChrome(d) {
     // A bare desktop frame is a window with no chrome at all — the default.
     if (d.chrome === 'macos') return WIN_BAR ? MACOS_BAR : '';
     if (d.chrome === 'browser') return BROWSER_BAR;
+    if (d.chrome === 'menubar') return MENUBAR_BAR;
     return '';
   }
 

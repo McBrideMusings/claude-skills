@@ -133,6 +133,72 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-rai
   color: #cdd2d9;
 }
 
+/* --- macOS menu bar (OUTSIDE the viewport) — what a menu bar extra hangs from --- */
+
+/* A panel has no bezel and no window edge, and the 6pt it really sits below the status
+   item is a gap you can see the desktop through — so the shell paints nothing and lets
+   the frame carry its own shadow. */
+.at-vp-shell[data-chrome="menubar"] {
+  overflow: visible;
+  background: transparent;
+  box-shadow: none;
+}
+
+.at-vp-shell[data-chrome="menubar"] .at-vp-frame {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 18px 50px rgba(0, 0, 0, 0.55);
+}
+
+.at-oc-menubar {
+  position: relative;
+  height: 24px;
+  margin-bottom: 6px;
+  padding: 0 10px;
+  background: rgba(30, 32, 36, 0.94);
+  border-bottom: 1px solid #16181b;
+}
+
+.at-oc-menubar .at-oc-mb-apple {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 50%;
+  background: #d6dae0;
+  opacity: 0.75;
+}
+
+.at-oc-menubar .at-oc-mb-clock {
+  margin-left: auto;
+  width: 46px;
+  height: 8px;
+  border-radius: 2px;
+  background: #d6dae0;
+  opacity: 0.4;
+}
+
+/* Centred, because the panel below is centred on this item. The neighbours sit either
+   side at the 22pt pitch real status items use. */
+.at-oc-menubar .at-oc-mb-item {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  margin-left: -6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #d6dae0;
+  opacity: 0.4;
+}
+
+.at-oc-menubar .at-oc-mb-i1 { transform: translateX(-44px); }
+.at-oc-menubar .at-oc-mb-i2 { transform: translateX(-22px); }
+
+.at-oc-menubar .at-oc-mb-active {
+  background: #2f6fe0;
+  opacity: 1;
+}
+
 /* --- browser chrome (OUTSIDE the viewport) --- */
 
 .at-oc-browser {
