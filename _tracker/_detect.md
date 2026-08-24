@@ -4,14 +4,22 @@ Every skill that touches issues resolves the backend the same way. Resolve in th
 stop at the first that answers. This is cheap — three shell calls at most — run it once per
 invocation and reuse the answer for the rest of the run.
 
-1. **Explicit argument.** If the invocation named a backend (`triage beads`, `to-tickets github`),
-   use it. An explicit name overrides everything below, including a missing marker — if the user
-   said `beads` and `.beads/` is absent, offer `bd init` rather than silently using GitHub.
+**The backend is a domain label.** It lives in the same map as every other label, spelled
+`tracker:beads` / `tracker:github` / `tracker:local`, and resolves through
+[`../_domains/_detect.md`](../_domains/_detect.md). There is one detection system, not two. The
+steps below are how that label is *derived* when the map has no answer for a repo — the
+classify-once bootstrap, not a parallel runtime path. Once the map answers, it wins.
 
-2. **Project override.** If the repo's root `CLAUDE.local.md` has an `## Issue tracker` section
+1. **Explicit argument.** If the invocation named a backend (`triage beads`, `to-tickets github`),
+   use it. An explicit name overrides everything below — if the user said `beads` and `.beads/` is
+   absent, offer `bd init` rather than silently using GitHub.
+
+2. **The map.** A `tracker:<backend>` label for this repo → use it.
+
+3. **Project override.** If the repo's root `CLAUDE.local.md` has an `## Issue tracker` section
    naming a backend, trust it. `bootstrap` writes this section; it is how a repo pins its choice.
 
-3. **Beads marker.** `bd where` exits 0 (authoritative — it follows `BEADS_DIR` and resolves a
+4. **Beads marker.** `bd where` exits 0 (authoritative — it follows `BEADS_DIR` and resolves a
    worktree back to the main repository's `.beads`, which a bare `test -d .beads` does not) →
    **`beads`**, read [`beads.md`](beads.md).
 
@@ -23,10 +31,13 @@ invocation and reuse the answer for the rest of the run.
    `brew install beads`. Never fall through to GitHub — the issues are in the Dolt database and a
    GitHub read would report an empty or stale backlog as if it were the whole picture.
 
-4. **GitHub remote.** `git remote -v` contains a `github.com` remote **and** `gh auth status`
+5. **GitHub remote.** `git remote -v` contains a `github.com` remote **and** `gh auth status`
    exits 0 → **`github`**, read [`github.md`](github.md).
 
-5. **Neither** → **`local`**, read [`local.md`](local.md).
+6. **Neither** → **`local`**, read [`local.md`](local.md).
+
+Whatever steps 3–6 resolve, write it back to the map as `tracker:<backend>` so this never
+runs again for that repo.
 
 ## Mirror mode (beads + GitHub together)
 
