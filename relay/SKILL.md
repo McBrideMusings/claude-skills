@@ -103,11 +103,13 @@ The prompt is the artifact. **Do not write a handoff document** — that is the
 
 The marker is transport, not a record: written, consumed by the Stop hook, deleted.
 
-Resolve the repo root in its own Bash call — `git rev-parse --show-toplevel` — and take
-`<repo-slug>` as its last path segment. **It must match what `hooks/relay-stop.sh` computes
-(`${root##*/}`) or the hook never finds the marker and the relay silently does nothing.**
-`mkdir -p /private/tmp/claude/<repo-slug>/relay` as a separate call, then `Write` to
-`/private/tmp/claude/<repo-slug>/relay/next.md`.
+**Get the directory from `~/.claude/tools/repo-slug --path`**, which prints
+`/private/tmp/claude/<repo-slug>` and creates it. Never work the slug out yourself: it and
+`hooks/relay-stop.sh` read the same definition (`hooks/repo-slug.sh`), and a slug you derive
+by hand can differ — a worktree and its main checkout share a directory name, so guessing
+puts the marker where the hook never looks and the relay silently does nothing.
+
+Then `Write` to `<that path>/relay/next.md`, creating the `relay/` subdirectory first.
 
 ### What goes in the prompt
 
