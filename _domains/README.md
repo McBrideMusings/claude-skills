@@ -96,6 +96,10 @@ because ranking the cells would guard a duplication that should be removed inste
 
 ## Current state
 
+Every label in the vocabulary now carries a `context.md`, except `node` and `docs-site`.
+Those two are deliberately empty for the same reason `tracker:github` is: each sits on half
+of all repos, so a cell would fire constantly to say what was already assumed.
+
 `apple/` has all five engine cells (`review`, `diagnose`, `profiling`, `testing`, `orchestrate`);
 `web/` has `profiling` + `testing` + `review`; `react/` has `review`; `threejs/` has `review` +
 `diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in `game/`). `orchestrate`
