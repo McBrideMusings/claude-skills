@@ -30,23 +30,23 @@ Duration is `-t <seconds>`: 2h = 7200, 8h = 28800, overnight (10h) = 36000. Omit
 Always run detached so it never blocks the shell, and report the PID + expiry back:
 
 ```bash
-mkdir -p ~/.claude-tmp/caffeinate
+mkdir -p /private/tmp/claude/caffeinate
 # system awake for N seconds, monitors free to sleep (the usual ask):
-nohup caffeinate -i -m -t 28800 >/dev/null 2>&1 &  echo $! > ~/.claude-tmp/caffeinate/manual-$!.pid
+nohup caffeinate -i -m -t 28800 >/dev/null 2>&1 &  echo $! > /private/tmp/claude/caffeinate/manual-$!.pid
 # screen ON too (presentation/dashboard):
-nohup caffeinate -i -m -d -t 7200 >/dev/null 2>&1 & echo $! > ~/.claude-tmp/caffeinate/manual-$!.pid
+nohup caffeinate -i -m -d -t 7200 >/dev/null 2>&1 & echo $! > /private/tmp/claude/caffeinate/manual-$!.pid
 # tie to a process — dies when that PID exits (great for a long build):
-nohup caffeinate -i -m -w <PID> >/dev/null 2>&1 &   echo $! > ~/.claude-tmp/caffeinate/manual-$!.pid
+nohup caffeinate -i -m -w <PID> >/dev/null 2>&1 &   echo $! > /private/tmp/claude/caffeinate/manual-$!.pid
 ```
 
-Write manual holds to `~/.claude-tmp/caffeinate/manual-<pid>.pid` so `status`/`doctor` can see them and `cleanup` knows to **leave them alone** (they're deliberate, not hook leaks). After starting, tell the user the PID, the flags, and the wall-clock expiry.
+Write manual holds to `/private/tmp/claude/caffeinate/manual-<pid>.pid` so `status`/`doctor` can see them and `cleanup` knows to **leave them alone** (they're deliberate, not hook leaks). After starting, tell the user the PID, the flags, and the wall-clock expiry.
 
 ### `caffeinate remote` — the leave-the-house hold
 
 When the user is about to work over SSH / from their phone and can't afford the Mac sleeping between tasks, start a long-lived, generous hold so they're never locked out:
 
 ```bash
-nohup caffeinate -i -m -t 43200 >/dev/null 2>&1 & echo $! > ~/.claude-tmp/caffeinate/manual-$!.pid   # 12h
+nohup caffeinate -i -m -t 43200 >/dev/null 2>&1 & echo $! > /private/tmp/claude/caffeinate/manual-$!.pid   # 12h
 ```
 
 This is separate from the automatic hook's short post-turn grace — it's a deliberate "hold the machine open while I'm away" that only ends when it expires or the user runs `cleanup`.
@@ -55,7 +55,7 @@ This is separate from the automatic hook's short post-turn grace — it's a deli
 
 Two hooks in `settings.json` keep the Mac awake **only while Claude is actively working**, bound to the session — leak-proof by construction:
 
-- **UserPromptSubmit** → `~/.claude/hooks/caffeinate.sh start` spawns `caffeinate -i -m -w <claude_pid> -t 3600` and records its PID in `~/.claude-tmp/caffeinate/hook-<session_id>.pid`. It holds the whole turn (however long), and dies on its own if the session process crashes (`-w`).
+- **UserPromptSubmit** → `~/.claude/hooks/caffeinate.sh start` spawns `caffeinate -i -m -w <claude_pid> -t 3600` and records its PID in `/private/tmp/claude/caffeinate/hook-<session_id>.pid`. It holds the whole turn (however long), and dies on its own if the session process crashes (`-w`).
 - **Stop / StopFailure** → `~/.claude/hooks/caffeinate.sh stop` kills the turn hold and swaps in a self-expiring **grace** hold `caffeinate -i -m -t $CLAUDE_CAFFEINATE_GRACE_SECS` (default 900 = 15 min). The next prompt cancels the grace and starts a fresh turn hold.
 
 Why it can't leak: the turn hold is pinned to the session PID, the grace hold is a bounded `-t` timer, and 10 concurrent sessions are just the OR of 10 independent holds — no shared counter to get stuck. When every session is idle past its grace, zero caffeinate procs remain and the Mac sleeps normally. A manual hold (above) is invisible to the hook and outlives it.
@@ -73,7 +73,7 @@ Show every hold and the live power state:
 
 ```bash
 echo "== caffeinate procs =="; pgrep -fl caffeinate || echo "  none"
-echo "== tracked pidfiles =="; ls -1 ~/.claude-tmp/caffeinate/*.pid 2>/dev/null || echo "  none"
+echo "== tracked pidfiles =="; ls -1 /private/tmp/claude/caffeinate/*.pid 2>/dev/null || echo "  none"
 echo "== power assertions =="; pmset -g assertions | grep -iE 'PreventUserIdleSystemSleep|PreventUserIdleDisplaySleep|PreventDiskIdle' | grep -v ' 0$'
 echo "== grace setting =="; echo "  CLAUDE_CAFFEINATE_GRACE_SECS=${CLAUDE_CAFFEINATE_GRACE_SECS:-900}"
 ```
@@ -85,7 +85,7 @@ Report: which holds are hook (`hook-*.pid`) vs manual (`manual-*.pid`), whether 
 Reap **hook** leaks only — stale `hook-*.pid` whose session is gone or whose PID is dead. **Never** touch `manual-*.pid` holds (those are deliberate); to end a manual hold, the user must ask for it by name/PID.
 
 ```bash
-for pf in ~/.claude-tmp/caffeinate/hook-*.pid; do
+for pf in /private/tmp/claude/caffeinate/hook-*.pid; do
   [ -e "$pf" ] || continue
   p="$(cat "$pf" 2>/dev/null)"
   if [ -z "$p" ] || ! kill -0 "$p" 2>/dev/null; then rm -f "$pf"; continue; fi   # dead → prune pidfile
