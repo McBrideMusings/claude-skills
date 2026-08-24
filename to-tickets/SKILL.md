@@ -44,10 +44,16 @@ After writing, tell the user the full path so they can open it — put the path 
 Work from whatever is in the conversation. If the user passes an issue reference (ID, number, URL, path) as an argument, fetch it (`bd show <id> --json` on beads, `gh issue view <N>` on GitHub) and read its full body + comments.
 
 **If the source is a prototype or an explainer**, read `../spike/SKILL.md` § Tickets from a
-prototype before writing the slate. The file gets committed — `docs/spikes/` for a prototype
-or wireframe, `docs/explainers/` for an explainer — and the slate ends with a teardown issue
-that depends on every other issue in it. That last ticket is not optional: without it the
-reference outlives its subject and starts contradicting the shipped code.
+prototype before writing the slate. It gets committed as a directory — `docs/spikes/<slug>/`
+for a prototype or wireframe, `docs/explainers/<slug>/` for an explainer — holding the build
+**and one screenshot per named state**, and the slate ends with a teardown issue that depends
+on every other issue in it. That last ticket is not optional: without it the reference
+outlives its subject and starts contradicting the shipped code.
+
+**If the work is UI and there is no prototype yet, stop and say so.** A UI slice needs a
+reference frame to cite, and inventing the visual target inside a ticket body is how a slate
+ends up unbuildable. Point at `/spike` to build one, or at `/gui sketch` if the question is
+only arrangement. Come back after.
 
 ### Phase 02 — Explore the codebase (if needed)
 
@@ -136,12 +142,15 @@ Per slice show:
 - **Blocked by** — which other slices must complete first (numeric refs for now, real issue IDs later)
 - **User stories covered** — by number, against the Phase 03 spec. Every user story must be covered by at least one slice; call out any that aren't and say why (out of scope, or a gap you missed).
 
+For a UI slice, also show its **reference frame** — the `docs/spikes/<slug>/<state>.png` it's built against — and the state names it claims to cover.
+
 Ask:
 
 - Does the granularity feel right? (too coarse / too fine)
 - Are dependencies correct?
 - Should any slices be merged or split further?
 - Are HITL / AFK classifications right?
+- For UI slices: are the states complete, and is each one screenshotted?
 
 Iterate until approved.
 
@@ -184,11 +193,14 @@ Per slice:
 - **`beads`:** `bd create "<title>" -t <task|bug|feature> -p <0-4> --body-file <path> --silent`
   - Capture the printed ID; later slices need it for their blocker edges.
   - Milestone group → `--parent <epic-id>` from Phase 06.
+  - **A UI slice's Visual acceptance block goes in `--design-file <path>`, not the body.** `bd show` renders design separately, so the agent gets the reference frame, the state list, and the copy strings as their own section instead of buried in prose. Write the block to a scratch file and pass the path. Non-UI slices omit the flag.
   - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `triage` and `iterate` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
   - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
 - **`github`:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
   - `--milestone` only when the slice belongs to a milestone group (omit otherwise). The milestone name must match a title from Phase 06.
+  - **GitHub has no design field**, so a UI slice keeps its Visual acceptance block as a `## Visual acceptance` section in the body. Same content, different shape — this is the one place the two backends diverge.
+  - **A `docs/spikes/` path in a GitHub issue body does not render as an image.** Cite it as a path in backticks, never as `![](…)` markdown that will show a broken image. The agent opens it from the checkout; that's the consumer that matters.
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
   - Blockers are prose only (`Blocked by #N` in the body) — GitHub has no dependency edges.
 
@@ -202,6 +214,7 @@ Issues from this skill go into AFK pipelines. The issue body is the contract.
 - **Behavioral, not procedural.** Describe **what** the system should do, not **how** to implement it. The agent will explore the codebase fresh and make its own implementation decisions.
 - **Complete acceptance criteria.** The agent needs to know when it's done. Concrete, testable, independently verifiable.
 - **Explicit scope boundaries.** State what's out of scope. Prevents gold-plating and assumption-drift.
+- **Visual work is described empirically or not at all.** A slice that renders something carries the Visual acceptance block from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md): every state named, copy verbatim, design tokens instead of raw values, one transition line per interaction, and a reference frame from `docs/spikes/<slug>/`. An agent cannot check "matches the design"; it can check that `empty` renders the string `"No sessions yet"`.
 
 ### Good vs bad
 

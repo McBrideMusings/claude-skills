@@ -126,16 +126,24 @@ A prototype that a ticket slate is cut from is **reference material with an expi
 the expiry is tracked, not remembered. When `to-tickets` (or any other pass) turns one
 into issues:
 
-1. It gets committed to `docs/spikes/` so every ticket can cite a path that resolves from
-   any checkout. A screenshot set is not a substitute — it can't be clicked, and it rots
-   faster than the thing it depicts.
-2. **File one last issue: delete it.** That issue depends on every other issue in the
+1. It gets committed to `docs/spikes/<slug>/` — a directory, not a bare file — so every
+   ticket can cite a path that resolves from any checkout.
+2. **Screenshot every state into that same directory**, one PNG per named state:
+   `empty.png`, `loading.png`, `error-rate-limited.png`, `populated.png`. The build stays
+   canonical — a screenshot can't be clicked and rots faster than the thing it depicts —
+   but a ticket that names a frame gives the agent a fixed target to compare against, and
+   gives you something to check the result against without launching anything. Capture
+   them with the `screenshot-checker` agent or the folios harness; never hand-wave a state
+   you didn't render.
+3. **File one last issue: delete it.** That issue depends on every other issue in the
    slate, so it surfaces as ready only once the work it described is done. Closing it
-   removes the file from `docs/spikes/` and closes the loop.
+   removes the whole `docs/spikes/<slug>/` directory — build and screenshots together —
+   and closes the loop.
 
-Without step 2 the reference outlives its subject and starts contradicting the shipped
+Without step 3 the reference outlives its subject and starts contradicting the shipped
 code. The dependency is what makes the cleanup arrive on its own instead of needing to be
-noticed.
+noticed. Screenshots make step 3 more urgent, not less: a stale picture is argued with
+more readily than stale markup.
 
 **Getting comments back.** Every build carries the comment layer: the user presses the
 speech-bubble button (or `a`), marks things up, and presses **Copy comments**. The
