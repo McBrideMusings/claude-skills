@@ -1,5 +1,11 @@
 # Backend: beads (`bd`)
 
+**Load this before saying anything about where bead data lives, whether it is backed up, or
+whether it reached the remote.** Reasoning about beads storage from `git ls-files`, `.gitignore`,
+or a hook listing produces confident wrong answers — see [Never infer sync state from
+`git`](#never-infer-sync-state-from-git). Upstream docs: https://beads.gascity.com/, and
+https://beads.gascity.com/core-concepts/sync-concepts for sync specifically.
+
 Dolt-backed local issue tracker. Verified against `bd version 1.2.2`. IDs are
 `<prefix>-<hash>` — the prefix defaults to the directory name at `bd init` (`bd where --json`
 prints it), the suffix is hashed so concurrent agents don't collide. A repo initialised with
@@ -170,8 +176,28 @@ bd dolt pull     # before reading, if the repo is shared
 bd dolt push     # at the end of a session that wrote
 ```
 
-`bd init` installs git hooks that handle most of this; an explicit `bd dolt push` at session end
-is still the reliable close-out (`wrap-up` does it).
+**Git hooks do not sync issue data.** The pre-commit hook refreshes `.beads/issues.jsonl` when
+`export.auto` is on; post-merge and post-checkout skip JSONL import when `sync.remote` is set.
+None of them push Dolt history. `bd dolt push` is the only thing that does, and `bd hooks install`
+is never the answer to "the issues didn't reach the remote" (`wrap-up` runs the push).
+
+### Never infer sync state from `git`
+
+Nothing in `git status`, `git ls-files`, or `.gitignore` reports on issue data. All of these are
+normal and mean nothing is wrong:
+
+- `.beads/embeddeddolt/` (or `.beads/dolt/`) gitignored — **by design**, per the architecture
+  diagram in the beads docs. It is not a missing backup and not a rollback gap.
+- `.beads/issues.jsonl` absent and untracked — the export is opt-in (`export.auto`), and it is
+  not the sync channel either way.
+- `bd hooks list` showing every hook uninstalled — see above; hooks are not the transport.
+- **`refs/dolt/data` keeping the same hash across a `bd dolt push`.** It is a Dolt manifest ref,
+  not a git content ref, so it does not advance the way a branch does. An unchanged hash is not
+  evidence the push did nothing.
+
+`bd dolt push` printing `Push complete.` is the success signal. If you genuinely need to prove
+data reached the remote, clone to a scratch dir and run `bd bootstrap`, then `bd list` — that is
+the only check that answers the question. Do not go looking for a git-side symptom instead.
 
 ### ⛔ Pushing the database to `origin` is the design. Never treat it as a leak.
 
