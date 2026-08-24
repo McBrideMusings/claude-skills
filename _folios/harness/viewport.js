@@ -46,7 +46,13 @@
     phone:   { label: 'Phone',   w: 390,  h: 844,  chrome: 'ios',     rotates: true, notch: true, radius: 46 },
     tablet:  { label: 'Tablet',  w: 834,  h: 1194, chrome: 'ios',     rotates: true, notch: false, radius: 20 },
     desktop: { label: 'Desktop', w: 1440, h: 900,  chrome: 'macos',   rotates: false, radius: 10 },
-    web:     { label: 'Web',     w: 1440, h: 900,  chrome: 'browser', rotates: false, radius: 10 }
+    web:     { label: 'Web',     w: 1440, h: 900,  chrome: 'browser', rotates: false, radius: 10 },
+    /* A television is the one frame whose furniture is entirely inset rather than drawn:
+       there is no status bar and no title bar, but the outer ~5% of the panel is not
+       reliably visible on real hardware. tvOS publishes that as a safe area and every
+       shipping layout keeps clear of it, so the frame publishes it too — a TV design
+       judged edge-to-edge is judged at a size no viewer has. */
+    tv:      { label: 'TV',      w: 1920, h: 1080, chrome: 'tv',      rotates: false, radius: 8 }
   };
 
   /* Which parts of the macOS window the desktop frame draws. Build-time, from --window,
@@ -241,6 +247,10 @@
       return { markup: LIGHTS_OVERLAY, top: 0, bottom: 0, lights: true };
     }
     if (d.chrome === 'macos') return { markup: '', top: 0, bottom: 0 };
+    // Overscan, not chrome: nothing is drawn, but the inset is real and is published so a
+    // layout can reserve it. tvOS HIG puts the 1080p safe area 60pt in vertically and
+    // 90pt in horizontally.
+    if (d.chrome === 'tv') return { markup: '', top: 60, bottom: 60, left: 90, right: 90 };
     if (d.chrome !== 'ios') return { markup: '', top: 0, bottom: 0 };
     // Landscape phones shrink the bar; tablets keep a slim one either way.
     var top = d.notch ? (land ? 24 : 54) : 24;
@@ -264,6 +274,12 @@
     var stage = clone.querySelector('#at-stage');
     if (stage) stage.innerHTML = '';
     clone.setAttribute('data-at-embedded', '');
+    /* Which frame this is, published INSIDE the frame. A width media query separates a
+       phone from a desktop, but it cannot separate two platforms that merely happen to
+       be wide — and platform is an interaction model (touch / pointer / remote focus),
+       not a size. A fragment that has to lay itself out differently per platform reads
+       this; one that only cares about width keeps using media queries. */
+    clone.setAttribute('data-at-device', names[current]);
     clone.setAttribute('data-at-key', root.getAttribute('data-at-key') || location.pathname);
     var v = root.getAttribute('data-at-variant-index');
     if (v) clone.setAttribute('data-at-variant-init', v);
@@ -288,12 +304,16 @@
       lholder.innerHTML = ch.markup;
       var lbody = clone.querySelector('body');
       while (lholder.firstChild) lbody.appendChild(lholder.firstChild);
-    } else if (ch.markup) {
+    } else if (ch.markup || ch.top || ch.bottom || ch.left || ch.right) {
+      // Insets without markup is a real case (a television's overscan), so this is gated
+      // on the numbers rather than on there being furniture to draw.
       var reserve = clone.getAttribute('data-at-safe') !== 'none';
       var style = clone.ownerDocument.createElement('style');
       style.textContent =
-        ':root{--at-safe-top:' + ch.top + 'px;--at-safe-bottom:' + ch.bottom + 'px}' +
-        (reserve ? 'body{padding-top:var(--at-safe-top);padding-bottom:var(--at-safe-bottom)}' : '') +
+        ':root{--at-safe-top:' + ch.top + 'px;--at-safe-bottom:' + ch.bottom + 'px;' +
+        '--at-safe-left:' + (ch.left || 0) + 'px;--at-safe-right:' + (ch.right || 0) + 'px}' +
+        (reserve ? 'body{padding-top:var(--at-safe-top);padding-bottom:var(--at-safe-bottom);' +
+                   'padding-left:var(--at-safe-left);padding-right:var(--at-safe-right)}' : '') +
         '.at-dc{position:fixed;left:0;right:0;z-index:2147483000;pointer-events:none;' +
         'font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;' +
         'color:currentColor}' +
