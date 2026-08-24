@@ -1,7 +1,6 @@
 ---
 name: folio
-disable-model-invocation: true
-description: "Build a self-contained HTML deliverable that no other verb owns — a page, a report, a plan, a deck. Thin front door over the `_folios/` store and the `folio` assembler; explainers go to `explain`, UI variants to `spike`, layout sketches to `gui`."
+description: "Build a self-contained HTML deliverable that no other verb owns — a page, a report, a plan, a deck — as a local file opened locally. Also the meaning of 'artifact': asking for an artifact is asking for a folio, never a hosted page. Explainers go to `explain`, UI variants to `spike`, layout sketches to `gui`."
 ---
 
 # folio
