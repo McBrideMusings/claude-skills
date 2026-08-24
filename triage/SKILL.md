@@ -203,18 +203,18 @@ Why: <one sentence>
 Append this prompt:
 
 ```
-Which should I start on? Reply with a number, or tell me something else.
+**1. Which should I start on?** Answer `1A`, or tell me something else.
 
-1. <option>
-2. <option>
-3. <option>
+1A. <option>
+1B. <option>
+1C. <option>
 ```
 
-Build 2–4 numbered options in this order:
+Build 2–4 options, lettered under question 1 per `CLAUDE.md` §Deciding & designing, in this order:
 
-1. Top scored recommendation — **named** like `SFTP pool hygiene (#297, #295)` or `HLS mutex stall (#286)`. Never bare issue numbers. Then scope + why.
-2. Next-best group / "also worth attention" — same naming.
-3. (Optional) Third meaningfully-different alternative. No need to add a "pick something else" escape — a free-form reply is always open.
+- **1A.** Top scored recommendation — **named** like `SFTP pool hygiene (#297, #295)` or `HLS mutex stall (#286)`. Never bare issue numbers. Then scope + why.
+- **1B.** Next-best group / "also worth attention" — same naming.
+- **1C.** (Optional) Third meaningfully-different alternative. No need to add a "pick something else" escape — a free-form reply is always open.
 
 Every option gets a named label in plain language; issue numbers in parens after.
 

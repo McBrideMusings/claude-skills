@@ -20,7 +20,7 @@ The trigger is what the *answer* will be, not what the request looked like. If t
 - Answering a design question by describing a mechanism you'd add.
 - A worker or dispatch brief reporting *what it intends to change* (findings alone are not a plan; the fix it proposes is).
 
-An **option set** — a numbered list choosing between courses of action — is not a plan. `CLAUDE.md` §"Deciding & designing" owns that format: bolded numbered line, bullets, cost last.
+An **option set** — a list choosing between courses of action — is not a plan. `CLAUDE.md` §"Deciding & designing" owns that format: numbered question, bolded `1A` / `1B` option lines, bullets, cost last.
 
 ### 2. An ordinary answer is about to draw a shape in prose
 

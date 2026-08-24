@@ -13,8 +13,10 @@ the standing requirements are:
   recommendation.
 - **Every option carries its own best argument** — the case for the pick *and* the real case
   for each alternative, so the user weighs genuine tradeoffs rather than strawmen.
-- **Formatted**, never one dense paragraph: a bolded numbered line naming what physically
-  happens, bullets beneath, cost as the last bullet.
+- **Formatted**, never one dense paragraph: the question numbered, each option a bolded
+  `1A` / `1B` line naming what physically happens, bullets beneath, cost as the last bullet.
+  Two numbering schemes in one message is a finding — the user cannot answer `3B` when `3`
+  was an option rather than a question.
 - Each option written as **what physically happens** — which file, which value, which
   process, when. Not a noun with no location.
 - Options and recommendations go **in chat**, never in a file the user has to open.
