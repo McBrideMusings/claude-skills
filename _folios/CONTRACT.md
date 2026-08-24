@@ -5,39 +5,56 @@ What you write is a **body fragment**: real content, nothing else. No `<!DOCTYPE
 
 ## Invoke
 
+**Two tools, split by whether the output has variants.** An explainer:
+
 ```bash
-"$HOME/.claude/tools/folio" build \
-  --kind explainer \
+"$HOME/.claude/tools/explainer" build \
   --title "How statusline auth works" \
-  --fragment /abs/repo/tmp/claude/folios/statusline-auth.body.html \
+  --fragment /abs/repo/tmp/claude/explainers/statusline-auth.body.html \
   --out /abs/repo/tmp/claude/explainers/statusline-auth.html
 ```
 
-**Decide whether the folio needs the device switcher.** Add `--with viewport` when the layout is
-meant to respond to width and seeing it at phone or tablet size is part of the judgement. Leave it off
-— the default — when the thing only ever exists at one size: a macOS menubar panel, a desktop-only
-window, a single component in isolation, a report meant to be read on a laptop. Sizes the folio will
-never be used at are chrome that invites a pointless verdict.
+A prototype or a wireframe:
 
-`folio kinds` lists the kinds and their flags. `folio serve <path>` is a contingency that shells
-to `python3 -m http.server`; you almost never need it — `file://` runs inline modules and blob workers
-fine, and a hermetic folio never calls `fetch`.
+```bash
+"$HOME/.claude/tools/spike" build \
+  --kind prototype \
+  --title "Wheelhouse nav" \
+  --fragment /abs/repo/tmp/claude/spikes/wheelhouse-nav.body.html \
+  --out /abs/repo/tmp/claude/spikes/wheelhouse-nav.html
+```
+
+`explainer` takes no `--kind` — it has exactly one look. Everything below that mentions a
+picker, rounds, state axes or device frames is `spike`'s alone.
+
+**Decide whether the prototype needs the device switcher.** `--devices` is on for
+`prototype`; name the frames deliberately when the layout is meant to respond to width and
+seeing it at phone or tablet size is part of the judgement. Leave a size off when the thing
+never exists at it: a macOS menubar panel, a desktop-only window, a single component in
+isolation. Sizes the design will never be used at are chrome that invites a pointless verdict.
+
+`spike kinds` lists the kinds and their flags. Both tools carry `serve <path>` as a
+contingency that shells to `python3 -m http.server`; you almost never need it — `file://` runs
+inline modules and blob workers fine, and a hermetic folio never calls `fetch`.
 
 **Every path absolute.** Resolve the repo root in its own Bash call (`git rev-parse --show-toplevel`,
 falling back to absolute `pwd`) and build `<root>/tmp/claude/…` from it. A path that doesn't start with
 `/` is the bug.
 
-## The five kinds
+## The three kinds
 
-| Kind | For | Palette | Read also |
+| Kind | Tool | For | Palette |
 |---|---|---|---|
-| `explainer` | Explaining a mechanism, system, comparison, concept, or decision | **House look** — fixed semantic colour, do not override | — |
-| `prototype` | Several genuinely different working versions of one UI | **None** — your fragment carries the host project's tokens | — |
-| `wireframe` | Greybox layout: structure and hierarchy only | **Withheld on purpose** — do not add colour | — |
-| `deck` | Slides | Yours to choose | `DIRECTION.md` |
-| `page` | Anything else: a plan, a report, a one-off deliverable | Yours to choose | `DIRECTION.md` |
+| `explainer` | `explainer` | Explaining a mechanism, system, comparison, concept, or decision | **House look** — fixed semantic colour, do not override |
+| `prototype` | `spike` | Several genuinely different working versions of one UI | **None** — your fragment carries the host project's tokens |
+| `wireframe` | `spike` | Greybox layout: structure and hierarchy only | **Withheld on purpose** — do not add colour |
 
 Pick by what the folio *is*, not by which skill you came from.
+
+`page` and `deck` were retired along with the `folio` skill: no verb owned them, and every
+real request turned out to be an explanation or a design question. Don't reintroduce a
+generic kind to catch an awkward request — decide whether it is being explained or being
+decided, and use that kind.
 
 ## Fragment rules — all kinds
 
@@ -74,12 +91,12 @@ gap), `.nums` (tabular numerals — the same class name on a `<td>` also right-a
 (visually hidden). Focus rings, `prefers-reduced-motion`, text selection, the caret, scrollbars and
 link underline offset are already themed — don't re-declare them.
 
-**The measure grid.** In `explainer` and `page`, `main` is a two-width grid: prose sits at `--maxw`
+**The measure grid.** In `explainer`, `main` is a two-width grid: prose sits at `--maxw`
 (68ch) and `figure`, `table`, `.scroll-x`, `.code` and `.compare` automatically break out to
 `--maxw-wide` (96ch). Add `class="wide"` to send anything else out to the wide track. A diagram or a
-ten-row table squeezed into a reading measure is the single most common way an folio looks cramped,
-and it is already handled — don't re-center things by hand. `deck`, `prototype` and `wireframe` take
-the full viewport instead.
+ten-row table squeezed into a reading measure is the single most common way a folio looks cramped,
+and it is already handled — don't re-center things by hand. `prototype` and `wireframe` take the
+full viewport instead.
 
 **Never a coloured `border-left` thicker than 1px** on a callout, card, list item or alert. It is the
 most recognisable machine-made accent there is, and the tinted ground plus a coloured label already
@@ -262,7 +279,7 @@ A prototype topic has **one output file for its whole life**: `prototypes/<slug>
 round is a rebuild of that same path with `--round N`:
 
 ```bash
-folio build --kind prototype --picker switch --round 2 \
+spike build --kind prototype --picker switch --round 2 \
   --title "Branches Pane" \
   --fragment <root>/tmp/claude/folios/branches-pane-v2.body.html \
   --out <root>/tmp/claude/prototypes/branches-pane/branches-pane.html
@@ -330,31 +347,10 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
 `.wf-text` (grey text bars, `data-lines="3"`), `.wf-control` (generic input/button block),
 `.wf-note` (annotation outside the frame).
 
-## `deck` — slides
-
-Each slide is a `<section data-slide>`; the first `<h2>` is its title. The tool adds `←`/`→`/space
-navigation, `1–9` jump, a slide counter, and print-to-PDF page breaks.
-
-```html
-<section data-slide>
-  <h2>Where the time goes</h2>
-  <p>…</p>
-</section>
-```
-
-`.deck-lead` for an opening statement, `.deck-note` for a footnote line, `.deck-split` for a two-column
-slide.
-
-## `page` — fallback
-
-Structural plumbing only; palette and typefaces are yours. Read `DIRECTION.md` and write the short
-colour/type/layout plan before any markup. Classes: `.page-hero`, `.page-section`, `.page-lead`,
-`.page-note`, plus everything in `_base.css`.
-
 ## Before handing it over
 
 1. Run the build; a non-zero exit means nothing was written.
-2. **Screenshot it and look at it.** Every variant for a picker, every slide for a deck, both themes if
+2. **Screenshot it and look at it.** Every variant for a picker, both themes if
    it themes. A path is delivery, not verification — a font falling back, an overlap, or a blank
    variant is invisible in source.
 3. **Run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md). One batched round: the folio's own

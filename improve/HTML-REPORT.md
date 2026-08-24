@@ -2,23 +2,22 @@
 
 Serves both report shapes: a single-aspect architecture review, and the **survey report** (one `<section>` per aspect, one card per finding, cross-aspect Top recommendation). The card fields and diagram patterns below are written for architecture cards; other aspects' cards keep Title / badge / Files / Problem / Solution and swap the before/after SVG for whatever carries the finding (a table, a config snippet, a layer-audit table) — same components, same tone.
 
-The report is one **hermetic** HTML file, built with the shared `explainer` kind — the same semantic-color tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes the `explain` skill uses. Read [../_folios/CONTRACT.md](../_folios/CONTRACT.md) for the vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md)) without ceremony.
+The report is one **hermetic** HTML file, and **`explain` owns the rendering** — a findings report is an explanation, so it is built with the same tool, tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes. This file owns only what is specific to a report: the card fields, the coverage table, and the diagram patterns below. Read [../_folios/CONTRACT.md](../_folios/CONTRACT.md) for the class vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md)) without ceremony.
 
 ## Build it
 
 Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The tool supplies the hermetic structure, the tokens, both themes, and the theme toggle:
 
 ```bash
-"$HOME/.claude/tools/folio" build \
-  --kind explainer \
+"$HOME/.claude/tools/explainer" build \
   --title "Architecture review — {repo name}" \
-  --fragment <repo-root>/tmp/claude/artifacts/<slug>.body.html \
-  --out <repo-root>/tmp/claude/improve/<slug>.html
+  --fragment <repo-root>/tmp/claude/explainers/<slug>.body.html \
+  --out <repo-root>/tmp/claude/explainers/<slug>.html
 ```
 
 (Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, so the hermetic rule is enforced rather than remembered. Every path absolute — resolve the repo root with `git rev-parse --show-toplevel` in its own Bash call.
 
-**Screenshot it and look at it** before handing it over.
+Follow [`../explain/SKILL.md`](../explain/SKILL.md) § Verify, then open it for the rest: **screenshot it and look at it** in both themes, then hand it over with a bare `open <absolute-path>` on its own line.
 
 ## Fragment skeleton
 

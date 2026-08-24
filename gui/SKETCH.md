@@ -103,15 +103,22 @@ width, how far down the page the third region sits, whether a column of numbers 
 can't show any of that honestly, so a yes/no given against ASCII would be answering a different
 question.
 
-When that's where you are, build a greybox wireframe:
+When that's where you are, the question has outgrown this mode and belongs to `spike`,
+which owns every fidelity above ASCII — `wireframe` (greybox, colour withheld) and
+`prototype` (working variants behind a picker). Escalating is a routing step, not a
+different build: read [`../spike/SKILL.md`](../spike/SKILL.md), then build the greybox:
 
 ```bash
-"$HOME/.claude/tools/folio" build \
+"$HOME/.claude/tools/spike" build \
   --kind wireframe \
   --title "<what's being laid out>" \
-  --fragment <repo-root>/tmp/claude/artifacts/<slug>.body.html \
-  --out <repo-root>/tmp/claude/sketches/<YYYY-MM-DD>-<HHMM>-<slug>.html
+  --fragment <repo-root>/tmp/claude/spikes/<slug>.body.html \
+  --out <repo-root>/tmp/claude/spikes/<slug>.html
 ```
+
+Stop at `wireframe`. Going straight to `prototype` because it looks better is how a
+layout question turns into a style conversation — that jump is a decision the user makes,
+not one that happens because the tool offered it.
 
 Class vocabulary — `.wf-region`, `.wf-label`, `.wf-ph`, `.wf-text`, `.wf-control`, `.wf-note`,
 `.wf-grid` — is in `../_folios/CONTRACT.md`.

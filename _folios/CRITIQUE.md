@@ -1,4 +1,4 @@
-# Critique — the pass between building an folio and handing it over
+# Critique — the pass between building a folio and handing it over
 
 One pass. Build the whole thing, inspect it once in a batch, fix everything that round shows in one
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
@@ -14,7 +14,7 @@ The folio carries its own instruments. Use them before your eyes.
 1. **Contrast, both themes.** Press `c`, read the toast, switch theme, press `c` again. The target is
    "All N text elements pass WCAG AA" twice. Any failure names its own ratio; fix the value, don't
    argue with the number.
-2. **Screenshot at 1280 wide, and at 390 if the folio is meant to respond.** A deck gets every
+2. **Screenshot at 1280 wide, and at 390 if the folio is meant to respond.** A prototype gets every
    slide; a picker gets every variant; anything themed gets both themes. This is one batched round,
    not a trip per surface.
 
@@ -29,7 +29,7 @@ a finding.
 - **The title is the biggest thing on the page, by a lot.** `--f-3xl` on the title against `--f-md`
   body is a 2.75× step. A title only 1.3× the body is why a page reads as undesigned.
 - **A slide is not a document.** Deck type scales with the viewport. If a slide's content occupies
-  less than half its height, the type is document-sized and the deck will look empty in a room.
+  less than half its height, the type is document-sized and the page will look empty on a wall.
 - **More space above a heading than below it.** A section that floats equidistant between two blocks
   belongs to neither.
 - **One accent, one job.** A semantic hue (data, flow, happy, danger, warn) spent on decoration —

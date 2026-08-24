@@ -90,15 +90,19 @@ Read `../_folios/CONTRACT.md` for the `explainer` class vocabulary, then **write
 
 Keep the explanation itself to the same standard the chat tier holds: one thing at a time, scoped tight, calibrated to what the listener already knows, with one primary source to go deeper.
 
-Write the fragment to `<repo>/tmp/claude/artifacts/<slug>.body.html`, then build:
+Write the fragment to `<repo>/tmp/claude/explainers/<slug>.body.html`, then build:
 
 ```bash
-"$HOME/.claude/tools/folio" build \
-  --kind explainer \
+"$HOME/.claude/tools/explainer" build \
   --title "<the title>" \
-  --fragment <repo>/tmp/claude/artifacts/<slug>.body.html \
+  --fragment <repo>/tmp/claude/explainers/<slug>.body.html \
   --out <repo>/tmp/claude/explainers/<slug>.html
 ```
+
+`explainer` has one look and no variants, so it takes no `--kind`, no picker, no rounds
+and no device frames. That machinery belongs to `spike`, which shares the same
+`_folios/` substrate — the tokens, the type scale, the class vocabulary and the
+annotate/contrast/theme widgets are common to both.
 
 `<repo>` is the ABSOLUTE repo root and `<slug>` a kebab-case topic slug. **Never a cwd-relative `tmp/…`.** Resolve `<repo>` in its own Bash call — `git rev-parse --show-toplevel` (if it errors/empty, use the absolute output of `pwd`). The Bash working directory is NOT guaranteed to be the repo root; a bare `tmp/claude/explainers/…` lands the file under whatever subdir the shell is in, so the `open <path>` you print won't match where it landed. If the path doesn't start with `/`, it's the bug. (The tool rejects a relative path rather than guessing.)
 
@@ -140,3 +144,12 @@ Don't auto-keep; wait for the user to ask.
 - `ARCHETYPES.md` — the five shapes: skeleton + signature diagram for each.
 - `../_folios/CONTRACT.md` — the `explainer` class vocabulary, semantic-colour roles, fragment rules.
 - `../_folios/README.md` — what the shared store is and why the tool exists.
+
+## Other callers
+
+`improve` renders its architecture review and improvement survey through this skill's
+tool rather than owning a build of its own — the report is an explanation of findings,
+and it uses the same tokens, type scale and `.diagram` / `.compare` / `.callout` /
+`.legend` / `.cite` vocabulary. Its card and diagram spec lives in
+`../improve/HTML-REPORT.md`; the build command and the verify-then-open steps are the
+ones above.

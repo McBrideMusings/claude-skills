@@ -1,11 +1,11 @@
 <div class="hero">
   <span class="badge">Mechanism</span>
-  <h1>How the folio tool assembles a hermetic file</h1>
+  <h1>How the folio tools assemble a hermetic file</h1>
   <p class="what">One body fragment goes in; one self-contained HTML file comes out, with no network request in it.</p>
-  <p class="why">After this you can add a widget, add a kind, or debug why a stylesheet did not land — without reading the whole 742-line tool.</p>
+  <p class="why">After this you can add a widget, add a kind, or debug why a stylesheet did not land — without reading either tool end to end.</p>
 </div>
 
-<p>The tool exists so the stylesheets never enter the model's context. The model writes content; <span class="cite">tools/folio:1</span> supplies the reset, the theme plumbing, the picker and the harness JS.</p>
+<p>The tools exist so the stylesheets never enter the model's context. The model writes content; <span class="cite">tools/spike:1</span> and <span class="cite">tools/explainer:1</span> supply the reset, the theme plumbing, the picker and the harness JS. They split on whether the output has variants — <code>spike</code> owns the picker, rounds and device frames; <code>explainer</code> owns none of them and takes no <code>--kind</code>.</p>
 
 <div class="callout callout--data">
   <span class="label">Input</span>

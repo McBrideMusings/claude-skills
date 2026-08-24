@@ -1,9 +1,14 @@
 # Creative direction — identity-first folios
 
-Read this for the **`page` and `deck` kinds only**. Those are the two where palette and typefaces are
-open decisions. `explainer` already has a house look, `prototype` copies the host project's tokens, and
-`wireframe` withholds colour on purpose — none of them has a direction to choose, so none of them reads
-this file.
+**Nothing reads this today**, and that is the state to leave it in. It covered the retired `page` and
+`deck` kinds — the two where palette and typefaces were open decisions. `explainer` already has a house
+look, `prototype` copies the host project's tokens, and `wireframe` withholds colour on purpose, so
+none of the three surviving kinds has a direction to choose.
+
+It is kept because the guidance is about identity-first design generally, not about those two kinds, so
+it is the reference if such a kind ever returns. **Do not wire it to a kind that already has its
+palette decided** — that is how a house look starts drifting per-folio. If it is still unread the next
+time someone passes through here, delete it.
 
 Adapted from `design-folio` (plannotator/effective-html, https://www.effectivehtml.com/docs/designing-folios).
 
@@ -140,5 +145,5 @@ ground, slide it toward an analogous hue or drain some saturation — don't trad
 
 ## Delivery
 
-Never publish to a hosted page — see `~/.claude/CLAUDE.md` §5. Write the file, screenshot it, look at
+Never publish to a hosted page — see `~/.claude/CLAUDE.md` §Permission gates. Write the file, screenshot it, look at
 it, run the one batched pass in [`CRITIQUE.md`](CRITIQUE.md), then `open <absolute-path>`.

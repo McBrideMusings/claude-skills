@@ -2,7 +2,7 @@
 
 Not a skill. The **implementation and delivery substrate** every skill uses when its output is a
 self-contained HTML file. The leading `_` and the absence of any `SKILL.md` keep this directory from
-registering as a skill (same mechanism as `_domains/` and `_domains/`).
+registering as a skill (same mechanism as `_domains/` and `_tracker/`).
 
 The principle: **the verb is the skill; this is what the verbs share.** `explain` decides what an
 explanation should say, `spike` decides which directions diverge, `gui` decides where things
@@ -13,15 +13,13 @@ sit on a layout. None of them should be re-authoring a reset, a theme block, or 
 ```
 README.md         <- this file
 DIRECTION.md      <- creative direction: register, palette, type, the originality bar
-CONTRACT.md       <- the five kinds, their class vocabulary, and the body-fragment rules
-CRITIQUE.md       <- the one batched pass between building an folio and handing it over
+CONTRACT.md       <- the three kinds, their class vocabulary, and the body-fragment rules
+CRITIQUE.md       <- the one batched pass between building a folio and handing it over
 kinds/
   _base.css       <- reset, theme plumbing, layout + overflow primitives, focus, print
   explainer.css   <- house look: semantic colour, type scale, callouts, steps, diagrams, cites
   prototype.css   <- stage only, no palette; variants carry the project's own tokens
   wireframe.css   <- greybox; withholds colour on purpose
-  deck.css        <- slide sections
-  page.css        <- generic fallback; palette and type left empty for the model to choose
 harness/
   chrome.css      <- the one palette every piece of harness furniture consumes, plus the
                      insets that describe how much of the window the folio actually gets
@@ -29,7 +27,6 @@ harness/
   rail.css        <- the prototype control rail, fixed spec, never restyled
   rail.js         <- rounds, variants, state axes; driven by <template data-variant>
                      and <nav data-axis>; other widgets add groups via window.__atRail
-  deck.js         <- slide keyboard navigation
   theme.js        <- light/dark toggle
   annotate.css    <- the comment layer
   annotate.js     <- comment on elements, export the comments as markdown
@@ -45,7 +42,7 @@ harness/
 
 Generic chrome any folio can carry, declared in one table (`WIDGETS`) in the tool.
 Adding one is a row there plus its files here — not three new branches in the build path.
-`folio kinds` prints the current set; `--with NAME` adds one to a kind that does not
+`spike kinds` prints the current set; `--with NAME` adds one to a kind that does not
 get it by default, `--without NAME` drops one.
 
 | Widget | Default on | What it does |
@@ -60,30 +57,43 @@ get it by default, `--without NAME` drops one.
 and a button behaviour that only half the chrome shares is how two surfaces drift apart.
 
 `annotate` and `contrast` are on everywhere because they are **dormant**: they render
-nothing at all until their key is pressed, so an folio you hand to someone else looks
+nothing at all until their key is pressed, so a folio you hand to someone else looks
 exactly as it would without them. `viewport` is visible chrome and no kind implies it —
 a prototype can just as easily be a desktop-only menubar panel as a responsive page — so
-the model asks for it per folio.
+the model asks for it per prototype.
 
-The picker and the deck navigator are not widgets — they restructure the body rather
-than adding chrome to it, so they keep their own path in the tool.
+The picker is not a widget — it restructures the body rather than adding chrome to it,
+so it keeps its own path in the tool.
 
-The tool that assembles all of it: `~/.claude/tools/folio`.
+**Two tools assemble all of it**, split by whether the output has variants:
+
+- `~/.claude/tools/spike` — `prototype` and `wireframe`. Owns the picker, rounds, state
+  axes and device frames.
+- `~/.claude/tools/explainer` — `explainer`. One look, no variants, none of that
+  machinery; it takes no `--kind`.
+
+They share this directory, which is the whole point: one set of tokens, one class
+vocabulary, one comment layer, two front doors.
 
 ## Who reads what
 
-| Skill | Kind | Cells it reads |
-|---|---|---|
-| `explain` (Tier 2) | `explainer` | `CONTRACT.md` |
-| `spike` (UI shape, and COMPARE's visual branch) | `prototype` | `CONTRACT.md` |
-| `gui` (sketch mode, escalated) | `wireframe` | `CONTRACT.md` |
-| `folio` | `page`, `deck` | `CONTRACT.md` + `DIRECTION.md` |
+| Skill | Tool | Kind | Store |
+|---|---|---|---|
+| `explain` | `explainer` | `explainer` | `tmp/claude/explainers/`, kept in `docs/explainers/` |
+| `improve` (architecture review, survey report) | `explainer` | `explainer` | same as `explain` — it routes through that skill |
+| `spike` (UI shape, and COMPARE's visual branch) | `spike` | `prototype` | `tmp/claude/spikes/`, kept in `docs/spikes/` |
+| `gui` (sketch mode, escalated) | `spike` | `wireframe` | same as `spike` — it routes through that skill |
 
-`CRITIQUE.md` is read by all four, at the same point: after the build, before `open`.
+All four read `CONTRACT.md` for the class vocabulary, and `CRITIQUE.md` at the same point:
+after the build, before `open`.
 
-`DIRECTION.md` is read only for the **identity-first** kinds — `page` and `deck` — where palette and
-typefaces are open decisions. `explainer` has a house look already, `prototype` copies the project's
-tokens, and `wireframe` is deliberately colourless, so none of the three has a direction to choose.
+`DIRECTION.md` is currently read by **nothing**. It covers the identity-first case — palette
+and typefaces as open decisions — which belonged to the retired `page` and `deck` kinds.
+`explainer` has a house look already, `prototype` copies the project's tokens, and
+`wireframe` is deliberately colourless, so none of the three surviving kinds has a direction
+to choose. It is kept because the guidance is not kind-specific and is the reference if an
+identity-first kind ever comes back; delete it rather than wiring it to a kind that already
+has its palette decided.
 
 ## Why a tool and not a scaffold
 
@@ -100,10 +110,12 @@ identically offline and in five years.
 Measured against real Chrome on `file://`: inline classic scripts, inline `type="module"` scripts, and
 blob-URL workers all run. Only `fetch()` is blocked (`origin 'null'`), and a hermetic folio has
 nothing to fetch — data goes in as a JS literal. **This is why no web server is part of the design.**
-`folio serve` exists as a contingency and shells out to the already-installed `python3`.
+Both tools carry a `serve` subcommand as a contingency, shelling out to the already-installed
+`python3`.
 
 ## Delivery
 
 Write to disk, then `open <absolute-path>`. **Screenshot it and look at it before handing it over** —
 a path is delivery, not verification; rendering failures live in pixels, not in source. Never publish
-an folio to a hosted page (see `~/.claude/CLAUDE.md` §5); the file itself is the portable thing.
+a folio to a hosted page (see `~/.claude/CLAUDE.md` §Permission gates); the file itself is the
+portable thing.

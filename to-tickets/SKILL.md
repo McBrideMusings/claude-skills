@@ -27,9 +27,11 @@ After writing, tell the user the full path so they can open it — put the path 
 
 Work from whatever is in the conversation. If the user passes an issue reference (ID, number, URL, path) as an argument, fetch it (`bd show <id> --json` on beads, `gh issue view <N>` on GitHub) and read its full body + comments.
 
-**If the source is a folio**, read `../folio/SKILL.md` § Tickets from a folio before writing the
-slate. The folio gets committed to `docs/folios/` and the slate ends with a teardown issue that
-depends on every other issue in it — that last ticket is not optional.
+**If the source is a prototype or an explainer**, read `../spike/SKILL.md` § Tickets from a
+prototype before writing the slate. The file gets committed — `docs/spikes/` for a prototype
+or wireframe, `docs/explainers/` for an explainer — and the slate ends with a teardown issue
+that depends on every other issue in it. That last ticket is not optional: without it the
+reference outlives its subject and starts contradicting the shipped code.
 
 ### Phase 02 — Explore the codebase (if needed)
 
