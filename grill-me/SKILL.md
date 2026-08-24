@@ -114,7 +114,7 @@ Shared understanding is the goal, not an artifact. Stop when there are no unreso
 If a written record is useful at the end, offer it — don't assume:
 
 - Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
-- Durable product spec → invoke `/to-spec` to synthesize a PRD (`docs/PRD.md`) from the conversation. (`/to-spec` owns spec generation; don't write the PRD by hand here.)
+- Durable product spec → invoke `/to-tickets`, which synthesizes the spec as its Phase 03 and offers to commit it as `docs/PRD.md` before slicing. (`/to-tickets` owns spec generation; don't write the PRD by hand here.)
 
 Glossary entries and ADRs are captured *inline* during the session — no end-of-session sweep needed.
 
@@ -125,8 +125,7 @@ Glossary entries and ADRs are captured *inline* during the session — no end-of
 | The user asks for | Invoke |
 | --- | --- |
 | a prototype, mockup, variants, "show me a few options" | `spike` |
-| a spec or PRD | `to-spec` |
-| tickets or issues from what was decided | `to-tickets` |
+| a spec or PRD, tickets, or issues from what was decided | `to-tickets` |
 | a diagram or a visual explanation | `show-me` / `explain` |
 | an ASCII layout sketch for one arrangement | `gui` |
 

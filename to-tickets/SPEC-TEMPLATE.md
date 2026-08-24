@@ -1,8 +1,8 @@
 # Spec template
 
-The shape of a synthesized spec. Read by `to-spec` (which writes it to `docs/PRD.md` as a
-durable product doc) and by `to-tickets` Phase 03 (which writes it to a scratch file as the
-input to slicing). One copy so the two can't drift.
+The shape of the spec `to-tickets` Phase 03 synthesizes before slicing. Normally written to
+scratch and thrown away; optionally copied to `docs/PRD.md` when the repo wants a committed
+product doc.
 
 Every section is required. Leave a one-line `TBD — open question` placeholder only if the
 conversation truly doesn't cover it.

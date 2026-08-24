@@ -202,7 +202,7 @@ sequenceDiagram
 ## Where this gets read from
 
 - `CLAUDE.md` §4 — default technique for any implementation plan or architecture proposal.
-- `to-spec`'s Implementation Decisions section — generalizes the prototype-snippet exception to any of the techniques above, not only output copied from a prototype run.
+- `to-tickets`' Implementation Decisions section (`../to-tickets/SPEC-TEMPLATE.md`) — generalizes the prototype-snippet exception to any of the techniques above, not only output copied from a prototype run.
 - `explain`'s Architecture / Process archetypes — a text-only alternative to the SVG signature diagram when the point is structural shape, not a rendered visual explanation.
 - `improve`'s proposed-fix descriptions — show the shape of the fix, not just name it.
 

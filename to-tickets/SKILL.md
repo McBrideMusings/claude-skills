@@ -1,13 +1,15 @@
 ---
 name: to-tickets
-description: "Break a plan, spec, PRD, or the conversation itself into independently-grabbable tickets using vertical-slice tracer bullets, published to the repo's issue backend — beads or GitHub. Synthesizes a scratch spec for review first when the source is loose conversation. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
+description: "The whole path from conversation to filed work: synthesize a spec (problem, solution, user stories, testing decisions), get it approved, slice it into vertical-slice tracer-bullet tickets, and publish them to the repo's issue backend — beads or GitHub. The single owner of spec/PRD generation; docs, grill-me and gui delegate here. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
 ---
 
 # To Tickets
 
 Break a plan into independently-grabbable tickets using **vertical slices** (tracer bullets). Tickets become inputs to `implement` / `iterate`.
 
-**The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that. `/to-spec` is for a *committed* PRD in `docs/`, a separate deliverable; it is not a gate in front of this one.
+**The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that.
+
+**This skill is the single owner of spec/PRD generation.** `docs`, `grill-me`, `gui` and `iron-out` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; a PRD is a by-product of this run (Phase 03), not a prerequisite for it.
 
 **Issue backend:** resolve once via [`../_tracker/_detect.md`](../_tracker/_detect.md) and hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
 
@@ -21,8 +23,9 @@ This skill writes two files, both disposable, both under `/private/tmp/claude/<r
 | `to-tickets.md` | Phase 05 | the slice breakdown awaiting approval |
 
 **Both are transitory.** They exist to produce the tickets and die with the tmp sweep; the
-tickets carry the durable content forward. Never write either into the repo. A spec that
-should outlive the slate is `/to-spec`'s `docs/PRD.md`, which is a separate ask.
+tickets carry the durable content forward. Never write either into the repo on your own
+initiative — the one exception is the `docs/PRD.md` copy in Phase 03, which only happens when
+the user asks for it.
 
 Draft slices to `/private/tmp/claude/<repo-slug>/to-tickets.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
 
@@ -54,9 +57,8 @@ Look for prefactoring opportunities — changes that make the upcoming implement
 
 ### Phase 03 — Synthesize the spec
 
-Slicing needs a stated problem, solution, user stories, and testing decisions. When the source
-doesn't already carry them, write them now — this is the step that used to live in a separate
-skill, and skipping it is why a slate ends up with slices nobody can trace to a user story.
+Slicing needs a stated problem, solution, user stories, and testing decisions. Write them now —
+skipping this is why a slate ends up with slices nobody can trace to a user story.
 
 **Skip this phase entirely when the source is already structured** and say in one line that
 you're skipping it:
@@ -66,9 +68,9 @@ you're skipping it:
 - drafts handed over by `improve`, or a slate derived from a `spike` prototype
 
 Otherwise synthesize from conversation context, following
-[`../to-spec/SPEC-TEMPLATE.md`](../to-spec/SPEC-TEMPLATE.md) — the same template `/to-spec`
-uses, including its seams confirmation. Do **not** interview the user; if the conversation is
-too thin to write a real spec, stop and say so, and point at `/grill-me`.
+[SPEC-TEMPLATE.md](SPEC-TEMPLATE.md), including its seams confirmation. **Do not interview the
+user** — synthesize what's already been discussed. Interviewing is `grill-me`'s job; if the
+conversation is too thin to write a real spec, stop and say so, and point at `/grill-me`.
 
 Write it to `/private/tmp/claude/<repo-slug>/spec.md` — absolute path, same `<root>` resolution
 as the proposal file above. Tell the user the path on its own line with no trailing
@@ -78,6 +80,19 @@ approval before slicing**:
 > *"Spec written. Does this match what you want built, or should I adjust before slicing?"*
 
 Iterate on the spec until approved. Only then continue.
+
+#### Committing the spec as `docs/PRD.md`
+
+The spec is transitory by default — it exists to produce the tickets. Copy it into the repo
+only when the user asks, or when a `docs/PRD.md` stub already exists (a `/docs` or `/bootstrap`
+run creates one), in which case offer once and don't insist:
+
+> *"There's an empty `docs/PRD.md` in this repo — want this spec written there too?"*
+
+If they say yes and `docs/PRD.md` already holds substantive content, ask which: **(a)**
+overwrite, **(b)** append a new section, **(c)** write `docs/PRD-{slug}.md` for a
+feature-scoped spec. If there's no `docs/` directory, create it, and mention that `/docs` can
+wire the file into a VitePress site.
 
 ### Phase 04 — Draft vertical slices
 
