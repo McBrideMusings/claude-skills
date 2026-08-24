@@ -4,8 +4,13 @@
 
 `~/.claude/projects/<encoded-cwd>/<session-id>.jsonl`
 
-The directory name is the working directory with `/` replaced by `-`, e.g.
-`/Users/pierce/Projects/term` → `-Users-pierce-Projects-term`.
+The directory name is the **absolute** working directory with `/` replaced by `-`, which
+leaves a leading `-` because the path starts with one: `$HOME/Projects/term` becomes
+`-Users-pierce-Projects-term` on a machine whose `$HOME` is `/Users/pierce`.
+
+This is the harness's own encoding, not ours — it is not `<repo-slug>` and the two are not
+interchangeable. `<repo-slug>` is relative to `$HOME` and has no leading dash; run
+`~/.claude/tools/repo-slug` for that one.
 
 `~/.claude-work/projects` is a **symlink** to the same directory — both profiles share one
 history. Never audit both paths; you would double every number.
