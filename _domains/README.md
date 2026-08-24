@@ -9,20 +9,24 @@ and the absence of any `SKILL.md` keep this directory from registering as a skil
 One flat store, one kind of label. A label can describe a *stack* (`apple`, `web`, `react`,
 `threejs`) or a *mode* of development (`game`); the store doesn't distinguish — every label is a
 directory of engine cells that stacks with every other label in scope, detected the same way (see
-`_detect.md`). A repo's `.claude/domain` marker can name several labels at once — a game on an
-iPhone carries `apple` (how you build/test/ship on Apple), `mobile` (what a phone app is regardless
-of vendor), and `game` (how games are built regardless of device) simultaneously.
+`_detect.md`). A repo carries several labels at once — a game on an iPhone is `apple` (how you
+build/test/ship on Apple), `mobile` (what a phone app is regardless of vendor), and `game` (how
+games are built regardless of device) simultaneously.
 
-A third store, [`../_tracker/`](../_tracker/README.md), sits outside this pairing entirely — it
-names the **issue backend** a skill writes to (beads / GitHub / local file), not knowledge layered
-onto an engine. Resolved per repo by `_tracker/_detect.md`, independently of the domain marker.
+Which labels apply to which repo is resolved from a map held outside this store, path-scoped per
+repo; see `_detect.md`. Nothing is written into a project repo, and the per-repo `.claude/domain`
+marker this store used to rely on was removed on 2026-08-23.
+
+The **issue backend** a skill writes to (beads / GitHub / local file) is a label in the same map,
+spelled `tracker:<backend>`; its cells live in [`../_tracker/`](../_tracker/README.md).
 
 ## Layout
 
 ```
 _domains/
-  _detect.md            <- marker-first detection, marker grammar, classifier heuristic
+  _detect.md            <- how labels resolve, map grammar, classifier heuristic
   <label>/
+    context.md          <- <=120 words, INJECTED at session start in every repo with this label
     review.md           <- lens the `review` engine adds when this label is in scope
     diagnose.md          <- what to instrument / watch, read at diagnose's instrument phase
     profiling.md         <- profiler catalog / performance gate, read by the `profiling` engine
@@ -75,7 +79,7 @@ shared device, port, or database.
 `game/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs. numbers
 questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
 majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to-end game builds over
-this store and sets the `game` marker on scaffold.
+this store and adds the `game` label on scaffold.
 
 `gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +
 `review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
