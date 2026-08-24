@@ -74,7 +74,10 @@
 
   var names = (root.getAttribute('data-at-devices') || 'fit,phone,tablet,desktop')
     .split(',').map(function (s) { return s.trim(); }).filter(function (s) { return CATALOG[s]; });
-  if (names.indexOf('fit') < 0) names.unshift('fit');
+  /* An explicit --devices list is honoured exactly. A design that ships on a phone and a
+     Mac panel and nothing else is judged in those two frames; a third, unframed one is a
+     size nobody drew for, and it was the one the harness opened on. `fit` is still in the
+     default list, so a build that names no devices is unchanged. */
   if (names.length < 2) return;
 
   var current = 0;
