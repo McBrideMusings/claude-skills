@@ -80,7 +80,26 @@ Edit the fragment, re-run the build to the same `--out`. Never a new file per re
 ## Keeping it
 
 Ephemeral by default — `tmp/claude/` is age-pruned. If the user asks to keep it, move it to
-`<repo-root>/docs/` inside a repo, or `~/folios/` outside one. Don't auto-keep.
+`<repo-root>/docs/folios/` inside a repo, or `~/folios/` outside one. Don't auto-keep.
+
+**Never invent a second word for the store.** Fragments go in `tmp/claude/folios/`, kept builds in
+`docs/folios/`. Not `prototypes/`, not `mockups/`, not `artifacts/` — the tool is `folio`, so the
+directory is `folios`, everywhere, no exceptions.
+
+## Tickets from a folio
+
+A folio that a ticket slate is cut from is **reference material with an expiry**, and the expiry is
+tracked, not remembered. When `to-tickets` (or any other pass) turns a folio into issues:
+
+1. The folio gets committed to `docs/folios/` so every ticket can cite a path that resolves from any
+   checkout. A screenshot set is not a substitute — it can't be clicked, and it rots faster than the
+   thing it depicts.
+2. **File one last issue: delete the folio.** It depends on every other issue in the slate, so it
+   surfaces as ready only once the work it described is done. Closing it removes the file from
+   `docs/folios/` and closes the loop.
+
+Without step 2 the reference outlives its subject and starts contradicting the shipped code. The
+dependency is what makes the cleanup arrive on its own instead of needing to be noticed.
 
 ## Delivery
 
