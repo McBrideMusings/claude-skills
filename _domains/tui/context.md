@@ -1,5 +1,7 @@
 # tui — injected context
 
+> Keyboard-first, no hover. State stays on screen. Reflow to 80 columns.
+
 A terminal interface is keyboard-first with rough mouse support. There is no hover, no
 drag-and-drop, no tooltip, no cursor affordance.
 

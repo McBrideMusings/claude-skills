@@ -1,5 +1,7 @@
 # api — injected context
 
+> Never break userspace. Idempotency key on every action. Cursor pagination, not offset.
+
 Good APIs are boring. An API the caller has to think about is one that stole
 attention from the job they were doing.
 

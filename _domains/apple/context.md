@@ -1,5 +1,7 @@
 # apple — injected context
 
+> Signing and provisioning are self-serve. Never ask, never call them blockers.
+
 - **Signing, entitlements, capabilities and provisioning are self-serve here.** Never ask
   whether an account, a team, or a signing identity exists, and never call any of them a
   blocker.

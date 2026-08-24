@@ -1,5 +1,7 @@
 # gui — injected context
 
+> Design all states: empty, loading, error, partial. Colour never carries meaning alone.
+
 Graphical interfaces — desktop, web, and mobile. The design principles are shared across
 all three; the platform label says where it ships. Terminal interfaces are [../tui/](../tui/),
 a sibling, and most of this does not apply there.

@@ -88,11 +88,22 @@ Two deliberate exceptions where cells overlap and that is correct, not a finding
 
 ## `context.md` — the injected cell
 
-Every label may carry a `context.md`, capped at **120 words** and enforced by
-`hooks/domain-context-size-check.sh`. It is injected in full at session start for every repo
-whose labels include it, so it is a routing table, not a knowledge store: the two or three
-facts that must be true before the first turn, plus links to the sibling files that hold the
-depth. A label with nothing worth injecting simply has no `context.md`.
+Every label may carry a `context.md`, and it has **two tiers**, both enforced by
+`hooks/domain-context-size-check.sh`:
+
+- The **headline** — the first `> ` line under the H1, **12 words**. This is the only part
+  injected at session start, and it is injected for every label the repo carries. State the
+  one fact whose absence would cause a wrong action.
+- The **body** — everything below it, **120 words**, measured with the headline excluded. A
+  routing table, not a knowledge store: read on demand by whichever engine resolved this
+  label into its scope, with links to the sibling files that hold the depth.
+
+Only the headline is charged to every session, so injection cost scales with how many labels
+a repo carries, not with how much each cell has to say. A per-cell cap alone bounded nothing
+about the sum, and the sum is what a session pays.
+
+A label with nothing worth injecting simply has no `context.md`. A cell with a body but no
+headline is a *broken* cell, and session start says so rather than dropping it silently.
 
 A label that is the default for its axis deliberately has no cell — `tracker:github` is the
 example. A cell there would fire in most repos and say only what was already assumed.

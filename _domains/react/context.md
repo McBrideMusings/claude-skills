@@ -1,5 +1,7 @@
 # react — injected context
 
+> Derive during render, never sync with an effect. Keys from stable ids.
+
 - **Derive during render instead of syncing with an effect.** An effect that only mirrors
   props into state is the single most common bug source here — it renders once wrong, then
   corrects, and the wrong frame is visible.

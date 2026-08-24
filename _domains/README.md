@@ -26,7 +26,8 @@ spelled `tracker:<backend>`; its cells live in [`../_tracker/`](../_tracker/READ
 _domains/
   _detect.md            <- how labels resolve, map grammar, classifier heuristic
   <label>/
-    context.md          <- <=120 words, INJECTED at session start in every repo with this label
+    context.md          <- two tiers: a `> ` headline INJECTED at session start in every repo
+                           carrying this label, and a body engines read on demand (see below)
     review.md           <- lens the `review` engine adds when this label is in scope
     diagnose.md          <- what to instrument / watch, read at diagnose's instrument phase
     profiling.md         <- profiler catalog / performance gate, read by the `profiling` engine
@@ -39,6 +40,31 @@ _domains/
 A cell may be absent — the engine then runs generic-only for that label. Add a label by adding a
 directory (see `_detect.md`'s "Adding a label"); add an engine column by adding that filename across
 the labels that need it.
+
+### `context.md` has two tiers
+
+```markdown
+# <label> — injected context
+
+> The one thing that must be true before the first turn. <= 12 words.
+
+<body: <= 120 words, the routing table proper, plus links to sibling files>
+```
+
+The **headline** is the first `> ` line under the H1. It is the only part injected at session start,
+and it is injected for every label the repo carries, so its cost is paid in every session in every
+such repo. Twelve words, stating the fact whose absence would cause a wrong action.
+
+The **body** is everything below it, capped at 120 words measured with the headline excluded. It is
+read on demand, by whichever engine has resolved this label into its scope.
+
+Why two tiers rather than one 120-word cell: a per-cell cap bounds nothing about the total, and the
+total is what a session actually pays. One repo reached 1,174 injected words with only 19 of 32
+labels covered. Tiering makes the cost scale with how many labels a repo carries rather than with
+how much each cell has to say, which is the only version that stays bounded as coverage fills in.
+
+A cell with a body but no headline is a broken cell: session start prints a placeholder naming it
+rather than staying silent, because silence there is indistinguishable from "no label applies".
 
 ## Who reads what
 

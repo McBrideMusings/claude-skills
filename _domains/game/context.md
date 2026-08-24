@@ -1,5 +1,7 @@
 # game — injected context
 
+> Feel is measured in frames. Playable loop first. Fixed timestep, interpolated rendering.
+
 - **Feel is a feature and it is measured in frames.** Input latency, hitstop, coyote time
   and animation cancel windows are the work, not polish applied afterwards.
 - **The loop must be playable before anything else is built on it.** A vertical slice that

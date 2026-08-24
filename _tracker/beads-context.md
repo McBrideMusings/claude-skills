@@ -1,5 +1,7 @@
 # tracker:beads — injected context
 
+> Issue backend is beads, not GitHub Issues. Use `bd`, never `gh issue`.
+
 This repo's issue backend is **beads**, not GitHub Issues. `gh issue` here is wrong and
 will either fail or file into the wrong place.
 

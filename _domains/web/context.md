@@ -1,5 +1,7 @@
 # web — injected context
 
+> Semantic HTML before ARIA. Test the narrow viewport and the cold cache.
+
 Ships in a browser. Pairs with [../gui/](../gui/) for the design half — this cell is the
 platform half.
 
