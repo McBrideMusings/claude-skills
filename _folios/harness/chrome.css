@@ -1,20 +1,20 @@
 /* chrome.css — the one palette every piece of harness chrome consumes.
 
    The rail, the comment panel, the device bezel and the toasts are all the same thing:
-   fixed-dark furniture that sits beside an handout whose own theme is none of their
+   fixed-dark furniture that sits beside an folio whose own theme is none of their
    business. They used to each carry their own hardcoded greys — the rail on #101114 /
    #181b20 / #23272d, the panel on rgba(18,18,18,.93) with its own amber — which is how
    the rail's labels ended up at 2.0-3.9:1 while the panel's were fine, and how a fix to
    one silently left the other behind.
 
-   Deliberately NOT theme-aware. Chrome stays dark beside a light handout and beside a
+   Deliberately NOT theme-aware. Chrome stays dark beside a light folio and beside a
    dark one, so it always reads as the harness and never as part of the design.
 
    Every ink value here clears 4.5:1 against --at-c-bg, and must keep clearing it. */
 
-/* --- the space the handout gets ---
+/* --- the space the folio gets ---
 
-   Both side panels run edge to edge, so the handout's usable area is the window minus
+   Both side panels run edge to edge, so the folio's usable area is the window minus
    whichever of them is open. One pair of tokens rather than each surface working it out for
    itself: the stage and the device host both read these, which is what makes a device
    frame stay centred in the space that is actually free — with the rail open or shut,
@@ -30,7 +30,7 @@
 /* --- the floating buttons ---
 
    One object with three instances: reopen the rail, comment, switch theme. Partially
-   opaque so they sit over the handout without competing with it, solid on hover, and
+   opaque so they sit over the folio without competing with it, solid on hover, and
    draggable to either edge — see dock.js. Positioned entirely from script, so nothing
    here sets left/right/top. */
 
@@ -96,7 +96,7 @@ html[data-at-rail][data-at-rail-collapsed]:not([data-at-embedded]) { --at-inset-
 
 :root {
   --at-c-bg: #101114;          /* the rail's ground */
-  --at-c-panel: rgba(18, 18, 18, 0.93);  /* floating surfaces, over an handout */
+  --at-c-panel: rgba(18, 18, 18, 0.93);  /* floating surfaces, over an folio */
   --at-c-surface: #181b20;     /* a control at rest */
   --at-c-surface-hi: #23272d;  /* a control under the pointer */
   --at-c-line: #22262c;        /* divider */

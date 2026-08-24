@@ -1,11 +1,11 @@
 <div class="hero">
   <span class="badge">Mechanism</span>
-  <h1>How the handout tool assembles a hermetic file</h1>
+  <h1>How the folio tool assembles a hermetic file</h1>
   <p class="what">One body fragment goes in; one self-contained HTML file comes out, with no network request in it.</p>
   <p class="why">After this you can add a widget, add a kind, or debug why a stylesheet did not land — without reading the whole 742-line tool.</p>
 </div>
 
-<p>The tool exists so the stylesheets never enter the model's context. The model writes content; <span class="cite">tools/handout:1</span> supplies the reset, the theme plumbing, the picker and the harness JS.</p>
+<p>The tool exists so the stylesheets never enter the model's context. The model writes content; <span class="cite">tools/folio:1</span> supplies the reset, the theme plumbing, the picker and the harness JS.</p>
 
 <div class="callout callout--data">
   <span class="label">Input</span>
@@ -93,7 +93,7 @@
 
 <div class="code">
 <pre><span class="tok-com"># one output file for the whole life of a topic</span>
-<span class="tok-key">handout</span> build --kind prototype --picker switch --round <span class="tok-val">2</span> \
+<span class="tok-key">folio</span> build --kind prototype --picker switch --round <span class="tok-val">2</span> \
   --title <span class="tok-str">"Branches Pane"</span> \
   --out <span class="tok-str">"$ROOT/tmp/claude/prototypes/branches-pane/branches-pane.html"</span>  <span class="ann">← same path every round</span>
 </pre>

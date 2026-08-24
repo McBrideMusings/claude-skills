@@ -7,7 +7,7 @@ documents, both pickers, all five device frames, two rounds, three variants and 
 axes.
 
 ```bash
-bash ~/.claude/skills/_handouts/specimens/build.sh
+bash ~/.claude/skills/_folios/specimens/build.sh
 ```
 
 Then run the critique pass from [`../CRITIQUE.md`](../CRITIQUE.md) over the result — press
@@ -25,9 +25,9 @@ visible in a diff; all of it is obvious in a screenshot.
 
 ## Keep them honest
 
-- **Real content only.** Every specimen is about the handout store itself, so the copy is
+- **Real content only.** Every specimen is about the folio store itself, so the copy is
   true and reads like something a person would write. No lorem, no `foo`.
 - **Add a class, add it here.** A class that ships without appearing in a specimen is a
   class nobody will look at again.
 - **The built HTML is not tracked.** `build.sh` writes to `tmp/claude/specimens/`, which is
-  gitignored and age-pruned. The fragments are the handout.
+  gitignored and age-pruned. The fragments are the folio.

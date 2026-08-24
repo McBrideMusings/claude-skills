@@ -2,7 +2,7 @@
 # Build every specimen. Output goes to tmp/claude/specimens/ in whatever repo you run it
 # from — the fragments are the tracked thing, the built HTML is not.
 #
-#   bash ~/.claude/skills/_handouts/specimens/build.sh [outdir]
+#   bash ~/.claude/skills/_folios/specimens/build.sh [outdir]
 #
 # Then look at them. Playwright cannot open file:// (see docs/harness-frictions.md), so
 # for a scripted check serve the directory first:
@@ -10,20 +10,20 @@
 set -e
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-A="$HOME/.claude/tools/handout"
+A="$HOME/.claude/tools/folio"
 OUT="${1:-$HOME/.claude/tmp/claude/specimens}"
 mkdir -p "$OUT"
 
-"$A" build --kind explainer --title "How the handout tool assembles a hermetic file" \
+"$A" build --kind explainer --title "How the folio tool assembles a hermetic file" \
   --fragment "$HERE/spec-explainer.body.html" --out "$OUT/explainer.html"
 
-"$A" build --kind page --title "Handout store maintenance cost" \
+"$A" build --kind page --title "Folio store maintenance cost" \
   --fragment "$HERE/spec-page.body.html" --out "$OUT/page.html"
 
-"$A" build --kind deck --title "The handout store in four slides" \
+"$A" build --kind deck --title "The folio store in four slides" \
   --fragment "$HERE/spec-deck.body.html" --out "$OUT/deck.html"
 
-"$A" build --kind wireframe --title "Handout review surface" \
+"$A" build --kind wireframe --title "Folio review surface" \
   --fragment "$HERE/spec-wireframe.body.html" --out "$OUT/wireframe.html"
 
 # The prototype specimen is two rounds, so it is built twice into the same file — which

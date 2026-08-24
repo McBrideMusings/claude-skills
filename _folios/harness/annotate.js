@@ -1,13 +1,13 @@
-/* annotate.js — mark up the handout and hand the marks back to Claude.
+/* annotate.js — mark up the folio and hand the marks back to Claude.
 
    Dormant until the user presses `a`. Nothing renders, nothing is bound to a visible
-   control, and an handout sent to somebody else looks exactly as it did before this
+   control, and an folio sent to somebody else looks exactly as it did before this
    file existed. That is why annotate is registered for every kind rather than gated
    per-kind: invisible chrome costs the reader nothing.
 
    How a comment finds its way back to source:
 
-     - `handout build` stamps every annotatable element with data-src="<fragment>:<line>",
+     - `folio build` stamps every annotatable element with data-src="<fragment>:<line>",
        so a pin carries the line of the body fragment that produced the element, not a
        CSS path nobody can act on.
      - A pin also stores the element's visible text. On rebuild, an exact data-src match
@@ -16,7 +16,7 @@
        because the file was rebuilt.
 
    Storage is localStorage (verified to work on file:// in Chrome), keyed by the
-   handout's own path so two handouts never share pins. A page embedded by viewport.js
+   folio's own path so two folios never share pins. A page embedded by viewport.js
    inherits the host's key through data-at-key on :root, so pins made inside a device
    frame are the same pins.
 
@@ -26,7 +26,7 @@
    asked about, it collides with itself on the second send, and it leaves litter.
 
    The clipboard is still a real channel back to a waiting agent, with no server and no
-   file: the markdown opens with an HTML comment naming the handout, so an agent can
+   file: the markdown opens with an HTML comment naming the folio, so an agent can
    poll `pbpaste`, recognise that marker, and pick the comments up the moment you press
    the button. See CONTRACT.md. */
 
@@ -39,12 +39,12 @@
     return m ? m.getAttribute('content') || '' : '';
   }
 
-  var BUILD = meta('handout-build');
-  var OUT = meta('handout-out');
-  var FRAGMENT = meta('handout-fragment');
-  var SLUG = (OUT.split('/').pop() || 'handout').replace(/\.html?$/i, '') || 'handout';
+  var BUILD = meta('folio-build');
+  var OUT = meta('folio-out');
+  var FRAGMENT = meta('folio-fragment');
+  var SLUG = (OUT.split('/').pop() || 'folio').replace(/\.html?$/i, '') || 'folio';
   /* The marker a watching agent greps the clipboard for. */
-  var MARK = '<!-- handout-feedback: ' + SLUG + ' -->';
+  var MARK = '<!-- folio-feedback: ' + SLUG + ' -->';
 
   var notes = load();
   var seq = notes.reduce(function (n, p) { return Math.max(n, p.n || 0); }, 0);
@@ -332,9 +332,9 @@
       var v = p.variant || '';
       (byVariant[v] = byVariant[v] || []).push(p);
     });
-    var out = [MARK, '', '# Handout feedback', ''];
-    if (OUT) out.push('Handout: ' + OUT);
-    if (FRAGMENT) out.push('Fragment: ' + FRAGMENT + '  <- edit this, not the handout');
+    var out = [MARK, '', '# Folio feedback', ''];
+    if (OUT) out.push('Folio: ' + OUT);
+    if (FRAGMENT) out.push('Fragment: ' + FRAGMENT + '  <- edit this, not the folio');
     if (BUILD) out.push('Build: ' + BUILD);
     out.push('');
     Object.keys(byVariant).forEach(function (v) {
@@ -389,7 +389,7 @@
 
   panel.querySelector('.at-clear').addEventListener('click', function () {
     if (!notes.length) return;
-    if (!window.confirm('Delete all ' + notes.length + ' comments on this handout?')) return;
+    if (!window.confirm('Delete all ' + notes.length + ' comments on this folio?')) return;
     notes = [];
     save();
     render();
@@ -467,7 +467,7 @@
   // --- keeping the overlay on top of a moving page --------------------------
 
   /* Programmatic surface. The panel is the human control; this is how a test — or an
-     agent checking its own handout — drives the same thing without a mouse. */
+     agent checking its own folio — drives the same thing without a mouse. */
   window.atAnnotate = {
     mode: function (on) { setMode(on === undefined ? !open : !!on); return open; },
     add: function (selector, comment) {

@@ -2,7 +2,7 @@
 
    Writes data-theme on :root, which only means something for kinds whose colours come
    from the base tokens. Registered for every kind except prototype (see the WIDGETS
-   table in ~/.claude/tools/handout). */
+   table in ~/.claude/tools/folio). */
 
 (function () {
   var btn = document.querySelector('.at-theme');

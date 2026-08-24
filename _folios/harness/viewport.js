@@ -1,4 +1,4 @@
-/* viewport.js — see the handout at real device sizes, in real device chrome.
+/* viewport.js — see the folio at real device sizes, in real device chrome.
 
    Why an iframe and not a width-constrained div: CSS media queries answer to the
    *viewport*, not to the box an element sits in. A 390px-wide <div> shows a squeezed
@@ -7,7 +7,7 @@
    `@media (max-width: 640px)` fires inside it for real.
 
    The frame's document is a clone of this page, serialized into srcdoc. That keeps the
-   handout hermetic (no second file, no fetch, no server) and means every harness widget
+   folio hermetic (no second file, no fetch, no server) and means every harness widget
    — annotate included — is already present inside the frame. The clone is marked
    data-at-embedded so it renders no nested chrome, and carries data-at-key so comments
    made inside the frame land in the same storage bucket as comments made outside it.
@@ -23,7 +23,7 @@
      A web page cannot see them and must never lay itself out around them. They are drawn
      in the host document, around the iframe.
 
-   Which devices appear is declared per-handout by `handout build --devices`, read here
+   Which devices appear is declared per-folio by `folio build --devices`, read here
    off data-at-devices. There is no sensible default: whether a prototype has anything to
    say at phone width is a property of that prototype. */
 
@@ -376,7 +376,7 @@
 
     frame = document.createElement('iframe');
     frame.className = 'at-vp-frame';
-    frame.setAttribute('title', 'Handout at device size');
+    frame.setAttribute('title', 'Folio at device size');
     frame.style.width = w + 'px';
     frame.style.height = h + 'px';
     shell.appendChild(frame);
@@ -387,7 +387,7 @@
     // there is anything to receive it, so the fresh frame is synced once on load.
     frame.addEventListener('load', function () {
       syncFrame();
-      // Whatever watches the handout — the contrast verdict, for one — is now looking
+      // Whatever watches the folio — the contrast verdict, for one — is now looking
       // at a different document and has to be told.
       window.dispatchEvent(new CustomEvent('at:device', { detail: { device: names[current] } }));
     });

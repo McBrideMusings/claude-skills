@@ -161,7 +161,7 @@
       // Re-emit every live axis so the freshly mounted markup gets its state applied
       // without every fragment writing its own re-apply-on-mount code.
       activeAxes().forEach(emitAxis);
-      // The stage now has content. Anything that measures the handout — the contrast
+      // The stage now has content. Anything that measures the folio — the contrast
       // verdict — would otherwise be guessing at a delay, and measuring an empty
       // document whenever it guessed short.
       window.dispatchEvent(new CustomEvent('at:mounted'));
@@ -332,10 +332,10 @@
   }, 0);
 
   /* When a file was built. Several confusing sessions came down to looking at an
-     handout from before a fix and reasoning about behaviour that no longer existed;
+     folio from before a fix and reasoning about behaviour that no longer existed;
      the answer was in a meta tag nothing displayed. */
   (function () {
-    var m = document.querySelector('meta[name="handout-built"]');
+    var m = document.querySelector('meta[name="folio-built"]');
     if (!m || !m.content) return;
     var el = document.createElement('div');
     el.className = 'at-rail-built';

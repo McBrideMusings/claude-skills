@@ -8,7 +8,7 @@ If the question is logic/state → [LOGIC.md](LOGIC.md). If it's "which technica
 expensive — that's `gui` sketch mode (ASCII in chat).
 
 Adapted from emilkowalski/skills `prototype` (MIT, © 2026 Emil Kowalski); the selection spec now lives
-as real code in `../_handouts/harness/rail.css` and `rail.js`, and the tool wires it — you never
+as real code in `../_folios/harness/rail.css` and `rail.js`, and the tool wires it — you never
 write it.
 
 ## When this is the right shape
@@ -28,8 +28,8 @@ something you can look at, and the winning direction gets rewritten in the proje
 promotion anyway.
 
 You write a **body fragment** — one `<template data-variant>` per direction, plus a `<style>` block
-carrying the project's tokens. `~/.claude/tools/handout` assembles the file. Read
-`../_handouts/CONTRACT.md` for the fragment rules; the `prototype` kind ships **no palette of its own**
+carrying the project's tokens. `~/.claude/tools/folio` assembles the file. Read
+`../_folios/CONTRACT.md` for the fragment rules; the `prototype` kind ships **no palette of its own**
 precisely so nothing competes with the design being judged.
 
 Make it look native to the product without importing anything from it:
@@ -115,7 +115,7 @@ Write the fragment to `<repo-root>/tmp/claude/artifacts/<slug>-v<N>.body.html`: 
 error, which empty case) and a top-level `<script>` listening for `at:axis`. Then:
 
 ```bash
-"$HOME/.claude/tools/handout" build \
+"$HOME/.claude/tools/folio" build \
   --kind prototype --picker switch --round <N> \
   --title "Wheelhouse Nav" --subtitle "<the question this round answers>" \
   --devices fit,phone \
@@ -137,7 +137,7 @@ harness draws the status bar / window chrome), `a` to comment on any element, an
 that fails contrast. Tell the user those
 exist when handing the prototype over — a comment pinned to an element comes back naming the fragment
 line that produced it, which is the fastest revision loop available. See
-`../_handouts/CONTRACT.md` for how the comments come back.
+`../_folios/CONTRACT.md` for how the comments come back.
 
 **Screen size is the frame's job, never a variant's.** `--devices` already renders the same fragment
 at each named size in a real viewport. A "Phone" variant next to a "Desktop"
@@ -169,7 +169,7 @@ buttons.
 Declare each state dimension as its own `<nav data-axis>`; the rail renders a group and dispatches
 `at:axis`, and axis state survives a variant switch on purpose, so `←`/`→` compares the same screen in
 the same state across two directions. Full syntax and the listener boilerplate:
-[`../_handouts/CONTRACT.md`](../_handouts/CONTRACT.md).
+[`../_folios/CONTRACT.md`](../_folios/CONTRACT.md).
 
 ### Devices — decide, don't default
 

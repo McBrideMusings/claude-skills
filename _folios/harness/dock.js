@@ -7,7 +7,7 @@
    competes for `a` or `c`, so those keep answering.
 
    The reopen chevron, the comment toggle and the theme toggle are all the same object:
-   a small round control parked over the handout. They used to be positioned by three
+   a small round control parked over the folio. They used to be positioned by three
    separate CSS rules that each knew about the others — a `:has()` offset here, a
    `calc(--at-panel-w …)` there — which is the shape a layout takes right before one of
    them lands on top of another.
@@ -16,7 +16,7 @@
    follows the pointer; let go and it slides to whichever vertical edge it is nearest,
    because the reason to move it is that it is covering the one element you are trying to
    look at, and the fix for that is "put it on the other side" rather than "put it 40px
-   left". Where each one sits is remembered per handout.
+   left". Where each one sits is remembered per folio.
 
    A docked button never has to be told about the comments panel: it stores a SIDE, not
    an x, so the panel opening simply changes where the right-hand edge is. */

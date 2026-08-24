@@ -6,22 +6,22 @@ What you write is a **body fragment**: real content, nothing else. No `<!DOCTYPE
 ## Invoke
 
 ```bash
-"$HOME/.claude/tools/handout" build \
+"$HOME/.claude/tools/folio" build \
   --kind explainer \
   --title "How statusline auth works" \
-  --fragment /abs/repo/tmp/claude/handouts/statusline-auth.body.html \
+  --fragment /abs/repo/tmp/claude/folios/statusline-auth.body.html \
   --out /abs/repo/tmp/claude/explainers/statusline-auth.html
 ```
 
-**Decide whether the handout needs the device switcher.** Add `--with viewport` when the layout is
+**Decide whether the folio needs the device switcher.** Add `--with viewport` when the layout is
 meant to respond to width and seeing it at phone or tablet size is part of the judgement. Leave it off
 — the default — when the thing only ever exists at one size: a macOS menubar panel, a desktop-only
-window, a single component in isolation, a report meant to be read on a laptop. Sizes the handout will
+window, a single component in isolation, a report meant to be read on a laptop. Sizes the folio will
 never be used at are chrome that invites a pointless verdict.
 
-`handout kinds` lists the kinds and their flags. `handout serve <path>` is a contingency that shells
+`folio kinds` lists the kinds and their flags. `folio serve <path>` is a contingency that shells
 to `python3 -m http.server`; you almost never need it — `file://` runs inline modules and blob workers
-fine, and a hermetic handout never calls `fetch`.
+fine, and a hermetic folio never calls `fetch`.
 
 **Every path absolute.** Resolve the repo root in its own Bash call (`git rev-parse --show-toplevel`,
 falling back to absolute `pwd`) and build `<root>/tmp/claude/…` from it. A path that doesn't start with
@@ -37,7 +37,7 @@ falling back to absolute `pwd`) and build `<root>/tmp/claude/…` from it. A pat
 | `deck` | Slides | Yours to choose | `DIRECTION.md` |
 | `page` | Anything else: a plan, a report, a one-off deliverable | Yours to choose | `DIRECTION.md` |
 
-Pick by what the handout *is*, not by which skill you came from.
+Pick by what the folio *is*, not by which skill you came from.
 
 ## Fragment rules — all kinds
 
@@ -67,7 +67,7 @@ tokens; never hardcode a hex in markup.
 --bg --surface --ink --ink-soft --line --c-muted --c-accent
 ```
 
-`--f-3xl` is the display step: one per handout, on the title, never on a section heading.
+`--f-3xl` is the display step: one per folio, on the title, never on a section heading.
 
 Utilities: `.scroll-x` (overflow container), `.stack` (vertical flex + gap), `.row` (horizontal flex +
 gap), `.nums` (tabular numerals — the same class name on a `<td>` also right-aligns it), `.vh`
@@ -77,7 +77,7 @@ link underline offset are already themed — don't re-declare them.
 **The measure grid.** In `explainer` and `page`, `main` is a two-width grid: prose sits at `--maxw`
 (68ch) and `figure`, `table`, `.scroll-x`, `.code` and `.compare` automatically break out to
 `--maxw-wide` (96ch). Add `class="wide"` to send anything else out to the wide track. A diagram or a
-ten-row table squeezed into a reading measure is the single most common way an handout looks cramped,
+ten-row table squeezed into a reading measure is the single most common way an folio looks cramped,
 and it is already handled — don't re-center things by hand. `deck`, `prototype` and `wireframe` take
 the full viewport instead.
 
@@ -262,9 +262,9 @@ A prototype topic has **one output file for its whole life**: `prototypes/<slug>
 round is a rebuild of that same path with `--round N`:
 
 ```bash
-handout build --kind prototype --picker switch --round 2 \
+folio build --kind prototype --picker switch --round 2 \
   --title "Branches Pane" \
-  --fragment <root>/tmp/claude/handouts/branches-pane-v2.body.html \
+  --fragment <root>/tmp/claude/folios/branches-pane-v2.body.html \
   --out <root>/tmp/claude/prototypes/branches-pane/branches-pane.html
 ```
 
@@ -292,7 +292,7 @@ at all. The other kinds are documents and still answer `a` and `c`.
 
 ### Checks — eight verdicts the rail keeps up to date
 
-The bottom of the rail carries a standing pass/fail row per check, recomputed whenever the handout
+The bottom of the rail carries a standing pass/fail row per check, recomputed whenever the folio
 changes and read from the device frame's document when one is up. Click a row for what it found.
 Nothing here is a judgement call — every one is arithmetic on the DOM:
 
@@ -357,7 +357,7 @@ colour/type/layout plan before any markup. Classes: `.page-hero`, `.page-section
 2. **Screenshot it and look at it.** Every variant for a picker, every slide for a deck, both themes if
    it themes. A path is delivery, not verification — a font falling back, an overlap, or a blank
    variant is invisible in source.
-3. **Run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md). One batched round: the handout's own
+3. **Run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md). One batched round: the folio's own
    contrast check in both themes, then the screenshot read against a fixed list. Fix what it finds in
    one batch and stop; it is a pass, not a loop.
 4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
@@ -368,7 +368,7 @@ colour/type/layout plan before any markup. Classes: `.page-hero`, `.page-section
 
 ## Getting comments back
 
-Every handout carries the annotate widget. Pressing `a` turns the page into a review surface: click
+Every folio carries the annotate widget. Pressing `a` turns the page into a review surface: click
 any element, type what is wrong with it, and the comment is pinned to that element with a number.
 Comments survive reload, and survive a rebuild — a pin reattaches by the fragment line it was made
 against, falls back to matching the element's text (flagged `MOVED`), and is kept and flagged `STALE`
@@ -376,32 +376,32 @@ rather than dropped when the element is gone.
 
 One way out of the browser: **Copy comments** puts the whole set on the clipboard as markdown.
 
-There used to be a second button that wrote `~/Downloads/handout-feedback--<slug>.md` for an agent
+There used to be a second button that wrote `~/Downloads/folio-feedback--<slug>.md` for an agent
 to watch. It is gone. A download is a worse handoff than a copy in every respect that matters: it
 needs a directory nobody asked about, Chrome renames the second one to ` (1)` so the watcher matches
 a stale file, and it leaves litter behind on a machine that never asked for a file.
 
 **The clipboard is still a channel back to you, with no server and no file.** The markdown opens with
-`<!-- handout-feedback: <slug> -->`, so you can wait on the clipboard instead of asking whether
+`<!-- folio-feedback: <slug> -->`, so you can wait on the clipboard instead of asking whether
 they're done. After `open`, start a bounded watcher in the background; the harness re-invokes you
 when it exits:
 
 ```bash
 for i in $(seq 1 900); do
-  pbpaste 2>/dev/null | head -1 | grep -q 'handout-feedback: <slug>' && break
+  pbpaste 2>/dev/null | head -1 | grep -q 'folio-feedback: <slug>' && break
   sleep 2
 done
 pbpaste
 ```
 
 Say you are doing this, because polling `pbpaste` reads whatever else they copy in the meantime.
-When that is not wanted, just ask them to paste it — the button is right there and the handout
+When that is not wanted, just ask them to paste it — the button is right there and the folio
 needs nothing from you.
 
-Each comment names a line of the **fragment**, not of the built handout. Edit the fragment and
+Each comment names a line of the **fragment**, not of the built folio. Edit the fragment and
 rebuild to the same `--out`; do not hand-edit the HTML.
 
 ## Refining
 
-Edit the fragment and re-run the build to the same `--out`. One file per handout — never a new file
+Edit the fragment and re-run the build to the same `--out`. One file per folio — never a new file
 per refinement.

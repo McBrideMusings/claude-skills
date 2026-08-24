@@ -2,14 +2,14 @@
 
 Serves both report shapes: a single-aspect architecture review, and the **survey report** (one `<section>` per aspect, one card per finding, cross-aspect Top recommendation). The card fields and diagram patterns below are written for architecture cards; other aspects' cards keep Title / badge / Files / Problem / Solution and swap the before/after SVG for whatever carries the finding (a table, a config snippet, a layer-audit table) — same components, same tone.
 
-The report is one **hermetic** HTML file, built with the shared `explainer` kind — the same semantic-color tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes the `explain` skill uses. Read [../_handouts/CONTRACT.md](../_handouts/CONTRACT.md) for the vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md)) without ceremony.
+The report is one **hermetic** HTML file, built with the shared `explainer` kind — the same semantic-color tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes the `explain` skill uses. Read [../_folios/CONTRACT.md](../_folios/CONTRACT.md) for the vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md)) without ceremony.
 
 ## Build it
 
 Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The tool supplies the hermetic structure, the tokens, both themes, and the theme toggle:
 
 ```bash
-"$HOME/.claude/tools/handout" build \
+"$HOME/.claude/tools/folio" build \
   --kind explainer \
   --title "Architecture review — {repo name}" \
   --fragment <repo-root>/tmp/claude/artifacts/<slug>.body.html \

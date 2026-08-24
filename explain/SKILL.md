@@ -54,9 +54,9 @@ Sometimes a programming concept is better explained from world knowledge than fr
 
 ## The hard rules (never break)
 
-1. **Hermetic.** The output is a single `.html` file: zero network requests, **no external libraries** (no Mermaid/D3/Tailwind/Prism CDN), no web fonts. The `handout` tool enforces this and supplies the CSS — you write content. See `../_handouts/CONTRACT.md`.
+1. **Hermetic.** The output is a single `.html` file: zero network requests, **no external libraries** (no Mermaid/D3/Tailwind/Prism CDN), no web fonts. The `folio` tool enforces this and supplies the CSS — you write content. See `../_folios/CONTRACT.md`.
 2. **No hallucinated code (B-mode).** Never describe a mechanism you haven't actually read. Every concrete code claim carries a `file:line` tag rendered next to the diagram node / step / statement. The doc is a **map back into the code**, not a plausible story. If you didn't open it, you can't draw it.
-3. **Semantic color.** Color *encodes meaning* (data / control-flow / happy-path / danger / caution), defined once in the `explainer` kind — never decorative. The house look is fixed: don't override the role tokens. See `../_handouts/CONTRACT.md`.
+3. **Semantic color.** Color *encodes meaning* (data / control-flow / happy-path / danger / caution), defined once in the `explainer` kind — never decorative. The house look is fixed: don't override the role tokens. See `../_folios/CONTRACT.md`.
 4. **Static-first.** Lightweight inline vanilla JS is allowed only where a dense section earns it (collapse/expand, tabbed concept↔code). No JS for anything that plain HTML can do.
 5. **Local file only, default browser.** The explainer is written to disk and opened with bare `open <absolute-path>` — never with `-a <app>`, never via a browser-automation tool. Never publish it anywhere.
 
@@ -86,14 +86,14 @@ From the prompt, infer **archetype · depth · audience** (e.g. `explain eli5 ho
 
 ### 4. Render
 
-Read `../_handouts/CONTRACT.md` for the `explainer` class vocabulary, then **write a body fragment — content only.** No doctype, no `<head>`, no reset, no theme block, no type scale: the tool supplies all of it, which is why none of it costs you context in either direction. Assemble from the archetype skeleton (`ARCHETYPES.md`). Hand-author every diagram as inline SVG/CSS. Tag every B-mode code claim with `file:line`.
+Read `../_folios/CONTRACT.md` for the `explainer` class vocabulary, then **write a body fragment — content only.** No doctype, no `<head>`, no reset, no theme block, no type scale: the tool supplies all of it, which is why none of it costs you context in either direction. Assemble from the archetype skeleton (`ARCHETYPES.md`). Hand-author every diagram as inline SVG/CSS. Tag every B-mode code claim with `file:line`.
 
 Keep the explanation itself to the same standard the chat tier holds: one thing at a time, scoped tight, calibrated to what the listener already knows, with one primary source to go deeper.
 
 Write the fragment to `<repo>/tmp/claude/artifacts/<slug>.body.html`, then build:
 
 ```bash
-"$HOME/.claude/tools/handout" build \
+"$HOME/.claude/tools/folio" build \
   --kind explainer \
   --title "<the title>" \
   --fragment <repo>/tmp/claude/artifacts/<slug>.body.html \
@@ -138,5 +138,5 @@ Don't auto-keep; wait for the user to ask.
 ## Reference files
 
 - `ARCHETYPES.md` — the five shapes: skeleton + signature diagram for each.
-- `../_handouts/CONTRACT.md` — the `explainer` class vocabulary, semantic-colour roles, fragment rules.
-- `../_handouts/README.md` — what the shared store is and why the tool exists.
+- `../_folios/CONTRACT.md` — the `explainer` class vocabulary, semantic-colour roles, fragment rules.
+- `../_folios/README.md` — what the shared store is and why the tool exists.

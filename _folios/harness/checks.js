@@ -5,7 +5,7 @@
    is why colour-only signalling, focus quality and motion appropriateness are absent —
    each needs a human, and a check that guesses is worse than no check at all.
 
-   They run against whatever document currently holds the handout: the page itself, or
+   They run against whatever document currently holds the folio: the page itself, or
    the device frame when one is up. Each returns { state, note, detail }, where detail is
    the list the row reveals when you click it.
 
@@ -28,7 +28,7 @@
   var INTERACTIVE = 'a[href], button, input, select, textarea, [role="button"], ' +
     '[role="link"], [role="tab"], [role="switch"], [role="checkbox"], [tabindex]';
 
-  /* The harness is not the handout. Every check has to exclude it or it reports on the
+  /* The harness is not the folio. Every check has to exclude it or it reports on the
      rail's own step buttons and the comment panel's chrome — which is how the first run
      of the tap-target check confidently failed a prototype for the size of MY buttons. */
   var CHROME = '.at-rail, .at-rail-reopen, .at-panel, .at-composer, .at-notes-layer, ' +
@@ -248,7 +248,7 @@
     {
       key: 'hermetic',
       name: 'Hermetic',
-      why: 'No network request of any kind. An handout has to render identically ' +
+      why: 'No network request of any kind. An folio has to render identically ' +
            'offline and in five years.',
       run: function (doc) {
         var bad = [];
@@ -269,7 +269,7 @@
     }
   ];
 
-  /* --- where the handout currently lives ---------------------------------- */
+  /* --- where the folio currently lives ---------------------------------- */
 
   function target() {
     if (root.hasAttribute('data-at-vp')) {

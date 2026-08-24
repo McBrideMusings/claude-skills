@@ -4,7 +4,7 @@
    tokens. Dark glass reads as harness on top of any page, light or dark.
 
    Dormant by default — nothing here renders until annotate.js sets data-at-annotate on
-   :root, which only happens when the user presses `a`. An handout handed to someone
+   :root, which only happens when the user presses `a`. An folio handed to someone
    else shows no annotation chrome at all. */
 
 .at-notes-layer {
@@ -145,7 +145,7 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 
 :root { --at-panel-w: 300px; }
 
-/* The panel is a review surface for the handout, so it must not cover the handout.
+/* The panel is a review surface for the folio, so it must not cover the folio.
    While annotate mode is on the page reflows beside it — the same move the prototype
    rail makes with padding-left — instead of parking a 300px pane over the right third
    of the content the reviewer is trying to comment on. The theme toggle lives in that
