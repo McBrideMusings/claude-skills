@@ -333,8 +333,16 @@ html[data-at-rail]:not([data-at-embedded]) #at-stage {
   transform: translateZ(0);
 }
 
-/* An embedded copy has no rail to sit beside, so its stage is the whole frame. */
-html[data-at-embedded] #at-stage { min-height: 100vh; }
+/* An embedded copy has no rail to sit beside, so its stage is the whole frame — minus
+   the safe area viewport.js pads the page by, or the stage is a status bar and a home
+   indicator taller than the screen it is inside. `height` as well as `min-height`,
+   because a design that opts into being bounded (min-height: 0 on its root, an app
+   shell with a scrolling middle) needs a definite size to be bounded BY; with only a
+   floor it grows to its content and its footer leaves the frame. */
+html[data-at-embedded] #at-stage {
+  min-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
+  height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
+}
 
 /* An embedded copy (inside a viewport frame) renders no rail and reclaims the width. */
 html[data-at-embedded] .at-rail { display: none; }

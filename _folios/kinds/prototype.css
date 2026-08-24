@@ -18,12 +18,17 @@ body { background: var(--bg); }
    made the prototype's whole root grow to match it. The root then WAS the wide thing,
    every sibling inherited that width, and an overflow that should have been visible as
    overflow just silently became a wider page. */
-#at-stage > * { flex: 1 0 auto; min-width: 0; }
+/* shrink is 1, not 0: an app shell — a design with a scrolling middle between a fixed
+   header and a fixed composer — sets min-height: 0 on its root to opt into being bounded
+   by the stage, and with shrink 0 it would grow to its content anyway and push its own
+   footer off the bottom of a device frame. Anything that does not opt in keeps
+   min-height: auto, so a long page is still as tall as its content and scrolls. */
+#at-stage > * { flex: 1 1 auto; min-width: 0; }
 
 /* list mode: each variant isolated and stacked, one per screenful.
    Never a grid of thumbnails — small side-by-side distorts spacing and scale. */
 .at-list-item {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
   display: flex;
   flex-direction: column;
   border-bottom: 1px solid var(--line);
