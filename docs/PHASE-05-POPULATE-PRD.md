@@ -15,4 +15,4 @@ Don't synthesize here. Hand off:
 
 > *"The PRD stub is in place at `docs/PRD.md`. To fill it from the conversation, run `/to-spec` — it's the spec generator and writes straight to `docs/PRD.md`."*
 
-Name the step and stop; don't auto-invoke `/to-spec`. If the user is mid-`docs`-run and clearly wants the content now, invoking `/to-spec` on their say-so is fine — but the generation logic, template, seams-confirmation, and existing-content handling all live in `/to-spec`, never duplicated here.
+Name the step and stop; don't auto-invoke `/to-spec`. If the user is mid-`docs`-run and clearly wants the content now, invoking `/to-spec` on their say-so is fine — but the generation logic and existing-content handling live in `/to-spec`, and the template plus seams-confirmation live in `../to-spec/SPEC-TEMPLATE.md`. Never duplicated here.

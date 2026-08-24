@@ -42,10 +42,10 @@ Selector forms are shared with `iterate` — one table, in [../iterate/SELECTORS
 
 ## Charting a foggy effort
 
-When the user arrives with an idea rather than a backlog — a greenfield build, a huge feature, a migration — there is nothing to scan yet. Chart it first. Only reach for this when the effort is too big to hold in one session; a smaller idea goes straight to `/grill-me` → `/to-spec`.
+When the user arrives with an idea rather than a backlog — a greenfield build, a huge feature, a migration — there is nothing to scan yet. Chart it first. Only reach for this when the effort is too big to hold in one session; a smaller idea goes straight to `/grill-me` → `/to-tickets`.
 
 1. **Name the destination.** Run `grill-me` to pin down what this effort finds its way to — a spec, a decision, a change made in place. The destination fixes the scope, so it is settled first.
-2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space rather than deep on one thread, surfacing the open decisions and the first steps takeable now. **If no fog surfaces**, the way is already clear: say so and send the user to `/to-spec`. No milestone needed.
+2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space rather than deep on one thread, surfacing the open decisions and the first steps takeable now. **If no fog surfaces**, the way is already clear: say so and send the user to `/to-tickets`. No milestone needed.
 3. **Create the milestone.** Its title is the effort; its description is the brief:
 
 ```markdown
@@ -183,13 +183,13 @@ Report: issues ironed out (with what was decided), questions answered and closed
 ```
 Scope is clear. Reply with a number, or tell me something else.
 
-1. Write the spec — invoke to-spec on the decisions made. (Answered questions, nothing implementable yet.)
+1. Cut the tickets — invoke to-tickets on the decisions made. (Answered questions, nothing implementable yet.)
 2. Fan it out — invoke orchestrate on this scope. (Work items, all AFK-ready.)
 3. March it sequentially — invoke iterate on this scope.
 4. Stop here.
 ```
 
-Option 1 loops back: `to-spec` → `to-tickets` files work issues onto the same milestone → `iron-out` again. Name the next step and stop — never auto-chain into it.
+Option 1 loops back: `to-tickets` synthesizes a spec from the decisions, gets it approved, files work issues onto the same milestone → `iron-out` again. Name the next step and stop — never auto-chain into it.
 
 ## Rules
 

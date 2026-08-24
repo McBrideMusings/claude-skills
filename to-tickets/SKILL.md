@@ -1,15 +1,28 @@
 ---
 name: to-tickets
-description: "Break a plan, spec, or PRD into independently-grabbable tickets using vertical-slice tracer bullets, published to the repo's issue backend — beads or GitHub. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
+description: "Break a plan, spec, PRD, or the conversation itself into independently-grabbable tickets using vertical-slice tracer bullets, published to the repo's issue backend — beads or GitHub. Synthesizes a scratch spec for review first when the source is loose conversation. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
 ---
 
 # To Tickets
 
 Break a plan into independently-grabbable tickets using **vertical slices** (tracer bullets). Tickets become inputs to `implement` / `iterate`.
 
-**Issue backend:** resolve once via [`../_tracker/_detect.md`](../_tracker/_detect.md) and hold the answer for the whole run — `beads`, `github`, or `local`. Phases 05 and 06 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
+**The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that. `/to-spec` is for a *committed* PRD in `docs/`, a separate deliverable; it is not a gate in front of this one.
 
-## Proposal file
+**Issue backend:** resolve once via [`../_tracker/_detect.md`](../_tracker/_detect.md) and hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
+
+## Scratch files
+
+This skill writes two files, both disposable, both under `/private/tmp/claude/<repo-slug>/`:
+
+| File | Written by | Holds |
+| --- | --- | --- |
+| `spec.md` | Phase 03 | the synthesized spec — problem, solution, user stories, testing decisions |
+| `to-tickets.md` | Phase 05 | the slice breakdown awaiting approval |
+
+**Both are transitory.** They exist to produce the tickets and die with the tmp sweep; the
+tickets carry the durable content forward. Never write either into the repo. A spec that
+should outlive the slate is `/to-spec`'s `docs/PRD.md`, which is a separate ask.
 
 Draft slices to `/private/tmp/claude/<repo-slug>/to-tickets.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
 
@@ -19,7 +32,7 @@ git rev-parse --git-common-dir
 # Step 2: dirname → basename of result gives the repo name
 ```
 
-After writing, tell the user the full path so they can open it — put the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean). Then ask the Phase 04 questions inline in the conversation — the user should never have to go find information not provided to them.
+After writing, tell the user the full path so they can open it — put the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean). Then ask the Phase 05 questions inline in the conversation — the user should never have to go find information not provided to them.
 
 ## Process
 
@@ -39,11 +52,38 @@ Use `docs/CONTEXT.md` vocabulary for ticket titles and descriptions. Respect ADR
 
 Look for prefactoring opportunities — changes that make the upcoming implementation easier without changing behavior. "Make the change easy, then make the easy change." Note any found; they belong in the "Out of scope" or a preceding slice, not folded silently into the target slice.
 
-### Phase 03 — Draft vertical slices
+### Phase 03 — Synthesize the spec
+
+Slicing needs a stated problem, solution, user stories, and testing decisions. When the source
+doesn't already carry them, write them now — this is the step that used to live in a separate
+skill, and skipping it is why a slate ends up with slices nobody can trace to a user story.
+
+**Skip this phase entirely when the source is already structured** and say in one line that
+you're skipping it:
+
+- `docs/PRD.md` or another spec document — read it and slice from it
+- an issue body fetched in Phase 01
+- drafts handed over by `improve`, or a slate derived from a `spike` prototype
+
+Otherwise synthesize from conversation context, following
+[`../to-spec/SPEC-TEMPLATE.md`](../to-spec/SPEC-TEMPLATE.md) — the same template `/to-spec`
+uses, including its seams confirmation. Do **not** interview the user; if the conversation is
+too thin to write a real spec, stop and say so, and point at `/grill-me`.
+
+Write it to `/private/tmp/claude/<repo-slug>/spec.md` — absolute path, same `<root>` resolution
+as the proposal file above. Tell the user the path on its own line with no trailing
+punctuation, summarize the problem, solution, and user-story count inline, and **ask for
+approval before slicing**:
+
+> *"Spec written. Does this match what you want built, or should I adjust before slicing?"*
+
+Iterate on the spec until approved. Only then continue.
+
+### Phase 04 — Draft vertical slices
 
 Break the plan into **tracer-bullet** tickets. Each slice cuts through ALL layers end-to-end (schema + API + UI + tests). **NOT** a horizontal slice of one layer.
 
-If the source plan implies milestone boundaries (e.g. "MVP vs Post-MVP", explicit phases, or a separate roadmap doc), group slices under `## Milestone: <name>` headings in the proposal file. Phase 05 reads these headings to create real GitHub milestones.
+If the source plan implies milestone boundaries (e.g. "MVP vs Post-MVP", explicit phases, or a separate roadmap doc), group slices under `## Milestone: <name>` headings in the proposal file. Phase 06 reads these headings to create real GitHub milestones.
 
 Classify each:
 
@@ -68,7 +108,7 @@ A **wide refactor** is one mechanical change — rename a column, retype a share
 
 If even a single batch can't stay green alone, keep the sequence but let the batches share one integration branch that all block a final integrate-and-verify ticket — green is promised only there. Mark the whole sequence AFK unless a batch needs a judgment call.
 
-### Phase 04 — Quiz the user
+### Phase 05 — Quiz the user
 
 Write the full slice breakdown to the proposal file (see "Proposal file" section above), then tell the user the exact path (on its own line, no trailing punctuation, so it stays Ghostty-clickable). After that, present a summary table inline in the conversation and ask the questions below — the user should never need to hunt for information not given to them.
 
@@ -79,7 +119,7 @@ Per slice show:
 - **Title** — short descriptive name
 - **Type** — HITL or AFK
 - **Blocked by** — which other slices must complete first (numeric refs for now, real issue IDs later)
-- **User stories covered** — if the source has them
+- **User stories covered** — by number, against the Phase 03 spec. Every user story must be covered by at least one slice; call out any that aren't and say why (out of scope, or a gap you missed).
 
 Ask:
 
@@ -90,7 +130,7 @@ Ask:
 
 Iterate until approved.
 
-### Phase 05 — Milestones (if grouped)
+### Phase 06 — Milestones (if grouped)
 
 If the proposal groups slices under `## Milestone: <name>` headings, confirm before publishing:
 
@@ -120,7 +160,7 @@ For each confirmed milestone, **reuse existing ones by exact title match** — n
 
 Skip this phase entirely if the proposal has no milestone groupings.
 
-### Phase 06 — Publish
+### Phase 07 — Publish
 
 Publish in **dependency order** (blockers first) so blockers can reference real issue IDs. Use the body template from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md).
 
@@ -128,12 +168,12 @@ Per slice:
 
 - **`beads`:** `bd create "<title>" -t <task|bug|feature> -p <0-4> --body-file <path> --silent`
   - Capture the printed ID; later slices need it for their blocker edges.
-  - Milestone group → `--parent <epic-id>` from Phase 05.
+  - Milestone group → `--parent <epic-id>` from Phase 06.
   - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `triage` and `iterate` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
   - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
 - **`github`:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
-  - `--milestone` only when the slice belongs to a milestone group (omit otherwise). The milestone name must match a title from Phase 05.
+  - `--milestone` only when the slice belongs to a milestone group (omit otherwise). The milestone name must match a title from Phase 06.
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
   - Blockers are prose only (`Blocked by #N` in the body) — GitHub has no dependency edges.
 
