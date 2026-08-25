@@ -57,6 +57,8 @@ On a yes, clear it with the tools' own commands. Everything else — app data, m
 
 For each worktree: is it dirty, and does it hold commits that aren't pushed anywhere? Clean **and** fully merged → `git worktree remove` and `git branch -d`. In a repo with submodules the plain remove refuses (`fatal: working trees containing submodules cannot be moved or removed`) and takes `branch -d` down with it — `git worktree remove --force` gets past that, and the dirty/ahead check above is what makes forcing safe here. Never `branch -D` — the safe delete refusing is the signal that work would be lost. Keep and report anything dirty or ahead.
 
+**Clean and merged is not the whole test — ask what is standing in the directory too.** `pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=` must come back empty before the remove; `lsof +D <worktree>` answers for certain when you still suspect a hold. A process keeps running against a path that no longer exists, and the failure surfaces somewhere else entirely: on `term`, 2026-08-25, a removed worktree left a Metro bundler serving nothing and the user's app red-screened with `Unable to resolve module ./index`, reading as a broken build rather than as a reclaimed directory. Keep and report a held worktree, naming the pid, exactly as for a dirty one. Never `pgrep -fl` — one npm-exec match is ~10,000 characters of inherited environment.
+
 ### 5. Offload keepers
 
 For large files worth keeping, with a drive mounted: `rsync -a` to the drive → verify the sizes match → trash the original → symlink the old path to the new one. Symlink individual folders, never a whole special directory like `~/Movies`. Warn that the owning app needs the drive mounted or the path breaks.
