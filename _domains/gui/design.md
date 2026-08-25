@@ -235,6 +235,8 @@ The reverse glossary of motion terms is `vocabulary.md` in this directory.
 - `review.md` — where motion is **broken**: jank, interruptibility and stranded state, accessibility.
   Run by the `review` engine. Craft calls never go here.
 - `prototype.md` — the craft bar and divergence axes for building UI variants (`spike`).
+- `native-first.md` — use the platform's and the library's own components before writing one;
+  when an incidental design detail is what forces a custom build, propose the redesign instead.
 - `libraries.md` — curated web/React library picks, so a solved component doesn't get hand-rolled.
 - `direction.md` — choosing the visual world, and the external-dice mechanism that stops every project
   in a category shipping the same design. Also the comp discipline and the one path to image generation.

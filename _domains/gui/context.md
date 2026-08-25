@@ -11,6 +11,8 @@ a sibling, and most of this does not apply there.
 - **Never let colour alone carry meaning.** Pair it with text, shape, or position.
 - **Interactive targets need a visible affordance and a focus ring**; keyboard reachability
   is not optional.
+- **Use the built-in component before writing your own** — [native-first.md](native-first.md).
 
 Depth: [design.md](design.md), [states.md](states.md), [slop.md](slop.md),
-[direction.md](direction.md), [alt-text.md](alt-text.md), [vocabulary.md](vocabulary.md).
+[native-first.md](native-first.md), [direction.md](direction.md), [alt-text.md](alt-text.md),
+[vocabulary.md](vocabulary.md).
