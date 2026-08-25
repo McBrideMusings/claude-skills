@@ -277,8 +277,11 @@
     // .at-dc is device chrome injected into a PREVIOUS frame's document. It should never
     // be on the host, but stripping it here means no frame can inherit another frame's
     // furniture even if it somehow is.
+    // .at-dock covers every floating harness control at once. Listing them one by one is
+    // how the contrast button and the comment toggle ended up cloned into the frame and
+    // rendered, undocked, in a corner of the design.
     [].slice.call(clone.querySelectorAll(
-      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-rail-reopen, .at-dc'
+      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-rail-reopen, .at-dock, .at-dc'
     )).forEach(function (n) { n.remove(); });
     var stage = clone.querySelector('#at-stage');
     if (stage) stage.innerHTML = '';

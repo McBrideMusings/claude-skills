@@ -169,7 +169,9 @@
     btn.setAttribute('title', label);
   }
   btn.addEventListener('click', function () { setMode(!on, false); });
-  document.body.appendChild(btn);
+  // Host only — see rail.js's reopen button. Undocked inside a frame, this '◐' rendered
+  // in normal flow in a corner of the design, reading as part of it.
+  if (!root.hasAttribute('data-at-embedded')) document.body.appendChild(btn);
   paintBtn();
   // dock.js is inlined first, but __atDock is registered inside its own IIFE; a timeout
   // runs after every inline script has executed. Same dance rail.js does.

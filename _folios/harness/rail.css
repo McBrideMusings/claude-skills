@@ -293,7 +293,25 @@
    1280 window means the frame is scaled to 67% before the rail takes its cut. `\` gives
    the width back; the reopen chevron is the only thing left on screen. */
 
-html[data-at-rail-collapsed] .at-rail { display: none; }
+/* Slid out, not switched off. `display: none` cannot be transitioned, so the rail used to
+   vanish and the frame jump sideways in the same frame — which reads as a glitch rather
+   than as a panel closing. The rail keeps its box and translates off the left edge;
+   .at-vp-host and the stage animate their insets to match, so the whole thing moves as
+   one. visibility follows at the end of the slide so nothing off-screen stays focusable. */
+.at-rail {
+  transition: transform 260ms cubic-bezier(.22, 1, .36, 1),
+              visibility 0s linear 0s;
+}
+html[data-at-rail-collapsed] .at-rail {
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 260ms cubic-bezier(.22, 1, .36, 1),
+              visibility 0s linear 260ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .at-rail, html[data-at-rail-collapsed] .at-rail { transition: none; }
+}
 
 /* The rail toggle is one of the docked floating buttons: everything about how it looks
    comes from .at-dock in chrome.css. It is always on screen — it used to try to hide

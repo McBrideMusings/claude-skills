@@ -7,11 +7,22 @@
 
 /* --- the stage --- */
 
-/* .at-rail-reopen is exempt for a reason: it is the ONLY way back once the rail is
-   collapsed, and this rule's !important was beating its display, so collapsing the rail
-   while a device frame was up left no control on screen at all and no way to restore one
-   short of editing the URL. */
-html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-rail-reopen):not(.at-notes-layer):not(.at-panel):not(.at-toast) {
+/* This hides the folio's own content while a frame is up, because the content is being
+   rendered inside the iframe instead. Everything harness has to be exempt.
+
+   The exemptions are CATEGORIES, not instances. `.at-rail-reopen` used to be listed by
+   name — added after collapsing the rail behind a device frame left no control on screen
+   at all — and that patch fixed one button while leaving the shape that produced it: any
+   new floating control is invisible until someone remembers to extend this list. Two
+   things went unnoticed that way. The comment toggle and the contrast button never
+   appeared at all once a device frame was picked, which is always. And dock.js positions
+   every floating button by measuring a hidden probe that is also a body child — hidden by
+   this rule, it measured 0, so every docked button snapped to the window's left edge and
+   sat on top of the rail.
+
+   `.at-dock` is the class __atDock puts on every floating control, so a new one is exempt
+   the moment it exists. `.at-rail-reopen` is gone from the list because it is one. */
+html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-dock):not([data-at-probe]):not(.at-notes-layer):not(.at-panel):not(.at-toast) {
   display: none !important;
 }
 
@@ -25,6 +36,10 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-rai
   right: var(--at-inset-r, 0px);
   bottom: 0;
   left: var(--at-inset-l, 0px);
+  /* Matched to the rail's slide so the frame tracks the panel instead of jumping to its
+     new centre a frame ahead of it. */
+  transition: left 260ms cubic-bezier(.22, 1, .36, 1),
+              right 260ms cubic-bezier(.22, 1, .36, 1);
   z-index: 40;
   display: flex;
   align-items: center;
@@ -338,4 +353,8 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-rai
   height: 14px;
   margin: 0 4px;
   background: rgba(255, 255, 255, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .at-vp-host { transition: none; }
 }

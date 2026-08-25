@@ -416,8 +416,12 @@
     '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" ' +
     'd="M2 3.6h12v7.2H7.2L4.2 13.4v-2.6H2z"/></svg>';
   toggleBtn.addEventListener('click', function () { setMode(!open); });
-  document.body.appendChild(toggleBtn);
-  if (window.__atDock) window.__atDock(toggleBtn, 'annotate', 'right', 0);
+  // Host only — see rail.js's reopen button. An undocked copy inside the frame renders in
+  // normal flow, on top of the design.
+  if (!root.hasAttribute('data-at-embedded')) {
+    document.body.appendChild(toggleBtn);
+    if (window.__atDock) window.__atDock(toggleBtn, 'annotate', 'right', 0);
+  }
 
   function setMode(on) {
     open = on;

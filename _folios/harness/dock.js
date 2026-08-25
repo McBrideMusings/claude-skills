@@ -61,6 +61,10 @@
      insets makes the browser resolve them, and its rect is the answer. */
   var probe = document.createElement('div');
   probe.setAttribute('aria-hidden', 'true');
+  /* Marked so viewport.css's "hide the folio's content behind a device frame" rule cannot
+     hide the very element this file measures the layout with. It did, and every docked
+     button silently snapped to the window edge and covered the rail. */
+  probe.setAttribute('data-at-probe', '');
   probe.style.cssText = 'position:fixed;top:0;height:0;pointer-events:none;visibility:hidden;' +
     'left:var(--at-inset-l,0px);right:var(--at-inset-r,0px)';
   document.body.appendChild(probe);

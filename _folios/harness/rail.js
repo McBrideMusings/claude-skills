@@ -315,7 +315,11 @@
   reopen.addEventListener('click', function () {
     setCollapsed(!root.hasAttribute('data-at-rail-collapsed'));
   });
-  document.body.appendChild(reopen);
+  /* Not inside a device frame. The frame's document is a clone of this one and runs this
+     script again, and dock.js bails when embedded — so the button was created, never
+     docked, and rendered in normal flow as an unexplained control in a corner of the
+     design under review. The host's copy is the only one. */
+  if (!root.hasAttribute('data-at-embedded')) document.body.appendChild(reopen);
 
   function paintToggle() {
     var open = !root.hasAttribute('data-at-rail-collapsed');
