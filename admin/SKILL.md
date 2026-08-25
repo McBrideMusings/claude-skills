@@ -569,16 +569,16 @@ port_range = [9988, 9999]                        # optional; defaults to [9988, 
 
 The server binds `0.0.0.0` unconditionally — anyone on the tailnet can POST. Single-user tailnet / dev tool; intentional.
 
-**Userscript:** `tampermonkey/log-bridge.user.js` in the admin-project-tool repo — one project-agnostic script, no per-project URLs in it. Install once via Tampermonkey. Edit the top-of-file constants only for your own machines:
-- `PROBE_HOSTS` — your machine's Tailscale IPs (always include `127.0.0.1`)
-- `PROBE_PORTS` — union of all port ranges across your machines
+**Userscript:** `tampermonkey/log-bridge.user.js` in the admin-project-tool repo — one project-agnostic script, no per-project URLs and no machine addresses in it. It is installed by `admin deploy` in that repo (`admin tampermonkey` writes it into a Chromium managed-storage policy), never by hand. Machine-specific values are `${VAR}` placeholders expanded from the environment at deploy time:
+- `PROBE_HOSTS` / `@connect` — `${TAILSCALE_HOST_MAC}` and `${TAILSCALE_HOST_UNRAID}`, set in `~/.claude/.env` (always includes `127.0.0.1`)
+- `PROBE_PORTS` — union of all port ranges across your machines (edit in the script)
 
 Which pages forward is decided at runtime, not by editing the script: `localhost`/`127.0.0.1`/`0.0.0.0` are always watched, and any other host is opt-in via a single Tampermonkey menu command — **"Log bridge: watch `<host>`"** (a host-labelled toggle that saves an auto-derived glob to `GM` storage). The per-project prod hostname lives only in that project's `admin.toml` `[log_bridge].hosts` (advertised via `/health`), which stays the authoritative final match. Each forwarded entry carries the page `host` (not the full URL — keeps auth tokens out of the log); the listener prints one `client connected: <host> (<browser>)` banner per host.
 
 **Adoption checklist for a new project:**
 1. Add `[log_bridge]` to `admin.toml` with the right `hosts` (and `port_range` if non-default).
 2. Confirm the dev action is `kind = "interactive-shell"` — bridge only wires in there.
-3. Verify `PROBE_HOSTS` in the userscript includes this machine's Tailscale IP.
+3. Verify `TAILSCALE_HOST_MAC` (or `_UNRAID`) in `~/.claude/.env` is this machine's Tailscale IP and the userscript has been deployed since it was set (`admin tampermonkey-status` in admin-project-tool).
 4. Run `admin dev`. For `localhost` it just works; for a prod host, open the page once and click the **"Log bridge: watch `<host>`"** menu command, then reload.
 5. `console.log("hello")` in the page, tail the log.
 
@@ -627,7 +627,7 @@ the streams laid out — default to intermingled. Full copy-paste snippets:
 
 4. **Always finish with:** `[log_bridge] hosts = ["${LOG_BRIDGE_HOSTS:-localhost}"]`;
    add `LOG_BRIDGE_HOSTS=` to `.env.example` and the real host to `.env`; confirm
-   the userscript's `PROBE_HOSTS` includes this machine's tailnet IP; tell the
+   `TAILSCALE_HOST_MAC`/`_UNRAID` in `~/.claude/.env` cover this machine's tailnet IP; tell the
    user the one-time **"Log bridge: watch `<host>`"** menu opt-in is needed for
    the prod page (localhost needs none); `admin check`.
 

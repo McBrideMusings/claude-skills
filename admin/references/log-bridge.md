@@ -44,7 +44,8 @@ Three misconceptions cause ~all of the confusion. Kill them now:
    `127.0.0.1` + tailnet IPs) on ports `9988–9999`. So either the browser is on
    the **same machine** as `admin` (`127.0.0.1` works, zero setup), or the
    browser is on a device that can reach the admin machine's **tailnet IP** (and
-   that IP is in the userscript's `PROBE_HOSTS`).
+   that IP is one of the `TAILSCALE_HOST_*` values the userscript was deployed
+   with).
 
 ## 3. Topology
 
@@ -187,14 +188,18 @@ port_range = [9988, 9999]                        # optional; default [9988, 9999
 
 ## 10. Userscript setup (`tampermonkey/log-bridge.user.js`)
 
-One project-agnostic script; install once via Tampermonkey. The only things you
-edit are the top-of-file constants, for **your machines**:
+One project-agnostic script, installed by `admin deploy` in admin-project-tool
+(`admin tampermonkey` embeds it in a Chromium managed-storage policy) — never by
+hand. Machine addresses are `${VAR}` placeholders expanded from the environment
+at deploy time, so the committed file carries none:
 
-- `PROBE_HOSTS` — where listeners might run: always `127.0.0.1`, plus this
-  machine's (and any peer machine's) Tailscale IPs. The browser must be able to
-  reach these.
-- `PROBE_PORTS` — the union of every machine's `port_range` (default 9988–9999).
-- `@connect` headers must include each probe host (Tampermonkey CORS allow-list).
+- `PROBE_HOSTS` — where listeners might run: always `127.0.0.1`, plus
+  `${TAILSCALE_HOST_MAC}` and `${TAILSCALE_HOST_UNRAID}` from `~/.claude/.env`.
+  The browser must be able to reach these.
+- `PROBE_PORTS` — the union of every machine's `port_range` (default 9988–9999);
+  edited in the script.
+- `@connect` headers carry the same `${VAR}` placeholders (Tampermonkey CORS
+  allow-list).
 
 Per-page forwarding is decided at runtime, not by editing the script:
 - `localhost`/`127.0.0.1`/`0.0.0.0` → always watched, zero setup.
@@ -244,8 +249,8 @@ Work top to bottom; the first failing row is almost always it.
 | Dev action is `kind = "interactive-shell"` | inspect the `[actions.*]` that `admin dev` runs | A `shell`/`python`/`docker-*`/`logs` action never starts the bridge. Convert per SKILL.md. |
 | `admin` is running on the SAME machine the userscript probes | did you run `admin dev` on your Mac, or "on the server"? | Run it where the listener should live (your Mac). The prod host doesn't run it. |
 | Listener actually opened a port | look for `[log-bridge] listening on port N hosts=[...]` in the admin output; `ls /tmp/admin-project-tool/` | If absent, one of the two gates above failed. |
-| Browser can reach the listener | is the browser on the same machine (127.0.0.1), or a device that can reach the Mac's tailnet IP? | Move the browser, or add the reachable tailnet IP to `PROBE_HOSTS`. |
-| Userscript probes the right host:port | `PROBE_HOSTS` includes the listener machine's IP; `PROBE_PORTS` covers `port_range` | Edit the userscript constants + `@connect`. |
+| Browser can reach the listener | is the browser on the same machine (127.0.0.1), or a device that can reach the Mac's tailnet IP? | Move the browser, or set the reachable tailnet IP in `TAILSCALE_HOST_MAC`/`_UNRAID` and redeploy. |
+| Userscript probes the right host:port | `TAILSCALE_HOST_*` in `~/.claude/.env` is the listener machine's IP; `PROBE_PORTS` covers `port_range` | Fix `.env` / `PROBE_PORTS`, then `admin deploy` in admin-project-tool. |
 | Page is a candidate | localhost auto; other hosts need the menu opt-in | Run "Log bridge: watch `<host>`", reload. Grey dot + no opt-in = not forwarding. |
 | Page hostname matches `[log_bridge].hosts` | compare the page hostname to the globs (also shown at `/health`) | Fix the glob; remember `*` = one label only. |
 | Status dot is green | bottom-right of the page | Grey = no matching listener found (recheck the rows above). |
