@@ -1,13 +1,13 @@
 ---
 name: review
-description: "The single entry point for reviewing code: a ten-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context; `noverify` skips the execution gate that runs each behavior claim against the code before it can reach the report. Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "The single entry point for reviewing code: a ten-axis review (with gated security lens) routed by context — own repo: review + document; collaborative repo: triage the PR queue, review your branch, or review a teammate's PR with per-finding fix/post-back offers; own open PR: work through unresolved comments or self-review. Also owns the pre-review gate ladder — a branch behind or conflicted with its base offers to resolve first, red CI checks offer to be diagnosed and fixed first, and an unchanged branch says so instead of writing a second identical report; so 'the PR is red', 'CI is failing', 'check the checks', 'the branch has conflicts' and 'resolve failing tests' all enter here. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context; `noverify` skips the execution gate that runs each behavior claim against the code before it can reach the report. Covers every review, PR-queue, security-review, and address-PR-comments request. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Review
 
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs. `review` is the **single entry point** for review — it routes by context (your working tree, a branch, one PR, or a queue of teammate PRs) and decides what to offer at the end (a fix pass, or posting to a PR) from where you invoke it.
 
-The review engine itself — the ten-axis dispatch, scoring, and report format — lives in [REVIEW-CORE.md](REVIEW-CORE.md). This file is the router: it resolves ownership, picks a branch, then hands off to REVIEW-CORE.md (self-review) or [PR-COMMENTS.md](PR-COMMENTS.md) (address my PR's unresolved comments). Load the branch file only once you've routed to it — that keeps context small.
+The review engine itself — the ten-axis dispatch, scoring, and report format — lives in [REVIEW-CORE.md](REVIEW-CORE.md). This file is the router: it resolves ownership, picks a branch, **clears the Phase 00.1 gate ladder**, then hands off to REVIEW-CORE.md (self-review) or [PR-COMMENTS.md](PR-COMMENTS.md) (address my PR's unresolved comments). The gate ladder loads [../resolve-conflicts/SKILL.md](../resolve-conflicts/SKILL.md) and [TEST-HEALTH.md](TEST-HEALTH.md) only when a gate fires. Load any branch file only once you've routed to it — that keeps context small.
 
 ## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a review
 
@@ -125,6 +125,7 @@ The `latest_commit <= latest_feedback` test is the load-bearing heuristic: **if 
 | **teammate's PR branch** | n/a | review → document → offer per finding: **fix small low/med issues on the branch**, **post** high-severity / design / intent-changing ones for the author |
 | **not mine, no PR** | review → document | review → document |
 
+- **Whatever the route, Phase 00.1's gate ladder runs before Phase 00.5 and before any lens.** Queue mode runs it per PR, inside the loop, with the teammate-PR column of the class table applying. The comment branch runs it too: reading feedback against a branch that is 40 commits behind misclassifies points the author already fixed by merging.
 - **Whatever the route, the checkout must be at the branch head before anything is reviewed.** [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01a is the mandatory check — a stale worktree (an old session's checkout, a force-push or rebase since you last fetched) reviews code the author already replaced and produces a confident, entirely void report. It applies to the comment branch too: reading feedback against a stale tree misclassifies fixed points as unaddressed.
 - **Comment branch** ⟺ the branch is mine *and* its open PR carries unaddressed reviewer feedback in **any** shape — an unresolved inline thread, a formal review whose substance is in the body, or a plain conversation comment with no commit pushed since (see step 3's *commits-pushed-after* heuristic). Run PR-COMMENTS.md instead of the self-review core (mutually exclusive). Do not gate this on inline-thread count alone.
 - **Offer to fix** ⟺ there's a branch checked out to fix on. On **my own code** (my branch or my owned-repo working tree): hand to `implement` (plain or `implement delegate`). On a **teammate's PR branch** I have checked out: apply only the small, `low`/`medium`, behavior-preserving findings directly, commit as me, and push to the PR's own branch — even though I don't own it; hand the rest back via the post offer.
@@ -132,6 +133,105 @@ The `latest_commit <= latest_feedback` test is the load-bearing heuristic: **if 
 - All offers are gated on an explicit yes in the moment — never automatic (global "never send / act on my behalf" rule). See **End of pass**.
 
 Everything except Queue mode and the comment branch is a single-target self-review: continue into [REVIEW-CORE.md](REVIEW-CORE.md) against that target. **Queue mode** wraps the core, running it once per selected PR.
+
+## Phase 00.1 — Gate ladder
+
+Three things make a review void before it starts: the diff is about to change (the branch is
+behind or conflicted), the answer is already sitting in a CI log (checks are red), or there is
+nothing new to review since last time. Gate on all three **before** Phase 00.5, and offer to
+resolve the first two rather than reviewing around them.
+
+### The state record — probed once
+
+Every gate reads this one record. No gate re-shells for its own facts; the whole point is that
+the ladder decides against a single consistent snapshot.
+
+```
+BranchState
+  remote        'none' | 'github'          gh repo view --json owner  (failure ⇒ 'none')
+  owner         'me' | 'other'             owner.login  vs  gh api user --jq .login
+  branch        git branch --show-current
+  onMain        branch == the repo's default branch
+  base          remote=='github' ? origin/<default> : <default>
+  pr            {number,state,mergeable} | null      gh pr view --json number,state,mergeable
+  mine          Phase 00 step 2's answer
+  behind        git rev-list --count HEAD..<base>
+  checks        {failing:[...]} | 'none-configured' | 'no-pr'
+  lastCommit    newest commit date on the branch
+  lastFeedback  newest non-author thread / review body / conversation comment | null
+  lastReport    prior review report for this branch {path, mtime} | null
+```
+
+**`base` is the substitution that makes every repo class work.** With a GitHub remote it is
+`origin/main`; on a local-only repo it is the local default branch. Nothing else in the ladder
+branches on whether there is a remote.
+
+**No GitHub remote at all** — `gh repo view` fails: set `remote: 'none'`, `owner: 'me'`,
+`pr: null`, `checks: 'no-pr'`, `lastFeedback: null`, and run the ladder unchanged. A local-only
+repo still has a base to be behind of and a prior report to compare against.
+
+### Which gates are live, by repo class
+
+| | conflicts | tests | novelty |
+|---|---|---|---|
+| local-only, no remote | base = local default branch | local suite, opt-in | live |
+| GitHub, mine, no PR open | skip on the default branch | local suite, opt-in | live |
+| GitHub, my PR open | live | live | live |
+| GitHub, teammate's PR | **skip** — not mine to merge | **diagnose only, no fix offer** | live |
+
+"local suite, opt-in" means: don't run a test suite unasked on a branch with no CI. Say the
+gate is available and let the user type `tests` to run it.
+
+### The ladder
+
+```
+gate(conflicts)
+  skip if  not state.mine  or  state.onMain  or  state.behind == 0
+  fire if  state.behind > 0  or  pr.mergeable == 'CONFLICTING'
+    → offer, one line:  "behind <base> by N commits[, conflicted]. `resolve` · `review anyway` · `stop`"
+    → on `resolve`:  run ../resolve-conflicts/SKILL.md, then RE-PROBE and restart the ladder
+
+gate(tests)
+  skip if  checks == 'no-pr'            → say in one clause: "no PR — CI gate skipped"
+  skip if  checks == 'none-configured'  → say in one clause: "no checks configured"
+  fire if  failing.length > 0
+    → state.mine:  "N checks red. `resolve` · `review anyway` · `stop`"
+       on `resolve`: run TEST-HEALTH.md, then RE-PROBE and restart the ladder
+    → not mine:    load TEST-HEALTH.md for its diagnosis phases only, carry the result into
+                   the review as evidence, make no fix offer, continue down the ladder
+
+gate(novelty)
+  skip if  lastReport == null
+  fire if  lastCommit <= lastReport.mtime  AND  (lastFeedback ?? '') <= lastReport.mtime
+    → "nothing pushed and no new feedback since <lastReport.path>. `review anyway` · `stop`"
+
+→ fall through to Phase 00.5
+```
+
+**Re-probe after every resolution — this is what makes the ladder atomic.** Resolving conflicts
+changes the diff, which changes which checks are red; fixing tests moves `lastCommit`, which is
+an input to the novelty gate. Carrying a stale record forward skips a gate that should fire.
+Restart from the top, not from where you left off.
+
+**Both resolvers keep their own push confirm.** A resolved merge that passes checks is finished
+work; it does not wait on a ten-axis review that may take ten minutes. Expect two confirms
+before the review starts on a branch that is both behind and red — that is the correct number.
+
+**A gate is an offer, never an action.** Each fires as one plain-chat line with keyword options
+and waits (RULE 0). `review anyway` is always available: a stale or red branch the user wants
+reviewed anyway gets reviewed, with the gate's finding stated once in the report's coverage
+line so the report says what it was reviewed against.
+
+### The novelty gate on a re-review
+
+This is the gate that stops a second `review` on an unchanged branch from producing a second
+identical report. It compares against the **report file** the last pass wrote, not against
+memory — a fresh session has no memory but can still stat the file. Reports live where
+REVIEW-CORE.md Phase 07 puts them; find the newest one whose name carries this branch.
+
+Note the asymmetry with the comment branch's heuristic in Phase 00 step 3: that one asks
+"has the author responded to feedback?", this one asks "has anything changed since I last
+looked?". Both compare timestamps against `lastCommit`, and they are not the same question.
 
 ## Phase 00.5 — Explain the PR before reviewing it
 
@@ -207,9 +307,10 @@ Present a table — one row per PR — with these columns: **#** (as a markdown 
 **Review loop (strictly sequential, one PR at a time):**
 1. `gh pr checkout <number>` — on failure, report the error, skip this PR, continue. Never force anything.
 2. Read context: `gh pr view <number> --json title,body,comments,reviews` — feeds the Spec axis and avoids re-flagging what other reviewers already raised.
-3. **Run Phase 00.5 for this PR** — explain what it changed and the issue it fixed, in chat, before its findings. Per-PR, every PR in the queue; the triage table's one-liner does **not** stand in for it. `skip summary` from the user drops it for the rest of the run.
-4. Run the review core (and dual flavor if chosen) against the PR's diff vs its base (usually `origin/main`). Let it finish before the next PR.
-5. Run the **fix-and-post offer** for this PR (it's a teammate PR → propose which findings to fix on the branch vs hand back via verdict/comment, explicit yes for each action). Capture report path, what was pushed (commit + branch), and the verdict you posted (or "not posted").
+3. **Run Phase 00.1 for this PR** — re-probe `BranchState` for *this* PR and clear the ladder. Teammate-PR column: conflicts gate skipped, tests gate diagnoses without offering a fix, novelty gate live.
+4. **Run Phase 00.5 for this PR** — explain what it changed and the issue it fixed, in chat, before its findings. Per-PR, every PR in the queue; the triage table's one-liner does **not** stand in for it. `skip summary` from the user drops it for the rest of the run.
+5. Run the review core (and dual flavor if chosen) against the PR's diff vs its base (usually `origin/main`). Let it finish before the next PR.
+6. Run the **fix-and-post offer** for this PR (it's a teammate PR → propose which findings to fix on the branch vs hand back via verdict/comment, explicit yes for each action). Capture report path, what was pushed (commit + branch), and the verdict you posted (or "not posted").
 
 **Complete.** Return to the recorded branch (`git checkout <original-branch>`). Summarize one row per PR — number, title, verdict, blocking-finding count, report path, posted (y/n). Never parallelize checkouts or reviews.
 

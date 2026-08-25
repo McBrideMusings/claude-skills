@@ -340,6 +340,12 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 Execution gate: 6 qualifying · 3 reproduced · 2 not-reproduced (dropped) · 1 not-executable (input needs a live database) · repro scripts + `bun run test`, 41s baseline
 ```
 
+- **Branch state** — a third line whenever any [SKILL.md](SKILL.md) Phase 00.1 gate fired and the user answered `review anyway`. Name what the review was run against, so nobody reads the findings as applying to a merged, green branch when they don't. Omit the line entirely when every gate passed.
+
+```
+Branch state: 12 commits behind origin/main (not merged) · 2 checks red (check-cloudflare-test (3), check-devvit-test) — reviewed anyway at user's request
+```
+
 ### The issue entry — the fields, in this order
 
 | Field | Content | Budget |
