@@ -121,7 +121,9 @@ Do not exit. Do not re-ask it in different words. Three moves, then carry on:
 
 ## An instruction is not an answer
 
-Once this skill is loaded, every later message reads as an answer to the current question — including the ones that are orders. A message that names what to build is `CLAUDE.md`'s *"Told to build means build"*, and it outranks the interview: go build it. Remaining branches can be resolved on the way, or after, but the build is not deferred behind them.
+Once this skill is loaded, every later message reads as an answer to the current question — including the ones that are orders. A message naming what to build starts that build (`CLAUDE.md`, *"Told to build means build"*). A question that serves the build is still building — sketch it, spike it, ask the one thing you genuinely need. A question that stands in for the build is not.
+
+The test is whether the turn moved toward the thing. Another option set about a decision the user already made does not.
 
 Observed 2026-08-25: "the settings button and the button that says Connected MacBook should be a settings button and a server button" became an options block about persistence, then a component-tree diff, then a committed README — three turns, no code, and the user had to ask why they were being ignored. The interview kept converting input into questions because that is what an interview does.
 
