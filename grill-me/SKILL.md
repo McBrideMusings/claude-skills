@@ -123,7 +123,7 @@ On a refusal, do not exit and do not re-ask it reworded:
 
 Once this skill is loaded, every later message reads as an answer to the current question, including the ones that are orders. A message naming what to build starts that build (`CLAUDE.md`, *"Told to build means build"*). A question that serves the build is still building; a question that stands in for it is not. The test is whether the turn moved toward the thing.
 
-**Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`show-shape`](../show-shape/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call gets the format through this door.
+**Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`show-shape`](../show-shape/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:133`), so an autonomous pass that hits a judgment call gets the format through this door.
 
 If a written record is useful at the end, offer it — don't assume:
 

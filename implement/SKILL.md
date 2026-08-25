@@ -11,7 +11,11 @@ One pass on one tracked item: resolve what to work on → implement → wrap-up.
 
 ## ⛔ Run the pass as a workflow — `~/.claude/workflows/implement.js`
 
-**A pass runs staged, not as one long context.** The phases below are the source of truth for *what* each stage does; `~/.claude/workflows/implement.js` is the harness that runs them, one `agent()` per phase, each starting fresh and handing the next a small validated object.
+**A pass runs staged, not as one long context.** `~/.claude/workflows/implement.js` runs one `agent()` per phase, each starting fresh and handing the next a small validated object.
+
+**This document is not what those agents read.** Each stage prompt in the script is the whole of that stage's brief, and [`STAGE-RULES.md`](STAGE-RULES.md) carries the rest — the Bash command rules, the build-runner and screenshot-checker rules. What is below is written for a whole-pass reader — you, deciding to run a pass, and anyone maintaining one. Twelve of its sixteen sections address that reader and only four address a single stage, so a stage agent handed the whole thing reads mostly instructions for work that is not its own, including a transition into wrap-up it must not take.
+
+**So an edit here does not reach a running pass.** Change what a stage does by changing that stage's prompt in `implement.js`; change what every stage does in `STAGE-RULES.md`. The phase descriptions below say what each stage is *for*, and `tools/tests/implement-workflow.test.sh` is what holds the script to it.
 
 Invoke it with `Workflow({ name: 'implement', args: { … } })`. Arguments: `issue` or `item` (or `resolved` when the caller already fetched and gated the item), `worktree`/`repo`, `branch`, `mode` (`standalone` | `continuous`), `model`, `land`.
 
@@ -21,16 +25,23 @@ Pass it explicitly on a standalone pass that runs in a worktree. That case is th
 
 **Why this is not optional.** Measured across 24h of session logs: 40 implement passes that ran as a single agent averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend**. The cost was never the code — it was one context that grew all pass and was re-read on every turn. Staging removes the growth curve; running the phases inline puts it back.
 
-**Two rules the harness depends on, which apply to every stage:**
-
-- **Never run a build, test, lint or typecheck directly.** Dispatch the `build-runner` subagent, which returns only the failures. Raw build output was the largest single source of growth inside a pass.
-- **Never read a screenshot to check something.** Dispatch `screenshot-checker`. Images were 84% of all tool-result bytes in the measured day, and an image stays in context for every turn after it lands.
-
-**When the session forbids subagents, it wins.** Some sessions carry a harness-injected "do not call the Agent tool unless the user requested it" instruction. It cannot be edited from this repo, so neither rule above overrides it. Fall back to running the command directly and truncating the output — `… 2>&1 | tail -40` for a build, `screenshot-checker`'s question answered by reading the one image and not keeping others.
+**Two rules keep that saving, and they live in [`STAGE-RULES.md`](STAGE-RULES.md) because they bind every stage:** no stage runs a build, test, lint or typecheck itself (that goes through `build-runner`), and no stage reads a screenshot (that goes through `screenshot-checker`). Raw build output was the largest single source of growth inside a pass; images were 84% of all tool-result bytes in the measured day.
 
 **Nesting is one level deep.** When `/orchestrate` or `/iterate` calls `workflow('implement')`, this script is already a child — its stages are plain agents and cannot open a further workflow. That is why the Wrap phase inlines wrap-up's phases rather than calling `workflow('wrap-up')`.
 
-**Running the phases inline is still correct in one case:** a pass already executing inside a subagent that has no `Workflow` tool. Follow the phases in order, in context, and keep the two rules above.
+### Running the phases inline
+
+Correct in one case: a pass already executing inside a subagent that has no `Workflow` tool. Follow the phases below in order, in context, and keep the two rules above. **You are then the only reader for whom the next paragraph is addressed** — the staged harness enforces it structurally, because no stage's prompt mentions the stage after it.
+
+**⛔ There is no stopping point between Phase 1, Phase 1.5 and Phase 2.**
+
+The single most common inline failure is stopping at green: code written, tests passing, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line; a *verified*, wrapped-up pass is. The moment implementation lands green with no halt fired, invoke the `verify` skill (Phase 1.5), then `wrap-up`. Specifically:
+
+- **Do NOT emit a summary, recap, or "next steps" message and end your turn.** Catching yourself about to write "Next: commit and push" IS the signal to invoke `wrap-up` instead — the recap is the work wrap-up does.
+- **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those run *inside* the wrap-up invocation.
+- **The pass is complete ONLY after** the `wrap-up` skill has returned. Until then you are mid-pass — keep going.
+
+The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `verify` and continue). There is no third option.
 
 ---
 
@@ -57,27 +68,9 @@ Pass it explicitly on a standalone pass that runs in a worktree. That case is th
 
 ---
 
-## ⛔ BASH COMMAND RULES — READ THIS BEFORE WRITING ANY SHELL COMMAND
+## Bash command rules
 
-These rules exist because implement is a walk-away tool. A single permission prompt kills the entire unattended run. There are no exceptions.
-
-**HARD BANS — these will ALWAYS trigger a permission prompt and MUST NEVER appear:**
-
-1. **`@{u}`, `@{upstream}`, `@{push}`, or ANY `{...}` git refspec.** These trigger brace-expansion prompts unconditionally. Use `origin/$(git branch --show-current)` or `origin/main` instead. Never type a `{` in a git argument outside a quoted string.
-
-2. **Compound commands where ANY sub-command is not allowlisted.** `&&`, `||`, `;` chaining is only safe when EVERY piece would individually pass the allowlist. If uncertain, run commands separately. A compound with one unlisted binary prompts the whole thing.
-
-3. **`$(...)` or backtick subshell expansion inside a command argument** where the inner command is not already allowlisted. Run the inner command first, capture the result, use it in a second call.
-
-4. **`#` comments inside Bash tool calls.** They trigger approval prompts.
-
-5. **Newlines inside a single Bash tool call** to separate commands.
-
-6. **`cd /path && git <cmd>` to run git in a different directory.** This triggers an "untrusted hooks" prompt. Use `git -C /absolute/path <cmd>` instead — same effect, no compound, no prompt.
-
-7. **`cat <file> || echo "not found"` existence-check compounds.** Use the Read tool to check/read files.
-
-If you find yourself contorting a command to avoid a prompt, STOP. The right fix is adding the pattern to the allowlist, not clever reformatting. Halt and surface the issue instead.
+implement is a walk-away tool, and a single permission prompt kills the whole unattended run. Seven shell shapes prompt unconditionally and must never appear in a pass. They are in [`STAGE-RULES.md`](STAGE-RULES.md), which is where every stage agent reads them — that file is the only copy, so a rule added here would bind nobody.
 
 ---
 
@@ -153,15 +146,7 @@ Work the resolved item on the current branch (following triage's Step 8 for the 
 - If implementation produces no diff after 1–2 attempts (false start, blocked, needs design), halt with a one-line blocker explanation. Do not commit empty changes.
 - If tests fail and the cause isn't trivially fixable in 1–2 attempts, halt with the failure surfaced.
 
-**⛔ MANDATORY TRANSITION — there is NO stopping point between Phase 1, Phase 1.5, and Phase 2.**
-
-The single most common implement failure is stopping here: code written, tests green, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line; a *verified*, wrapped-up pass is. The moment implementation lands green with no halt fired, invoke the `verify` skill (Phase 1.5), then `wrap-up`. Specifically:
-
-- **Do NOT emit a summary, recap, or "next steps" message and end your turn.** Catching yourself about to write "Next: commit and push" IS the signal to invoke `wrap-up` instead — the recap is the work wrap-up does.
-- **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those run *inside* the wrap-up invocation.
-- **The pass is complete ONLY after** the `wrap-up` skill has returned. Until then, you are mid-pass — keep going.
-
-The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `verify` and continue). There is no third option.
+Green tests are not the finish line; a *verified*, wrapped-up pass is. Phase 1.5 and Phase 2 follow with nothing in between — see [Running the phases inline](#running-the-phases-inline) for what that costs a reader who is executing these phases by hand.
 
 ---
 

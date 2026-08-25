@@ -210,6 +210,6 @@ sequenceDiagram
 
 These call `Skill(show-shape)` at the point they start writing a plan, so the format arrives without anyone remembering to ask for it:
 
-- [`grill-me`](../grill-me/SKILL.md) — when an interview resolves into a stated plan or decision. This is also `implement`'s ambiguity path: `implement`'s Phase 0.5 objectivity failure routes to `grill-me` (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call picks up this format on the way through. `implement` itself stays uninstrumented on purpose — a pass that clears the gate is walk-away work and should not stop to format a plan for a human.
+- [`grill-me`](../grill-me/SKILL.md) — when an interview resolves into a stated plan or decision. This is also `implement`'s ambiguity path: `implement`'s Phase 0.5 objectivity failure routes to `grill-me` (`../implement/SKILL.md:133`), so an autonomous pass that hits a judgment call picks up this format on the way through. `implement` itself stays uninstrumented on purpose — a pass that clears the gate is walk-away work and should not stop to format a plan for a human.
 - [`iron-out`](../iron-out/SKILL.md) — when writing the resolved plan onto an issue.
 - [`spike`](../spike/SKILL.md) — when writing up which approach won and what to build.
