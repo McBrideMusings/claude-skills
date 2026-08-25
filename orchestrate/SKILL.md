@@ -327,7 +327,8 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 | `working` | leave alone |
 | `done`/`idle`, verdict `PASS`/`SKIP`, branch has ≥1 commit past the base, `verified_parent` == branch head's parent, tree clean | land it (step 6) |
 | verdict `PASS`/`SKIP` but the branch has **no commits past the base** | **not a pass — it is empty.** The verdict describes code in no commit. Keep the worktree, [recover it](#recovering-a-stranded-worker); never land, never tear down |
-| `done`/`idle`, verdict `PASS`/`SKIP` but `verified_parent` is **not** the branch head's parent, or the tree is dirty | **stale** — escalate; the tip commits or the uncommitted edits shipped unverified |
+| verdict `PASS`/`SKIP` but `verified_parent` **names no object in this repo** | **not a pass — it is no verdict.** The sha was written without reading git, so nothing in the file was measured against a real tree. Keep the worktree, [recover it](#recovering-a-stranded-worker); never land, never tear down |
+| `done`/`idle`, verdict `PASS`/`SKIP` but `verified_parent` resolves and is **not** the branch head's parent, or the tree is dirty | **stale** — escalate; the tip commits or the uncommitted edits shipped unverified |
 | `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `haiku` | retire it, tear the worktree down, and re-dispatch the issue **once** on `model` (sonnet) through step 3; name the retry in the report |
 | `done`/`idle`, verdict `FAIL`/`BLOCKED`/missing, worker ran `sonnet` | report it, retire it, leave the issue open. No escalation above sonnet exists — a second failure is work for `iron-out`, not a bigger model |
 | `blocked` (herdr: an approval prompt) | escalate to the human; never auto-approve |
@@ -356,8 +357,11 @@ Copy it at read time, not at teardown time. A worker can be retired for reasons 
 **Check the verdict's `verified_parent` against the branch head's parent** before trusting a `PASS`:
 
 ```bash
-git -C <worktree> rev-parse <branch>^     # must equal the verdict's verified_parent
+git -C <worktree> cat-file -e <verified_parent>^{commit}   # must succeed
+git -C <worktree> rev-parse <branch>^                      # must equal the verdict's verified_parent
 ```
+
+**Run the `cat-file` first, and stop there when it fails.** A sha that names no object in the repo was never read out of git, so the verdict measured nothing — that is a different verdict class from a stale one, not a harsher one. Observed: a verdict carrying `bb85bca17fe86dfa3c7a26b8c4c6a5b7d9e2f3a4`, 40 valid hex characters naming no object, on a branch whose real fork point was `25bee4a`. The comparison alone reads that as stale and sends the reader off to work out which commits shipped unverified, when the answer is that nothing in the verdict was ever verified.
 
 `verify` runs before anything is committed, so the only sha it can honestly record is the parent of the commit its work becomes. Wrap then makes exactly one commit. On an honest pass those match; when they don't, something was committed after the verdict was written and is shipping unverified. Observed: a worker returned `PASS` at one commit, made one more, and the extra change landed on nothing but its own say-so.
 
@@ -390,7 +394,7 @@ Teardown is the orchestrator's job because it is **structurally impossible for t
 
 ```bash
 ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/*.json    # every verdict in there, by name
-test -f /private/tmp/claude/<repo-slug>/verify/<item>.json   # the one you copied out — step 5
+test -f $(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json   # the one you copied out — step 5
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
 git -C <repo> worktree remove --force <worktree> \
@@ -501,7 +505,7 @@ The only other moment the human is involved. This list is **additive to** `CLAUD
 - **Escalated** — conflicts, stale verdicts, dirty worktrees left standing.
 - **Still blocked** — issue and the blocker it is waiting on.
 - **Index entries written**, and any landed branch that added a file and named none — that is a stale index in the making, and it is only visible here.
-- **Verdicts preserved** — one line listing the `/private/tmp/claude/<repo-slug>/verify/<item>.json` files now in the primary checkout, and naming any landed issue that has none. A swarm that lands six slices should leave six verdicts behind; anything less means the evidence went out with a worktree and the next person to look will have to re-drive the result to learn what you already knew.
+- **Verdicts preserved** — one line listing the `$(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json` files now in the primary checkout, and naming any landed issue that has none. A swarm that lands six slices should leave six verdicts behind; anything less means the evidence went out with a worktree and the next person to look will have to re-drive the result to learn what you already knew.
 - **Next batch** — the issues that failed the gate this run, each with **your pick** for what unblocks it, and the skill that does it (usually `iron-out`). Every other line above is backward-looking, and an empty frontier is not an empty backlog: the loop's terminal condition is "no issue passes the gate", which on a hundred-issue tracker means the gate is the bottleneck, not the work. A report that stops at **Still blocked** hands back a list of obstacles with nothing to answer.
 
 **Then close with the escape hatch, always** — this report ends in recommendations, so `CLAUDE.md` §Deciding & designing binds it exactly as it binds `review` and `wrap-up`:
