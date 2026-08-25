@@ -43,6 +43,8 @@ Reproduce with `python3 ~/.claude/skills/audit-session/adherence.py --rule plan-
 
 A plan already three lines long, or a decision with no structural shape — "which library to use" is a comparison table, not this. Skipping is a judgment you make *after* loading, not a reason to skip loading.
 
+**Also skip when the shape is a change you are already authorised to make.** Drawing a component tree of an edit you could make in the time it takes to draw it is not a plan, it is a delay. Make the change and show the real diff — that is the same shape, measured instead of predicted. This rule applies to a *proposal*; once the answer is settled, the deliverable is code.
+
 ## Techniques
 
 ### 1. File labels

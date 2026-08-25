@@ -109,6 +109,10 @@ These are the same disciplines the `gui` orchestrator uses; grill-me reads the c
 
 Shared understanding is the goal, not an artifact. Stop when there are no unresolved branches.
 
+**Leave the interview the moment the user stops answering and starts instructing.** Once this skill is loaded, every later message reads as an answer to the current question — including the ones that are orders. A message that names what to build, or accepts a design and tells you to apply it, ends the interview: go build it, and do not convert it into the next question, a spec, or a recorded decision.
+
+The tell is that your reply would restate their instruction back to them in a more structured form. Observed 2026-08-25: "the settings button and the button that says Connected MacBook should be a settings button and a server button" became an options block about persistence, then a component-tree diff, then a committed README — three turns, no code, and the user had to ask why they were being ignored. `CLAUDE.md`'s *"Instructions are just instructions"* is the rule; this is where it gets broken, because an interview is a machine for turning input into questions.
+
 **Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`show-shape`](../show-shape/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call gets the format through this door.
 
 If a written record is useful at the end, offer it — don't assume:
