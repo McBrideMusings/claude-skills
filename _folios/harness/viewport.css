@@ -262,10 +262,10 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-doc
 
 /* --- size readout, and the two controls that change it ---
 
-   Rotate and 1:1 belong here rather than among the device chips: the chips answer "which
-   frame", these two answer "how is it shown". Wearing the same chip treatment they read
-   as two more frames in the list, which is the one thing they are not. Ghost buttons on
-   the readout line — attached to the numbers they change, subordinate to the chips. */
+   Rotate and 1:1 are the whole device group now: a folio is built for one device, so
+   there is nothing to choose and the group's name IS the device. These two answer "how is
+   it shown", never "which frame". Ghost buttons on the readout line, attached to the
+   numbers they change and subordinate to the group's own name. */
 
 .at-vp-readout {
   display: flex;
@@ -357,4 +357,12 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-doc
 
 @media (prefers-reduced-motion: reduce) {
   .at-vp-host { transition: none; }
+}
+
+/* The device's name on the floating bar, where a chooser used to be. A label, not a
+   control: the folio is for one device and the fragment cannot be shown at another. */
+.at-vp-name {
+  padding: 0 10px 0 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
 }

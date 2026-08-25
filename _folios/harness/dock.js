@@ -71,8 +71,14 @@
 
   function free() {
     var r = probe.getBoundingClientRect();
-    return { left: r.left, right: r.right };
+    return { left: r.left, right: r.right, width: r.width };
   }
+
+  /* Published because the device stage needs the same answer and cannot measure itself
+     for it: .at-vp-host animates its own insets over 260ms, so anything reading its box
+     during a rail collapse reads the layout it is leaving. The probe carries the same
+     two tokens with no transition, so it is already at the destination. */
+  window.__atFree = free;
 
   function leftEdge() {
     var l = free().left;

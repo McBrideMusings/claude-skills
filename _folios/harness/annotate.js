@@ -63,6 +63,19 @@
 
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(notes)); } catch (e) {}
+    /* Belt and braces for the storage listener at the foot of this file, and symmetric on
+       purpose. A folio is normally opened as file://, where Chrome gives each document an
+       opaque origin and the cross-document storage event is not something to bet the
+       user's only copy of their comments on. So a write inside a device frame nudges the
+       host, and a write on the host nudges the frame — otherwise deleting a comment from
+       the panel leaves its pin sitting on the design with nothing to clear it. */
+    if (document.documentElement.hasAttribute('data-at-embedded')) {
+      try { parent.postMessage({ at: 'notes' }, '*'); } catch (e) {}
+      return;
+    }
+    [].slice.call(document.querySelectorAll('.at-vp-frame')).forEach(function (f) {
+      try { f.contentWindow.postMessage({ at: 'notes' }, '*'); } catch (e) {}
+    });
   }
 
   // --- the elements a pin can point at --------------------------------------
@@ -145,7 +158,14 @@
     '</div></footer>';
 
   document.body.appendChild(layer);
-  document.body.appendChild(panel);
+  /* The pin layer belongs to whichever document holds the design; the PANEL never does.
+     It is host chrome, like the comment toggle and the rail handle, and a device frame
+     runs this same file — so once the host started telling the frame to enter annotate
+     mode, the frame drew its own COMMENTS sidebar inside the bezel, over the design.
+     It is still built, because the copy/clear/close handlers and paintActions() all read
+     it; it is simply never put on screen in an embedded document. A pin made in here
+     still reaches the real panel — see the storage listener at the foot of this file. */
+  if (!root.hasAttribute('data-at-embedded')) document.body.appendChild(panel);
 
   var list = panel.querySelector('.at-panel-list');
 
@@ -406,7 +426,11 @@
      theme toggle rather than in the rail because every kind has annotate and only
      prototypes have a rail. */
   var toggleBtn = document.createElement('button');
-  toggleBtn.className = 'at-annotate-toggle';
+  /* `at-dock` at CREATION, not when __atDock runs on a timeout. viewport.js serializes the
+     device frame's srcdoc out of this same DOM, and it strips floating controls by that
+     one class; a button that had not been docked yet survived the strip, then rendered
+     undocked in a corner of the design inside the frame. */
+  toggleBtn.className = 'at-annotate-toggle at-dock';
   toggleBtn.type = 'button';
   toggleBtn.title = 'Comment on anything  (a)';
   toggleBtn.setAttribute('aria-label', 'Comment mode');
@@ -437,7 +461,41 @@
       if (aimed) { aimed.classList.remove('at-aim'); aimed = null; }
       layer.innerHTML = '';
     }
+    pushFrames();
+    /* The comments panel takes 300px off the right edge through --at-inset-r, so the
+       device stage has less room than it had a moment ago and its frame has to be
+       rescaled. Only the rail dispatched this, so opening comments left a TV frame at its
+       old scale, running underneath the panel until the window was resized. */
+    window.dispatchEvent(new Event('at:relayout'));
   }
+
+  /* ---------------- the design lives inside the device frame ----------------
+
+     Annotate mode is a property of a document, and on a prototype the design is not in
+     THIS document — it is in the iframe viewport.js builds. Setting data-at-annotate on
+     the host alone put the crosshair on the black stage around the frame and nothing
+     else: every element worth commenting on kept its own cursor, and clicks on the design
+     went to the design. The frame is same-origin and runs this same file, so it is told
+     the mode and turns itself on. Pins land in the same bucket either way — the clone
+     inherits data-at-key. */
+
+  function pushFrames() {
+    if (root.hasAttribute('data-at-embedded')) return;
+    [].slice.call(document.querySelectorAll('.at-vp-frame')).forEach(function (f) {
+      try { f.contentWindow.postMessage({ at: 'annotate', on: open }, '*'); } catch (e) {}
+    });
+  }
+
+  window.addEventListener('message', function (e) {
+    var m = e.data;
+    if (!m || m.at !== 'annotate') return;
+    if (!root.hasAttribute('data-at-embedded')) return;
+    if (!!m.on !== open) setMode(!!m.on);
+  });
+
+  // A fresh frame has just finished loading and knows nothing about the mode it is
+  // opening into.
+  window.addEventListener('at:device', pushFrames);
 
   document.addEventListener('keydown', function (e) {
     if (!window.__atHotkeys || !window.__atHotkeys(e)) return;
@@ -514,6 +572,15 @@
      exactly how the host panel learns about it. */
   window.addEventListener('storage', function (e) {
     if (e.key && e.key !== KEY) return;
+    notes = load();
+    renumber();
+    reflow();
+  });
+
+  // The same news, sent directly by the document that wrote it — see save(). Both
+  // directions, so this listener does not care which side it is on.
+  window.addEventListener('message', function (e) {
+    if (!e.data || e.data.at !== 'notes') return;
     notes = load();
     renumber();
     reflow();

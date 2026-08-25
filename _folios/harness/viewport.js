@@ -23,9 +23,13 @@
      A web page cannot see them and must never lay itself out around them. They are drawn
      in the host document, around the iframe.
 
-   Which devices appear is declared per-folio by `folio build --devices`, read here
-   off data-at-devices. There is no sensible default: whether a prototype has anything to
-   say at phone width is a property of that prototype. */
+   WHICH device is declared per-folio by `spike build --device`, read here off
+   data-at-device-frame, and there is exactly one. It is required and has no default:
+   which platform a design is for is the author's decision, made before anything is drawn.
+   The switcher that used to sit in the rail is gone — a row of frames invited the reader
+   to judge a phone layout against a desktop layout as if they were two directions for one
+   design, which is the comparison this harness exists to prevent. Two platforms is two
+   prototypes, and the slug says which. */
 
 (function () {
   var root = document.documentElement;
@@ -42,7 +46,6 @@
   if (root.hasAttribute('data-at-embedded')) return;
 
   var CATALOG = {
-    fit:     { label: 'Fit',     w: 0,    h: 0,    chrome: null,      rotates: false },
     phone:   { label: 'Phone',   w: 390,  h: 844,  chrome: 'ios',     rotates: true, notch: true, radius: 46 },
     tablet:  { label: 'Tablet',  w: 834,  h: 1194, chrome: 'ios',     rotates: true, notch: false, radius: 20 },
     desktop: { label: 'Desktop', w: 1440, h: 900,  chrome: 'macos',   rotates: false, radius: 10 },
@@ -78,39 +81,35 @@
     '<span class="at-oc-dot" style="background:#febc2e"></span>' +
     '<span class="at-oc-dot" style="background:#28c840"></span>';
 
-  var names = (root.getAttribute('data-at-devices') || 'fit,phone,tablet,desktop')
-    .split(',').map(function (s) { return s.trim(); }).filter(function (s) { return CATALOG[s]; });
-  /* An explicit --devices list is honoured exactly. A design that ships on a phone and a
-     Mac panel and nothing else is judged in those two frames; a third, unframed one is a
-     size nobody drew for, and it was the one the harness opened on. `fit` is still in the
-     default list, so a build that names no devices is unchanged.
+  /* ONE device, named at build time by `spike build --device`. There is no switcher and
+     no default: which platform a design is for is a decision the author makes before
+     drawing anything, not a row of chips the reader flips through — and a list invited
+     exactly the comparison the harness exists to prevent, judging a phone layout and a
+     desktop layout as if they were two directions for one design. Two platforms is two
+     prototypes, and the slug says which. */
+  var DEVICE = (root.getAttribute('data-at-device-frame') || '').trim();
+  if (!CATALOG[DEVICE]) return;
 
-     ONE named device is the normal case, not a degenerate one: a prototype targets a
-     single device type, and `--devices desktop` still gets its bezel and window chrome.
-     Bail only when the sole entry is `fit`, which has no frame to draw and nothing to
-     switch to. */
-  if (!names.length) return;
-  if (names.length === 1 && names[0] === 'fit') return;
-
-  var current = 0;
   var landscape = false;
   var actual = false;          // 1:1 — show the frame at its real size and scroll to it
   var host = null;
   var frame = null;
   var shell = null;
-  var deviceBtns = [];
   var rotateBtn = null;
   var actualBtn = null;
   var sizeLabel = null;
+  var D = CATALOG[DEVICE];
 
   /* Every bit of frame state belongs in the URL, so a phone-landscape view of variant 2
      is a link. Rotate used to call apply() directly and skipped this, which meant the
      one control whose result you would most want to send someone was the one that did
-     not survive being sent. */
+     not survive being sent. The device itself is no longer in the URL: it is a property
+     of the file, not of the view. */
   function writeDeviceUrl() {
     try {
       var url = new URL(location);
-      url.searchParams.set('d', names[current] + (landscape ? '-landscape' : ''));
+      if (landscape) url.searchParams.set('rotate', '1');
+      else url.searchParams.delete('rotate');
       if (actual) url.searchParams.set('zoom', '1');
       else url.searchParams.delete('zoom');
       history.replaceState(null, '', url);
@@ -118,7 +117,7 @@
   }
 
   function toggleRotate() {
-    if (!CATALOG[names[current]].rotates) return;
+    if (!D.rotates) return;
     landscape = !landscape;
     paintControls();
     writeDeviceUrl();
@@ -132,26 +131,19 @@
     fit();
   }
 
-  /* ---------------- controls: into the rail when there is one ---------------- */
+  /* ---------------- controls: into the rail when there is one ----------------
 
-  var rail = window.__atRail;
-  if (rail) {
-    var g = rail.group('Device');
-    var row = rail.row(g);
-    names.forEach(function (n, i) {
-      deviceBtns.push(rail.item(row, CATALOG[n].label, function () { select(i); }));
-    });
-    /* Rotate and 1:1 are not devices — they change how the chosen frame is shown, not
-       which frame it is. Given the same chip treatment they read as two more frames in
-       the list. They sit on the readout line instead, with the numbers they change. */
-    var readout = document.createElement('div');
-    readout.className = 'at-vp-readout';
+     Rotate and 1:1 are the only two. They change how the one frame is shown, not which
+     frame it is, so they sit on the readout line with the numbers they change rather
+     than wearing the chip treatment a chooser would need. The device's name is a label,
+     because there is nothing to choose. */
+
+  function buildReadout(cls) {
     sizeLabel = document.createElement('span');
     sizeLabel.className = 'at-vp-size';
-    readout.appendChild(sizeLabel);
 
     rotateBtn = document.createElement('button');
-    rotateBtn.className = 'at-vp-mod';
+    rotateBtn.className = cls;
     rotateBtn.type = 'button';
     rotateBtn.title = 'Rotate';
     rotateBtn.setAttribute('aria-label', 'Rotate');
@@ -159,45 +151,36 @@
     rotateBtn.addEventListener('click', toggleRotate);
 
     actualBtn = document.createElement('button');
-    actualBtn.className = 'at-vp-mod';
+    actualBtn.className = cls;
     actualBtn.type = 'button';
     actualBtn.title = 'Show at actual size';
     actualBtn.textContent = '1:1';
     actualBtn.addEventListener('click', toggleActual);
+  }
 
+  var rail = window.__atRail;
+  if (rail) {
+    var g = rail.group(D.label);
+    buildReadout('at-vp-mod');
+    var readout = document.createElement('div');
+    readout.className = 'at-vp-readout';
+    readout.appendChild(sizeLabel);
     readout.appendChild(rotateBtn);
     readout.appendChild(actualBtn);
     g.appendChild(readout);
   } else {
     var bar = document.createElement('nav');
     bar.className = 'at-vp';
-    bar.setAttribute('aria-label', 'Viewport size');
-    names.forEach(function (n, i) {
-      var b = document.createElement('button');
-      b.className = 'at-vp-item';
-      b.type = 'button';
-      b.textContent = CATALOG[n].label;
-      b.addEventListener('click', function () { select(i); });
-      bar.appendChild(b);
-      deviceBtns.push(b);
-    });
+    bar.setAttribute('aria-label', 'Viewport');
+    buildReadout('at-vp-item');
+    var name = document.createElement('span');
+    name.className = 'at-vp-name';
+    name.textContent = D.label;
     var divider = document.createElement('span');
     divider.className = 'at-vp-divider';
     divider.setAttribute('aria-hidden', 'true');
-    rotateBtn = document.createElement('button');
-    rotateBtn.className = 'at-vp-item at-vp-rotate';
-    rotateBtn.type = 'button';
-    rotateBtn.setAttribute('aria-label', 'Rotate');
-    rotateBtn.innerHTML = '&#8635;';
-    rotateBtn.addEventListener('click', toggleRotate);
-    actualBtn = document.createElement('button');
-    actualBtn.className = 'at-vp-item';
-    actualBtn.type = 'button';
-    actualBtn.textContent = '1:1';
-    actualBtn.addEventListener('click', toggleActual);
+    bar.appendChild(name);
     bar.appendChild(actualBtn);
-    sizeLabel = document.createElement('span');
-    sizeLabel.className = 'at-vp-size';
     bar.appendChild(divider);
     bar.appendChild(rotateBtn);
     bar.appendChild(sizeLabel);
@@ -205,28 +188,11 @@
   }
 
   function paintControls() {
-    deviceBtns.forEach(function (b, j) { b.toggleAttribute('data-active', j === current); });
-    var d = CATALOG[names[current]];
     if (rotateBtn) {
-      rotateBtn.toggleAttribute('disabled', !d.rotates);
-      rotateBtn.toggleAttribute('data-active', d.rotates && landscape);
+      rotateBtn.toggleAttribute('disabled', !D.rotates);
+      rotateBtn.toggleAttribute('data-active', D.rotates && landscape);
     }
-    if (actualBtn) {
-      actualBtn.toggleAttribute('disabled', !d.w);
-      actualBtn.toggleAttribute('data-active', !!d.w && actual);
-    }
-  }
-
-  function select(i) {
-    current = i;
-    if (!CATALOG[names[i]].rotates) landscape = false;
-    paintControls();
-    writeDeviceUrl();
-    apply();
-  }
-
-  function stepDevice(delta) {
-    select((current + delta + names.length) % names.length);
+    if (actualBtn) actualBtn.toggleAttribute('data-active', actual);
   }
 
   /* ---------------- inside-the-viewport chrome ---------------- */
@@ -257,7 +223,7 @@
     // Keyed on the device itself, not just its chrome family: traffic lights belong to
     // the desktop window and nothing else, so a phone can never inherit them however
     // this is called.
-    if (names[current] === 'desktop' && d.chrome === 'macos') {
+    if (DEVICE === 'desktop' && d.chrome === 'macos') {
       if (!WIN_LIGHTS || WIN_BAR) return { markup: '', top: 0, bottom: 0 };
       return { markup: LIGHTS_OVERLAY, top: 0, bottom: 0, lights: true };
     }
@@ -297,7 +263,7 @@
        be wide — and platform is an interaction model (touch / pointer / remote focus),
        not a size. A fragment that has to lay itself out differently per platform reads
        this; one that only cares about width keeps using media queries. */
-    clone.setAttribute('data-at-device', names[current]);
+    clone.setAttribute('data-at-device', DEVICE);
     clone.setAttribute('data-at-key', root.getAttribute('data-at-key') || location.pathname);
     var v = root.getAttribute('data-at-variant-index');
     if (v) clone.setAttribute('data-at-variant-init', v);
@@ -391,15 +357,7 @@
   /* ---------------- apply ---------------- */
 
   function apply() {
-    var d = CATALOG[names[current]];
-    if (!d.w) {
-      root.removeAttribute('data-at-vp');
-      if (host) { host.remove(); host = null; frame = null; shell = null; }
-      sizeLabel.textContent = '';
-      paintControls();
-      window.dispatchEvent(new CustomEvent('at:device', { detail: { device: 'fit' } }));
-      return;
-    }
+    var d = D;
     var land = d.rotates && landscape;
     var w = land ? d.h : d.w;
     var h = land ? d.w : d.h;
@@ -409,7 +367,7 @@
       host.className = 'at-vp-host';
       document.body.appendChild(host);
     }
-    // The shell is rebuilt per device: its chrome and corner radius differ.
+    // Rebuilt on rotate: the bezel's proportions and the notch follow the orientation.
     host.innerHTML = '';
     shell = document.createElement('div');
     shell.className = 'at-vp-shell';
@@ -439,7 +397,7 @@
       syncFrame();
       // Whatever watches the folio — the contrast verdict, for one — is now looking
       // at a different document and has to be told.
-      window.dispatchEvent(new CustomEvent('at:device', { detail: { device: names[current] } }));
+      window.dispatchEvent(new CustomEvent('at:device', { detail: { device: DEVICE } }));
     });
     frame.srcdoc = srcdoc(d, land);
     fit();
@@ -457,21 +415,32 @@
     shell.style.marginRight = '';
     host.toggleAttribute('data-actual', actual);
 
-    var d = CATALOG[names[current]];
+    var d = D;
     var land = d.rotates && landscape;
     var vw = land ? d.h : d.w;
     var vh = land ? d.w : d.h;
     var w = shell.offsetWidth;
     var h = shell.offsetHeight;
-    var k = actual ? 1 : Math.min(1, (host.clientWidth - 40) / w, (host.clientHeight - 40) / h);
+    /* The host's own box is the WRONG ruler while the rail is opening or closing:
+       .at-vp-host transitions left/right over 260ms and at:relayout fires at the start of
+       it, so host.clientWidth describes the layout the stage is leaving. Expanding the
+       rail scaled a 1920 TV frame to 76% of the full window and slid it under the rail;
+       collapsing it left the frame at the old scale with 272px of ground unused. The dock
+       probe carries the same two inset tokens and does not animate, so it already reads
+       the destination. */
+    var freeW = window.__atFree ? window.__atFree().width : host.clientWidth;
+    var k = actual ? 1 : Math.min(1, (freeW - 40) / w, (host.clientHeight - 40) / h);
 
     if (k < 1) {
       shell.style.transform = 'scale(' + k.toFixed(4) + ')';
       shell.style.marginBottom = -(h * (1 - k)) + 'px';
       shell.style.marginRight = -(w * (1 - k)) + 'px';
     }
-    sizeLabel.textContent = vw + ' × ' + vh +
-      (k < 1 ? '  ·  ' + Math.round(k * 100) + '%' : '  ·  1:1');
+    // Rounded, not raw: a phone that clears the window by two pixels scales to 0.9977 and
+    // printed "100%", which says scaled-but-not-really about a frame that is 1:1 to the
+    // eye. The number on screen is the one being read, so it decides which label applies.
+    var pct = Math.round(k * 100);
+    sizeLabel.textContent = vw + ' × ' + vh + (pct < 100 ? '  ·  ' + pct + '%' : '  ·  1:1');
   }
 
   window.addEventListener('resize', fit);
@@ -495,23 +464,12 @@
   window.addEventListener('at:variant', syncFrame);
   window.addEventListener('at:axis', syncFrame);
 
+  /* Boot. The frame is always built — there is no "no frame" state to resolve to any
+     more, which is what `?d=` used to be able to ask for. Only the two view modifiers
+     come off the URL. */
   var params = new URLSearchParams(location.search);
   actual = params.get('zoom') === '1';
-  var want = params.get('d') || '';
-  var wantLandscape = /-landscape$/.test(want);
-  var wantName = want.replace(/-landscape$/, '');
-  /* `>= 0`, and always select something. This was `> 0` with a bare paintControls() in
-     the else, which was correct only while `fit` was guaranteed to sit at index 0 and
-     "no frame" was therefore the right opening state. With `--devices desktop` the one
-     real frame IS index 0, and the old test built no frame at all: no bezel, no window
-     chrome, the design laid out at whatever size the window happened to be.
-     select(0) on a list whose only entry is `fit` still resolves to no frame, via
-     apply()'s own `!d.w` branch. */
-  var wantIndex = names.indexOf(wantName);
-  if (wantIndex >= 0) {
-    landscape = wantLandscape && CATALOG[wantName].rotates;
-    select(wantIndex);
-  } else {
-    select(0);
-  }
+  landscape = params.get('rotate') === '1' && D.rotates;
+  paintControls();
+  apply();
 })();

@@ -156,9 +156,18 @@
   }
 
   /* A docked button, not only a key. `c` was this check's only human affordance, so on
-     a prototype — where the harness answers no keys — it would have had none at all. */
+     a kind with no rail — where the harness answers no keys — it would have had none at
+     all.
+
+     NOT on a prototype. A rail means checks.js is present, and its "Contrast" row is a
+     labelled verdict that reveals the same overlay when you click it. The floating '◐'
+     alongside it is a second, unlabelled way to do one thing: it reads as a theme toggle,
+     which is what people asked it about, and nothing on screen says otherwise. */
   var btn = document.createElement('button');
-  btn.className = 'at-dock-btn';
+  /* `at-dock` at CREATION — see the same note in annotate.js. Docked on a timeout, this
+     button was still unclassed when viewport.js serialized the frame, so it survived the
+     strip and rendered inside the design. */
+  btn.className = 'at-dock-btn at-dock';
   btn.type = 'button';
   btn.textContent = '◐';
   function paintBtn() {
@@ -169,14 +178,14 @@
     btn.setAttribute('title', label);
   }
   btn.addEventListener('click', function () { setMode(!on, false); });
-  // Host only — see rail.js's reopen button. Undocked inside a frame, this '◐' rendered
-  // in normal flow in a corner of the design, reading as part of it.
-  if (!root.hasAttribute('data-at-embedded')) document.body.appendChild(btn);
+  // Host only, and only where nothing better carries the check — see the note above.
+  var floating = !root.hasAttribute('data-at-embedded') && !window.__atRail;
+  if (floating) document.body.appendChild(btn);
   paintBtn();
   // dock.js is inlined first, but __atDock is registered inside its own IIFE; a timeout
   // runs after every inline script has executed. Same dance rail.js does.
   setTimeout(function () {
-    if (window.__atDock) window.__atDock(btn, 'contrast', 'right', 1);
+    if (floating && window.__atDock) window.__atDock(btn, 'contrast', 'right', 1);
   }, 0);
 
   document.addEventListener('keydown', function (e) {

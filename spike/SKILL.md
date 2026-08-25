@@ -51,17 +51,17 @@ The shape is the *mechanism*. The domain is the *mode of software* — it says w
 
 ## One prototype, one device type
 
-**A prototype targets exactly one device type, and the file is named for it.** A phone design, a desktop design and a TV design are three files, three slugs, three `--devices` lists — never one file switching between them.
+**A prototype targets exactly one device type, and the file is named for it.** A phone design, a desktop design and a TV design are three files, three slugs, three `--device` values — never one file switching between them.
 
 ```
-/private/tmp/claude/<repo-slug>/spikes/wheelhouse-phone/wheelhouse-phone.html    --devices phone
-/private/tmp/claude/<repo-slug>/spikes/wheelhouse-desktop/wheelhouse-desktop.html --devices desktop
-/private/tmp/claude/<repo-slug>/spikes/wheelhouse-tv/wheelhouse-tv.html           --devices tv
+/private/tmp/claude/<repo-slug>/spikes/wheelhouse-phone/wheelhouse-phone.html    --device phone
+/private/tmp/claude/<repo-slug>/spikes/wheelhouse-desktop/wheelhouse-desktop.html --device desktop
+/private/tmp/claude/<repo-slug>/spikes/wheelhouse-tv/wheelhouse-tv.html           --device tv
 ```
 
-Why, when the harness can hold all three at once: a platform is an interaction model, not a width. Touch, pointer and remote-focus are different designs that happen to share a product, and one file holding all three spends every variant slot on "which platform" instead of on the question the prototype exists to answer. It also makes each file three times the size, and two thirds of it is always irrelevant to what is being looked at.
+Why: a platform is an interaction model, not a width. Touch, pointer and remote-focus are different designs that happen to share a product, and one file holding all three spends every variant slot on "which platform" instead of on the question the prototype exists to answer. It also makes each file three times the size, and two thirds of it is always irrelevant to what is being looked at.
 
-**`--devices` names ONE frame, and `fit` is not added for you.** `--devices phone` opens on the phone and offers nothing else. A second frame belongs in the list only when the same design genuinely ships at both sizes — a phone and its tablet layout, a desktop window and the browser it also runs in. Rotation is not a second device: the `phone` and `tablet` frames rotate, and landscape is that frame's own control.
+**`--device` takes one value and is required.** There is no list, no switcher in the rail and no unframed `fit` — the harness builds that one frame and the rail's device group carries only the size readout, rotate and 1:1. Rotation is not a second device: the `phone` and `tablet` frames rotate, and landscape is that frame's own control. A design that ships on a phone and a tablet is two builds, judged separately.
 
 ## Naming — every shape
 
@@ -88,7 +88,7 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the full relevant state so the user can see what changed.
 6. **Realistic content, always.** Product-shaped copy, plausible names and numbers, real-sized data. No lorem ipsum, no `foo`/`bar`, no "imagine this part here".
 7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something, every destructive button shows what it would do — the reject path as much as the approve path. A dead control reads as a bug and derails the conversation the prototype exists to have. A control with nowhere to go does not go in.
-8. **Name the devices deliberately** (UI shape). `--devices` is a judgement about this design, made fresh each time: `phone` for a phone surface, `desktop` for a desktop one, a second frame only when the thing genuinely ships at both sizes. Never accept a default list, and never draw device chrome by hand — the harness owns the status bar, notch, window title bar and browser chrome.
+8. **Name the device deliberately** (UI shape). `--device` is a judgement about this design, made fresh each time: `phone` for a phone surface, `desktop` for a desktop one, `tv` for a ten-foot one. It is required, so there is no default to accept — and never draw device chrome by hand, since the harness owns the status bar, notch, window title bar and browser chrome.
 9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a direction wins, implement it properly in the project's stack and conventions, then delete the prototype. Never move the file into the codebase.
 
 ## Arguments

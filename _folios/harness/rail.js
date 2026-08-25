@@ -237,7 +237,8 @@
      says which — amber when the rail is showing, dark when it is not, exactly like the
      comment button and its panel. Same object, same states, same CSS. */
   var reopen = document.createElement('button');
-  reopen.className = 'at-rail-reopen';
+  // `at-dock` at CREATION — see the same note in annotate.js.
+  reopen.className = 'at-rail-reopen at-dock';
   reopen.type = 'button';
   reopen.addEventListener('click', function () {
     setCollapsed(!root.hasAttribute('data-at-rail-collapsed'));

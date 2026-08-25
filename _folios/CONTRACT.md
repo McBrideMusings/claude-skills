@@ -27,11 +27,10 @@ A prototype or a wireframe:
 `explainer` takes no `--kind` — it has exactly one look. Everything below that mentions a
 picker, state axes or device frames is `spike`'s alone.
 
-**Decide whether the prototype needs the device switcher.** `--devices` is on for
-`prototype`; name the frames deliberately when the layout is meant to respond to width and
-seeing it at phone or tablet size is part of the judgement. Leave a size off when the thing
-never exists at it: a macOS menubar panel, a desktop-only window, a single component in
-isolation. Sizes the design will never be used at are chrome that invites a pointless verdict.
+**Decide which device this prototype is for.** `--device` is required on `prototype`, takes
+exactly one value, and has no default. It is the first thing to settle, because it decides
+the slug as well as the frame: a design that ships on a phone and on a desktop is two
+prototypes, not one file with a switcher.
 
 `spike kinds` lists the kinds and their flags. Both tools carry `serve <path>` as a
 contingency that shells to `python3 -m http.server`; you almost never need it — `file://` runs
@@ -221,14 +220,17 @@ screen across two directions is the entire job.
   `<template>` does not execute — this is the one trap in the whole contract.
 - Axis state persists in the URL as `?screen=chat`, alongside `?r=` and `?v=`.
 
-### Devices — named per prototype, never defaulted into
+### The device — one per prototype, required, chosen at build time
 
-`--devices fit,phone,tablet,desktop,panel,web,tv`. Choosing these is a judgement about **this** design,
-and it is yours to make: offering a frame the design was never meant for invites a verdict on a layout
-nobody drew. A phone-only chat surface gets `phone`. A pane-tree editor gets `desktop`. One design that
-ships on iOS and as a Mac menu bar extra gets `phone,panel`. The list is honoured exactly — `fit` is
-one entry among the rest, present only when you name it or when you name nothing and take the default
-list. A list whose only entry is `fit` has no frame to draw, so the switcher does not appear at all.
+`--device phone|tablet|desktop|panel|web|tv`. Exactly one, and the tool refuses a build without it.
+A phone-only chat surface gets `phone`. A pane-tree editor gets `desktop`. A design that ships on iOS
+*and* as a Mac menu bar extra is two prototypes, `--device phone` and `--device panel`, each named for
+what it is.
+
+There is no switcher and no unframed `fit`. A row of frames invited the reader to judge a phone layout
+against a desktop layout as if they were two directions for one design, which is the comparison the
+harness exists to prevent — and the unframed view was a size nobody drew for. The rail's device group
+is the frame's name plus the size readout, rotate, and 1:1.
 
 Chrome sits on whichever side of the viewport it really sits on, and the harness draws all of it:
 
@@ -246,7 +248,7 @@ exactly what a 1440-wide `desktop` frame would hide.
 
 ### `--window` — what kind of window the desktop frame is
 
-A build-time decision, like `--devices`, and for the same reason: whether the design owns its own
+A build-time decision, like `--device`, and for the same reason: whether the design owns its own
 title area is a property of the thing being prototyped, not something to flip while looking at it.
 **The default is a bare window** — a desktop app with a full-size content view draws its own top
 area, and a generic macOS title bar stapled over it is chrome nobody designed.
@@ -261,7 +263,7 @@ area, and a generic macOS title bar stapled over it is chrome nobody designed.
 `--window lights` is the only one that reaches into the viewport, so it is the only one your layout
 has to know about. It reserves nothing — drawing under the lights is the entire point of that window
 style — and publishes `--at-lights-w` (78px) and `--at-lights-h` (28px) so a layout that wants to
-keep its own controls clear of them can. `--window` is refused unless `desktop` is in `--devices`.
+keep its own controls clear of them can. `--window` is refused unless `--device` is `desktop`.
 
 Never draw your own status bar or window chrome in the fragment. Reserve the space instead: the frame
 publishes `--at-safe-top` and `--at-safe-bottom`, and pads `body` by them automatically. Set

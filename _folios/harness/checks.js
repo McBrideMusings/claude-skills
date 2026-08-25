@@ -320,7 +320,20 @@
 
   function showDetail(c, result) {
     var box = rows.__detail;
-    if (openKey === c.key) { openKey = null; box.hidden = true; paint(); return; }
+    if (openKey === c.key) {
+      openKey = null;
+      box.hidden = true;
+      /* This row is the only control for the overlay now that the floating '◐' is gone
+         from any folio with a rail, so closing the row has to put the overlay away too —
+         through target().win, the same window result.reveal() turned it on in. The host's
+         own window.atContrast is a different instance: with a device frame up, the design
+         and its overlay live in the frame, and asking the host to switch it off left the
+         markers on screen with nothing able to clear them. */
+      var w = target().win;
+      if (c.key === 'contrast' && w.atContrast) w.atContrast.mode(false);
+      paint();
+      return;
+    }
     openKey = c.key;
     if (c.key === 'contrast' && result.reveal) { result.reveal(); }
     box.hidden = false;

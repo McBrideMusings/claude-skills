@@ -35,7 +35,7 @@ harness/
   checks.css      <- the standing verdict rows in the rail
   checks.js       <- eight checks that run themselves and report in the rail
   viewport.css    <- device bezel + the chrome that sits outside the viewport
-  viewport.js     <- real iframe per device; --devices names which frames exist
+  viewport.js     <- one real iframe; --device names the single frame it builds
 ```
 
 ## Widgets

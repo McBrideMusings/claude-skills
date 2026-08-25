@@ -117,7 +117,7 @@ error, which empty case) and a top-level `<script>` listening for `at:axis`. The
 "$HOME/.claude/tools/spike" build \
   --kind prototype --picker switch \
   --title "Wheelhouse Phone" --subtitle "<the question this answers>" \
-  --devices phone \
+  --device phone \
   --fragment /private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.body.html \
   --out /private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html
 ```
@@ -129,13 +129,12 @@ The rail's markup, styles and URL persistence all come from the tool. It binds n
 **Write none of it**, and never restyle it — it stays identical across every project so it reads as
 harness chrome rather than part of the design being judged.
 
-The same is true of the other harness widgets a prototype gets for free: the device frames in the rail
-(each renders the page in a real viewport, so the fragment's media queries actually fire, and the
-harness draws the status bar / window chrome), `a` to comment on any element, and `c` to flag text
-that fails contrast. Tell the user those
-exist when handing the prototype over — a comment pinned to an element comes back naming the fragment
-line that produced it, which is the fastest revision loop available. See
-`../_folios/CONTRACT.md` for how the comments come back.
+The same is true of the other harness widgets a prototype gets for free: the device frame (a real
+viewport, so the fragment's media queries actually fire, with the status bar / window chrome drawn by
+the harness), the comment button, and the rail's Checks group, whose Contrast row reveals any text
+failing WCAG AA. Tell the user the comment button exists when handing the prototype over — a comment
+pinned to an element comes back naming the fragment line that produced it, which is the fastest
+revision loop available. See `../_folios/CONTRACT.md` for how the comments come back.
 
 **Screen size is the frame's job, never a variant's**, and a different *platform* is a different
 prototype. A "Phone" variant next to a "Desktop" variant spends two slots on something that is not a
@@ -168,14 +167,12 @@ Declare each state dimension as its own `<nav data-axis>`; the rail renders a gr
 the same state across two directions. Full syntax and the listener boilerplate:
 [`../_folios/CONTRACT.md`](../_folios/CONTRACT.md).
 
-### Devices — decide, don't default
+### The device — decide it here, once
 
-`--devices` names the frame this design is judged in — **normally exactly one**, matching the
-prototype's device type. A phone chat surface is `phone`; a pane-tree editor is `desktop`; a TV guide
-is `tv`. Add a second only when the same design genuinely ships at both sizes, such as a phone layout
-that also has to hold up on a tablet. `fit` is not added for you, and an unframed view is a size
-nobody drew for. The status bar, notch, window title bar
-and browser chrome are all drawn by the harness — never build your own.
+`--device` names the one frame this design is judged in, and it is **required**. A phone chat surface
+is `phone`; a pane-tree editor is `desktop`; a TV guide is `tv`. There is no list and no switcher: the
+choice is made now, in the build command, and the file is named for it. The status bar, notch, window
+title bar and browser chrome are all drawn by the harness — never build your own.
 
 The variant swap itself is **instant** — flipping is a 100+/session action, so by the frequency rule it
 gets no animation. Set `data-motion` on a template if any variant has an entrance animation worth

@@ -25,12 +25,12 @@ mkdir -p "$OUT"
 # is also the only place the round-carry-forward path gets exercised.
 "$S" build --kind prototype --picker switch --round 1 \
   --title "Session list" --subtitle "herdr session picker" \
-  --devices fit,phone,tablet,desktop,web \
+  --device phone \
   --fragment "$HERE/spec-prototype.body.html" --out "$OUT/prototype.html"
 
 "$S" build --kind prototype --picker switch --round 2 \
   --title "Session list" --subtitle "herdr session picker" \
-  --devices fit,phone,tablet,desktop,web --window bar,lights \
+  --device desktop --window bar,lights \
   --fragment "$HERE/proto-r2.body.html" --out "$OUT/prototype.html"
 
 # Eight rounds, so the stepper is exercised at the size it actually reaches: a two-round
@@ -42,7 +42,7 @@ for i in 1 2 3 4 5 6 7 8; do
   sed -e "s/__ROUND__/$i/g" -e "s/__NAME__/$n/g" "$HERE/spec-round.tmpl.html" > "$OUT/.round-$i.html"
   "$S" build --kind prototype --picker switch --round "$i" \
     --title "Session list" --subtitle "eight rounds, to size up the round control" \
-    --devices fit,phone,desktop \
+    --device desktop \
     --fragment "$OUT/.round-$i.html" --out "$OUT/many-rounds.html" >/dev/null
   rm -f "$OUT/.round-$i.html"
 done
@@ -52,7 +52,7 @@ echo "$OUT/many-rounds.html  (kind=prototype, rounds=v1..v8)"
 # how you tell a check that works from a check that always says pass.
 "$S" build --kind prototype --picker switch \
   --title "Check harness" --subtitle "one of each defect, on purpose" \
-  --devices fit,phone \
+  --device phone \
   --fragment "$HERE/spec-checks.body.html" --out "$OUT/checks.html"
 
 echo
