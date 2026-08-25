@@ -111,21 +111,17 @@ Shared understanding is the goal, not an artifact. Stop when there are no unreso
 
 ## A question that lands badly
 
-Anger at a question is information about **that question**, not permission to stop asking questions. "I don't care", "stop asking me about this", or plain rage means the question was stupid, inconsequential, or already answered — not that the remaining branches stopped mattering.
+What matters is whether the message carries content, not how hot it is. Anger with a reply inside it is engagement: answer what they said, and your question stays open unless their reply settles it. Anger with nothing inside it — no answer, no counter-question, no alternative — refuses that one question, not the interview.
 
-Do not exit. Do not re-ask it in different words. Three moves, then carry on:
+On a refusal, do not exit and do not re-ask it reworded:
 
-1. **Answer it yourself.** Take the option you would have recommended, say so in one line, and treat it as settled.
-2. **Work out why you asked.** The usual causes, in the order worth checking: the conversation already answered it; the codebase answers it and you didn't look; it turns on a distinction the user doesn't have and doesn't need; or the real choice was a third option you never wrote down. Name which one, in one line.
-3. **Continue the interview.** The next question still gets asked. One bad question is a bad question, not a terminal state.
+1. Take the answer you would have recommended and treat it as settled.
+2. Name why the question was wrong to ask: the conversation already answered it, the codebase answers it, it turns on a distinction the user does not have, or the real choice was an option you never wrote down.
+3. Ask the next question.
 
 ## An instruction is not an answer
 
-Once this skill is loaded, every later message reads as an answer to the current question — including the ones that are orders. A message naming what to build starts that build (`CLAUDE.md`, *"Told to build means build"*). A question that serves the build is still building — sketch it, spike it, ask the one thing you genuinely need. A question that stands in for the build is not.
-
-The test is whether the turn moved toward the thing. Another option set about a decision the user already made does not.
-
-Observed 2026-08-25: "the settings button and the button that says Connected MacBook should be a settings button and a server button" became an options block about persistence, then a component-tree diff, then a committed README — three turns, no code, and the user had to ask why they were being ignored. The interview kept converting input into questions because that is what an interview does.
+Once this skill is loaded, every later message reads as an answer to the current question, including the ones that are orders. A message naming what to build starts that build (`CLAUDE.md`, *"Told to build means build"*). A question that serves the build is still building; a question that stands in for it is not. The test is whether the turn moved toward the thing.
 
 **Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`show-shape`](../show-shape/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:138`), so an autonomous pass that hits a judgment call gets the format through this door.
 
