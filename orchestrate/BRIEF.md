@@ -22,7 +22,7 @@ Substitute `<>` values. Keep every section — each one prevents a failure seen 
 >
 > **Only if step 3 gave this worker a device — drop the clause otherwise.** Your device is `<device-id>`. Every command that builds to, installs on, or reads from a device names that id explicitly; never a device name and never "the default one". Your siblings are running the same app on their own devices, and a name resolves to whichever of them answers to it. Platform commands: `<the two or three pinned invocations from ../_domains/<platform>/orchestrate.md>`.
 >
-> **Your verify phase is what reports you finished.** `/implement` Phase 1.5 must run and must write `/private/tmp/claude/<repo-slug>/worktrees/<name>/<repo-slug>/verify/<issue>.json`. That file is the only thing the orchestrator can read — your transcript is not recoverable. Write it for every verdict, `SKIP` included.
+> **Your verify phase is what reports you finished.** `/implement` Phase 1.5 must run and must write `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<issue>.json`. That file is the only thing the orchestrator can read — your transcript is not recoverable. Write it for every verdict, `SKIP` included.
 >
 > **Commit your branch BEFORE any optional quality pass** — before a review agent, a simplification pass, a docs tidy, a second look at anything. Those are worth doing and they go after, on top of a commit that exists; anything they change gets its own commit. The reason is not tidiness: an uncommitted worktree is the only state nobody but you can land or recover, and the optional passes are exactly where workers die.
 >

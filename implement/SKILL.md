@@ -194,7 +194,7 @@ Passing tests are not evidence the item works — they prove CI runs. Before wra
 - If it does not exist, let the bundled skill write one, and make sure what it writes names *this* repo's actual surface and commands — not a generic recipe that would read the same in any project.
 - **Keep it out of git.** A `verify` skill is per-checkout tooling, not shipped code: add `.claude/skills/verify-project` to `<repo>/.git/info/exclude` (never `.gitignore`, which is committed) the moment you create one. If you find it already tracked in a repo, untrack it — `git rm --cached -r .claude/skills/verify-project` plus the exclude line — on a branch if the repo is not the user's own.
 
-**1. Persist the verdict.** `verify` reports inline in chat, which nothing outside this session can read — and when the pass runs in a pane, that transcript is often unrecoverable. Write the verdict to `/private/tmp/claude/<repo-slug>/verify/<item>.json`, taking `<repo-root>` from `git rev-parse --show-toplevel` in its own call:
+**1. Persist the verdict.** `verify` reports inline in chat, which nothing outside this session can read — and when the pass runs in a pane, that transcript is often unrecoverable. Write the verdict to `$(~/.claude/tools/repo-slug --path <checkout>)/verify/<item>.json` — run that command rather than assembling the path, since it is the one definition of the directory and it creates it. In a worktree `<checkout>` is the worktree, so the verdict files under the worktree's own slug and never inside the repo:
 
 ```json
 {"item": "<the tracker id — never the title>", "verdict": "PASS|FAIL|BLOCKED|SKIP",

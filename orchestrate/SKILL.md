@@ -313,7 +313,7 @@ The transport file says how. Two rules hold for all three:
 ```bash
 git -C <worktree> log --oneline <default-branch>..<branch>   # commits: none means nothing landable
 git -C <worktree> status --short                             # dirty: work exists, uncommitted
-ls -l /private/tmp/claude/<repo-slug>/worktrees/<name>/verify/<item>.json               # verdict, and its mtime
+ls -l $(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json               # verdict, and its mtime
 ```
 
   Read them together. **Commits + clean tree + verdict** is a worker that finished. **No commits + dirty tree** is a worker that did not — whatever the transport says, and whatever its closing message claims. A dirty tree whose mtimes are still advancing is mid-flight; the same tree unchanged across two sweeps is stranded, and stranded means [recovery](#recovering-a-stranded-worker), never teardown. The worker that just woke is the one you already know about; the sweep is for the others.
@@ -335,16 +335,15 @@ The states are herdr's vocabulary; the others map onto them — running → `wor
 
 **A `PASS` whose diff added tests and whose verdict has no `mutation` block is not a pass.** `/implement` Phase 1.5 requires the worker to strip its production change, re-run only the new tests, and record the real failure text; a verdict missing that — or carrying `discriminates: false` — is a pass that proved nothing about the test it shipped. Land it if the behavioural evidence stands on its own, but say so in the report and file the test as a follow-up. Observed 2026-08-16: three landed tests each rebuilt the production logic inside the test body, and all three passed with the fix reverted.
 
-The verdict is a file, not the worker's own words: `/private/tmp/claude/<repo-slug>/worktrees/<name>/verify/<item>.json`. **`/implement`'s Phase 1.5 owns that file** — its schema, when it is written, and what each verdict means. Orchestrate is only its reader; do not re-specify it here.
+The verdict is a file, not the worker's own words: `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json`. **`/implement`'s Phase 1.5 owns that file** — its schema, when it is written, and what each verdict means. Orchestrate is only its reader; do not re-specify it here.
 
 **Copy the verdict into the primary checkout the moment you read it, before anything else happens to that worktree:**
 
 ```bash
-mkdir -p /private/tmp/claude/<repo-slug>/verify
-cp /private/tmp/claude/<repo-slug>/worktrees/<name>/verify/<item>.json /private/tmp/claude/<repo-slug>/verify/<item>.json
+cp $(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json $(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json
 ```
 
-The verdict lives inside the worktree, `tmp/` is gitignored so it never rides the branch, and step 7 removes the worktree with `--force`. **Teardown therefore destroys the only copy of the evidence for every slice the swarm lands.** The work was verified and nothing records it: `/private/tmp/claude/<repo-slug>/verify/` in the primary checkout stops at whatever the last non-swarm pass wrote, which reads from the outside exactly like a swarm that skipped verification entirely.
+Both sides are the same tool, keyed by which checkout you hand it. The worker's verdict is filed under the **worktree's** slug, and a worktree exists for one round — its slug is a name nobody can reconstruct once step 7 deletes the tree, and the three-day sweep takes the directory with it. **The repo's own verdict directory is the one a later reader can find**, and if the copy never happens it stops at whatever the last non-swarm pass wrote, which reads from the outside exactly like a swarm that skipped verification entirely.
 
 Observed: a seven-issue run landed six slices, each driven at its surface by its own worker, each with a verdict the orchestrator read before merging — and left no verdict file behind for any of them. The reviewer afterwards could not tell "verified, evidence deleted" from "never verified", and had to re-drive the whole integrated result to find out.
 
@@ -390,7 +389,7 @@ Close the issue with what shipped.
 Teardown is the orchestrator's job because it is **structurally impossible for the worker**: git refuses to delete a branch that a worktree still has checked out, and the worker is standing in it. Whatever created a resource retires it — this skill made the worktree and the branch, so this skill removes them, on every transport.
 
 ```bash
-ls /private/tmp/claude/<repo-slug>/worktrees/<name>/verify/*.json    # every verdict in there, by name
+ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/*.json    # every verdict in there, by name
 test -f /private/tmp/claude/<repo-slug>/verify/<item>.json   # the one you copied out — step 5
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
