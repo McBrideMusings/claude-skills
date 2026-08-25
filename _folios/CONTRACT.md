@@ -225,9 +225,10 @@ screen across two directions is the entire job.
 
 `--devices fit,phone,tablet,desktop,panel,web,tv`. Choosing these is a judgement about **this** design,
 and it is yours to make: offering a frame the design was never meant for invites a verdict on a layout
-nobody drew. A phone-only chat surface gets `fit,phone`. A pane-tree editor gets `fit,desktop`. One
-design that ships on iOS and as a Mac menu bar extra gets `fit,phone,panel`. `fit` is
-always included and is the default view.
+nobody drew. A phone-only chat surface gets `phone`. A pane-tree editor gets `desktop`. One design that
+ships on iOS and as a Mac menu bar extra gets `phone,panel`. The list is honoured exactly — `fit` is
+one entry among the rest, present only when you name it or when you name nothing and take the default
+list. A list whose only entry is `fit` has no frame to draw, so the switcher does not appear at all.
 
 Chrome sits on whichever side of the viewport it really sits on, and the harness draws all of it:
 

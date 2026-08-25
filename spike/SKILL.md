@@ -88,7 +88,7 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the full relevant state so the user can see what changed.
 6. **Realistic content, always.** Product-shaped copy, plausible names and numbers, real-sized data. No lorem ipsum, no `foo`/`bar`, no "imagine this part here".
 7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something, every destructive button shows what it would do — the reject path as much as the approve path. A dead control reads as a bug and derails the conversation the prototype exists to have. A control with nowhere to go does not go in.
-8. **Name the devices deliberately** (UI shape). `--devices` is a judgement about this design, made fresh each time: `fit,phone` for a phone surface, `fit,desktop` for a desktop one, more only when the thing genuinely ships on more. Never accept a default list, and never draw device chrome by hand — the harness owns the status bar, notch, window title bar and browser chrome.
+8. **Name the devices deliberately** (UI shape). `--devices` is a judgement about this design, made fresh each time: `phone` for a phone surface, `desktop` for a desktop one, a second frame only when the thing genuinely ships at both sizes. Never accept a default list, and never draw device chrome by hand — the harness owns the status bar, notch, window title bar and browser chrome.
 9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a direction wins, implement it properly in the project's stack and conventions, then delete the prototype. Never move the file into the codebase.
 
 ## Arguments

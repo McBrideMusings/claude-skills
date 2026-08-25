@@ -83,8 +83,14 @@
   /* An explicit --devices list is honoured exactly. A design that ships on a phone and a
      Mac panel and nothing else is judged in those two frames; a third, unframed one is a
      size nobody drew for, and it was the one the harness opened on. `fit` is still in the
-     default list, so a build that names no devices is unchanged. */
-  if (names.length < 2) return;
+     default list, so a build that names no devices is unchanged.
+
+     ONE named device is the normal case, not a degenerate one: a prototype targets a
+     single device type, and `--devices desktop` still gets its bezel and window chrome.
+     Bail only when the sole entry is `fit`, which has no frame to draw and nothing to
+     switch to. */
+  if (!names.length) return;
+  if (names.length === 1 && names[0] === 'fit') return;
 
   var current = 0;
   var landscape = false;
@@ -494,11 +500,18 @@
   var want = params.get('d') || '';
   var wantLandscape = /-landscape$/.test(want);
   var wantName = want.replace(/-landscape$/, '');
+  /* `>= 0`, and always select something. This was `> 0` with a bare paintControls() in
+     the else, which was correct only while `fit` was guaranteed to sit at index 0 and
+     "no frame" was therefore the right opening state. With `--devices desktop` the one
+     real frame IS index 0, and the old test built no frame at all: no bezel, no window
+     chrome, the design laid out at whatever size the window happened to be.
+     select(0) on a list whose only entry is `fit` still resolves to no frame, via
+     apply()'s own `!d.w` branch. */
   var wantIndex = names.indexOf(wantName);
-  if (wantIndex > 0) {
+  if (wantIndex >= 0) {
     landscape = wantLandscape && CATALOG[wantName].rotates;
     select(wantIndex);
   } else {
-    paintControls();
+    select(0);
   }
 })();
