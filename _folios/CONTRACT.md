@@ -25,7 +25,7 @@ A prototype or a wireframe:
 ```
 
 `explainer` takes no `--kind` — it has exactly one look. Everything below that mentions a
-picker, rounds, state axes or device frames is `spike`'s alone.
+picker, state axes or device frames is `spike`'s alone.
 
 **Decide whether the prototype needs the device switcher.** `--devices` is on for
 `prototype`; name the frames deliberately when the layout is meant to respond to width and
@@ -145,7 +145,7 @@ Build with `--picker switch` (one at a time, full size — the default) or `--pi
 full size, one per screenful). **Never a grid of thumbnails**: small side-by-side comparison distorts
 spacing and scale, and judging UI at postage-stamp size is the failure the picker exists to prevent.
 
-In switch mode every control lives in **one left rail**: round, variant, each state axis, and the
+In switch mode every control lives in **one left rail**: variant, each state axis, and the
 device frame. They are all the same question — *what am I looking at* — and they are ordered coarse to
 fine. The tool generates the rail and the URL persistence. **Write no rail
 code.**
@@ -185,7 +185,6 @@ code.**
 - `data-variant` is the rail label — a direction ("Quiet", "Dense"), never "Variant A".
 - `data-caption` is optional; `list` mode prints it under the heading. It is **not** `data-axis` —
   see below, those are two different things.
-- **Never write `data-round` yourself.** `--round N` stamps it. See "Rounds" below.
 - Add `data-motion` to the fragment's first `<template>` if any variant has an entrance animation worth
   re-triggering — the tool then renders the replay button.
 - The rail is chrome. It is never restyled with the project's tokens, and `prototype.css` supplies no
@@ -196,11 +195,11 @@ code.**
 - **Every control in the prototype is live.** Not the happy path only: each tab switches, each toggle
   toggles, each row opens something, each dangerous button shows what it would do. A dead control is
   worse than an absent one — it reads as a bug and stops the conversation the prototype exists to
-  have. If a control genuinely goes nowhere in this round, it does not go in this round.
+  have. If a control genuinely goes nowhere, it does not go in.
 
 ### State axes — which screen, which state, which error
 
-An **axis** is a control the rail renders and your fragment interprets. It is orthogonal to round and
+An **axis** is a control the rail renders and your fragment interprets. It is orthogonal to
 variant on purpose: flipping variant must not reset which screen is showing, because comparing one
 screen across two directions is the entire job.
 
@@ -220,10 +219,6 @@ screen across two directions is the entire job.
   state after a variant switch — it just handles the event again. Don't write re-apply code.
 - Your listener must be a **top-level `<script>`** in the fragment. A `<script>` cloned out of a
   `<template>` does not execute — this is the one trap in the whole contract.
-- Every round's top-level markup is carried forward, so **scope selectors to what your round owns**
-  and guard on existence; round 1's script and round 3's script both run.
-- Axes are round-scoped: `--round 3` can declare screens round 1 never had, and the rail shows only
-  the current round's.
 - Axis state persists in the URL as `?screen=chat`, alongside `?r=` and `?v=`.
 
 ### Devices — named per prototype, never defaulted into
@@ -280,30 +275,27 @@ prototype holds all survive. Only changing device or orientation rebuilds it.
 Each frame is a real `<iframe>`, so `@media (max-width: 640px)` fires inside it for real — which a
 width-constrained `<div>` can never do, and is why device frames are the harness's job.
 
-### Rounds — one canonical file per topic
+### One file, rebuilt in place
 
-A prototype topic has **one output file for its whole life**: `prototypes/<slug>/<slug>.html`. Each
-round is a rebuild of that same path with `--round N`:
+A prototype has **one output file**, and a build replaces it:
 
 ```bash
-spike build --kind prototype --picker switch --round 2 \
+spike build --kind prototype --picker switch \
   --title "Branches Pane" \
-  --fragment /private/tmp/claude/<repo-slug>/folios/branches-pane-v2.body.html \
-  --out /private/tmp/claude/<repo-slug>/prototypes/branches-pane/branches-pane.html
+  --fragment /private/tmp/claude/<repo-slug>/spikes/branches-pane/branches-pane.body.html \
+  --out /private/tmp/claude/<repo-slug>/spikes/branches-pane/branches-pane.html
 ```
 
-The tool reads the file it is about to overwrite, keeps every round that is **not** N, stamps this
-fragment's templates `data-round="N"`, and writes them all back. Rebuilding round N replaces round N
-and nothing else. Each round's non-template markup — its `<style>` of project tokens — is fenced as
-`<!--at:round N-->…<!--/at:round N-->` and carried forward too, newest last, so a later round's
-redefinition of a class wins by ordinary cascade while v1 keeps the rules it was built against.
+There are no rounds and nothing is carried forward. Refining is editing the fragment and building
+again over the top; earlier attempts live in git if the file is committed, and nowhere if it is not,
+which is what "throwaway" means. Keeping every attempt inside the artifact doubled its size and left
+stale designs one click away from the current one.
 
 The controls never share a letter:
 
 | | URL | Control |
 | --- | --- | --- |
-| **Round** — a whole rebuild of the design | `?r=2` | rail, top: a `‹ v3 ›` stepper |
-| **Variant** — a direction within one round | `?v=3` | rail: named buttons |
+| **Variant** — which direction is on screen | `?v=3` | rail: named buttons |
 | **Axis** — which state of the thing | `?screen=chat` | rail: one group per axis |
 | **Device** — which frame it renders in | `?d=phone-landscape` | rail, below the axes |
 
@@ -335,14 +327,11 @@ Harness chrome is excluded from all of them — the rail is not the design under
 `window.atContrast.check(true)` audits the chrome itself when that is what you need.
 
 Ordered coarse to fine down the rail, so the thing you change once a session sits above the thing you
-change a hundred times. The round group is omitted entirely while a topic has one round.
+change a hundred times. The variant group is omitted entirely when there is only one variant.
 
-Opening the file bare shows the newest round's first variant. Stepping rounds keeps the variant slot,
-so `]` compares the same position across versions. An out-of-range `r` or `v` falls back rather than
-blanking, and the URL is rewritten to what is actually on screen.
+Opening the file bare shows the first variant. An out-of-range `v` falls back rather than blanking,
+and the URL is rewritten to what is actually on screen.
 
-`--round` applies to `--picker switch` only; `list` mode stacks one round and has nowhere to put a
-ticker.
 
 ## `wireframe` — greybox
 
@@ -365,7 +354,7 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
    one batch and stop; it is a pass, not a loop.
 4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
 5. Say how to drive it. On a **prototype**: every control is a button — the rail on the left for
-   round, variant, axes and device, and the two docked buttons on the right for comment mode and
+   variant, axes and device, and the two docked buttons on the right for comment mode and
    the contrast check. No keys, so the prototype's own keyboard is entirely its own. On the other
    kinds: `a` to comment on anything, `c` to check contrast.
 

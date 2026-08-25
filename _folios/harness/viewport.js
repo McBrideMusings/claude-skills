@@ -295,8 +295,6 @@
     clone.setAttribute('data-at-key', root.getAttribute('data-at-key') || location.pathname);
     var v = root.getAttribute('data-at-variant-index');
     if (v) clone.setAttribute('data-at-variant-init', v);
-    var r = root.getAttribute('data-at-round');
-    if (r) clone.setAttribute('data-at-round-init', r);
     var ax = root.getAttribute('data-at-axis-state');
     if (ax) clone.setAttribute('data-at-axis-init', ax);
     clone.removeAttribute('data-at-vp');
@@ -484,7 +482,6 @@
     try { axes = JSON.parse(root.getAttribute('data-at-axis-state') || '{}'); } catch (e) {}
     frame.contentWindow.postMessage({
       at: 'sync',
-      round: root.getAttribute('data-at-round'),
       variantIndex: root.getAttribute('data-at-variant-index'),
       axes: axes
     }, '*');

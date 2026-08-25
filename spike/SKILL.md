@@ -21,14 +21,14 @@ The one thing that is *not* this skill: if the ask is to **explain how something
 rather than to decide what it should look like, that is `explain`. Both build a hermetic
 single-file page from the same `_folios/` substrate — same tokens, same class vocabulary,
 same annotate/contrast widgets — but through different tools, because an explainer has one
-look and no variants. `~/.claude/tools/spike` owns the picker, the rounds and the device
+look and no variants. `~/.claude/tools/spike` owns the picker and the device
 frames; `~/.claude/tools/explainer` owns neither.
 
 ## Load this whenever a prototype is being built — including mid-conversation
 
 This skill owns every prototype, however the request arrives. Load it when the user says *prototype, mockup, wireframe, "show me a few options", "what should this look like", "spike it", "which approach"* — and equally when that request lands in the middle of something else, which is the case it gets missed in. `grill-me` in particular ends with "and then make an HTML prototype": that sentence is an instruction to invoke this skill, not to start writing HTML.
 
-Hand-writing a prototype instead of loading this skill loses the slug and round scheme (so round 2 has nowhere to go), the rail and its state axes, the device frames, and the `--devices` judgement call. None of that is visible as an error — the file just quietly can't be iterated on. **If you can see exactly what to write, that is when to load this, not when to skip it.**
+Hand-writing a prototype instead of loading this skill loses the slug scheme, the rail and its state axes, the device frames, and the one-device-per-prototype rule. None of that is visible as an error — the file just quietly can't be iterated on. **If you can see exactly what to write, that is when to load this, not when to skip it.**
 
 ## Pick a shape
 
@@ -49,31 +49,34 @@ The shape is the *mechanism*. The domain is the *mode of software* — it says w
 - `game` → [`_domains/game/prototype.md`](../_domains/game/prototype.md) — feel questions, the surfaces a game prototype runs on (Roblox scratch Place, canvas/three.js HTML file, native scratch target), playtest-by-hand instead of flip-and-compare.
 - No marker → shape file only. A feature or technical spike is the generic path and needs no cell.
 
-## Naming and versions — every shape, every round
+## One prototype, one device type
 
-A prototype topic gets **one kebab-case slug naming what the prototype is for**, chosen on the first round and never changed: `wheelhouse-nav`, `settings-screen`, `queue-backend`. Everything for that topic lives in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`.
-
-**UI prototypes are one canonical file, named for the slug, that accumulates rounds.** Logic and compare prototypes are code, so they keep one directory per round:
+**A prototype targets exactly one device type, and the file is named for it.** A phone design, a desktop design and a TV design are three files, three slugs, three `--devices` lists — never one file switching between them.
 
 ```
-/private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav/wheelhouse-nav.html   # UI: ONE file, every round inside it
-/private/tmp/claude/<repo-slug>/spikes/queue-backend/v1/run.ts              # logic & compare: one dir per round
-/private/tmp/claude/<repo-slug>/spikes/queue-backend/v2/run.ts
+/private/tmp/claude/<repo-slug>/spikes/wheelhouse-phone/wheelhouse-phone.html    --devices phone
+/private/tmp/claude/<repo-slug>/spikes/wheelhouse-desktop/wheelhouse-desktop.html --devices desktop
+/private/tmp/claude/<repo-slug>/spikes/wheelhouse-tv/wheelhouse-tv.html           --devices tv
 ```
 
-For UI, the round lives **inside** the file, not in its name: `spike build --round 2` stamps this round's variants, carries the earlier rounds forward, and adds a dimmed round chip in the bottom-right corner that expands into the version list on click. The file is opened at `<slug>.html` forever — the same URL every round, so a bookmark never goes stale and nothing has to be `ls`-ed to find the newest.
+Why, when the harness can hold all three at once: a platform is an interaction model, not a width. Touch, pointer and remote-focus are different designs that happen to share a product, and one file holding all three spends every variant slot on "which platform" instead of on the question the prototype exists to answer. It also makes each file three times the size, and two thirds of it is always irrelevant to what is being looked at.
 
-That leaves exactly two axes, and they never share a letter: **`?r=` is the round, `?v=` is the variant.** A file called `v1.html` read back as `?v=3` is the confusion this split exists to end — that URL meant round 1, variant 3, and read as "third iteration".
+**`--devices` names ONE frame, and `fit` is not added for you.** `--devices phone` opens on the phone and offers nothing else. A second frame belongs in the list only when the same design genuinely ships at both sizes — a phone and its tablet layout, a desktop window and the browser it also runs in. Rotation is not a second device: the `phone` and `tablet` frames rotate, and landscape is that frame's own control.
+
+## Naming — every shape
+
+A prototype gets **one kebab-case slug naming what it is for**, and the slug is the whole filename: `wheelhouse-phone`, `settings-desktop`, `queue-backend`. Everything for it lives in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`.
+
+**There are no rounds and no versions.** A rebuild replaces the file. Earlier attempts live in git if the file is committed, and nowhere if it is not — which is correct, because a prototype is throwaway. `?v=` is the only axis in the URL, and it means variant.
 
 Rules:
 
 1. **The slug is the whole filename.** Never a word suffix — no `-riff`, `-revised`, `-v2-final`, `-new`, `-alt` — and never a version in the name. "Wheelhouse Nav Riff" is the bug this stops.
-2. **Pick the round by reading the file**: `grep -o 'data-round="[0-9]*"' <slug>.html | sort -u`, highest + 1. No file means round 1, even when nobody expects a second round.
-3. **Never rebuild an earlier round.** `--round N` replaces round N and only round N; passing a round that already exists overwrites that round's variants. Old rounds stay so directions can be compared and walked back. Deletion happens once, at promotion, for the whole topic directory.
-4. **The artifact title is the topic alone** — `--title "Wheelhouse Nav"`. No version, no adjective: the round chip already says which round is on screen.
-5. **Say what changed.** When handing over round 2, open with one line naming what it does differently from round 1, and the one path plus `?r=1` to jump back.
+2. **Rebuild to the same `--out`.** Refining a prototype is editing the fragment and building again over the top, never a second file.
+3. **The artifact title is the topic alone** — `--title "Wheelhouse Phone"`. No version, no adjective.
+4. **Say what changed.** When handing back a rebuild, open with one line naming what is different from the last time they looked at it.
 
-Variant names *inside* a round stay descriptive — "Quiet", "Editorial", "Dense". Those name directions being compared at once; the version numbers the rounds.
+Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name directions being compared side by side right now, which is the only thing the picker is for.
 
 ## Rules for all three shapes
 
@@ -84,7 +87,7 @@ Variant names *inside* a round stay descriptive — "Quiet", "Editorial", "Dense
 4. **Skip the polish.** No tests, no error handling beyond what makes it runnable, no abstractions, no "what if we later want".
 5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the full relevant state so the user can see what changed.
 6. **Realistic content, always.** Product-shaped copy, plausible names and numbers, real-sized data. No lorem ipsum, no `foo`/`bar`, no "imagine this part here".
-7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something, every destructive button shows what it would do — the reject path as much as the approve path. A dead control reads as a bug and derails the conversation the prototype exists to have. A control with nowhere to go this round does not go in this round.
+7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something, every destructive button shows what it would do — the reject path as much as the approve path. A dead control reads as a bug and derails the conversation the prototype exists to have. A control with nowhere to go does not go in.
 8. **Name the devices deliberately** (UI shape). `--devices` is a judgement about this design, made fresh each time: `fit,phone` for a phone surface, `fit,desktop` for a desktop one, more only when the thing genuinely ships on more. Never accept a default list, and never draw device chrome by hand — the harness owns the status bar, notch, window title bar and browser chrome.
 9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a direction wins, implement it properly in the project's stack and conventions, then delete the prototype. Never move the file into the codebase.
 
@@ -94,7 +97,7 @@ Variant names *inside* a round stay descriptive — "Quiet", "Editorial", "Dense
 | --- | --- |
 | `<description>` | Full run of whichever shape the question implies |
 | `<description>` + a count ("give me five") | Same, capped at 5 variants (UI) or 3 implementations (compare) |
-| `riff <name>` | Next round: keep the harness and the slug, generate a fresh set diverging *around* the named variant's direction, built into the same file with `--round <N+1>` |
+| `riff <name>` | Keep the harness and the slug, generate a fresh set diverging *around* the named variant's direction, rebuilt over the same file |
 
 `riff` is a verb for what to build, never a word that reaches a filename or title.
 
@@ -106,7 +109,7 @@ Picking a winner needs no verb — say it in chat ("go with Dense") and the prom
 
 **Load [`show-shape`](../show-shape/SKILL.md) via the Skill tool before writing up which version won and what to build from it.** The verdict is a plan — it says what the real implementation should look like — and it is worth more when it carries the winning version's actual signatures and call shape than when it says "version B felt better".
 
-The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in `docs/adr/`, a tracked issue) along with the question it was answering and which version won — if the user is around, that's a quick conversation; if not, leave `NOTES.md` in `/private/tmp/claude/<repo-slug>/spikes/<slug>/` with the verdict blank. Then delete the whole topic directory, every version with it.
+The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in `docs/adr/`, a tracked issue) along with the question it was answering and which variant won — if the user is around, that's a quick conversation; if not, leave `NOTES.md` in `/private/tmp/claude/<repo-slug>/spikes/<slug>/` with the verdict blank. Then delete the whole topic directory.
 
 ## Keeping one
 

@@ -20,8 +20,8 @@ write it.
 ## The artifact — always one standalone HTML file
 
 `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html`, where `<slug>` names what the prototype is for
-— one canonical file for the topic's whole life, every round inside it behind the rail's round chips
-(see SKILL.md "Naming and versions"). Self-contained, inline CSS and JS, opened directly
+**and which device it targets** — one file per device type, rebuilt in place (see SKILL.md
+"One prototype, one device type"). Self-contained, inline CSS and JS, opened directly
 in a browser. No dev server, no route, no framework, and **no edit to any production file**. This holds
 even when the project is React, Vue, or SwiftUI: hand-written HTML/CSS/JS is the fastest path to
 something you can look at, and the winning direction gets rewritten in the project's stack at
@@ -55,11 +55,10 @@ One thing per run. If the description spans several components ("the dashboard")
 single highest-leverage piece, say which and why, offer the rest as later runs. Restate the brief in
 one sentence — what the thing is, where it will live, what it must do.
 
-Then fix the slug and the round. `ls /private/tmp/claude/<repo-slug>/spikes/`: an existing directory for
-this topic means this is its next round — reuse the slug, read the highest round already in the file
-(`grep -o 'data-round="[0-9]*"' <slug>.html | sort -u`) and add 1, and read the previous round's
-variants so this one diverges from them instead of repeating them. No directory means a new topic,
-slug named for the thing being designed, round 1.
+Then fix the device and the slug. **One prototype targets one device type** — decide which, and name
+the slug for it (`settings-phone`, `settings-desktop`). `ls /private/tmp/claude/<repo-slug>/spikes/`: an
+existing directory for this slug means this is a rebuild — read the fragment beside it so the new set
+diverges from what is already there instead of repeating it, and build over the same `--out`.
 
 ### Phase 02 — Recon
 
@@ -109,23 +108,22 @@ gets dropped, same as a hand-written direction would.
 
 ### Phase 04 — Build
 
-Write the fragment to `/private/tmp/claude/<repo-slug>/spikes/<slug>-v<N>.body.html`: one
+Write the fragment to `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.body.html`: one
 `<template data-variant="Name" data-caption="...">` per direction, plus the project's tokens in a
 `<style>`, plus a `<nav data-axis>` for each state the design has to be judged in (which screen, which
 error, which empty case) and a top-level `<script>` listening for `at:axis`. Then:
 
 ```bash
 "$HOME/.claude/tools/spike" build \
-  --kind prototype --picker switch --round <N> \
-  --title "Wheelhouse Nav" --subtitle "<the question this round answers>" \
-  --devices fit,phone \
-  --fragment /private/tmp/claude/<repo-slug>/spikes/<slug>-v<N>.body.html \
+  --kind prototype --picker switch \
+  --title "Wheelhouse Phone" --subtitle "<the question this answers>" \
+  --devices phone \
+  --fragment /private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.body.html \
   --out /private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html
 ```
 
-`--out` is the same path every round. The tool reads it before overwriting, keeps every round that
-isn't `<N>`, and adds the round chips at the top of the rail. The title is the topic and nothing
-else — no version, no adjective; the chips already say which round is showing.
+A build **replaces** `--out` entirely. There is no merge and no history inside the file: refining is
+editing the fragment and building again over the top. The title is the topic and nothing else.
 
 The rail's markup, styles and URL persistence all come from the tool. It binds no keys: on a prototype the whole keyboard belongs to the design being shown, so every harness control is a button.
 **Write none of it**, and never restyle it — it stays identical across every project so it reads as
@@ -139,12 +137,11 @@ exist when handing the prototype over — a comment pinned to an element comes b
 line that produced it, which is the fastest revision loop available. See
 `../_folios/CONTRACT.md` for how the comments come back.
 
-**Screen size is the frame's job, never a variant's.** `--devices` already renders the same fragment
-at each named size in a real viewport. A "Phone" variant next to a "Desktop"
-variant spends two of your three or four slots on something the harness supplies for free, and it
-splits one design across two templates that then drift. Build **one** responsive variant and let the
-switcher size it — if it looks wrong at desktop width, that is a media query to write, not a template
-to add.
+**Screen size is the frame's job, never a variant's**, and a different *platform* is a different
+prototype. A "Phone" variant next to a "Desktop" variant spends two slots on something that is not a
+design direction at all. Within one prototype's single device type, build one responsive variant and
+let the frame size it — if it looks wrong rotated, that is a media query to write, not a template to
+add. Across device types, build separate files (SKILL.md, "One prototype, one device type").
 
 `--picker switch` renders **one variant at a time, full size, in realistic surrounding context** — a
 toast needs a page behind it, a card needs siblings, a button needs a form. `--picker list` stacks each
@@ -157,7 +154,7 @@ every toggle toggles, every row opens something, every destructive button shows 
 Not the happy path only: the reject button works as well as the approve button. A dead control reads
 as a bug, and the user stops judging the design to tell you it's broken — which is the one thing a
 prototype cannot afford, since its whole job is to hold a conversation about the design. If a control
-genuinely has nowhere to go this round, it does not go in this round.
+genuinely has nowhere to go, it does not go in.
 
 ### State axes, and why they are not variants
 
@@ -173,11 +170,11 @@ the same state across two directions. Full syntax and the listener boilerplate:
 
 ### Devices — decide, don't default
 
-`--devices` names the frames this design is judged in, and picking them is your call every time. Ask
-what the thing actually is: a phone chat surface is `fit,phone`; a pane-tree editor is `fit,desktop`;
-a marketing page is `fit,phone,tablet,web`; a thing that must work everywhere earns all of them.
-Offering a frame the design was never drawn for invites a verdict on a layout nobody designed, and
-omitting the one it ships on hides the only test that mattered. The status bar, notch, window title bar
+`--devices` names the frame this design is judged in — **normally exactly one**, matching the
+prototype's device type. A phone chat surface is `phone`; a pane-tree editor is `desktop`; a TV guide
+is `tv`. Add a second only when the same design genuinely ships at both sizes, such as a phone layout
+that also has to hold up on a tablet. `fit` is not added for you, and an unframed view is a size
+nobody drew for. The status bar, notch, window title bar
 and browser chrome are all drawn by the harness — never build your own.
 
 The variant swap itself is **instant** — flipping is a 100+/session action, so by the frequency rule it
@@ -196,9 +193,9 @@ Then present the set and **stop — the choice is the user's**:
 | 1 | Quiet | Minimal motion, borders over shadows | A daily-use tool | Least memorable |
 | 2 | Editorial | Large type, generous whitespace | The moment deserves weight | Eats vertical space |
 
-Close with the full path to the file and the keys to flip: `1–N` and `←`/`→` for variants, `[` / `]`
-for rounds (or the chips at the top of the rail), `R` to replay. From round 2 on, add one line on what this round changed and the same path
-with `?r=1` appended — the earlier rounds live in the same file precisely so the user can flip back.
+Close with the full path to the file and how to drive it: every control is a button in the rail — no
+keys, because the design under judgement owns the keyboard. On a rebuild, add one line naming what
+changed since they last looked.
 
 Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
 in the table. If the user asks which you'd choose, answer with a reason rooted in the product's
@@ -207,14 +204,14 @@ judgement is licensed and how it must be anchored). If two variants converged wh
 one and say so: two truly distinct directions beat three padded ones.
 
 The most useful feedback is usually **"the header from Editorial with the density of Dense"** — that's
-the actual design. Treat it as a `riff`: run Phase 03 again around it and rebuild the same file with
-`--round <N+1>`. The earlier rounds stay in it untouched.
+the actual design. Treat it as a `riff`: run Phase 03 again around it and rebuild the same file over
+the top.
 
 ### Phase 06 — Promote and delete
 
 When a direction wins: capture the answer and why (commit message, ADR, issue), implement it properly
 in the project's stack and conventions — a rewrite, never a copy of prototype markup — then delete
-`/private/tmp/claude/<repo-slug>/spikes/<slug>/`, every version in it. Record which version and variant won.
+`/private/tmp/claude/<repo-slug>/spikes/<slug>/`. Record which variant won.
 Keep the files only if the user asks.
 
 ## Anti-patterns
@@ -228,11 +225,11 @@ Keep the files only if the user asks.
   therefore distinguishes none of them.
 - **Judging variants side by side at small scale.** One at a time, full size.
 - **A version or a word in the filename** — `nav-riff.html`, `nav-v2.html`, `nav-v2-final.html`, a
-  title reading "Wheelhouse Nav Riff". One file per topic; the round lives inside it.
-- **Building the next round to a new path.** That splits the topic across files again and is exactly
-  what `--round` exists to stop.
+  title reading "Wheelhouse Nav Riff". One file per prototype, rebuilt in place.
+- **One file covering several device types.** A platform is an interaction model, not a width: phone,
+  desktop and TV are three prototypes. See SKILL.md.
 - **Restyling or relocating the rail's groups.** They are harness chrome, ordered coarse to fine:
-  rounds change once a session, variants a hundred times, and the order says so.
+  variants change constantly and axes change with them, and the order says so.
 - **A "Phone" variant and a "Desktop" variant of the same design.** Screen size is the device frame's
   axis, not a variant's. One responsive template, sized by the harness.
 - **Moving prototype markup into the codebase.** It was written with no tests, no error handling, and

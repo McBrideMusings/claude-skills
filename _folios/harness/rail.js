@@ -1,17 +1,19 @@
-/* rail.js — the prototype control rail: rounds, variants, state axes, devices.
+/* rail.js — the prototype control rail: variants, state axes, devices.
 
-   Supersedes picker.js. The selection/keyboard behaviour is the same contract, ported
-   from emilkowalski/skills prototype/PICKER.md (MIT, © 2026 Emil Kowalski) and extended
-   with the round axis and with arbitrary fragment-declared state axes.
+   Supersedes picker.js. The selection behaviour is the same contract, ported from
+   emilkowalski/skills prototype/PICKER.md (MIT, © 2026 Emil Kowalski) and extended with
+   arbitrary fragment-declared state axes.
 
-   Three kinds of control, and they are NOT the same question:
+   Two kinds of control, and they are NOT the same question:
 
-   - ROUND (`?r=`) — which version of the design. Changed once a session.
-   - VARIANT (`?v=`) — which direction within this round. Changed constantly.
+   - VARIANT (`?v=`) — which direction is on screen. Changed constantly.
    - AXIS (`?<key>=`) — which state of the thing being shown: which screen, which
-     connection state, which error. Orthogonal to both of the above: flipping variant
-     must not reset which screen you were looking at, because the whole point is
-     comparing the same screen across two directions.
+     connection state, which error. Orthogonal to variant: flipping variant must not
+     reset which screen you were looking at, because the whole point is comparing the
+     same screen across two directions.
+
+   There are no rounds. A build replaces the file; earlier attempts live in git, not
+   stacked inside the artifact.
 
    THE RAIL ANSWERS NO KEYS, and neither does any other harness widget on a prototype.
    Every control here is a button. The rail used to own [ ] 1-N ← → x , . d D r \ ? and
@@ -45,30 +47,11 @@
   if (!rail || !stage || !all.length) return;
 
   var variantBtns = [].slice.call(rail.querySelectorAll('.at-rail-variant'));
-  var stepBtns = [].slice.call(rail.querySelectorAll('.at-rail-step'));
-  var roundNow = rail.querySelector('.at-rail-round-now');
-  var roundCount = rail.querySelector('.at-rail-step-count');
   var axisGroups = [].slice.call(rail.querySelectorAll('.at-rail-axis'));
   var replay = rail.querySelector('.at-rail-replay');
 
-  function roundOf(el) { return el.getAttribute('data-round') || '1'; }
-
-  var rounds = [];
-  all.forEach(function (t) {
-    var r = roundOf(t);
-    if (rounds.indexOf(r) < 0) rounds.push(r);
-  });
-
-  var round = rounds[rounds.length - 1];   // newest round is what opening the file shows
-  var current = 0;                          // variant index WITHIN the round
+  var current = 0;                          // which variant is mounted
   var axisState = {};                       // axis key -> chosen value, survives everything
-
-  function inRound(r) {
-    return all.filter(function (t) { return roundOf(t) === r; });
-  }
-  function btnsIn(r) {
-    return variantBtns.filter(function (el) { return roundOf(el) === r; });
-  }
 
   /* ---------------- axes ---------------- */
 
@@ -114,14 +97,7 @@
     emitAxis(g);
   }
 
-  /* Axes can differ between rounds; only the current round's are shown, and only those
-     are emitted. An axis absent from this round keeps its value for when you step back. */
-  function activeAxes() {
-    return axisGroups.filter(function (g) {
-      var r = g.getAttribute('data-round');
-      return !r || r === round;
-    });
-  }
+  function activeAxes() { return axisGroups; }
 
   axisGroups.forEach(function (g) {
     var key = g.getAttribute('data-axis');
@@ -140,7 +116,6 @@
     // best-effort; the data-at-* attributes are the real signal.
     try {
       var url = new URL(location);
-      url.searchParams.set('r', round);
       url.searchParams.set('v', current + 1);
       Object.keys(axisState).forEach(function (k) {
         url.searchParams.set(k, axisState[k]);
@@ -152,7 +127,7 @@
   /* ---------------- mounting ---------------- */
 
   function mount() {
-    var t = inRound(round)[current];
+    var t = all[current];
     if (!t) return;
     stage.innerHTML = '';
     // Clear first, render next frame, so entrance animations re-run.
@@ -171,83 +146,35 @@
     });
   }
 
-  function setActive(r, i) {
-    if (rounds.indexOf(r) < 0) return;
-    var n = inRound(r).length;
-    if (i < 0 || i >= n) return;
-    round = r;
+  function setActive(i) {
+    if (i < 0 || i >= all.length) return;
     current = i;
 
-    variantBtns.forEach(function (el) {
-      var on = roundOf(el) === round;
-      el.toggleAttribute('hidden', !on);
-      var active = on && btnsIn(round).indexOf(el) === current;
+    variantBtns.forEach(function (el, j) {
+      var active = j === current;
       el.toggleAttribute('data-active', active);
       if (active) el.setAttribute('aria-current', 'true');
       else el.removeAttribute('aria-current');
     });
-    if (roundNow) roundNow.textContent = 'v' + round;
-    if (roundCount) {
-      roundCount.textContent = (rounds.indexOf(round) + 1) + ' of ' + rounds.length;
-    }
-    stepBtns.forEach(function (el) {
-      var delta = parseInt(el.getAttribute('data-step'), 10) || 1;
-      var i = rounds.indexOf(round) + delta;
-      el.disabled = i < 0 || i >= rounds.length;
-    });
-    axisGroups.forEach(function (g) {
-      var gr = g.getAttribute('data-round');
-      g.toggleAttribute('hidden', !!gr && gr !== round);
-      paintAxis(g);
-    });
+    axisGroups.forEach(paintAxis);
     axisFocus = 0;
     paintAxisFocus();
-    // A round's top-level markup lives in the document permanently, so it has to be
-    // hidden when its round is not the one on screen — otherwise round 1's shared
-    // screens stack under round 2's.
-    [].slice.call(document.querySelectorAll('.at-shell')).forEach(function (s) {
-      s.toggleAttribute('hidden', s.getAttribute('data-round') !== round);
-    });
 
     writeUrl();
 
-    var t = inRound(round)[current];
-    root.setAttribute('data-at-round', round);
+    var t = all[current];
     root.setAttribute('data-at-variant', t.getAttribute('data-variant') || '');
     root.setAttribute('data-at-variant-index', String(current + 1));
     root.setAttribute('data-at-axis-state', JSON.stringify(axisState));
-    window.dispatchEvent(new CustomEvent('at:variant', {
-      detail: { index: current, round: round }
-    }));
+    window.dispatchEvent(new CustomEvent('at:variant', { detail: { index: current } }));
     mount();
   }
 
-  variantBtns.forEach(function (el) {
-    el.addEventListener('click', function () {
-      var r = roundOf(el);
-      setActive(r, btnsIn(r).indexOf(el));
-    });
-  });
-
-  // Stepping a round keeps the variant slot when the destination round has one, so
-  // stepping compares the same direction across versions instead of resetting to 1.
-  stepBtns.forEach(function (el) {
-    el.addEventListener('click', function () {
-      stepRound(parseInt(el.getAttribute('data-step'), 10) || 1);
-    });
+  variantBtns.forEach(function (el, i) {
+    el.addEventListener('click', function () { setActive(i); });
   });
 
   if (replay) replay.addEventListener('click', mount);
-
-  /* Clamped, not wrapped. Rounds are a history: v4 is not "next to" v1, and stepping off
-     the end of one into the other is a jump, not a step. The buttons disable at the ends
-     so the wall is visible before you hit it. */
-  function stepRound(delta) {
-    var i = rounds.indexOf(round) + delta;
-    if (i < 0 || i >= rounds.length) return;
-    var r = rounds[i];
-    setActive(r, Math.min(current, inRound(r).length - 1));
-  }
 
   /* ---------------- focused axis ----------------
 
@@ -362,9 +289,9 @@
   window.addEventListener('message', function (e) {
     var m = e.data;
     if (!m || m.at !== 'sync') return;
-    if (m.round && m.variantIndex) {
-      var i = Math.min(parseInt(m.variantIndex, 10), inRound(m.round).length) - 1;
-      if (m.round !== round || i !== current) setActive(m.round, i);
+    if (m.variantIndex) {
+      var i = Math.min(parseInt(m.variantIndex, 10), all.length) - 1;
+      if (i !== current) setActive(i);
     }
     if (m.axes) {
       axisGroups.forEach(function (g) {
@@ -439,9 +366,7 @@
   if (q.get('rail') === '0') root.setAttribute('data-at-rail-collapsed', '');
   paintToggle();
 
-  var r0 = root.getAttribute('data-at-round-init') || q.get('r') || round;
-  if (rounds.indexOf(r0) < 0) r0 = round;
   var v0 = parseInt(root.getAttribute('data-at-variant-init'), 10) ||
     parseInt(q.get('v'), 10) || 1;
-  setActive(r0, Math.min(v0, inRound(r0).length) - 1);
+  setActive(Math.min(Math.max(v0, 1), all.length) - 1);
 })();
