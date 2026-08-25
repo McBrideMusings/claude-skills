@@ -5,7 +5,9 @@ description: "Add/edit/audit a project's admin task runner, AND diagnose it when
 
 # /admin — Manifest-Driven Admin Task Runner
 
-**One committed file per project: `admin.toml`** — a short (~5–25 line) manifest declaring archetypes, URLs, and project commands. It is the source of truth, read live.
+**One file per project: `admin.toml`** — a short (~5–25 line) manifest declaring archetypes, URLs, and project commands. It is the source of truth, read live.
+
+**`admin.toml` is NEVER committed, in any repo, ever.** It is globally gitignored (`~/.config/git/ignore`) and excluded per-repo where needed (`.git/info/exclude`), so it leaves no trace in a repo at all — not in `.gitignore`, not in `git status`. `admin-project-tool` is a private repo nobody else can use, so a committed manifest would be dead weight in someone else's checkout. Never ask whether to commit it, never offer to, never add it to a `.gitignore`, and never stage it — including inside a `git add -A`. If it ever shows up in `git status`, the exclusion is missing: add it and move on without asking.
 
 There is **no generated `./admin` script** (ADR-0006). The installed tool interprets `admin.toml` at runtime:
 
@@ -23,7 +25,7 @@ Source repo: `~/projects/admin-project-tool/` (CLI `admin-run`, runtime `admin_l
 
 2. **After any commit+push to admin-project-tool, immediately reinstall:** `bash ~/projects/admin-project-tool/install.sh`. Full sequence for any tool change: **edit → commit → push → install**. There is no per-project regeneration step — installing updates the one interpreter every project shares. Installing from an unpushed commit embeds a dirty SHA into `~/.admin/VERSION`.
 
-3. **`admin.toml` is the only source of truth.** A project commits just the manifest; there is no `./admin` file to hand-edit or keep in sync. (If a project still has an old committed `./admin`, it's a stale generated artifact — delete it; `admin` runs from PATH.)
+3. **`admin.toml` is the only source of truth.** A project commits nothing at all for admin — not the manifest, not a `./admin` file. (If a project still has an old committed `./admin`, it's a stale generated artifact — delete it; `admin` runs from PATH.)
 
 4. **Act, don't ask, for standard setup.** Creating or editing `admin.toml`, wiring standard commands (build/dev/deploy/test/docs), populating `[urls]`, or writing a thin passthrough to an existing runner (Makefile/justfile/npm) is routine — just do it and validate with `admin check`. No "shall I create it?", no "want me to wire X?", no "commit?" prompts. The ONLY thing that stops for a decision is a genuine design fork: heavy inline code that should migrate to `admin_lib` (present finding + migration plan first), or a tool/archetype change (Phase 0 commit+push+install). `admin.toml` is globally gitignored, so its edits are never a commit question anyway.
 
@@ -265,7 +267,7 @@ If `admin.toml` uses `${VAR}`, run `admin env` and tell the user which vars to e
 2. **`.claude/skills/read-logs.md`** — create if missing using `references/read-logs-template.md`.
 3. **`CLAUDE.md` (committed)** — if the project has no root `CLAUDE.md`, invoke `/init` first.
 4. **`CLAUDE.local.md` (repo root)** — create/update with the dev-process section (Phase 5). Keep thin: admin-specific dev process and machine overrides only. Root, not `.claude/` — Claude Code only auto-loads a local file at the repo root.
-5. **Project `CLAUDE.md`** — note that `admin.toml` is the source of truth and commands run via `admin <cmd>` (the tool is installed on PATH; nothing is committed but the manifest).
+5. **Project `CLAUDE.md`** — note that `admin.toml` is the source of truth and commands run via `admin <cmd>` (the tool is installed on PATH; nothing about admin is committed, the manifest included).
 6. **Docs site, if present** — `admin.toml` must have a single `[commands.docs]` shell command (no sub-targets). If shaped wrong, invoke `/docs`.
 
 **Audit checks:**
@@ -298,7 +300,7 @@ If `admin dev` is one-shot (compiles and exits), omit this section.
 
 ### Phase 6: Commit
 
-Commit `admin.toml` alone — there is no `./admin` to commit alongside it, and no `generator_commit` to keep coherent. (Worktree note: since only `admin.toml` is committed and the interpreter is shared, there's nothing extra to copy between worktrees.)
+**Nothing from admin gets committed** — `admin.toml` is globally gitignored and there is no `./admin` or `generator_commit` to keep coherent. Commit only the OTHER files this pass touched (docs, `CLAUDE.md`, `CLAUDE.local.md`). Do not ask about the manifest. (Worktree note: `admin.toml` is per-checkout and the interpreter is shared, so there's nothing to copy between worktrees.)
 
 ---
 
