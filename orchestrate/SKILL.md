@@ -397,6 +397,7 @@ ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/*.json    # every verdi
 test -f $(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json   # the one you copied out — step 5
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
+pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=   # must be empty — nothing is standing in it
 git -C <repo> worktree remove --force <worktree> \
   && git -C <repo> branch -d <branch>
 ```
@@ -406,6 +407,12 @@ git -C <repo> worktree remove --force <worktree> \
 **The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy from step 5 is missing, do it now rather than removing the worktree — this is the check that stops a whole swarm's evidence disappearing one worker at a time, each teardown looking perfectly clean as it goes.
 
 **List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the worker wrote a differently-named file, and `--force` then deletes the only copy. Observed on `etv-station` #182, 2026-08-16: a worker left a complete `FAIL` verdict — naming the exact cause at `daemon.rs:2344` — at `/private/tmp/claude/<repo-slug>/verify/undefined.json`, found by listing the directory rather than by looking for it. It survived only because the tree was also dirty, which forbids teardown for an unrelated reason. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the worker's issue and branch, then decide. Two workers in one round can both write `undefined.json`, and once copied to the primary checkout they are indistinguishable — so never copy one out under the name it already has.
+
+**A live process in the worktree forbids teardown exactly as uncommitted work does.** `worktree remove --force` deletes the directory out from under whatever is standing in it, and that process keeps running against a path that no longer exists. Observed on `term`, 2026-08-25: a Metro bundler started at 01:29 inside `~/.worktrees/term/perm-questionnaire/apps/phone`, step 7 removed the worktree at 01:36, and the user's app red-screened with `Unable to resolve module ./index from /Users/pierce/.worktrees/term/perm-questionnaire/apps/phone/`. The tree was clean and fully merged, so every other check passed. The damage surfaced minutes later in the user's app and read as a broken build, not as teardown.
+
+**Refuse, do not name-and-remove.** A swarm retires workers unattended, so "removed, and this killed PID 15916" is still an unattended removal — the sentence lands in a round report nobody reads until the app is already broken. Deferring costs one worktree's disk; the branch is already merged and the round moves on. Say which condition fired and which process holds it — `worktree 4 (#182): pgrep found 15916 node …/apps/phone; not removed` — so the next pass retires it rather than re-deriving why it was skipped.
+
+`pgrep -f` matches the command line, not the working directory: it catches a bundler, dev server or watch process launched with the path in its argv, and misses a bare shell that `cd`'d in. When it is empty and you still suspect a hold, `lsof +D <worktree>` walks the tree and answers for certain — slower, and worth it only then. Quote the path (it contains no metacharacters today, but a branch slug can), and use `xargs -r`: without it, empty pgrep output runs `ps` with no pids and prints the caller's own processes as if they were holders. Never `pgrep -fl` — an npm-exec process carries its whole inherited environment in the command column, so one match is ~10,000 characters (`cc-k0m`).
 
 **Retire the worker's device too**, if step 3 gave it one — the platform cell you read there has the teardown commands. Whatever it is, it survives its worker and holds resources; a long run that skips this ends with one per issue still alive.
 

@@ -26,6 +26,8 @@ Per worker, using the recipe in SKILL.md step 7 — `worktree remove --force` + 
 
 A **still-running** worker must be stopped before its worktree goes: `herdr agent`'s pane is torn down by closing the tab, and a live subagent needs `TaskStop` first. Never `rm -rf` a worktree with a worker standing in it.
 
+The worker is not the only thing that can be standing in it. Step 7's `pgrep -f "<worktree>"` line applies here unchanged: a bundler, dev server or watch process the worker left running forbids teardown the same way uncommitted work does. That worker sorts into **Kept**, naming the pid and the process.
+
 `branch -d` (never `-D`) is the safety interlock: git re-checks merged-ness and refuses if the branch still holds unmerged commits. **If `-d` refuses, stop and re-sort that worker** — the refusal means step 2 misjudged it.
 
 ## 4. Stop the watches
