@@ -1,70 +1,74 @@
-# explainer — archetypes
+# explain — archetypes
 
-Five shapes. Classify the request, then fill the matching skeleton. Each carries a **signature diagram** so the visuals aren't reinvented per run. All share the `.hero` opener (title · what-this-is · archetype badge · why-you'd-read-it) and, in B-mode, `file:line` `.cite` tags on every concrete code claim.
+Two shapes. Classify the request, then fill the matching skeleton.
 
-When a request blends two, pick the dominant one for the spine and borrow a section from the other (e.g. an Architecture doc may end with a small Comparison panel).
-
----
-
-## 1. Process / Mechanism — "how does X work, step by step"
-
-For things that *happen over time*: request lifecycles, build pipelines, auth handshakes, algorithms.
-
-**Skeleton**
-1. Hero + one-sentence "what runs, and when".
-2. **Signature diagram: step timeline + sequence diagram.** Left-rail numbered steps down the page; a sequence diagram (lifelines + arrows) for the inter-actor calls. Color arrows `--c-flow`, payloads `--c-data`. When the point is a *change* to the flow rather than explaining an existing one, a call-stack diff (`../show-shape/SKILL.md`) inside a code panel can stand in for or supplement the sequence diagram.
-3. `.steps` walkthrough — one numbered step per stage, each with its `file:line` and a one-line "what changes here".
-4. Edge cases / failure modes in `.callout--danger` (what happens when it breaks).
-5. Recap: the whole flow in 3 bullets.
+Comparison and Decision are **not** shapes to classify into — they died as archetypes on
+purpose. A comparison is a `.compare-table` you drop into a Walk; a decision (forces →
+options → consequences) is the same table with different column headings, or three short
+panels. If you find yourself asking "is this a Comparison or a Process", it's a Process
+(a Walk) with a table in the middle. Don't reintroduce a third shape to catch it.
 
 ---
 
-## 2. Architecture / System — "how do the parts fit together"
+## 1. The Walk (default) — "how does X work, step by step" / "explain this idea"
 
-For *structure*: module maps, service boundaries, how a subsystem is wired.
+The comic strip. Absorbs the old Process and Concept archetypes — a mechanism that runs
+over time and a single idea that needs to land are the same shape: a sequence of panels,
+each one plain sentence, each one action.
 
 **Skeleton**
-1. Hero + "the parts and who talks to whom".
-2. **Signature diagram: module map + data-flow.** Boxes for modules grouped into subtle background bands by layer; arrows for dependencies/data; mark trust/process boundaries in `--c-danger`. Legend required. For a *proposed* restructuring rather than the current state, a before/after component tree (`../show-shape/SKILL.md`) reads better than forcing the change into the module-map diagram.
-3. Per-module cards: name, responsibility (one line), `file:line` entry point, what it depends on.
-4. A representative data-flow traced through the map (highlight the path).
-5. `.callout--warn` for the non-obvious coupling / the thing that surprises newcomers.
+
+1. `.hero` — title as a question, `.lede` stating the calibration assumption in one line.
+2. `.core` — the one-sentence short version, right under the hero.
+3. **One `.panel` per step or per facet of the idea.** `.eyebrow` ("Step 1"), then an
+   `<h2>` that is a complete subject-verb-object sentence — **the titles ARE the
+   explanation.** Read every `<h2>` top to bottom with nothing else and the whole story
+   must hold together. One action per panel; two actions means two panels.
+4. Each panel's `.scene` diagram draws that one action with the symbol cast — a person,
+   terminal, laptop, browser, folder, repo, server, database, file, notebook, robot,
+   clock, stop, or trash, connected by `.arrow` / `.arrow.hot` / `.arrow.no`.
+5. Each panel's `.cap` adds the "why it matters" aside — never restates the `<h2>`.
+6. B-mode: `.cite` under the `<h2>`, and an optional `details.deeper` "the code" reveal
+   with the real snippet, the claim line highlighted.
+7. Optional mid-walk `.compare-table` when the request is genuinely "X vs Y" or a
+   decision with named options — one table, not a shape swap.
+8. `.gotcha` for the failure mode or the part that surprises people — usually one, near
+   the end, dashed border, no second colour.
+9. `.close` — one closing truth, Georgia, after the last panel.
+
+Use for: request lifecycles, build pipelines, auth handshakes, algorithms, a pattern, a
+theorem, a mental model, "explain X" with no structural comparison or spatial layout in
+it. When unsure, default here.
 
 ---
 
-## 3. Comparison / Tradeoff — "X vs Y, which and why"
+## 2. The Map — "how do the parts fit together, who talks to whom"
 
-For *choices between alternatives*: libraries, patterns, approaches.
+For *structure in space* — module maps, service boundaries, "who calls whom" — the one
+thing a sequence of panels cannot show, because there is no single order to walk it in.
 
 **Skeleton**
-1. Hero + "what's being compared and the decision it informs".
-2. **Signature diagram: side-by-side panels (`.compare`) + decision table.** Same rows for each option so differences line up; a final table scoring each on the axes that matter.
-3. Per-axis breakdown: for each dimension, who wins and the one-line why.
-4. "Pick X when… / Pick Y when…" decision guide.
-5. `.callout--warn` for the trap (the dimension people over-weight).
+
+1. `.hero` + `.lede` as above.
+2. `.core` — one sentence: what the parts are and the one relationship that matters most.
+3. **One `.panel` (or bare `.diagram`) with one larger `<svg>`** holding every module as
+   a `.mapnode` (or `.mapnode--hot` for the one under discussion), connected by
+   `.mapedge` / `.mapedge--hot` / `.mapedge--dashed`. A `.legend` if the diagram uses
+   both ink and red for more than one reason.
+4. **One `.card` per module** underneath the diagram: name, one-line responsibility,
+   `.cite` entry point (B-mode), what it depends on.
+5. A representative flow traced through the same diagram — highlight that path's edges
+   `--hot` rather than drawing a second diagram.
+6. `.gotcha` for the non-obvious coupling or the thing that surprises newcomers.
+7. `.close` — one closing truth.
+
+Use for: "how does X fit together", "what talks to what", a system/service boundary
+question, an ADR-shaped "why is it wired this way" (forces/options/consequences becomes
+three `.card`s or a `.compare-table`, not a third archetype).
 
 ---
 
-## 4. Concept — "explain this one idea, deeply"
-
-For a *single idea* that needs to land: a pattern, a theorem, a mental model. The archetype most likely to run in **A-mode** (world knowledge).
-
-**Skeleton**
-1. Hero + the one-sentence version.
-2. **Signature diagram: analogy anchor.** A single strong visual metaphor rendered as SVG/CSS — the picture the reader will remember.
-3. The idea in plain terms, then **layered `.reveal` disclosures** — "go deeper" `<details>` that peel back to the rigorous version for those who want it. Static-first, no JS.
-4. Worked example (B-mode: from the actual code with `file:line`; A-mode: a concrete instance).
-5. Common misconceptions in `.callout--warn`; "you've got it if you can…" check.
-
----
-
-## 5. Decision — "why was this choice made" (ADR-shaped)
-
-For *rationale*: why the code is the way it is, the road not taken.
-
-**Skeleton**
-1. Hero + the decision in one line.
-2. **Signature diagram: forces → options → consequences** as three connected columns.
-3. **Forces** — the constraints/pressures that shaped it (`.callout` by type: `--c-danger` for risks, `--c-data` for requirements).
-4. **Options considered** — each in a `.compare` cell with its fatal flaw or winning trait.
-5. **Consequences** — what this buys and what it costs, including future reversibility. B-mode: `file:line` to where the decision is embodied; surface a matching `docs/adr/` entry if one exists.
+When a request blends both — a system whose *setup* is a sequence but whose *shape* is
+spatial — pick the dominant one for the spine and borrow the other's device for one
+section (a Map with a short numbered onboarding sequence at the top; a Walk that ends in
+one small map panel instead of a ninth step).

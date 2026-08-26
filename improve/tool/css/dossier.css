@@ -1,0 +1,89 @@
+/* improve/report — "Dossier" direction.
+   Warm paper, serif throughout, boxed cards with hairline rules, one navy accent.
+   Reads as a bound report handed across a desk — a dossier someone reads to decide. */
+
+:root{
+  --paper:#F3EEE2; --card:#FBF8F1; --ink:#211C14; --soft:#726A5A;
+  --accent:#1F3A5F; --line:#D9D0BC; --line-strong:#211C14;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font-family:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,serif;
+     font-size:17px;line-height:1.55}
+code,.files li{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+.hero{background:var(--card);border-top:5px double var(--line-strong);
+      border-bottom:1.5px solid var(--line-strong);padding:50px 24px 34px}
+.hero .in{max-width:840px;margin:0 auto}
+h1{font-weight:400;font-size:34px;line-height:1.25;margin:0 0 10px;
+   letter-spacing:.005em}
+.meta{margin:0;color:var(--soft);font-size:14px;font-style:italic}
+
+main{max-width:840px;margin:0 auto;padding:44px 24px 88px}
+h2.sec{font-weight:400;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+       color:var(--soft);margin:0 0 16px;border-bottom:1px solid var(--line-strong);
+       padding-bottom:8px}
+section{margin:0 0 48px}
+
+table{border-collapse:collapse;width:100%;font-size:15.5px}
+th{text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+   font-style:normal;color:var(--soft);font-weight:normal;padding:0 12px 9px 0;
+   border-bottom:1px solid var(--line-strong)}
+td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+td.res{white-space:nowrap}
+td.res b{color:var(--accent);font-weight:700}
+td.res i{font-style:italic;color:var(--soft)}
+.note{margin:14px 0 0;color:var(--soft);font-size:15px;font-style:italic}
+
+article{background:var(--card);border:1px solid var(--line-strong);border-radius:1px;
+        padding:28px 30px 24px;margin:0 0 26px}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+         font-style:normal;margin:0 0 8px}
+article h3{font-weight:400;font-size:23px;line-height:1.3;margin:0 0 12px}
+/* Chips are solid fills with white text — an outlined chip in accent-on-paper reads as
+   low-contrast decoration at 11px. Fill carries the label; the two fills are the only
+   two colours on the page. */
+.strength{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+          background:var(--soft);border:1px solid var(--soft);color:#fff;border-radius:1px;
+          padding:2px 8px;margin:0 6px 0 0;font-style:normal}
+.strength.strong{background:var(--accent);border-color:var(--accent);color:#fff}
+.files{margin:14px 0 0;padding:0;list-style:none}
+.files li{display:inline-block;font-size:12px;color:var(--ink);background:var(--paper);
+          border:1px solid var(--line);border-radius:1px;padding:2px 7px;margin:0 6px 6px 0}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:20px 0 0}
+.ba figure{margin:0}
+.ba figcaption{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+               color:var(--soft);margin:0 0 7px;font-style:normal}
+.ba svg{width:100%;height:auto;display:block;background:var(--paper);
+        border:1px solid var(--line)}
+
+.ps{margin:20px 0 0;display:grid;grid-template-columns:auto 1fr;gap:7px 16px;
+    align-items:baseline}
+.ps dt{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);
+       font-style:normal}
+.ps dd{margin:0;max-width:58ch}
+.wins{margin:16px 0 0;padding:0 0 0 20px;color:var(--ink)}
+.wins li{margin:0 0 4px}
+
+.adr{border:1px dashed var(--accent);border-radius:1px;padding:14px 18px;margin:20px 0 0;
+     font-size:15px;background:var(--paper)}
+.adr .eyebrow{color:var(--ink)}
+.adr p{margin:0;max-width:58ch}
+
+.top{background:var(--card);border:1.5px solid var(--line-strong);border-radius:1px;
+     padding:28px 30px}
+.top h3{font-weight:400;font-size:24px;margin:0 0 9px}
+.top p{margin:0;max-width:58ch}
+.top a{color:var(--accent)}
+
+svg text{font-family:Georgia,serif;font-size:10px;fill:var(--ink)}
+svg .lbl{font-family:Helvetica,Arial,sans-serif;font-size:9px;letter-spacing:.06em;
+         text-transform:uppercase;fill:var(--soft)}
+svg .box{fill:var(--card);stroke:var(--ink);stroke-width:1.3}
+svg .box.deep{fill:var(--ink)}
+svg .box.deep + text{fill:var(--card)}
+svg .edge{stroke:var(--ink);stroke-width:1.2;fill:none;marker-end:url(#b)}
+svg .edge.leak{stroke:var(--accent);stroke-dasharray:4 3;marker-end:url(#bh)}
+.mk-fill{fill:#211C14}
+.mk-fill-leak{fill:#1F3A5F}

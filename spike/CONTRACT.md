@@ -5,34 +5,20 @@ What you write is a **body fragment**: real content, nothing else. No `<!DOCTYPE
 
 ## Invoke
 
-**Two tools, split by whether the output has variants.** An explainer:
-
 ```bash
-"$HOME/.claude/tools/explainer" build \
-  --title "How statusline auth works" \
-  --fragment /private/tmp/claude/<repo-slug>/explainers/statusline-auth.body.html \
-  --out /private/tmp/claude/<repo-slug>/explainers/statusline-auth.html
-```
-
-A prototype or a wireframe:
-
-```bash
-"$HOME/.claude/tools/spike" build \
+"$HOME/.claude/skills/spike/tool/spike" build \
   --kind prototype \
   --title "Wheelhouse nav" \
   --fragment /private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav.body.html \
   --out /private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav.html
 ```
 
-`explainer` takes no `--kind` — it has exactly one look. Everything below that mentions a
-picker, state axes or device frames is `spike`'s alone.
-
 **Decide which device this prototype is for.** `--device` is required on `prototype`, takes
 exactly one value, and has no default. It is the first thing to settle, because it decides
 the slug as well as the frame: a design that ships on a phone and on a desktop is two
 prototypes, not one file with a switcher.
 
-`spike kinds` lists the kinds and their flags. Both tools carry `serve <path>` as a
+`spike kinds` lists the kinds and their flags. `spike` carries `serve <path>` as a
 contingency that shells to `python3 -m http.server`; you almost never need it — `file://` runs
 inline modules and blob workers fine, and a hermetic folio never calls `fetch`.
 
@@ -40,22 +26,18 @@ inline modules and blob workers fine, and a hermetic folio never calls `fetch`.
 falling back to absolute `pwd`) and build `/private/tmp/claude/<repo-slug>/…` from it. A path that doesn't start with
 `/` is the bug.
 
-## The three kinds
+## The two kinds
 
-| Kind | Tool | For | Palette |
-|---|---|---|---|
-| `explainer` | `explainer` | Explaining a mechanism, system, comparison, concept, or decision | **House look** — fixed semantic colour, do not override |
-| `prototype` | `spike` | Several genuinely different working versions of one UI | **None** — your fragment carries the host project's tokens |
-| `wireframe` | `spike` | Greybox layout: structure and hierarchy only | **Withheld on purpose** — do not add colour |
+| Kind | For | Palette |
+|---|---|---|
+| `prototype` | Several genuinely different working versions of one UI | **None** — your fragment carries the host project's tokens |
+| `wireframe` | Greybox layout: structure and hierarchy only | **Withheld on purpose** — do not add colour |
 
-Pick by what the folio *is*, not by which skill you came from.
+Pick by what the thing you're building *is*. Explaining a mechanism, system or decision is a
+different tool (`explainer`) and a different kind entirely — it has no picker, no state axes, no
+device frames, and none of what follows applies to it.
 
-`page` and `deck` were retired along with the `folio` skill: no verb owned them, and every
-real request turned out to be an explanation or a design question. Don't reintroduce a
-generic kind to catch an awkward request — decide whether it is being explained or being
-decided, and use that kind.
-
-## Fragment rules — all kinds
+## Fragment rules
 
 - Plain HTML. It may include its own `<style>` and `<script>`; the tool hoists them into the single
   output file, so the result stays hermetic.
@@ -90,53 +72,12 @@ gap), `.nums` (tabular numerals — the same class name on a `<td>` also right-a
 (visually hidden). Focus rings, `prefers-reduced-motion`, text selection, the caret, scrollbars and
 link underline offset are already themed — don't re-declare them.
 
-**The measure grid.** In `explainer`, `main` is a two-width grid: prose sits at `--maxw`
-(68ch) and `figure`, `table`, `.scroll-x`, `.code` and `.compare` automatically break out to
-`--maxw-wide` (96ch). Add `class="wide"` to send anything else out to the wide track. A diagram or a
-ten-row table squeezed into a reading measure is the single most common way a folio looks cramped,
-and it is already handled — don't re-center things by hand. `prototype` and `wireframe` take the
-full viewport instead.
+`prototype` and `wireframe` take the full viewport — neither uses the measure grid, so nothing here
+about breaking prose out to a wide track applies to them.
 
 **Never a coloured `border-left` thicker than 1px** on a callout, card, list item or alert. It is the
-most recognisable machine-made accent there is, and the tinted ground plus a coloured label already
-say what it would say. Every kind's stylesheet has been cleared of them; don't reintroduce one in a
-fragment.
-
-## `explainer` — house look
-
-Semantic colour is **information**, not decoration. Hue means the same thing in every explainer:
-
-| Role | Token | Means |
-|---|---|---|
-| Data / state | `--c-data` (blue) | values, state, stored things, payloads |
-| Control flow | `--c-flow` (violet) | calls, branches, the path execution takes |
-| Happy path | `--c-happy` (green) | success, the normal case |
-| Danger / edge | `--c-danger` (red) | errors, failure modes |
-| Caution / gotcha | `--c-warn` (amber) | surprising behaviour, footguns |
-
-Never repurpose a role for decoration. When a diagram uses more than two roles, add a `.legend`.
-Never rely on colour alone — pair hue with a label, shape, or border style.
-
-Classes:
-
-- `.hero` — wraps `.badge` (archetype), `<h1>`, `.what` (one line), `.why` (1–2 sentences on what you'll
-  be able to do after)
-- `.callout` + `.callout--data` / `--flow` / `--happy` / `--danger` / `--warn`, each with a
-  `<span class="label">`
-- `.diagram` — `<figure>` around inline SVG, `<figcaption>` required. The sheet ships the node and edge
-  vocabulary, so a diagram is marked up, not restyled: `<g class="node node--flow">` around a `rect` /
-  `circle` / `ellipse`, `.node-t` for a node's label and `.node-s` for its second line, `.edge` (plus
-  `.edge--dashed`) for connectors and `.edge-t` for an edge label. Role modifiers are the same five as
-  everywhere else: `--data --flow --happy --danger --warn`.
-- `.legend` with `.dot` swatches — `.dot--data` / `--flow` / `--happy` / `--danger` / `--warn` carry the
-  colour; a bare `.dot` is muted grey
-- `.steps` — `<ol>`, numbered rail, the Process backbone
-- `.compare` (add `.three` for three columns) with `.col` children
-- `.code` — `<pre>` inside; hand-coloured spans `.tok-key` `.tok-val` `.tok-str` `.tok-com` `.ann`. No
-  syntax-highlighting library.
-- `.cite` — the `file:line` pill. **Every concrete code claim carries one.** If you didn't open the
-  file, you can't draw it.
-- `details.reveal` — layered "go deeper". Native `<details>`, no JS.
+most recognisable machine-made accent there is. Every kind's stylesheet has been cleared of them;
+don't reintroduce one in a fragment.
 
 ## `prototype` — variants, state axes and devices, behind one rail
 
@@ -218,7 +159,7 @@ screen across two directions is the entire job.
   state after a variant switch — it just handles the event again. Don't write re-apply code.
 - Your listener must be a **top-level `<script>`** in the fragment. A `<script>` cloned out of a
   `<template>` does not execute — this is the one trap in the whole contract.
-- Axis state persists in the URL as `?screen=chat`, alongside `?r=` and `?v=`.
+- Axis state persists in the URL as `?screen=chat`, alongside `?v=`.
 
 ### The device — one per prototype, required, chosen at build time
 
@@ -283,7 +224,7 @@ width-constrained `<div>` can never do, and is why device frames are the harness
 A prototype has **one output file**, and a build replaces it:
 
 ```bash
-spike build --kind prototype --picker switch \
+"$HOME/.claude/skills/spike/tool/spike" build --kind prototype --picker switch \
   --title "Branches Pane" \
   --fragment /private/tmp/claude/<repo-slug>/spikes/branches-pane/branches-pane.body.html \
   --out /private/tmp/claude/<repo-slug>/spikes/branches-pane/branches-pane.html
@@ -305,9 +246,8 @@ The controls never share a letter:
 **A prototype answers no harness keys at all.** Every control above is a button, collapse is the
 `‹` toggle at the rail's edge (`?rail=0` remembers it), and comment mode and the contrast check are
 the two docked buttons on the right. This is not an oversight to fix: a prototype is a working
-interface with keys of its own, and the harness used to claim `[ ] 1-9 ← → x , . d D r \ ? a c`
-and `Escape` — most of a keyboard — so a prototype of anything keyboard-driven could not be driven
-at all. The other kinds are documents and still answer `a` and `c`.
+interface with keys of its own, so a prototype of anything keyboard-driven could not be driven at all
+if the harness claimed the keyboard too. `wireframe` is a document and still answers `a` and `c`.
 
 ### Checks — eight verdicts the rail keeps up to date
 
@@ -335,7 +275,6 @@ change a hundred times. The variant group is omitted entirely when there is only
 Opening the file bare shows the first variant. An out-of-range `v` falls back rather than blanking,
 and the URL is rewritten to what is actually on screen.
 
-
 ## `wireframe` — greybox
 
 Structure and hierarchy only. Greys, dashed placeholder frames, labelled regions. No brand colour, no
@@ -358,8 +297,8 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
 4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
 5. Say how to drive it. On a **prototype**: every control is a button — the rail on the left for
    variant, axes and device, and the two docked buttons on the right for comment mode and
-   the contrast check. No keys, so the prototype's own keyboard is entirely its own. On the other
-   kinds: `a` to comment on anything, `c` to check contrast.
+   the contrast check. No keys, so the prototype's own keyboard is entirely its own. On `wireframe`:
+   `a` to comment on anything, `c` to check contrast.
 
 ## Getting comments back
 
@@ -371,12 +310,7 @@ rather than dropped when the element is gone.
 
 One way out of the browser: **Copy comments** puts the whole set on the clipboard as markdown.
 
-There used to be a second button that wrote `~/Downloads/folio-feedback--<slug>.md` for an agent
-to watch. It is gone. A download is a worse handoff than a copy in every respect that matters: it
-needs a directory nobody asked about, Chrome renames the second one to ` (1)` so the watcher matches
-a stale file, and it leaves litter behind on a machine that never asked for a file.
-
-**The clipboard is still a channel back to you, with no server and no file.** The markdown opens with
+**The clipboard is a channel back to you, with no server and no file.** The markdown opens with
 `<!-- folio-feedback: <slug> -->`, so you can wait on the clipboard instead of asking whether
 they're done. After `open`, start a bounded watcher in the background; the harness re-invokes you
 when it exits:

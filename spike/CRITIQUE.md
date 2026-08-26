@@ -1,24 +1,25 @@
-# Critique — the pass between building a folio and handing it over
+# Critique — the pass between building a spike and handing it over
 
 One pass. Build the whole thing, inspect it once in a batch, fix everything that round shows in one
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
 
 Adapted from Impeccable's craft floor (`pbakaus/impeccable`, Apache-2.0) and
-`_domains/gui/slop.md`, narrowed to what a hermetic single-file folio can actually get wrong.
-Everything the kind stylesheets already handle is left out — this is only what a fragment decides.
+`_domains/gui/slop.md`, narrowed to what a hermetic single-file prototype or wireframe can actually
+get wrong.
 
 ## Measure first, then look
 
-The folio carries its own instruments. Use them before your eyes.
+The spike carries its own instruments. Use them before your eyes.
 
-1. **Contrast, both themes.** Press `c`, read the toast, switch theme, press `c` again. The target is
-   "All N text elements pass WCAG AA" twice. Any failure names its own ratio; fix the value, don't
-   argue with the number.
-2. **Screenshot at 1280 wide, and at 390 if the folio is meant to respond.** A picker gets every
-   variant; anything themed gets both themes. This is one batched round, not a trip per surface.
+1. **Contrast, both themes** (a wireframe themes; a prototype's colours come from the host project's
+   tokens, so check both there if the fragment themes them). Press `c`, read the toast, switch theme,
+   press `c` again. The target is "All N text elements pass WCAG AA" twice. Any failure names its own
+   ratio; fix the value, don't argue with the number.
+2. **Screenshot every variant, in the device frame it was built for.** A picker gets every variant;
+   anything themed gets both themes. This is one batched round, not a trip per surface.
 
    **Use headless Chrome, not Playwright's screenshot tool.** Two separate failures make Playwright
-   the wrong instrument here: it refuses `file://` outright, and on a freshly built folio served over
+   the wrong instrument here: it refuses `file://` outright, and on a freshly built spike served over
    http its `browser_take_screenshot` times out at 5000ms — every attempt, always after logging
    "fonts loaded", with the page rendering fine and the console clean. Chrome takes the same shot in
    one call and needs no server:
@@ -30,38 +31,28 @@ The folio carries its own instruments. Use them before your eyes.
 
    It prints two `task_policy_set` errors to stderr on macOS and writes the file anyway; the line to
    check for is `N bytes written to file`. Drive a prototype's variants and state axes through the
-   URL (`?r=`, `?v=`, and one param per axis) so each shot is one command with no clicking.
+   URL (`?v=`, and one param per axis) so each shot is one command with no clicking.
 
 ## Then read the screenshot against these
 
 Each is a fact you can check, not a matter of taste. The fix is named because "make it better" is not
 a finding.
 
-- **Nothing is squeezed into the reading measure that isn't prose.** Tables, diagrams, code and
-  side-by-side comparisons break out to the wide track automatically; if one is still 68ch wide it is
-  nested inside something that isn't passing the grid through. Fix the wrapper, not the figure.
-- **The title is the biggest thing on the page, by a lot.** `--f-3xl` on the title against `--f-md`
-  body is a 2.75× step. A title only 1.3× the body is why a page reads as undesigned.
-- **A slide is not a document.** Deck type scales with the viewport. If a slide's content occupies
-  less than half its height, the type is document-sized and the page will look empty on a wall.
+- **The title is the biggest thing on the page, by a lot**, on a spike that has one. `--f-3xl` on the
+  title against `--f-md` body is a 2.75× step. A title only 1.3× the body is why a page reads as
+  undesigned.
 - **More space above a heading than below it.** A section that floats equidistant between two blocks
   belongs to neither.
-- **One accent, one job.** A semantic hue (data, flow, happy, danger, warn) spent on decoration —
-  a step marker, a divider, a badge — breaks the promise that hue means something. Neutral it.
 - **No coloured `border-left` above 1px.** Anywhere. It is the clearest machine-made tell in the
   catalogue, and the tinted ground plus a coloured label already carry the role.
-- **Three encodings of one fact is noise.** Tint + stripe + uppercase coloured label + icon, all
-  saying "warning", is one signal wearing four costumes. Keep two.
 - **A table is not a ladder.** A rule under every row stops the header reading as a header. One rule
   under the header, one under the last row, zebra between if the rows are long.
-- **Every eyebrow earns its place.** One archetype label per document is the folio's voice. One
-  above every section is machine grammar — delete them.
 - **Numbered markers only where order is information.** A real procedure or a dated sequence keeps
   them. "01 / 02 / 03" over three peers does not.
 - **Real content, real controls.** No lorem, no `foo`, no dead button. A control that goes nowhere in
-  this round does not go in this round.
-- **Both themes got equal care.** Mechanical inversion isn't care: check that the accent still works
-  and that nothing white sits on a light tint.
+  this round does not go in this round — every control in a prototype is live.
+- **Both themes got equal care**, on whatever themes. Mechanical inversion isn't care: check that
+  nothing white sits on a light tint.
 
 ## Refuse outright
 
@@ -72,7 +63,12 @@ These never survive a critique, whatever the brief:
 - Emoji standing in for an icon system.
 - Same-size icon+heading+text cards as the page's structure; cards inside cards.
 - Fake-precise invented numbers. If it isn't real, don't print it.
-- A webfont, a CDN, or any network request. The folio is hermetic — this one is also a build error.
+- A webfont, a CDN, or any network request. The build is hermetic — this one is also a build error.
+- **Colour on a wireframe.** The whole point is withheld colour; any hue that isn't the greybox
+  palette is a build the tool should have refused.
+- **A house palette on a prototype.** `prototype.css` supplies none; every colour comes from the
+  fragment's own copied tokens. A prototype that reaches for spike's own chrome colours instead of the
+  host project's is answering the wrong question.
 
 ## Stop rule
 

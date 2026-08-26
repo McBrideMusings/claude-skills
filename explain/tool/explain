@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""explain — assemble a hermetic single-file HTML explainer from a body fragment.
+
+The point of this tool is that the stylesheet and the symbol cast never enter the
+model's context in either direction: the model writes content, the tool supplies
+everything else. See ../CONTRACT.md for the fragment contract.
+
+Self-contained on purpose: nothing outside skills/explain/tool/ is read. No shared
+store, no widgets, no theme toggle. Light-only, ~15 KB per build.
+
+  explain build --title <t> --fragment <abs.html> --out <abs.html>
+  explain serve <abs-path> [--port 8000]
+"""
+
+import argparse
+import html
+import os
+import re
+import sys
+
+TOOL_DIR = os.path.dirname(os.path.abspath(__file__))
+ASSETS_DIR = os.path.join(TOOL_DIR, "assets")
+
+
+def die(msg):
+    print("explain: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def read(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError as e:
+        die("cannot read %s: %s" % (path, e.strerror))
+
+
+def require_abs(path, what):
+    if not os.path.isabs(path):
+        die("%s must be an absolute path, got %r. Resolve the repo root with "
+            "`git rev-parse --show-toplevel` first." % (what, path))
+    return path
+
+
+def cmd_build(args):
+    fragment_path = require_abs(args.fragment, "--fragment")
+    out_path = require_abs(args.out, "--out")
+    fragment = read(fragment_path)
+
+    if not fragment.strip():
+        die("fragment %s is empty — nothing to build" % fragment_path)
+
+    # Match on a real tag boundary — `<header>` must not trip the `<head>` check.
+    for pattern, shown, why in (
+        (r"<!doctype\b", "<!doctype", "the tool supplies the doctype"),
+        (r"<html[\s>]", "<html>", "the tool supplies <html>"),
+        (r"<head[\s>]", "<head>", "the tool supplies <head>"),
+        (r"<body[\s>]", "<body>", "the tool supplies <body>"),
+    ):
+        if re.search(pattern, fragment, re.IGNORECASE):
+            die("fragment contains %s — %s. Write body content only (see CONTRACT.md)."
+                % (shown, why))
+
+    # Hermetic: no network request of any kind, ever.
+    net_checks = (
+        (r"<link\b[^>]*\bhref\s*=", "a <link> tag"),
+        (r"@import\s+url\(", "an @import url()"),
+        (r"""src\s*=\s*["']https?://""", "a remote src="),
+        (r"""url\(\s*["']?https?://""", "a remote url() reference"),
+        (r"fonts\.googleapis\.com|fonts\.gstatic\.com", "a webfont reference"),
+        (r"""<script\b[^>]*\bsrc\s*=\s*["']https?://""", "a CDN script"),
+    )
+    for pattern, shown in net_checks:
+        m = re.search(pattern, fragment, re.IGNORECASE)
+        if m:
+            die("fragment makes a network request (%s: %r). Explainers are hermetic: "
+                "inline the CSS, embed rasters as data: URIs, and never link a webfont "
+                "or a CDN script." % (shown, m.group(0).strip()))
+
+    base_css = read(os.path.join(ASSETS_DIR, "base.css"))
+    symbols = read(os.path.join(ASSETS_DIR, "symbols.html"))
+    if args.extra_css:
+        base_css += "\n" + read(require_abs(args.extra_css, "--extra-css"))
+
+    doc = [
+        "<!DOCTYPE html>",
+        '<html lang="%s">' % html.escape(args.lang),
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        '<meta name="generator" content="explain">',
+        "<title>%s</title>" % html.escape(args.title),
+        "<style>",
+        base_css.strip(),
+        "</style>",
+        "</head>",
+        "<body>",
+        '<svg width="0" height="0" style="position:absolute" aria-hidden="true">',
+        "<defs>",
+        symbols.strip(),
+        "</defs>",
+        "</svg>",
+        fragment.strip(),
+        "</body>",
+        "</html>",
+        "",
+    ]
+
+    out_dir = os.path.dirname(out_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(doc))
+
+    size = os.path.getsize(out_path)
+    print("%s  (explain, %.1f KB)" % (out_path, size / 1024.0))
+    print("Screenshot it and look at it before handing it over.", file=sys.stderr)
+
+
+def cmd_serve(args):
+    path = require_abs(args.path, "path")
+    directory = path if os.path.isdir(path) else os.path.dirname(path)
+    print("Serving %s on http://127.0.0.1:%d — Ctrl-C to stop." % (directory, args.port))
+    if not os.path.isdir(path):
+        print("  http://127.0.0.1:%d/%s" % (args.port, os.path.basename(path)))
+    os.execvp("python3", ["python3", "-m", "http.server", str(args.port),
+                          "--bind", "127.0.0.1", "--directory", directory])
+
+
+def main():
+    p = argparse.ArgumentParser(prog="explain", description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    b = sub.add_parser("build", help="assemble a hermetic explainer from a body fragment")
+    b.add_argument("--title", required=True)
+    b.add_argument("--fragment", required=True, help="absolute path to the body fragment")
+    b.add_argument("--out", required=True, help="absolute path to write")
+    b.add_argument("--lang", default="en")
+    b.add_argument("--extra-css", help="absolute path to additional CSS appended last")
+    b.set_defaults(func=cmd_build)
+
+    s = sub.add_parser("serve", help="contingency static server (python3 http.server)")
+    s.add_argument("path")
+    s.add_argument("--port", type=int, default=8000)
+    s.set_defaults(func=cmd_serve)
+
+    args = p.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

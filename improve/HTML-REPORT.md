@@ -2,22 +2,22 @@
 
 Serves both report shapes: a single-aspect architecture review, and the **survey report** (one `<section>` per aspect, one card per finding, cross-aspect Top recommendation). The card fields and diagram patterns below are written for architecture cards; other aspects' cards keep Title / badge / Files / Problem / Solution and swap the before/after SVG for whatever carries the finding (a table, a config snippet, a layer-audit table) — same components, same tone.
 
-The report is one **hermetic** HTML file, and **`explain` owns the rendering** — a findings report is an explanation, so it is built with the same tool, tokens, type scale, and `.diagram` / `.compare` / `.callout` / `.legend` / `.cite` classes. This file owns only what is specific to a report: the card fields, the coverage table, and the diagram patterns below. Read [../_folios/CONTRACT.md](../_folios/CONTRACT.md) for the class vocabulary. The diagrams carry the weight; prose is sparse and uses the glossary terms (the Vocabulary section of [ARCHITECTURE.md](ARCHITECTURE.md)) without ceremony.
+The report is one **hermetic** HTML file, built by `improve`'s own tool — `skills/improve/tool/report`. It is self-contained: it reads nothing outside `skills/improve/tool/`, shares no code or substrate with `explain` or `spike`, and never references `../explain/`. Light only — no theme toggle, no dark mode. No annotation or contrast widgets — those are `spike`'s, and a report is not soliciting design feedback; it's a dossier someone reads to decide.
 
 ## Build it
 
-Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The tool supplies the hermetic structure, the tokens, both themes, and the theme toggle:
+Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The tool supplies the hermetic structure and the stylesheet:
 
 ```bash
-"$HOME/.claude/tools/explainer" build \
+"$HOME/.claude/skills/improve/tool/report" build \
   --title "Architecture review — {repo name}" \
-  --fragment /private/tmp/claude/<repo-slug>/explainers/<slug>.body.html \
-  --out /private/tmp/claude/<repo-slug>/explainers/<slug>.html
+  --fragment /private/tmp/claude/<repo-slug>/reports/<slug>.body.html \
+  --out /private/tmp/claude/<repo-slug>/reports/<slug>.html
 ```
 
-(Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, so the hermetic rule is enforced rather than remembered. Every path absolute — resolve the repo root with `git rev-parse --show-toplevel` in its own Bash call.
+(Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, any `<link>`, `@import url()`, CDN reference, webfont, or remote image — the hermetic rule is enforced, not remembered. Every path absolute; a relative `--out` or `--fragment` is refused. Resolve the repo root with `git rev-parse --show-toplevel` in its own Bash call.
 
-Follow [`../explain/SKILL.md`](../explain/SKILL.md) § Verify, then open it for the rest: **screenshot it and look at it** in both themes, then hand it over with a bare `open <absolute-path>` on its own line.
+**Screenshot it and look at it.** Check specifically for overlapping SVG text in the before/after diagrams. Then hand it over with a bare `open <absolute-path>` on its own line.
 
 ## Fragment skeleton
 
@@ -36,30 +36,30 @@ Below the table, one line for anything tagged `review-territory` during the pass
 
 ## Header
 
-Repo name, date, and a compact **`.legend`**: solid box = module, dashed line = seam (`--c-muted`), red arrow = leakage (`--c-danger`), thick dark box = deep module. No intro paragraph — straight into the candidates.
+Repo name, date, and a compact legend: solid box = module, dashed line = seam, coloured arrow = leakage, filled dark box = deep module. No intro paragraph — straight into coverage, then candidates.
 
 ## Candidate card
 
 Each candidate is one `<article>`:
 
 - **Title** — short, names the deepening (e.g. "Collapse the Order intake pipeline").
-- **Badge row** — recommendation strength: `Strong` → `.callout--happy` green, `Worth exploring` → `.callout--warn` amber, `Speculative` → `--c-muted`. Optionally a dependency-category tag (`in-process`, `local-substitutable`, `ports & adapters`, `mock`).
-- **Files** — monospaced list (the `.cite` pill style works well).
-- **Before / After diagram** — the centrepiece, a `.compare` of two hand-authored inline SVGs. See patterns below.
+- **Badge row** — recommendation strength as a `.strength` chip: `Strong`, `Worth exploring`, `Speculative`. Chips are solid fills with white text, never an outline — an outlined chip at 11px reads as low-contrast decoration. `Strong` fills with the accent; the rest fill muted. Severity beyond that is carried by border style (dashed, weight), never a third hue. Optionally a dependency-category tag (`in-process`, `local-substitutable`, `ports & adapters`, `mock`), which takes the same chip.
+- **Files** — monospaced pill list (`.files li`).
+- **Before / After diagram** — the centrepiece, a `.ba` grid of two hand-authored inline SVGs. See patterns below.
 - **Problem** — one sentence. What hurts.
 - **Solution** — one sentence. What changes.
 - **Wins** — bullets, ≤6 words each: "Tests hit one interface", "Pricing stops leaking", "Delete 4 shallow wrappers".
-- **ADR callout** (if applicable) — one line in a `.callout--warn` box.
+- **ADR callout** (`.adr`, dashed box) — one line, if applicable.
 
 No paragraphs of explanation. If the diagram needs a paragraph to be understood, redraw the diagram.
 
 ## Diagram patterns (all hand-authored inline SVG/CSS — no diagramming library)
 
-Pick the pattern that fits; mix them so every card doesn't look the same.
+Pick the pattern that fits; mix them so every card doesn't look the same. The tool ships reusable `<marker>` arrowheads (`#b` normal, `#bh` leak) inline once per page — reference them with `marker-end`, don't redefine them per fragment.
 
 ### Boxes-and-arrows (the workhorse for dependencies / call flow)
 
-Modules as `<rect>` with `<text>` labels; arrows as `<line>`/`<path>`. Color leakage edges `--c-danger`, the deep module a filled dark box. Use for "X calls Y calls Z, and look at the mess" → "one interface".
+Modules as `<rect class="box">` with `<text>` labels; arrows as `<path class="edge">`. A leak edge gets `.edge.leak` (dashed, accent colour); a deep module gets `.box.deep` (filled dark, white text). Use for "X calls Y calls Z, and look at the mess" → "one interface".
 
 ### Cross-section (good for layered shallowness)
 
@@ -71,19 +71,19 @@ Two rectangles per module — interface surface area vs implementation. Before: 
 
 ### Call-graph collapse
 
-Before: a tree of calls as nested boxes. After: the same tree collapsed into one box, the now-internal calls shown faded (`--c-muted`) inside it.
+Before: a tree of calls as nested boxes. After: the same tree collapsed into one box, the now-internal calls shown faded inside it.
 
 ## Style guidance
 
 - Lean editorial, not corporate-dashboard. Generous whitespace.
-- Color sparingly and semantically — `--c-danger` for leakage, `--c-warn` for ADR warnings, `--c-accent` for the one highlight. Never decorative.
-- Keep before/after diagrams ~320px tall so they sit side by side without scrolling.
+- **Two colours maximum plus neutrals** — ink and one accent. Severity, leakage, and warnings are carried by label text and border style (dashed, weight, fill vs. outline), never by a third or fourth hue.
+- Keep before/after diagrams ~200px tall so they sit side by side without scrolling.
 - Use small uppercase muted labels inside diagrams — they should read as schematic, not as UI.
-- Real `<text>` labels (not paths) so diagrams stay searchable and theme correctly in light/dark.
+- Real `<text>` labels (not paths) so diagrams stay searchable.
 
 ## Top recommendation section
 
-One larger card: candidate name, one sentence on why, an anchor link to its card. That's it.
+One larger card (`.top`): candidate name, one sentence on why, an anchor link to its card. That's it.
 
 **Every card is a ticket body in waiting.** Phase 08 files the surviving cards to the tracker, so a card whose Solution names an outcome instead of showing the change produces a ticket nobody can implement. Keep the shape — the signature, the call-stack diff, the before/after layout — inside the card rather than only in the diagram, since the diagram does not survive the trip to a plain-text issue body.
 

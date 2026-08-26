@@ -1,0 +1,91 @@
+<div class="hero">
+  <div class="in">
+    <h1>How does one fragment become a whole explainer?</h1>
+    <p class="lede">Assuming you know what an HTML file and a build script are, but have
+    never opened <b>tool/explain</b> — tell me if I'm off.</p>
+  </div>
+</div>
+
+<main>
+
+  <p class="core">The short version: you write one file of real content, the tool glues
+  a stylesheet and a symbol cast around it, and what comes out never makes a network
+  request.</p>
+
+  <section class="panel">
+    <p class="eyebrow">Step 1</p>
+    <h2>You write a body fragment — content only, no page scaffolding.</h2>
+    <span class="cite">tool/explain:44</span>
+    <svg class="scene" viewBox="0 0 700 150" role="img" aria-label="A file icon labelled fragment, with no doctype or head inside it">
+      <use href="#file" x="60" y="40" width="56" height="68"/>
+      <text class="mono" x="140" y="70">spec.body.html</text>
+      <text class="lbl" x="140" y="88">panels, a hero, no &lt;head&gt;</text>
+      <path class="arrow hot" d="M400 78 H540"/>
+      <use href="#terminal" x="560" y="42" width="96" height="64"/>
+    </svg>
+    <p class="cap">A <code>&lt;!doctype&gt;</code>, <code>&lt;html&gt;</code>,
+    <code>&lt;head&gt;</code>, or <code>&lt;body&gt;</code> tag in the fragment is
+    refused before anything is written — the tool owns those.</p>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow">Step 2</p>
+    <h2>The tool checks it for a network request and refuses if it finds one.</h2>
+    <span class="cite">tool/explain:60-75</span>
+    <svg class="scene" viewBox="0 0 700 150" role="img" aria-label="A magnifying glass over the fragment, checking for a link or CDN reference">
+      <use href="#file" x="50" y="40" width="56" height="68"/>
+      <path class="arrow hot" d="M130 74 H280"/>
+      <use href="#stop" x="300" y="44" width="60" height="60"/>
+      <text class="mono" x="380" y="70" fill="#C42A1C">exit 1</text>
+      <text class="lbl" x="380" y="88">link, @import, CDN script, or webfont</text>
+    </svg>
+    <p class="cap">A hermetic explainer opens the same on a plane as it does on a
+    conference wifi. There is no exception for "just one small icon font".</p>
+  </section>
+
+  <section class="panel">
+    <p class="eyebrow">Step 3</p>
+    <h2>It wraps your content in one stylesheet and one symbol cast.</h2>
+    <span class="cite">tool/explain:78-101</span>
+    <svg class="scene" viewBox="0 0 700 160" role="img" aria-label="Base CSS and the symbol library merging with the fragment into one output file">
+      <use href="#file" x="30" y="46" width="56" height="68"/>
+      <text class="lbl" x="20" y="128">your fragment</text>
+      <path class="arrow" d="M110 80 H240"/>
+      <use href="#folder" x="260" y="50" width="84" height="62"/>
+      <text class="lbl" x="256" y="128">base.css + symbols.html</text>
+      <path class="arrow hot" d="M360 80 H500"/>
+      <use href="#file" x="520" y="46" width="56" height="68"/>
+      <text class="lbl" x="500" y="128">one .html, ~15 KB</text>
+    </svg>
+    <p class="cap">Neither the CSS nor the fourteen symbol definitions ever enter the
+    model's context — they live on disk in <b>tool/assets/</b> and get concatenated in
+    at build time.</p>
+    <details class="deeper">
+      <summary>The code</summary>
+<pre class="code"><span class="com"># tool/explain:78-84</span>
+base_css = read(os.path.join(ASSETS_DIR, <span class="hl">"base.css"</span>))
+symbols  = read(os.path.join(ASSETS_DIR, <span class="hl">"symbols.html"</span>))
+</pre>
+    </details>
+  </section>
+
+  <div class="gotcha">
+    <p class="eyebrow">The part that surprises people</p>
+    <p>There is no theme toggle and no dark mode. This kind is light-only by design — the
+    bright textbook look is the point, not a default waiting for a switch.</p>
+  </div>
+
+  <table class="compare-table">
+    <caption>explain vs. spike — same fragment idea, different job</caption>
+    <thead><tr><th>Question</th><th>explain</th><th>spike</th></tr></thead>
+    <tbody>
+      <tr><td>Variants</td><td><b>one look, no picker</b></td><td>several, behind a rail</td></tr>
+      <tr><td>Theme</td><td><b>light only</b></td><td>light + dark toggle</td></tr>
+      <tr><td>Assets</td><td><b>skills/explain/tool/</b></td><td>skills/spike/tool/</td></tr>
+    </tbody>
+  </table>
+
+  <p class="close">Two files on disk — one stylesheet, one symbol cast — turn every
+  explainer's fragment into a page that opens anywhere, forever, with nothing to fetch.</p>
+
+</main>

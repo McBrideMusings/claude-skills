@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+"""report — assemble a hermetic single-file HTML improvement survey from a body fragment.
+
+The point of this tool is that the stylesheet never enters the model's context: it
+writes content, the tool supplies everything else. See ../HTML-REPORT.md for the
+fragment contract.
+
+improve's report is its own isolated builder — no shared substrate with explain or
+spike. Duplication between those tools' builders is deliberate. This tool reads
+nothing outside skills/improve/tool/.
+
+Light only, no theme toggle, no annotation or contrast widgets — this is a report,
+not a page soliciting design feedback.
+
+  report build --title <t> --fragment <abs.html> --out <abs.html>
+  report serve <abs-path> [--port 8000]
+"""
+
+import argparse
+import html
+import os
+import re
+import sys
+
+TOOL_DIR = os.path.dirname(os.path.abspath(__file__))
+CSS_DIR = os.path.join(TOOL_DIR, "css")
+
+# Reusable inline arrow markers + repeated diagram primitives, shipped by the tool so
+# a fragment never redraws them. Same marker ids as the sample: #b (edge), #bh (leak).
+SYMBOLS_SVG = """<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" class="mk-fill"/></marker>
+  <marker id="bh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+    <path d="M0,0 L10,5 L0,10 z" class="mk-fill-leak"/></marker>
+</defs></svg>"""
+
+
+def die(msg):
+    print("report: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def read(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError as e:
+        die("cannot read %s: %s" % (path, e.strerror))
+
+
+def require_abs(path, what):
+    if not os.path.isabs(path):
+        die("%s must be an absolute path, got %r." % (what, path))
+    return path
+
+
+def cmd_build(args):
+
+    fragment_path = require_abs(args.fragment, "--fragment")
+    out_path = require_abs(args.out, "--out")
+    fragment = read(fragment_path)
+
+    if not fragment.strip():
+        die("fragment %s is empty — nothing to build" % fragment_path)
+
+    for pattern, shown, why in (
+        (r"<!doctype\b", "<!doctype", "the tool supplies the doctype"),
+        (r"<html[\s>]", "<html>", "the tool supplies <html>"),
+        (r"<head[\s>]", "<head>", "the tool supplies <head>"),
+        (r"<body[\s>]", "<body>", "the tool supplies <body>"),
+    ):
+        if re.search(pattern, fragment, re.IGNORECASE):
+            die("fragment contains %s — %s. Write body content only." % (shown, why))
+
+    net = re.search(
+        r"""<link\b[^>]*\bhref\s*=|@import\s+url\(|src\s*=\s*["']https?:""",
+        fragment, re.IGNORECASE,
+    )
+    if net:
+        die("fragment makes a network request (%r). Reports are hermetic: inline the "
+            "CSS, embed rasters as data: URIs, and never link a webfont." % net.group(0).strip())
+
+    css = read(os.path.join(CSS_DIR, "dossier.css"))
+
+    body = SYMBOLS_SVG + "\n" + fragment.strip()
+
+    doc = [
+        "<!DOCTYPE html>",
+        '<html lang="%s">' % html.escape(args.lang),
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        '<meta name="generator" content="improve/report">',
+        "<title>%s</title>" % html.escape(args.title),
+        "<style>",
+        css.strip(),
+        "</style>",
+        "</head>",
+        "<body>",
+        body,
+        "</body>",
+        "</html>",
+        "",
+    ]
+
+    out_dir = os.path.dirname(out_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(doc))
+
+    size = os.path.getsize(out_path)
+    print("%s  (survey, %.1f KB)" % (out_path, size / 1024.0))
+    print("Screenshot it and look at it before handing it over.", file=sys.stderr)
+
+
+def cmd_serve(args):
+    path = require_abs(args.path, "path")
+    directory = path if os.path.isdir(path) else os.path.dirname(path)
+    print("Serving %s on http://127.0.0.1:%d — Ctrl-C to stop." % (directory, args.port))
+    if not os.path.isdir(path):
+        print("  http://127.0.0.1:%d/%s" % (args.port, os.path.basename(path)))
+    os.execvp("python3", ["python3", "-m", "http.server", str(args.port),
+                          "--bind", "127.0.0.1", "--directory", directory])
+
+
+def main():
+    p = argparse.ArgumentParser(prog="report", description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    b = sub.add_parser("build", help="assemble a hermetic report from a body fragment")
+    b.add_argument("--title", required=True)
+    b.add_argument("--fragment", required=True, help="absolute path to the body fragment")
+    b.add_argument("--out", required=True, help="absolute path to write")
+    b.add_argument("--lang", default="en")
+    b.set_defaults(func=cmd_build)
+
+    s = sub.add_parser("serve", help="contingency static server (python3 http.server)")
+    s.add_argument("path")
+    s.add_argument("--port", type=int, default=8000)
+    s.set_defaults(func=cmd_serve)
+
+    args = p.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

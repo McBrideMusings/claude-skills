@@ -19,10 +19,10 @@ me an artifact of X" are all the same request: build or rebuild at a stable path
 
 The one thing that is *not* this skill: if the ask is to **explain how something works**
 rather than to decide what it should look like, that is `explain`. Both build a hermetic
-single-file page from the same `_folios/` substrate — same tokens, same class vocabulary,
-same annotate/contrast widgets — but through different tools, because an explainer has one
-look and no variants. `~/.claude/tools/spike` owns the picker and the device
-frames; `~/.claude/tools/explainer` owns neither.
+single-file page — similar shape, an annotate/contrast comment layer — but the two share
+no code and no assets, each with its own tool: an explainer has one look and no variants,
+so its tool owns neither the picker nor the device frames. `~/.claude/skills/spike/tool/spike`
+owns both.
 
 ## Load this whenever a prototype is being built — including mid-conversation
 
@@ -34,7 +34,7 @@ Hand-writing a prototype instead of loading this skill loses the slug scheme, th
 
 Identify which question is being answered — from the prompt, the surrounding code, or by asking if the user is around:
 
-- **"What should this look like?"** → [UI.md](UI.md). Several genuinely different working versions of one piece of UI, in a single standalone HTML file, flipped through with the picker. Built with `~/.claude/tools/spike --kind prototype`.
+- **"What should this look like?"** → [UI.md](UI.md). Several genuinely different working versions of one piece of UI, in a single standalone HTML file, flipped through with the picker. Built with `~/.claude/skills/spike/tool/spike --kind prototype`.
 - **"Where do the regions sit?"** → `--kind wireframe`, a greybox with colour withheld on purpose. This is the fidelity *below* a prototype, and `gui` sketch mode routes here when an ASCII layout can't carry the question — see [`../gui/SKETCH.md`](../gui/SKETCH.md), which owns when to escalate. The build command is UI.md's with the kind swapped; there are no variants and no picker.
 - **"Does this logic / state model hold up?"** → [LOGIC.md](LOGIC.md). Tiny interactive terminal app that pushes the state machine through cases hard to reason about on paper. Runs in a visible window via the `terminal` skill's session mode.
 - **"Which technical approach should we use?"** → [COMPARE.md](COMPARE.md). Two or three real implementations behind one interface, run against the same fixture. **Splits on what the answer is:** a number goes to `terminal` one-shot and gets measured; a look goes to the UI shape's picker with one variant per approach.
@@ -151,7 +151,7 @@ more readily than stale markup.
 **Getting comments back.** Every build carries the comment layer: the user presses the
 speech-bubble button (or `a`), marks things up, and presses **Copy comments**. The
 markdown starts with `<!-- folio-feedback: <slug> -->`, so you can either ask them to
-paste it, or wait for it — [`../_folios/CONTRACT.md`](../_folios/CONTRACT.md) § Getting
+paste it, or wait for it — [`CONTRACT.md`](CONTRACT.md) § Getting
 comments back has the `pbpaste` watcher. Say which you are doing.
 
 ## Not this skill

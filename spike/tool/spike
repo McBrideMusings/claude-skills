@@ -1,0 +1,660 @@
+#!/usr/bin/env python3
+"""spike — assemble a hermetic single-file HTML prototype from a body fragment.
+
+The point of this tool is that the stylesheets and harness JS never enter the model's
+context: it writes content, the tool supplies everything else. See
+~/.claude/skills/spike/CONTRACT.md for the fragment contract.
+
+Two fidelities of the same question — what should this look like:
+
+  wireframe  greybox structure, colour withheld on purpose
+  prototype  working versions of one UI behind a picker, in the project's own tokens
+
+Explainers are a separate kind of document with their own tool, `explainer` — one look,
+no variants, none of the rail/device machinery here.
+
+  spike build --kind wireframe|prototype --title <t>
+              --fragment <abs.html> --out <abs.html>
+              [--picker switch|list] [--subtitle <s>]
+              --device phone|tablet|desktop|panel|web|tv
+              [--lang en] [--extra-css <abs.css>]
+              [--with w1,w2] [--without w1,w2]
+  spike kinds
+  spike serve <abs-path> [--port 8000]
+"""
+
+import argparse
+import collections
+import hashlib
+import html
+import os
+import re
+import sys
+import time
+
+STORE = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
+KINDS_DIR = os.path.join(STORE, "kinds")
+HARNESS_DIR = os.path.join(STORE, "harness")
+# The fragment contract lives one level up, at the skill root, alongside SKILL.md and
+# UI.md — it is the agent-facing doc, not a tool asset.
+CONTRACT_PATH = os.path.join(os.path.dirname(STORE), "CONTRACT.md")
+
+KINDS = {
+    "prototype": "Several genuinely different working versions of one UI, behind a picker. "
+                 "No palette — the fragment carries the host project's tokens.",
+    "wireframe": "Greybox layout: structure and hierarchy only. Colour withheld on purpose.",
+}
+
+PICKER_KINDS = {"prototype"}
+ALL_KINDS = frozenset(KINDS)
+
+# Device frames viewport.js can render. Naming them is the AGENT'S job, per spike:
+# a phone-only chat prototype and a desktop-only pane-tree prototype are different
+# questions, and offering a frame the design was never meant for invites a judgement
+# about a layout nobody designed. The list is honoured exactly, `fit` included: naming
+# `desktop,phone` opens on desktop and offers no unframed view.
+# ONE device per folio, named at build time and required. A platform is an interaction
+# model — touch, pointer, remote focus — not a width, so a design that ships on two of
+# them is two prototypes, and the answer to "which one is this" belongs in the filename
+# rather than in a row of chips the reader flips through. There is no `fit`: an unframed
+# view is a size nobody drew for, and it was what the harness opened on.
+DEVICES = collections.OrderedDict([
+    ("phone",   "390x844, iOS status bar + notch + home indicator, rotates"),
+    ("tablet",  "834x1194, iOS status bar, thin bezel, rotates"),
+    ("desktop", "1440x900 as a bare window; add chrome with --window"),
+    ("panel",   "380x520 macOS menu bar extra, hanging under a lit status item"),
+    ("web",     "1440x900 inside browser chrome (tab + URL bar outside the viewport)"),
+    ("tv",      "1920x1080, no chrome drawn; publishes tvOS overscan as --at-safe-*"),
+])
+
+# Window chrome for the `desktop` frame. A build-time decision, not a runtime toggle:
+# whether the design owns its title area is a property of the thing being prototyped, and
+# a switch would invite a verdict on a window nobody drew. Default is neither — a desktop
+# app with a full-size content view draws its own top area, and a generic macOS title bar
+# stapled over it is chrome the design never asked for.
+WINDOW_PARTS = collections.OrderedDict([
+    ("bar",    "macOS title bar above the viewport (drawn outside it, as a real one is)"),
+    ("lights", "traffic lights. With `bar`, they sit in it. Without, they float INSIDE "
+               "the viewport over the app's own top area — the full-size-content-view "
+               "shape — and the frame publishes --at-lights-w / --at-lights-h to reserve"),
+])
+
+THEME_TOGGLE_HTML = (
+    '<button class="at-theme" type="button" aria-label="Toggle light or dark theme" '
+    'title="Toggle theme">&#9681;</button>'
+)
+
+# --- harness widgets --------------------------------------------------------
+#
+# One table entry per generic widget the tool can add to any spike. Everything a
+# widget needs — where it applies, its stylesheet, its script, any static markup — is
+# declared here, so adding one is a row rather than three new branches in cmd_build.
+# (The picker is not in this table: it restructures the body rather than adding
+# chrome to it, so it keeps its own path below.)
+#
+# `kinds` is where the widget is on by DEFAULT. --with turns one on anywhere, --without
+# turns one off. Dormant widgets — the ones that render nothing until a key is pressed —
+# are on for every kind, because invisible chrome costs a reader nothing.
+
+Widget = collections.namedtuple("Widget", "kinds css js html stamp desc")
+
+WIDGETS = collections.OrderedDict([
+    # The theme toggle writes data-theme on :root, which only means something for kinds
+    # whose colours come from the base tokens. A prototype's colours come from the host
+    # project's tokens in the fragment, so the toggle would be a control that declares an
+    # effect it does not have — and in list mode it collides with the sticky variant header.
+    ("theme", Widget(
+        kinds=ALL_KINDS - {"prototype"}, css=None, js="theme.js", html=THEME_TOGGLE_HTML,
+        stamp=False, desc="light/dark toggle button")),
+    ("annotate", Widget(
+        kinds=ALL_KINDS, css="annotate.css", js="annotate.js", html=None,
+        stamp=True, desc="press `a`: comment on elements, export the comments as markdown")),
+    ("contrast", Widget(
+        kinds=ALL_KINDS, css="contrast.css", js="contrast.js", html=None,
+        stamp=False, desc="flag text that fails WCAG AA against its backdrop. On a kind "
+                          "with a rail the Checks group's Contrast row is the control; "
+                          "elsewhere it is a floating button and the `c` key")),
+    # On for prototype, off elsewhere; other kinds opt in with --with viewport. WHICH
+    # device is per-spike and required (--device): a prototype always has a device answer
+    # worth declaring, and it is the agent's to declare at build time rather than the
+    # reader's to flip through.
+    # The standing verdicts. Needs the rail to put them in, so prototype only; and it
+    # reads contrast.js's result rather than recomputing it, so it must load after.
+    ("checks", Widget(
+        kinds=frozenset({"prototype"}), css="checks.css", js="checks.js",
+        html=None, stamp=False,
+        desc="always-on pass/fail checks in the rail: contrast, overflow, tap "
+             "targets, text size, dead links, alt text, duplicate ids, hermetic")),
+    ("viewport", Widget(
+        kinds=frozenset({"prototype"}), css="viewport.css", js="viewport.js",
+        html=None, stamp=False,
+        desc="one device frame with real chrome; named by --device")),
+])
+
+
+def die(msg):
+    print("spike: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def read(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except OSError as e:
+        die("cannot read %s: %s" % (path, e.strerror))
+
+
+def split_list(value):
+    return [p.strip() for p in (value or "").split(",") if p.strip()]
+
+
+def require_abs(path, what):
+    if not os.path.isabs(path):
+        die("%s must be an absolute path, got %r. Resolve the repo root with "
+            "`git rev-parse --show-toplevel` first." % (what, path))
+    return path
+
+
+# --- fragment parsing -------------------------------------------------------
+
+TEMPLATE_RE = re.compile(
+    r"<template\b(?P<attrs>[^>]*)>(?P<body>.*?)</template\s*>",
+    re.DOTALL | re.IGNORECASE,
+)
+ATTR_RE = re.compile(r"""(?P<name>[\w-]+)\s*=\s*(?P<q>["'])(?P<val>.*?)(?P=q)""", re.DOTALL)
+
+
+def parse_attrs(s):
+    return {m.group("name").lower(): m.group("val") for m in ATTR_RE.finditer(s)}
+
+
+# --- source stamping --------------------------------------------------------
+#
+# annotate.js needs a pin to name a line of the fragment, not a CSS path. The tool is
+# the only place that knows both the element and the line it came from, so it stamps
+# data-src="<fragment basename>:<line>" on every element worth commenting on.
+
+VOID_TAGS = frozenset("area base br col embed hr img input link meta param source track wbr".split())
+# `template` is the variant wrapper, never a visible thing to comment on; its children
+# are stamped normally. SVG internals are stamped as one unit at the <svg> element.
+NO_STAMP_TAGS = VOID_TAGS | frozenset({"template", "script", "style", "title"})
+
+BLOCK_RE = re.compile(
+    r"<!--.*?-->"
+    r"|<script\b[^>]*>.*?</script\s*>"
+    r"|<style\b[^>]*>.*?</style\s*>"
+    r"|<svg\b[^>]*>.*?</svg\s*>",
+    re.DOTALL | re.IGNORECASE,
+)
+OPEN_TAG_RE = re.compile(
+    r"""<(?P<name>[a-zA-Z][a-zA-Z0-9-]*)(?P<attrs>(?:'[^']*'|"[^"]*"|[^>'"])*)>"""
+)
+
+
+def stamp_sources(fragment, label):
+    """Add data-src="<label>:<line>" to each annotatable element. Returns (html, count)."""
+    blocked = []
+    for m in BLOCK_RE.finditer(fragment):
+        # An <svg> is one annotatable unit: stamp its opening tag, skip everything inside.
+        blocked.append((m.start(), m.end(), m.group(0).lower().startswith("<svg")))
+
+    def inside(pos):
+        for start, end, svg in blocked:
+            if start <= pos < end:
+                return "svg-open" if (svg and pos == start) else "skip"
+        return None
+
+    edits = []
+    for m in OPEN_TAG_RE.finditer(fragment):
+        where = inside(m.start())
+        if where == "skip":
+            continue
+        name = m.group("name").lower()
+        if where != "svg-open" and name in NO_STAMP_TAGS:
+            continue
+        if re.search(r"\bdata-src\s*=", m.group("attrs")):
+            continue
+        line = fragment.count("\n", 0, m.start()) + 1
+        edits.append((m.start() + 1 + len(m.group("name")),
+                      ' data-src="%s:%d"' % (html.escape(label, quote=True), line)))
+
+    out = fragment
+    for pos, text in reversed(edits):
+        out = out[:pos] + text + out[pos:]
+    return out, len(edits)
+
+
+def resolve_widgets(kind, with_, without):
+    unknown = (with_ | without) - set(WIDGETS)
+    if unknown:
+        die("unknown widget %s. Known widgets: %s"
+            % (", ".join(sorted(unknown)), ", ".join(WIDGETS)))
+    both = with_ & without
+    if both:
+        die("%s is in both --with and --without" % ", ".join(sorted(both)))
+    return collections.OrderedDict(
+        (name, w) for name, w in WIDGETS.items()
+        if (kind in w.kinds or name in with_) and name not in without
+    )
+
+
+def extract_variants(fragment):
+    """Pull <template data-variant="..."> blocks out of the fragment.
+
+    Returns (variants, remainder). Each variant is a dict with name/axis/body/attrs.
+    """
+    variants = []
+    for m in TEMPLATE_RE.finditer(fragment):
+        attrs = parse_attrs(m.group("attrs"))
+        if "data-variant" not in attrs:
+            continue
+        variants.append({
+            "name": attrs["data-variant"],
+            # `data-caption` and not `data-axis`: an AXIS is the rail's state control
+            # (which screen, which error). A caption is one line describing a variant's
+            # direction, printed under the heading in list mode. Two different things.
+            "caption": attrs.get("data-caption", ""),
+            "motion": "data-motion" in m.group("attrs").lower(),
+            "position": attrs.get("data-picker-position", ""),
+            "body": m.group("body"),
+            "raw": m.group(0),
+        })
+    remainder = fragment
+    for v in variants:
+        remainder = remainder.replace(v["raw"], "")
+    return variants, remainder
+
+
+# --- state axes -------------------------------------------------------------
+#
+# An axis is a control the RAIL renders and the FRAGMENT interprets: which screen, which
+# connection state, which error. Orthogonal to variant — flipping variant must
+# not reset which screen is on show, because comparing one screen across two directions
+# is the entire job. Declared at the top level of the fragment (never inside a
+# <template data-variant>, which is not in the document until it is mounted):
+#
+#   <nav data-axis="screen" data-label="Screen">
+#     <button data-value="home">Home<em>the list</em></button>
+#     <button data-value="chat">Agent chat<em>ACP transcript</em></button>
+#   </nav>
+#
+# Clicking one dispatches window 'at:axis' with {axis, value, index, label}. See
+# CONTRACT.md for the listener boilerplate.
+
+AXIS_RE = re.compile(
+    r"<nav\b(?P<attrs>[^>]*\bdata-axis\s*=[^>]*)>(?P<body>.*?)</nav\s*>",
+    re.DOTALL | re.IGNORECASE,
+)
+OPTION_RE = re.compile(
+    r"<button\b(?P<attrs>[^>]*)>(?P<body>.*?)</button\s*>", re.DOTALL | re.IGNORECASE
+)
+NOTE_RE = re.compile(
+    r"<aside\b[^>]*\bdata-rail-note\b[^>]*>(?P<body>.*?)</aside\s*>", re.DOTALL | re.IGNORECASE
+)
+
+
+def extract_axes(fragment):
+    """Pull top-level <nav data-axis="..."> blocks out. Returns (axes, remainder)."""
+    axes, raws = [], []
+    for m in AXIS_RE.finditer(fragment):
+        attrs = parse_attrs(m.group("attrs"))
+        key = attrs.get("data-axis", "").strip()
+        if not key:
+            continue
+        options = []
+        for o in OPTION_RE.finditer(m.group("body")):
+            oa = parse_attrs(o.group("attrs"))
+            value = oa.get("data-value", "").strip()
+            if not value:
+                die("axis %r has a <button> with no data-value" % key)
+            options.append({"value": value, "body": o.group("body").strip()})
+        if not options:
+            die("axis %r declares no <button data-value=...> options" % key)
+        axes.append({"key": key, "label": attrs.get("data-label") or key.title(),
+                     "options": options})
+        raws.append(m.group(0))
+    remainder = fragment
+    for raw in raws:
+        remainder = remainder.replace(raw, "")
+    return axes, remainder
+
+
+def extract_rail_note(fragment):
+    """Pull an optional <aside data-rail-note> — the scope line pinned under the rail."""
+    m = NOTE_RE.search(fragment)
+    if not m:
+        return "", fragment
+    return m.group("body").strip(), fragment.replace(m.group(0), "")
+
+
+# --- assembly ---------------------------------------------------------------
+
+def build_axis_groups(axes):
+    """One group per state axis the fragment declares."""
+    parts = []
+    for a in axes:
+        rows = ['<div class="at-rail-group at-rail-axis" data-axis="%s">'
+                % html.escape(a["key"], quote=True),
+                '  <div class="at-rail-label">%s'
+                '</div>' % html.escape(a["label"])]
+        for i, o in enumerate(a["options"]):
+            active = " data-active" if i == 0 else ""
+            rows.append('  <button class="at-rail-item at-rail-opt" data-value="%s"%s>%s</button>'
+                        % (html.escape(o["value"], quote=True), active, o["body"]))
+        rows.append("</div>")
+        rows.append("<!--/at:axis-->")
+        parts.append("\n".join(rows))
+    return "\n".join(parts)
+
+
+def build_rail(variants, axis_html, note, title, subtitle):
+    """The control rail: one column holding every "what am I looking at" question.
+
+    Round, variant, each state axis, and (added at runtime by viewport.js) device. They
+    were three separate surfaces — a bottom pill, a corner ticker, a floating size bar —
+    which gave a once-a-session choice the same weight as a constant one and left
+    nowhere at all for a state axis. One column, ordered coarse to fine.
+    """
+    has_motion = any(v["motion"] for v in variants)
+
+    parts = ['<nav class="at-rail" aria-label="Prototype controls">',
+             '  <div class="at-rail-head">',
+             '    <div class="at-rail-titlebar">',
+             '      <div class="at-rail-title">%s</div>' % html.escape(title),
+             '    </div>']
+    if subtitle:
+        parts.append('    <div class="at-rail-sub">%s</div>' % html.escape(subtitle))
+    parts.append("  </div>")
+
+
+    # One variant group, and only when there is a choice to make. A single-variant
+    # prototype is one design, and a picker offering one option is a control that answers
+    # nothing.
+    if len(variants) > 1 or has_motion:
+        parts.append('  <div class="at-rail-group">')
+        replay = ('<button class="at-rail-replay" aria-label="Replay animation">&#8635;</button>'
+                  if has_motion else "")
+        parts.append('    <div class="at-rail-label">Variant%s</div>' % replay)
+        for i, v in enumerate(variants):
+            attrs = ' data-active aria-current="true"' if i == 0 else ""
+            parts.append('    <button class="at-rail-item at-rail-variant"%s>%s</button>'
+                         % (attrs, html.escape(v["name"])))
+        parts.append("  </div>")
+
+    if axis_html:
+        parts.append(axis_html)
+    if note:
+        parts.append('  <div class="at-rail-note">%s</div>' % note)
+    parts.append("</nav>")
+    return "\n".join(parts)
+
+
+def build_list_body(variants):
+    """List mode: each variant isolated, stacked, full size. Never thumbnails."""
+    out = []
+    for i, v in enumerate(variants):
+        axis = ('<span class="at-list-axis">%s</span>' % html.escape(v["caption"])) \
+            if v["caption"] else ""
+        out.append(
+            '<section class="at-list-item">\n'
+            '  <header class="at-list-head">'
+            '<span class="at-list-n">%d</span>'
+            '<span class="at-list-name">%s</span>%s</header>\n'
+            '  <div class="at-list-body">%s</div>\n'
+            '</section>' % (i + 1, html.escape(v["name"]), axis, v["body"])
+        )
+    return "\n".join(out)
+
+
+def cmd_build(args):
+    kind = args.kind
+    if kind not in KINDS:
+        die("unknown kind %r. Known kinds: %s" % (kind, ", ".join(sorted(KINDS))))
+
+    fragment_path = require_abs(args.fragment, "--fragment")
+    out_path = require_abs(args.out, "--out")
+    fragment = read(fragment_path)
+
+    if not fragment.strip():
+        die("fragment %s is empty — nothing to build" % fragment_path)
+
+    # Match on a real tag boundary — `<header>` must not trip the `<head>` check.
+    for pattern, shown, why in (
+        (r"<!doctype\b", "<!doctype", "the tool supplies the doctype"),
+        (r"<html[\s>]", "<html>", "the tool supplies <html>"),
+        (r"<head[\s>]", "<head>", "the tool supplies <head>"),
+        (r"<body[\s>]", "<body>", "the tool supplies <body>"),
+    ):
+        if re.search(pattern, fragment, re.IGNORECASE):
+            die("fragment contains %s — %s. Write body content only (see CONTRACT.md)."
+                % (shown, why))
+
+    net = re.search(r"""<link\b[^>]*\bhref\s*=|@import\s+url\(|src\s*=\s*["']https?:""",
+                    fragment, re.IGNORECASE)
+    if net:
+        die("fragment makes a network request (%r). Folios are hermetic: inline the CSS, "
+            "embed rasters as data: URIs, and never link a webfont." % net.group(0).strip())
+
+    widgets = resolve_widgets(kind, set(split_list(args.with_)), set(split_list(args.without)))
+
+    stamped = 0
+    if any(w.stamp for w in widgets.values()):
+        fragment, stamped = stamp_sources(fragment, os.path.basename(fragment_path))
+
+    build_id = hashlib.sha1(("%s\n%s" % (kind, fragment)).encode("utf-8")).hexdigest()[:12]
+    # A wall-clock stamp, not the content hash above: the question it answers is "am I
+    # looking at a stale file", and a hash cannot answer that. The rail prints it.
+    built_at = time.strftime("%Y-%m-%d %H:%M")
+
+    css = [read(os.path.join(KINDS_DIR, "_base.css")),
+           read(os.path.join(KINDS_DIR, kind + ".css"))]
+    scripts = []
+
+    picker_mode = args.picker
+    if picker_mode and kind not in PICKER_KINDS:
+        die("--picker is only meaningful for kind %s, not %r"
+            % ("/".join(sorted(PICKER_KINDS)), kind))
+    variants, remainder = extract_variants(fragment)
+
+    if kind in PICKER_KINDS and not picker_mode:
+        picker_mode = "switch" if variants else None
+
+    if picker_mode and not variants:
+        die("--picker %s was requested but the fragment has no <template data-variant=\"...\"> "
+            "blocks. See CONTRACT.md." % picker_mode)
+
+    root_attrs = ""
+
+    if picker_mode == "switch":
+        css.append(read(os.path.join(HARNESS_DIR, "rail.css")))
+        scripts.append(read(os.path.join(HARNESS_DIR, "rail.js")))
+        axes, remainder = extract_axes(remainder)
+        note, remainder = extract_rail_note(remainder)
+        axis_html = build_axis_groups(axes)
+        root_attrs += " data-at-rail"
+        # A build replaces the file. There is no merge with what was there before: one
+        # prototype is one design, and the earlier attempts belong in git, not stacked
+        # inside the artifact where they double its size and go stale.
+        body = "%s\n%s\n<main id=\"at-stage\"></main>\n%s" % (
+            build_rail(variants, axis_html, note, args.title, args.subtitle),
+            remainder.strip(),
+            "\n".join(v["raw"] for v in variants),
+        )
+    elif picker_mode == "list":
+        body = "%s\n<main>\n%s\n</main>" % (remainder.strip(), build_list_body(variants))
+    else:
+        body = fragment.strip()
+        if "<main" not in body.lower():
+            body = "<main>\n%s\n</main>" % body
+
+    if args.extra_css:
+        css.append(read(require_abs(args.extra_css, "--extra-css")))
+
+    # One palette for every piece of harness chrome. Inlined before any widget stylesheet
+    # so rail, panel and device frames consume the same tokens instead of each carrying
+    # its own hardcoded greys.
+    if widgets or kind == "prototype":
+        css.append(read(os.path.join(HARNESS_DIR, "chrome.css")))
+        # Every floating harness button is draggable and edge-snapping; the helper has to
+        # exist before any widget registers one, so it loads with the shared palette.
+        scripts.append(read(os.path.join(HARNESS_DIR, "dock.js")))
+
+    for name, w in widgets.items():
+        if w.css:
+            css.append(read(os.path.join(HARNESS_DIR, w.css)))
+        if w.html:
+            body = w.html + "\n" + body
+        if w.js:
+            scripts.append(read(os.path.join(HARNESS_DIR, w.js)))
+
+    if "viewport" in widgets:
+        device = (args.device or "").strip()
+        if not device:
+            die("--device is required: name the one device this prototype is for "
+                "(%s). A platform is an interaction model, not a width, so a design "
+                "that ships on two of them is two prototypes."
+                % ", ".join(DEVICES))
+        if device not in DEVICES:
+            die("unknown device %r. Known devices: %s" % (device, ", ".join(DEVICES)))
+        root_attrs += ' data-at-device-frame="%s"' % html.escape(device, quote=True)
+        window_parts = split_list(args.window)
+        unknown = [w for w in window_parts if w not in WINDOW_PARTS]
+        if unknown:
+            die("unknown --window part %s. Known parts: %s"
+                % (", ".join(unknown), ", ".join(WINDOW_PARTS)))
+        if window_parts and device != "desktop":
+            die("--window only applies to the desktop frame, and --device is %r" % device)
+        if window_parts:
+            root_attrs += ' data-at-window="%s"' % html.escape(
+                ",".join(window_parts), quote=True)
+    elif args.device:
+        die("--device needs the viewport widget: it is on for prototype, and elsewhere "
+            "you turn it on with --with viewport")
+    elif args.window:
+        die("--window needs the viewport widget and --device desktop")
+
+    doc = [
+        "<!DOCTYPE html>",
+        '<html lang="%s" data-at-kind="%s"%s>' % (html.escape(args.lang), kind, root_attrs),
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        '<meta name="generator" content="spike/%s">' % kind,
+        # Read by annotate.js: the build a comment was made against, the file to edit in
+        # response to it, and the file to rebuild.
+        '<meta name="folio-build" content="%s">' % build_id,
+        '<meta name="folio-built" content="%s">' % built_at,
+        '<meta name="folio-fragment" content="%s">' % html.escape(fragment_path, quote=True),
+        '<meta name="folio-out" content="%s">' % html.escape(out_path, quote=True),
+        "<title>%s</title>" % html.escape(args.title),
+        "<style>",
+        "\n".join(c.strip() for c in css),
+        "</style>",
+        "</head>",
+        "<body>",
+        body,
+    ]
+    if scripts:
+        doc.append("<script>")
+        doc.append("\n".join(s.strip() for s in scripts))
+        doc.append("</script>")
+    doc += ["</body>", "</html>", ""]
+
+    out_dir = os.path.dirname(out_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(doc))
+
+    size = os.path.getsize(out_path)
+    detail = "kind=%s" % kind
+    if picker_mode:
+        detail += ", picker=%s, variants=%d" % (picker_mode, len(variants))
+    if widgets:
+        detail += ", widgets=%s" % "+".join(widgets)
+    if stamped:
+        detail += ", stamped=%d" % stamped
+    print("%s  (%s, %.1f KB)" % (out_path, detail, size / 1024.0))
+    print("Screenshot it and look at it before handing it over.", file=sys.stderr)
+
+
+def cmd_kinds(_args):
+    width = max(len(k) for k in KINDS)
+    for k in sorted(KINDS):
+        print("%-*s  %s" % (width, k, KINDS[k]))
+    print()
+    print("--picker switch|list applies to: %s" % ", ".join(sorted(PICKER_KINDS)))
+    print()
+    print("Widgets (--with NAME turns one on anywhere, --without NAME turns one off):")
+    wwidth = max(len(w) for w in WIDGETS)
+    for name, w in WIDGETS.items():
+        if w.kinds == ALL_KINDS:
+            on = "all kinds"
+        elif not w.kinds:
+            on = "no kinds — opt in per spike with --with %s" % name
+        else:
+            on = ", ".join(sorted(w.kinds))
+        print("  %-*s  %s" % (wwidth, name, w.desc))
+        print("  %-*s  default: %s" % (wwidth, "", on))
+    print()
+    print("Devices (--device D — exactly one, required whenever the viewport widget is on):")
+    dwidth = max(len(d) for d in DEVICES)
+    for name, desc in DEVICES.items():
+        print("  %-*s  %s" % (dwidth, name, desc))
+    print()
+    print("Fragment contract: %s" % CONTRACT_PATH)
+
+
+def cmd_serve(args):
+    path = require_abs(args.path, "path")
+    directory = path if os.path.isdir(path) else os.path.dirname(path)
+    print("Serving %s on http://127.0.0.1:%d — Ctrl-C to stop." % (directory, args.port))
+    if not os.path.isdir(path):
+        print("  http://127.0.0.1:%d/%s" % (args.port, os.path.basename(path)))
+    os.execvp("python3", ["python3", "-m", "http.server", str(args.port),
+                          "--bind", "127.0.0.1", "--directory", directory])
+
+
+def main():
+    p = argparse.ArgumentParser(prog="spike", description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    b = sub.add_parser("build", help="assemble a hermetic HTML file from a body fragment")
+    b.add_argument("--kind", required=True, choices=sorted(KINDS))
+    b.add_argument("--title", required=True)
+    b.add_argument("--fragment", required=True, help="absolute path to the body fragment")
+    b.add_argument("--out", required=True, help="absolute path to write")
+    b.add_argument("--picker", choices=["switch", "list"])
+    b.add_argument("--subtitle", default="",
+                   help="one line under the rail title: what this prototype is deciding")
+    b.add_argument("--device", metavar="D", choices=sorted(DEVICES),
+                   help="the one device this prototype is for (see `spike kinds`). "
+                        "Required wherever the viewport widget is on")
+    b.add_argument("--window", metavar="bar,lights",
+                   help="window chrome for the desktop frame. Default is neither: a "
+                        "design that owns its own top area should not get a generic "
+                        "macOS title bar stapled over it")
+    b.add_argument("--lang", default="en")
+    b.add_argument("--extra-css", help="absolute path to additional CSS appended last")
+    b.add_argument("--with", dest="with_", metavar="W1,W2",
+                   help="harness widgets to add regardless of kind (see `spike kinds`)")
+    b.add_argument("--without", metavar="W1,W2",
+                   help="harness widgets to leave out")
+    b.set_defaults(func=cmd_build)
+
+    k = sub.add_parser("kinds", help="list the kinds and what each is for")
+    k.set_defaults(func=cmd_kinds)
+
+    s = sub.add_parser("serve", help="contingency static server (python3 http.server)")
+    s.add_argument("path")
+    s.add_argument("--port", type=int, default=8000)
+    s.set_defaults(func=cmd_serve)
+
+    args = p.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()

@@ -128,7 +128,7 @@ The ranking input is leverage and dependency order — what a change unblocks, w
 
 1. **Write the HTML report** per [HTML-REPORT.md](HTML-REPORT.md) — one `<section>` per aspect, one card per surviving finding, the Top recommendation section, and the coverage line. Title it "Improvement survey — {repo name}".
 
-   **⛔ Resolve `<root>` to an ABSOLUTE path** — run `git rev-parse --show-toplevel` in its own Bash call. Every `mkdir` / `Write` / `open` / printed path is the absolute `/private/tmp/claude/<repo-slug>/explainers/…` (the report renders through `explain`, so it lands in that skill's store). If a path doesn't start with `/`, that's the bug. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
+   **⛔ Resolve `<root>` to an ABSOLUTE path** — run `git rev-parse --show-toplevel` in its own Bash call. Every `mkdir` / `Write` / `open` / printed path is the absolute `/private/tmp/claude/<repo-slug>/reports/…`, built with `skills/improve/tool/report`. If a path doesn't start with `/`, that's the bug. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
 2. **Screenshot it and look at it** before handing it over. A path is not verification.
 3. **Summarize inline** — per aspect: finding count and the top finding's title, so the user can react without opening the file. Name any aspect that returned not-applicable and any sub-agent that died. A missing aspect reads as a clean bill of health for that aspect.
 4. **Do not ask what to work on.** The report is a reading surface, not a menu; the next step is Phase 08 for every route. The only thing to ask here is whether any card is wrong, and the answer changes the ticket, not the plan.

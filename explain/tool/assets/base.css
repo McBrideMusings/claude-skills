@@ -1,0 +1,97 @@
+:root{
+  --ground:#F7F8FC; --band:#E7EAF6; --well:#DDE2F2;
+  --ink:#111111; --soft:#5F6272; --red:#C42A1C; --rule:#111111;
+}
+*{box-sizing:border-box}
+html,body{background:var(--ground)}
+body{margin:0;color:var(--ink);
+     font-family:Helvetica,Arial,sans-serif;font-size:17px;line-height:1.5}
+code,pre,kbd{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+
+h1,h2,h3{font-family:Georgia,serif;font-weight:400}
+
+.hero{background:var(--band);border-bottom:1.5px solid var(--rule);padding:56px 24px 44px}
+.hero .in{max-width:780px;margin:0 auto}
+.hero h1{font-size:34px;line-height:1.25;margin:0 0 14px}
+.lede{margin:0;max-width:60ch}
+.lede b{color:var(--red);font-weight:inherit}
+
+main{max-width:780px;margin:0 auto;padding:44px 24px 80px}
+.core{margin:0 0 30px;max-width:58ch}
+
+/* one panel = one action. never split a panel's content across two ideas. */
+.panel{background:#fff;border:1.5px solid var(--rule);border-radius:4px;
+       padding:26px 26px 22px;margin:0 0 26px}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+         color:var(--red);margin:0 0 8px;font-weight:inherit;font-family:Helvetica,Arial,sans-serif}
+.panel h2{font-size:23px;line-height:1.3;margin:0 0 6px}
+.scene{width:100%;height:auto;display:block;background:var(--well);border-radius:4px;margin-top:16px}
+.cap{margin:16px 0 0;color:var(--soft);font-size:15px;max-width:56ch}
+.cap b{color:var(--ink);font-weight:inherit}
+
+/* the grounding pill — one per concrete code claim, sits under the panel title */
+.cite{display:inline-block;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12px;
+      color:var(--red);border:1px solid var(--red);border-radius:3px;padding:1px 6px;margin:0 0 4px}
+
+/* depth reveal — closed by default; the panel above must read fine without it. no JS. */
+details.deeper{margin:18px 0 0;border-top:1px solid #D6D9E6;padding-top:14px}
+details.deeper summary{cursor:pointer;font-size:13px;letter-spacing:.06em;
+                        text-transform:uppercase;color:var(--soft)}
+details.deeper summary::marker{color:var(--red)}
+details.deeper > *{max-width:60ch}
+pre.code{background:var(--well);border:1px solid #C9CEE2;border-radius:4px;padding:14px 16px;
+         font-size:13px;line-height:1.6;overflow-x:auto;margin:12px 0 0}
+pre.code .hl{color:var(--red)}
+pre.code .com{color:var(--soft)}
+
+/* a failure or gotcha — marked by a dashed border + label, never by a second hue */
+.gotcha{border:1.5px dashed var(--rule);border-radius:4px;padding:18px 20px;
+        margin:0 0 26px;background:#fff}
+.gotcha .eyebrow{color:var(--ink)}
+.gotcha p{margin:0;max-width:58ch}
+
+.close{border-top:1.5px solid var(--rule);margin-top:38px;padding-top:22px;
+       font-family:Georgia,serif;font-size:20px;line-height:1.4;max-width:52ch}
+
+/* Comparison / Decision sections — dropped into a Walk, not a shape of their own */
+.compare-table{width:100%;border-collapse:collapse;margin:0 0 26px;font-size:15px}
+.compare-table caption{caption-side:top;text-align:left;color:var(--soft);font-size:13px;
+                        letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
+.compare-table th,.compare-table td{text-align:left;padding:10px 14px;vertical-align:top}
+.compare-table thead th{border-bottom:1.5px solid var(--rule);font-weight:700}
+.compare-table tbody td{border-bottom:1px solid #D6D9E6}
+.compare-table tbody tr:last-child td{border-bottom:1.5px solid var(--rule)}
+.compare-table td b,.compare-table td strong{color:var(--red);font-weight:inherit}
+
+.scroll-x{overflow-x:auto}
+
+/* small bordered card — per-module summary in a Map, or any compact aside */
+.card{background:#fff;border:1.5px solid var(--rule);border-radius:4px;
+      padding:16px 18px;margin:0 0 14px}
+.card h3{font-size:17px;margin:0 0 4px;font-family:Helvetica,Arial,sans-serif;font-weight:700}
+.card p{margin:6px 0 0;color:var(--soft);font-size:14px;max-width:56ch}
+
+.legend{display:flex;flex-wrap:wrap;gap:18px;margin:14px 0 0;font-size:13px;color:var(--soft)}
+.legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;
+             margin-right:6px;vertical-align:middle;background:var(--ink)}
+.legend .dot--hot{background:var(--red)}
+
+/* the shared cast — SVG rendering rules */
+svg text{font-family:Helvetica,Arial,sans-serif;font-size:11px;fill:var(--ink)}
+svg .lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;fill:var(--soft)}
+svg .mono{font-family:ui-monospace,Menlo,monospace;font-size:11px}
+svg .accent{fill:var(--red)}
+svg .accent-stroke{stroke:var(--red)}
+svg .arrow{stroke:var(--ink);stroke-width:1.5;fill:none;marker-end:url(#a)}
+svg .arrow.hot{stroke:var(--red);marker-end:url(#ah)}
+svg .arrow.no{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:5 4;marker-end:url(#a)}
+svg .box{fill:#fff;stroke:var(--ink);stroke-width:1.5}
+
+/* Map archetype — boxes and connections in space, drawn once, not per-step */
+.mapnode{fill:#fff;stroke:var(--ink);stroke-width:1.5}
+.mapnode--hot{stroke:var(--red)}
+.mapedge{stroke:var(--ink);stroke-width:1.5;fill:none;marker-end:url(#a)}
+.mapedge--hot{stroke:var(--red);marker-end:url(#ah)}
+.mapedge--dashed{stroke-dasharray:5 4}
+.maplabel{font-size:11px;fill:var(--ink);font-family:Helvetica,Arial,sans-serif}
+.maplabel--lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;fill:var(--soft)}

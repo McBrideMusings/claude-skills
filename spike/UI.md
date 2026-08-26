@@ -8,7 +8,7 @@ If the question is logic/state → [LOGIC.md](LOGIC.md). If it's "which technica
 expensive — that's `gui` sketch mode (ASCII in chat).
 
 Adapted from emilkowalski/skills `prototype` (MIT, © 2026 Emil Kowalski); the selection spec now lives
-as real code in `../_folios/harness/rail.css` and `rail.js`, and the tool wires it — you never
+as real code in `tool/harness/rail.css` and `rail.js`, and the tool wires it — you never
 write it.
 
 ## When this is the right shape
@@ -28,8 +28,8 @@ something you can look at, and the winning direction gets rewritten in the proje
 promotion anyway.
 
 You write a **body fragment** — one `<template data-variant>` per direction, plus a `<style>` block
-carrying the project's tokens. `~/.claude/tools/spike` assembles the file. Read
-`../_folios/CONTRACT.md` for the fragment rules; the `prototype` kind ships **no palette of its own**
+carrying the project's tokens. `~/.claude/skills/spike/tool/spike` assembles the file. Read
+[`CONTRACT.md`](CONTRACT.md) for the fragment rules; the `prototype` kind ships **no palette of its own**
 precisely so nothing competes with the design being judged.
 
 Make it look native to the product without importing anything from it:
@@ -114,7 +114,7 @@ Write the fragment to `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.body
 error, which empty case) and a top-level `<script>` listening for `at:axis`. Then:
 
 ```bash
-"$HOME/.claude/tools/spike" build \
+"$HOME/.claude/skills/spike/tool/spike" build \
   --kind prototype --picker switch \
   --title "Wheelhouse Phone" --subtitle "<the question this answers>" \
   --device phone \
@@ -134,7 +134,7 @@ viewport, so the fragment's media queries actually fire, with the status bar / w
 the harness), the comment button, and the rail's Checks group, whose Contrast row reveals any text
 failing WCAG AA. Tell the user the comment button exists when handing the prototype over — a comment
 pinned to an element comes back naming the fragment line that produced it, which is the fastest
-revision loop available. See `../_folios/CONTRACT.md` for how the comments come back.
+revision loop available. See [`CONTRACT.md`](CONTRACT.md) for how the comments come back.
 
 **Screen size is the frame's job, never a variant's**, and a different *platform* is a different
 prototype. A "Phone" variant next to a "Desktop" variant spends two slots on something that is not a
@@ -165,7 +165,7 @@ buttons.
 Declare each state dimension as its own `<nav data-axis>`; the rail renders a group and dispatches
 `at:axis`, and axis state survives a variant switch on purpose, so `←`/`→` compares the same screen in
 the same state across two directions. Full syntax and the listener boilerplate:
-[`../_folios/CONTRACT.md`](../_folios/CONTRACT.md).
+[`CONTRACT.md`](CONTRACT.md).
 
 ### The device — decide it here, once
 

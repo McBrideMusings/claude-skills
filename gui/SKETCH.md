@@ -109,7 +109,7 @@ which owns every fidelity above ASCII — `wireframe` (greybox, colour withheld)
 different build: read [`../spike/SKILL.md`](../spike/SKILL.md), then build the greybox:
 
 ```bash
-"$HOME/.claude/tools/spike" build \
+"$HOME/.claude/skills/spike/tool/spike" build \
   --kind wireframe \
   --title "<what's being laid out>" \
   --fragment /private/tmp/claude/<repo-slug>/spikes/<slug>.body.html \
@@ -121,7 +121,7 @@ layout question turns into a style conversation — that jump is a decision the 
 not one that happens because the tool offered it.
 
 Class vocabulary — `.wf-region`, `.wf-label`, `.wf-ph`, `.wf-text`, `.wf-control`, `.wf-note`,
-`.wf-grid` — is in `../_folios/CONTRACT.md`.
+`.wf-grid` — is in [`../spike/CONTRACT.md`](../spike/CONTRACT.md).
 
 **It stays a sketch.** The `wireframe` kind withholds colour deliberately: no brand palette, no
 imagery, no type personality. The moment a wireframe looks designed, the feedback you get is about the
