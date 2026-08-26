@@ -50,7 +50,7 @@ invents a bare one.
 ## Pull requests are always GitHub
 
 Beads has no pull-request concept. Anything touching a PR — `review`'s PR queue and
-`PR-COMMENTS.md`, `wrap-up`'s landing phase, `summary`'s branch read — keeps using `gh pr …`
+`unblock`'s FEEDBACK.md, `wrap-up`'s landing phase, `summary`'s branch read — keeps using `gh pr …`
 unchanged regardless of which issue backend resolved. Only *issues* route through this axis.
 
 ## Adding a backend

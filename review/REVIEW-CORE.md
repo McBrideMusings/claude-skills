@@ -2,12 +2,12 @@
 
 The review engine — what runs against a **single target** (a working tree, a branch, or one PR). It produces scored, axis-tagged findings plus a report body. It does **not** decide what to do with them; the caller wraps it:
 
-- **`review` self-review / teammate PR** — writes the report, then offers a fix pass or a post (see [SKILL.md](SKILL.md) End-of-pass).
-- **`review` queue mode** — runs this once per selected PR.
+- **`review` self-review / teammate PR** — writes the report, then offers a fix pass or a post (see [POSTING.md](POSTING.md)).
+- **`review` sweep mode** — runs this once per PR, in that PR's own worktree and session.
 - **`wrap-up` Phase 4** — runs this over the session diff, then auto-fixes 75+ findings and routes architecture findings to follow-ups.
 - **`implement` validate** — runs this in plain mode over the implementer's diff, no offers, no posting.
 
-**RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, no matter which caller above entered the review. Full statement in [SKILL.md](SKILL.md) RULE 0 — it binds here identically.
+**RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, no matter which caller above entered the review. Full statement in [RULES.md](RULES.md) — it binds here identically, along with RULE 1.
 
 ## Modes
 
@@ -32,46 +32,20 @@ Findings are produced without a fix (Phase 04), scored by reading (Phase 05), **
 
 **Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched ten parallel sub-agents.
 
-### Phase 01a — Confirm the checkout is at the branch head
+### Phase 01a — Assert the checkout is at the branch head
 
-**Mandatory whenever the target is a branch or a PR — never skipped, never assumed.** Run this before computing any diff and before launching a single sub-agent.
+**[../unblock/SKILL.md](../unblock/SKILL.md) Phase U1 owns this** — it fetches, detects the five divergence states, repairs the safe ones, and stops on local-only work. [SKILL.md](SKILL.md) Phase 00.1 runs it before any lens is launched. This phase only asserts the result.
 
-A checkout is not proof of currency. A worktree left over from an earlier session, a branch the author force-pushed or rebased since you last fetched, a PR head that moved after you were assigned — each leaves a local `HEAD` that looks perfectly healthy while pointing at code that no longer exists upstream. Every lens then reviews the stale tree and reports findings about lines the author already changed. That failure is **silent and total**: the report reads normally, the file:line citations resolve locally, and nothing in the output hints that the whole pass is void. It is worse than no review, because it hands back confident findings that are wrong.
+Why it matters enough to assert twice: a checkout is not proof of currency. A worktree left over from an earlier session, a branch the author force-pushed or rebased since you last fetched, a PR head that moved after you were assigned — each leaves a local `HEAD` that looks perfectly healthy while pointing at code that no longer exists upstream. Every lens then reviews the stale tree and reports findings about lines the author already changed. That failure is **silent and total**: the report reads normally, the file:line citations resolve locally, and nothing in the output hints that the whole pass is void.
 
-Skip only for the **uncommitted changes** mode (the target is the working tree, so there is no remote to be behind) or when the repo has no remote at all. In every other mode, verify:
-
-```
-branch=$(git branch --show-current)
-git fetch origin "$branch"
-git rev-list --left-right --count HEAD...FETCH_HEAD
-```
-
-Both counts must be `0`. **When a PR is the target, the authoritative head is the PR's own head commit, not just `origin/<branch>`** — compare against it directly:
+Skip for the **uncommitted changes** mode (the target is the working tree, so there is nothing to be behind) and when the repo has no remote. Otherwise, one check:
 
 ```
-gh pr view <n> --json headRefOid --jq .headRefOid
 git rev-parse HEAD
+gh pr view <n> --json headRefOid --jq .headRefOid       # or: git rev-parse '@{u}'
 ```
 
-**If HEAD is not the head, sync automatically when it's safe, ask when it isn't.** The only real risk is discarding a local commit that exists nowhere else — judge the response on that, not on convenience:
-
-- **Ahead-count is `0`** (the left number in `git rev-list --left-right --count HEAD...FETCH_HEAD`) — every commit the worktree is missing is already public on the remote/PR head, so no local work is at risk. **Sync without asking**: `git reset --hard <authoritative-head-sha>` (use `git checkout <head-sha>` instead when the branch ref itself shouldn't move — e.g. a teammate's branch you don't own). Then state one line so the sync is visible, not silent: old HEAD sha → new HEAD sha, and the commits just pulled in (`git log --oneline <old-head>..<new-head>`, titles only). Continue straight into the review.
-- **Ahead-count is nonzero** — local commits exist that the remote doesn't have; resetting would discard them. Stop. Do not review, do not launch Phase 04, do not report partial findings. Print:
-  - local `HEAD` sha and the authoritative head sha,
-  - the ahead/behind counts,
-  - the commits missing locally — `git log --oneline HEAD..FETCH_HEAD` — because a commit titled like a fix for the last review is the single most load-bearing thing the user needs to see,
-  - whether the "ahead" commits are genuinely local work or pre-rebase duplicates of remote commits (compare messages) — this decides whether moving is lossy.
-
-  Then offer, as **plain chat text with typed keywords** (RULE 0 — no selector), the ways to move the worktree onto the real head, each with what it costs:
-
-  ```
-  `reset` — git reset --hard origin/<branch> (discards local commits; say which, and whether their content survives on the remote)
-  `detach` — git checkout <head-sha> (branch ref untouched, fully reversible; use when local commits must survive)
-  ```
-
-  Moving the user's worktree here is a git state change that would destroy local-only work, so it waits on an **explicit yes in that message** — never move it unilaterally. On a clean pass through this phase (counts already both `0`), say nothing and continue.
-
-**Never work around a stale checkout by reviewing the remote diff alone** (`gh pr diff` into a prompt, a raw `git diff` against `FETCH_HEAD`) while the working tree still holds old files. The lenses read files, not just the diff — a diff-only patch leaves every sub-agent reading the stale tree, which is the exact failure this phase exists to prevent.
+Equal → continue, say nothing. **Not equal → `unblock` did not run, or ran and left the branch diverged. Stop and say which.** Do not repair it here; do not review around it.
 
 ### Phase 01r — Repo mode
 
@@ -92,7 +66,7 @@ Reached only via explicit `review repo` or an accepted offer above. The target i
 
 **Repo mode also adds two things a diff review doesn't need — both scoped to repo mode only:**
 
-- **Dependency ordering.** A whole-codebase audit is a backlog to sequence, not a merge gate, so repo mode replaces the default severity-then-path order with **confidence-weighted impact, dependency-first**: a finding that other findings sit on top of (a structural condition several symptoms share, a contract others depend on) comes before the things it enables, and everything else falls in impact order. Forward *"note which other findings this one blocks or is blocked by, and whether it can proceed independently"* into each Phase 04 sub-agent, and carry a **Blocks / Independent** field on every finding — independent ones are the parallelizable set, so mark them as such. **Never rank by effort** — no S/M/L buckets, no hours, no `impact ÷ effort` (RULE 1 in [SKILL.md](SKILL.md) binds here too): ordering says what to do *first*, never what to skip, and an expensive fix outranks a cheap one whenever more depends on it. Diff mode ignores this entirely (severity-then-path stays).
+- **Dependency ordering.** A whole-codebase audit is a backlog to sequence, not a merge gate, so repo mode replaces the default severity-then-path order with **confidence-weighted impact, dependency-first**: a finding that other findings sit on top of (a structural condition several symptoms share, a contract others depend on) comes before the things it enables, and everything else falls in impact order. Forward *"note which other findings this one blocks or is blocked by, and whether it can proceed independently"* into each Phase 04 sub-agent, and carry a **Blocks / Independent** field on every finding — independent ones are the parallelizable set, so mark them as such. **Never rank by effort** — no S/M/L buckets, no hours, no `impact ÷ effort` (RULE 1 in [RULES.md](RULES.md) binds here too): ordering says what to do *first*, never what to skip, and an expensive fix outranks a cheap one whenever more depends on it. Diff mode ignores this entirely (severity-then-path stays).
 - **Considered-and-rejected ledger.** Because repo mode re-runs over the same codebase, persist deliberate rejections so a later run doesn't re-audit settled ground. The ledger lives at `<repo-root>/.claude/review-rejected.md` — **not** under `/private/tmp`, which deletes anything untouched for three days, and this ledger has to survive between runs weeks apart. Resolve `<repo-root>` absolute via `git rev-parse --show-toplevel`; append-only. *Before* Phase 05, read it if present and drop any incoming finding already listed (match on file + one-line description). *After* the report, append the findings this run deliberately rejected (not every sub-75 drop — only the ones a future run would otherwise re-surface), one line each with the rationale. The rationale must be one of RULE 1's three reasons — **by design / correct as-is**, **divergent work (name the other concern)**, or **blocked on a decision** — never "not worth doing"; a finding rejected for size is not rejected, it is unfinished, and it stays out of the ledger. Diff mode never reads or writes this ledger.
 
 ### Phase 02 — Find CLAUDE.md Context
@@ -291,7 +265,7 @@ One **Sonnet** sub-agent for the whole surviving set (one agent per finding only
 
 - **Fix** — the minimal remediation, naming the specific guard, signature change, replaced API, or removed line in backticks. State the post-condition the fix restores, and where the intent table names that postcondition, quote it — the fix is then checkable against the contract the author stated rather than against the fix author's taste.
 - **Test** — the case that would have caught it, using the Bites input as its input.
-- **Scope** — `in place` or `needs a broader change`, one clause on why. Never an effort estimate, a size bucket, or an hours figure — RULE 1 in [SKILL.md](SKILL.md) binds here.
+- **Scope** — `in place` or `needs a broader change`, one clause on why. Never an effort estimate, a size bucket, or an hours figure — RULE 1 in [RULES.md](RULES.md) binds here.
 
 Rules that bind the fix author:
 
@@ -340,7 +314,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 Execution gate: 6 qualifying · 3 reproduced · 2 not-reproduced (dropped) · 1 not-executable (input needs a live database) · repro scripts + `bun run test`, 41s baseline
 ```
 
-- **Branch state** — a third line whenever any [SKILL.md](SKILL.md) Phase 00.1 gate fired and the user answered `review anyway`. Name what the review was run against, so nobody reads the findings as applying to a merged, green branch when they don't. Omit the line entirely when every gate passed.
+- **Branch state** — a third line whenever [../unblock/SKILL.md](../unblock/SKILL.md) left something unfinished: a test still red, a conflict hunk still open, a feedback point still waiting on the user. Name what the review was run against, so nobody reads the findings as applying to a merged, green branch when they don't. Omit the line entirely when `unblock` returned clean or did not need to run.
 
 ```
 Branch state: 12 commits behind origin/main (not merged) · 2 checks red (check-cloudflare-test (3), check-devvit-test) — reviewed anyway at user's request

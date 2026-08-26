@@ -1,19 +1,18 @@
-# Review — PR comments branch
+# Unblock — feedback
 
-Auto-entered from [SKILL.md](SKILL.md) Phase 00 when the current branch has an **open PR that is mine** (author or assignee) carrying **unaddressed reviewer feedback in any shape** — an unresolved inline thread, a formal review whose substance sits in the review **body** (zero inline threads), or a plain conversation comment with nothing pushed since (see SKILL.md step 3's *commits-pushed-after* heuristic). Work through every feedback point one by one: fetch → score → plan → (on approval) apply code fixes + write a local reply doc. Mutually exclusive with the self-review core — this branch runs *instead of* [REVIEW-CORE.md](REVIEW-CORE.md). **Never gate on inline-thread count alone** — a body-only review has zero threads and is the exact case that silently slipped through before.
+Loaded by [SKILL.md](SKILL.md) Phase U4 when the branch is mine and its open PR carries **unaddressed reviewer feedback in any shape** — an unresolved inline thread, a formal review whose substance sits in the review **body** (zero inline threads), or a plain conversation comment with nothing pushed since (see SKILL.md Phase U4's *commits-pushed-after* heuristic). Work through every feedback point: fetch → score → plan → apply code fixes + write a local reply doc. **Never gate on inline-thread count alone** — a body-only review has zero threads and is the exact case that silently slipped through before.
 
-**Never posts words to GitHub.** All reviewer replies are written to a local response document the user copy-pastes; thread resolution is the user's to do. The one action this branch may take on GitHub is re-requesting a formal reviewer once the fixes are pushed (Phase 08), and only on an explicit yes.
+**This file owns how a response to feedback is written, and that is its own formatting problem.** It is deliberately separate from [../review/POSTING.md](../review/POSTING.md), which formats findings you are handing *to* an author. Here you are answering a reviewer who already read your code: the shape, the caps, and the banned phrases are all different, and merging the two documents makes both worse.
 
-**RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, regardless of which skill entered the review. Full statement in [SKILL.md](SKILL.md) RULE 0 — it binds here identically.
+**Never posts words to GitHub.** All reviewer replies are written to a local response document the user copy-pastes; thread resolution is the user's to do. The one action this file may take on GitHub is re-requesting a formal reviewer once the fixes are pushed (Phase 08), and only on an explicit yes.
 
-## Phase 01 — Pre-flight (mandatory; abort if any check fails)
+**[RULES.md](../review/RULES.md) binds this file** — RULE 0 (no selector, ever), RULE 1 (effort never decides), RULE 2 (the gate does the job it names, it does not ask permission to). Load it if it is not already in context.
 
-Before touching GitHub, prove the local state is safe to act on. Stop and tell the user if any check fails — do not auto-fix.
+## Phase 01 — Pre-flight
 
-1. **Clean working tree**: `git status --porcelain` must be empty. If not, abort with the list of dirty files and tell the user to stash, commit, or discard.
-2. **Branch has a remote**: the current branch's upstream must resolve (`git rev-parse --abbrev-ref --symbolic-full-name origin/$(git branch --show-current)` or `git status -sb`). If none, abort — the PR flow needs a remote.
-3. **Branch matches origin**: `git fetch origin <branch>`, then compare `git rev-parse HEAD` vs `git rev-parse origin/<branch>`. They must be equal. If local is behind, ahead, or diverged, abort and tell the user (suggest `resolve-conflicts` or a push, but don't run them).
-4. **GitHub CLI auth**: `gh auth status` must succeed. If not, abort.
+**Phase U1 already fetched, proved the tree clean, and put the checkout at the branch head.** Do not re-run any of that; a second `git fetch` here is the shape of the duplication that made these two skills one skill.
+
+One check this file adds: `gh auth status` must succeed. If not, stop and say so.
 
 ## Phase 02 — Locate the PR
 
@@ -73,9 +72,9 @@ Read each non-author review body in full and enumerate its findings as separate 
 
 **(c) Top-level conversation comments** (not tied to a diff line): `gh pr view <pr_number> --json comments`. No "resolved" state, so treat each non-author comment as a feedback item. If unsure whether one is in-scope, ask the user — as a plain-chat question, never the `AskUserQuestion` tool / structured-question schema.
 
-**Guard — don't bounce a body-only review back to self-review.** Fall back to [REVIEW-CORE.md](REVIEW-CORE.md) **only** when **all three** sources are empty of non-author feedback (no unresolved thread, no non-author review body, no non-author comment). Zero *inline threads* alone is **not** grounds to fall back — that was the old bug. If (b) or (c) has content, stay here and triage it.
+**Guard — don't bounce a body-only review back out.** Return to [SKILL.md](SKILL.md) Phase U4 as "no feedback" **only** when **all three** sources are empty of non-author feedback (no unresolved thread, no non-author review body, no non-author comment). Zero *inline threads* alone is **not** grounds to bounce — that was the old bug. If (b) or (c) has content, stay here and triage it.
 
-**Reconcile mode — check each item against current HEAD.** When commits were pushed *after* the feedback landed (the ambiguous case from SKILL.md step 3), some items may already be fixed. For every feedback item, read the **current** code (Phase 04) before scoring: an item resolved by a post-feedback commit is classified `reply: already addressed in <sha>` (cite the commit and the current code), not re-implemented. Never assume "commits since ⇒ all handled" — verify each point; partial fixes are common.
+**Reconcile mode — check each item against current HEAD.** When commits were pushed *after* the feedback landed (the ambiguous case from Phase U4), some items may already be fixed. For every feedback item, read the **current** code (Phase 04) before scoring: an item resolved by a post-feedback commit is classified `reply: already addressed in <sha>` (cite the commit and the current code), not re-implemented. Never assume "commits since ⇒ all handled" — verify each point; partial fixes are common.
 
 ## Phase 04 — Read code context for each feedback item
 
@@ -99,22 +98,11 @@ For each thread, decide:
 
 ### Effort is BANNED as an input to score or action
 
-**Never decide to `reply` instead of `address` because the fix is large, hard, tedious, or spread across files.** This is the single most common failure of this phase: a wall of valid findings gets a uniform "deliberate / follow-up / not in this PR" because implementing them all looked like a lot of work. Sorting findings by effort and calling the expensive half "out of scope" is not triage — it is skipping the work, and the user will catch it.
+**[RULES.md](../review/RULES.md) RULE 1 is the full statement and it binds here.** Its three legitimate reasons to not fix something now — the code is correct as-is, the work is divergent, the fix is blocked on the user's intent — are the only three this phase may use, and each must be stated as itself.
 
-**Effort is not a real cost here.** The agent writes the fix; a change that reads as "an afternoon" in human terms is minutes of tool calls. Estimating in human-hours imports a cost model that does not apply to who is doing the work. So:
+**The specific failure this phase produces when RULE 1 slips:** a wall of valid findings gets a uniform "deliberate / follow-up / not in this PR" because implementing them all looked like a lot of work. Sorting findings by effort and calling the expensive half "out of scope" is not triage — it is skipping the work, and the user will catch it.
 
-- **Never state, imply, or reason from a time estimate** — no "quick", "an afternoon", "a big lift", "a few hours", "a one-liner vs a refactor" as *justification*. (Naming a fix's shape — "one attribute", "six lines" — as a *description* is fine; using it as the reason to skip is not.)
-- **Banned justifications**, in the plan and in the response document alike: "not worth it", "low value", "marginal", "an edge case", "too big for this PR", "I'd rather not fold this in", "follow-up" / "out of scope" when the only actual reason is size.
-
-**The three legitimate reasons to not fix something now** — each must be stated as itself, never as a stand-in for effort:
-
-1. **The code is correct as-is.** Say *why*, on the merits, citing the code: the predicate is already covered by an existing index; the exemption protects live work; the reviewer's claim is factually wrong (show it). This is a `reply` with evidence, not an opinion.
-2. **Divergent work** — the change is about a *different concern* than this PR, so it belongs in its own unit of work. Divergence is about subject matter, never magnitude. Divergent work is exactly what parallelizes: say so concretely — "own branch, can run alongside this" — so it reads as work being *routed*, not deferred. If you cannot name the different concern in one clause, it is not divergent; it is just large, and large is not a reason.
-3. **Blocked on a decision only the user can make** — the fix depends on intent you do not have. State the question. Do not guess and do not bury it.
-
-If a finding fits none of the three, its action is `address`. "It's a lot of work" is not a fourth reason.
-
-**Self-check before presenting the plan.** Count the `reply` actions. If most findings landed on `reply`, or if several `reply` items share a same-shaped justification, stop and re-score every one of them against the three reasons above. A reviewer who wrote ten findings usually found ten real things.
+**Self-check before presenting the plan.** Count the `reply` actions. If most findings landed on `reply`, or if several `reply` items share a same-shaped justification, stop and re-score every one of them against RULE 1's three reasons. A reviewer who wrote ten findings usually found ten real things.
 
 **Recommended action** — pick one:
 
@@ -131,7 +119,7 @@ If a thread has multiple comments (back-and-forth between reviewer and author), 
 
 Write a **single consolidated reply** the user copy-pastes as one PR comment. The reply is an ordered list where item N corresponds to issue N from the plan (Phase 07) — same numbering, same ordering.
 
-- Filename: `/private/tmp/claude/reviews/claude-pr-comments-<number>-<YYYY-MM-DD-HHMMSS>.md` using current local time. `mkdir -p /private/tmp/claude/reviews` first. No pruning needed — macOS deletes anything under `/private/tmp` untouched for three days.
+- Filename: `<dir>/pr-<number>-response-<YYYY-MM-DD-HHMMSS>.md`, where `<dir>` is whatever `~/.claude/tools/repo-slug --path` prints — it creates the directory too, so never `mkdir` a path of your own. No pruning needed; macOS deletes anything under `/private/tmp` untouched for three days.
 
 ### Budget — hard caps, not guidance
 
@@ -242,9 +230,21 @@ Thanks @alexthemighty — quick rundown:
 
 118 words to 52. Item 2 is the load-bearing change: the first version hedges twice, offers to reopen the argument, and cites nothing — three separate invitations to reply. The second states the position once and points at the line that settles it.
 
-## Phase 07 — Present the plan (plan mode)
+## Phase 07 — Print the plan, then apply it
 
-Build the plan body and call `ExitPlanMode` with it. Format:
+**Print the plan in chat and act on it. Do not call `ExitPlanMode` and do not wait for approval** — RULE 2: the gate already decided that unanswered feedback gets answered, and asking again is the halt this skill exists to remove. The plan is the record of what you are doing.
+
+**The one exception is an item whose action is blocked on the user's intent** (RULE 1's third reason). Those, and only those, are pulled out of the plan into a short list at the end with the question stated, and left undone while everything else lands:
+
+```
+1 item needs you:
+
+4. @alexthemighty wants cohort assignment to prefer the smallest cohort; the branch prefers the newest. Both are defensible and the choice is yours.
+
+The other 6 are applied and the response doc is written.
+```
+
+Format for the plan itself:
 
 ```
 # PR #<number> — <title>
@@ -277,13 +277,15 @@ Everything scored **below 50** is one table row, no block — the long tail is a
 
 ## Summary
 - address N · partial N · reply N · ignore N · N files touched
-- Response doc: /private/tmp/claude/reviews/claude-pr-comments-<number>-<timestamp>.md
+- Response doc: <repo-slug path>/pr-<number>-response-<timestamp>.md
 - Paste as ONE PR comment. Do not split per thread.
 ```
 
-The quoted reviewer sentence, the score rationale, and the plan sentence all stay for items scored 50+. Cutting those is how the effort-triage failure Phase 05 spends forty lines preventing gets back in — a plan that shows scores without their reasons cannot be argued with, so it gets approved by default.
+The quoted reviewer sentence, the score rationale, and the plan sentence all stay for items scored 50+. Cutting those is how RULE 1's effort-triage failure gets back in — a plan that shows scores without their reasons cannot be argued with, so nobody argues with it.
 
-On approval, apply the code changes for the `address` / `partial` items, commit under the rules below, then backfill the real short SHAs into the response document. The user handles all GitHub replies and thread resolution themselves.
+Then apply the code changes for the `address` / `partial` items, commit under the rules below, and backfill the real short SHAs into the response document. The user handles all GitHub replies and thread resolution themselves.
+
+**Commit, do not push.** The push is [SKILL.md](SKILL.md) Phase U5's single confirm, batched with whatever the conflicts and tests gates did.
 
 ### Commit messages for review fixes
 
@@ -368,9 +370,9 @@ gh pr view <pr_number> --json reviewRequests --jq '[.reviewRequests[].login]'
 ## Guardrails
 
 - **No GitHub writes except the Phase 08 re-request, and that one only on an explicit yes.** No `gh pr comment`, no `gh pr review`, no `gh api` mutations, no thread resolution — the reply is the user's to paste and the threads are theirs to resolve. The single exception is `gh pr edit --add-reviewer` in Phase 08, which posts no words of its own and only puts back a request the reviewer's own verdict replaced; it still needs a yes in the message, never prior or implied consent.
-- **No code edits before plan approval.** Edits happen after the user approves the plan — and only for `address` / `partial` items.
+- **Print the plan before editing, but do not wait on it.** The plan goes in chat first so the user can see what is about to change and interrupt; then the `address` / `partial` items are applied. Only items blocked on the user's intent wait.
 - **All replies go to the response document as one consolidated comment.** The user copy-pastes it as a single PR-level comment. Never offer to post for them, and never split into per-thread drafts unless the user explicitly asks.
-- **Don't manufacture feedback.** Fall back to the self-review core only when **all three** sources (inline threads, non-author review bodies, non-author conversation comments) are empty — never invent an item to triage. Zero inline threads alone is not emptiness if a review body or comment carries findings.
+- **Don't manufacture feedback.** Report "no feedback" back to Phase U4 only when **all three** sources (inline threads, non-author review bodies, non-author conversation comments) are empty — never invent an item to triage. Zero inline threads alone is not emptiness if a review body or comment carries findings.
 - **Cite the comment URL** for each thread in both the plan and the response document.
 - **Outdated ≠ ignore.** Outdated threads frequently still need a one-line reply so the reviewer knows you saw it — those get a `reply` action with a draft.
 - **Score on evidence.** Defend each score by quoting the comment or pointing at the file. Avoid scoring on vibes.
