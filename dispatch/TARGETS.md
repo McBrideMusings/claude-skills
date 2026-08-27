@@ -61,19 +61,44 @@ collision they did not agree to.
 Inside herdr that is `herdr worktree create --workspace <repo-workspace-id> --branch <name>`,
 then start the agent in the pane that comes back. Targeting `--workspace` is what keeps the
 worktree grouped under the repo in the sidebar instead of detaching to top level; never
-`herdr workspace create --cwd <worktree-path>`, and never a custom `--label`.
+`herdr workspace create --cwd <worktree-path>`, and never a custom `--label`. Checkouts land
+under `~/.worktrees/<repo>/<branch>` — `[worktrees] directory` in
+`~/.config/herdr/config.toml` — so no `--path` is needed.
 
-**The worktree lands its own work.** Tell it in the dispatch prompt: verify, build, merge
-into `main`, then report that the worktree is ready to retire. A worktree that finishes and
-then waits for the orchestrator to merge it is a queue the user has to drain by hand.
+Herdr reaches the same topology on its own: a pane whose cwd is a linked worktree of a repo
+gets **promoted** into a worktree-backed child workspace under that repo, and its pane ID
+changes when it moves. So `pane split --cwd <worktree-path>` is not a way to keep a worker
+in the current workspace; it is a slower way to arrive at the same place. Read the new ID
+from `herdr agent list` rather than the one `pane split` returned.
 
-**It does not remove its own worktree — you do, from the main checkout.** Landing is the
-worker's job; teardown is not, because a session cannot outlive its own cwd. Delete the
-directory it is running in and every shell hook afterwards fails to spawn with `ENOENT` on
-`posix_spawn` before reaching its first line, so the PreToolUse, PostToolUse and Stop guards
-are silently skipped for the rest of that session — non-blocking failures, so nothing stops.
-`no-self-delete-guard.py`
-refuses the command; this line is why.
+**The dispatch decides where the work happens, never what the work is.** Verifying, building,
+merging, opening a PR — those belong to the prompt, because only the prompt knows whether this
+delegate is implementing a feature, chasing a bug, or reading logs. What dispatch owes the
+worker is the *capacity* to finish and clear out.
+
+**Give every worktree worker the retire line.** Put this in the prompt verbatim, whatever the
+work is:
+
+> When your work is done, retire yourself: `herdr worktree remove --workspace "$HERDR_WORKSPACE_ID" --force`.
+
+The herdr **server** performs the deletion, not the pane's shell, so nothing loses its footing
+when the directory goes. Removal is asynchronous — a check that runs immediately afterwards
+will still see the checkout, so never make the worker confirm it.
+
+**Never `git worktree remove <path>` or `rm -rf` on its own checkout.** That is the shape
+`no-self-delete-guard.py` blocks, and the reason is real: delete the directory a session is
+running in and every shell hook afterwards fails to spawn with `ENOENT` on `posix_spawn`
+before reaching its first line, so the PreToolUse, PostToolUse and Stop guards are silently
+skipped for the rest of that session — non-blocking failures, so nothing stops. The
+`--workspace` form carries no path argument and is not affected.
+
+**The branch is not the worker's to delete, and not yours either.** At the moment a worktree
+finishes, its PR has not merged; the branch has to outlive every session involved. A hook
+cannot know *done* — that is a judgment only the agent holds — but it can know *merged*, which
+is a fact that arrives later. `tools/git-sweep.sh`, run daily from `hooks/daily-git-sweep.sh`,
+collects branches proven merged (reachable from the default branch, or a `gh`-confirmed
+squash-merge) along with any worktree still holding them. So a worker that never retires itself
+is collected anyway once its PR lands; the retire line is the fast path, not the mechanism.
 
 **The exception is work that only reads.** A build, a test run, a log tail, a probe, a
 review that reports findings — those belong in a pane on the main checkout, because
