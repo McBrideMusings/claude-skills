@@ -23,7 +23,7 @@
 (function () {
   var root = document.documentElement;
   if (root.hasAttribute('data-at-embedded')) return;   // the host owns the verdicts
-  if (!window.__atRail) return;                        // no rail, nowhere to put them
+  if (!window.__atTweaks) return;                      // no panel, nowhere to put them
 
   var INTERACTIVE = 'a[href], button, input, select, textarea, [role="button"], ' +
     '[role="link"], [role="tab"], [role="switch"], [role="checkbox"], [tabindex]';
@@ -31,7 +31,7 @@
   /* The harness is not the folio. Every check has to exclude it or it reports on the
      rail's own step buttons and the comment panel's chrome — which is how the first run
      of the tap-target check confidently failed a prototype for the size of MY buttons. */
-  var CHROME = '.at-rail, .at-rail-reopen, .at-panel, .at-composer, .at-notes-layer, ' +
+  var CHROME = '.at-twk, .at-twk-pill, .at-panel, .at-composer, .at-notes-layer, ' +
     '.at-cx-layer, .at-vp, .at-vp-host, .at-theme, .at-annotate-toggle, ' +
     /* Both classes: dock.js adds `.at-dock` at registration, which never runs inside an
        embedded clone, so in a device frame `.at-dock-btn` is the only one present — and a
@@ -287,15 +287,15 @@
     return { doc: document, win: window };
   }
 
-  /* --- the rail group ------------------------------------------------------ */
+  /* --- the panel group ----------------------------------------------------- */
 
   var rows = {};
   var group = null;
 
-  // Deferred so the device group, added by viewport.js, lands above this one: the rail
-  // runs coarse to fine down the column, and a verdict is not a control.
+  // Deferred so the device group, added by viewport.js, lands above this one: the panel
+  // runs coarse to fine down the card, and a verdict is not a control.
   setTimeout(function () {
-    group = window.__atRail.group('Checks');
+    group = window.__atTweaks.group('Checks');
     CHECKS.forEach(function (c) {
       var row = document.createElement('button');
       row.className = 'at-check';
@@ -324,7 +324,7 @@
       openKey = null;
       box.hidden = true;
       /* This row is the only control for the overlay now that the floating '◐' is gone
-         from any folio with a rail, so closing the row has to put the overlay away too —
+         from any folio with a Tweaks panel, so closing the row has to put the overlay away —
          through target().win, the same window result.reveal() turned it on in. The host's
          own window.atContrast is a different instance: with a device frame up, the design
          and its overlay live in the frame, and asking the host to switch it off left the

@@ -85,7 +85,7 @@
      theme toggle are the harness, and flipping variants or sizes mid-review has to keep
      working. */
   var CHROME = '.at-panel, .at-composer, .at-notes-layer, ' +
-    '.at-rail, .at-rail-reopen, .at-vp, .at-vp-host, .at-theme, .at-cx-layer, ' +
+    '.at-twk, .at-twk-pill, .at-vp, .at-vp-host, .at-theme, .at-cx-layer, ' +
     '.at-annotate-toggle';
 
   function snippetOf(el) {
@@ -159,13 +159,24 @@
 
   document.body.appendChild(layer);
   /* The pin layer belongs to whichever document holds the design; the PANEL never does.
-     It is host chrome, like the comment toggle and the rail handle, and a device frame
+     It is host chrome, like the comment toggle and the Tweaks panel, and a device frame
      runs this same file — so once the host started telling the frame to enter annotate
      mode, the frame drew its own COMMENTS sidebar inside the bezel, over the design.
      It is still built, because the copy/clear/close handlers and paintActions() all read
      it; it is simply never put on screen in an embedded document. A pin made in here
      still reaches the real panel — see the storage listener at the foot of this file. */
-  if (!root.hasAttribute('data-at-embedded')) document.body.appendChild(panel);
+  if (!root.hasAttribute('data-at-embedded')) {
+    document.body.appendChild(panel);
+    /* Dragged by its header, remembered per folio, and clamped to the window — the same
+       helper the Tweaks panel uses, because they are the same object: a card the reviewer
+       moves off whatever they are trying to look at. annotate.js is inlined before
+       dock.js, so the helper does not exist until every inline script has run. */
+    setTimeout(function () {
+      if (window.__atDrag) {
+        window.__atDrag(panel, panel.querySelector('.at-panel-head'), 'comments', 'bl');
+      }
+    }, 0);
+  }
 
   var list = panel.querySelector('.at-panel-list');
 
@@ -462,10 +473,9 @@
       layer.innerHTML = '';
     }
     pushFrames();
-    /* The comments panel takes 300px off the right edge through --at-inset-r, so the
-       device stage has less room than it had a moment ago and its frame has to be
-       rescaled. Only the rail dispatched this, so opening comments left a TV frame at its
-       old scale, running underneath the panel until the window was resized. */
+    /* The panel no longer takes width off the stage, but the docked buttons and the two
+       cards all re-clamp on this event, and the card appearing is exactly when one of them
+       may be under it. */
     window.dispatchEvent(new Event('at:relayout'));
   }
 

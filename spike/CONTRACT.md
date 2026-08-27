@@ -34,8 +34,8 @@ falling back to absolute `pwd`) and build `/private/tmp/claude/<repo-slug>/…` 
 | `wireframe` | Greybox layout: structure and hierarchy only | **Withheld on purpose** — do not add colour |
 
 Pick by what the thing you're building *is*. Explaining a mechanism, system or decision is a
-different tool (`explainer`) and a different kind entirely — it has no picker, no state axes, no
-device frames, and none of what follows applies to it.
+different tool (`explainer`) and a different kind entirely — it has no picker, no tweaks, no device
+frames, and none of what follows applies to it.
 
 ## Fragment rules
 
@@ -79,16 +79,18 @@ about breaking prose out to a wide track applies to them.
 most recognisable machine-made accent there is. Every kind's stylesheet has been cleared of them;
 don't reintroduce one in a fragment.
 
-## `prototype` — variants, state axes and devices, behind one rail
+## `prototype` — variants, tweaks and devices, behind one panel
 
 Build with `--picker switch` (one at a time, full size — the default) or `--picker list` (each stacked
 full size, one per screenful). **Never a grid of thumbnails**: small side-by-side comparison distorts
 spacing and scale, and judging UI at postage-stamp size is the failure the picker exists to prevent.
 
-In switch mode every control lives in **one left rail**: variant, each state axis, and the
-device frame. They are all the same question — *what am I looking at* — and they are ordered coarse to
-fine. The tool generates the rail and the URL persistence. **Write no rail
-code.**
+In switch mode every control lives in **one floating card, the Tweaks panel**: variant, every tweak
+the fragment registers, the device readout and the checks. They are all the same question — *what am
+I looking at* — and they are ordered coarse to fine. Drag the panel by its header; `×` closes it to a
+**Tweaks** pill in the corner, and the pill opens it again (`?tweaks=0` remembers which). The tool
+generates the panel, the widgets and the URL persistence. **Write no panel code and no widget
+markup.**
 
 ```html
 <style>
@@ -96,12 +98,7 @@ code.**
   :root { --brand: #2f6df6; --radius-card: 10px; }
 </style>
 
-<nav data-axis="screen" data-label="Screen">
-  <button data-value="home">Home<em>the session list</em></button>
-  <button data-value="chat">Agent chat<em>ACP transcript</em></button>
-</nav>
-
-<aside data-rail-note><b>Scope.</b> Resume-only. No terminal view.</aside>
+<aside data-note><b>Scope.</b> Resume-only. No terminal view.</aside>
 
 <template data-variant="Quiet" data-caption="Minimal motion, borders over shadows">
   <div class="proto-frame">…the variant, in realistic surrounding context…</div>
@@ -112,23 +109,28 @@ code.**
 </template>
 
 <script>
-  // See "State axes" — every axis is event-driven, and this is the whole boilerplate.
-  addEventListener('at:axis', function (e) {
-    if (e.detail.axis !== 'screen') return;
-    document.querySelectorAll('[data-screen]').forEach(function (el) {
-      el.hidden = el.dataset.screen !== e.detail.value;
-    });
+  // See "Tweaks" — this is the whole boilerplate for one control.
+  atTweaks.add('screen', [
+    { value: 'home', label: 'Home',       hint: 'the session list' },
+    { value: 'chat', label: 'Agent chat', hint: 'ACP transcript' }
+  ], {
+    label: 'Screen',
+    onChange: function (v) {
+      document.querySelectorAll('[data-screen]').forEach(function (el) {
+        el.hidden = el.dataset.screen !== v;
+      });
+    }
   });
 </script>
 ```
 
-- `data-variant` is the rail label — a direction ("Quiet", "Dense"), never "Variant A".
-- `data-caption` is optional; `list` mode prints it under the heading. It is **not** `data-axis` —
-  see below, those are two different things.
+- `data-variant` is the panel label — a direction ("Quiet", "Dense"), never "Variant A".
+- `data-caption` is optional; `list` mode prints it under the heading. It is not a control and never
+  reaches the panel.
 - Add `data-motion` to the fragment's first `<template>` if any variant has an entrance animation worth
   re-triggering — the tool then renders the replay button.
-- The rail is chrome. It is never restyled with the project's tokens, and `prototype.css` supplies no
-  palette of its own — every colour in the output comes from your fragment.
+- The panel is chrome. It is never restyled with the project's tokens, and `prototype.css` supplies
+  no palette of its own — every colour in the output comes from your fragment.
 - Each variant renders in realistic surrounding context: a toast needs a page behind it, a card needs
   siblings, a button needs a form.
 - The variant swap is instant. Flipping is a 100+/session action; it gets no animation.
@@ -137,51 +139,81 @@ code.**
   worse than an absent one — it reads as a bug and stops the conversation the prototype exists to
   have. If a control genuinely goes nowhere, it does not go in.
 
-### State axes — which screen, which state, which error
+### Tweaks — everything about the design you want to change while looking at it
 
-An **axis** is a control the rail renders and your fragment interprets. It is orthogonal to
-variant on purpose: flipping variant must not reset which screen is showing, because comparing one
-screen across two directions is the entire job.
+A **tweak** is a named value the panel renders a control for and your fragment reacts to: which
+screen, which error state, how much padding, which accent. It is orthogonal to variant on purpose —
+flipping variant must not reset which screen is showing, because comparing one screen across two
+directions is the entire job.
+
+**You declare the value, not the widget.** The control follows the value's type:
+
+| The value you pass | The control you get |
+| --- | --- |
+| `true` / `false` | a switch |
+| a number **with `max`** | a slider, with the live value beside its label |
+| a number with no `max` | a stepper field |
+| `'#2f6df6'` | a colour well |
+| an array (≤6 short entries, or any entry with a `hint`) | a segmented picker |
+| a longer array | a dropdown |
+| any other string | a text field |
 
 ```html
-<nav data-axis="conn" data-label="Connection">
-  <button data-value="up">Connected</button>
-  <button data-value="down">Server unreachable<em>what the list does with no data</em></button>
-</nav>
+<script>
+  atTweaks.add('conn', [
+    { value: 'up',   label: 'Connected' },
+    { value: 'down', label: 'Server unreachable', hint: 'what the list does with no data' }
+  ], { label: 'Connection', onChange: function (v) { … } });
+
+  atTweaks.add('gap',   12,        { max: 40, unit: 'px', onChange: function (v) { … } });
+  atTweaks.add('dark',  false,     { onChange: function (v) { … } });
+  atTweaks.add('brand', '#2f6df6', { onChange: function (v) { … } });
+</script>
 ```
 
-- Declared at the **top level** of the fragment — never inside a `<template data-variant>`, which is
-  not in the document until it is mounted.
-- The first `<button>` is the default. `<em>` inside a button is a second, dimmer line.
-- Clicking one dispatches on `window`:
-  `new CustomEvent('at:axis', {detail: {axis, value, index, label}})`.
-- **The rail re-emits every live axis right after each mount.** So a listener never has to re-apply
-  state after a variant switch — it just handles the event again. Don't write re-apply code.
-- Your listener must be a **top-level `<script>`** in the fragment. A `<script>` cloned out of a
-  `<template>` does not execute — this is the one trap in the whole contract.
-- Axis state persists in the URL as `?screen=chat`, alongside `?v=`.
+- **Top-level `<script>` only** — never inside a `<template data-variant>`, which is not in the
+  document until it is mounted, and whose scripts never execute. This is the one trap in the whole
+  contract.
+- `onChange(value, key)` runs once at declaration **and again after every mount**, so nothing in your
+  fragment re-applies state after a variant switch. Don't write re-apply code.
+- The first array entry is the default. `hint` is a second, dimmer line under the option's label.
+- `opts`: `label` (defaults to the key), `min`, `max`, `step`, `unit`, `control` to name a widget
+  outright, `onChange`.
+- `atTweaks.add` returns `{ get(), set(v) }`. `atTweaks.get(key)` and `atTweaks.set(key, v)` reach any
+  registered tweak by name — that is how one control drives another.
+- `atTweaks.section('Motion')` starts a labelled group; everything registered after it lands there.
+  `atTweaks.action('Reset', fn)` is a button, holds no value and never re-fires on mount.
+  `atTweaks.toggle/slider/stepper/color/pick/select/text` name a widget when the inference is wrong.
+- Every change also dispatches `at:tweak` on `window` with `{key, value}`, for anything that would
+  rather listen than pass a handler.
+- Tweak state persists in the URL as `?screen=chat&gap=18`, alongside `?v=`.
 
 ### The device — one per prototype, required, chosen at build time
 
-`--device phone|tablet|desktop|panel|web|tv`. Exactly one, and the tool refuses a build without it.
-A phone-only chat surface gets `phone`. A pane-tree editor gets `desktop`. A design that ships on iOS
-*and* as a Mac menu bar extra is two prototypes, `--device phone` and `--device panel`, each named for
-what it is.
+`--device phone|tablet|desktop|panel|web|tv|fill`. Exactly one, and the tool refuses a build without
+it. A phone-only chat surface gets `phone`. A pane-tree editor gets `desktop`. A design that ships on
+iOS *and* as a Mac menu bar extra is two prototypes, `--device phone` and `--device panel`, each named
+for what it is.
 
-There is no switcher and no unframed `fit`. A row of frames invited the reader to judge a phone layout
-against a desktop layout as if they were two directions for one design, which is the comparison the
-harness exists to prevent — and the unframed view was a size nobody drew for. The rail's device group
-is the frame's name plus the size readout, rotate, and 1:1.
+There is no switcher. A row of frames invited the reader to judge a phone layout against a desktop
+layout as if they were two directions for one design, which is the comparison the harness exists to
+prevent. The panel's device group is the frame's name plus the size readout, rotate, and 1:1.
+
+`fill` is the one device that frames nothing: the folio renders straight into the browser window at
+whatever size it happens to be, and the device group is a live size readout. It is a real answer to
+"which device is this for" — a page that is whatever the reader's window is — and it is **not** the
+answer for a desktop app. A desktop app is a window; that is `desktop`.
 
 Chrome sits on whichever side of the viewport it really sits on, and the harness draws all of it:
 
 | Frame | Chrome | Where |
 | --- | --- | --- |
 | `phone`, `tablet` | status bar, notch, home indicator | **inside** the viewport — content scrolls under it |
-| `desktop` | none by default; `--window` adds it | see below |
+| `desktop` | title bar + traffic lights by default; `--window` changes it | see below |
 | `panel` | menu bar strip with the status item lit | **outside** — the panel hangs from it |
 | `web` | tab strip + URL bar | **outside** |
 | `tv` | none drawn; tvOS overscan published as `--at-safe-*` | inset only |
+| `fill` | none — no frame and no bezel, the window itself | — |
 
 `panel` is 380×520 — a menu bar extra, not a small window. It has no title bar, no traffic lights and
 no resize, so `--window` is refused against it; the width is the whole design constraint, which is
@@ -191,15 +223,15 @@ exactly what a 1440-wide `desktop` frame would hide.
 
 A build-time decision, like `--device`, and for the same reason: whether the design owns its own
 title area is a property of the thing being prototyped, not something to flip while looking at it.
-**The default is a bare window** — a desktop app with a full-size content view draws its own top
-area, and a generic macOS title bar stapled over it is chrome nobody designed.
+**The default is the standard macOS window** — `bar,lights`. A desktop app *is* a window, and a frame
+with no title bar at all was the shape of a full-screen viewport, which is what `fill` is for.
 
 | `--window` | What you get | Where the chrome sits |
 | --- | --- | --- |
-| *(omitted)* | bare viewport, bezel only | — |
+| *(omitted)* | `bar,lights` — the standard macOS window | **outside** the viewport |
 | `bar` | title bar, no lights | **outside** the viewport |
-| `bar,lights` | the standard macOS window | **outside** the viewport |
 | `lights` | full-size content view: lights float over the app's own top area | **inside** the viewport |
+| `none` | bare viewport, bezel only. On its own, never beside another part | — |
 
 `--window lights` is the only one that reaches into the viewport, so it is the only one your layout
 has to know about. It reserves nothing — drawing under the lights is the entire point of that window
@@ -210,11 +242,11 @@ Never draw your own status bar or window chrome in the fragment. Reserve the spa
 publishes `--at-safe-top` and `--at-safe-bottom`, and pads `body` by them automatically. Set
 `data-at-safe="none"` on your root element if your layout wants to paint under the status bar itself.
 
-A frame larger than the window is scaled down to fit, and the rail says by how much — `1440 × 900 ·
+A frame larger than the window is scaled down to fit, and the panel says by how much — `1440 × 900 ·
 67%`. Nobody can judge type or spacing at 67%, so `1:1` turns scaling off and lets the page scroll to
-the rest of the frame instead. Flipping a variant or an axis does **not** rebuild the frame: it is
+the rest of the frame instead. Flipping a variant or a tweak does **not** rebuild the frame: it is
 told what changed and applies it in place, so scroll position, typed input and whatever state the
-prototype holds all survive. Only changing device or orientation rebuilds it.
+prototype holds all survive. Only changing orientation rebuilds it.
 
 Each frame is a real `<iframe>`, so `@media (max-width: 640px)` fires inside it for real — which a
 width-constrained `<div>` can never do, and is why device frames are the harness's job.
@@ -239,19 +271,20 @@ The controls never share a letter:
 
 | | URL | Control |
 | --- | --- | --- |
-| **Variant** — which direction is on screen | `?v=3` | rail: named buttons |
-| **Axis** — which state of the thing | `?screen=chat` | rail: one group per axis |
-| **Device** — which frame it renders in | `?d=phone-landscape` | rail, below the axes |
+| **Variant** — which direction is on screen | `?v=3` | panel: named buttons |
+| **Tweak** — a value of the thing | `?screen=chat` | panel: one control per tweak |
+| **Frame** — rotation and 1:1 | `?rotate=1&zoom=1` | panel: the device readout |
+| **The panel itself** — open or a pill | `?tweaks=0` | its `×`, and the pill |
 
-**A prototype answers no harness keys at all.** Every control above is a button, collapse is the
-`‹` toggle at the rail's edge (`?rail=0` remembers it), and comment mode and the contrast check are
-the two docked buttons on the right. This is not an oversight to fix: a prototype is a working
-interface with keys of its own, so a prototype of anything keyboard-driven could not be driven at all
-if the harness claimed the keyboard too. `wireframe` is a document and still answers `a` and `c`.
+**A prototype answers no harness keys at all.** Every control above is a button, and comment mode and
+the contrast check are the docked buttons on the right. This is not an oversight to fix: a prototype
+is a working interface with keys of its own, so a prototype of anything keyboard-driven could not be
+driven at all if the harness claimed the keyboard too. `wireframe` is a document and still answers
+`a` and `c`.
 
-### Checks — eight verdicts the rail keeps up to date
+### Checks — eight verdicts the panel keeps up to date
 
-The bottom of the rail carries a standing pass/fail row per check, recomputed whenever the folio
+The bottom of the panel carries a standing pass/fail row per check, recomputed whenever the folio
 changes and read from the device frame's document when one is up. Click a row for what it found.
 Nothing here is a judgement call — every one is arithmetic on the DOM:
 
@@ -266,10 +299,10 @@ Nothing here is a judgement call — every one is arithmetic on the DOM:
 | Duplicate ids | one id used twice, which breaks `<label for>` and every aria reference |
 | Hermetic | a remote `src` or `@import`. The builder already refuses these, so this is a backstop for anything injected at runtime |
 
-Harness chrome is excluded from all of them — the rail is not the design under review.
+Harness chrome is excluded from all of them — the panel is not the design under review.
 `window.atContrast.check(true)` audits the chrome itself when that is what you need.
 
-Ordered coarse to fine down the rail, so the thing you change once a session sits above the thing you
+Ordered coarse to fine down the card, so the thing you change once a session sits above the thing you
 change a hundred times. The variant group is omitted entirely when there is only one variant.
 
 Opening the file bare shows the first variant. An out-of-range `v` falls back rather than blanking,
@@ -295,10 +328,10 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
    contrast check in both themes, then the screenshot read against a fixed list. Fix what it finds in
    one batch and stop; it is a pass, not a loop.
 4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
-5. Say how to drive it. On a **prototype**: every control is a button — the rail on the left for
-   variant, axes and device, and the two docked buttons on the right for comment mode and
-   the contrast check. No keys, so the prototype's own keyboard is entirely its own. On `wireframe`:
-   `a` to comment on anything, `c` to check contrast.
+5. Say how to drive it. On a **prototype**: every control is a button — the Tweaks panel for variant,
+   tweaks, device and checks, dragged by its header and closed to a pill with `×`, and the docked
+   buttons on the right for comment mode and the contrast check. No keys, so the prototype's own
+   keyboard is entirely its own. On `wireframe`: `a` to comment on anything, `c` to check contrast.
 
 ## Getting comments back
 

@@ -1,0 +1,408 @@
+/* tweaks.css — the floating Tweaks panel: variant, the fragment's own controls, device.
+
+   Supersedes rail.css. The rail was a 272px column pinned to the left edge for as long as
+   it was open, which is width the design under judgement never got — and the reason a
+   1440-wide desktop frame had to be scaled to 67% before it fit. A card that floats over
+   the folio and can be dragged out of the way costs the layout nothing.
+
+   Deliberately NOT theme-aware, like every other piece of harness chrome: dark glass over
+   a light folio and over a dark one, so it always reads as the harness and never as part
+   of the design. Every colour comes from chrome.css.
+
+   Two states, and the panel is only ever in one of them: the card, or the pill. Closing is
+   not hiding — the pill says "Tweaks" in the corner and brings the card back. */
+
+:root {
+  --at-twk-w: 272px;
+}
+
+/* --- the card -------------------------------------------------------------- */
+
+.at-twk {
+  position: fixed;
+  z-index: 2147483645;
+  width: var(--at-twk-w);
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: var(--at-c-panel);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 14px 44px rgba(0, 0, 0, 0.5);
+  color: var(--at-c-ink);
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root[data-at-tweaks-collapsed] .at-twk { display: none; }
+html[data-at-embedded] .at-twk { display: none; }
+
+/* --- header: the drag handle ----------------------------------------------- */
+
+.at-twk-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 8px 10px 13px;
+  border-bottom: 1px solid var(--at-c-line);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.at-twk[data-dragging] .at-twk-head { cursor: grabbing; }
+
+.at-twk-titles { flex: 1; min-width: 0; }
+
+.at-twk-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--at-c-ink);
+}
+
+.at-twk-sub {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--at-c-faint);
+}
+
+.at-twk-x {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--at-c-dim);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.at-twk-x:hover { background: rgba(255, 255, 255, 0.1); color: var(--at-c-ink); }
+.at-twk-x:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
+
+/* --- body ------------------------------------------------------------------ */
+
+.at-twk-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 13px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.at-twk-body::-webkit-scrollbar { width: 8px; }
+.at-twk-body::-webkit-scrollbar-track { background: transparent; }
+.at-twk-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid transparent;
+  border-radius: 4px;
+  background-clip: content-box;
+}
+
+/* A group is a label plus its controls. `at-twk-group` is also the slot other harness
+   widgets add to — viewport.js puts the device readout in one, checks.js its verdicts —
+   so every "what am I looking at" control lives in this one card. */
+.at-twk-group { display: flex; flex-direction: column; gap: 6px; }
+
+.at-twk-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--at-c-faint);
+}
+
+.at-twk-row { display: flex; gap: 6px; }
+
+/* --- segmented picker (also the variant chooser) --------------------------- */
+
+.at-twk-seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.at-twk-seg.at-twk-seg--stack { flex-direction: column; }
+
+.at-twk-opt {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--at-c-dim);
+  font: 500 12px/1.25 inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.at-twk-opt:hover { background: var(--at-c-surface-hi); color: var(--at-c-ink); }
+
+.at-twk-opt[data-active] {
+  border-color: var(--at-c-sel-edge);
+  background: var(--at-c-sel);
+  color: var(--at-c-sel-ink);
+}
+
+.at-twk-opt:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
+
+/* A second, dimmer line inside an option: what that state actually shows. */
+.at-twk-opt em {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.3;
+  color: var(--at-c-fainter);
+}
+
+.at-twk-opt[data-active] em { color: var(--at-c-sel-dim); }
+
+/* --- a labelled control row ------------------------------------------------ */
+
+.at-twk-ctl { display: flex; flex-direction: column; gap: 5px; }
+.at-twk-ctl--inline { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
+
+.at-twk-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--at-c-dim);
+}
+
+.at-twk-value {
+  color: var(--at-c-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- slider ---------------------------------------------------------------- */
+
+.at-twk-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  margin: 5px 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  outline: none;
+  cursor: pointer;
+}
+
+.at-twk-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--at-c-ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.at-twk-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--at-c-ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.at-twk-slider:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 3px; }
+
+/* --- field: stepper, text, select ------------------------------------------ */
+
+.at-twk-field {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 27px;
+  padding: 0 8px;
+  border: 1px solid var(--at-c-edge);
+  border-radius: 7px;
+  background: var(--at-c-surface);
+  color: var(--at-c-ink);
+  font: 12px/1 inherit;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.at-twk-field:hover { border-color: var(--at-c-edge-hi); }
+.at-twk-field:focus { border-color: var(--at-c-sel-edge); background: var(--at-c-surface-hi); }
+
+.at-twk-ctl--inline .at-twk-field { width: 84px; flex: none; text-align: right; }
+
+select.at-twk-field {
+  padding-right: 22px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23979ea8' d='M0 0h10L5 6z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+}
+
+.at-twk-field::-webkit-inner-spin-button,
+.at-twk-field::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* --- toggle ---------------------------------------------------------------- */
+
+.at-twk-toggle {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 19px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: background 150ms ease-out;
+}
+
+.at-twk-toggle[data-on] { background: var(--at-c-sel-edge); }
+
+.at-twk-toggle i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  transition: transform 150ms ease-out;
+}
+
+.at-twk-toggle[data-on] i { transform: translateX(15px); }
+.at-twk-toggle:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
+
+/* --- colour well ----------------------------------------------------------- */
+
+.at-twk-color {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  width: 56px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--at-c-edge);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.at-twk-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.at-twk-color::-webkit-color-swatch { border: 0; border-radius: 4px; }
+.at-twk-color::-moz-color-swatch { border: 0; border-radius: 4px; }
+
+/* --- action button --------------------------------------------------------- */
+
+.at-twk-action {
+  height: 27px;
+  padding: 0 11px;
+  border: 1px solid var(--at-c-edge);
+  border-radius: 7px;
+  background: var(--at-c-surface);
+  color: var(--at-c-ink);
+  font: 500 12px/1 inherit;
+  cursor: pointer;
+}
+
+.at-twk-action:hover { background: var(--at-c-surface-hi); border-color: var(--at-c-edge-hi); }
+.at-twk-action:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
+
+/* --- replay, note, build stamp --------------------------------------------- */
+
+.at-twk-replay {
+  width: 20px;
+  height: 20px;
+  margin: -4px -4px -4px 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--at-c-faint);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.at-twk-replay:hover { background: rgba(255, 255, 255, 0.1); color: var(--at-c-ink); }
+
+.at-twk-note {
+  padding-top: 10px;
+  border-top: 1px solid var(--at-c-line);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--at-c-faint);
+}
+
+.at-twk-note b { color: var(--at-c-dim); font-weight: 600; }
+
+.at-twk-built {
+  margin-top: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: var(--at-c-fainter);
+}
+
+/* --- the pill -------------------------------------------------------------- */
+
+/* Not a .at-dock circle: a circle with a glyph would be the fourth identical button in
+   the corner, and this one has to say what it opens. It is still dragged and docked by
+   dock.js, so it snaps to an edge like the others. */
+.at-twk-pill {
+  position: fixed;
+  z-index: 2147483645;
+  display: none;
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: var(--at-c-panel);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  backdrop-filter: blur(10px) saturate(1.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  color: var(--at-c-ink);
+  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+:root[data-at-tweaks-collapsed] .at-twk-pill { display: grid; place-items: center; }
+html[data-at-embedded] .at-twk-pill { display: none !important; }
+
+.at-twk-pill:hover { background: var(--at-c-surface-hi); }
+.at-twk-pill[data-dragging] { cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45); }
+.at-twk-pill:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
+
+@media print {
+  .at-twk, .at-twk-pill { display: none !important; }
+}

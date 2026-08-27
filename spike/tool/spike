@@ -11,12 +11,12 @@ Two fidelities of the same question — what should this look like:
   prototype  working versions of one UI behind a picker, in the project's own tokens
 
 Explainers are a separate kind of document with their own tool, `explainer` — one look,
-no variants, none of the rail/device machinery here.
+no variants, none of the panel/device machinery here.
 
   spike build --kind wireframe|prototype --title <t>
               --fragment <abs.html> --out <abs.html>
               [--picker switch|list] [--subtitle <s>]
-              --device phone|tablet|desktop|panel|web|tv
+              --device phone|tablet|desktop|panel|web|tv|fill
               [--lang en] [--extra-css <abs.css>]
               [--with w1,w2] [--without w1,w2]
   spike kinds
@@ -61,22 +61,30 @@ ALL_KINDS = frozenset(KINDS)
 DEVICES = collections.OrderedDict([
     ("phone",   "390x844, iOS status bar + notch + home indicator, rotates"),
     ("tablet",  "834x1194, iOS status bar, thin bezel, rotates"),
-    ("desktop", "1440x900 as a bare window; add chrome with --window"),
+    ("desktop", "1440x900 macOS window: title bar + traffic lights. --window changes it"),
     ("panel",   "380x520 macOS menu bar extra, hanging under a lit status item"),
     ("web",     "1440x900 inside browser chrome (tab + URL bar outside the viewport)"),
     ("tv",      "1920x1080, no chrome drawn; publishes tvOS overscan as --at-safe-*"),
+    ("fill",    "the window itself: no frame, no chrome, no scaling — a page at whatever "
+                "size the reader's browser is"),
 ])
 
 # Window chrome for the `desktop` frame. A build-time decision, not a runtime toggle:
 # whether the design owns its title area is a property of the thing being prototyped, and
-# a switch would invite a verdict on a window nobody drew. Default is neither — a desktop
-# app with a full-size content view draws its own top area, and a generic macOS title bar
-# stapled over it is chrome the design never asked for.
+# a switch would invite a verdict on a window nobody drew.
+#
+# The default is a real window — `bar,lights`. A desktop app IS a window; a frame with no
+# title bar at all was the shape of a full-screen viewport, which is what `fill` is for, and
+# it made the one device that most needed drawing look like the one that needed none.
+# `--window none` is the opt-out, for a design that draws its own top area edge to edge.
+WINDOW_DEFAULT = "bar,lights"
 WINDOW_PARTS = collections.OrderedDict([
     ("bar",    "macOS title bar above the viewport (drawn outside it, as a real one is)"),
     ("lights", "traffic lights. With `bar`, they sit in it. Without, they float INSIDE "
                "the viewport over the app's own top area — the full-size-content-view "
                "shape — and the frame publishes --at-lights-w / --at-lights-h to reserve"),
+    ("none",   "no window chrome at all: a bare viewport in a bezel. On its own, never "
+               "beside `bar` or `lights`"),
 ])
 
 THEME_TOGGLE_HTML = (
@@ -112,18 +120,18 @@ WIDGETS = collections.OrderedDict([
     ("contrast", Widget(
         kinds=ALL_KINDS, css="contrast.css", js="contrast.js", html=None,
         stamp=False, desc="flag text that fails WCAG AA against its backdrop. On a kind "
-                          "with a rail the Checks group's Contrast row is the control; "
+                          "with a Tweaks panel the Checks group's Contrast row is it; "
                           "elsewhere it is a floating button and the `c` key")),
     # On for prototype, off elsewhere; other kinds opt in with --with viewport. WHICH
     # device is per-spike and required (--device): a prototype always has a device answer
     # worth declaring, and it is the agent's to declare at build time rather than the
     # reader's to flip through.
-    # The standing verdicts. Needs the rail to put them in, so prototype only; and it
+    # The standing verdicts. Needs the Tweaks panel to put them in, so prototype only; and it
     # reads contrast.js's result rather than recomputing it, so it must load after.
     ("checks", Widget(
         kinds=frozenset({"prototype"}), css="checks.css", js="checks.js",
         html=None, stamp=False,
-        desc="always-on pass/fail checks in the rail: contrast, overflow, tap "
+        desc="always-on pass/fail checks in the panel: contrast, overflow, tap "
              "targets, text size, dead links, alt text, duplicate ids, hermetic")),
     ("viewport", Widget(
         kinds=frozenset({"prototype"}), css="viewport.css", js="viewport.js",
@@ -242,7 +250,7 @@ def resolve_widgets(kind, with_, without):
 def extract_variants(fragment):
     """Pull <template data-variant="..."> blocks out of the fragment.
 
-    Returns (variants, remainder). Each variant is a dict with name/axis/body/attrs.
+    Returns (variants, remainder). Each variant is a dict with name/caption/body/raw.
     """
     variants = []
     for m in TEMPLATE_RE.finditer(fragment):
@@ -251,9 +259,8 @@ def extract_variants(fragment):
             continue
         variants.append({
             "name": attrs["data-variant"],
-            # `data-caption` and not `data-axis`: an AXIS is the rail's state control
-            # (which screen, which error). A caption is one line describing a variant's
-            # direction, printed under the heading in list mode. Two different things.
+            # A caption is one line describing a variant's direction, printed under the
+            # heading in list mode. It is not a control and never appears in the panel.
             "caption": attrs.get("data-caption", ""),
             "motion": "data-motion" in m.group("attrs").lower(),
             "position": attrs.get("data-picker-position", ""),
@@ -266,62 +273,26 @@ def extract_variants(fragment):
     return variants, remainder
 
 
-# --- state axes -------------------------------------------------------------
+# --- the scope note ---------------------------------------------------------
 #
-# An axis is a control the RAIL renders and the FRAGMENT interprets: which screen, which
-# connection state, which error. Orthogonal to variant — flipping variant must
-# not reset which screen is on show, because comparing one screen across two directions
-# is the entire job. Declared at the top level of the fragment (never inside a
-# <template data-variant>, which is not in the document until it is mounted):
+# A fragment declares its CONTROLS in a top-level <script>, through the atTweaks registry
+# the head stub publishes — never in markup. `<nav data-axis>` used to be the only way, and
+# it could only ever render a row of buttons, so a gap of 0-40px became five chips at
+# arbitrary stops and a colour became a list of four. The control now follows the type of
+# the value: see CONTRACT.md and tweaks.js.
 #
-#   <nav data-axis="screen" data-label="Screen">
-#     <button data-value="home">Home<em>the list</em></button>
-#     <button data-value="chat">Agent chat<em>ACP transcript</em></button>
-#   </nav>
+# The one thing still declared in markup is the scope note — prose, pinned to the bottom of
+# the panel, saying what this prototype is and is not answering:
 #
-# Clicking one dispatches window 'at:axis' with {axis, value, index, label}. See
-# CONTRACT.md for the listener boilerplate.
+#   <aside data-note><b>Scope.</b> Resume-only. No terminal view.</aside>
 
-AXIS_RE = re.compile(
-    r"<nav\b(?P<attrs>[^>]*\bdata-axis\s*=[^>]*)>(?P<body>.*?)</nav\s*>",
-    re.DOTALL | re.IGNORECASE,
-)
-OPTION_RE = re.compile(
-    r"<button\b(?P<attrs>[^>]*)>(?P<body>.*?)</button\s*>", re.DOTALL | re.IGNORECASE
-)
 NOTE_RE = re.compile(
-    r"<aside\b[^>]*\bdata-rail-note\b[^>]*>(?P<body>.*?)</aside\s*>", re.DOTALL | re.IGNORECASE
+    r"<aside\b[^>]*\bdata-note\b[^>]*>(?P<body>.*?)</aside\s*>", re.DOTALL | re.IGNORECASE
 )
 
 
-def extract_axes(fragment):
-    """Pull top-level <nav data-axis="..."> blocks out. Returns (axes, remainder)."""
-    axes, raws = [], []
-    for m in AXIS_RE.finditer(fragment):
-        attrs = parse_attrs(m.group("attrs"))
-        key = attrs.get("data-axis", "").strip()
-        if not key:
-            continue
-        options = []
-        for o in OPTION_RE.finditer(m.group("body")):
-            oa = parse_attrs(o.group("attrs"))
-            value = oa.get("data-value", "").strip()
-            if not value:
-                die("axis %r has a <button> with no data-value" % key)
-            options.append({"value": value, "body": o.group("body").strip()})
-        if not options:
-            die("axis %r declares no <button data-value=...> options" % key)
-        axes.append({"key": key, "label": attrs.get("data-label") or key.title(),
-                     "options": options})
-        raws.append(m.group(0))
-    remainder = fragment
-    for raw in raws:
-        remainder = remainder.replace(raw, "")
-    return axes, remainder
-
-
-def extract_rail_note(fragment):
-    """Pull an optional <aside data-rail-note> — the scope line pinned under the rail."""
+def extract_note(fragment):
+    """Pull an optional <aside data-note> — the scope line pinned under the controls."""
     m = NOTE_RE.search(fragment)
     if not m:
         return "", fragment
@@ -330,63 +301,64 @@ def extract_rail_note(fragment):
 
 # --- assembly ---------------------------------------------------------------
 
-def build_axis_groups(axes):
-    """One group per state axis the fragment declares."""
-    parts = []
-    for a in axes:
-        rows = ['<div class="at-rail-group at-rail-axis" data-axis="%s">'
-                % html.escape(a["key"], quote=True),
-                '  <div class="at-rail-label">%s'
-                '</div>' % html.escape(a["label"])]
-        for i, o in enumerate(a["options"]):
-            active = " data-active" if i == 0 else ""
-            rows.append('  <button class="at-rail-item at-rail-opt" data-value="%s"%s>%s</button>'
-                        % (html.escape(o["value"], quote=True), active, o["body"]))
-        rows.append("</div>")
-        rows.append("<!--/at:axis-->")
-        parts.append("\n".join(rows))
-    return "\n".join(parts)
+# The queueing stub. A fragment's <script> sits in the BODY and therefore runs before the
+# harness script block at the end of the document, so `atTweaks` has to exist first. This is
+# the whole of it: record the call, hand back a handle, and let tweaks.js drain the queue in
+# declaration order and fill the handles in.
+TWEAKS_STUB = """window.atTweaks=(function(){var q=[];var api={__queue:q};
+function val(m){return function(){var h={get:function(){},set:function(){}};
+q.push({method:m,args:[].slice.call(arguments),handle:h});return h;};}
+function act(m){return function(){q.push({method:m,args:[].slice.call(arguments)});return api;};}
+['add','pick','select','slider','stepper','toggle','color','text'].forEach(function(m){api[m]=val(m);});
+['section','note','action','set'].forEach(function(m){api[m]=act(m);});
+api.get=function(){};return api;})();"""
+
+TWEAKS_PILL = ('<button class="at-twk-pill" type="button" '
+               'title="Show the controls" aria-label="Show the controls">Tweaks</button>')
 
 
-def build_rail(variants, axis_html, note, title, subtitle):
-    """The control rail: one column holding every "what am I looking at" question.
+def build_panel(variants, note, title, subtitle):
+    """The Tweaks panel: one card holding every "what am I looking at" question.
 
-    Round, variant, each state axis, and (added at runtime by viewport.js) device. They
-    were three separate surfaces — a bottom pill, a corner ticker, a floating size bar —
-    which gave a once-a-session choice the same weight as a constant one and left
-    nowhere at all for a state axis. One column, ordered coarse to fine.
+    Variant, whatever the fragment registers, and (added at runtime) the device readout and
+    the checks. They were three separate surfaces — a bottom pill, a corner ticker, a
+    floating size bar — which gave a once-a-session choice the same weight as a constant
+    one. Then they were one 272px column pinned to the left edge, which is width the design
+    under judgement never got. Now they are a card that floats over the folio and is dragged
+    out of the way, and closing it leaves the pill.
     """
     has_motion = any(v["motion"] for v in variants)
 
-    parts = ['<nav class="at-rail" aria-label="Prototype controls">',
-             '  <div class="at-rail-head">',
-             '    <div class="at-rail-titlebar">',
-             '      <div class="at-rail-title">%s</div>' % html.escape(title),
-             '    </div>']
+    parts = ['<nav class="at-twk" aria-label="Prototype controls">',
+             '  <div class="at-twk-head">',
+             '    <div class="at-twk-titles">',
+             '      <div class="at-twk-title">%s</div>' % html.escape(title)]
     if subtitle:
-        parts.append('    <div class="at-rail-sub">%s</div>' % html.escape(subtitle))
-    parts.append("  </div>")
+        parts.append('      <div class="at-twk-sub">%s</div>' % html.escape(subtitle))
+    parts += ['    </div>',
+              '    <button class="at-twk-x" type="button" title="Hide the controls" '
+              'aria-label="Hide the controls">&#215;</button>',
+              '  </div>',
+              '  <div class="at-twk-body">']
 
-
-    # One variant group, and only when there is a choice to make. A single-variant
-    # prototype is one design, and a picker offering one option is a control that answers
-    # nothing.
+    # One variant group, and only when there is a choice to make. A single-variant prototype
+    # is one design, and a picker offering one option is a control that answers nothing.
     if len(variants) > 1 or has_motion:
-        parts.append('  <div class="at-rail-group">')
-        replay = ('<button class="at-rail-replay" aria-label="Replay animation">&#8635;</button>'
-                  if has_motion else "")
-        parts.append('    <div class="at-rail-label">Variant%s</div>' % replay)
+        replay = ('<button class="at-twk-replay" type="button" title="Replay animation" '
+                  'aria-label="Replay animation">&#8635;</button>' if has_motion else "")
+        parts.append('    <div class="at-twk-group">')
+        parts.append('      <div class="at-twk-label"><span>Variant</span>%s</div>' % replay)
+        parts.append('      <div class="at-twk-seg at-twk-seg--stack">')
         for i, v in enumerate(variants):
             attrs = ' data-active aria-current="true"' if i == 0 else ""
-            parts.append('    <button class="at-rail-item at-rail-variant"%s>%s</button>'
-                         % (attrs, html.escape(v["name"])))
-        parts.append("  </div>")
+            parts.append('        <button class="at-twk-opt at-twk-variant" type="button"%s>%s'
+                         '</button>' % (attrs, html.escape(v["name"])))
+        parts.append('      </div>')
+        parts.append('    </div>')
 
-    if axis_html:
-        parts.append(axis_html)
     if note:
-        parts.append('  <div class="at-rail-note">%s</div>' % note)
-    parts.append("</nav>")
+        parts.append('    <div class="at-twk-note">%s</div>' % note)
+    parts += ['  </div>', '</nav>', TWEAKS_PILL]
     return "\n".join(parts)
 
 
@@ -394,7 +366,7 @@ def build_list_body(variants):
     """List mode: each variant isolated, stacked, full size. Never thumbnails."""
     out = []
     for i, v in enumerate(variants):
-        axis = ('<span class="at-list-axis">%s</span>' % html.escape(v["caption"])) \
+        caption = ('<span class="at-list-axis">%s</span>' % html.escape(v["caption"])) \
             if v["caption"] else ""
         out.append(
             '<section class="at-list-item">\n'
@@ -402,7 +374,7 @@ def build_list_body(variants):
             '<span class="at-list-n">%d</span>'
             '<span class="at-list-name">%s</span>%s</header>\n'
             '  <div class="at-list-body">%s</div>\n'
-            '</section>' % (i + 1, html.escape(v["name"]), axis, v["body"])
+            '</section>' % (i + 1, html.escape(v["name"]), caption, v["body"])
         )
     return "\n".join(out)
 
@@ -444,7 +416,7 @@ def cmd_build(args):
 
     build_id = hashlib.sha1(("%s\n%s" % (kind, fragment)).encode("utf-8")).hexdigest()[:12]
     # A wall-clock stamp, not the content hash above: the question it answers is "am I
-    # looking at a stale file", and a hash cannot answer that. The rail prints it.
+    # looking at a stale file", and a hash cannot answer that. The panel prints it.
     built_at = time.strftime("%Y-%m-%d %H:%M")
 
     css = [read(os.path.join(KINDS_DIR, "_base.css")),
@@ -466,18 +438,21 @@ def cmd_build(args):
 
     root_attrs = ""
 
+    head_scripts = []
+
     if picker_mode == "switch":
-        css.append(read(os.path.join(HARNESS_DIR, "rail.css")))
-        scripts.append(read(os.path.join(HARNESS_DIR, "rail.js")))
-        axes, remainder = extract_axes(remainder)
-        note, remainder = extract_rail_note(remainder)
-        axis_html = build_axis_groups(axes)
-        root_attrs += " data-at-rail"
+        css.append(read(os.path.join(HARNESS_DIR, "tweaks.css")))
+        scripts.append(read(os.path.join(HARNESS_DIR, "tweaks.js")))
+        # The stub goes in <head>, because the fragment's own <script> is in the body and
+        # therefore runs before the harness block that defines the real registry.
+        head_scripts.append(TWEAKS_STUB)
+        note, remainder = extract_note(remainder)
+        root_attrs += " data-at-tweaks"
         # A build replaces the file. There is no merge with what was there before: one
         # prototype is one design, and the earlier attempts belong in git, not stacked
         # inside the artifact where they double its size and go stale.
         body = "%s\n%s\n<main id=\"at-stage\"></main>\n%s" % (
-            build_rail(variants, axis_html, note, args.title, args.subtitle),
+            build_panel(variants, note, args.title, args.subtitle),
             remainder.strip(),
             "\n".join(v["raw"] for v in variants),
         )
@@ -492,7 +467,7 @@ def cmd_build(args):
         css.append(read(require_abs(args.extra_css, "--extra-css")))
 
     # One palette for every piece of harness chrome. Inlined before any widget stylesheet
-    # so rail, panel and device frames consume the same tokens instead of each carrying
+    # so both panels and the device frames consume the same tokens instead of each carrying
     # its own hardcoded greys.
     if widgets or kind == "prototype":
         css.append(read(os.path.join(HARNESS_DIR, "chrome.css")))
@@ -525,9 +500,16 @@ def cmd_build(args):
                 % (", ".join(unknown), ", ".join(WINDOW_PARTS)))
         if window_parts and device != "desktop":
             die("--window only applies to the desktop frame, and --device is %r" % device)
-        if window_parts:
-            root_attrs += ' data-at-window="%s"' % html.escape(
-                ",".join(window_parts), quote=True)
+        if "none" in window_parts and len(window_parts) > 1:
+            die("--window none means no chrome at all, so it cannot be combined with %s"
+                % ", ".join(w for w in window_parts if w != "none"))
+        if device == "desktop":
+            # A desktop app is a window. Saying nothing gets you one; opting out is explicit.
+            if not window_parts:
+                window_parts = split_list(WINDOW_DEFAULT)
+            if window_parts != ["none"]:
+                root_attrs += ' data-at-window="%s"' % html.escape(
+                    ",".join(window_parts), quote=True)
     elif args.device:
         die("--device needs the viewport widget: it is on for prototype, and elsewhere "
             "you turn it on with --with viewport")
@@ -551,6 +533,10 @@ def cmd_build(args):
         "<style>",
         "\n".join(c.strip() for c in css),
         "</style>",
+    ]
+    for sc in head_scripts:
+        doc.append("<script>%s</script>" % sc)
+    doc += [
         "</head>",
         "<body>",
         body,
@@ -628,14 +614,14 @@ def main():
     b.add_argument("--out", required=True, help="absolute path to write")
     b.add_argument("--picker", choices=["switch", "list"])
     b.add_argument("--subtitle", default="",
-                   help="one line under the rail title: what this prototype is deciding")
+                   help="one line under the panel title: what this prototype is deciding")
     b.add_argument("--device", metavar="D", choices=sorted(DEVICES),
                    help="the one device this prototype is for (see `spike kinds`). "
                         "Required wherever the viewport widget is on")
     b.add_argument("--window", metavar="bar,lights",
-                   help="window chrome for the desktop frame. Default is neither: a "
-                        "design that owns its own top area should not get a generic "
-                        "macOS title bar stapled over it")
+                   help="window chrome for the desktop frame. Default is bar,lights — a "
+                        "desktop app is a window. --window none for a design that draws "
+                        "its own top area edge to edge")
     b.add_argument("--lang", default="en")
     b.add_argument("--extra-css", help="absolute path to additional CSS appended last")
     b.add_argument("--with", dest="with_", metavar="W1,W2",

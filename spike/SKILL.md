@@ -28,7 +28,7 @@ owns both.
 
 This skill owns every prototype, however the request arrives. Load it when the user says *prototype, mockup, wireframe, "show me a few options", "what should this look like", "spike it", "which approach"* — and equally when that request lands in the middle of something else, which is the case it gets missed in. `grill-me` in particular ends with "and then make an HTML prototype": that sentence is an instruction to invoke this skill, not to start writing HTML.
 
-Hand-writing a prototype instead of loading this skill loses the slug scheme, the rail and its state axes, the device frames, and the one-device-per-prototype rule. None of that is visible as an error — the file just quietly can't be iterated on. **If you can see exactly what to write, that is when to load this, not when to skip it.**
+Hand-writing a prototype instead of loading this skill loses the slug scheme, the Tweaks panel and its generated controls, the device frames, and the one-device-per-prototype rule. None of that is visible as an error — the file just quietly can't be iterated on. **If you can see exactly what to write, that is when to load this, not when to skip it.**
 
 ## Pick a shape
 
@@ -61,7 +61,7 @@ The shape is the *mechanism*. The domain is the *mode of software* — it says w
 
 Why: a platform is an interaction model, not a width. Touch, pointer and remote-focus are different designs that happen to share a product, and one file holding all three spends every variant slot on "which platform" instead of on the question the prototype exists to answer. It also makes each file three times the size, and two thirds of it is always irrelevant to what is being looked at.
 
-**`--device` takes one value and is required.** There is no list, no switcher in the rail and no unframed `fit` — the harness builds that one frame and the rail's device group carries only the size readout, rotate and 1:1. Rotation is not a second device: the `phone` and `tablet` frames rotate, and landscape is that frame's own control. A design that ships on a phone and a tablet is two builds, judged separately.
+**`--device` takes one value and is required.** There is no list and no switcher — the harness builds that one frame and the panel's device group carries only the size readout, rotate and 1:1. `fill` is a device like any other: the window itself, unframed, for a design that is a page rather than an app. Rotation is not a second device: the `phone` and `tablet` frames rotate, and landscape is that frame's own control. A design that ships on a phone and a tablet is two builds, judged separately.
 
 ## Naming — every shape
 

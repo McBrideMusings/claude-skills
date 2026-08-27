@@ -8,7 +8,7 @@ If the question is logic/state → [LOGIC.md](LOGIC.md). If it's "which technica
 expensive — that's `gui` sketch mode (ASCII in chat).
 
 Adapted from emilkowalski/skills `prototype` (MIT, © 2026 Emil Kowalski); the selection spec now lives
-as real code in `tool/harness/rail.css` and `rail.js`, and the tool wires it — you never
+as real code in `tool/harness/tweaks.css` and `tweaks.js`, and the tool wires it — you never
 write it.
 
 ## When this is the right shape
@@ -110,8 +110,8 @@ gets dropped, same as a hand-written direction would.
 
 Write the fragment to `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.body.html`: one
 `<template data-variant="Name" data-caption="...">` per direction, plus the project's tokens in a
-`<style>`, plus a `<nav data-axis>` for each state the design has to be judged in (which screen, which
-error, which empty case) and a top-level `<script>` listening for `at:axis`. Then:
+`<style>`, plus a top-level `<script>` that registers one tweak per thing worth changing while
+looking at it — which screen, which error, which empty case, and any value the design turns on. Then:
 
 ```bash
 "$HOME/.claude/skills/spike/tool/spike" build \
@@ -125,13 +125,15 @@ error, which empty case) and a top-level `<script>` listening for `at:axis`. The
 A build **replaces** `--out` entirely. There is no merge and no history inside the file: refining is
 editing the fragment and building again over the top. The title is the topic and nothing else.
 
-The rail's markup, styles and URL persistence all come from the tool. It binds no keys: on a prototype the whole keyboard belongs to the design being shown, so every harness control is a button.
+The Tweaks panel's markup, its widgets and its URL persistence all come from the tool: you declare a
+value and it renders the control the value's type calls for. It binds no keys — on a prototype the
+whole keyboard belongs to the design being shown, so every harness control is a button.
 **Write none of it**, and never restyle it — it stays identical across every project so it reads as
 harness chrome rather than part of the design being judged.
 
 The same is true of the other harness widgets a prototype gets for free: the device frame (a real
 viewport, so the fragment's media queries actually fire, with the status bar / window chrome drawn by
-the harness), the comment button, and the rail's Checks group, whose Contrast row reveals any text
+the harness), the comment button, and the panel's Checks group, whose Contrast row reveals any text
 failing WCAG AA. Tell the user the comment button exists when handing the prototype over — a comment
 pinned to an element comes back naming the fragment line that produced it, which is the fastest
 revision loop available. See [`CONTRACT.md`](CONTRACT.md) for how the comments come back.
@@ -162,9 +164,9 @@ variants. A variant is a *direction* being compared; a state is a *condition* th
 to survive. Crossing them into one flat list is how five screens and two states become ten unusable
 buttons.
 
-Declare each state dimension as its own `<nav data-axis>`; the rail renders a group and dispatches
-`at:axis`, and axis state survives a variant switch on purpose, so `←`/`→` compares the same screen in
-the same state across two directions. Full syntax and the listener boilerplate:
+Register each state dimension as its own tweak — `atTweaks.add('conn', [...], {onChange})`. The panel
+renders the control, and tweak state survives a variant switch on purpose, so flipping direction
+compares the same screen in the same state. Full syntax and the handler boilerplate:
 [`CONTRACT.md`](CONTRACT.md).
 
 ### The device — decide it here, once
@@ -190,8 +192,9 @@ Then present the set and **stop — the choice is the user's**:
 | 1 | Quiet | Minimal motion, borders over shadows | A daily-use tool | Least memorable |
 | 2 | Editorial | Large type, generous whitespace | The moment deserves weight | Eats vertical space |
 
-Close with the full path to the file and how to drive it: every control is a button in the rail — no
-keys, because the design under judgement owns the keyboard. On a rebuild, add one line naming what
+Close with the full path to the file and how to drive it: every control is a button in the Tweaks
+panel, which drags by its header and closes to a pill — no keys, because the design under judgement
+owns the keyboard. On a rebuild, add one line naming what
 changed since they last looked.
 
 Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
@@ -216,8 +219,9 @@ Keep the files only if the user asks.
 - **Variants that differ only in colour or copy.** That's a tweak, not a divergence.
 - **A shared layout wrapper across variants.** Each variant must be free to throw out the layout;
   sharing one defeats the point.
-- **Hand-writing or restyling the rail.** It is chrome, and it is supplied. The moment it uses
-  project tokens, it starts competing with the design being judged.
+- **Hand-writing or restyling the Tweaks panel, or hand-drawing a control it would render.** It is
+  chrome, and it is supplied. The moment it uses project tokens, it starts competing with the design
+  being judged.
 - **Lorem ipsum, placeholder avatars, `$0.00`.** Fake content flatters every variant equally and
   therefore distinguishes none of them.
 - **Judging variants side by side at small scale.** One at a time, full size.
@@ -225,9 +229,9 @@ Keep the files only if the user asks.
   title reading "Wheelhouse Nav Riff". One file per prototype, rebuilt in place.
 - **One file covering several device types.** A platform is an interaction model, not a width: phone,
   desktop and TV are three prototypes. See SKILL.md.
-- **Restyling or relocating the rail's groups.** They are harness chrome, ordered coarse to fine:
-  variants change constantly and axes change with them, and the order says so.
+- **Restyling or relocating the panel's groups.** They are harness chrome, ordered coarse to fine:
+  variants change constantly and tweaks change with them, and the order says so.
 - **A "Phone" variant and a "Desktop" variant of the same design.** Screen size is the device frame's
-  axis, not a variant's. One responsive template, sized by the harness.
+  question, not a variant's. One responsive template, sized by the harness.
 - **Moving prototype markup into the codebase.** It was written with no tests, no error handling, and
-  no accessibility pass beyond what the rail spec carries.
+  no accessibility pass beyond what the panel spec carries.

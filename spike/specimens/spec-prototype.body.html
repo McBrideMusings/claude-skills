@@ -12,12 +12,7 @@
   .p-edit .p-btn { background: #111; border-radius: 2px; }
 </style>
 
-<nav data-axis="state" data-label="Data">
-  <button data-value="full">Three sessions<em>the normal case</em></button>
-  <button data-value="empty">No sessions<em>first run</em></button>
-</nav>
-
-<aside data-rail-note><b>Scope.</b> Session list only. No transcript view in this round.</aside>
+<aside data-note><b>Scope.</b> Session list only. No transcript view in this round.</aside>
 
 <template data-variant="Quiet" data-caption="Borders over shadows, one accent">
   <div class="proto-frame">
@@ -46,10 +41,22 @@
 </template>
 
 <script>
-  addEventListener('at:axis', function (e) {
-    if (e.detail.axis !== 'state') return;
-    document.querySelectorAll('[data-state]').forEach(function (el) {
-      el.hidden = el.dataset.state !== e.detail.value;
-    });
+  /* A list value, so the panel renders a picker. The handler runs once now and again after
+     every variant swap, which is why nothing here re-applies state on mount. */
+  atTweaks.add('state', [
+    { value: 'full',  label: 'Three sessions', hint: 'the normal case' },
+    { value: 'empty', label: 'No sessions',    hint: 'first run' }
+  ], {
+    label: 'Data',
+    onChange: function (v) {
+      document.querySelectorAll('[data-state]').forEach(function (el) {
+        el.hidden = el.dataset.state !== v;
+      });
+    }
   });
+
+  /* A bounded number, so the panel renders a slider — the card padding, live. */
+  atTweaks.add('pad', 16, { max: 40, unit: 'px', label: 'Card padding', onChange: function (v) {
+    document.querySelectorAll('.p-card').forEach(function (el) { el.style.padding = v + 'px'; });
+  } });
 </script>

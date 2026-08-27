@@ -141,6 +141,54 @@ has "$WORK/one.html" 'data-at-device-frame="desktop"' && say ok "a desktop build
   --device panel --window bar --out "$WORK/bad2.html" >/dev/null 2>&1
 [ $? -ne 0 ] && say ok "--window without the desktop frame is rejected" \
   || say f "--window built against a panel device"
+# A desktop app IS a window: saying nothing gets the real thing, and opting out is explicit.
+"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
+  --device desktop --out "$WORK/deskdef.html" >/dev/null 2>&1
+has "$WORK/deskdef.html" 'data-at-window="bar,lights"' \
+  && say ok "a bare --device desktop defaults to a real window" \
+  || say f "--device desktop did not default to bar,lights"
+"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
+  --device desktop --window none --out "$WORK/desknone.html" >/dev/null 2>&1
+# On the <html> line only: viewport.js's own source mentions the attribute it reads.
+grep -q '^<html[^>]*data-at-window' "$WORK/desknone.html" \
+  && say f "--window none still wrote window chrome" \
+  || say ok "--window none opts out of the title bar"
+grep -q '^<html[^>]*data-at-window="bar,lights"' "$WORK/deskdef.html" \
+  && say ok "the default window chrome is on :root" \
+  || say f "bar,lights did not reach the <html> element"
+"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
+  --device desktop --window none,bar --out "$WORK/deskmix.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "--window none cannot be combined" || say f "--window none,bar built"
+# `fill` is the window itself — a real device answer, and the one that frames nothing.
+"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
+  --device fill --out "$WORK/fill.html" >/dev/null 2>&1
+has "$WORK/fill.html" 'data-at-device-frame="fill"' && say ok "--device fill reaches the document" \
+  || say f "--device fill did not build"
+
+echo "--- the tweaks panel ---"
+cat > "$WORK/twk.html" <<'EOF'
+<aside data-note><b>Scope.</b> The list only.</aside>
+<template data-variant="Quiet"><div class="frame"><button>Go</button></div></template>
+<template data-variant="Loud"><div class="frame"><button>GO NOW</button></div></template>
+<script>atTweaks.add('dark', false, { onChange: function () {} });</script>
+EOF
+"$ART" build --kind prototype --title P --fragment "$WORK/twk.html" \
+  --device phone --out "$WORK/twk.out.html" >/dev/null 2>&1
+has "$WORK/twk.out.html" 'class="at-twk"' && say ok "the panel ships on a prototype" \
+  || say f "no .at-twk in a switch-picker prototype"
+has "$WORK/twk.out.html" 'class="at-twk-pill"' && say ok "the pill ships beside it" \
+  || say f "no .at-twk-pill — closing the panel would strand it"
+# The stub has to be in <head>: a fragment's own <script> is in the body and runs first.
+sed -n '1,/<\/head>/p' "$WORK/twk.out.html" | grep -q 'window.atTweaks=' \
+  && say ok "the atTweaks stub is in <head>" \
+  || say f "the atTweaks stub is not ahead of the fragment"
+has "$WORK/twk.out.html" 'class="at-twk-note"' && say ok "data-note becomes the scope note" \
+  || say f "<aside data-note> did not reach the panel"
+has "$WORK/twk.out.html" 'data-at-tweaks' && say ok "the root says the panel is present" \
+  || say f "data-at-tweaks missing from :root"
+# The rail is gone entirely, markup-declared axes with it.
+has "$WORK/twk.out.html" 'class="at-rail"' && say f "the rail is still being built" \
+  || say ok "the rail is gone"
 
 echo "--- retired kinds ---"
 # page/deck are gone; explainer belongs to the explain skill and its own tool.

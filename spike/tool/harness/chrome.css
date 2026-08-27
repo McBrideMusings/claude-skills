@@ -1,6 +1,6 @@
 /* chrome.css — the one palette every piece of harness chrome consumes.
 
-   The rail, the comment panel, the device bezel and the toasts are all the same thing:
+   The Tweaks panel, the comment panel, the device bezel and the toasts are all one thing:
    fixed-dark furniture that sits beside an folio whose own theme is none of their
    business. They used to each carry their own hardcoded greys — the rail on #101114 /
    #181b20 / #23272d, the panel on rgba(18,18,18,.93) with its own amber — which is how
@@ -14,12 +14,9 @@
 
 /* --- the space the folio gets ---
 
-   Both side panels run edge to edge, so the folio's usable area is the window minus
-   whichever of them is open. One pair of tokens rather than each surface working it out for
-   itself: the stage and the device host both read these, which is what makes a device
-   frame stay centred in the space that is actually free — with the rail open or shut,
-   with the comments panel open or shut. Before this the host only knew about the rail,
-   so opening comments pushed the phone off-centre by half the panel's width. */
+   The folio's usable area, as one pair of tokens rather than each surface working it out
+   for itself: the stage, the device host and dock.js all read these, which is what keeps a
+   device frame, a floating card and a docked button describing the same layout. */
 
 :root {
   --at-gap: 12px;
@@ -29,7 +26,7 @@
 
 /* --- the floating buttons ---
 
-   One object with three instances: reopen the rail, comment, switch theme. Partially
+   One object with three instances: comment, check contrast, switch theme. Partially
    opaque so they sit over the folio without competing with it, solid on hover, and
    draggable to either edge — see dock.js. Positioned entirely from script, so nothing
    here sets left/right/top. */
@@ -65,7 +62,7 @@
 
 /* Active is the one state that overrides the resting transparency: amber, the same
    colour the pins and the send button use, so "the review layer is on" is one signal
-   wherever it appears. Blue belongs to the rail, where it means "this is the option
+   wherever it appears. Blue belongs to the Tweaks panel, where it means "this is the option
    currently selected out of several" — a different question from "this mode is engaged",
    and the floating buttons are never one of several. */
 .at-dock[data-active] {
@@ -81,21 +78,14 @@
   .at-dock { transition: none !important; }
 }
 
-html[data-at-rail]:not([data-at-embedded]) {
-  --at-inset-l: var(--at-rail-w, 272px);
-}
-
-/* Written to outweigh the rule above rather than relying on order: that one carries two
-   attribute selectors, so a single-attribute reset silently lost and the stage kept the
-   rail's width reserved after the rail was gone. */
-html[data-at-rail][data-at-rail-collapsed]:not([data-at-embedded]) { --at-inset-l: 0px; }
-
-:root[data-at-annotate]:not([data-at-embedded]) {
-  --at-inset-r: var(--at-panel-w, 300px);
-}
+/* Both insets stay 0. They were the width of the two edge-to-edge columns — the rail on
+   the left, the comments panel on the right — and both are now cards that float over the
+   folio instead of reserving a strip of the window. Nothing reassigns them today; the
+   tokens stay because the stage, the device host and dock.js all read them, and a frame
+   that ever does have to sit beside something has one place to say so. */
 
 :root {
-  --at-c-bg: #101114;          /* the rail's ground */
+  --at-c-bg: #101114;          /* an opaque chrome ground */
   --at-c-panel: rgba(18, 18, 18, 0.93);  /* floating surfaces, over an folio */
   --at-c-surface: #181b20;     /* a control at rest */
   --at-c-surface-hi: #23272d;  /* a control under the pointer */

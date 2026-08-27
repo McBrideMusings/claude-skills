@@ -1,7 +1,7 @@
 /* viewport.css — the device stage: bezel, outside-the-viewport chrome, and the
-   floating size bar used when there is no rail to put the controls in.
+   floating size bar used when there is no Tweaks panel to put the controls in.
 
-   Fixed spec, same rule as rail.css: this is harness chrome, never restyled with project
+   Fixed spec, same rule as tweaks.css: this is harness chrome, never restyled with project
    tokens, never theme-aware. It has to read as "the thing holding the design" against a
    light prototype and a dark one alike. */
 
@@ -10,25 +10,25 @@
 /* This hides the folio's own content while a frame is up, because the content is being
    rendered inside the iframe instead. Everything harness has to be exempt.
 
-   The exemptions are CATEGORIES, not instances. `.at-rail-reopen` used to be listed by
-   name — added after collapsing the rail behind a device frame left no control on screen
+   The exemptions are CATEGORIES, not instances. A single button used to be listed by
+   name — added after closing the panel behind a device frame left no control on screen
    at all — and that patch fixed one button while leaving the shape that produced it: any
    new floating control is invisible until someone remembers to extend this list. Two
    things went unnoticed that way. The comment toggle and the contrast button never
    appeared at all once a device frame was picked, which is always. And dock.js positions
    every floating button by measuring a hidden probe that is also a body child — hidden by
    this rule, it measured 0, so every docked button snapped to the window's left edge and
-   sat on top of the rail.
+   sat on top of the panel.
 
    `.at-dock` is the class __atDock puts on every floating control, so a new one is exempt
-   the moment it exists. `.at-rail-reopen` is gone from the list because it is one. */
-html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-dock):not([data-at-probe]):not(.at-notes-layer):not(.at-panel):not(.at-toast) {
+   the moment it exists. `.at-dock` covers every one of them instead. */
+html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-twk):not(.at-twk-pill):not(.at-dock):not([data-at-probe]):not(.at-notes-layer):not(.at-panel):not(.at-toast) {
   display: none !important;
 }
 
 /* Centred in the space that is actually free, not in the window: both side panels float
    and either can be open, so the host reads the shared insets rather than knowing about
-   the rail alone. Opening comments used to leave the frame centred on the old bounds,
+   one panel alone. Opening comments used to leave the frame centred on the old bounds,
    sitting half a panel's width off to the right. */
 .at-vp-host {
   position: fixed;
@@ -36,7 +36,7 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-doc
   right: var(--at-inset-r, 0px);
   bottom: 0;
   left: var(--at-inset-l, 0px);
-  /* Matched to the rail's slide so the frame tracks the panel instead of jumping to its
+  /* Matched to the panel's slide so the frame tracks it instead of jumping to its
      new centre a frame ahead of it. */
   transition: left 260ms cubic-bezier(.22, 1, .36, 1),
               right 260ms cubic-bezier(.22, 1, .36, 1);
@@ -50,7 +50,7 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-doc
     radial-gradient(120% 100% at 50% 0%, #16181d 0%, #0a0b0d 70%);
 }
 
-/* The insets already collapse to 0 without a rail, or with it hidden. */
+/* The insets are 0 now that both panels float; this stays as the one place that says so. */
 
 /* 1:1 — the frame keeps its real pixel size and the host scrolls to the rest of it.
    Centring a frame that is wider than the host would cut off its left edge with no way
@@ -305,7 +305,7 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-rail):not(.at-doc
 .at-vp-mod:disabled:hover { background: transparent; color: var(--at-c-faint); }
 .at-vp-mod:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
-/* --- the floating bar, used only when no rail exists (non-prototype kinds) --- */
+/* --- the floating bar, used only when no Tweaks panel exists (non-prototype kinds) --- */
 
 .at-vp {
   position: fixed;

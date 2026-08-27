@@ -83,7 +83,7 @@
      with nothing to say so. window.atContrast.check(true) audits the chrome; it has no
      key because its result is for whoever maintains the harness, not for whoever is
      judging a prototype. */
-  var CHROME = '.at-panel, .at-notes-layer, .at-vp, .at-rail, .at-rail-reopen, ' +
+  var CHROME = '.at-panel, .at-notes-layer, .at-vp, .at-twk, .at-twk-pill, ' +
     '.at-composer, .at-theme, .at-oc, .at-vp-size';
 
   function check(chromeOnly) {
@@ -179,7 +179,7 @@
   }
   btn.addEventListener('click', function () { setMode(!on, false); });
   // Host only, and only where nothing better carries the check — see the note above.
-  var floating = !root.hasAttribute('data-at-embedded') && !window.__atRail;
+  var floating = !root.hasAttribute('data-at-embedded') && !window.__atTweaks;
   if (floating) document.body.appendChild(btn);
   paintBtn();
   // dock.js is inlined first, but __atDock is registered inside its own IIFE; a timeout

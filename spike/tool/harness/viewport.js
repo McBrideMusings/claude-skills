@@ -26,7 +26,7 @@
    WHICH device is declared per-folio by `spike build --device`, read here off
    data-at-device-frame, and there is exactly one. It is required and has no default:
    which platform a design is for is the author's decision, made before anything is drawn.
-   The switcher that used to sit in the rail is gone — a row of frames invited the reader
+   The switcher that used to sit in the panel is gone — a row of frames invited the reader
    to judge a phone layout against a desktop layout as if they were two directions for one
    design, which is the comparison this harness exists to prevent. Two platforms is two
    prototypes, and the slug says which. */
@@ -36,7 +36,7 @@
 
   /* Inside a frame: no nested frames, but the keyboard has to be given back.
      Clicking a device frame moves focus into the iframe, and from then on every keypress
-     belongs to that document — so the rail's keys, and `a` and `c`, all silently stop
+     belongs to that document — so `a` and `c` silently stop
      working the moment you interact with the thing you are reviewing. The frame is
      same-origin, so it forwards what it is not going to use itself up to the host, which
      re-dispatches it as if the host had focus. A key typed into one of the prototype's
@@ -61,7 +61,11 @@
        reliably visible on real hardware. tvOS publishes that as a safe area and every
        shipping layout keeps clear of it, so the frame publishes it too — a TV design
        judged edge-to-edge is judged at a size no viewer has. */
-    tv:      { label: 'TV',      w: 1920, h: 1080, chrome: 'tv',      rotates: false, radius: 8 }
+    tv:      { label: 'TV',      w: 1920, h: 1080, chrome: 'tv',      rotates: false, radius: 8 },
+    /* The window itself: no frame, no bezel, no scaling. It is a real answer to "which
+       device" — a page that is whatever size the reader's browser is — and it is the only
+       one where the readout is measuring rather than reporting. */
+    fill:    { label: 'Fill',    w: 0,    h: 0,    chrome: 'none',    rotates: false, radius: 0 }
   };
 
   /* Which parts of the macOS window the desktop frame draws. Build-time, from --window,
@@ -100,6 +104,28 @@
   var sizeLabel = null;
   var D = CATALOG[DEVICE];
 
+  /* `fill` draws nothing at all — the folio renders straight into the page. The panel still
+     gets a device group, because "what am I looking at" is a question the reader asks
+     whatever the answer is, and here the live window size is the whole of it. */
+  if (DEVICE === 'fill') {
+    var slot = window.__atTweaks;
+    if (slot) {
+      var fg = slot.group(D.label);
+      var readout = document.createElement('div');
+      readout.className = 'at-vp-readout';
+      var size = document.createElement('span');
+      size.className = 'at-vp-size';
+      readout.appendChild(size);
+      fg.appendChild(readout);
+      var paintSize = function () {
+        size.textContent = window.innerWidth + ' \u00d7 ' + window.innerHeight + ' \u00b7 the window';
+      };
+      paintSize();
+      window.addEventListener('resize', paintSize);
+    }
+    return;
+  }
+
   /* Every bit of frame state belongs in the URL, so a phone-landscape view of variant 2
      is a link. Rotate used to call apply() directly and skipped this, which meant the
      one control whose result you would most want to send someone was the one that did
@@ -131,7 +157,7 @@
     fit();
   }
 
-  /* ---------------- controls: into the rail when there is one ----------------
+  /* ---------------- controls: into the Tweaks panel when there is one ----------------
 
      Rotate and 1:1 are the only two. They change how the one frame is shown, not which
      frame it is, so they sit on the readout line with the numbers they change rather
@@ -158,9 +184,9 @@
     actualBtn.addEventListener('click', toggleActual);
   }
 
-  var rail = window.__atRail;
-  if (rail) {
-    var g = rail.group(D.label);
+  var panel = window.__atTweaks;
+  if (panel) {
+    var g = panel.group(D.label);
     buildReadout('at-vp-mod');
     var readout = document.createElement('div');
     readout.className = 'at-vp-readout';
@@ -240,11 +266,11 @@
   }
 
   /* A copy of this document, with the live harness DOM stripped so the frame starts
-     clean and the rail inside it mounts its own variant. */
+     clean and the panel inside it mounts its own variant. */
   function srcdoc(d, land) {
     var clone = root.cloneNode(true);
-    // The rail STAYS in the clone. rail.js needs it to exist to mount a variant at all —
-    // removing it makes the frame render an empty stage. rail.css hides it under
+    // The Tweaks panel STAYS in the clone. tweaks.js needs it to exist to mount a variant
+    // at all — removing it makes the frame render an empty stage. tweaks.css hides it under
     // html[data-at-embedded], which is the right mechanism: present, not visible.
     // .at-dc is device chrome injected into a PREVIOUS frame's document. It should never
     // be on the host, but stripping it here means no frame can inherit another frame's
@@ -253,7 +279,7 @@
     // how the contrast button and the comment toggle ended up cloned into the frame and
     // rendered, undocked, in a corner of the design.
     [].slice.call(clone.querySelectorAll(
-      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-rail-reopen, .at-dock, .at-dc'
+      '.at-vp, .at-vp-host, .at-notes-layer, .at-panel, .at-twk-pill, .at-dock, .at-dc'
     )).forEach(function (n) { n.remove(); });
     var stage = clone.querySelector('#at-stage');
     if (stage) stage.innerHTML = '';
@@ -267,8 +293,8 @@
     clone.setAttribute('data-at-key', root.getAttribute('data-at-key') || location.pathname);
     var v = root.getAttribute('data-at-variant-index');
     if (v) clone.setAttribute('data-at-variant-init', v);
-    var ax = root.getAttribute('data-at-axis-state');
-    if (ax) clone.setAttribute('data-at-axis-init', ax);
+    var tw = root.getAttribute('data-at-tweak-state');
+    if (tw) clone.setAttribute('data-at-tweak-init', tw);
     clone.removeAttribute('data-at-vp');
     clone.removeAttribute('data-at-annotate');
 
@@ -421,10 +447,10 @@
     var vh = land ? d.w : d.h;
     var w = shell.offsetWidth;
     var h = shell.offsetHeight;
-    /* The host's own box is the WRONG ruler while the rail is opening or closing:
+    /* The host's own box is the WRONG ruler while a panel is animating:
        .at-vp-host transitions left/right over 260ms and at:relayout fires at the start of
        it, so host.clientWidth describes the layout the stage is leaving. Expanding the
-       rail scaled a 1920 TV frame to 76% of the full window and slid it under the rail;
+       stale box scaled a 1920 TV frame to 76% of the full window and slid it under a panel;
        collapsing it left the frame at the old scale with 272px of ground unused. The dock
        probe carries the same two inset tokens and does not animate, so it already reads
        the destination. */
@@ -450,15 +476,15 @@
      Rebuilding from srcdoc re-parses the whole document, which throws away the frame's
      scroll position, anything typed into it, and any state the prototype itself holds —
      on an action that happens a hundred times a session. The frame is same-origin, runs
-     this same rail.js, and knows how to apply a round, a variant and an axis in place. */
+     this same tweaks.js, and knows how to apply a variant and a tweak in place. */
   function syncFrame() {
     if (!frame || !frame.contentWindow) return;
-    var axes = {};
-    try { axes = JSON.parse(root.getAttribute('data-at-axis-state') || '{}'); } catch (e) {}
+    var tweaks = {};
+    try { tweaks = JSON.parse(root.getAttribute('data-at-tweak-state') || '{}'); } catch (e) {}
     frame.contentWindow.postMessage({
       at: 'sync',
       variantIndex: root.getAttribute('data-at-variant-index'),
-      axes: axes
+      tweaks: tweaks
     }, '*');
   }
   window.addEventListener('at:variant', syncFrame);

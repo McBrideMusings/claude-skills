@@ -16,18 +16,7 @@
   .p-warm { --page: #f6f2ec; --brand: #9a5b2d; --edge: #e3d9cc; }
 </style>
 
-<nav data-axis="state" data-label="Data">
-  <button data-value="full">Six sessions<em>the normal case</em></button>
-  <button data-value="empty">No sessions<em>first run</em></button>
-  <button data-value="error">Daemon unreachable<em>what the list does with no data</em></button>
-</nav>
-
-<nav data-axis="sort" data-label="Order">
-  <button data-value="recent">Most recent</button>
-  <button data-value="name">By name</button>
-</nav>
-
-<aside data-rail-note><b>Scope.</b> Session list only. Search filters nothing yet.</aside>
+<aside data-note><b>Scope.</b> Session list only. Search filters nothing yet.</aside>
 
 <template data-variant="Quiet" data-caption="Borders over shadows, one accent">
   <div class="proto-frame">
@@ -85,13 +74,22 @@
       });
     }
 
-    addEventListener('at:axis', function (e) {
-      if (e.detail.axis === 'state') {
+    atTweaks.add('state', [
+      { value: 'full',  label: 'Six sessions',       hint: 'the normal case' },
+      { value: 'empty', label: 'No sessions',        hint: 'first run' },
+      { value: 'error', label: 'Daemon unreachable', hint: 'what the list does with no data' }
+    ], {
+      label: 'Data',
+      onChange: function (v) {
         document.querySelectorAll('[data-state]').forEach(function (el) {
-          el.hidden = el.dataset.state !== e.detail.value;
+          el.hidden = el.dataset.state !== v;
         });
       }
-      if (e.detail.axis === 'sort') { order = e.detail.value; paint(); }
+    });
+
+    atTweaks.add('sort', ['recent', 'name'], {
+      label: 'Order',
+      onChange: function (v) { order = v; paint(); }
     });
 
     addEventListener('at:variant', paint);

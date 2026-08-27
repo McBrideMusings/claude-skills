@@ -1,6 +1,6 @@
 /* annotate.css — the comment layer. Chrome, not design.
 
-   Same rule as rail.css: deliberately NOT theme-aware, never restyled with project
+   Same rule as tweaks.css: deliberately NOT theme-aware, never restyled with project
    tokens. Dark glass reads as harness on top of any page, light or dark.
 
    Dormant by default — nothing here renders until annotate.js sets data-at-annotate on
@@ -33,14 +33,16 @@
    clickable while you annotate, so they must not look like annotation targets. */
 :root[data-at-annotate] .at-panel,
 :root[data-at-annotate] .at-panel *,
+:root[data-at-annotate] .at-twk,
+:root[data-at-annotate] .at-twk *,
 :root[data-at-annotate] .at-composer,
 :root[data-at-annotate] .at-composer * { cursor: auto !important; }
 :root[data-at-annotate] .at-panel button,
 :root[data-at-annotate] .at-composer button,
 :root[data-at-annotate] .at-theme,
 :root[data-at-annotate] .at-annotate-toggle,
-:root[data-at-annotate] .at-rail-reopen,
-:root[data-at-annotate] .at-rail button,
+:root[data-at-annotate] .at-twk button,
+:root[data-at-annotate] .at-twk-pill,
 :root[data-at-annotate] .at-vp button { cursor: pointer !important; }
 
 /* --- a pinned comment ------------------------------------------------------ */
@@ -145,25 +147,26 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 
 :root { --at-panel-w: 300px; }
 
-/* The panel is a review surface for the folio, so it must not cover the folio.
-   While annotate mode is on the page reflows beside it — the same move the prototype
-   rail makes with padding-left — instead of parking a 300px pane over the right third
-   of the content the reviewer is trying to comment on. The theme toggle lives in that
-   same corner and moves with it. */
-:root[data-at-annotate]:not([data-at-rail]) body { padding-right: calc(var(--at-panel-w) + 32px); }
-
-/* Edge to edge and full height, the mirror of the rail on the other side. */
+/* A card, not a column. It was edge to edge and full height — the mirror of the rail on
+   the other side — and it reflowed the page with padding-right to keep off the folio.
+   Both halves of that are gone with the rail: the panel floats over the folio, is dragged
+   by its header out of the way of whatever is being commented on, and grows only as tall
+   as the comments in it. A review surface for eight notes was drawing a 300px column down
+   a 900px window to hold eight notes. */
 .at-panel {
   position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: var(--at-panel-w);
   z-index: 2147483641;
+  width: var(--at-panel-w);
+  max-height: min(60vh, 520px);
   display: none;
   flex-direction: column;
-  background: var(--at-c-bg);
-  border-left: 1px solid var(--at-c-line);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: var(--at-c-panel);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 14px 44px rgba(0, 0, 0, 0.5);
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
@@ -171,6 +174,7 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 }
 
 :root[data-at-annotate] .at-panel { display: flex; }
+html[data-at-embedded] .at-panel { display: none !important; }
 
 .at-panel-head {
   display: flex;
@@ -178,7 +182,13 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
   gap: 8px;
   padding: 11px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
 }
+
+.at-panel[data-dragging] .at-panel-head { cursor: grabbing; }
 
 .at-panel-title {
   flex: 1;
@@ -190,7 +200,8 @@ html[data-at-embedded] .at-annotate-toggle { display: none; }
 }
 
 .at-panel-list {
-  flex: 1;
+  flex: 0 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 6px;
 }
