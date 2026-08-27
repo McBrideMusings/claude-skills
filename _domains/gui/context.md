@@ -15,4 +15,4 @@ a sibling, and most of this does not apply there.
 
 Depth: [design.md](design.md), [states.md](states.md), [slop.md](slop.md),
 [native-first.md](native-first.md), [direction.md](direction.md), [alt-text.md](alt-text.md),
-[vocabulary.md](vocabulary.md).
+[icons.md](icons.md), [vocabulary.md](vocabulary.md).

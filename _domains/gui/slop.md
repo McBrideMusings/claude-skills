@@ -36,7 +36,9 @@ Reaching for one of these means the axis was never decided. Unlike the absolute 
 words can earn any of them back — but recognising one means **rewriting the element, not softening it**.
 
 - **Unicode glyphs or emoji as an icon system.** `→ ✓ ⚡ 🚀` standing in for icons. Icons are drawn —
-  a real library or authored SVG, one consistent stroke and weight throughout.
+  a real library or authored SVG, one consistent stroke and weight throughout. Drawing them
+  yourself has its own failure one step past this one, where the icon is authored properly and
+  still reads as the wrong object — [icons.md](icons.md).
 - **A system display face as the display voice.** Impact, Arial Black, or the platform sans carrying
   the headline of a page with its own visual world. Source and self-host a face whose character matches
   the lettering the direction committed to; the closest installed font is a failure, not a fallback.
