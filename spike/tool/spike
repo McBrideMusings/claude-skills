@@ -345,8 +345,8 @@ def build_panel(variants, note, title, subtitle):
               '    <button class="at-twk-x" type="button" title="Hide the controls" '
               'aria-label="Hide the controls">&#215;</button>',
               '  </div>',
-              '  <div class="at-twk-seg at-twk-tabs" role="group" aria-label="Panel tabs" '
-              'hidden></div>',
+              '  <div class="at-twk-meta" hidden></div>',
+              '  <div class="at-twk-tabs" role="tablist" aria-label="Panel tabs" hidden></div>',
               '  <div class="at-twk-body">',
               '    <div class="at-twk-pane" data-pane="tweaks">']
 

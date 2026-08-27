@@ -42,6 +42,7 @@
   if (!panel || !stage || !all.length) return;
 
   var body = panel.querySelector('.at-twk-body');
+  var meta = panel.querySelector('.at-twk-meta');
   var tabStrip = panel.querySelector('.at-twk-tabs');
   var pill = document.querySelector('.at-twk-pill');
   var variantBtns = [].slice.call(panel.querySelectorAll('.at-twk-variant'));
@@ -114,7 +115,7 @@
     panes[p.key] = el;
 
     var b = document.createElement('button');
-    b.className = 'at-twk-opt at-twk-tab';
+    b.className = 'at-twk-tab';
     b.type = 'button';
     b.textContent = p.label;
     b.hidden = true;
@@ -124,13 +125,18 @@
   });
 
   function selectTab(key) {
-    if (!panes[key]) return;
+    if (!panes[key] || active === key) return;
     active = key;
     PANES.forEach(function (p) {
       panes[p.key].hidden = p.key !== key;
       tabs[p.key].toggleAttribute('data-active', p.key === key);
-      tabs[p.key].setAttribute('aria-pressed', p.key === key ? 'true' : 'false');
+      tabs[p.key].setAttribute('aria-selected', p.key === key ? 'true' : 'false');
     });
+    /* The tab IS the mode on Comments: the review layer turns on when you open the tab and
+       off when you leave it. It used to be a separate docked button, so the layer could be
+       on with its list on another tab, or the list open with the layer off — two controls
+       for one state, and the button was the only one that actually did anything. */
+    window.dispatchEvent(new CustomEvent('at:tab', { detail: { tab: key } }));
   }
 
   /* A tab for an empty pane is a control that opens nothing. The strip itself goes when
@@ -142,7 +148,9 @@
   }
 
   showTab('tweaks');
-  selectTab('tweaks');
+  panes.tweaks.hidden = false;
+  tabs.tweaks.setAttribute('data-active', '');
+  tabs.tweaks.setAttribute('aria-selected', 'true');
 
   /* ---------------- the panel's own shape ---------------- */
 
@@ -532,14 +540,17 @@
   /* When a file was built. Several confusing sessions came down to looking at a folio from
      before a fix and reasoning about behaviour that no longer existed; the answer was in a
      meta tag nothing displayed. */
-  (function () {
+  // Deferred so it lands under viewport.js's readout: the device is the fact you read first
+  // and the build date the one you read when something looks wrong.
+  setTimeout(function () {
     var m = document.querySelector('meta[name="folio-built"]');
-    if (!m || !m.content || !note) return;
+    if (!m || !m.content) return;
     var el = document.createElement('div');
     el.className = 'at-twk-built';
     el.textContent = 'built ' + m.content;
-    note.appendChild(el);
-  })();
+    meta.hidden = false;
+    meta.appendChild(el);
+  }, 0);
 
   /* ---------------- driven from outside ----------------
 
@@ -629,6 +640,12 @@
       showTab(key);
       selectTab(key);
       setCollapsed(false);
+    },
+    /* The strip between the header and the tabs: which frame, how far it is scaled, when
+       the file was built. Facts about the folio, true on every tab. */
+    meta: function () {
+      meta.hidden = false;
+      return meta;
     },
     group: group,
     row: function (g) {

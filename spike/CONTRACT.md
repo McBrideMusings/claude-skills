@@ -93,10 +93,21 @@ Everything lives in **one floating card** with three tabs:
 | **Checks** | the eight standing verdicts, below |
 | **Comments** | the review layer's list, and **Copy comments** |
 
+Between the header and the tabs is a **meta strip**: which frame this is, how far it is scaled, and
+when the file was built. Facts about the folio rather than things you change, so they stay on screen
+whichever tab is up.
+
+**The Comments tab is the review mode.** Opening it turns the comment layer on and leaving it turns
+the layer off — there is no separate button, because two controls for one state is how the button
+ended up saying "on" while its list was two tabs away.
+
 Drag the card by its header; `×` closes it to a **Tweaks** pill in the corner, and the pill opens it
-again (`?tweaks=0` remembers which). Entering comment mode brings the card up on its Comments tab.
-The tool generates the card, the tabs, the widgets and the URL persistence. **Write no panel code and
-no widget markup.**
+again (`?tweaks=0` remembers which). The tool generates the card, the tabs, the meta strip, the
+widgets and the URL persistence. **Write no panel code and no widget markup.**
+
+The tabs deliberately do not look like the segmented control a fragment declares — they run full
+bleed on a recessed band, and the live one is marked by a rule rather than a pill. The row that never
+changes and the row that changes per prototype must not read as two instances of one thing.
 
 ```html
 <style>
@@ -282,11 +293,10 @@ The controls never share a letter:
 | **Frame** — rotation and 1:1 | `?rotate=1&zoom=1` | panel: the device readout |
 | **The panel itself** — open or a pill | `?tweaks=0` | its `×`, and the pill |
 
-**A prototype answers no harness keys at all.** Every control above is a button, and comment mode and
-the contrast check are the docked buttons on the right. This is not an oversight to fix: a prototype
-is a working interface with keys of its own, so a prototype of anything keyboard-driven could not be
-driven at all if the harness claimed the keyboard too. `wireframe` is a document and still answers
-`a` and `c`.
+**A prototype answers no harness keys at all.** Every control above is a button. This is not an
+oversight to fix: a prototype is a working interface with keys of its own, so a prototype of anything
+keyboard-driven could not be driven at all if the harness claimed the keyboard too. `wireframe` is a
+document and still answers `a` and `c`.
 
 ### Checks — eight verdicts the panel keeps up to date
 
@@ -336,13 +346,14 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
 4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
 5. Say how to drive it. On a **prototype**: every control is a button — the floating card, dragged by
    its header and closed to a pill with `×`, with Tweaks, Checks and Comments behind its three tabs,
-   and the docked button on the right for comment mode. No keys, so the prototype's own keyboard is
+   and the Comments tab is what turns the review layer on. No keys, so the prototype's own keyboard is
    entirely its own. On `wireframe`: `a` to comment on anything, `c` to check contrast.
 
 ## Getting comments back
 
-Every folio carries the annotate widget — the docked speech-bubble button on a prototype, and `a` as
-well on a `wireframe`. Turning it on makes the page a review surface: click
+Every folio carries the annotate widget — the Comments tab on a prototype, `a` and a docked
+speech-bubble button on a `wireframe`, which has no panel. Turning it on makes the page a review
+surface: click
 any element, type what is wrong with it, and the comment is pinned to that element with a number.
 Comments survive reload, and survive a rebuild — a pin reattaches by the fragment line it was made
 against, falls back to matching the element's text (flagged `MOVED`), and is kept and flagged `STALE`

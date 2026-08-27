@@ -51,7 +51,7 @@ html[data-at-embedded] .at-twk { display: none; }
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 10px 8px 8px 13px;
+  padding: 10px 8px 9px 13px;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -96,10 +96,12 @@ html[data-at-embedded] .at-twk { display: none; }
 
 /* --- the segmented control ---
 
-   One object, three jobs: the tab strip, the variant chooser, and any tweak whose value is
-   a list of three or less. A trough with the chosen segment lifted out of it in white.
-   Above three it is a dropdown instead — six segments across 250px is four characters each,
-   which is a control you have to guess at. */
+   Two jobs, both of them the design's: the variant chooser, and any tweak whose value is a
+   list of three or less. A trough with the chosen segment lifted out of it in white. Above
+   three it is a dropdown instead — six segments across 250px is four characters each, which
+   is a control you have to guess at.
+
+   The tab strip deliberately does NOT use this. See "tabs" below. */
 
 .at-twk-seg {
   display: flex;
@@ -121,8 +123,11 @@ html[data-at-embedded] .at-twk { display: none; }
   text-align: center;
   cursor: pointer;
   /* Wraps rather than truncating: three segments across 250px is 14 characters each, and a
-     label that reads "Daemon …" is a segment you have to click to identify. */
-  overflow-wrap: anywhere;
+     label that reads "Daemon …" is a segment you have to click to identify. It wraps at
+     spaces only — breaking inside a word gives you "unreachabl / e", which is worse than
+     either. */
+  overflow-wrap: normal;
+  word-break: normal;
   transition: background-color 140ms ease-out, color 140ms ease-out;
 }
 
@@ -136,12 +141,97 @@ html[data-at-embedded] .at-twk { display: none; }
 
 .at-twk-opt:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
-/* --- tabs ------------------------------------------------------------------ */
+/* --- the meta strip ---
+
+   Which frame this is, how far it is scaled, and when the file was built. Facts about the
+   folio rather than things you change, so they sit above the tabs and stay on screen
+   whichever tab is up. Mono, because two of the three are numbers you compare. */
+
+.at-twk-meta {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding: 6px 13px 8px;
+  border-top: 1px solid var(--at-c-line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: var(--at-c-fainter);
+}
+
+/* One line each, and neither of them wraps: these are facts to glance at, and a wrapped
+   "1440 ×\A 900" is a number you have to reassemble. */
+.at-twk-meta .at-vp-readout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.at-twk-meta .at-vp-name { color: var(--at-c-faint); }
+.at-twk-meta .at-vp-size { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+.at-twk-meta[hidden] { display: none; }
+.at-twk-built { white-space: nowrap; }
+
+/* --- tabs ---
+
+   NOT the segmented control. The segmented control belongs to the design under judgement —
+   a fragment declares one every time it has a three-way choice — and the tabs are the
+   harness's own furniture, permanent on every folio the tool builds. When they shared a
+   look, the row that never changes and the row that changes per prototype read as two
+   instances of one thing.
+
+   So: full bleed to both edges, on a recessed band, marked by a rule under the live tab
+   rather than a pill around it. Nothing a fragment can declare looks like this. */
 
 .at-twk-tabs {
-  margin: 0 11px 2px;
   flex: none;
+  display: flex;
+  border-top: 1px solid var(--at-c-line);
+  border-bottom: 1px solid var(--at-c-line);
+  background: rgba(0, 0, 0, 0.035);
 }
+
+.at-twk-tabs[hidden] { display: none; }
+
+.at-twk-tab {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  padding: 8px 4px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--at-c-faint);
+  font: 600 10px/1 inherit;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.at-twk-tab:hover { color: var(--at-c-dim); background: rgba(0, 0, 0, 0.03); }
+
+.at-twk-tab[data-active] {
+  background: var(--at-c-panel);
+  color: var(--at-c-ink);
+}
+
+/* The rule sits ON the bottom border, so the live tab reads as continuous with the pane
+   below it rather than as a chip floating in a strip. */
+.at-twk-tab[data-active]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--at-c-ink);
+}
+
+.at-twk-tab:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: -3px; }
 
 /* --- panes ----------------------------------------------------------------- */
 
@@ -369,13 +459,6 @@ select.at-twk-field {
 }
 
 .at-twk-note b { color: var(--at-c-dim); font-weight: 600; }
-
-.at-twk-built {
-  margin-top: 6px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px;
-  color: var(--at-c-fainter);
-}
 
 /* --- the pill -------------------------------------------------------------- */
 

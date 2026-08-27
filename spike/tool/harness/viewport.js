@@ -110,15 +110,18 @@
   if (DEVICE === 'fill') {
     var slot = window.__atTweaks;
     if (slot) {
-      var fg = slot.group(D.label);
       var readout = document.createElement('div');
       readout.className = 'at-vp-readout';
+      var fname = document.createElement('span');
+      fname.className = 'at-vp-name';
+      fname.textContent = D.label;
       var size = document.createElement('span');
       size.className = 'at-vp-size';
+      readout.appendChild(fname);
       readout.appendChild(size);
-      fg.appendChild(readout);
+      slot.meta().appendChild(readout);
       var paintSize = function () {
-        size.textContent = window.innerWidth + ' \u00d7 ' + window.innerHeight + ' \u00b7 the window';
+        size.textContent = window.innerWidth + ' \u00d7 ' + window.innerHeight;
       };
       paintSize();
       window.addEventListener('resize', paintSize);
@@ -191,14 +194,20 @@
 
   var panel = window.__atTweaks;
   if (panel) {
-    var g = panel.group(D.label);
-    buildReadout('at-vp-mod');
+    /* The meta strip, not a group in the Tweaks pane. Which frame this is and how far it is
+       scaled is a fact about the file, true on every tab — it belongs with the build stamp
+       above the tabs rather than in the list of things you change. */
     var readout = document.createElement('div');
     readout.className = 'at-vp-readout';
+    buildReadout('at-vp-mod');
+    var name = document.createElement('span');
+    name.className = 'at-vp-name';
+    name.textContent = D.label;
+    readout.appendChild(name);
     readout.appendChild(sizeLabel);
     if (rotateBtn) readout.appendChild(rotateBtn);
     readout.appendChild(actualBtn);
-    g.appendChild(readout);
+    panel.meta().appendChild(readout);
   } else {
     var bar = document.createElement('nav');
     bar.className = 'at-vp';
@@ -471,6 +480,16 @@
     // eye. The number on screen is the one being read, so it decides which label applies.
     var pct = Math.round(k * 100);
     sizeLabel.textContent = vw + ' × ' + vh + (pct < 100 ? '  ·  ' + pct + '%' : '  ·  1:1');
+
+    /* Published INTO the frame so anything the harness draws in there can undo the scale.
+       The comment composer is chrome at the reader's size, not part of the design being
+       shrunk: at 67% its 13px text rendered at 8.7px, which is smaller than the thing being
+       commented on. */
+    try {
+      if (frame && frame.contentDocument) {
+        frame.contentDocument.documentElement.style.setProperty('--at-frame-scale', k.toFixed(4));
+      }
+    } catch (e) {}
   }
 
   window.addEventListener('resize', fit);

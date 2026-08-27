@@ -256,9 +256,9 @@
       // A prototype answers no harness keys — naming `a` there is an instruction that does
       // nothing, and the docked button is the only way in and out.
       list.innerHTML = '<p class="at-empty">Click anything on the page to comment on it. ' +
-        (window.__atHotkeys && window.__atHotkeys()
-          ? '<kbd>a</kbd> leaves comment mode, <kbd>c</kbd> checks contrast.'
-          : 'Done leaves comment mode.') + '</p>';
+        (window.__atTweaks
+          ? 'Leaving this tab turns comment mode off.'
+          : '<kbd>a</kbd> leaves comment mode, <kbd>c</kbd> checks contrast.') + '</p>';
       return;
     }
     list.innerHTML = '';
@@ -456,12 +456,27 @@
     '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" ' +
     'd="M2 3.6h12v7.2H7.2L4.2 13.4v-2.6H2z"/></svg>';
   toggleBtn.addEventListener('click', function () { setMode(!open); });
-  // Host only — see rail.js's reopen button. An undocked copy inside the frame renders in
-  // normal flow, on top of the design.
-  if (!root.hasAttribute('data-at-embedded')) {
+
+  /* The button exists only where there is no panel to hold a Comments tab — a wireframe.
+     Where there is one, the tab IS the control: opening it turns the review layer on and
+     leaving it turns the layer off. Keeping both meant a floating button that said "on"
+     while the list it opened was two tabs away.
+
+     Host only either way. An undocked copy inside a device frame renders in normal flow, on
+     top of the design. */
+  setTimeout(function () {
+    if (root.hasAttribute('data-at-embedded')) return;
+    if (window.__atTweaks) return;
     document.body.appendChild(toggleBtn);
     if (window.__atDock) window.__atDock(toggleBtn, 'annotate', 'right', 0);
-  }
+  }, 0);
+
+  /* The panel's tab strip is the mode switch. `active === key` is guarded in selectTab, so
+     the show() below cannot bounce back through here. */
+  window.addEventListener('at:tab', function (e) {
+    var want = e.detail.tab === 'comments';
+    if (want !== open) setMode(want);
+  });
 
   function setMode(on) {
     open = on;
@@ -472,9 +487,8 @@
     if (on) {
       root.setAttribute('data-at-annotate', '');
       render();
-      /* The comment list is a tab now, so turning the layer on has to bring that tab up —
-         and open the panel if it is sitting in the corner as a pill. Without this the
-         crosshair appeared with the comments nowhere on screen. */
+      // Turned on from outside — a keypress on a wireframe, or atAnnotate.mode(true) — so
+      // the list has to come up with it.
       if (window.__atTweaks) window.__atTweaks.show('comments');
     } else {
       root.removeAttribute('data-at-annotate');
