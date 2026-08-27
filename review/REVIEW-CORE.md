@@ -306,6 +306,42 @@ Runs only for findings that came back `reproduced` in Phase 05b and got a mechan
 
 The report **opens with a single high-level summary sentence** — no `# Review` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Then the **coverage line**, then the issue list grouped by axis. There is no filename to carry the date/scope — say the branch or PR once, in the summary sentence, if it isn't already obvious from the chat above it.
 
+### Clean verdict → collapse to one or two sentences, full stop
+
+**Nothing survived is not a finding, and it does not get finding-shaped prose.** When the verdict
+is Approve and the report has no issue list, the whole message is what happened and the verdict —
+never a walkthrough of the diff, never a list of what was tested, never a sentence explaining *why*
+the logic is correct. The user wrote the diff or already read it; restating its mechanism back to
+them ("`resumeSchedulers` now reuses `armNextHandStartNoLaterThan` instead of the
+`pending.length===0` check") is not information, it is a summary of something they don't need
+summarized. State the verdict, not the evidence for it:
+
+> Reviewed, looks good, checks passed. No issues found.
+
+**Overrides the global closing convention for this case only.** The global "Files changed /
+Unchanged / Follow-up needed" three-section closer and its manual-testing-steps block describe a
+coding task; a clean review-only pass changed no files, so all three sections would read "none" /
+"everything" / "none" — which is what the one-liner above already says, just as three headers
+instead of four words. Skip that closer here. It comes back the moment a finding gets fixed on the
+branch, because now files actually changed and the global format is answering a real question
+again.
+
+If CI needed an action, name the action in a clause, not a paragraph — `re-ran a flaky check
+(check-cloudflare-test), now green`, not an account of reproducing it locally, isolating it, and
+confirming it passed 4/4. The coverage line and execution-gate line below still print — they are
+evidence a lens didn't silently skip, not narrative — but they stay the one compact line each that
+they already are; they never grow a prose explanation. This only relaxes for an actual finding:
+once something is being reported, its Bites/Fix/evidence detail (below) is exactly as thorough as
+the format already requires. Zero findings and thorough prose about zero findings are not a
+tradeoff the user asked for.
+
+### Any code reference, in any report, is backtick-quoted
+
+A bare identifier, path, or line of code in prose reads as an English word and gets misparsed —
+`handleRebuy`, not handleRebuy; `pending.length === 0`, not pending.length === 0; `d1Ops.ts:47`, not
+d1Ops.ts:47. This applies to the one-line clean-verdict message exactly as it applies to a full
+finding entry.
+
 ### The coverage line — mandatory, every report, including clean ones
 
 One line naming **which lenses ran, which were gated off, and which failed**. Without it, a lens that never ran is indistinguishable from a lens that found nothing, and the report reads as a clean bill of health for an axis nobody looked at.

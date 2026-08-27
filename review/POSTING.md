@@ -141,6 +141,17 @@ merge), so the post offer **always proposes a verdict**, never a bare comment. (
 can't get a verdict — GitHub blocks self-approve and self-request-changes — which is why this
 lives only on the teammate-PR path.)
 
+**"It's not my PR" is never a reason to skip this section.** It is the reason this section runs at
+all — a teammate's PR is exactly the case the verdict exists for; a self-review can't even use it.
+`gh pr review --approve` needs read access to the repo, nothing more — it is not gated on push
+access to the author's branch, and it is not a merge button. **Do not conflate the two.** "I can't
+push a fix to their branch without asking" is real and governs the fix-on-branch offer above; "I
+have no standing to approve or request changes on their PR" is false on any repo you can `gh pr
+view` in, and saying it out loud is the specific failure this line exists to stop — a real
+instance of this skill telling the user their review responsibilities are not its job, then having
+to be told twice, in the same session, that finding nothing wrong on a teammate's PR **is** a
+finished review with a verdict, not a review with no ending.
+
 What separates blocking from non-blocking is *what the finding is about*, never how confident or
 how large it is:
 
