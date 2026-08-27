@@ -4,7 +4,10 @@ Loaded by [SKILL.md](SKILL.md) Phase U4 when the branch is mine and its open PR 
 
 **This file owns how a response to feedback is written, and that is its own formatting problem.** It is deliberately separate from [../review/POSTING.md](../review/POSTING.md), which formats findings you are handing *to* an author. Here you are answering a reviewer who already read your code: the shape, the caps, and the banned phrases are all different, and merging the two documents makes both worse.
 
-**Never posts words to GitHub.** All reviewer replies are written to a local response document the user copy-pastes; thread resolution is the user's to do. The one action this file may take on GitHub is re-requesting a formal reviewer once the fixes are pushed (Phase 08), and only on an explicit yes.
+**Never posts words to GitHub.** All reviewer replies are printed in chat, quoted as a Markdown
+blockquote, for the user to copy-paste; nothing is written to disk and thread resolution is the
+user's to do. The one action this file may take on GitHub is re-requesting a formal reviewer once
+the fixes are pushed (Phase 08), and only on an explicit yes.
 
 **[RULES.md](../review/RULES.md) binds this file** — RULE 0 (no selector, ever), RULE 1 (effort never decides), RULE 2 (the gate does the job it names, it does not ask permission to). Load it if it is not already in context.
 
@@ -108,18 +111,23 @@ For each thread, decide:
 
 - **address** — change the code to satisfy the comment. Include a one-line description of what the change is.
 - **partial** — make a smaller change than the reviewer asked for, or address part of the concern. Describe what to do and what to skip.
-- **reply** — no code change; write a draft reply explaining why (out of scope, intentional, addressed elsewhere, outdated). The reply goes in the response document — never posted.
+- **reply** — no code change; write a draft reply explaining why (out of scope, intentional, addressed elsewhere, outdated). The reply goes in the response block — never posted.
 - **ignore** — skip without responding. Reserve for clearly-stale outdated threads, accidental comments, or duplicates already covered by another thread you're addressing.
 
 Bias against implementing **preference** comments. A 30-point taste comment that gets implemented is worse than one that gets a polite explanation — it adds churn to the diff and signals to future reviewers that all feedback is mandatory. This is a bias against churn on *low-scoring* items, and nothing more: it is **not** licence to thin out a list of high-scoring findings, and it never applies to anything scored 75+. When a reviewer is right about ten things, ten `address` actions is the correct plan, not a red flag.
 
 If a thread has multiple comments (back-and-forth between reviewer and author), read the WHOLE chain — the original concern may already be resolved in discussion.
 
-## Phase 06 — Write the response document
+## Phase 06 — Present the response block
 
-Write a **single consolidated reply** the user copy-pastes as one PR comment. The reply is an ordered list where item N corresponds to issue N from the plan (Phase 07) — same numbering, same ordering.
+Print, in chat, a **single consolidated reply** the user copy-pastes as one PR comment. The reply
+is an ordered list where item N corresponds to issue N from the plan (Phase 07) — same numbering,
+same ordering.
 
-- Filename: `<dir>/pr-<number>-response-<YYYY-MM-DD-HHMMSS>.md`, where `<dir>` is whatever `~/.claude/tools/repo-slug --path` prints — it creates the directory too, so never `mkdir` a path of your own. No pruning needed; macOS deletes anything under `/private/tmp` untouched for three days.
+**No file.** Quote the block as Markdown (`>` on every line) so it reads as one pasteable unit
+apart from your own commentary. It is transient — nobody has ever opened one of these back up on
+disk, so stop writing one. When Phase 07 backfills commit SHAs after landing the fixes, re-print
+the updated block rather than editing a file that never existed.
 
 ### Budget — hard caps, not guidance
 
@@ -167,7 +175,7 @@ Head: <short-sha>
 - **partial** → one line. What landed, then what you did not do and the reason — the reason is one of the three legitimate ones from Phase 05, named as itself.
 - **reply** → two lines maximum, and the second carries the evidence: a value read out of the running code, or a `<path>:<line>` where the codebase already settles it. A `reply` with no value and no path is not finished.
 
-**Commit SHA handling.** `<commit-sha-placeholder>` is a temporary marker. As soon as code changes are committed (after plan approval), replace every placeholder with the real short SHA from the `git commit` output. If all `address`/`partial` items land in one commit, drop the SHA reference. Never leave a placeholder in the final document.
+**Commit SHA handling.** `<commit-sha-placeholder>` is a temporary marker. As soon as code changes are committed (after plan approval), re-print the block with every placeholder replaced by the real short SHA from the `git commit` output. If all `address`/`partial` items land in one commit, drop the SHA reference. Never leave a placeholder in the final printed block.
 
 ### What is cut entirely
 
@@ -277,13 +285,14 @@ Everything scored **below 50** is one table row, no block — the long tail is a
 
 ## Summary
 - address N · partial N · reply N · ignore N · N files touched
-- Response doc: <repo-slug path>/pr-<number>-response-<timestamp>.md
-- Paste as ONE PR comment. Do not split per thread.
+- Paste the blockquoted reply above as ONE PR comment. Do not split per thread.
 ```
 
 The quoted reviewer sentence, the score rationale, and the plan sentence all stay for items scored 50+. Cutting those is how RULE 1's effort-triage failure gets back in — a plan that shows scores without their reasons cannot be argued with, so nobody argues with it.
 
-Then apply the code changes for the `address` / `partial` items, commit under the rules below, and backfill the real short SHAs into the response document. The user handles all GitHub replies and thread resolution themselves.
+Then apply the code changes for the `address` / `partial` items, commit under the rules below, and
+re-print the response block in chat with the real short SHAs backfilled in place of the
+placeholders. The user handles all GitHub replies and thread resolution themselves.
 
 **Commit, do not push.** The push is [SKILL.md](SKILL.md) Phase U5's single confirm, batched with whatever the conflicts and tests gates did.
 
@@ -337,7 +346,7 @@ test(seat-rotation): cover the heads-up blind swap
 
 The third has no body on purpose: the subject says what the commit adds, and nothing about the why is hidden.
 
-If the user rejects or edits, re-score the affected threads, regenerate the response document, and re-present.
+If the user rejects or edits, re-score the affected threads, regenerate the response block, and re-present.
 
 ## Phase 08 — Offer to re-request the review
 
@@ -345,7 +354,7 @@ If the user rejects or edits, re-score the affected threads, regenerate the resp
 
 The offer applies to a reviewer who submitted a **formal review of any state** — `CHANGES_REQUESTED`, `COMMENTED`, or `APPROVED` on a since-changed diff. It does **not** apply to someone who only left a conversation comment: there is no review to supersede, and re-requesting reads as a nudge rather than a status change.
 
-Make the offer in the same message as the response document, one plain line per reviewer, keyword-answered (RULE 0 — never a selector):
+Make the offer in the same message as the response block, one plain line per reviewer, keyword-answered (RULE 0 — never a selector):
 
 ```
 @alexthemighty's CHANGES_REQUESTED is still gating the merge. Re-request their review? `re-request` / `skip`
@@ -371,8 +380,8 @@ gh pr view <pr_number> --json reviewRequests --jq '[.reviewRequests[].login]'
 
 - **No GitHub writes except the Phase 08 re-request, and that one only on an explicit yes.** No `gh pr comment`, no `gh pr review`, no `gh api` mutations, no thread resolution — the reply is the user's to paste and the threads are theirs to resolve. The single exception is `gh pr edit --add-reviewer` in Phase 08, which posts no words of its own and only puts back a request the reviewer's own verdict replaced; it still needs a yes in the message, never prior or implied consent.
 - **Print the plan before editing, but do not wait on it.** The plan goes in chat first so the user can see what is about to change and interrupt; then the `address` / `partial` items are applied. Only items blocked on the user's intent wait.
-- **All replies go to the response document as one consolidated comment.** The user copy-pastes it as a single PR-level comment. Never offer to post for them, and never split into per-thread drafts unless the user explicitly asks.
+- **All replies go into the response block as one consolidated comment.** The user copy-pastes it as a single PR-level comment. Never offer to post for them, and never split into per-thread drafts unless the user explicitly asks.
 - **Don't manufacture feedback.** Report "no feedback" back to Phase U4 only when **all three** sources (inline threads, non-author review bodies, non-author conversation comments) are empty — never invent an item to triage. Zero inline threads alone is not emptiness if a review body or comment carries findings.
-- **Cite the comment URL** for each thread in both the plan and the response document.
+- **Cite the comment URL** for each thread in both the plan and the response block.
 - **Outdated ≠ ignore.** Outdated threads frequently still need a one-line reply so the reviewer knows you saw it — those get a `reply` action with a draft.
 - **Score on evidence.** Defend each score by quoting the comment or pointing at the file. Avoid scoring on vibes.

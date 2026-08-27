@@ -193,7 +193,13 @@ The prompt is one line and names the skill, not the steps — the worker has the
 do, and re-typing the procedure into a prompt is how it drifts from the file:
 
 - **`unblock` worker** — `Run the /unblock skill on this branch. <what is blocked, from the table>.`
-- **`review` worker** — `Run the /review skill on PR <n>, checked out here. Report findings in this pane.`
+- **`review` worker** — `Run the /review skill on PR <n>, checked out here.`
+
+**Never append a step to either line, including "report findings" or "stay open".** The skill already
+ends at a proposed disposition — a verdict for `review`, a pushed fix for `unblock` — and a prompt that
+names one intermediate step reads as the whole job. That is not hypothetical: a `review` worker told to
+"report findings in this pane" stopped there and never reached the disposition list, the proposed
+verdict, or the approve step, on every PR this fan-out touched.
 
 **The repo's own tail, copied verbatim.** A repo that needs something appended to every dispatched
 prompt — a check command with a known lock, a "never deploy" line, a migration prohibition —

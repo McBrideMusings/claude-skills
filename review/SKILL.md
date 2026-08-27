@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Perform a code review. Routes by what you're standing in — uncommitted changes review the working tree, a feature branch reviews itself against its base, an explicit branch/PR/path argument overrides both, and the repo's default branch sweeps every PR waiting on your review. Runs the ten-axis engine (with gated security lens), scores, verifies each behavior claim by executing it, writes a report, then offers per finding to fix it on the branch or post it back to the author. A branch that is blocked — conflicts, red CI, or unanswered reviewer feedback — is handed to `unblock` first, which fixes it and hands back; review never stops to ask permission to unblock. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context; `noverify` skips the execution gate. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Perform a code review. Routes by what you're standing in — uncommitted changes review the working tree, a feature branch reviews itself against its base, an explicit branch/PR/path argument overrides both, and the repo's default branch sweeps every PR waiting on your review. Runs the ten-axis engine (with gated security lens), scores, verifies each behavior claim by executing it, presents the report in chat, then offers per finding to fix it on the branch or post it back to the author. A branch that is blocked — conflicts, red CI, or unanswered reviewer feedback — is handed to `unblock` first, which fixes it and hands back; review never stops to ask permission to unblock. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context; `noverify` skips the execution gate. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Review
@@ -109,10 +109,13 @@ otherwise:
 
 Review owns this because it is about review's own output, not the branch's state: **a second `review` on an unchanged branch must not produce a second identical report.**
 
-Find the newest report whose name carries this branch (where [REVIEW-CORE.md](REVIEW-CORE.md) Phase 07 puts them). If the newest branch commit **and** the newest reviewer feedback are both older than that file's mtime, nothing has changed since you last looked:
+Check this branch's marker — `/private/tmp/claude/reviews/.last-<branch-slug>`, an empty file
+[REVIEW-CORE.md](REVIEW-CORE.md) Phase 07 touches at the end of every pass (the report itself is
+never written to disk — see Phase 07). If the newest branch commit **and** the newest reviewer
+feedback are both older than the marker's mtime, nothing has changed since you last looked:
 
 ```
-nothing pushed and no new feedback since <report path>. `again` · `axes <names>` · `stop`
+nothing pushed and no new feedback since the last pass. `again` · `axes <names>` · `stop`
 ```
 
 **This one asks, and it is not a RULE 2 violation** — there is no job to do. Re-running produces a byte-identical report, so the only question is what the user wants *instead*, which is a genuine unknown. Run `unblock` first regardless: fixing a red test moves the branch's newest commit, which is an input to this check.
@@ -129,7 +132,7 @@ Two things go in the chat explanation:
 
 **Skip the issue half for a new feature.** A PR that adds something that didn't exist has no bug behind it — say what it adds and move on. Don't invent a fixed issue to fill the slot.
 
-**This is chat-only — it never enters the PR.** It's the user's orientation, not review output: it does not go in the report file, the verdict body, or any posted comment.
+**This is chat-only — it never enters the PR.** It's the user's orientation, not review output: it does not go in the review report, the verdict body, or any posted comment.
 
 **Skipping the summary document.** The summary skill writes a file to `/private/tmp/claude/<repo-slug>/summaries/…`. On a teammate's PR that file is usually noise. Default: run the skill for its analysis, present it in chat, and **skip the file write** — say "summary not written to disk" in one clause. Write the file when the user asks, or when the PR is mine and I'll want the text for the PR description; then print its absolute path as the last token on its line. `skip summary` from the user drops this phase entirely.
 
@@ -185,6 +188,10 @@ Phase 00 context 3. Instead of reviewing `main` itself, review everything waitin
 Two things are review's to supply, and SWEEP.md reads them from here:
 
 - **Selection** — open PRs where `author.login != my login` and my review is outstanding.
-- **The worker's prompt** — `Run the /review skill on PR <n>, checked out here. Report findings in this pane.`
+- **The worker's prompt** — `Run the /review skill on PR <n>, checked out here.` Nothing appended — the
+  skill's own last phase is the disposition list and the proposed verdict, and naming an earlier step
+  ("report findings") is what has made fanned-out reviews stop there instead of reaching it.
 
-**Sweep is a dispatch, not a review.** Each session runs the full skill — Phase 00.1's `unblock` call included — inside its own worktree. This context's job ends at S8's proof step; don't also review the PRs here.
+**Sweep is a dispatch, not a review.** Each session runs the full skill — Phase 00.1's `unblock` call
+included, and Phase 07/POSTING.md's disposition list and verdict proposal too — inside its own worktree.
+This context's job ends at S8's proof step; don't also review the PRs here.

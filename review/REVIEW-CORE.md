@@ -287,15 +287,24 @@ Runs only for findings that came back `reproduced` in Phase 05b and got a mechan
 
 **A Phase 06c verdict never removes a finding** — Phase 05b already decided whether the failure is real. This phase only decides whether the proposed remedy is trustworthy enough to paste. Clean the worktree up again when it finishes.
 
-### Phase 07 — Write the Report
+### Phase 07 — Present the Report
 
-- Filename: `/private/tmp/claude/reviews/claude-review-YYYY-MM-DD-HHMMSS.md` using current local time. `mkdir -p /private/tmp/claude/reviews` first. No pruning needed — macOS deletes anything under `/private/tmp` untouched for three days.
-- Write the review using the format below. **Carry the coverage line** — which lenses ran, which were gated off and why, which failed. Track this from Phase 04 onward; it cannot be reconstructed afterwards.
-- Print the full review body to chat, then follow with a one-line link to the file. **The path must be the last token on its line with no trailing punctuation** (so Ghostty ⌘-click stays clean) — e.g. `Review written to /private/tmp/claude/reviews/claude-review-2026-05-05-143022.md`
+- **No report file.** Print the review straight to chat as plain Markdown, using the format below
+  — it is transient, the transcript is the only record, and nobody has ever edited one of these on
+  disk. **Carry the coverage line** — which lenses ran, which were gated off and why, which failed.
+  Track this from Phase 04 onward; it cannot be reconstructed afterwards. (The *pasteable* verdict
+  body that [POSTING.md](POSTING.md) proposes for GitHub is a separate, shorter artifact and is
+  the one quoted as a blockquote — see there.)
+- **One exception, bookkeeping only, never shown to the user as "the report":** `mkdir -p
+  /private/tmp/claude/reviews` and `touch /private/tmp/claude/reviews/.last-<branch-slug>` — an
+  empty marker, no content. [SKILL.md](SKILL.md)'s novelty check reads its mtime to tell "reviewed
+  a minute ago" from "never reviewed"; nothing else depends on it and it holds no text worth
+  opening. No pruning needed — macOS deletes anything under `/private/tmp` untouched for three
+  days, and a stale marker just means the next pass re-reviews instead of short-circuiting.
 
-## File format
+## Report format
 
-The report **opens with a single high-level summary sentence** — no `# Review` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Then the **coverage line**, then the issue list grouped by axis. The filename already carries the date/scope — don't repeat it in the body.
+The report **opens with a single high-level summary sentence** — no `# Review` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Then the **coverage line**, then the issue list grouped by axis. There is no filename to carry the date/scope — say the branch or PR once, in the summary sentence, if it isn't already obvious from the chat above it.
 
 ### The coverage line — mandatory, every report, including clean ones
 

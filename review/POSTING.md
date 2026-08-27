@@ -15,7 +15,8 @@ like everywhere else. RULE 1 too — how big a fix is never decides whether it h
 ## Always print, before any offer
 
 - the **PR URL** if one exists (`gh pr view --json url --jq .url`),
-- the **report file path** as the last token on its line, no trailing punctuation.
+- the **report itself**, in chat, quoted as a Markdown blockquote. There is no file — see
+  [REVIEW-CORE.md](REVIEW-CORE.md) Phase 07.
 
 ## The disposition list
 
@@ -69,7 +70,7 @@ picks per finding:
    push to the PR's own branch (`git push origin <headRefName>`).
 2. **Post it for the author** — leave the code alone, hand the finding back via the formal review
    verdict or a comment.
-3. **Neither** — drop it. It stays in the report file; nothing goes to GitHub or the branch.
+3. **Neither** — drop it. It stays in the chat report above; nothing goes to GitHub or the branch.
 
 **Default split — fix the small stuff, hand the rest back.** Propose this stance up front, then
 let the user override per finding:
@@ -102,8 +103,8 @@ outward action on their work, held to the same **explicit-yes-in-this-message** 
 
 ## Comment budget — at most FIVE posted threads per PR, per pass
 
-Everything above the cap stays in the local report file and in chat; it does not go to GitHub.
-This caps the *posted* set only — the report file is always complete.
+Everything above the cap stays in the chat report already printed; it does not go to GitHub.
+This caps the *posted* set only — the report printed in chat is always complete.
 
 Five is the number because of what the extra ones cost. Concise, focused review comments are far
 more likely to be acted on than long ones, and the failure being corrected here is a tool posting
@@ -180,10 +181,10 @@ it.
 
 ### Propose, then confirm — never auto-submit
 
-State the recommended verdict, the exact body that will be posted (the report scoped to the
-handed-back findings — summary line plus axis-grouped findings, minus any being fixed on the
-branch, with a one-line note of what was pushed instead), and that the user can pick a different
-verdict or decline. A verdict review — Request changes especially — changes the PR's merge state,
+State the recommended verdict, then the exact body that will be posted — the report scoped to the
+handed-back findings (summary line plus axis-grouped findings, minus any being fixed on the
+branch, with a one-line note of what was pushed instead), quoted in chat as a Markdown blockquote,
+never written to a file — and that the user can pick a different verdict or decline. A verdict review — Request changes especially — changes the PR's merge state,
 so it is held to the same **explicit-yes-in-this-message** gate as any send. Prior or implied
 consent does not count.
 
