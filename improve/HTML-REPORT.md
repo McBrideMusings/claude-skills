@@ -28,6 +28,8 @@ Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The
 <section id="top-recommendation"><!-- the one to tackle first --></section>
 ```
 
+These four elements are direct children of `<body>` — there is no wrapping element. `.hero` runs full-bleed and pads itself; each `<section>` carries its own measure and side gutter. Do not introduce a `<main>` or a wrapper `<div>`: `dossier.css` styles `body>section` and nothing would lay a wrapper out.
+
 ## Coverage section — survey reports only, and mandatory
 
 One compact table, directly under the header, before any card. One row per aspect the survey was given, with exactly one of four results: **`n findings`**, **`no findings`**, **`not applicable — <reason>`**, or **`died`**. These are four different things and a report that collapses them hands out a clean bill of health nobody earned — an aspect that never ran is not an aspect that found nothing.
