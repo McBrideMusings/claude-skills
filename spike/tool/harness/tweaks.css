@@ -30,8 +30,8 @@
 
    TWO GROUNDS, and the boundary between them is the tab strip. Everything above and
    including the tabs is FIXED — the folio's name, which frame it is, when it was built, and
-   the tabs themselves — and it sits on a tinted band. Everything below is what the live tab
-   swapped in, and it sits on the lighter ground. One look tells you which half of the card
+   the tabs themselves — and it takes the lighter ground. Everything below is what the live
+   tab swapped in, and it takes the darker one. One look tells you which half of the card
    changes when you click something. */
 
 :root {
@@ -69,7 +69,7 @@ html[data-at-embedded] .at-twk { display: none; }
 
 .at-twk-head,
 .at-twk-meta,
-.at-twk-tabs { background: rgba(0, 0, 0, 0.045); }
+.at-twk-tabs { background: rgba(255, 255, 255, 0.42); }
 
 .at-twk-head {
   display: flex;
@@ -192,13 +192,14 @@ html[data-at-embedded] .at-twk { display: none; }
   white-space: nowrap;
 }
 
-.at-twk-meta .at-vp-name { font-weight: 600; color: var(--at-c-dim); }
+/* The floating size bar pads this by 8px on the left, which put the device name 8px off the
+   edge every other line in the card sits on. Its BOX was aligned, which is why measuring the
+   element rather than the glyphs said the alignment was fine twice. */
+.at-twk-meta .at-vp-name { padding: 0; font-weight: 600; color: var(--at-c-dim); }
 .at-twk-meta .at-vp-size { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 .at-twk-meta[hidden] { display: none; }
-/* --at-c-faint, not --at-c-fainter: the hint ink is computed against the card's own ground
-   and the band under it is 4.5% darker, which took the build stamp to 4.22:1. */
-.at-twk-built { white-space: nowrap; color: var(--at-c-faint); }
+.at-twk-built { white-space: nowrap; color: var(--at-c-fainter); }
 
 /* --- tabs ---
 
@@ -262,7 +263,7 @@ html[data-at-embedded] .at-twk { display: none; }
   overflow-y: auto;
   overflow-x: hidden;
   padding: 11px 13px 13px;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.045);
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }

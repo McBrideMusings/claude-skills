@@ -295,6 +295,18 @@ html[data-at-embedded] .at-panel { display: none !important; }
   place-items: center;
 }
 
+/* Deleting every comment on the folio is the one irreversible thing in here, and it was a
+   grey glyph on a grey button beside a grey button. */
+/* `.at-btn.at-clear`, not `.at-clear`: .at-btn sets its own background further down this
+   file, and at equal specificity the later rule wins — which is how this shipped grey. */
+.at-btn.at-clear {
+  background: color-mix(in srgb, var(--at-c-danger) 12%, transparent);
+  color: var(--at-c-danger);
+}
+
+.at-btn.at-clear:hover { background: color-mix(in srgb, var(--at-c-danger) 20%, transparent); }
+.at-btn.at-clear:disabled:hover { background: color-mix(in srgb, var(--at-c-danger) 12%, transparent); }
+
 .at-btn {
   height: 26px;
   padding: 0 11px;

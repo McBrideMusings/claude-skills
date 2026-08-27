@@ -108,6 +108,7 @@
   --at-c-sel-dim: #3f5b85;     /* selected control second line — 6.0:1 on --at-c-sel */
 
   --at-c-on: #34c759;          /* a switch that is on */
+  --at-c-danger: #a02b1c;      /* destroys something — 7.0:1 */
   --at-c-warn: #8a4b04;        /* a failing verdict, as TEXT — 6.5:1. --at-c-mark is amber
                                   for a fill and reads at 2:1 as ink on this ground */
   --at-c-mark: #f5a524;        /* the annotate layer's pin colour */
