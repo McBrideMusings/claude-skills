@@ -93,6 +93,8 @@ Two failure modes this closes, both real:
 
 The word is **`go`**, matching `improve`'s existing *"Type `go`, name a subset"*. Do not invent a synonym (`apply`, `yes`, `all`) — one keyword across every skill is the point. `go` means *your stated picks*, including the ones you marked skip; it never means "fix everything".
 
+There is exactly one sanctioned second word, and it is not a synonym: **`park`** applies the identical dispositions and then stops. It appears only on a slate that also proposes next work — `go` continues into that work, `park` ends the turn. An audit slate that proposes none names `go` alone.
+
 ## RULE — effort never kills a finding
 
 Same as `review` and `improve`. How hard something is to fix is not a reason to drop it, downgrade it, or call it a follow-up. A steering rule being ignored across 40 sessions is a finding whether the fix is one line or a rewrite.

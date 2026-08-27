@@ -202,9 +202,9 @@ Shape — three plain sections, then one sentence:
 
 Then exactly one sentence, no block-quote, no heading:
 
-`Reply` **`go`** `for the defaults — A, relay on — or override: e.g.` **`fix 1, B, no relay`**`.`
+`Reply` **`go`** `for the defaults — A, relay on — or` **`park`** `for the same dispositions with no next work, or override: e.g.` **`fix 1, B, no relay`**`.`
 
-`go` accepts all defaults. `no relay` keeps the pane and ends the turn normally after Step C.
+`go` accepts all defaults. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. `no relay` keeps the pane and ends the turn normally after Step C. Drop `park` from the sentence when relay is unavailable: with no Next-work section there is nothing for it to decline.
 
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
