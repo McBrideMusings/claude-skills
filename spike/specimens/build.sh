@@ -28,6 +28,14 @@ mkdir -p "$OUT"
   --device desktop --window bar,lights \
   --fragment "$HERE/proto-r2.body.html" --out "$OUT/prototype-desktop.html"
 
+# The unframed device: the same fragment as the phone build, with no frame at all. Kept as a
+# specimen because `fill` is the one device where the harness draws nothing and the panel is
+# the only chrome on screen.
+"$S" build --kind prototype --picker switch \
+  --title "Session list" --subtitle "herdr session picker, unframed" \
+  --device fill \
+  --fragment "$HERE/spec-prototype.body.html" --out "$OUT/prototype-fill.html"
+
 # The check fixture: one of each detectable defect planted, plus a clean twin. This is
 # how you tell a check that works from a check that always says pass.
 "$S" build --kind prototype --picker switch \

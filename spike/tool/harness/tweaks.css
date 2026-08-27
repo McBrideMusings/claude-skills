@@ -26,7 +26,13 @@
      weight   600 for anything that NAMES a thing — title, tab, group label, control name.
               400 for everything else — values, prose, options.
      case     sentence. Nothing here is uppercased.
-     left     13px. Title, meta, tab labels and pane content share one edge. */
+     left     13px. Title, meta and pane content share one edge.
+
+   TWO GROUNDS, and the boundary between them is the tab strip. Everything above and
+   including the tabs is FIXED — the folio's name, which frame it is, when it was built, and
+   the tabs themselves — and it sits on a tinted band. Everything below is what the live tab
+   swapped in, and it sits on the lighter ground. One look tells you which half of the card
+   changes when you click something. */
 
 :root {
   --at-twk-w: 276px;
@@ -58,6 +64,12 @@
 html[data-at-embedded] .at-twk { display: none; }
 
 /* --- header: the drag handle ----------------------------------------------- */
+
+/* --- the fixed band: header, meta strip, tabs --- */
+
+.at-twk-head,
+.at-twk-meta,
+.at-twk-tabs { background: rgba(0, 0, 0, 0.045); }
 
 .at-twk-head {
   display: flex;
@@ -184,7 +196,9 @@ html[data-at-embedded] .at-twk { display: none; }
 .at-twk-meta .at-vp-size { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 .at-twk-meta[hidden] { display: none; }
-.at-twk-built { white-space: nowrap; color: var(--at-c-fainter); }
+/* --at-c-faint, not --at-c-fainter: the hint ink is computed against the card's own ground
+   and the band under it is 4.5% darker, which took the build stamp to 4.22:1. */
+.at-twk-built { white-space: nowrap; color: var(--at-c-faint); }
 
 /* --- tabs ---
 
@@ -194,27 +208,25 @@ html[data-at-embedded] .at-twk { display: none; }
    look, the row that never changes and the row that changes per prototype read as two
    instances of one thing.
 
-   So: a band across the card, labels on the same 13px left edge as everything above and
-   below them, and the live one marked by a rule under its own word rather than a pill
-   around it. Nothing a fragment can declare looks like this — a declared control is always
-   inset, in a rounded trough, with a white pill. */
+   So: the last row of the fixed band, each tab taking an equal share of the width, and the
+   live one marked by a rule under its own word rather than a pill around it. Nothing a
+   fragment can declare looks like this — a declared control is always inset, in a rounded
+   trough, with a white pill. */
 
 .at-twk-tabs {
   flex: none;
   display: flex;
-  gap: 16px;
-  padding: 0 13px;
-  border-top: 1px solid var(--at-c-line);
+  padding: 0 9px;
   border-bottom: 1px solid var(--at-c-line);
-  background: rgba(0, 0, 0, 0.035);
 }
 
 .at-twk-tabs[hidden] { display: none; }
 
 .at-twk-tab {
-  flex: 0 0 auto;
+  flex: 1;
+  min-width: 0;
   position: relative;
-  padding: 8px 0 7px;
+  padding: 8px 4px 7px;
   border: 0;
   background: transparent;
   color: var(--at-c-faint);
@@ -231,8 +243,8 @@ html[data-at-embedded] .at-twk { display: none; }
 .at-twk-tab[data-active]::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 4px;
+  right: 4px;
   bottom: -1px;
   height: 2px;
   background: var(--at-c-ink);
@@ -242,12 +254,15 @@ html[data-at-embedded] .at-twk { display: none; }
 
 /* --- panes ----------------------------------------------------------------- */
 
+/* --- the switched ground: whatever the live tab put here --- */
+
 .at-twk-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px 13px 13px;
+  padding: 11px 13px 13px;
+  background: rgba(255, 255, 255, 0.4);
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }

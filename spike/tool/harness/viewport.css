@@ -267,12 +267,13 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-twk):not(.at-twk-
    it shown", never "which frame". Ghost buttons on the readout line, attached to the
    numbers they change and subordinate to the group's own name. */
 
+/* No inset of its own. It carried margin-top:2px and padding-left:2px from when it lived in
+   a rail group, which put the device name 2px off the left edge every other line in the card
+   shares — small enough to read as a mistake rather than as spacing. */
 .at-vp-readout {
   display: flex;
   align-items: center;
   gap: 2px;
-  margin-top: 2px;
-  padding-left: 2px;
 }
 
 .at-vp-size {
