@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md) or surveys all applicable aspects when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; improve never implements what it finds. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md, skills) or surveys all applicable aspects when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; improve never implements what it finds. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Improve
@@ -55,6 +55,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `interface-safety` | [aspects/interface-safety.md](aspects/interface-safety.md) | native — [INTERFACE-SAFETY.md](INTERFACE-SAFETY.md) | always |
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
+| `skills` | [aspects/skills.md](aspects/skills.md) | native — [WRITING-SKILLS.md](WRITING-SKILLS.md), vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md) | a `skills/` or `.claude/skills/` directory exists |
 | `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
 | `gui` | [aspects/gui.md](aspects/gui.md) | `gui` critique mode | UI surface exists |
 | `product` | [aspects/product.md](aspects/product.md) | `gui` orient mode | always |
@@ -65,7 +66,9 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 
 **The brief column is what a survey sub-agent gets** — a short file naming exactly what to read and what this aspect asks, so no agent burns a read of a 300-line `SKILL.md` hunting for one section. The owner column is what an *interactive* single-aspect run loads, in full, grilling loop included.
 
-**Improving a skill itself** — when the target under improvement is a `SKILL.md` rather than project code, read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, and description discipline. Folded in from the standalone `writing-skills` skill on 2026-08-20. The meta-audit *pass* itself is `audit-session`, not this skill.
+**Improving a skill itself** is the `skills` aspect above — read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, description discipline, and the precision pass. Folded in from the standalone `writing-skills` skill on 2026-08-20.
+
+**It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `audit-session`'s [steering-conflict](../audit-session/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `audit-session` generally, not this skill.
 
 Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, and `gui` (in its `SKILL.md` for critique and its `ORIENT.md` for orient). The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
 
@@ -87,8 +90,13 @@ Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). **RULE 0 holds under 
 
 ## Native aspects
 
-`architecture`, `interface-safety`, `security`, and `claude-md` live here because no other skill owns them.
+`architecture`, `interface-safety`, `security`, `claude-md`, and `skills` live here because no other skill owns them.
 
 `interface-safety` asks one question the others don't: can a caller do the obvious thing and get the wrong result? It is the proactive half of the footgun test that `review`'s `contracts` axis runs read-only on a diff.
 
 Interactive runs use the full native files including their grilling loops and, for `claude-md`, the rebuild. Survey sub-agents get the `aspects/` brief, which points at the same file and names which sections stop applying.
+
+Two more files the aspect table does not reach, listed here so nothing in this skill needs two hops to find:
+
+- [HTML-REPORT.md](HTML-REPORT.md) — the fragment contract for the survey report. Read it before writing any report body.
+- [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md) — alternative interfaces for a module `architecture` has deepened. Reached from [ARCHITECTURE.md](ARCHITECTURE.md) and [INTERFACE-SAFETY.md](INTERFACE-SAFETY.md) at the moment it applies.

@@ -1,7 +1,7 @@
 ---
 name: audit-session
 disable-model-invocation: true
-description: Audit conversation transcripts — this session, this project's history, or all of it — through lenses that ask what was spent, what was steered and ignored, which skills should have fired and didn't, and where the conversation itself wasted the user's time. Replaces the old `skill-audit` (2026-08-20) and absorbs its direct-fix mode.
+description: Audit conversation transcripts — this session, this project's history, or all of it — through lenses that ask what was spent, what was steered and ignored, which skills should have fired and didn't, whether the co-loaded steering sources contradict each other, and where the conversation itself wasted the user's time. Replaces the old `skill-audit` (2026-08-20) and absorbs its direct-fix mode.
 ---
 
 # audit-session
@@ -14,7 +14,9 @@ Reviews **conversations**, not code. `review` judges a diff; this judges the tra
 
 Transcripts are enormous. Reading them directly burns the context this skill exists to protect, and eyeballing produces vibes instead of findings. **Always run [analyze.py](analyze.py) first** and hand its output to the lenses. A lens that needs raw text asks `analyze.py --dump-user-messages`, never `cat`.
 
-**Two extractors, different questions.** [analyze.py](analyze.py) answers *where did the effort go* — spend, skills fired, friction. [adherence.py](adherence.py) answers *was this rule obeyed* — the ratio `negative-space` exists to produce. Never hand-roll the second one: it carries four exclusions that each produced a published wrong number, and every hand-rolled count so far has missed at least one.
+**Two extractors, different questions.** [analyze.py](analyze.py) answers *where did the effort go* — spend, skills fired, friction, and under `--steering`, what steering was injected and from where. [adherence.py](adherence.py) answers *was this rule obeyed* — the ratio `negative-space` exists to produce. Never hand-roll the second one: it carries four exclusions that each produced a published wrong number, and every hand-rolled count so far has missed at least one.
+
+**The steering is not in the user or assistant records.** It arrives as `attachment` records — hook stdout, the skill listing, the agent and deferred-tool listings, MCP instructions, the auto-mode flags. Scan only user+assistant and the whole set reads as absent. `analyze.py --steering` extracts it; `--dump` prints each source's text, which a contradiction finding has to quote. The `CLAUDE.md` set and `MEMORY.md` are the exception: injected at request build time, never persisted, so read them from disk. The inventory prints that caveat so a thin result is never mistaken for a quiet session.
 
 Corollary, learned the hard way: **validate the instrument before trusting the number.** A measurement that disagrees with a second method is not a finding until one of them is explained. See [CORPUS.md](CORPUS.md) § Measurement traps.
 
@@ -49,8 +51,11 @@ Run every applicable lens unless the invocation names a subset. Each is a file i
 | [friction](axes/friction.md) | Blocked calls, retries, repeated reads — the papercut surface. |
 | [decision-quality](axes/decision-quality.md) | Were choices put to the user answerable inline, or did they need a round trip? |
 | [restatement](axes/restatement.md) | Where did the user have to repeat, re-scope, or correct? |
+| [steering-conflict](axes/steering-conflict.md) | Do the co-loaded steering sources contradict, collide, or duplicate each other? |
 
 **`negative-space` is the point of this skill.** The others find waste that shows up in a token count. Negative-space finds the rule you wrote, deployed, and never saw obeyed — which no cost metric will ever surface, because not doing the work is *cheaper*.
+
+**`steering-conflict` is the only lens that judges the steering set instead of the transcript.** Every other lens holds the conversation up against the documentation; this one asks whether the documentation can be obeyed at all. A skill audited alone always passes — `improve`'s `skills` aspect owns that read. The failure here needs two sources in one session, so only a transcript can show it.
 
 ## RULE — every finding is tested against the fix shapes
 
@@ -74,7 +79,7 @@ These bind every lens, not just `negative-space`. When more than one offers an a
 
 1. **Resolve the corpus** — [CORPUS.md](CORPUS.md). State it in one line.
 2. **Extract** — `python3 ~/.claude/skills/audit-session/analyze.py <corpus> [--since …]`. Read the output. This is the shared fact base for every lens.
-3. **Load the steering set** — global `~/.claude/CLAUDE.md`, the project `CLAUDE.md` and `CLAUDE.local.md`, and the `SKILL.md` of every skill `analyze.py` reports as fired. `negative-space` and `skill-miss` are meaningless without it.
+3. **Load the steering set** — global `~/.claude/CLAUDE.md`, the project `CLAUDE.md` and `CLAUDE.local.md`, and the `SKILL.md` of every skill `analyze.py` reports as fired. `negative-space` and `skill-miss` are meaningless without it. Then `analyze.py <corpus> --steering` for the half that only the transcript carries — hook stdout, the skill listing, the tool and agent listings, MCP instructions. `steering-conflict` needs both halves and `--dump` on top.
 4. **Run the lenses.** One sub-agent per lens for a multi-session corpus; inline for a single session. Each returns findings only — no edits.
 5. **Score.** A finding survives only if it names a **specific transcript moment** (timestamp or quoted line) *and* a **specific rule or cheaper alternative**. Kill anything that is a general observation about how sessions could go better.
 6. **Report** in chat, in the shape [REPORT-FORMAT.md](REPORT-FORMAT.md) specifies. Ranked, most-recurrent first. Every finding carries a count — "3 of 12 sessions" beats "sometimes".

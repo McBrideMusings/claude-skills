@@ -101,3 +101,23 @@ Use these to diagnose issues the user may be having with the skill.
 - **Sediment** — stale layers that settle because adding feels safe and removing feels risky. The default fate of any skill without a pruning discipline.
 - **Sprawl** — a skill simply too long, even when every line is live and unique. Hurts readability and maintainability and wastes tokens. The cure is the ladder: disclose **reference** behind pointers, and split by **branch** or sequence so each path carries only what it needs.
 - **No-op** — a line the model already obeys by default, so you pay load to say nothing. The test: does it change behaviour versus the default? The commonest form is a **bare quality adjective** — _be thorough_, _very detailed_, _easy to read_, _be rigorous_ — exhorting toward a subjective target the agent already aims at, with no actionable bar. The baseline includes what the skill has _already_ established: _be rigorous_ is a no-op in a skill whose process is already rigorous, even if it would bite in a bare prompt. A weak leading word (_be thorough_ when the agent is already thorough-ish) is the same failure; the fix is a stronger word (_relentless_), not a different technique.
+
+## Precision before addition
+
+Before adding a rule, section or file, pick one of five and say which: **replace** a rule that is vague or points at the wrong behaviour, **narrow** one that is mostly right but over-triggers, **move** content that belongs in another file, **delete** what repeats another rule or no longer changes behaviour, or **add** — only when no existing rule can cover it without becoming less precise.
+
+Adding without considering the other four is how **sediment** and **duplication** arrive, and duplication is the condition that later produces a contradiction. Run this before the edit and again after.
+
+---
+
+## Audit mode
+
+For `improve`'s `skills` aspect: no writes, no commits, no questions. Judge one skill directory at a time and return findings.
+
+Everything above is the authoring contract — it says what to write and why. Audit mode reads the same principles backwards: each becomes a question asked of a skill that already exists. Run the ten axes in [aspects/skills.md](aspects/skills.md); this file supplies the vocabulary behind them.
+
+**Scope boundary.** This judges a skill **in isolation**, as if it were the only one loaded. Two skills that contradict each other in the same session is a real failure and not this one's — route it to `audit-session`'s [steering-conflict](../audit-session/axes/steering-conflict.md) lens, which can see which sources actually landed together.
+
+**Read the skill in full first, including its sibling files.** A finding that does not quote the skill's own line is not a finding. Same rule `claude-md` carries, same reason: a clause judged out of context routinely contradicts one three sections down.
+
+Each finding: the **gap**, **evidence** (the quoted line), **fix** (the concrete rewrite — for a missing gate, the artifact that proves the step ran), **strength** (`Strong` / `Worth exploring` / `Speculative`). Card fields per [HTML-REPORT.md](HTML-REPORT.md).

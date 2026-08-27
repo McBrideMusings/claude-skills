@@ -12,6 +12,21 @@ Three places the money actually is, in order:
    Paid on every single turn of every session, forever. `analyze.py` reports the median
    first-turn context. At N turns/month, 1,000 preamble tokens costs `N × 1500 / 1e6` per
    month; compute N from the corpus.
+
+   **Break it down by source before proposing a cut.** The median is one number for a
+   dozen contributors, and the biggest one is rarely the one anybody would guess:
+
+   ```bash
+   python3 ~/.claude/skills/audit-session/analyze.py <corpus> --steering
+   ```
+
+   That names each injected source and its word count — the skill listing, each hook's
+   stdout, the agent and deferred-tool listings, MCP instructions. The `CLAUDE.md` set is
+   not in the transcript; add it from disk. A source that is large *and* never referenced
+   in the transcript is the cleanest finding this lens produces, because cutting it costs
+   nothing. Route a source that is large and *contradicts* another to
+   [steering-conflict](steering-conflict.md) instead — that is a correctness finding
+   wearing a cost finding's clothes, and it ranks higher.
 2. **Turns at very high context.** A turn at 500k pays ~$0.75 in cache-read before the model
    writes a word. `analyze.py`'s context-band table shows the distribution. 15–25% of spend
    sitting above 500k is common and is nearly always avoidable.

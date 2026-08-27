@@ -6,6 +6,8 @@ The lenses never eyeball raw JSONL — they read this output.
 
 Usage:
     python3 analyze.py <corpus-path> [--since YYYY-MM-DD] [--json]
+    python3 analyze.py <corpus-path> --steering        # inventory only
+    python3 analyze.py <corpus-path> --steering --dump # + the full text of each source
 
 <corpus-path> is either
     a single  <session-id>.jsonl
@@ -19,6 +21,16 @@ Two traps this encodes, both learned the hard way:
     or every fork double-counts (2,422 duplicate turns in one project).
   * Sub-agent transcripts live in <session-id>/subagents/**.jsonl, NOT beside
     the parent .jsonl. Miss them and sub-agent cost reads as zero.
+
+A third, for --steering: the injected steering is NOT in the user/assistant
+records. It arrives as `attachment` records (hook stdout, the skill listing,
+the agent and deferred-tool listings, MCP instructions, the auto-mode flags).
+Scan only user+assistant and the whole steering set reads as absent.
+
+What --steering CANNOT see, and says so rather than under-reporting silently:
+the CLAUDE.md / CLAUDE.local.md / MEMORY.md reminder is injected at request
+build time and never written to the JSONL. Read those from disk — which is
+what SKILL.md Phase 3 already tells the lenses to do.
 """
 import os, sys, json, glob, datetime, argparse
 from collections import Counter, defaultdict
@@ -72,12 +84,72 @@ class Facts:
         self.cmd_prefix = Counter()
         self.dup_reads = Counter(); self.dup_bash = Counter()
         self.user_msgs = []          # (timestamp, text) — the steering signal
+        self.steering = defaultdict(lambda: {"n": 0, "texts": {}})   # source -> texts by hash
+        self.hook_cmds = Counter()   # every hook the harness reports running
         self.ctx_bucket = Counter()
         self.first_ctx = []
         self.sessions = 0; self.dupe_turns = 0
         self.tool_wait = 0.0; self.human_wait = 0.0
         self.slow_tools = Counter()
         self.seen = set()
+
+
+def add_steering(F, source, text):
+    """Record one injected steering source, deduped by content."""
+    if not text or not text.strip():
+        return
+    text = text.strip()
+    e = F.steering[source]
+    e["n"] += 1
+    e["texts"][hash(text)] = text
+
+
+def reminder_blocks(content):
+    """<system-reminder> blocks riding on a user turn, if this build persists them."""
+    blocks = [content] if isinstance(content, str) else [
+        b.get("text") for b in (content or [])
+        if isinstance(b, dict) and b.get("type") == "text"
+    ]
+    for txt in blocks:
+        if txt and "<system-reminder>" in txt:
+            yield "system-reminder", txt
+
+
+def collect_steering(r, F):
+    """Pull injected steering out of an `attachment` or `system` record.
+
+    Every branch here exists because the text it grabs shapes the session before
+    the user says anything. Anything not steering (token counters, turn timings)
+    is deliberately dropped.
+    """
+    if r.get("type") == "system":
+        # The only steering-relevant system record: which hooks the harness ran.
+        for h in (r.get("hookInfos") or []):
+            if h.get("command"):
+                F.hook_cmds[h["command"]] += 1
+        return
+
+    a = r.get("attachment") or {}
+    kind = a.get("type")
+
+    if kind == "hook_success":
+        add_steering(F, f"hook:{a.get('hookName') or a.get('hookEvent') or '?'}",
+                     a.get("content"))
+    elif kind == "hook_additional_context":
+        c = a.get("content")
+        add_steering(F, "hook:additional-context",
+                     "\n".join(c) if isinstance(c, list) else c)
+    elif kind == "skill_listing":
+        add_steering(F, "skill-listing", a.get("content"))
+    elif kind == "agent_listing_delta":
+        add_steering(F, "agent-listing", "\n".join(a.get("addedLines") or []))
+    elif kind == "mcp_instructions_delta":
+        add_steering(F, "mcp-instructions", "\n".join(a.get("addedBlocks") or []))
+    elif kind == "deferred_tools_delta":
+        add_steering(F, "deferred-tools", ", ".join(a.get("addedNames") or []))
+    elif kind == "auto_mode":
+        flags = {k: v for k, v in a.items() if k != "type"}
+        add_steering(F, "auto-mode", json.dumps(flags, sort_keys=True))
 
 
 def scan(path, F, side, since=None):
@@ -110,9 +182,15 @@ def scan(path, F, side, since=None):
         t = ts(r.get("timestamp"))
         if since and t and t.date().isoformat() < since: return
 
+        if r.get("type") in ("attachment", "system"):
+            collect_steering(r, F)
+            continue
+
         if r.get("type") == "user":
             m = r.get("message") or {}
             c = m.get("content")
+            for src, txt in reminder_blocks(c):
+                add_steering(F, src, txt)
             if isinstance(c, str) and c.strip():
                 F.user_msgs.append((r.get("timestamp", "")[:19], c.strip()))
             elif isinstance(c, list):
@@ -190,6 +268,48 @@ def scan(path, F, side, since=None):
         prev_t, prev_tools = t, tools_this_turn
 
 
+def steering_report(F, dump):
+    """The fact base for `steering-conflict`: what was injected, from where, how much."""
+    P = print
+    P("=" * 72)
+    P("INJECTED STEERING — what shaped the session before the work started")
+    P("")
+    if not F.steering:
+        P("  none found. Either the corpus predates attachment records, or this")
+        P("  build does not persist them. Do not read that as 'nothing was injected'.")
+    rows = sorted(F.steering.items(), key=lambda kv: -sum(len(t.split()) for t in kv[1]["texts"].values()))
+    total = 0
+    for src, e in rows:
+        words = sum(len(t.split()) for t in e["texts"].values())
+        total += words
+        variants = len(e["texts"])
+        P(f"  {words:7,} w  x{e['n']:<4} {'(' + str(variants) + ' variants) ' if variants > 1 else ''}{src}")
+    P("")
+    P(f"  {total:,} words of steering across {len(rows)} sources.")
+    P("")
+    P("  NOT IN THE TRANSCRIPT, read from disk instead:")
+    P("    ~/.claude/CLAUDE.md, the project CLAUDE.md / CLAUDE.local.md, MEMORY.md.")
+    P("    These are injected at request build time and never persisted here.")
+    if F.hook_cmds:
+        P("")
+        P("  HOOKS THE HARNESS RAN (from stop_hook_summary):")
+        for c, n in F.hook_cmds.most_common(20):
+            P(f"    {n:5d}x  {c}")
+    P("=" * 72)
+    if not dump:
+        P("")
+        P("Re-run with --dump to get the text of each source, which is what a")
+        P("contradiction finding has to quote.")
+        return
+    for src, e in rows:
+        for i, t in enumerate(e["texts"].values(), 1):
+            P("")
+            P("-" * 72)
+            P(f"SOURCE: {src}" + (f"  (variant {i})" if len(e["texts"]) > 1 else ""))
+            P("-" * 72)
+            P(t)
+
+
 def report(F, args):
     tot = F.cost["main"] + F.cost["sub"]
     cr = sum(v for k, v in F.tok.items() if k[1] == "cr")
@@ -262,6 +382,10 @@ def main():
     ap.add_argument("--since")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--dump-user-messages", action="store_true")
+    ap.add_argument("--steering", action="store_true",
+                    help="inventory the steering injected into the session")
+    ap.add_argument("--dump", action="store_true",
+                    help="with --steering, print each source's full text")
     args = ap.parse_args()
 
     main_files, sub_files = corpus_files(args.corpus)
@@ -269,6 +393,9 @@ def main():
     for f in main_files: scan(f, F, "main", args.since)
     for f in sub_files: scan(f, F, "sub", args.since)
 
+    if args.steering:
+        steering_report(F, args.dump)
+        return
     if args.dump_user_messages:
         for t, m in F.user_msgs: print(f"--- {t}\n{m}\n")
         return
