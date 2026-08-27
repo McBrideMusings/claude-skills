@@ -70,7 +70,7 @@ line without one must be typed individually.
 | teammate's PR I have checked out | combined fix-then-post, per finding |
 | not mine, no PR | nothing. Print the report and the path, no offer. |
 
-All offers are gated on an explicit yes in the moment — never automatic (global "never send /
+All offers are gated on an explicit `go` in the moment — never automatic (global "never send /
 act on my behalf" rule).
 
 ## Offer grill-me
@@ -87,7 +87,7 @@ Present both flows and let the user pick:
 - **`implement`** — Claude fixes the findings itself.
 - **`implement delegate`** — Claude orchestrates; a cheaper model implements; Claude validates.
 
-Hand the report path to the chosen flow. Don't start it without a yes.
+Hand the report path to the chosen flow. Don't start it without a `go`.
 
 ## Offer to fix and/or post (teammate's PR)
 
@@ -118,7 +118,7 @@ blocking still holds, so a blocking bug can be a tiny behavior-preserving one-li
 in the fix bucket, while a non-blocking architecture note usually belongs in the hand-back bucket.
 
 **Fixing on the branch — mechanics + gate.** Pushing commits to someone else's PR branch is an
-outward action on their work, held to the same **explicit-yes-in-this-message** gate as any send.
+outward action on their work, held to the same **explicit-`go`-in-this-message** gate as any send.
 
 - Preflight: the PR branch checked out, clean working tree. State exactly which findings you'll
   commit and confirm before touching the branch.
@@ -228,8 +228,8 @@ user's `go` authorises only the first:
 2. **Then draft the outgoing text against what actually happened**, not against what the report
    said before the fixes existed. A finding fixed in step 1 is described in the past tense and no
    longer asks anything of the author; a finding left alone keeps its original wording.
-3. **Show that text and wait for a second explicit yes** before `gh pr review` touches the PR.
-   The verdict changes the PR's merge state, so it is held to the explicit-yes-in-this-message
+3. **Show that text and wait for a second explicit `go`** before `gh pr review` touches the PR.
+   The verdict changes the PR's merge state, so it is held to the explicit-`go`-in-this-message
    gate on its own — the `go` that authorised the fix does not carry forward to the post.
 
 When a disposition set implies **no** local work — everything is `post` or `skip` — step 1 is
@@ -238,14 +238,14 @@ appearing to skip a step.
 
 ### Propose, then confirm — never auto-submit
 
-State the recommended verdict, then the exact body that will be posted — the report scoped to the
+Close with `go` and nothing else — never `yes`, `approve`, or `post` (RULES.md). State the recommended verdict, then the exact body that will be posted — the report scoped to the
 handed-back findings (summary line plus axis-grouped findings, minus any being fixed on the
 branch, with a one-line note of what was pushed instead), quoted in chat as a Markdown blockquote,
 never written to a file — and that the user can pick a different verdict or decline. A verdict review — Request changes especially — changes the PR's merge state,
-so it is held to the same **explicit-yes-in-this-message** gate as any send. Prior or implied
+so it is held to the same **explicit-`go`-in-this-message** gate as any send. Prior or implied
 consent does not count.
 
-On an explicit yes in that message, submit one consolidated review:
+On an explicit `go` in that message, submit one consolidated review:
 
 ```
 gh pr review <number> --request-changes --body "$(cat <<'EOF'

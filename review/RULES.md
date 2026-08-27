@@ -54,8 +54,9 @@ and close it with `go`.
 
 **`go` is a keyword, not a selector — it does not reopen RULE 0.** RULE 0 bans a *menu* that
 hides the reasoning behind a click; `go` is typed chat text meaning "apply the disposition
-already printed and reasoned about on every line above," same as `yes` confirms the one action
-in a single-action offer. It is available whenever **every** line in the list carries a
+already printed and reasoned about on every line above." **It is also the only accept word this
+skill ever asks for** — a single-action offer closes with `go` too, never `yes` / `post` /
+`approve` / `confirm` (`CLAUDE.md`, Deciding & designing). It is available whenever **every** line in the list carries a
 `(recommended)` keyword — if any line has no clear recommendation (two keywords with neither
 marked, or a genuine "your call" case), that item is excluded from what `go` covers and must
 still be typed individually; say so in the same message as the list (`go covers 1–2; 3 has no
