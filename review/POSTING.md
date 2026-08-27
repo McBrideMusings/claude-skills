@@ -226,7 +226,10 @@ Gate on the repo actually allowing it:
 gh api repos/<owner>/<repo> --jq '.allow_auto_merge'
 ```
 
-`true` → one plain-text line: ``Repo allows auto-merge — arm it so GitHub merges on approval? `arm` / `skip` ``. On an explicit `arm` in that message:
+`true` → **one more row on the disposition slate above, not a question of its own** (RULES.md, one
+slate per message): ``N. **arm auto-merge** — repo allows it; GitHub would merge on approval. My
+pick: arm.`` A separate `arm` / `skip` line under the findings list makes the user answer twice.
+On an explicit `arm`, or a `go` that covers the row:
 
 ```
 gh pr merge <n> --squash --delete-branch --auto

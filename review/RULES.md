@@ -43,6 +43,15 @@ A findings list with no recommendation is a non-answer (`CLAUDE.md`, Deciding & 
 with recommendations but no way to accept them wholesale makes the user re-type a decision they
 already agree with. `go` means *the picks as stated*, skips included — never "fix everything".
 
+**ONE slate per message, and `go` takes all of it.** Everything still waiting on the user at the
+end of a pass goes in a single numbered list — findings, a push, a re-request, arming auto-merge,
+whatever else a sub-file produced. A message that ends with two conforming lists, or with a list
+plus a separate one-off question underneath it, still makes the user answer twice to accept two
+things you already recommended, and it is the same failure as no accept-all at all. A sub-file
+that produces an outward action contributes **a row**, never a prompt of its own; the top-level
+phase that prints the report owns the only slate. One row is still a slate — print it numbered
+and close it with `go`.
+
 **`go` is a keyword, not a selector — it does not reopen RULE 0.** RULE 0 bans a *menu* that
 hides the reasoning behind a click; `go` is typed chat text meaning "apply the disposition
 already printed and reasoned about on every line above," same as `yes` confirms the one action

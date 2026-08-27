@@ -218,7 +218,7 @@ job from how `review` writes its own findings, and the two documents are deliber
 `review/POSTING.md` formats findings you are handing *to* an author; `FEEDBACK.md` formats
 answers you are handing *back* to a reviewer.
 
-## Phase U5 — One report, one push confirm
+## Phase U5 — One report, one slate
 
 Print, once, whatever the pass actually did — one line per gate that fired, nothing for gates
 that did not:
@@ -230,14 +230,30 @@ tests      2 failing, both fixed — check-cloudflare-test (3), check-cloudflare
 feedback   1 body-only review from alexthemighty — 3 points: 2 addressed, 1 reply
 ```
 
-Then **the one confirm this skill makes, batched over everything above**:
+Then **one slate, and it is the only thing this skill asks — every outward action the pass
+produced goes in it, numbered, each with your pick**. `FEEDBACK.md` Phase 08's re-request is one
+of these rows; it never prints a prompt of its own. Close it with `CLAUDE.md`'s escape hatch:
 
-> `unblock` made 3 commits on `pierce/leagues-lp`. Push to origin? `push` / `hold`
+> `unblock` made 3 commits on `pierce/leagues-lp`. Outward actions waiting:
+>
+> 1. **push** — 3 commits to `origin/pierce/leagues-lp`. My pick: push.
+> 2. **re-request** — @alexthemighty's `CHANGES_REQUESTED` still gates the merge. My pick: re-request.
+>
+> Type `go` to take both, or answer per item (`1 push, 2 skip`).
 
-- **`hold`** leaves every commit local. Say the branch is still blocked on GitHub's side until
-  it is pushed — the fixes exist only here.
-- **On an owned repo with no PR**, there is nothing outward about it: commit and push without
-  the confirm, per `CLAUDE.md`'s "commit and push finished work without asking in my repos".
+**One slate, one keyword, however many rows.** Two prompts at the bottom of one message —
+`push` / `hold` on one line and `re-request` / `skip` on the next — is the failure this phase
+exists to prevent: the user has to answer twice to accept what you already recommended. A pass
+with exactly one outward action still prints the slate, one row, closed with `go`.
+
+- **Ordering is execution order.** Push is always row 1 when it is present, because every other
+  outward action assumes the commits are on the branch.
+- **A row the user skips is reported as not done**, in one clause. Skipping push leaves every
+  commit local — say the branch is still blocked on GitHub's side, since the fixes exist only
+  here.
+- **On an owned repo with no PR**, push is not outward and does not get a row: commit and push
+  without asking, per `CLAUDE.md`'s "commit and push finished work without asking in my repos".
+  Print the slate only if some other row survives.
 - **Never push while anything is still red**, and never describe the PR as fixed before the push
   lands.
 - **Never `--force`**, never push to the default branch, never open a PR from here.

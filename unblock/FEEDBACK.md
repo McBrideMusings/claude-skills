@@ -348,19 +348,21 @@ The third has no body on purpose: the subject says what the commit adds, and not
 
 If the user rejects or edits, re-score the affected threads, regenerate the response block, and re-present.
 
-## Phase 08 — Offer to re-request the review
+## Phase 08 — Hand the re-request to Phase U5's slate
 
 **Whenever the feedback came from a formal review, offer to re-request that reviewer once the fixes are pushed.** Not a footnote and not something the user should have to think of — a review with a verdict on it stays on the PR as the reviewer's standing position, and `CHANGES_REQUESTED` keeps gating the merge, until they are asked again. Fixing everything and saying nothing leaves the PR looking exactly as blocked as it did before the work.
 
 The offer applies to a reviewer who submitted a **formal review of any state** — `CHANGES_REQUESTED`, `COMMENTED`, or `APPROVED` on a since-changed diff. It does **not** apply to someone who only left a conversation comment: there is no review to supersede, and re-requesting reads as a nudge rather than a status change.
 
-Make the offer in the same message as the response block, one plain line per reviewer, keyword-answered (RULE 0 — never a selector):
+**This phase prints no prompt of its own.** It contributes one row per reviewer to [SKILL.md](SKILL.md) Phase U5's single slate, which is the only thing the whole skill asks:
 
 ```
-@alexthemighty's CHANGES_REQUESTED is still gating the merge. Re-request their review? `re-request` / `skip`
+2. **re-request** — @alexthemighty's `CHANGES_REQUESTED` still gates the merge. My pick: re-request.
 ```
 
-On an explicit yes **in that message** — this is an outward action on someone else's queue, held to the same gate as any send:
+A second prompt under the response block — `re-request` / `skip` on its own line, beneath U5's own question — makes the user answer twice to accept two things you already recommended. One slate, one keyword (RULE 0 — never a selector).
+
+On an explicit yes to that row — this is an outward action on someone else's queue, held to the same gate as any send:
 
 ```
 gh pr edit <pr_number> --repo <owner>/<repo> --add-reviewer <login>
