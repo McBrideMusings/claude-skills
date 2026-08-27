@@ -19,7 +19,11 @@ h1{font-weight:400;font-size:34px;line-height:1.25;margin:0 0 10px;
    letter-spacing:.005em}
 .meta{margin:0;color:var(--soft);font-size:14px;font-style:italic}
 
-main{max-width:840px;margin:0 auto;padding:44px 24px 88px}
+/* Sections are direct children of <body> per the fragment contract — there is no
+   wrapper element to hang the measure and gutter on, so each section carries them. */
+body>section{max-width:888px;margin:0 auto 48px;padding:0 24px}
+body>section:first-of-type{margin-top:44px}
+body>section:last-of-type{margin-bottom:88px}
 h2.sec{font-weight:400;font-size:14px;letter-spacing:.14em;text-transform:uppercase;
        color:var(--soft);margin:0 0 16px;border-bottom:1px solid var(--line-strong);
        padding-bottom:8px}
