@@ -167,7 +167,6 @@ has "$WORK/fill.html" 'data-at-device-frame="fill"' && say ok "--device fill rea
 
 echo "--- the tweaks panel ---"
 cat > "$WORK/twk.html" <<'EOF'
-<aside data-note><b>Scope.</b> The list only.</aside>
 <template data-variant="Quiet"><div class="frame"><button>Go</button></div></template>
 <template data-variant="Loud"><div class="frame"><button>GO NOW</button></div></template>
 <script>atTweaks.add('dark', false, { onChange: function () {} });</script>
@@ -182,8 +181,8 @@ has "$WORK/twk.out.html" 'class="at-twk-pill"' && say ok "the pill ships beside 
 sed -n '1,/<\/head>/p' "$WORK/twk.out.html" | grep -q 'window.atTweaks=' \
   && say ok "the atTweaks stub is in <head>" \
   || say f "the atTweaks stub is not ahead of the fragment"
-has "$WORK/twk.out.html" 'class="at-twk-note"' && say ok "data-note becomes the scope note" \
-  || say f "<aside data-note> did not reach the panel"
+has "$WORK/twk.out.html" 'class="at-twk-meta"' && say ok "the meta strip is built" \
+  || say f "no meta strip — the device readout has nowhere to go"
 has "$WORK/twk.out.html" 'data-at-tweaks' && say ok "the root says the panel is present" \
   || say f "data-at-tweaks missing from :root"
 # The rail is gone entirely, markup-declared axes with it.

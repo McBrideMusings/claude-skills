@@ -115,8 +115,6 @@ changes and the row that changes per prototype must not read as two instances of
   :root { --brand: #2f6df6; --radius-card: 10px; }
 </style>
 
-<aside data-note><b>Scope.</b> Resume-only. No terminal view.</aside>
-
 <template data-variant="Quiet" data-caption="Minimal motion, borders over shadows">
   <div class="proto-frame">…the variant, in realistic surrounding context…</div>
 </template>
@@ -201,6 +199,10 @@ directions is the entire job.
 - `atTweaks.section('Motion')` starts a labelled group; everything registered after it lands there.
   `atTweaks.action('Reset', fn)` is a button, holds no value and never re-fires on mount.
   `atTweaks.toggle/slider/stepper/color/pick/select/text` name a widget when the inference is wrong.
+- `atTweaks.note('<b>…</b> …')` pins arbitrary non-interactive prose under the controls. **Almost
+  never the right answer.** It is for something a reader cannot work out from the screen and would
+  otherwise get wrong — not a standing "Scope" section every prototype carries. If the sentence
+  restates what the design already shows, cut it.
 - Every change also dispatches `at:tweak` on `window` with `{key, value}`, for anything that would
   rather listen than pass a handler.
 - Tweak state persists in the URL as `?screen=chat&gap=18`, alongside `?v=`.

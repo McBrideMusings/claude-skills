@@ -278,31 +278,34 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-twk):not(.at-twk-
 .at-vp-size {
   flex: 1;
   min-width: 0;
-  font-size: 11px;
-  color: var(--at-c-fainter);
-  font-variant-numeric: tabular-nums;
+  color: var(--at-c-faint);
 }
 
+/* Rotate and 1:1 are the only two things in the meta strip you can click, and they sat in a
+   line of plain text with no border and no ground — which is a label until you happen to
+   hover it. They get the edge and the surface every other control on the card has. */
 .at-vp-mod {
   flex: 0 0 auto;
-  height: 22px;
-  min-width: 24px;
-  padding: 0 6px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--at-c-faint);
-  font: inherit;
-  font-size: 11px;
-  line-height: 1;
+  height: 20px;
+  min-width: 26px;
+  padding: 0 7px;
+  border: 0.5px solid var(--at-c-edge);
+  border-radius: 6px;
+  background: var(--at-c-surface);
+  color: var(--at-c-dim);
+  font: 600 11.5px/1 inherit;
   cursor: pointer;
-  transition: color 120ms ease-out, background-color 120ms ease-out;
+  transition: color 120ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out;
 }
 
-.at-vp-mod:hover { background: var(--at-c-edge); color: var(--at-c-ink); }
-.at-vp-mod[data-active] { background: var(--at-c-sel); color: var(--at-c-sel-ink); }
-.at-vp-mod:disabled { opacity: 0.3; cursor: default; }
-.at-vp-mod:disabled:hover { background: transparent; color: var(--at-c-faint); }
+.at-vp-mod:hover { border-color: var(--at-c-edge-hi); background: #fff; color: var(--at-c-ink); }
+
+.at-vp-mod[data-active] {
+  border-color: var(--at-c-sel-edge);
+  background: var(--at-c-sel);
+  color: var(--at-c-sel-ink);
+}
+
 .at-vp-mod:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
 /* --- the floating bar, used only when no Tweaks panel exists (non-prototype kinds) --- */

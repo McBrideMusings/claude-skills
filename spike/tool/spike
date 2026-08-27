@@ -273,33 +273,7 @@ def extract_variants(fragment):
     return variants, remainder
 
 
-# --- the scope note ---------------------------------------------------------
-#
-# A fragment declares its CONTROLS in a top-level <script>, through the atTweaks registry
-# the head stub publishes — never in markup. `<nav data-axis>` used to be the only way, and
-# it could only ever render a row of buttons, so a gap of 0-40px became five chips at
-# arbitrary stops and a colour became a list of four. The control now follows the type of
-# the value: see CONTRACT.md and tweaks.js.
-#
-# The one thing still declared in markup is the scope note — prose, pinned to the bottom of
-# the panel, saying what this prototype is and is not answering:
-#
-#   <aside data-note><b>Scope.</b> Resume-only. No terminal view.</aside>
-
-NOTE_RE = re.compile(
-    r"<aside\b[^>]*\bdata-note\b[^>]*>(?P<body>.*?)</aside\s*>", re.DOTALL | re.IGNORECASE
-)
-
-
-def extract_note(fragment):
-    """Pull an optional <aside data-note> — the scope line pinned under the controls."""
-    m = NOTE_RE.search(fragment)
-    if not m:
-        return "", fragment
-    return m.group("body").strip(), fragment.replace(m.group(0), "")
-
-
-# --- assembly ---------------------------------------------------------------
+# --- assembly ---# --- assembly ---------------------------------------------------------------
 
 # The queueing stub. A fragment's <script> sits in the BODY and therefore runs before the
 # harness script block at the end of the document, so `atTweaks` has to exist first. This is
@@ -323,7 +297,7 @@ TWEAKS_PILL = ('<button class="at-twk-pill" type="button" '
 SEG_MAX = 3
 
 
-def build_panel(variants, note, title, subtitle):
+def build_panel(variants, title, subtitle):
     """The panel: one card holding Tweaks, Checks and Comments behind three tabs.
 
     Variant and whatever the fragment registers, plus the device readout, the checks and the
@@ -374,8 +348,6 @@ def build_panel(variants, note, title, subtitle):
             parts.append('        </div>')
         parts.append('      </div>')
 
-    if note:
-        parts.append('      <div class="at-twk-note">%s</div>' % note)
     parts += ['    </div>', '  </div>', '</nav>', TWEAKS_PILL]
     return "\n".join(parts)
 
@@ -464,13 +436,12 @@ def cmd_build(args):
         # The stub goes in <head>, because the fragment's own <script> is in the body and
         # therefore runs before the harness block that defines the real registry.
         head_scripts.append(TWEAKS_STUB)
-        note, remainder = extract_note(remainder)
         root_attrs += " data-at-tweaks"
         # A build replaces the file. There is no merge with what was there before: one
         # prototype is one design, and the earlier attempts belong in git, not stacked
         # inside the artifact where they double its size and go stale.
         body = "%s\n%s\n<main id=\"at-stage\"></main>\n%s" % (
-            build_panel(variants, note, args.title, args.subtitle),
+            build_panel(variants, args.title, args.subtitle),
             remainder.strip(),
             "\n".join(v["raw"] for v in variants),
         )

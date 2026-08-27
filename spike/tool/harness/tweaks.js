@@ -48,7 +48,9 @@
   var variantBtns = [].slice.call(panel.querySelectorAll('.at-twk-variant'));
   var variantSelect = panel.querySelector('.at-twk-variant-select');
   var replay = panel.querySelector('.at-twk-replay');
-  var note = panel.querySelector('.at-twk-note');
+  // Created only if a fragment calls atTweaks.note(). No prototype gets one by default —
+  // a standing "Scope" section on every folio is a paragraph nobody reads.
+  var note = null;
 
   var current = 0;          // which variant is mounted
   var state = {};           // tweak key -> live value, survives every variant swap
@@ -155,7 +157,7 @@
   /* ---------------- the panel's own shape ---------------- */
 
   function slot(el) {
-    // Groups stack above the scope note, which stays pinned to the bottom of the pane.
+    // Groups stack above the note, if there is one, which stays pinned to the pane's foot.
     if (note) panes.tweaks.insertBefore(el, note);
     else panes.tweaks.appendChild(el);
   }
