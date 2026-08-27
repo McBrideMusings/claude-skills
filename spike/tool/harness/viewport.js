@@ -168,13 +168,18 @@
     sizeLabel = document.createElement('span');
     sizeLabel.className = 'at-vp-size';
 
-    rotateBtn = document.createElement('button');
-    rotateBtn.className = cls;
-    rotateBtn.type = 'button';
-    rotateBtn.title = 'Rotate';
-    rotateBtn.setAttribute('aria-label', 'Rotate');
-    rotateBtn.innerHTML = '&#8635;';
-    rotateBtn.addEventListener('click', toggleRotate);
+    /* Only where rotating is a real thing the device does. A desktop window, a menu bar
+       panel and a TV do not turn sideways, and the button shipped anyway — disabled, which
+       is a control that exists to say it does nothing. */
+    if (D.rotates) {
+      rotateBtn = document.createElement('button');
+      rotateBtn.className = cls;
+      rotateBtn.type = 'button';
+      rotateBtn.title = 'Rotate';
+      rotateBtn.setAttribute('aria-label', 'Rotate');
+      rotateBtn.innerHTML = '&#8635;';
+      rotateBtn.addEventListener('click', toggleRotate);
+    }
 
     actualBtn = document.createElement('button');
     actualBtn.className = cls;
@@ -191,7 +196,7 @@
     var readout = document.createElement('div');
     readout.className = 'at-vp-readout';
     readout.appendChild(sizeLabel);
-    readout.appendChild(rotateBtn);
+    if (rotateBtn) readout.appendChild(rotateBtn);
     readout.appendChild(actualBtn);
     g.appendChild(readout);
   } else {
@@ -207,17 +212,16 @@
     divider.setAttribute('aria-hidden', 'true');
     bar.appendChild(name);
     bar.appendChild(actualBtn);
-    bar.appendChild(divider);
-    bar.appendChild(rotateBtn);
+    if (rotateBtn) {
+      bar.appendChild(divider);
+      bar.appendChild(rotateBtn);
+    }
     bar.appendChild(sizeLabel);
     document.body.appendChild(bar);
   }
 
   function paintControls() {
-    if (rotateBtn) {
-      rotateBtn.toggleAttribute('disabled', !D.rotates);
-      rotateBtn.toggleAttribute('data-active', D.rotates && landscape);
-    }
+    if (rotateBtn) rotateBtn.toggleAttribute('data-active', landscape);
     if (actualBtn) actualBtn.toggleAttribute('data-active', actual);
   }
 

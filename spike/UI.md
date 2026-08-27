@@ -133,7 +133,7 @@ harness chrome rather than part of the design being judged.
 
 The same is true of the other harness widgets a prototype gets for free: the device frame (a real
 viewport, so the fragment's media queries actually fire, with the status bar / window chrome drawn by
-the harness), the comment button, and the panel's Checks group, whose Contrast row reveals any text
+the harness), the comment button, and the panel's Checks tab, whose Contrast row reveals any text
 failing WCAG AA. Tell the user the comment button exists when handing the prototype over — a comment
 pinned to an element comes back naming the fragment line that produced it, which is the fastest
 revision loop available. See [`CONTRACT.md`](CONTRACT.md) for how the comments come back.

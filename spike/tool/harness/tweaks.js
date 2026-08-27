@@ -42,8 +42,10 @@
   if (!panel || !stage || !all.length) return;
 
   var body = panel.querySelector('.at-twk-body');
+  var tabStrip = panel.querySelector('.at-twk-tabs');
   var pill = document.querySelector('.at-twk-pill');
   var variantBtns = [].slice.call(panel.querySelectorAll('.at-twk-variant'));
+  var variantSelect = panel.querySelector('.at-twk-variant-select');
   var replay = panel.querySelector('.at-twk-replay');
   var note = panel.querySelector('.at-twk-note');
 
@@ -84,12 +86,70 @@
     root.setAttribute('data-at-tweak-state', JSON.stringify(state));
   }
 
+  /* ---------------- tabs ----------------
+
+     Three questions about the same folio, and each of them used to own a surface of its
+     own: what am I looking at, does it pass, and what is wrong with it. The order is fixed
+     here rather than following registration, so the strip does not reshuffle depending on
+     which widget booted first. A tab appears only once something has filled its pane. */
+
+  var PANES = [
+    { key: 'tweaks',   label: 'Tweaks' },
+    { key: 'checks',   label: 'Checks' },
+    { key: 'comments', label: 'Comments' }
+  ];
+  var panes = {};
+  var tabs = {};
+  var active = 'tweaks';
+
+  PANES.forEach(function (p) {
+    var el = panel.querySelector('.at-twk-pane[data-pane="' + p.key + '"]');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'at-twk-pane';
+      el.setAttribute('data-pane', p.key);
+      el.hidden = true;
+      body.appendChild(el);
+    }
+    panes[p.key] = el;
+
+    var b = document.createElement('button');
+    b.className = 'at-twk-opt at-twk-tab';
+    b.type = 'button';
+    b.textContent = p.label;
+    b.hidden = true;
+    b.addEventListener('click', function () { selectTab(p.key); });
+    tabStrip.appendChild(b);
+    tabs[p.key] = b;
+  });
+
+  function selectTab(key) {
+    if (!panes[key]) return;
+    active = key;
+    PANES.forEach(function (p) {
+      panes[p.key].hidden = p.key !== key;
+      tabs[p.key].toggleAttribute('data-active', p.key === key);
+      tabs[p.key].setAttribute('aria-pressed', p.key === key ? 'true' : 'false');
+    });
+  }
+
+  /* A tab for an empty pane is a control that opens nothing. The strip itself goes when
+     only one tab would show — a single-segment segmented control says nothing. */
+  function showTab(key) {
+    if (tabs[key]) tabs[key].hidden = false;
+    var shown = PANES.filter(function (p) { return !tabs[p.key].hidden; });
+    tabStrip.hidden = shown.length < 2;
+  }
+
+  showTab('tweaks');
+  selectTab('tweaks');
+
   /* ---------------- the panel's own shape ---------------- */
 
   function slot(el) {
-    // Groups stack above the scope note, which stays pinned to the bottom of the body.
-    if (note) body.insertBefore(el, note);
-    else body.appendChild(el);
+    // Groups stack above the scope note, which stays pinned to the bottom of the pane.
+    if (note) panes.tweaks.insertBefore(el, note);
+    else panes.tweaks.appendChild(el);
   }
 
   function group(label) {
@@ -173,15 +233,18 @@
 
   /* ---------------- the widgets ---------------- */
 
+  /* Three segments is the most that stays readable across 250px — a fourth leaves each of
+     them four characters, which is a control you have to guess at. So above three the same
+     choice is a dropdown, and nothing in between. */
+  var SEG_MAX = 3;
+
   function pick(key, opts_, opts) {
     opts = opts || {};
     var list = options(opts_);
+    if (list.length > SEG_MAX) return select(key, list, opts);
     var g = group(opts.label || key);
     var seg = document.createElement('div');
-    // Options with a second line, or more than three of them, read as a stacked list;
-    // side by side they would each be a two-word column.
-    var stack = list.length > 3 || list.some(function (o) { return !!o.hint; });
-    seg.className = 'at-twk-seg' + (stack ? ' at-twk-seg--stack' : '');
+    seg.className = 'at-twk-seg';
     g.appendChild(seg);
 
     var btns = list.map(function (o) {
@@ -189,11 +252,8 @@
       b.className = 'at-twk-opt';
       b.type = 'button';
       b.textContent = o.label;
-      if (o.hint) {
-        var em = document.createElement('em');
-        em.textContent = o.hint;
-        b.appendChild(em);
-      }
+      // A segment has no room for a second line, so the hint becomes its tooltip.
+      if (o.hint) b.title = o.hint;
       seg.appendChild(b);
       return b;
     });
@@ -369,15 +429,9 @@
   function add(key, value, opts) {
     opts = opts || {};
     if (opts.control) return byName(opts.control, key, value, opts);
-    if (Array.isArray(value)) {
-      // An option carrying a second line only reads in a picker; a <select> would throw the
-      // hint away, which is the whole reason it was written.
-      var hinted = value.some(function (o) { return o && typeof o === 'object'; });
-      var few = value.length <= 6 && value.every(function (o) {
-        return String(typeof o === 'object' ? (o.label || o.value) : o).length <= 24;
-      });
-      return (hinted || few) ? pick(key, value, opts) : select(key, value, opts);
-    }
+    // pick() itself sends anything over three segments to the dropdown, so the count rule
+    // lives in one place rather than being decided twice.
+    if (Array.isArray(value)) return pick(key, value, opts);
     if (typeof value === 'boolean') return toggle(key, value, opts);
     if (typeof value === 'number') {
       // A range is what makes a slider readable. Without one there is no scale to drag
@@ -428,11 +482,12 @@
     current = i;
 
     variantBtns.forEach(function (el, j) {
-      var active = j === current;
-      el.toggleAttribute('data-active', active);
-      if (active) el.setAttribute('aria-current', 'true');
+      var on = j === current;
+      el.toggleAttribute('data-active', on);
+      if (on) el.setAttribute('aria-current', 'true');
       else el.removeAttribute('aria-current');
     });
+    if (variantSelect) variantSelect.value = String(current);
 
     writeUrl();
 
@@ -447,6 +502,13 @@
   variantBtns.forEach(function (el, i) {
     el.addEventListener('click', function () { setActive(i); });
   });
+
+  // Above three directions the chooser is a dropdown, for the same reason a tweak's is.
+  if (variantSelect) {
+    variantSelect.addEventListener('change', function () {
+      setActive(parseInt(variantSelect.value, 10) || 0);
+    });
+  }
 
   if (replay) replay.addEventListener('click', mount);
 
@@ -551,6 +613,23 @@
      checks.js its verdicts, rather than each floating a bar of its own, so every "what am I
      looking at" control lives in one card. */
   window.__atTweaks = {
+    /* A named tab's container. Asking for one reveals its tab — a tab over an empty pane is
+       a control that opens nothing, so a folio built without checks or without the comment
+       widget shows no tab for it. */
+    pane: function (key) {
+      if (!panes[key]) return null;
+      showTab(key);
+      return panes[key];
+    },
+    /* Reveal a pane AND put it on screen, opening the panel if it is a pill. Entering
+       comment mode calls this: the comments are in here now, so a review that started with
+       a keypress or the docked button has to bring its own surface up. */
+    show: function (key) {
+      if (!panes[key]) return;
+      showTab(key);
+      selectTab(key);
+      setCollapsed(false);
+    },
     group: group,
     row: function (g) {
       var r = document.createElement('div');

@@ -287,15 +287,19 @@
     return { doc: document, win: window };
   }
 
-  /* --- the panel group ----------------------------------------------------- */
+  /* --- the Checks tab -------------------------------------------------------
+
+     Its own pane rather than a group under the controls: a verdict is not a control, and
+     eight of them at the bottom of the Tweaks list meant scrolling past every slider to
+     find out whether the thing passed. */
 
   var rows = {};
   var group = null;
 
-  // Deferred so the device group, added by viewport.js, lands above this one: the panel
-  // runs coarse to fine down the card, and a verdict is not a control.
+  // Deferred so the pane exists whichever order the harness scripts ran in.
   setTimeout(function () {
-    group = window.__atTweaks.group('Checks');
+    group = window.__atTweaks.pane('checks');
+    if (!group) return;
     CHECKS.forEach(function (c) {
       var row = document.createElement('button');
       row.className = 'at-check';

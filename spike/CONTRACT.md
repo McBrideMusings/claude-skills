@@ -85,12 +85,18 @@ Build with `--picker switch` (one at a time, full size — the default) or `--pi
 full size, one per screenful). **Never a grid of thumbnails**: small side-by-side comparison distorts
 spacing and scale, and judging UI at postage-stamp size is the failure the picker exists to prevent.
 
-In switch mode every control lives in **one floating card, the Tweaks panel**: variant, every tweak
-the fragment registers, the device readout and the checks. They are all the same question — *what am
-I looking at* — and they are ordered coarse to fine. Drag the panel by its header; `×` closes it to a
-**Tweaks** pill in the corner, and the pill opens it again (`?tweaks=0` remembers which). The tool
-generates the panel, the widgets and the URL persistence. **Write no panel code and no widget
-markup.**
+Everything lives in **one floating card** with three tabs:
+
+| Tab | What is in it |
+| --- | --- |
+| **Tweaks** | variant, every tweak the fragment registers, and the device readout — all the same question, *what am I looking at*, ordered coarse to fine |
+| **Checks** | the eight standing verdicts, below |
+| **Comments** | the review layer's list, and **Copy comments** |
+
+Drag the card by its header; `×` closes it to a **Tweaks** pill in the corner, and the pill opens it
+again (`?tweaks=0` remembers which). Entering comment mode brings the card up on its Comments tab.
+The tool generates the card, the tabs, the widgets and the URL persistence. **Write no panel code and
+no widget markup.**
 
 ```html
 <style>
@@ -154,8 +160,8 @@ directions is the entire job.
 | a number **with `max`** | a slider, with the live value beside its label |
 | a number with no `max` | a stepper field |
 | `'#2f6df6'` | a colour well |
-| an array (≤6 short entries, or any entry with a `hint`) | a segmented picker |
-| a longer array | a dropdown |
+| an array of three or fewer | a segmented picker, side by side |
+| an array of four or more | a dropdown |
 | any other string | a text field |
 
 ```html
@@ -284,7 +290,7 @@ driven at all if the harness claimed the keyboard too. `wireframe` is a document
 
 ### Checks — eight verdicts the panel keeps up to date
 
-The bottom of the panel carries a standing pass/fail row per check, recomputed whenever the folio
+The Checks tab carries a standing pass/fail row per check, recomputed whenever the folio
 changes and read from the device frame's document when one is up. Click a row for what it found.
 Nothing here is a judgement call — every one is arithmetic on the DOM:
 
@@ -302,8 +308,8 @@ Nothing here is a judgement call — every one is arithmetic on the DOM:
 Harness chrome is excluded from all of them — the panel is not the design under review.
 `window.atContrast.check(true)` audits the chrome itself when that is what you need.
 
-Ordered coarse to fine down the card, so the thing you change once a session sits above the thing you
-change a hundred times. The variant group is omitted entirely when there is only one variant.
+The Tweaks tab is ordered coarse to fine, so the thing you change once a session sits above the thing
+you change a hundred times. The variant group is omitted entirely when there is only one variant.
 
 Opening the file bare shows the first variant. An out-of-range `v` falls back rather than blanking,
 and the URL is rewritten to what is actually on screen.
@@ -328,14 +334,15 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
    contrast check in both themes, then the screenshot read against a fixed list. Fix what it finds in
    one batch and stop; it is a pass, not a loop.
 4. `open <absolute-path>`, printed on its own line with no trailing punctuation.
-5. Say how to drive it. On a **prototype**: every control is a button — the Tweaks panel for variant,
-   tweaks, device and checks, dragged by its header and closed to a pill with `×`, and the docked
-   buttons on the right for comment mode and the contrast check. No keys, so the prototype's own
-   keyboard is entirely its own. On `wireframe`: `a` to comment on anything, `c` to check contrast.
+5. Say how to drive it. On a **prototype**: every control is a button — the floating card, dragged by
+   its header and closed to a pill with `×`, with Tweaks, Checks and Comments behind its three tabs,
+   and the docked button on the right for comment mode. No keys, so the prototype's own keyboard is
+   entirely its own. On `wireframe`: `a` to comment on anything, `c` to check contrast.
 
 ## Getting comments back
 
-Every folio carries the annotate widget. Pressing `a` turns the page into a review surface: click
+Every folio carries the annotate widget — the docked speech-bubble button on a prototype, and `a` as
+well on a `wireframe`. Turning it on makes the page a review surface: click
 any element, type what is wrong with it, and the comment is pinned to that element with a number.
 Comments survive reload, and survive a rebuild — a pin reattaches by the fragment line it was made
 against, falls back to matching the element's text (flagged `MOVED`), and is kept and flagged `STALE`

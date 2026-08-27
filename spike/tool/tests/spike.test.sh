@@ -189,6 +189,24 @@ has "$WORK/twk.out.html" 'data-at-tweaks' && say ok "the root says the panel is 
 # The rail is gone entirely, markup-declared axes with it.
 has "$WORK/twk.out.html" 'class="at-rail"' && say f "the rail is still being built" \
   || say ok "the rail is gone"
+has "$WORK/twk.out.html" 'at-twk-tabs' && say ok "the panel carries its tab strip" \
+  || say f "no tab strip — Checks and Comments have nowhere to go"
+has "$WORK/twk.out.html" 'data-pane="tweaks"' && say ok "the Tweaks pane holds the variant group" \
+  || say f "no tweaks pane"
+# Three segments side by side is the ceiling; a fourth choice is a dropdown.
+has "$WORK/twk.out.html" 'at-twk-variant"' && say ok "two variants get the segmented chooser" \
+  || say f "the variant chooser is not segmented"
+cat > "$WORK/many.html" <<'EOF'
+<template data-variant="One"><div class="frame"><button>a</button></div></template>
+<template data-variant="Two"><div class="frame"><button>b</button></div></template>
+<template data-variant="Three"><div class="frame"><button>c</button></div></template>
+<template data-variant="Four"><div class="frame"><button>d</button></div></template>
+EOF
+"$ART" build --kind prototype --title P --fragment "$WORK/many.html" \
+  --device phone --out "$WORK/many.out.html" >/dev/null 2>&1
+has "$WORK/many.out.html" 'at-twk-variant-select' \
+  && say ok "four variants get the dropdown instead" \
+  || say f "four variants still rendered as segments"
 
 echo "--- retired kinds ---"
 # page/deck are gone; explainer belongs to the explain skill and its own tool.

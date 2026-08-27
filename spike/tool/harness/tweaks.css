@@ -1,19 +1,24 @@
-/* tweaks.css — the floating Tweaks panel: variant, the fragment's own controls, device.
+/* tweaks.css — the floating panel: Tweaks, Checks and Comments behind three tabs.
 
    Supersedes rail.css. The rail was a 272px column pinned to the left edge for as long as
    it was open, which is width the design under judgement never got — and the reason a
    1440-wide desktop frame had to be scaled to 67% before it fit. A card that floats over
    the folio and can be dragged out of the way costs the layout nothing.
 
-   Deliberately NOT theme-aware, like every other piece of harness chrome: dark glass over
-   a light folio and over a dark one, so it always reads as the harness and never as part
-   of the design. Every colour comes from chrome.css.
+   Three tabs, because they are three questions about the same folio and each used to own a
+   surface: what am I looking at, does it pass, and what is wrong with it. Comments were a
+   second full-height column on the other side of the window; the checks were a group at the
+   bottom of the rail you had to scroll past the controls to reach.
+
+   Deliberately NOT theme-aware, like every other piece of harness chrome: the same warm
+   off-white over a light folio and over a dark one, so it always reads as the harness and
+   never as part of the design. Every colour comes from chrome.css.
 
    Two states, and the panel is only ever in one of them: the card, or the pill. Closing is
    not hiding — the pill says "Tweaks" in the corner and brings the card back. */
 
 :root {
-  --at-twk-w: 272px;
+  --at-twk-w: 276px;
 }
 
 /* --- the card -------------------------------------------------------------- */
@@ -26,14 +31,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
   border-radius: 14px;
   background: var(--at-c-panel);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  backdrop-filter: blur(24px) saturate(1.4);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 14px 44px rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 12px 40px rgba(0, 0, 0, 0.18);
   color: var(--at-c-ink);
-  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 11.5px/1.4 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -46,8 +51,7 @@ html[data-at-embedded] .at-twk { display: none; }
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 10px 8px 10px 13px;
-  border-bottom: 1px solid var(--at-c-line);
+  padding: 10px 8px 8px 13px;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
@@ -81,16 +85,65 @@ html[data-at-embedded] .at-twk { display: none; }
   border: 0;
   border-radius: 6px;
   background: transparent;
-  color: var(--at-c-dim);
+  color: var(--at-c-faint);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
 }
 
-.at-twk-x:hover { background: rgba(255, 255, 255, 0.1); color: var(--at-c-ink); }
+.at-twk-x:hover { background: rgba(0, 0, 0, 0.06); color: var(--at-c-ink); }
 .at-twk-x:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
-/* --- body ------------------------------------------------------------------ */
+/* --- the segmented control ---
+
+   One object, three jobs: the tab strip, the variant chooser, and any tweak whose value is
+   a list of three or less. A trough with the chosen segment lifted out of it in white.
+   Above three it is a dropdown instead — six segments across 250px is four characters each,
+   which is a control you have to guess at. */
+
+.at-twk-seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.at-twk-opt {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--at-c-dim);
+  font: 500 11.5px/1.25 inherit;
+  text-align: center;
+  cursor: pointer;
+  /* Wraps rather than truncating: three segments across 250px is 14 characters each, and a
+     label that reads "Daemon …" is a segment you have to click to identify. */
+  overflow-wrap: anywhere;
+  transition: background-color 140ms ease-out, color 140ms ease-out;
+}
+
+.at-twk-opt:hover { color: var(--at-c-ink); }
+
+.at-twk-opt[data-active] {
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.18);
+  color: var(--at-c-ink);
+}
+
+.at-twk-opt:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
+
+/* --- tabs ------------------------------------------------------------------ */
+
+.at-twk-tabs {
+  margin: 0 11px 2px;
+  flex: none;
+}
+
+/* --- panes ----------------------------------------------------------------- */
 
 .at-twk-body {
   flex: 1;
@@ -98,25 +151,24 @@ html[data-at-embedded] .at-twk { display: none; }
   overflow-y: auto;
   overflow-x: hidden;
   padding: 10px 13px 13px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }
 
 .at-twk-body::-webkit-scrollbar { width: 8px; }
 .at-twk-body::-webkit-scrollbar-track { background: transparent; }
 .at-twk-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.18);
   border: 2px solid transparent;
   border-radius: 4px;
   background-clip: content-box;
 }
 
+.at-twk-pane { display: flex; flex-direction: column; gap: 10px; }
+.at-twk-pane[hidden] { display: none; }
+
 /* A group is a label plus its controls. `at-twk-group` is also the slot other harness
-   widgets add to — viewport.js puts the device readout in one, checks.js its verdicts —
-   so every "what am I looking at" control lives in this one card. */
+   widgets add to — viewport.js puts the device readout in one. */
 .at-twk-group { display: flex; flex-direction: column; gap: 6px; }
 
 .at-twk-label {
@@ -132,57 +184,9 @@ html[data-at-embedded] .at-twk { display: none; }
 
 .at-twk-row { display: flex; gap: 6px; }
 
-/* --- segmented picker (also the variant chooser) --------------------------- */
-
-.at-twk-seg {
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.at-twk-seg.at-twk-seg--stack { flex-direction: column; }
-
-.at-twk-opt {
-  flex: 1;
-  min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--at-c-dim);
-  font: 500 12px/1.25 inherit;
-  text-align: left;
-  cursor: pointer;
-  overflow-wrap: anywhere;
-}
-
-.at-twk-opt:hover { background: var(--at-c-surface-hi); color: var(--at-c-ink); }
-
-.at-twk-opt[data-active] {
-  border-color: var(--at-c-sel-edge);
-  background: var(--at-c-sel);
-  color: var(--at-c-sel-ink);
-}
-
-.at-twk-opt:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
-
-/* A second, dimmer line inside an option: what that state actually shows. */
-.at-twk-opt em {
-  display: block;
-  margin-top: 2px;
-  font-size: 11px;
-  font-style: normal;
-  line-height: 1.3;
-  color: var(--at-c-fainter);
-}
-
-.at-twk-opt[data-active] em { color: var(--at-c-sel-dim); }
-
 /* --- a labelled control row ------------------------------------------------ */
 
-.at-twk-ctl { display: flex; flex-direction: column; gap: 5px; }
+.at-twk-ctl { display: flex; flex-direction: column; gap: 4px; }
 .at-twk-ctl--inline { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
 
 .at-twk-name {
@@ -190,11 +194,13 @@ html[data-at-embedded] .at-twk { display: none; }
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  font-size: 12px;
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--at-c-dim);
 }
 
 .at-twk-value {
+  font-weight: 400;
   color: var(--at-c-faint);
   font-variant-numeric: tabular-nums;
 }
@@ -206,9 +212,9 @@ html[data-at-embedded] .at-twk { display: none; }
   appearance: none;
   width: 100%;
   height: 4px;
-  margin: 5px 0;
+  margin: 6px 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.12);
   outline: none;
   cursor: pointer;
 }
@@ -218,24 +224,24 @@ html[data-at-embedded] .at-twk { display: none; }
   appearance: none;
   width: 14px;
   height: 14px;
-  border: 0;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
   border-radius: 50%;
-  background: var(--at-c-ink);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .at-twk-slider::-moz-range-thumb {
   width: 14px;
   height: 14px;
-  border: 0;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
   border-radius: 50%;
-  background: var(--at-c-ink);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .at-twk-slider:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 3px; }
 
-/* --- field: stepper, text, select ------------------------------------------ */
+/* --- field: stepper, text, dropdown ---------------------------------------- */
 
 .at-twk-field {
   -webkit-appearance: none;
@@ -243,25 +249,25 @@ html[data-at-embedded] .at-twk { display: none; }
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  height: 27px;
+  height: 26px;
   padding: 0 8px;
-  border: 1px solid var(--at-c-edge);
+  border: 0.5px solid var(--at-c-edge);
   border-radius: 7px;
   background: var(--at-c-surface);
   color: var(--at-c-ink);
-  font: 12px/1 inherit;
+  font: 11.5px/1 inherit;
   font-variant-numeric: tabular-nums;
   outline: none;
 }
 
 .at-twk-field:hover { border-color: var(--at-c-edge-hi); }
-.at-twk-field:focus { border-color: var(--at-c-sel-edge); background: var(--at-c-surface-hi); }
+.at-twk-field:focus { border-color: var(--at-c-sel-edge); background: rgba(255, 255, 255, 0.9); }
 
-.at-twk-ctl--inline .at-twk-field { width: 84px; flex: none; text-align: right; }
+.at-twk-ctl--inline .at-twk-field { width: 88px; flex: none; text-align: right; }
 
 select.at-twk-field {
   padding-right: 22px;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23979ea8' d='M0 0h10L5 6z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
   background-repeat: no-repeat;
   background-position: right 8px center;
   cursor: pointer;
@@ -275,31 +281,31 @@ select.at-twk-field {
 .at-twk-toggle {
   position: relative;
   flex: none;
-  width: 34px;
-  height: 19px;
+  width: 32px;
+  height: 18px;
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: background 150ms ease-out;
 }
 
-.at-twk-toggle[data-on] { background: var(--at-c-sel-edge); }
+.at-twk-toggle[data-on] { background: var(--at-c-on); }
 
 .at-twk-toggle i {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   transition: transform 150ms ease-out;
 }
 
-.at-twk-toggle[data-on] i { transform: translateX(15px); }
+.at-twk-toggle[data-on] i { transform: translateX(14px); }
 .at-twk-toggle:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
 
 /* --- colour well ----------------------------------------------------------- */
@@ -309,32 +315,32 @@ select.at-twk-field {
   appearance: none;
   flex: none;
   width: 56px;
-  height: 24px;
+  height: 22px;
   padding: 0;
-  border: 1px solid var(--at-c-edge);
+  border: 0.5px solid var(--at-c-edge);
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
 }
 
-.at-twk-color::-webkit-color-swatch-wrapper { padding: 2px; }
-.at-twk-color::-webkit-color-swatch { border: 0; border-radius: 4px; }
-.at-twk-color::-moz-color-swatch { border: 0; border-radius: 4px; }
+.at-twk-color::-webkit-color-swatch-wrapper { padding: 0; }
+.at-twk-color::-webkit-color-swatch { border: 0; border-radius: 5.5px; }
+.at-twk-color::-moz-color-swatch { border: 0; border-radius: 5.5px; }
 
 /* --- action button --------------------------------------------------------- */
 
 .at-twk-action {
-  height: 27px;
-  padding: 0 11px;
-  border: 1px solid var(--at-c-edge);
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
   border-radius: 7px;
-  background: var(--at-c-surface);
+  background: rgba(0, 0, 0, 0.06);
   color: var(--at-c-ink);
-  font: 500 12px/1 inherit;
+  font: 500 11.5px/1 inherit;
   cursor: pointer;
 }
 
-.at-twk-action:hover { background: var(--at-c-surface-hi); border-color: var(--at-c-edge-hi); }
+.at-twk-action:hover { background: rgba(0, 0, 0, 0.1); }
 .at-twk-action:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
 /* --- replay, note, build stamp --------------------------------------------- */
@@ -352,7 +358,7 @@ select.at-twk-field {
   cursor: pointer;
 }
 
-.at-twk-replay:hover { background: rgba(255, 255, 255, 0.1); color: var(--at-c-ink); }
+.at-twk-replay:hover { background: rgba(0, 0, 0, 0.07); color: var(--at-c-ink); }
 
 .at-twk-note {
   padding-top: 10px;
@@ -373,23 +379,23 @@ select.at-twk-field {
 
 /* --- the pill -------------------------------------------------------------- */
 
-/* Not a .at-dock circle: a circle with a glyph would be the fourth identical button in
-   the corner, and this one has to say what it opens. It is still dragged and docked by
-   dock.js, so it snaps to an edge like the others. */
+/* Not a .at-dock circle: a circle with a glyph would be the fourth identical button in the
+   corner, and this one has to say what it opens. It is still dragged and docked by dock.js,
+   so it snaps to an edge like the others. */
 .at-twk-pill {
   position: fixed;
   z-index: 2147483645;
   display: none;
   height: 30px;
   padding: 0 13px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
   border-radius: 999px;
   background: var(--at-c-panel);
-  -webkit-backdrop-filter: blur(10px) saturate(1.3);
-  backdrop-filter: blur(10px) saturate(1.3);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 20px rgba(0, 0, 0, 0.18);
   color: var(--at-c-ink);
-  font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 600 11.5px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -399,8 +405,8 @@ select.at-twk-field {
 :root[data-at-tweaks-collapsed] .at-twk-pill { display: grid; place-items: center; }
 html[data-at-embedded] .at-twk-pill { display: none !important; }
 
-.at-twk-pill:hover { background: var(--at-c-surface-hi); }
-.at-twk-pill[data-dragging] { cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45); }
+.at-twk-pill:hover { background: var(--at-c-bg); }
+.at-twk-pill[data-dragging] { cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28); }
 .at-twk-pill:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
 
 @media print {

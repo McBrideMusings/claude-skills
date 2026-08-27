@@ -140,21 +140,18 @@
   var layer = document.createElement('div');
   layer.className = 'at-notes-layer';
 
-  var panel = document.createElement('aside');
+  var panel = document.createElement('div');
   panel.className = 'at-panel';
   panel.innerHTML =
-    '<header class="at-panel-head">' +
-    '<span class="at-panel-title">Comments</span>' +
-    '<button class="at-btn at-btn--icon at-clear" type="button" ' +
-    'title="Delete every comment" aria-label="Delete every comment">' + ICON.clear + '</button>' +
-    '<button class="at-btn at-btn--icon at-close" type="button" ' +
-    'title="Leave comment mode  (a)" aria-label="Leave comment mode">' + ICON.done + '</button>' +
-    '</header>' +
     '<div class="at-panel-list"></div>' +
     '<footer class="at-panel-foot">' +
     '<div class="at-panel-actions">' +
     '<button class="at-btn at-btn--primary at-copy" type="button">' +
     ICON.copy + '<span>Copy comments</span></button>' +
+    '<button class="at-btn at-btn--icon at-clear" type="button" ' +
+    'title="Delete every comment" aria-label="Delete every comment">' + ICON.clear + '</button>' +
+    '<button class="at-btn at-btn--icon at-close" type="button" ' +
+    'title="Leave comment mode" aria-label="Leave comment mode">' + ICON.done + '</button>' +
     '</div></footer>';
 
   document.body.appendChild(layer);
@@ -165,16 +162,20 @@
      It is still built, because the copy/clear/close handlers and paintActions() all read
      it; it is simply never put on screen in an embedded document. A pin made in here
      still reaches the real panel — see the storage listener at the foot of this file. */
+  /* The comments live in the floating panel's Comments tab. They were a full-height column
+     down the right of the window, mirroring a rail down the left, which is two of the four
+     sides of the window spent on chrome for one folio. On a kind with no such panel — a
+     wireframe — the list is still a card of its own, dragged by dock.js like any other. */
   if (!root.hasAttribute('data-at-embedded')) {
-    document.body.appendChild(panel);
-    /* Dragged by its header, remembered per folio, and clamped to the window — the same
-       helper the Tweaks panel uses, because they are the same object: a card the reviewer
-       moves off whatever they are trying to look at. annotate.js is inlined before
-       dock.js, so the helper does not exist until every inline script has run. */
     setTimeout(function () {
-      if (window.__atDrag) {
-        window.__atDrag(panel, panel.querySelector('.at-panel-head'), 'comments', 'bl');
+      var pane = window.__atTweaks && window.__atTweaks.pane('comments');
+      if (pane) {
+        pane.appendChild(panel);
+        return;
       }
+      panel.classList.add('at-panel--loose');
+      document.body.appendChild(panel);
+      if (window.__atDrag) window.__atDrag(panel, panel, 'comments', 'bl');
     }, 0);
   }
 
@@ -252,8 +253,12 @@
 
   function renderList(rows) {
     if (!rows.length) {
+      // A prototype answers no harness keys — naming `a` there is an instruction that does
+      // nothing, and the docked button is the only way in and out.
       list.innerHTML = '<p class="at-empty">Click anything on the page to comment on it. ' +
-        '<kbd>a</kbd> leaves annotate mode, <kbd>c</kbd> checks contrast.</p>';
+        (window.__atHotkeys && window.__atHotkeys()
+          ? '<kbd>a</kbd> leaves comment mode, <kbd>c</kbd> checks contrast.'
+          : 'Done leaves comment mode.') + '</p>';
       return;
     }
     list.innerHTML = '';
@@ -467,6 +472,10 @@
     if (on) {
       root.setAttribute('data-at-annotate', '');
       render();
+      /* The comment list is a tab now, so turning the layer on has to bring that tab up —
+         and open the panel if it is sitting in the corner as a pill. Without this the
+         crosshair appeared with the comments nowhere on screen. */
+      if (window.__atTweaks) window.__atTweaks.show('comments');
     } else {
       root.removeAttribute('data-at-annotate');
       if (aimed) { aimed.classList.remove('at-aim'); aimed = null; }

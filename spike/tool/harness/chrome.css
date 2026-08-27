@@ -7,10 +7,14 @@
    the rail's labels ended up at 2.0-3.9:1 while the panel's were fine, and how a fix to
    one silently left the other behind.
 
-   Deliberately NOT theme-aware. Chrome stays dark beside a light folio and beside a
-   dark one, so it always reads as the harness and never as part of the design.
+   Deliberately NOT theme-aware. Chrome stays the same warm off-white beside a light folio
+   and beside a dark one, so it always reads as the harness and never as part of the design.
 
-   Every ink value here clears 4.5:1 against --at-c-bg, and must keep clearing it. */
+   The device stage and the bezels are not in here: a phone's shell is a physical object,
+   not a control surface, and it stays black in viewport.css.
+
+   Every ink value here clears 4.5:1 against --at-c-bg, and must keep clearing it. The
+   ratios in the comments are against #faf9f7. */
 
 /* --- the space the folio gets ---
 
@@ -39,18 +43,18 @@
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
   border-radius: 999px;
   background: var(--at-c-panel);
-  -webkit-backdrop-filter: blur(10px) saturate(1.3);
-  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
   color: var(--at-c-dim);
   font: inherit;
   font-size: 14px;
   line-height: 1;
   cursor: grab;
-  opacity: 0.55;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  opacity: 0.75;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 20px rgba(0, 0, 0, 0.18);
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -58,7 +62,7 @@
 
 .at-dock:hover { opacity: 1; color: var(--at-c-ink); }
 .at-dock:focus-visible { opacity: 1; outline: 2px solid var(--at-c-mark); outline-offset: 2px; }
-.at-dock[data-dragging] { opacity: 1; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45); }
+.at-dock[data-dragging] { opacity: 1; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28); }
 
 /* Active is the one state that overrides the resting transparency: amber, the same
    colour the pins and the send button use, so "the review layer is on" is one signal
@@ -85,28 +89,31 @@
    that ever does have to sit beside something has one place to say so. */
 
 :root {
-  --at-c-bg: #101114;          /* an opaque chrome ground */
-  --at-c-panel: rgba(18, 18, 18, 0.93);  /* floating surfaces, over an folio */
-  --at-c-surface: #181b20;     /* a control at rest */
-  --at-c-surface-hi: #23272d;  /* a control under the pointer */
-  --at-c-line: #22262c;        /* divider */
-  --at-c-edge: #23272d;        /* control border */
-  --at-c-edge-hi: #333a43;     /* control border, hover */
+  --at-c-bg: #faf9f7;          /* an opaque chrome ground */
+  --at-c-panel: rgba(250, 249, 247, 0.82);  /* floating surfaces, over a folio */
+  --at-c-surface: rgba(255, 255, 255, 0.66);  /* a control at rest */
+  --at-c-surface-hi: rgba(0, 0, 0, 0.06);     /* a control under the pointer */
+  --at-c-line: rgba(0, 0, 0, 0.09);           /* divider */
+  --at-c-edge: rgba(0, 0, 0, 0.12);           /* control border */
+  --at-c-edge-hi: rgba(0, 0, 0, 0.24);        /* control border, hover */
 
-  --at-c-ink: #e8eaed;         /* primary text — 14.9:1 */
-  --at-c-dim: #979ea8;         /* secondary text — 7.4:1 */
-  --at-c-faint: #8a919c;       /* labels and second lines — 5.9:1 */
-  --at-c-fainter: #767d88;     /* hints — 4.6:1, the floor */
+  --at-c-ink: #29261b;         /* primary text — 14.2:1 */
+  --at-c-dim: #57544c;         /* secondary text — 7.2:1 */
+  --at-c-faint: #656158;       /* labels and second lines — 5.9:1 */
+  --at-c-fainter: #767165;     /* hints — 4.6:1, the floor */
 
-  --at-c-sel: #1b2740;         /* selected control ground */
+  --at-c-sel: #e3ecfb;         /* selected control ground */
   --at-c-sel-edge: #3f6ac2;    /* selected control border, and the focus marker */
-  --at-c-sel-ink: #cfe0ff;     /* selected control text */
-  --at-c-sel-dim: #8296b8;     /* selected control second line */
+  --at-c-sel-ink: #14315f;     /* selected control text — 10.8:1 on --at-c-sel */
+  --at-c-sel-dim: #3f5b85;     /* selected control second line — 6.0:1 on --at-c-sel */
 
+  --at-c-on: #34c759;          /* a switch that is on */
+  --at-c-warn: #8a4b04;        /* a failing verdict, as TEXT — 6.5:1. --at-c-mark is amber
+                                  for a fill and reads at 2:1 as ink on this ground */
   --at-c-mark: #f5a524;        /* the annotate layer's pin colour */
   --at-c-mark-hi: #ffb733;     /* pin colour, hover */
   --at-c-mark-ink: #1a1204;    /* text on --at-c-mark */
   --at-c-stale: #9a9a9a;       /* a pin whose element is gone */
-  --at-c-ok: #3fb950;          /* a completed action */
-  --at-c-ok-ink: #06210c;      /* text on --at-c-ok */
+  --at-c-ok: #1f7a33;          /* a completed action */
+  --at-c-ok-ink: #ffffff;      /* text on --at-c-ok */
 }

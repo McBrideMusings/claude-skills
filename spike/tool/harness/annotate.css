@@ -89,15 +89,16 @@
   background: var(--at-c-panel);
   -webkit-backdrop-filter: blur(12px) saturate(1.4);
   backdrop-filter: blur(12px) saturate(1.4);
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
-    0 12px 32px rgba(0, 0, 0, 0.4);
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 12px 32px rgba(0, 0, 0, 0.2);
   pointer-events: auto;
 }
 
 .at-composer-target {
   margin: 0 0 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--at-c-faint);
   font-size: 11px;
   line-height: 1.4;
   word-break: break-word;
@@ -108,11 +109,11 @@
   width: 100%;
   min-height: 66px;
   padding: 7px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 0.5px solid var(--at-c-edge);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--at-c-ink);
+  font: 12.5px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   resize: vertical;
 }
 
@@ -130,7 +131,7 @@
 
 .at-composer-hint {
   flex: 1;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--at-c-fainter);
   font-size: 11px;
 }
 
@@ -143,84 +144,59 @@
 
 html[data-at-embedded] .at-annotate-toggle { display: none; }
 
-/* --- the panel ------------------------------------------------------------- */
+/* --- the comment list ------------------------------------------------------
 
-:root { --at-panel-w: 300px; }
+   It lives in the floating panel's Comments tab, so it has no frame, no header and no
+   position of its own — the panel supplies all three. `.at-panel--loose` is the fallback
+   for a kind with no such panel (a wireframe): the same list, as its own dragged card. */
 
-/* A card, not a column. It was edge to edge and full height — the mirror of the rail on
-   the other side — and it reflowed the page with padding-right to keep off the folio.
-   Both halves of that are gone with the rail: the panel floats over the folio, is dragged
-   by its header out of the way of whatever is being commented on, and grows only as tall
-   as the comments in it. A review surface for eight notes was drawing a 300px column down
-   a 900px window to hold eight notes. */
-.at-panel {
+.at-panel { display: none; flex-direction: column; gap: 8px; min-height: 0; }
+:root[data-at-annotate] .at-panel { display: flex; }
+html[data-at-embedded] .at-panel { display: none !important; }
+
+.at-panel--loose {
   position: fixed;
   z-index: 2147483641;
   width: var(--at-panel-w);
   max-height: min(60vh, 520px);
-  display: none;
-  flex-direction: column;
+  padding: 10px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 0.5px solid rgba(255, 255, 255, 0.6);
   border-radius: 14px;
   background: var(--at-c-panel);
-  -webkit-backdrop-filter: blur(24px) saturate(1.4);
-  backdrop-filter: blur(24px) saturate(1.4);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 14px 44px rgba(0, 0, 0, 0.5);
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 13px;
-  -webkit-font-smoothing: antialiased;
-}
-
-:root[data-at-annotate] .at-panel { display: flex; }
-html[data-at-embedded] .at-panel { display: none !important; }
-
-.at-panel-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 11px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 12px 40px rgba(0, 0, 0, 0.18);
   cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none;
 }
 
-.at-panel[data-dragging] .at-panel-head { cursor: grabbing; }
+.at-panel--loose[data-dragging] { cursor: grabbing; }
 
-.at-panel-title {
-  flex: 1;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
-}
+:root { --at-panel-w: 276px; }
 
 .at-panel-list {
   flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 6px;
+  margin: 0 -6px;
+  padding: 0 2px;
 }
 
-/* The empty state is the first and often only thing anyone reads in this panel, so it
-   holds the 4.5:1 floor like any other text. At 0.42 alpha it sat at 3.96:1 and the key
-   chips at 3.34:1 — found the first time the contrast check was pointed at chrome. */
+/* The empty state is the first and often only thing anyone reads here, so it holds the
+   4.5:1 floor like any other text. At 0.42 alpha it sat at 3.96:1 and the key chips at
+   3.34:1 — found the first time the contrast check was pointed at chrome. */
 .at-empty {
-  padding: 14px 10px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
+  padding: 10px 6px;
+  color: var(--at-c-faint);
+  font-size: 11.5px;
   line-height: 1.55;
 }
 
 .at-empty kbd {
   padding: 1px 5px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--at-c-ink);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
 }
@@ -228,12 +204,12 @@ html[data-at-embedded] .at-panel { display: none !important; }
 .at-note {
   display: flex;
   gap: 8px;
-  padding: 8px;
+  padding: 7px 6px;
   border-radius: 8px;
   cursor: pointer;
 }
 
-.at-note:hover { background: rgba(255, 255, 255, 0.06); }
+.at-note:hover { background: rgba(0, 0, 0, 0.05); }
 
 .at-note-n {
   flex: none;
@@ -254,14 +230,16 @@ html[data-at-embedded] .at-panel { display: none !important; }
 
 .at-note-text {
   margin: 0 0 3px;
+  color: var(--at-c-ink);
+  font-size: 11.5px;
   line-height: 1.45;
   word-break: break-word;
 }
 
 .at-note-src {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--at-c-fainter);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 11px;
+  font-size: 10.5px;
   word-break: break-all;
 }
 
@@ -270,8 +248,8 @@ html[data-at-embedded] .at-panel { display: none !important; }
   margin-left: 5px;
   padding: 0 5px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.13);
-  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--at-c-dim);
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -285,66 +263,63 @@ html[data-at-embedded] .at-panel { display: none !important; }
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--at-c-fainter);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
 }
 
-.at-note-del:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.at-note-del:hover { background: rgba(0, 0, 0, 0.08); color: var(--at-c-ink); }
 
 .at-panel-foot {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  flex: none;
+  padding-top: 8px;
+  border-top: 1px solid var(--at-c-line);
 }
 
 .at-panel-actions { display: flex; gap: 6px; }
 .at-panel-actions .at-copy { flex: 1; gap: 7px; }
 .at-panel-actions .at-copy svg { flex: 0 0 auto; }
 
-/* An icon button: square, no label, the glyph carries it. Clear and Done sit in the
-   header, where a word would crowd the title. */
+/* An icon button: square, no label, the glyph carries it. */
 .at-btn--icon {
-  width: 28px;
+  width: 26px;
   padding: 0;
   display: grid;
   place-items: center;
 }
 
-.at-btn:disabled { opacity: 0.35; cursor: default; }
-.at-btn:disabled:hover { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.88); }
-
-.at-btn--primary { display: flex; align-items: center; justify-content: center; }
-
 .at-btn {
-  height: 28px;
+  height: 26px;
   padding: 0 11px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 0;
   border-radius: 7px;
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.88);
-  font: 500 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--at-c-ink);
+  font: 500 11.5px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   cursor: pointer;
 }
 
-.at-btn:hover { background: rgba(255, 255, 255, 0.13); color: #fff; }
+.at-btn:hover { background: rgba(0, 0, 0, 0.1); }
 .at-btn:active { transform: scale(0.97); }
-.at-btn:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.45); outline-offset: 2px; }
+.at-btn:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
+.at-btn:disabled { opacity: 0.35; cursor: default; }
+.at-btn:disabled:hover { background: rgba(0, 0, 0, 0.06); }
 
 .at-btn--primary {
-  flex: 1;
-  border-color: transparent;
-  background: var(--at-c-mark);
-  color: var(--at-c-mark-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
   font-weight: 600;
 }
 
-.at-btn--primary:hover { background: var(--at-c-mark-hi); color: var(--at-c-mark-ink); }
+.at-btn--primary:hover { background: rgba(0, 0, 0, 0.88); }
+.at-btn--primary:disabled:hover { background: rgba(0, 0, 0, 0.78); }
 
-.at-btn[data-done] { background: var(--at-c-ok); border-color: transparent; color: var(--at-c-ok-ink); }
+.at-btn[data-done] { background: var(--at-c-ok); color: var(--at-c-ok-ink); }
+.at-btn[data-done]:hover { background: var(--at-c-ok); }
 
 /* --- the toast ------------------------------------------------------------- */
 

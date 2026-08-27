@@ -317,15 +317,21 @@ TWEAKS_PILL = ('<button class="at-twk-pill" type="button" '
                'title="Show the controls" aria-label="Show the controls">Tweaks</button>')
 
 
-def build_panel(variants, note, title, subtitle):
-    """The Tweaks panel: one card holding every "what am I looking at" question.
+# Three segments is the most that stays readable across the panel's width; a fourth leaves
+# each of them four characters. Above it, the same choice is a dropdown. The variant chooser
+# obeys the same rule as a tweak's — it is the same control asking the same kind of question.
+SEG_MAX = 3
 
-    Variant, whatever the fragment registers, and (added at runtime) the device readout and
-    the checks. They were three separate surfaces — a bottom pill, a corner ticker, a
-    floating size bar — which gave a once-a-session choice the same weight as a constant
-    one. Then they were one 272px column pinned to the left edge, which is width the design
-    under judgement never got. Now they are a card that floats over the folio and is dragged
-    out of the way, and closing it leaves the pill.
+
+def build_panel(variants, note, title, subtitle):
+    """The panel: one card holding Tweaks, Checks and Comments behind three tabs.
+
+    Variant and whatever the fragment registers, plus the device readout, the checks and the
+    comment list added at runtime. They were five separate surfaces — a bottom pill, a corner
+    ticker, a floating size bar, a 272px rail down the left and a full-height comments column
+    down the right — which is four sides of the window spent on chrome, and gave a
+    once-a-session choice the same weight as a constant one. Now it is one card that floats
+    over the folio and is dragged out of the way, and closing it leaves the pill.
     """
     has_motion = any(v["motion"] for v in variants)
 
@@ -339,26 +345,38 @@ def build_panel(variants, note, title, subtitle):
               '    <button class="at-twk-x" type="button" title="Hide the controls" '
               'aria-label="Hide the controls">&#215;</button>',
               '  </div>',
-              '  <div class="at-twk-body">']
+              '  <div class="at-twk-seg at-twk-tabs" role="group" aria-label="Panel tabs" '
+              'hidden></div>',
+              '  <div class="at-twk-body">',
+              '    <div class="at-twk-pane" data-pane="tweaks">']
 
     # One variant group, and only when there is a choice to make. A single-variant prototype
     # is one design, and a picker offering one option is a control that answers nothing.
     if len(variants) > 1 or has_motion:
         replay = ('<button class="at-twk-replay" type="button" title="Replay animation" '
                   'aria-label="Replay animation">&#8635;</button>' if has_motion else "")
-        parts.append('    <div class="at-twk-group">')
-        parts.append('      <div class="at-twk-label"><span>Variant</span>%s</div>' % replay)
-        parts.append('      <div class="at-twk-seg at-twk-seg--stack">')
-        for i, v in enumerate(variants):
-            attrs = ' data-active aria-current="true"' if i == 0 else ""
-            parts.append('        <button class="at-twk-opt at-twk-variant" type="button"%s>%s'
-                         '</button>' % (attrs, html.escape(v["name"])))
+        parts.append('      <div class="at-twk-group">')
+        parts.append('        <div class="at-twk-label"><span>Variant</span>%s</div>' % replay)
+        if len(variants) > SEG_MAX:
+            parts.append('        <select class="at-twk-field at-twk-variant-select" '
+                         'aria-label="Variant">')
+            for i, v in enumerate(variants):
+                sel = " selected" if i == 0 else ""
+                parts.append('          <option value="%d"%s>%s</option>'
+                             % (i, sel, html.escape(v["name"])))
+            parts.append('        </select>')
+        else:
+            parts.append('        <div class="at-twk-seg">')
+            for i, v in enumerate(variants):
+                attrs = ' data-active aria-current="true"' if i == 0 else ""
+                parts.append('          <button class="at-twk-opt at-twk-variant" '
+                             'type="button"%s>%s</button>' % (attrs, html.escape(v["name"])))
+            parts.append('        </div>')
         parts.append('      </div>')
-        parts.append('    </div>')
 
     if note:
-        parts.append('    <div class="at-twk-note">%s</div>' % note)
-    parts += ['  </div>', '</nav>', TWEAKS_PILL]
+        parts.append('      <div class="at-twk-note">%s</div>' % note)
+    parts += ['    </div>', '  </div>', '</nav>', TWEAKS_PILL]
     return "\n".join(parts)
 
 
