@@ -55,7 +55,9 @@ One brief per confirmed aspect: the content of its [`aspects/`](aspects/) file, 
 
 **The finding shape.** Forward verbatim:
 
-> *Return each finding as: **title** (names the change, not the problem area) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **strength** (`Strong` / `Worth exploring` / `Speculative`). **At most 5 findings, at most 120 words each.** If you have more than five, return the five best and say how many you dropped — the count reaches the report, the sixth finding does not.*
+> *Return each finding as: **title** (names the change, not the problem area) · **lens** (the specific rule, craft lens, domain cell, or lateral technique that produced it — `ARCHITECTURE.md deletion test`, `_domains/gui/opportunities.md motion`, `worst-idea`, `PHASE-03-AUDIT.md substantive checklist` — never just the aspect name) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **strength** (`Strong` / `Worth exploring` / `Speculative`). **At most 5 findings, at most 120 words each.** If you have more than five, return the five best and say how many you dropped — the count reaches the report, the sixth finding does not.*
+
+The **lens** field is what makes a finding traceable back to the knowledge that produced it. The aspect name says which agent ran; the lens says which sentence in which file fired. It travels unchanged through the report card and into the ticket body, so the reader can open the rule and judge the finding against it.
 
 The budget is **per finding with a count limit**, not one cap across the response. A single cap is what silently starves an aspect: five findings under a 400-word cap get 80 words each, which cannot hold evidence *and* leverage *and* the shape of the fix, so the agent drops the shape — and a fix with no shape caps at 50 in Phase 05 and never reaches the report. The cap would have discarded the findings after paying for them.
 
@@ -145,6 +147,7 @@ The ranking input is leverage and dependency order — what a change unblocks, w
    | Finding field | Ticket field |
    |---|---|
    | title | ticket title — the change, imperative |
+   | lens | the body's "Lens" line — the rule, craft lens, domain cell, or lateral technique, named as a path the reader can open |
    | proposed fix (the *shape*) | the body's plan section, verbatim shape — signature, call-stack diff, module layout |
    | evidence (`file:line`) | the body's "where" section, paths intact |
    | leverage | the body's "why", in real units |
