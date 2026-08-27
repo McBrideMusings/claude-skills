@@ -393,6 +393,9 @@ def main():
     for f in main_files: scan(f, F, "main", args.since)
     for f in sub_files: scan(f, F, "sub", args.since)
 
+    if args.dump and not args.steering:
+        sys.exit("--dump only means anything with --steering. "
+                 "For raw user turns use --dump-user-messages.")
     if args.steering:
         steering_report(F, args.dump)
         return
