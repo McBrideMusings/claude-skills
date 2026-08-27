@@ -18,6 +18,34 @@ like everywhere else. RULE 1 too — how big a fix is never decides whether it h
 - the **report itself**, in chat, quoted as a Markdown blockquote. There is no file — see
   [REVIEW-CORE.md](REVIEW-CORE.md) Phase 07.
 
+## Order of the closing message — findings, then dispositions, then the quoted outcome
+
+Three parts, in this order, and never interleaved:
+
+1. **Every finding**, formatted and grouped per [REVIEW-CORE.md](REVIEW-CORE.md), so the user
+   reads the whole set before being asked anything about it.
+2. **The disposition list** — one line per finding, keywords, the recommended one marked.
+3. **Beneath the recommended disposition, a blockquote of the text that disposition would
+   actually put on GitHub.** Not the text some other branch of the offer would put there.
+
+### The quoted body must be the body of the path you recommend
+
+**A quoted verdict that contradicts the recommended keyword is the failure this section exists to
+stop.** It has shipped: a pass printed a full *Request changes* body — "this is broken, the author
+should fix it" — and then recommended `fix`, which means fixing it on the branch and pushing.
+Those cannot both happen. Once the fix lands there is nothing left to request changes about, so
+the honest verdict is Approve and the honest body is *"found this, fixed it on the branch, here is
+what I pushed."* The user had to point out the contradiction.
+
+**Self-check before sending the closing message: read the quoted body as if the recommended
+keyword had already been carried out.** If the body describes work that the keyword itself would
+have already done, or asks the author to do something you are about to do yourself, the body is
+for the wrong branch — rewrite it for the recommended one.
+
+When the alternatives lead to materially different outgoing text, don't quote all of them. Name
+the paths in one line each, quote only the recommended path's body, and say the other body is the
+one already printed above (or that you'll draft it if they pick that branch).
+
 ## The disposition list
 
 One line per finding, its keyword options, and the recommended one leading with its rationale as
@@ -189,6 +217,24 @@ genuinely **no** safe on-branch change at all may you present a post-only offer,
 **say explicitly** "no safe on-branch fix here because …" so the omission is a stated decision
 rather than a silent drop. When in doubt, list the fix-on-branch option and let the user decline
 it.
+
+### Local work first, then the body, then the post — two confirms, in that order
+
+`go` (or any disposition naming a fix) is not a single action. It runs in three steps, and the
+user's `go` authorises only the first:
+
+1. **Enact every local change the dispositions imply** — write the fixes, run the project's
+   checks, commit, push to the PR's head branch. Report what landed.
+2. **Then draft the outgoing text against what actually happened**, not against what the report
+   said before the fixes existed. A finding fixed in step 1 is described in the past tense and no
+   longer asks anything of the author; a finding left alone keeps its original wording.
+3. **Show that text and wait for a second explicit yes** before `gh pr review` touches the PR.
+   The verdict changes the PR's merge state, so it is held to the explicit-yes-in-this-message
+   gate on its own — the `go` that authorised the fix does not carry forward to the post.
+
+When a disposition set implies **no** local work — everything is `post` or `skip` — step 1 is
+empty and the first `go` goes straight to showing the body for confirmation. Say so rather than
+appearing to skip a step.
 
 ### Propose, then confirm — never auto-submit
 
