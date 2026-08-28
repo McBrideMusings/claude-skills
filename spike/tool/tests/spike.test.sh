@@ -207,6 +207,23 @@ has "$WORK/many.out.html" 'at-twk-variant-select' \
   && say ok "four variants get the dropdown instead" \
   || say f "four variants still rendered as segments"
 
+echo "--- the at: event vocabulary ---"
+# Every at:* event a harness file listens for must be one some harness file dispatches.
+# `at:axis` outlived the rail by two commits: checks.js stopped re-running on a tweak and
+# viewport.js stopped syncing the device frame, both silently, because a listener for an
+# event nobody fires throws nothing and logs nothing.
+python3 - "$HOME/.claude/skills/spike/tool/harness" <<'PY' && say ok "every at: listener has a dispatcher" || say f "a harness file listens for an at: event nothing dispatches"
+import glob, os, re, sys
+d = sys.argv[1]
+src = "".join(open(f).read() for f in glob.glob(os.path.join(d, "*.js")))
+fired = set(re.findall(r"(?:CustomEvent|Event)\(\s*'(at:[a-z]+)'", src))
+heard = set(re.findall(r"addEventListener\(\s*'(at:[a-z]+)'", src))
+dead = sorted(heard - fired)
+if dead:
+    print("dead listeners:", ", ".join(dead))
+sys.exit(1 if dead else 0)
+PY
+
 echo "--- retired kinds ---"
 # page/deck are gone; explainer belongs to the explain skill and its own tool.
 # argparse rejects an unknown --kind choice, so each of these must be a non-zero exit.

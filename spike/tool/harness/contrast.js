@@ -183,7 +183,7 @@
   if (floating) document.body.appendChild(btn);
   paintBtn();
   // dock.js is inlined first, but __atDock is registered inside its own IIFE; a timeout
-  // runs after every inline script has executed. Same dance rail.js does.
+  // runs after every inline script has executed. Same dance tweaks.js does.
   setTimeout(function () {
     if (floating && window.__atDock) window.__atDock(btn, 'contrast', 'right', 1);
   }, 0);

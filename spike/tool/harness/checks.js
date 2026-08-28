@@ -394,7 +394,7 @@
   window.addEventListener('message', function (e) {
     if (e.data && e.data.at === 'mounted') runAll();
   });
-  window.addEventListener('at:axis', function () { requestAnimationFrame(runAll); });
+  window.addEventListener('at:tweak', function () { requestAnimationFrame(runAll); });
   window.addEventListener('resize', function () {
     clearTimeout(runAll.t);
     runAll.t = setTimeout(runAll, 200);

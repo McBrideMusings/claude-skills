@@ -511,7 +511,7 @@
     }, '*');
   }
   window.addEventListener('at:variant', syncFrame);
-  window.addEventListener('at:axis', syncFrame);
+  window.addEventListener('at:tweak', syncFrame);
 
   /* Boot. The frame is always built — there is no "no frame" state to resolve to any
      more, which is what `?d=` used to be able to ask for. Only the two view modifiers
