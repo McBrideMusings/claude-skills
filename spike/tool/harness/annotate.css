@@ -240,8 +240,11 @@ html[data-at-embedded] .at-panel { display: none !important; }
   word-break: break-word;
 }
 
+/* --at-c-fainter is 4.6:1 and calibrated against the page ground, but a comment row sits on
+   the list's tinted ground, which took these two to 4.22:1. The ink moves up a step rather
+   than the ground moving down: --at-c-faint is 5.9:1 on the page and 5.4:1 in here. */
 .at-note-src {
-  color: var(--at-c-fainter);
+  color: var(--at-c-faint);
   word-break: break-all;
 }
 
@@ -265,7 +268,7 @@ html[data-at-embedded] .at-panel { display: none !important; }
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: var(--at-c-fainter);
+  color: var(--at-c-faint);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -284,8 +287,39 @@ html[data-at-embedded] .at-panel { display: none !important; }
 .at-panel:not(.at-panel--loose) .at-close { display: none; }
 
 .at-panel-actions { display: flex; gap: 6px; }
+/* `display: flex` outranks the UA sheet's `[hidden] { display: none }`. */
+.at-panel-actions[hidden] { display: none; }
 .at-panel-actions .at-copy { flex: 1; gap: 7px; }
 .at-panel-actions .at-copy svg { flex: 0 0 auto; }
+
+/* The Delete-all question, in the space the actions row just vacated. One line: the ask in
+   body type, then Cancel and the red commit, both ordinary buttons at fixed width so the
+   footer keeps its height and neither target moves after the first click. */
+.at-panel-confirm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.at-panel-confirm[hidden] { display: none; }
+
+.at-confirm-ask {
+  flex: 1;
+  margin: 0;
+  font: 400 11.5px/1.2 inherit;
+  color: var(--at-c-ink);
+}
+
+/* The loose card is ~260px wide, so the ask wraps there. The buttons never shrink to make
+   room for it — a squeezed Delete is a smaller target for the one irreversible action. */
+.at-panel-confirm .at-btn { flex: 0 0 auto; }
+
+.at-btn.at-confirm-yes {
+  background: var(--at-c-danger);
+  color: #fff;
+}
+
+.at-btn.at-confirm-yes:hover { background: color-mix(in srgb, var(--at-c-danger) 85%, #000); }
 
 /* An icon button: square, no label, the glyph carries it. */
 .at-btn--icon {

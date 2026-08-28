@@ -152,6 +152,13 @@
     'title="Delete every comment" aria-label="Delete every comment">' + ICON.clear + '</button>' +
     '<button class="at-btn at-btn--icon at-close" type="button" ' +
     'title="Leave comment mode" aria-label="Leave comment mode">' + ICON.done + '</button>' +
+    '</div>' +
+    // The group is named by the question, so focus landing on Cancel announces what is
+    // being asked rather than a bare "Cancel button" with no subject.
+    '<div class="at-panel-confirm" role="group" aria-labelledby="at-clear-ask" hidden>' +
+    '<p class="at-confirm-ask" id="at-clear-ask"></p>' +
+    '<button class="at-btn at-confirm-no" type="button">Cancel</button>' +
+    '<button class="at-btn at-confirm-yes" type="button">Delete</button>' +
     '</div></footer>';
 
   document.body.appendChild(layer);
@@ -249,6 +256,9 @@
     var any = notes.length > 0;
     panel.querySelector('.at-copy').disabled = !any;
     panel.querySelector('.at-clear').disabled = !any;
+    // atAnnotate.clear() takes no confirmation, so the question can be left asking about
+    // comments that are already gone. Nothing to delete retires it.
+    if (!any && confirmRow && !confirmRow.hidden) askClear(false);
   }
 
   function renderList(rows) {
@@ -423,9 +433,54 @@
     ta.remove();
   }
 
+  /* Deleting every comment asks first, and it asks inside the footer. A window.confirm
+     blocks the whole tab: a folio is a page agents drive headlessly, and no further command
+     lands until a human dismisses the modal. So the actions row hides and a row carrying the
+     question takes its place — same footer node in the Comments tab and on the loose card.
+     The commit button sits in its own slot rather than growing out of the 26px icon button,
+     so it cannot slide under a resting cursor and catch the second click. Escape and a click
+     off the panel also cancel, but neither is the way out: a prototype answers no harness
+     keys (__atHotkeys), so the only mandatory path is Cancel, which is a button. */
+  var actionsRow = panel.querySelector('.at-panel-actions');
+  var confirmRow = panel.querySelector('.at-panel-confirm');
+
+  function askClear(on) {
+    if (on) {
+      confirmRow.querySelector('.at-confirm-ask').textContent =
+        'Delete ' + notes.length + (notes.length === 1 ? ' comment?' : ' comments?');
+    }
+    actionsRow.hidden = on;
+    confirmRow.hidden = !on;
+    document[on ? 'addEventListener' : 'removeEventListener']('keydown', clearKey, true);
+    document[on ? 'addEventListener' : 'removeEventListener']('mousedown', clearAway, true);
+    if (on) confirmRow.querySelector('.at-confirm-no').focus();
+  }
+
+  /* Capture, and it stops the event: the same key leaves comment mode entirely on a kind
+     that answers hotkeys, and cancelling the question is the nearer meaning. */
+  function clearKey(e) {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    e.stopPropagation();
+    askClear(false);
+  }
+
+  function clearAway(e) {
+    if (!panel.contains(e.target)) askClear(false);
+  }
+
   panel.querySelector('.at-clear').addEventListener('click', function () {
     if (!notes.length) return;
-    if (!window.confirm('Delete all ' + notes.length + ' comments on this folio?')) return;
+    askClear(true);
+  });
+
+  confirmRow.querySelector('.at-confirm-no').addEventListener('click', function () {
+    askClear(false);
+    panel.querySelector('.at-clear').focus();
+  });
+
+  confirmRow.querySelector('.at-confirm-yes').addEventListener('click', function () {
+    askClear(false);
     notes = [];
     save();
     render();
@@ -481,6 +536,7 @@
   function setMode(on) {
     open = on;
     closeComposer();
+    if (confirmRow && !confirmRow.hidden) askClear(false);
     paintActions();
     toggleBtn.toggleAttribute('data-active', on);
     toggleBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
