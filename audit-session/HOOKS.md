@@ -1,16 +1,36 @@
-# The hook question — could this have been enforced instead of asked for?
+# The enforcement question — could this have been enforced instead of asked for?
 
 Not a lens. A **fix shape** every lens must consider before writing its `Fix:` line.
 
 An instruction in `CLAUDE.md` or a `SKILL.md` is re-decided every single turn, by a
-stochastic process, against everything else competing for attention in a 250k window. A
-hook is the harness executing code. It fires every time or never, and its behaviour does
+stochastic process, against everything else competing for attention in a 250k window.
+Enforcement is a machine executing code. It fires every time or never, and its behaviour does
 not degrade as context fills.
 
 So whenever a finding's fix is *"write it down more forcefully"* — a rule already written
-once and ignored, a guard tripping repeatedly, a tool that keeps not being reached for —
-**state explicitly whether a hook could have enforced it, and why you did or didn't propose
-one.** Silence on this question is itself a gap in the finding.
+once and ignored, a guard tripping repeatedly, a tool that keeps not being reached for, a
+mistake the agent made and corrected — **state explicitly whether something could have caught
+it mechanically, which mechanism, and why you did or didn't propose one.** Silence on this
+question is itself a gap in the finding.
+
+## The mechanism ladder
+
+Three mechanisms, and the finding names which one. They differ in what they watch, so the
+shape of the failure picks the rung — this is not a preference order.
+
+| Rung | Watches | Fires on | Reach for it when |
+| --- | --- | --- | --- |
+| **Harness hook** | tool events — commands, paths, arguments, turn boundaries | the agent's *action* | The failure is a shape the agent keeps typing, or a step it keeps skipping. `~/.claude/hooks/`, wired in `settings.json`. |
+| **Project check** | the code — types, lints, tests, schema | the agent's *output* | The failure is a mistake in what was written. `tsc`, the linter, a test, `admin check`. A hook cannot see this; only running the code can. |
+| **Filesystem validator** | the repo's shape — files present, absent, or malformed | the *result* on disk | The failure is structural: a doc that should exist and doesn't, a file in the wrong place, a manifest out of step with the tree. Cheapest of the three to write, and the most often forgotten. |
+
+**Every rung takes the same precision gate below.** A project check that fails on code that
+was fine, or a validator that fires on a legitimate layout, trains the same ignore-it reflex
+as a bad hook.
+
+A mistake that `tsc` or the test suite would have caught is a **project check** finding. It is
+not "route it back to documentation", and it is not a hook — a hook watches the tool call, not
+the compiler.
 
 ## The precision gate — check this before proposing any hook
 
@@ -56,8 +76,14 @@ Granularity, not habit. The full event list on this machine:
 
 ## When a hook is the wrong answer
 
-- **The trigger needs judgment.** See the precision gate. Route it back to documentation, or
-  to a skill that loads at the right moment.
+- **The failure is in the code, not the action.** Drop to the **project check** rung. A wrong
+  import, a call to a function that doesn't exist, an unhandled case — no tool-event predicate
+  sees any of these, and routing them to documentation is the failure this file exists to
+  prevent.
+- **The failure is structural.** Drop to the **filesystem validator** rung: a file that should
+  exist, a manifest out of step with the tree, a doc never written.
+- **The trigger needs judgment.** See the precision gate. Only now route it back to
+  documentation, or to a skill that loads at the right moment.
 - **A load trigger would fix it instead.** The `show-shape` case: the real fix was pointing
   the skills that already fire at the format doc, not policing the output afterwards. Prefer
   the fix that removes the condition over one that guards it — and **label which one you are
@@ -70,10 +96,12 @@ Granularity, not habit. The full event list on this machine:
 
 ## Writing the finding
 
-Every lens's `Fix:` line gains one clause:
+Every lens's `Fix:` line gains one clause, and it names the rung:
 
-> **Enforceable?** `<hook event + predicate, with fires/precision>` | `<no — trigger needs
-> judgment>` | `<no — a load trigger removes the condition instead>`
+> **Enforceable, by what?** `<hook: event + predicate, with fires/precision>` | `<project
+> check: the lint rule / type / test, and what it would have caught here>` | `<validator: the
+> condition on the tree>` | `<no — trigger needs judgment>` | `<no — a load trigger removes
+> the condition instead>`
 
 Configuration goes through the `update-config` skill, which owns `settings.json`. Hook
 scripts live in `~/.claude/hooks/` and are tracked; a hook committed there does nothing on

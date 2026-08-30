@@ -66,7 +66,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 
 **The brief column is what a survey sub-agent gets** — a short file naming exactly what to read and what this aspect asks, so no agent burns a read of a 300-line `SKILL.md` hunting for one section. The owner column is what an *interactive* single-aspect run loads, in full, grilling loop included.
 
-**Improving a skill itself** is the `skills` aspect above — read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, description discipline, and the precision pass. Folded in from the standalone `writing-skills` skill on 2026-08-20.
+**Improving a skill itself** is the `skills` aspect above — read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md), pointer wording in [POINTERS.md](POINTERS.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, description discipline, and the precision pass. Folded in from the standalone `writing-skills` skill on 2026-08-20.
 
 **It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `audit-session`'s [steering-conflict](../audit-session/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `audit-session` generally, not this skill.
 

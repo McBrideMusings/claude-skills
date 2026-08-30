@@ -67,8 +67,4 @@ through the arrow-key selector in a context that bans it is a finding on both co
 
 Axis tag: `decision-quality`.
 
-**Before writing the `Fix:` line, test it against both fix shapes.**
-**Enforceable?** — [../HOOKS.md](../HOOKS.md). Name the event and predicate plus simulated fires/precision if a hook could enforce this; if not, say why.
-**Right shape?** — [../SKILL-SHAPE.md](../SKILL-SHAPE.md). If the finding is about a skill, walk the ladder (delete → hide/relocate → reword → combine/embed → split/disclose → load trigger) and name the rung.
-**Should it have prompted?** — [../PERMISSIONS.md](../PERMISSIONS.md). If the finding involves a permission prompt or denial, pick the shape (allow rule / deny+allow pair / wrapper tool) and name what stays denied.
-Say which shape you rejected and why. Prefer the fix that removes the condition over one that guards it.
+**Before writing the `Fix:` line, test it against all five fix shapes** — [../FIX-SHAPES.md](../FIX-SHAPES.md).

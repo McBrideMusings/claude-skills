@@ -99,7 +99,7 @@ A file with three commits yields little. Say that plainly rather than dressing u
 
 ## Phase 6 — Triage, section by section, as tables
 
-One table per section. One verdict per rule, from exactly five:
+One table per section. One verdict per rule, from exactly six:
 
 | Verdict | When |
 | --- | --- |
@@ -107,7 +107,10 @@ One table per section. One verdict per rule, from exactly five:
 | **Compress** | Right rule, three times the words it needs. Cut the worked examples and the rant |
 | **→ hook** | Guard-shaped: a check on a command string, a path, an argument. Deterministic |
 | **→ doc / skill** | Domain knowledge that only matters for one kind of task. Replace with one routing line |
+| **→ the environment** | `admin.toml`, `package.json`, a config file, the directory layout or `--help` already answers it. The document is a **cache** of a lookup, so delete it and let the agent look |
 | **Delete** | Already enforced elsewhere, model-default behavior, role padding, or vague enough to change nothing |
+
+**The `→ doc / skill` verdict produces a context pointer, and the pointer is the part that fails.** Cold pointers — a `CLAUDE.md` line naming a doc — are read in 0.8–3.1% of sessions on this machine. Write the routing line to [POINTERS.md](POINTERS.md)'s three rules, and prefer putting must-reach material behind a skill that fires (7.4% weighted, up to 68%) over a steering line that does not.
 
 Present the whole section's table at once and let the user answer by exception. That is far faster than one question at a time, and it's how this method was actually validated.
 

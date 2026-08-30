@@ -21,11 +21,10 @@ When user-invoked skills multiply past what you can remember, that piled-up cogn
 
 ## Writing the description
 
-A model-invoked **description** does two jobs — state what the skill is, and list the **branches** that should trigger it. Every word increases **context load**, so a description earns even harder pruning than the body:
-
-- **Front-load the skill's leading word** — the description is where it does its invocation work.
-- **One trigger per branch.** Synonyms that rename a single branch are **duplication** — "build features using TDD … asks for test-first development" is one branch written twice. Collapse them; keep only genuinely distinct branches.
-- **Cut identity that's already in the body.** Keep the description to triggers, plus any "when another skill needs…" reach clause.
+A model-invoked **description** is a **context pointer**, and so is every line in this
+`SKILL.md` that names a sibling file. Both are governed by [POINTERS.md](POINTERS.md) — the
+three wording rules, the sharpen-before-inline ordering, and the measured read rates that
+say why thinness is the forcing function. Read it before writing either.
 
 ## Information hierarchy
 
@@ -75,6 +74,8 @@ where the issues are in a database `gh` cannot see.
 
 Keep each meaning in a **single source of truth**: one authoritative place, so changing the behaviour is a one-place edit.
 
+The **environment** is a source of truth too — `admin.toml`, `package.json` scripts, config files, the directory layout, `--help` output — and a document that restates it is a **cache**: a copy of a lookup, earning its load only when the lookup is expensive. Cache what the agent cannot find by looking: the unwritten convention, the reason behind a choice, the gotcha no config confesses. Leave the one-file, one-command lookups to the environment, where they cannot go stale.
+
 Check every line for **relevance**: does it still bear on what the skill does?
 
 Then hunt **no-ops** sentence by sentence, not just line by line: run the no-op test on each sentence in isolation, and when one fails, delete the whole sentence rather than trim words from it. Be aggressive — most prose that fails should go, not be rewritten.
@@ -96,11 +97,12 @@ You win twice over: fewer tokens, _and_ a sharper hook for the agent to hang its
 
 Use these to diagnose issues the user may be having with the skill.
 
-- **Premature completion** — ending a step before it's genuinely done, attention slipping to _being done_. Defence, in order: sharpen the completion criterion first (cheap, local); only if it is irreducibly fuzzy _and_ you observe the rush, hide the post-completion steps by splitting (the sequence cut).
+- **Premature completion** — ending a step before it's genuinely done, attention slipping to _being done_. Defence, in order: sharpen the completion criterion first (cheap, local); only if it is irreducibly fuzzy _and_ you observe the rush, hide the post-completion steps by splitting (the sequence cut). **Hiding only works across a real context boundary** — a hand-off, a relay, or a subagent dispatch. An inline `Skill()` call leaves the later steps sitting in the same window and clears nothing, so the split buys nothing there.
 - **Duplication** — the same meaning in more than one place. Costs maintenance and tokens, and inflates a meaning's prominence on the ladder past its real rank.
 - **Sediment** — stale layers that settle because adding feels safe and removing feels risky. The default fate of any skill without a pruning discipline.
 - **Sprawl** — a skill simply too long, even when every line is live and unique. Hurts readability and maintainability and wastes tokens. The cure is the ladder: disclose **reference** behind pointers, and split by **branch** or sequence so each path carries only what it needs.
 - **No-op** — a line the model already obeys by default, so you pay load to say nothing. The test: does it change behaviour versus the default? The commonest form is a **bare quality adjective** — _be thorough_, _very detailed_, _easy to read_, _be rigorous_ — exhorting toward a subjective target the agent already aims at, with no actionable bar. The baseline includes what the skill has _already_ established: _be rigorous_ is a no-op in a skill whose process is already rigorous, even if it would bite in a bare prompt. A weak leading word (_be thorough_ when the agent is already thorough-ish) is the same failure; the fix is a stronger word (_relentless_), not a different technique.
+- **Negation** — steering by prohibition drags the forbidden behaviour into context and makes it _more_ available, not less. _Don't think of an elephant_, and the elephant is all there is: the negation is a weak modifier that the strongly-activated concept overruns, so the ban half-reads as an instruction to do the thing. **Prompt the positive** — state the target behaviour (_write one-line comments_) so the banned one is never spoken. A prohibition earns its place only as a hard guardrail you cannot phrase positively; even then, pair it with the positive target so attention lands on what to do.
 
 ## Precision before addition
 

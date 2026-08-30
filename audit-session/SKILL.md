@@ -14,7 +14,7 @@ Reviews **conversations**, not code. `review` judges a diff; this judges the tra
 
 Transcripts are enormous. Reading them directly burns the context this skill exists to protect, and eyeballing produces vibes instead of findings. **Always run [analyze.py](analyze.py) first** and hand its output to the lenses. A lens that needs raw text asks `analyze.py --dump-user-messages`, never `cat`.
 
-**Two extractors, different questions.** [analyze.py](analyze.py) answers *where did the effort go* — spend, skills fired, friction, and under `--steering`, what steering was injected and from where. [adherence.py](adherence.py) answers *was this rule obeyed* — the ratio `negative-space` exists to produce. Never hand-roll the second one: it carries four exclusions that each produced a published wrong number, and every hand-rolled count so far has missed at least one.
+**Three extractors, different questions.** [pointer_rate.py](pointer_rate.py) answers *was this pointer ever followed* — the cold-versus-warm read rates behind [`../improve/POINTERS.md`](../improve/POINTERS.md), and the instrument `navigation` re-runs after a pointer is rewritten. [analyze.py](analyze.py) answers *where did the effort go* — spend, skills fired, friction, and under `--steering`, what steering was injected and from where. [adherence.py](adherence.py) answers *was this rule obeyed* — the ratio `negative-space` exists to produce. Never hand-roll the second one: it carries four exclusions that each produced a published wrong number, and every hand-rolled count so far has missed at least one.
 
 **The steering is not in the user or assistant records.** It arrives as `attachment` records — hook stdout, the skill listing, the agent and deferred-tool listings, MCP instructions, the auto-mode flags. Scan only user+assistant and the whole set reads as absent. `analyze.py --steering` extracts it; `--dump` prints each source's text, which a contradiction finding has to quote. The `CLAUDE.md` set and `MEMORY.md` are the exception: injected at request build time, never persisted, so read them from disk. The inventory prints that caveat so a thin result is never mistaken for a quiet session.
 
@@ -51,6 +51,7 @@ Run every applicable lens unless the invocation names a subset. Each is a file i
 | [friction](axes/friction.md) | Blocked calls, retries, repeated reads — the papercut surface. |
 | [decision-quality](axes/decision-quality.md) | Were choices put to the user answerable inline, or did they need a round trip? |
 | [restatement](axes/restatement.md) | Where did the user have to repeat, re-scope, or correct? |
+| [navigation](axes/navigation.md) | What did it cost to *find* things, and which pointer removes the hunt? |
 | [steering-conflict](axes/steering-conflict.md) | Do the co-loaded steering sources contradict, collide, or duplicate each other? |
 
 **`negative-space` is the point of this skill.** The others find waste that shows up in a token count. Negative-space finds the rule you wrote, deployed, and never saw obeyed — which no cost metric will ever surface, because not doing the work is *cheaper*.
@@ -59,9 +60,9 @@ Run every applicable lens unless the invocation names a subset. Each is a file i
 
 ## RULE — every finding is tested against the fix shapes
 
-A lens finds what went wrong. The **fix shapes** are the structural answers worth reaching for before the lazy one — *"write the instruction more forcefully"*. No finding is complete until it has been tested against each one that applies.
+A lens finds what went wrong. The **fix shapes** are the structural answers worth reaching for before the lazy one — *"write the instruction more forcefully"*. No finding is complete until it has been tested against each one that applies. All five, in one table the axis files point at: [FIX-SHAPES.md](FIX-SHAPES.md).
 
-**[HOOKS.md](HOOKS.md) — could this have been enforced?** An instruction is re-decided every turn by a stochastic process. A hook is the harness running code: it fires every time or never. Name the event and predicate if yes, the reason if no.
+**[HOOKS.md](HOOKS.md) — could this have been enforced, and by what?** An instruction is re-decided every turn by a stochastic process; a machine running code fires every time or never. Three rungs, picked by what the failure *is*: a **harness hook** watches the agent's action, a **project check** (lint, type, test) watches its output, a **filesystem validator** watches the result on disk. Name the rung and its predicate if yes, the reason if no.
 
 > Simulate before proposing. A `Stop` hook for the `show-shape` rule fired 62 times over 13 months at **10% precision**. A hook without a fires-count and a precision sample is a guess, and a low-precision hook is worse than none — it trains the user to ignore it.
 
@@ -72,6 +73,14 @@ A lens finds what went wrong. The **fix shapes** are the structural answers wort
 **[PERMISSIONS.md](PERMISSIONS.md) — should this have prompted at all?** The classifier is conservative; a prompt on a command that was always going to be approved is a stall on a full context window. Three shapes in order: allowlist rule → deny+allow pair → a narrow wrapper tool when the safe/unsafe split lives inside an argument the matcher can't parse.
 
 > Denials leave a trace; **approved prompts leave none**. Rank by repeated command prefixes, not denial counts, and say it's inference. Any widening names what stays denied in the same breath.
+
+**[CONTEXT-PRESSURE.md](CONTEXT-PRESSURE.md) — whose window pays for this rule?** The implementing stage re-decides every always-loaded rule on every turn; the reviewing stage receives a diff and has room. A code-quality standard in `CLAUDE.md` is charged to every session; in `review/axes/` it is charged once. The only shape that *removes* always-on tokens instead of adding enforcement — reach for it before `HOOKS.md`.
+
+> Three tests, all required: checkable against a diff, acceptable to catch after the fact, and not steering the work itself. **`review` fires in ~1.5% of sessions** — state that rate in the proposal, or the rule has been downgraded rather than rehoused.
+
+**[INFORMATION-ACCESS.md](INFORMATION-ACCESS.md) — could it have known?** The only shape that adds capability rather than constraining behaviour, which is why it gets skipped: when a session failed because a fact was unreachable, the answer is a surface, not a better instruction.
+
+> The bar is both halves: the specific fact that was missing, and the specific command or file that would have answered it. "More visibility" is a wishlist, not a finding.
 
 These bind every lens, not just `negative-space`. When more than one offers an answer, the cheaper and more reversible one wins — and say which you rejected, and why.
 

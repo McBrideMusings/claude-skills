@@ -119,8 +119,4 @@ vendored and cannot be edited, which is exactly why that hook exists.
 Axis tag: `steering-conflict`. Every finding carries the co-load count — "3 of 12
 sessions" beats "sometimes", same as every other lens.
 
-**Before writing the `Fix:` line, test it against the fix shapes.**
-**Enforceable?** — [../HOOKS.md](../HOOKS.md). A conflict between two *files* can often be caught at author time rather than arbitrated at run time; name the event and predicate, with simulated fires and precision.
-**Right shape?** — [../SKILL-SHAPE.md](../SKILL-SHAPE.md). A trigger collision is usually rung 3 (reword the description) or rung 4 (combine or embed). It already warns against merging two skills whose bodies carry contradictory rules until the contradiction is resolved.
-**Should it have prompted?** — [../PERMISSIONS.md](../PERMISSIONS.md). Where the conflict surfaces as a denial, pick the shape and name what stays denied.
-Say which shape you rejected and why. Prefer the fix that removes the condition over one that guards it.
+**Before writing the `Fix:` line, test it against all five fix shapes** — [../FIX-SHAPES.md](../FIX-SHAPES.md). Two are lens-specific here: a conflict between two *files* can often be caught at author time rather than arbitrated at run time, so the **filesystem validator** rung is live; and a trigger collision is usually `SKILL-SHAPE`'s rung 3 (reword the description) or rung 4 (combine or embed), which already warns against merging two skills whose bodies carry contradictory rules until the contradiction is resolved.
