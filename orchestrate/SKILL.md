@@ -265,8 +265,18 @@ Per ready issue, in order:
    Run it after every `worktree add`, including a recovery dispatch into an existing worktree.
 3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else), and read `../_domains/<label>/orchestrate.md` for the commands. Created here, alongside the worktree.
 4. **Model check** — resolve the kind, then pick this issue's tier with [Picking the model per issue](#picking-the-model-per-issue), then check the resolved id against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them. Record the tier next to the slug; the run report names it.
-5. **`dispatch(…)`** — the transport file. Returns the **handle** you will use for every later verb. The workflow transport dispatches the whole batch in one call rather than per issue; its file says how.
-6. **Brief** — [BRIEF.md](BRIEF.md).
+5. **Worktree still there?** — the last thing before the transport is touched, for **every** worktree in the batch, not just the one being dispatched:
+
+   ```bash
+   git -C <repo> rev-parse --absolute-git-dir >/dev/null 2>&1 || echo MISSING
+   test -d <worktree>/.git && test -f "$(git -C <worktree> rev-parse --absolute-git-dir)/SWARM-WORKER" || echo "MISSING <worktree>"
+   ```
+
+   **Any `MISSING` halts the round.** Do not dispatch, do not re-create it silently — say which slugs are gone and stop, so the cause gets looked at rather than papered over.
+
+   **Why this check exists (`term-bvlt`).** Creation succeeding is not evidence the worktree is there when the worker starts. On 2026-08-28 an orchestrate round created four worktrees, confirmed each, and `~/.claude/tools/git-sweep.sh` — running from this same session's `Stop` hook at 22:17:53 UTC (6:17pm ET) — removed all four as "merged into main", because a worktree created at the tip of the default branch has no commits of its own and a clean tree. Two workers found the directory gone and recreated it at a base they chose themselves; two halted and their dispatches were lost. `git-sweep.sh` now refuses a worktree carrying a `SWARM-WORKER` or `SELF-LAND` marker, so that specific cause is closed — this check is what makes the *next* one loud at dispatch instead of silent until the round returns.
+6. **`dispatch(…)`** — the transport file. Returns the **handle** you will use for every later verb. The workflow transport dispatches the whole batch in one call rather than per issue; its file says how.
+7. **Brief** — [BRIEF.md](BRIEF.md).
 
 Record `slug → issue → model → handle → worktree → branch → device` as you go. Step 7 needs the handle and the device.
 
