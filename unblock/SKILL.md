@@ -1,6 +1,6 @@
 ---
 name: unblock
-description: "Get a branch from blocked to mergeable, doing the work rather than offering to: it re-syncs the checkout to the branch head every single run, then resolves merge conflicts, diagnoses and fixes red CI checks, and writes responses to unaddressed PR feedback — each step gated only on whether that condition is actually true. Prefers a project-local `resolve-conflicts` or `resolve-failing-tests` skill when the repo ships one. Invoked on the default branch it sweeps every blocked branch you own, one worktree and one session per branch. So 'the PR is red', 'CI is failing', 'the branch has conflicts', 'resolve failing tests', 'address the review comments', 'answer the feedback on my PR' and 'unstick my PRs' all enter here. `review` calls it and continues; it never halts a review to ask whether it should do its job. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Get a blocked branch to mergeable, doing the work rather than offering: resolve merge conflicts, diagnose and fix red CI, respond to unaddressed PR feedback. On the default branch it sweeps every blocked branch you own. Triggers: 'the PR is red', 'CI is failing', 'conflicts', 'resolve failing tests', 'address the review comments', 'unstick my PRs'."
 ---
 
 # Unblock

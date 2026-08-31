@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: "The whole path from conversation to filed work: synthesize a spec (problem, solution, user stories, testing decisions), get it approved, slice it into vertical-slice tracer-bullet tickets, and publish them to the repo's issue backend — beads or GitHub. The single owner of spec/PRD generation; docs, grill-me and gui delegate here. Classifies each slice as HITL (needs human input) or AFK (implement can run it)."
+description: "The path from conversation to filed work: synthesize a spec, get it approved, slice it into vertical-slice tracer-bullet tickets, publish to the repo's issue backend (beads or GitHub). The single owner of spec/PRD generation. Classifies slices as HITL or AFK."
 ---
 
 # To Tickets

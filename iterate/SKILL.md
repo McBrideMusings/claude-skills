@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, chunked to keep context flat. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Every pass runs as a staged `/implement` workflow. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
+description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations. SCOPED mode marches a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) in order; bare `iterate` picks via triage. One item is /implement; parallel is /orchestrate."
 ---
 
 # /iterate — Continuous autonomous iteration harness

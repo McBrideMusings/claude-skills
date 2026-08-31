@@ -1,6 +1,6 @@
 ---
 name: lateral
-description: "Lateral thinking, when idea generation is stuck — every option feels the same, a constraint feels unbreakable, or the stated need may be the wrong problem. Runs exactly one technique. Another skill that already knows which one invokes `lateral <technique>`. Never for debugging, review, or implementation."
+description: "Lateral thinking when idea generation is stuck — every option feels the same, a constraint feels unbreakable, or the stated need is the wrong problem. Runs exactly one technique. Never for debugging, review, or implementation."
 ---
 
 # Lateral

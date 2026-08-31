@@ -1,6 +1,6 @@
 ---
 name: grill-me
-description: "One-question-at-a-time design interviews — for new ideas (Shape), existing plans (Grill), or existing codebases (Backfill). Captures vocabulary and offers ADRs as a byproduct. Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work."
+description: "One-question-at-a-time design interviews — new ideas (Shape), existing plans (Grill), existing codebases (Backfill). Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work."
 ---
 
 Walk the decision tree one question at a time until we reach shared understanding. For every question, recommend an answer — never ask open-ended without taking a position.

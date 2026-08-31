@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Perform a code review. Routes by what you're standing in — uncommitted changes review the working tree, a feature branch reviews itself against its base, an explicit branch/PR/path argument overrides both, and the repo's default branch sweeps every PR waiting on your review. A branch that is blocked — conflicts, red CI, or unanswered reviewer feedback — is handed to `unblock` first, which fixes it and hands back; review never stops to ask permission to unblock. `review dual` adds a cross-vendor second opinion; `review repo` reviews the whole codebase (always confirms first); `review workflow` runs the lens fan-out and scoring in a workflow so only surviving findings reach this context; `noverify` skips the execution gate. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Perform a code review. Routes by what you're standing in: uncommitted changes review the working tree, a feature branch reviews against its base, an explicit branch/PR/path argument overrides, the default branch sweeps every PR awaiting your review. Blocked branches go to `unblock` first, without asking. Modes: `review dual`, `review repo`, `review workflow`, `noverify`. Choices are typed keywords in chat, never AskUserQuestion."
 ---
 
 # Review

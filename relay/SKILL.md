@@ -1,6 +1,6 @@
 ---
 name: relay
-description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt, so one pane runs indefinitely at near-zero context carryover. Invoked at the end of `wrap-up` as its final step, and by `iterate` between passes. Requires HERDR_ENV=1. Handing work SIDEWAYS to another agent or process is `dispatch`, not this."
+description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `iterate`. Requires HERDR_ENV=1. Handing work SIDEWAYS is `dispatch`, not this."
 ---
 
 # Relay

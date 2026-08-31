@@ -1,6 +1,6 @@
 ---
 name: iron-out
-description: "Drive a scope's ambiguity to zero so the work can be handed off. Also charts a foggy effort from scratch, filing the open questions as issues under a milestone that names the destination. Selectors: issue numbers, #range, label:X, milestone:X, followups, papercuts; bare iron-out takes the whole open backlog."
+description: "Drive a scope's ambiguity to zero so the work can be handed off; also charts a foggy effort from scratch, filing open questions as issues under a milestone. Selectors: issue numbers, #range, label:X, milestone:X, followups, papercuts; bare iron-out takes the whole backlog."
 ---
 
 # Iron Out

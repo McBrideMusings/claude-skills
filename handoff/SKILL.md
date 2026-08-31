@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Write a handoff document capturing the current session so a fresh agent (or future you) can pick up the work. Write-only — produces a doc, never reads one back. Does NOT cover 'wrap up' — that's /summary write."
+description: "Write a handoff document capturing the current session so a fresh agent can pick up the work. Write-only — never reads one back. Does NOT cover 'wrap up' — that's /summary write."
 ---
 
 # Handoff

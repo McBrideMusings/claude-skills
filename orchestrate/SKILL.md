@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one /implement pass per issue — then verify, land, retire, and re-dispatch as the dependency frontier advances. Workers never ask questions: anything needing a human decision is gated out before dispatch or filed and halted. Every worker is a staged `/implement` workflow in its own git worktree. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items is /iterate."
+description: "Fan out a swarm of coding agents over an ironed-out backlog — one git worktree and one staged /implement workflow per issue — then verify, land, retire, and re-dispatch. Covers starting, checking on, and disbanding a swarm; one item is /implement, sequential items is /iterate."
 ---
 
 # /orchestrate — fan work out to a swarm, land it, retire it

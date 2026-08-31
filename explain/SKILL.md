@@ -1,6 +1,6 @@
 ---
 name: explain
-description: "Explain something so the user gets it — a codebase subsystem (grounded with file:line tags, never invented) or a world-knowledge concept. Builds a self-contained visual HTML explainer by default; drops to chat only when it's a few sentences, nothing structural, and won't be revisited."
+description: "Explain something so the user gets it — a codebase subsystem (grounded with file:line tags) or a world-knowledge concept. Builds a visual HTML explainer by default; chat only when it's a few sentences and nothing structural."
 ---
 
 # explain

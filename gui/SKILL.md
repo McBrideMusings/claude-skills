@@ -1,6 +1,6 @@
 ---
 name: gui
-description: "Front door for design and UI/UX work at every layer — visual design, interface design, UX, GUI craft, layout, typography, colour, motion and AI-slop, plus the decisions beneath the screen: observed behaviour, domain vocabulary, user needs, product strategy, conceptual model and breadboarding. Default `orient` names the bottleneck layer; `sketch` gives an ASCII wireframe; `critique` reviews an interface that already exists; `direction` picks the visual world for a new one; `bolder`/`quieter` change its volume. Use for any what-to-build, how-it-looks, design-review, redesign, mockup or wireframe decision."
+description: "Front door for design and UI/UX work at every layer — visual design, layout, typography, colour, motion, AI-slop, plus user needs, product strategy and conceptual model. Verbs: `orient` (default), `sketch`, `critique`, `direction`, `bolder`/`quieter`. Use for any what-to-build, how-it-looks, design-review, redesign, mockup or wireframe decision."
 ---
 
 # gui — design at every layer

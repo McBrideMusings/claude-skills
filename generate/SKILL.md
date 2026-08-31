@@ -1,6 +1,6 @@
 ---
 name: generate
-description: "Single front door for generating game/app assets — 3D models, images, video, textures, music, sound effects, voice — picking the right backend per asset type. Use for any asset-generation request; per-type backends and prompts live in the _generate/ axis."
+description: "Single front door for generating game/app assets — 3D models, images, video, textures, music, sound effects, voice — picking the right backend per asset type. Use for any asset-generation request."
 ---
 
 # Generate

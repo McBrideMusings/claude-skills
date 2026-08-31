@@ -1,6 +1,6 @@
 ---
 name: docs
-description: "Bootstrap, audit, or migrate a VitePress docs site and act as the project's docs librarian, placing artifacts other skills generate (specs, ADRs) into the site. Does not generate spec/PRD content itself — that's /to-tickets."
+description: "Bootstrap, audit, or migrate a VitePress docs site and place artifacts other skills generate (specs, ADRs) into it. Does not generate spec/PRD content — that's /to-tickets."
 user_invocable: true
 ---
 

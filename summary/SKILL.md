@@ -1,6 +1,6 @@
 ---
 name: summary
-description: "Read a branch in and catch up on it — the diff, the commits, and the PR discussion — so you can pick up half-finished work. `summary write` instead generates the pasteable summary of what was built and why, for a PR description or the session record."
+description: "Read a branch in and catch up — diff, commits, PR discussion — to pick up half-finished work. `summary write` instead generates the pasteable summary of what was built and why."
 ---
 
 # Summary

@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking, update docs, run review + simplify, commit, push, resolve follow-ups (fix now / file / skip), summarize, land the branch — merge on an owned repo, PR on a collaborative one — and relay the next body of work into a fresh context. Also invoked by implement as its final phase."
+description: "Close out the current session: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Also implement's final phase."
 ---
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.

@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous single-pass work on one tracked item, ending in commit/push/land. `implement <issue>` works that issue; bare `implement` discovers one; `implement delegate` hands implementation to a cheaper model with Claude validating. One pass, one item — continuous mode across many items is /iterate."
+description: "Autonomous single-pass work on one tracked item, ending in commit/push/land. `implement <issue>` works that issue; bare `implement` discovers one; `implement delegate` hands it to a cheaper model. One pass, one item — continuous mode is /iterate."
 ---
 
 # /implement — Single-pass autonomous iteration

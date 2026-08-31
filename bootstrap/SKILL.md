@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Idempotent bootstrap and audit of the standard repo layout (CLAUDE.md, CLAUDE.local.md, .gitignore, admin runner, VitePress docs, docs/CONTEXT.md, docs/adr/). Use for setting up, scaffolding, or auditing a repo's layout, including checking an existing project against the standard."
+description: "Idempotent bootstrap and audit of the standard repo layout (CLAUDE.md, .gitignore, admin runner, VitePress docs, docs/adr/). Use for setting up, scaffolding, or auditing a repo's layout against the standard."
 user_invocable: true
 ---
 

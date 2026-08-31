@@ -1,6 +1,6 @@
 ---
 name: show-shape
-description: "How to WRITE DOWN any answer that describes a shape — an implementation plan, a design proposal, a PRD's Implementation Decisions section, an `improve` proposed fix, an architecture-change note, or an ordinary chat reply about to explain logic, control flow, UI structure, file responsibility, a refactor, or a diff — as structured pseudocode rather than prose. Load BEFORE writing any of those, including mid-conversation: 'make a plan', 'how would you implement this', 'what's your approach', 'here's what I'd do', a numbered slice list, a proposal weighing options, or a paragraph about to describe a call chain or component tree instead of drawing it. Supplies eight techniques (file:line labels, type signatures, component trees, call-stack diffs, generic diffs, pseudocode, shallow file trees, Mermaid) with worked examples. Not for prose answers with no structural shape."
+description: "How to WRITE DOWN any answer that describes a shape — a plan, design proposal, refactor, diff, call chain, component tree, or UI structure — as structured pseudocode rather than prose. Load BEFORE 'make a plan', 'what's your approach', or any paragraph about to describe structure. Eight techniques with worked examples. Not for prose answers with no structural shape."
 ---
 
 # Show the shape — structured pseudocode instead of prose

@@ -1,6 +1,6 @@
 ---
 name: repo-analysis
-description: Compare a subsystem in the user's repo against reference repos to find smarter approaches, likely bugs, and features worth porting. Also harvests a missing capability ('harvest their X' → analysis doc + issue slate) or whole skills when the reference is a skills repo ('mine their skills'). Use whenever the user points at another project as a reference for their own code.
+description: Compare a subsystem against reference repos to find smarter approaches, likely bugs, and features worth porting. Also 'harvest their X' and 'mine their skills'. Use whenever the user points at another project as a reference for their own code.
 ---
 
 # Repo Analysis

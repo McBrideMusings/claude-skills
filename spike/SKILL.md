@@ -1,6 +1,6 @@
 ---
 name: spike
-description: "Build a throwaway prototype to settle a design or technical question before committing — several working UI variations behind a picker, a greybox wireframe, competing TUI/terminal-screen designs in the real toolkit (never an HTML mock), a runnable terminal app for state/logic questions, or competing technical approaches measured against one fixture. Also the meaning of 'artifact': asking for an artifact is asking for a prototype built here, never a hosted page. Use to prototype, mock up, wireframe, try out, experiment, spike, or build a proof of concept; also for 'which approach should we use' and 'let me see it working first'."
+description: "Build a throwaway prototype to settle a design or technical question — UI variations behind a picker, a greybox wireframe, competing TUI designs in the real toolkit (never an HTML mock), or competing approaches measured against one fixture. 'Artifact' means a prototype built here, never a hosted page. Use to prototype, mock up, wireframe, experiment, spike, or 'let me see it working first'."
 ---
 
 # spike — throwaway builds that settle a question

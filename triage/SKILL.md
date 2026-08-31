@@ -1,6 +1,6 @@
 ---
 name: triage
-description: "Pick the next work item from the repo's issue backend (beads or GitHub). Assesses project phase (early vs mature) and recommends one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', 'pick next issue', start-of-session planning."
+description: "Pick the next work item from the repo's issue backend (beads or GitHub) and recommend one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', start-of-session planning."
 ---
 
 # Triage

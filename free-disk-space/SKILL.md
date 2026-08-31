@@ -1,6 +1,6 @@
 ---
 name: free-disk-space
-description: "Reclaim disk space on macOS — audit real free space, clear build artifacts and package-manager caches after one confirmation, retire merged git worktrees, and offload large keepers to an external drive behind a symlink. Use whenever the disk is full, an 'out of space' error appears, or the user asks to clean up, offload, or free up the machine."
+description: "Reclaim disk space on macOS — clear build artifacts and caches, retire merged worktrees, offload large keepers to an external drive behind a symlink. Use when the disk is full, 'out of space' appears, or the user asks to clean up or free up the machine."
 user_invocable: true
 ---
 

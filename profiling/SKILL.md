@@ -1,6 +1,6 @@
 ---
 name: profiling
-description: "Measure where a program spends its time, memory, or energy and optimize the dominant cost — proactive, no bug required. Use for 'make it faster' / 'why is this slow' / performance audits when there's no regression baseline (regressions are `diagnose`)."
+description: "Measure where a program spends time, memory, or energy and optimize the dominant cost. Use for 'make it faster', 'why is this slow', performance audits with no regression baseline (regressions are `diagnose`)."
 ---
 
 # Profiling

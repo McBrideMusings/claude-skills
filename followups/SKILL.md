@@ -1,6 +1,6 @@
 ---
 name: followups
-description: "Capture follow-up items — quick 'add a followup' captures and session-end generation (also invoked by /wrap-up) — filing them as issues on the repo's tracker (beads or GitHub); a repo with neither halts and is offered `bd init`. Browsing, picking, or working an existing follow-up is `triage`, not this skill."
+description: "Capture follow-up items — quick captures and session-end generation (also invoked by /wrap-up) — filed as issues on the repo's tracker (beads or GitHub). Browsing, picking, or working an existing follow-up is `triage`; this skill only creates."
 ---
 
 Use when the user asks to add a follow-up ("remember to …", "file as a followup") or to generate/surface new follow-ups from the session (also invoked by `/wrap-up`). To **browse, pick, or start** an existing item, that's `triage` — a follow-up is just another tracked item triage reads. This skill only **creates** items.

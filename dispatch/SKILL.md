@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: "Owner of the delegation-target ladder every skill picks from — Claude agent by default, escalating to a live herdr tab or a Terminal.app window — plus the router behind it. Read when wiring, debugging, or extending any delegated work."
+description: "Owner of the delegation-target ladder every skill picks from — Claude agent by default, escalating to a herdr tab or Terminal.app window. Read when wiring, debugging, or extending delegated work."
 ---
 
 # Delegation backend

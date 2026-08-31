@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md, skills) or surveys all applicable aspects when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; improve never implements what it finds. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; never implements. Opportunities where nothing is broken; defects are `review`. Choices are typed keywords, never AskUserQuestion."
 ---
 
 # Improve
