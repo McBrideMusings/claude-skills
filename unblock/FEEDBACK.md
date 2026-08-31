@@ -4,10 +4,24 @@ Loaded by [SKILL.md](SKILL.md) Phase U4 when the branch is mine and its open PR 
 
 **This file owns how a response to feedback is written, and that is its own formatting problem.** It is deliberately separate from [../review/POSTING.md](../review/POSTING.md), which formats findings you are handing *to* an author. Here you are answering a reviewer who already read your code: the shape, the caps, and the banned phrases are all different, and merging the two documents makes both worse.
 
-**Never posts words to GitHub.** All reviewer replies are printed in chat, quoted as a Markdown
-blockquote, for the user to copy-paste; nothing is written to disk and thread resolution is the
-user's to do. The one action this file may take on GitHub is re-requesting a formal reviewer once
-the fixes are pushed (Phase 08), and only on an explicit yes.
+**The reply is posted by this pass, on the same `go` that pushes.** It is drafted in chat as a
+Markdown blockquote so the user reads it before accepting, and nothing is written to disk — but it
+is not a copy-paste chore handed back. `gh pr comment` runs immediately after the push, as the
+middle third of [SKILL.md](SKILL.md) Phase U5's one `push + reply + re-request` row. Thread
+resolution stays the user's.
+
+**The push, the reply and the re-request are one action, and no `go` takes a subset.** Fixing a
+branch, saying what was fixed, and putting the reviewer back in the queue are three parts of one
+claim. Splitting them has now failed in both directions. On PR #1395 the reply went out while the
+commits were unpushed, so the reviewer would have read "fixed" against zero new commits — the rule
+that came out of it is `memory/feedback_push_before_pr_reply.md`, *"posting is the authorization to
+make the whole claim true"*. On PR #1938 the mirror image: the push and the re-request went out on
+`go`, and the reply was handed back as "post it yourself", so the reviewer got new commits and a
+re-request with nothing saying what changed.
+
+**Never re-introduce a rule that prints the reply for the user to paste.** A numbered row whose
+pick is "you do it manually" is unactionable by construction — `go` means *apply my picks*, and
+that row has no pick to apply.
 
 **[RULES.md](../review/RULES.md) binds this file** — RULE 0 (no selector, ever), RULE 1 (effort never decides), RULE 2 (the gate does the job it names, it does not ask permission to). Load it if it is not already in context.
 
@@ -120,22 +134,23 @@ If a thread has multiple comments (back-and-forth between reviewer and author), 
 
 ## Phase 06 — Present the response block
 
-Print, in chat, a **single consolidated reply** the user copy-pastes as one PR comment. The reply
-is an ordered list where item N corresponds to issue N from the plan (Phase 07) — same numbering,
-same ordering.
+Print, in chat, the **single consolidated reply** this pass will post as one PR comment. It goes
+out on Phase U5's `go`, so the block in chat is what the user is accepting, not a draft they have
+to carry anywhere. The reply is an ordered list where item N corresponds to issue N from the plan
+(Phase 07) — same numbering, same ordering.
 
-**No file.** Quote the block as Markdown (`>` on every line) so it reads as one pasteable unit
-apart from your own commentary. It is transient — nobody has ever opened one of these back up on
+**No file.** Quote the block as Markdown (`>` on every line) so it reads as one unit apart from
+your own commentary — what is inside the quote is exactly what posts. It is transient — nobody has ever opened one of these back up on
 disk, so stop writing one. When Phase 07 backfills commit SHAs after landing the fixes, re-print
 the updated block rather than editing a file that never existed.
 
 ### Budget — hard caps, not guidance
 
-The pasteable block obeys all four. If a draft breaks one, cut words; never raise the cap.
+The posted block obeys all four. If a draft breaks one, cut words; never raise the cap.
 
 | Cap | Value |
 |---|---|
-| Whole pasteable block | **150 words**, excluding the numbered prefixes and the `file:line` tags |
+| Whole posted block | **150 words**, excluding the numbered prefixes and the `file:line` tags |
 | Per item | **1 line**; a second line only when the *why* is not visible in the change itself |
 | Per sentence | **20 words** |
 | Items | **one per plan issue with action `address` / `partial` / `reply`**; `ignore` items never appear |
@@ -151,7 +166,7 @@ Document format:
 Generated: YYYY-MM-DD HH:MM:SS
 Head: <short-sha>
 
-> Copy-paste the block below as a single PR comment. Nothing was posted for you.
+> The block below goes out as a single PR comment on `go`. Nothing is posted before that.
 
 ---
 
@@ -186,7 +201,7 @@ Head: <short-sha>
 | "Good catch", "you're right", "fair point", apologies | Not information; each one invites a reply that is also not information. |
 | The optional "note on the approach" for `address` items | The diff is the approach. If the approach genuinely needs defending, that is a `partial`, not a footnote. |
 | `ignore` items | They stay in the Phase 07 plan for the user and never reach the PR. |
-| Headers, nested bullets, bold, tables inside the pasteable block | One flat numbered list a human reads top to bottom. |
+| Headers, nested bullets, bold, tables inside the posted block | One flat numbered list a human reads top to bottom. |
 
 ### Reply-comment style rules
 
@@ -285,14 +300,14 @@ Everything scored **below 50** is one table row, no block — the long tail is a
 
 ## Summary
 - address N · partial N · reply N · ignore N · N files touched
-- Paste the blockquoted reply above as ONE PR comment. Do not split per thread.
+- The blockquoted reply above posts as ONE PR comment. Never split it per thread.
 ```
 
 The quoted reviewer sentence, the score rationale, and the plan sentence all stay for items scored 50+. Cutting those is how RULE 1's effort-triage failure gets back in — a plan that shows scores without their reasons cannot be argued with, so nobody argues with it.
 
 Then apply the code changes for the `address` / `partial` items, commit under the rules below, and
 re-print the response block in chat with the real short SHAs backfilled in place of the
-placeholders. The user handles all GitHub replies and thread resolution themselves.
+placeholders — the backfilled block is the one that posts. Thread resolution stays the user's.
 
 **Commit, do not push.** The push is [SKILL.md](SKILL.md) Phase U5's single confirm, batched with whatever the conflicts and tests gates did.
 
@@ -348,7 +363,7 @@ The third has no body on purpose: the subject says what the commit adds, and not
 
 If the user rejects or edits, re-score the affected threads, regenerate the response block, and re-present.
 
-## Phase 08 — Hand the re-request to Phase U5's slate
+## Phase 08 — Hand the reply and the re-request to Phase U5's slate
 
 **Whenever the feedback came from a formal review, offer to re-request that reviewer once the fixes are pushed.** Not a footnote and not something the user should have to think of — a review with a verdict on it stays on the PR as the reviewer's standing position, and `CHANGES_REQUESTED` keeps gating the merge, until they are asked again. Fixing everything and saying nothing leaves the PR looking exactly as blocked as it did before the work.
 
@@ -358,20 +373,27 @@ The offer applies to a reviewer who submitted a **formal review of any state** �
 
 **This file is not the only thing that produces it, and it is not the gate on it.** [SKILL.md](SKILL.md) Phase U5 owes a re-request to every prior reviewer whenever the pass pushes at all — including a pass where this file never loaded because the only problem was a conflict or a red check.
 
-**This phase prints no prompt of its own, and contributes no row of its own.** Phase U5 carries the re-request inside its `push + re-request` row, and that row is the whole ask:
+**This phase prints no prompt of its own, and contributes no row of its own.** Phase U5 carries both the reply and the re-request inside its `push + reply + re-request` row, and that row is the whole ask:
 
 ```
-1. **push + re-request** — 2 commits to `origin/pierce/leagues-lp`, then re-request
-   @alexthemighty, who reviewed 4c1f9ab before either existed. My pick: both.
+1. **push + reply + re-request** — 2 commits to `origin/pierce/leagues-lp`, then post the
+   4-item reply above and re-request @alexthemighty, who reviewed 4c1f9ab before any of it
+   existed. My pick: all three.
 ```
 
-A second prompt under the response block — `re-request` / `skip` on its own line, beneath U5's own question — makes the user answer twice to accept two things you already recommended. One slate, one keyword (RULE 0 — never a selector). A `re-request` numbered *separately* from the push is the same failure wearing a slate's clothes: `go` already means "push these commits", and leaving a reviewer's verdict standing against commits they have never seen is not a second decision.
+A second prompt under the response block — `re-request` / `skip`, or `post` / `paste it yourself`, on its own line beneath U5's own question — makes the user answer twice to accept things you already recommended. One slate, one keyword (RULE 0 — never a selector). Numbering the reply or the re-request *separately* from the push is the same failure wearing a slate's clothes: `go` already means "push these commits", and neither telling the reviewer what changed nor clearing their stale verdict is a second decision.
 
-On a `go` that takes the push row — this is an outward action on someone else's queue, run immediately after the push confirms, never deferred to a later message:
+On a `go` that takes the push row — both are outward actions on someone else's queue, run immediately after the push confirms, in this order, never deferred to a later message:
 
 ```
+gh pr comment <pr_number> --repo <owner>/<repo> --body "$(cat <<'EOF'
+<the consolidated reply block, verbatim, SHAs backfilled>
+EOF
+)"
 gh pr edit <pr_number> --repo <owner>/<repo> --add-reviewer <login>
 ```
+
+**Comment before re-request.** The re-request pings the reviewer; arriving at a PR whose newest commits carry no explanation is the state the reply exists to prevent.
 
 `--add-reviewer` works on someone who has already reviewed: GitHub drops their prior verdict from the merge gate and puts them back in `reviewRequests`. Confirm it by reading the list back rather than trusting the command's silence:
 
@@ -385,9 +407,9 @@ gh pr view <pr_number> --json reviewRequests --jq '[.reviewRequests[].login]'
 
 ## Guardrails
 
-- **No GitHub writes except the Phase 08 re-request, and that one only on an explicit yes.** No `gh pr comment`, no `gh pr review`, no `gh api` mutations, no thread resolution — the reply is the user's to paste and the threads are theirs to resolve. The single exception is `gh pr edit --add-reviewer` in Phase 08, which posts no words of its own and only puts back a request the reviewer's own verdict replaced; it still needs a yes in the message, never prior or implied consent.
+- **Two GitHub writes, both on the one `go` that takes Phase U5's push row, neither on prior or implied consent.** `gh pr comment` posts the consolidated reply, and `gh pr edit --add-reviewer` puts back the request the reviewer's own verdict replaced. Nothing else: no `gh pr review`, no other `gh api` mutation, no thread resolution — the threads are the user's to resolve, because marking someone's finding settled is their call and not a consequence of the fix landing.
 - **Print the plan before editing, but do not wait on it.** The plan goes in chat first so the user can see what is about to change and interrupt; then the `address` / `partial` items are applied. Only items blocked on the user's intent wait.
-- **All replies go into the response block as one consolidated comment.** The user copy-pastes it as a single PR-level comment. Never offer to post for them, and never split into per-thread drafts unless the user explicitly asks.
+- **All replies go into the response block as one consolidated comment**, posted as a single PR-level comment. Never split into per-thread drafts unless the user explicitly asks, and never offer the block as something for them to paste.
 - **Don't manufacture feedback.** Report "no feedback" back to Phase U4 only when **all three** sources (inline threads, non-author review bodies, non-author conversation comments) are empty — never invent an item to triage. Zero inline threads alone is not emptiness if a review body or comment carries findings.
 - **Cite the comment URL** for each thread in both the plan and the response block.
 - **Outdated ≠ ignore.** Outdated threads frequently still need a one-line reply so the reviewer knows you saw it — those get a `reply` action with a draft.

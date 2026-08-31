@@ -236,16 +236,17 @@ feedback   1 body-only review from alexthemighty — 3 points: 2 addressed, 1 re
 ```
 
 Then **one slate, and it is the only thing this skill asks — every outward action the pass
-produced goes in it, numbered, each with your pick**. `FEEDBACK.md` Phase 08's re-request is one
-of these rows; it never prints a prompt of its own. Close it with `CLAUDE.md`'s escape hatch:
+produced goes in it, numbered, each with your pick**. `FEEDBACK.md` Phase 08's reply and
+re-request are not rows of their own; they are the rest of the push row, and that file prints no
+prompt. Close the slate with `CLAUDE.md`'s escape hatch:
 
 > `unblock` made 3 commits on `pierce/leagues-lp`. Outward actions waiting:
 >
-> 1. **push + re-request** — 3 commits to `origin/pierce/leagues-lp`, then re-request
->    @alexthemighty, who reviewed `4c1f9ab` before any of them existed. My pick: both.
-> 2. **reply** — the consolidated response block, 3 points. My pick: post.
+> 1. **push + reply + re-request** — 3 commits to `origin/pierce/leagues-lp`, then post the
+>    3-point response block above and re-request @alexthemighty, who reviewed `4c1f9ab` before
+>    any of them existed. My pick: all three.
 >
-> Type `go` to take both, or answer per item (`1 push, 2 skip`).
+> Type `go`, or `1 skip` to leave the branch as it is.
 
 **One slate, one keyword, however many rows.** Two prompts at the bottom of one message —
 `push` / `hold` on one line and `re-request` / `skip` on the next — is the failure this phase
@@ -254,38 +255,46 @@ with exactly one outward action still prints the slate, one row, closed with `go
 
 - **Ordering is execution order.** Push is always row 1 when it is present, because every other
   outward action assumes the commits are on the branch.
-- **The re-request is PART OF the push row, not a row beside it.** Every login that has already
-  submitted a formal review — `CHANGES_REQUESTED`, `COMMENTED` or `APPROVED` alike — gets
-  re-requested as the second half of the same action, immediately after the push lands, whichever
-  gate produced the commits. Write the row as `push + re-request` and take both on `go`.
+- **The reply and the re-request are PART OF the push row, not rows beside it.** Push, then
+  `gh pr comment` with the consolidated response block, then `gh pr edit --add-reviewer` for every
+  login that has already submitted a formal review — `CHANGES_REQUESTED`, `COMMENTED` or
+  `APPROVED` alike — whichever gate produced the commits. Write the row as
+  `push + reply + re-request` and take all three on `go`.
 
-  A reviewer's verdict is a statement about the diff they read. The moment this pass pushes, that
-  diff is gone, and their verdict sits on the PR looking current while describing code that no
-  longer exists — an `APPROVED` that now approves unreviewed commits, a `CHANGES_REQUESTED` that
-  still gates a merge over findings that are fixed. Pushing without re-requesting is what leaves
-  that stale verdict standing, so the two are one action with one approval.
+  The three are one claim, not three favours. New commits with no explanation make the reviewer
+  reconstruct what changed; an explanation with no push describes code that is not there; and a
+  reviewer's verdict is a statement about the diff they read, so the moment this pass pushes it
+  sits on the PR looking current while describing code that no longer exists — an `APPROVED` that
+  now approves unreviewed commits, a `CHANGES_REQUESTED` that still gates a merge over findings
+  that are fixed. One approval covers all three because no two of them are useful apart.
 
-  **Never split it into its own numbered row, and never leave it to a follow-up message.** A
-  separate row is a second thing to notice at the end of a long pass; a follow-up message is the
-  user approving a consequence of what they already approved. Both are the failure this bullet
-  exists to prevent. The user types `go` once and the branch ends the turn pushed, answered, and
-  back in the reviewer's queue.
+  **Never split any of them into its own numbered row, never mark one "yours to do", and never
+  leave one to a follow-up message.** A separate row is a second thing to notice at the end of a
+  long pass. A row whose pick is "post it yourself" is worse — `go` means *apply my picks*, so a
+  row with no pick to apply cannot be accepted at all, and the user has to ask a second time for
+  something they already said yes to. A follow-up message is the user approving a consequence of
+  what they already approved. All three are the failure this bullet exists to prevent. The user
+  types `go` once and the branch ends the turn pushed, answered, and back in the reviewer's queue.
 
-  **It does not wait on the feedback gate.** Gate 3 fires on *unanswered* feedback; this fires on
-  *any* push with a prior reviewer, so a pass that only resolved conflicts or only fixed red CI
-  still owes it. Read the reviewer list directly rather than inferring it from whether U4 fired:
+  **They do not wait on the feedback gate.** Gate 3 fires on *unanswered* feedback; the
+  re-request fires on *any* push with a prior reviewer, so a pass that only resolved conflicts or
+  only fixed red CI still owes it. Read the reviewer list directly rather than inferring it from
+  whether U4 fired:
 
   ```
   gh pr view <n> --json reviews,author --jq '[.reviews[].author.login] - [.author.login] | unique'
   ```
 
-  Name the reason in the row's own words — what the pass pushed, not what the reviewer said:
-  `push + re-request — 2 commits, then re-request @alexthemighty, who reviewed 1e0555f4 before
-  the main merge and the export fix existed.`
+  A pass that never loaded `FEEDBACK.md` has no reply to post; the row is then
+  `push + re-request` and that is the only shape with a missing third.
 
-- **A skipped push takes the re-request with it.** `1 skip` means neither half happened — say so
-  in one clause. Re-requesting a reviewer against commits that never left the machine asks them
-  to look at nothing.
+  Name the reason in the row's own words — what the pass pushed, not what the reviewer said:
+  `push + reply + re-request — 2 commits, then the 3-point reply and a re-request for
+  @alexthemighty, who reviewed 1e0555f4 before the main merge and the export fix existed.`
+
+- **A skipped push takes the reply and the re-request with it.** `1 skip` means none of the three
+  happened — say so in one clause. Telling a reviewer what changed, or putting them back in the
+  queue, against commits that never left the machine asks them to look at nothing.
 - **A row the user skips is reported as not done**, in one clause. Skipping push leaves every
   commit local — say the branch is still blocked on GitHub's side, since the fixes exist only
   here.
