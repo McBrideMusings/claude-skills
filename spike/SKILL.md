@@ -112,14 +112,19 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
     kind = "shell"
     run  = "open /private/tmp/claude/<repo-slug>/spikes/wheelhouse-phone/wheelhouse-phone.html"
 
-    [actions.prototype.admin-tui]                 # TUI: hands over the real terminal
+    [actions.prototype.admin-tui]                 # TUI: must delegate — see below
+    action = "prototype-admin-tui"
+
+    [actions.prototype-admin-tui]                 # hands over the real terminal
     kind        = "shell-passthrough"
     run         = "go run /private/tmp/claude/<repo-slug>/spikes/admin-tui/"
     interactive = true
     ```
 
     - **The sub-target name is the slug**, so the menu reads as the prototype list and nothing has to be kept in sync.
-    - **A TUI sub-target is `shell-passthrough` with `interactive = true`, and nothing else works.** That path is a bare `subprocess.call` with no pipes, so the prototype inherits the real terminal — full size, no log tee, no formatter. Every other kind pumps the child's output through admin's own writer, which timestamps each line and sizes the child to admin's scroll region: a full-screen TUI comes out stamped `21:03:25.146` per row and rendered at the region's width instead of the window's. `pty = true` does not fix it — the pump is still in the path — and `interactive-shell` is deliberately non-TTY.
+    - **A TUI target must delegate to a top-level action, which is `shell-passthrough` with `interactive = true`.** Both halves are load-bearing:
+      - **`interactive = true` shell-passthrough** is a bare `subprocess.call` with no pipes, so the prototype inherits the real terminal — full size, no log tee, no stamping. Every other kind goes through `run_cmd`, whose pump timestamps each line (`_cmd_pump`, `%H:%M:%S.%f`) and sizes the child to admin's frame region. `pty = true` does not help: the pump is still in the path.
+      - **The delegation is not stylistic.** A multi-target sub-target's `kind` is *ignored* — the parent stores each target as a shell string and always runs it through `run_cmd`. `action = "<name>"` is the only branch that dispatches by the target's own kind. Declaring `kind = "shell-passthrough"` directly on the sub-target parses, resolves, passes `admin check`, and then silently runs stamped and truncated anyway.
     - **A single prototype still gets the sub-target**, not a bare `run` on `[actions.spike]`. The second prototype arrives sooner than you think, and adding it should not mean restructuring the first.
     - **Point at wherever the prototype actually is** — `/private/tmp/claude/<repo-slug>/spikes/<slug>/` normally, `docs/spikes/<slug>/` once it is kept as ticket reference.
     - **Delete the sub-target when the prototype is deleted** (Phase 06, and the delete-me issue under "Tickets from a prototype"). A `prototype` menu offering a path that no longer exists is worse than no entry, and nothing else will catch it — `admin check` validates the manifest's shape, never whether a `run` line's path resolves.
