@@ -51,7 +51,7 @@ Work down the tiers. First match wins.
 | 2 | Clean worktree AND (`merged_into_base` OR PR state `MERGED` OR `unlanded_commits: 0`) | `delete` |
 | 3 | Clean worktree, `upstream_state: gone`, no unlanded commits | `delete` |
 | 4 | Dirty worktree, branch itself qualifies under tier 2 or 3 | read the diff → `delete` or `decide` |
-| 5 | Unlanded commits and no merged PR | `keep` — say why in one line |
+| 5 | Clean worktree, unlanded commits, no merged PR | `keep` — say why in one line |
 | 6 | Dirty worktree AND unlanded commits | `decide` |
 
 A branch with **no upstream and no unique commits** is a branch someone created and never used:

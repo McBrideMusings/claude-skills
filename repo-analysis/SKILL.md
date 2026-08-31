@@ -1,6 +1,6 @@
 ---
 name: repo-analysis
-description: Compare a subsystem in the user's repo against reference repos to find smarter approaches, likely bugs, and features worth porting, filtering out UX/scope differences so suggestions stay portable. Also harvests a missing capability ('harvest their X' → analysis doc + issue slate) or whole skills when the reference is a skills repo ('mine their skills'). Use whenever the user points at another project as a reference for their own code.
+description: Compare a subsystem in the user's repo against reference repos to find smarter approaches, likely bugs, and features worth porting. Also harvests a missing capability ('harvest their X' → analysis doc + issue slate) or whole skills when the reference is a skills repo ('mine their skills'). Use whenever the user points at another project as a reference for their own code.
 ---
 
 # Repo Analysis
@@ -167,7 +167,7 @@ Always follow the report with a `grill-me`-style interview (that skill's mechani
 
 1. **Map findings against existing tracking first — codebase over questions.** Before asking anything, check the repo's existing plans: open issues on whichever backend the repo uses (`bd list --status open --json` / `gh issue list`, backend resolved by invoking `ref-tracker`), plan files, roadmap docs. Bucket every actionable finding as either **already planned** (an existing issue/plan covers it — candidate for an augmentation comment citing the reference's pattern) or **unplanned** (candidate for a new issue). Show the user this mapping as context before the first question.
 2. **Grill only the contested routings, one per message.** Skip findings whose disposition is obvious (a clear bug with no existing issue → new issue; an existing issue that already anticipates the fix → small augment). For each genuinely contested item — where does it live, augment vs new, which mechanism, what scope — offer 2-3 lettered options with a recommendation and wait for the user's answer. Never answer your own question or roll forward on an assumed answer.
-3. **End with a confirmed slate.** Summarize the final list — new issues with one-line scopes, augmentation comments per existing issue — and get an explicit yes before creating anything. Issue bodies match the repo's existing issue conventions and cite the reference's file:line pattern sources; augmentation comments name the concrete code both sides.
+3. **End with a confirmed slate.** Summarize the final list — new issues with one-line scopes, augmentation comments per existing issue — and get an explicit yes before creating anything. Type `go` to file everything as listed, or answer per item. Issue bodies match the repo's existing issue conventions and cite the reference's file:line pattern sources; augmentation comments name the concrete code both sides.
 
 If the user declines the session ("just the report"), stop after Phase 07 — the interview is the default, not a gate.
 

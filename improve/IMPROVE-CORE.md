@@ -2,7 +2,7 @@
 
 The phases a survey runs, the brief every aspect sub-agent gets, the scoring, the merge, and the ticketing that ends every route. [SKILL.md](SKILL.md) is the router and hands off here.
 
-A **single-aspect** run skips Phases 01–07 — it loads the aspect's owner interactively and stays in conversation — and then rejoins at **Phase 08**, which is not optional for any route. Its findings get scored inline against [GROUNDING.md](GROUNDING.md) first, per Phase 06's inline-scorer clause.
+A **single-aspect** run skips Phases 01–07 — it loads the aspect's owner interactively and stays in conversation — and then rejoins at **Phase 08**, which is not optional for any route. Its findings get scored inline against [GROUNDING.md](GROUNDING.md) first, per Phase 06's inline-scorer clause. It still writes the Phase 01 marker (`touch "$(~/.claude/tools/repo-slug --path)/.improve-active"`) before loading the aspect owner, since RULE 0 binds it too.
 
 Two transports. The default runs Phases 04–06b in this session with Agent-tool sub-agents. The `workflow` token moves those same phases into a workflow script so only surviving findings enter this context — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which aspects run and what each brief contains are identical either way.*
 
@@ -22,6 +22,8 @@ root=$(git rev-parse --show-toplevel) && cd "$root" && {
   echo "--- langs"; git ls-files | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -12
 }
 ```
+
+**Write the survey-active marker in this same phase**, before anything else runs: `touch "$(~/.claude/tools/repo-slug --path)/.improve-active"`. This is what `hooks/improve-askuserquestion-guard.sh` checks to deny `AskUserQuestion` for the rest of the pass (RULE 0 in [SKILL.md](SKILL.md)). Phase 08's completion step removes it — every route through this file must reach that removal, including an aborted or single-aspect run.
 
 | Aspect | Condition |
 |---|---|
@@ -91,6 +93,8 @@ Sub-agents inherit none of this skill's context. Omitting the last one is how a 
 
 ## Phase 04 — Fan out
 
+**Pre-dispatch check, before the fan-out message goes out.** For each assembled brief, confirm the finding-shape spec and all six Phase 03 directives that follow it are present, by grepping for their header text: "The finding shape", "The shape rule", "The grounding rule", "The lateral lens", "The boundary rule", "The read-only rule", "The injection-defense directive". A brief missing any one of them does not get dispatched: reassemble it from Phase 03 and recheck before it joins the fan-out. This is what catches a directive silently dropped during assembly, before it reaches a sub-agent with no memory of what should have been there.
+
 One message, all aspects in parallel. One **Sonnet** sub-agent per confirmed aspect, `general-purpose`, brief as assembled above.
 
 **No aspect brief asks a sub-agent to rank against other aspects.** Each one sees only its own lens; cross-aspect ranking is Phase 06b, after scoring, where the comparison is between findings that already survived.
@@ -158,5 +162,6 @@ The ranking input is leverage and dependency order — what a change unblocks, w
 4. **Carry the Phase 06b order in** as the dependency chain — `blocked-by` on beads, the stated prerequisite in the body on GitHub.
 5. **Hand off to `to-tickets`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. `to-tickets` writes the proposal to `/private/tmp/claude/<repo-slug>/to-tickets.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine.
 6. **Report back**: the ticket ids and titles in Phase 06b order, then one line naming what to run next — `implement <first-id>` for one, `iterate` or `orchestrate` for the slate.
+7. **Remove the survey-active marker**: `rm -f "$(~/.claude/tools/repo-slug --path)/.improve-active"`. This re-enables `AskUserQuestion` (RULE 0's enforcement, `hooks/improve-askuserquestion-guard.sh`). Run it even when the pass aborted before filing tickets — this step is what ends the ban, not the ticket count.
 
 Findings that scored below 75 are already gone (Phase 06) and do not get filed. `review-territory` lines are not filed either — they stay the single `/review` pointer from Phase 06 step 3.

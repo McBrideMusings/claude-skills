@@ -55,7 +55,7 @@ User-triggered only — **never run this unprompted.** Reads the current session
 
 Get the log path from the tool — `"$HOME/.claude/tools/papercut" --path` — and read exactly what it prints. Never assemble the path yourself and never go looking for the file.
 
-The log always belongs to the MAIN checkout, so from inside a linked worktree it lives **outside the tree you are working in**. Two consequences, both of which have already bitten:
+The log always belongs to the MAIN checkout, so from inside a linked worktree it lives **outside the tree you are working in**. Two consequences:
 
 - A relative `.claude/papercuts.md` resolves to the worktree, where the file does not exist.
 - Hunting for it (`find`, `ls`, a speculative `cd`) drags the shell's working directory into the main checkout, and every later edit in the session silently lands on the wrong branch.

@@ -74,7 +74,9 @@ This is an interview. Work through each component below. Start by asking the use
 
 5. **Disturbances + dampener (offer).** Name what changes the system outside the loop (teammates shipping concurrently, dependency bumps, generated code). Then **offer** a dampener: a check that keeps the measured problem from getting worse while the scheduled loop chips away at it — for example a PR check that compares the sensor's output against a baseline and surfaces (or eventually blocks) newly introduced deviations. This is optional; some loops do not need one.
 
-Completion criterion: a short written design naming the set point, sensor, controller, actuator (agent + skill + validation), and disturbances/dampener — with each component something the user can run locally.
+6. **Cadence.** How often should the loop run — daily, weekdays, weekly, monthly, manual-only, or a custom cron? Ask the user, surfacing task risk and review burden as the trade-off, rather than picking for them.
+
+Completion criterion: a short written design naming the set point, sensor, controller, actuator (agent + skill + validation), disturbances/dampener, and cadence — with each component something the user can run locally.
 
 ### Phase C — Build the actuator skill
 
@@ -90,7 +92,7 @@ Write a repo-local skill that captures the actuator's judgement for this task. I
 
 **IMPORTANT:** the `name` in the skill's frontmatter must match its directory slug — a skill named `migrate-foo` lives at `.claude/skills/migrate-foo/SKILL.md` (or `.agents/skills/migrate-foo/SKILL.md`).
 
-Completion criterion: the skill explains the job clearly enough that the agent can do it unattended, including how to format its final response.
+Completion criterion: the skill explains the job clearly enough that the agent can do it unattended, including how to format its final response. Before this criterion is met, grep the just-written SKILL.md's `name:` frontmatter field against the directory basename it was written into — a mismatch fails the criterion.
 
 ### Phase D — Make each component runnable locally
 
@@ -114,7 +116,7 @@ Assemble the components into a recurring job. GitHub Actions is the default beca
 
 - Run the loop as **discrete steps: sensor → controller → actuator**, then commit and open a PR using the agent's final message as the body. (When components are fused — e.g. the sensor already prioritizes, or one agent both selects and changes — collapse them into a single step; do not invent separation the design does not have.)
 - Reusable logic can live in a custom composite action.
-- Decide the **cadence** (daily, weekdays, weekly, monthly, manual-only, or custom cron) based on task risk and review burden.
+- Use the **cadence** agreed in Phase B (question 6).
 - Interpolate the memory file (Phase F) into the actuator's context.
 - Use `references/workflow-template.yml` as the base and `references/prompt-template.md` for the embedded prompt. Pull the agent run + response-extraction steps from `references/agent-runner-templates.md` (each agent outputs differently; get the final response into `/tmp/pr-body.md`).
 

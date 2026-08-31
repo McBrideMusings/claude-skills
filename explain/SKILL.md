@@ -1,6 +1,6 @@
 ---
 name: explain
-description: "Explain something so the user gets it — a codebase subsystem (grounded with file:line tags, never invented) or a world-knowledge concept. Builds a self-contained visual HTML explainer by default; drops to a plain chat answer only when a couple of sentences fully resolve it."
+description: "Explain something so the user gets it — a codebase subsystem (grounded with file:line tags, never invented) or a world-knowledge concept. Builds a self-contained visual HTML explainer by default; drops to chat only when it's a few sentences, nothing structural, and won't be revisited."
 ---
 
 # explain
@@ -193,31 +193,8 @@ guessing.
 
 ### 5. Verify, then open it
 
-**Screenshot it and look at it.** A font falling back, overlapping SVG text, a blank
-section — none of that is visible in the source, and the path alone pushes the discovery
-onto the user.
-
-The Playwright MCP screenshot tool times out against a freshly built file in this
-environment — every attempt, after logging "fonts loaded", page and console clean. Use
-headless Chrome instead. `file://` is blocked too, so serve the directory first:
-
-```bash
-( cd /private/tmp/claude/<repo-slug>/explainers && nohup python3 -m http.server 8791 >/dev/null 2>&1 & )
-```
-
-then:
-
-```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --headless --disable-gpu --window-size=900,2200 \
-  --screenshot=/private/tmp/claude/<repo-slug>/explainers/<slug>.png \
-  --virtual-time-budget=2500 \
-  http://127.0.0.1:8791/<slug>.html
-```
-
-Look specifically for **overlapping SVG text** — a label crossing another label or an
-arrow — that's the failure mode the reference style was fixed for and nothing in the
-browser warns you about it.
+Serve and screenshot per `CRITIQUE.md` §Screenshot first, then look, then run its
+checklist before handing over.
 
 Then hand it over with **bare `open <absolute-path>`** and nothing else. No `-a`, no
 `open -a Safari`, no `open -a "Google Chrome"`, no AppleScript, no browser-automation

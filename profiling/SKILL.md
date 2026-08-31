@@ -1,6 +1,6 @@
 ---
 name: profiling
-description: "Measure where a program spends its time, memory, or energy and optimize the dominant cost — proactive, no bug required: baseline, profile, isolate the hottest cost, change one thing, re-measure. Use for 'make it faster' / 'why is this slow' / performance audits when there's no regression baseline (regressions are `diagnose`)."
+description: "Measure where a program spends its time, memory, or energy and optimize the dominant cost — proactive, no bug required. Use for 'make it faster' / 'why is this slow' / performance audits when there's no regression baseline (regressions are `diagnose`)."
 ---
 
 # Profiling
@@ -33,7 +33,11 @@ Measure the current cost **before touching anything**, and write the number down
 is judged against this. No baseline → no way to prove an improvement, so this gate is mandatory. Use
 the matched label's profiler (e.g. Instruments Time Profiler, `perf`, `py-spy`, Chrome perf panel).
 
+Completion: the baseline number is stated in chat before Phase 03 begins.
+
 ## Phase 03 — Isolate the dominant cost
+
+Quote the Phase 02 number here; if none was recorded, return to Phase 02.
 
 - Read the profile top-down: find the single largest contributor, not a scatter of small ones.
 - Confirm it's real and repeatable across runs before optimizing — profilers lie under noise (other

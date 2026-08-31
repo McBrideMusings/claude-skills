@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous single-pass work on one tracked item: resolve the item (argument → branch name → triage), implement, verify at the surface, wrap up. `implement <issue>` works that issue; bare `implement` discovers one; `implement delegate` hands implementation to a cheaper model with Claude validating. One pass, one item — continuous mode across many items is /iterate."
+description: "Autonomous single-pass work on one tracked item, ending in commit/push/land. `implement <issue>` works that issue; bare `implement` discovers one; `implement delegate` hands implementation to a cheaper model with Claude validating. One pass, one item — continuous mode across many items is /iterate."
 ---
 
 # /implement — Single-pass autonomous iteration
@@ -33,7 +33,7 @@ Pass it explicitly on a standalone pass that runs in a worktree. That case is th
 
 Correct in one case: a pass already executing inside a subagent that has no `Workflow` tool. Follow the phases below in order, in context, and keep the two rules above. **You are then the only reader for whom the next paragraph is addressed** — the staged harness enforces it structurally, because no stage's prompt mentions the stage after it.
 
-**⛔ There is no stopping point between Phase 1, Phase 1.5 and Phase 2.**
+**⛔ There is no stopping point between Phase 1, Phase 1.5 and Phase 2.** What a reader checks for this — a human, `/orchestrate`, a follow-up session — is whether `verify/<item>.json` exists for this item: if it does not exist when the turn ends, Phase 1.5 was skipped.
 
 The single most common inline failure is stopping at green: code written, tests passing, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line; a *verified*, wrapped-up pass is. The moment implementation lands green with no halt fired, invoke the `verify` skill (Phase 1.5), then `wrap-up`. Specifically:
 
@@ -189,17 +189,17 @@ Passing tests are not evidence the item works — they prove CI runs. Before wra
 
 Write it on **every** verdict, `SKIP` included. A missing file is not a pass — it is indistinguishable from a pass that never ran, which is exactly what a reader must never have to guess.
 
-**`<item>` is the tracker id, in the filename and in the `item` field, and a pass with no id stops rather than inventing one.** The id is the only key: a reader matches the file to the work by it, and the title is already on the issue. Observed on `etv-station` #182, 2026-08-16 — a worker wrote `/private/tmp/claude/<repo-slug>/verify/undefined.json` (the string JS renders for a missing value) with the issue title in `item`, putting the id in neither place. Orchestrate read that worker as having stopped without a verdict, and its teardown check, phrased against one exact path, would have deleted a complete `FAIL` verdict along with the worktree. Do not substitute a slug, a title, or a branch name: a verdict that files neatly under a name nothing looks for is worse than one that never got written, because the second announces itself.
+**`<item>` is the tracker id, in the filename and in the `item` field, and a pass with no id stops rather than inventing one.** The id is the only key: a reader matches the file to the work by it, and the title is already on the issue. `undefined.json` is what JS renders for a missing value — a worker that writes that filename has put the id in neither place. Do not substitute a slug, a title, or a branch name: a verdict that files neatly under a name nothing looks for is worse than one that never got written, because the second announces itself.
 
 **A verdict describes one tree, and touching the code voids it.** If you change anything after `verify` returns — fixing a finding, a last tidy-up, a review nit — the verdict no longer describes what you are about to land: **re-run `verify` and rewrite the file.** Observed: a worker verified `PASS`, committed one more change, and shipped it unverified under the earlier verdict.
 
 **The verdict records `verified_parent`, not `commit`, and the name carries the whole contract.** `verify` runs before wrap-up commits, so the sha it can read is the *parent* of the commit this work becomes. Writing that under `commit` would claim a commit was verified before it existed, and a later stage would then have to rewrite the file to make the claim true. Name it truthfully once and nothing has to correct it.
 
-**The sha comes out of `git -C <checkout> rev-parse HEAD`, run at the moment you write the file.** Never recalled from earlier in the pass, never reconstructed from a log line, never typed. A reader resolves it with `git -C <checkout> cat-file -e <verified_parent>^{commit}` before comparing anything, so a sha that names no object does not read as a stale verdict — it reads as no verdict at all, and voids the whole file. Observed: a verdict carrying `bb85bca17fe86dfa3c7a26b8c4c6a5b7d9e2f3a4`, 40 valid hex characters naming no object, on a branch whose real fork point was `25bee4a`.
+**The sha comes out of `git -C <checkout> rev-parse HEAD`, run at the moment you write the file.** Never recalled from earlier in the pass, never reconstructed from a log line, never typed. A reader resolves it with `git -C <checkout> cat-file -e <verified_parent>^{commit}` before comparing anything, so a sha that names no object does not read as a stale verdict — it reads as no verdict at all, and voids the whole file.
 
 **How a reader checks it:** `verified_parent` must be the parent of the branch head (`git -C <worktree> rev-parse <branch>^`). Wrap makes exactly one commit, so on an honest pass they match. If they don't, something was committed after `verify` returned and is shipping unverified — which is the staleness this field exists to catch. Fill in `branch` too; measured across three worktrees in one swarm, two verdict files had it null, which strands the verdict with no route back to the work.
 
-**There is no re-stamping stage, and adding one back is a mistake.** A `restamp` agent used to rewrite `commit` to the wrap sha after the fact. It was refused by the safety classifier on all twelve workers of one swarm (iptv-mac, 2026-08-20) as audit tampering, and the refusal was right: it asked an agent to write "this commit was verified" about a commit no stage had verified. Rewording the prompt to justify it harder read as bad-faith tunneling and was refused harder. The field name is the fix.
+**There is no re-stamping stage, and adding one back is a mistake.** A `restamp` agent used to rewrite `commit` to the wrap sha after the fact. It was refused by the safety classifier as audit tampering, and the refusal was right: it asked an agent to write "this commit was verified" about a commit no stage had verified. Rewording the prompt to justify it harder read as bad-faith tunneling and was refused harder. The field name is the fix.
 
 **1b. If the pass added or changed a test, prove the test discriminates — and put the proof in the verdict file.**
 

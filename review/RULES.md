@@ -65,10 +65,10 @@ clear recommendation — type its disposition separately`).
 **Self-check before every question.** If you are about to open a selector, stop — that is this
 rule firing. Rewrite the question as chat text and send that instead.
 
-### Where it has actually broken — check these two by name
+### Named tripwires — check these two by name
 
-The rule was violated twice in ~120 real passes, both at points the prose above already covers
-but nobody recognised in the moment. Treat these as named tripwires:
+These are points where the prose above already covers the case but the selector still feels
+reasonable in the moment. Treat these as named tripwires:
 
 1. **"The diff hasn't changed since I last reviewed this — what do you want from this pass?"** A
    re-review of an unchanged diff feels like a fresh routing decision, so it invites a selector.
@@ -79,8 +79,7 @@ but nobody recognised in the moment. Treat these as named tripwires:
    *exactly* the end-of-pass disposition the rule enumerates. Per-finding typed answers, always:
    *"1 fix, 2 post, 3 skip."*
 
-Both fired mid-pass in the work repo. The lesson is not that the rule was unclear — it is that a
-selector looks reasonable precisely when the question feels like routing rather than judgment.
+A selector looks reasonable precisely when the question feels like routing rather than judgment.
 **From `/review` or `/unblock` until the pass ends, there is no such thing as a routing question
 that escapes this rule.**
 

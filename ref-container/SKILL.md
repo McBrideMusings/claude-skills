@@ -7,4 +7,4 @@ description: Containers — Dockerfile, Compose, multi-stage builds, healthcheck
 
 | Open | When |
 | --- | --- |
-| [`../_domains/container/context.md`](../_domains/container/context.md) | The whole cell. The Compose file and Dockerfile are the interface; build multi-stage and define a healthcheck. |
+| [`../_domains/container/context.md`](../_domains/container/context.md) | The whole cell — open before writing or changing container configuration. |

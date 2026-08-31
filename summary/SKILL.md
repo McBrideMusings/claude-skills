@@ -131,7 +131,7 @@ of the eleven live codes pointed at guard ids that no longer existed.
 
 Determine the output path and whether this invocation is branch-scoped or timestamped.
 
-Run these via Bash tool (as separate calls — never nest `$(...)`). **NEVER prefix these with `cd /path &&`** — that triggers an "untrusted hooks" permission prompt. If you're not already in the project directory, use `git -C /absolute/path <subcommand>` instead:
+Run these via Bash tool, each as its own call, using absolute paths. If you're not already in the project directory, use `git -C /absolute/path <subcommand>` instead:
 
 1. `git rev-parse --show-toplevel 2>/dev/null` → the ABSOLUTE `<repo-root>`. If empty, not in a git repo → **timestamped mode**, and use the absolute output of `pwd` as `<repo-root>`. **`<repo-root>` MUST be absolute — every summary path is `/private/tmp/claude/<repo-slug>/…`, NEVER a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `/private/tmp/claude/<repo-slug>/summaries/…` would land the file under whatever subdir the shell is in, not the repo root. If a path you pass to Bash doesn't start with `/`, it's the bug.
 2. `git branch --show-current` → current branch name. If empty (detached HEAD), **timestamped mode**.

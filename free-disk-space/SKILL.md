@@ -40,7 +40,7 @@ A cache that regenerates isn't worth deleting on its own — find what regenerat
 Targeted `du -sh … | sort -hr` — not a full scan of `~`. The usual big ones:
 
 - **Build artifacts** — `target/` (every worktree too), `node_modules/`, Xcode DerivedData
-  - For DerivedData, `~/.claude/tools/prune-derived-data` first. Xcode keys each tree by the project's absolute path, so every git worktree leaves one behind and worktree teardown never removes it. The tool reads each tree's `info.plist` `WorkspacePath` and names the ones whose checkout is gone — exact, not a heuristic. Measured 2026-08-20: 134 orphans, 36.2 GB, against 14 live trees at 21.4 GB. Add `--delete` once the user has said yes to the tier.
+  - For DerivedData, `~/.claude/tools/prune-derived-data` first. Xcode keys each tree by the project's absolute path, so every git worktree leaves one behind and worktree teardown never removes it. The tool reads each tree's `info.plist` `WorkspacePath` and names the ones whose checkout is gone — exact, not a heuristic. Add `--delete` once the user has said yes to the tier.
 - **Package-manager caches** — go-build, Homebrew, pnpm/npm/pip stores
 - **Large media** — CapCut, Screen Studio, `~/Movies`, `~/Downloads`
 - **App caches / Application Support** — size only, never a delete candidate
@@ -57,7 +57,7 @@ On a yes, clear it with the tools' own commands. Everything else — app data, m
 
 For each worktree: is it dirty, and does it hold commits that aren't pushed anywhere? Clean **and** fully merged → `git worktree remove` and `git branch -d`. In a repo with submodules the plain remove refuses (`fatal: working trees containing submodules cannot be moved or removed`) and takes `branch -d` down with it — `git worktree remove --force` gets past that, and the dirty/ahead check above is what makes forcing safe here. Never `branch -D` — the safe delete refusing is the signal that work would be lost. Keep and report anything dirty or ahead.
 
-**Clean and merged is not the whole test — ask what is standing in the directory too.** `pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=` must come back empty before the remove; `lsof +D <worktree>` answers for certain when you still suspect a hold. A process keeps running against a path that no longer exists, and the failure surfaces somewhere else entirely: on `term`, 2026-08-25, a removed worktree left a Metro bundler serving nothing and the user's app red-screened with `Unable to resolve module ./index`, reading as a broken build rather than as a reclaimed directory. Keep and report a held worktree, naming the pid, exactly as for a dirty one. Never `pgrep -fl` — one npm-exec match is ~10,000 characters of inherited environment.
+**Clean and merged is not the whole test — ask what is standing in the directory too.** `pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=` must come back empty before the remove; `lsof +D <worktree>` answers for certain when you still suspect a hold. A process can still hold a path after removal even when git's dirty/merged checks pass — check `pgrep`/`lsof` before removing. Keep and report a held worktree, naming the pid, exactly as for a dirty one. Never `pgrep -fl` — one npm-exec match is ~10,000 characters of inherited environment.
 
 ### 5. Offload keepers
 

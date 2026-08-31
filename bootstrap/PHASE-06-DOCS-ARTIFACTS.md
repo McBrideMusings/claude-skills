@@ -13,10 +13,8 @@ was actually made against alternatives that were actually considered. Both are t
 they are written and stay true until the thing they describe changes.
 
 A PRD and a roadmap are the other kind: at bootstrap time there is no product and no plan, so
-the file can only hold a prediction. Measured across 78 repos, that difference shows up in how
-fast each artifact rots — `docs/CONTEXT.md` had zero instances diverging more than 90 days
-from its repo's last commit, against a 37-day median divergence for roadmaps. So neither a PRD
-nor a roadmap is created here, and adding one back needs an argument that beats those numbers.
+the file can only hold a prediction, and a prediction rots while a record doesn't. So neither
+a PRD nor a roadmap is created here, and adding one back needs an argument that beats that.
 
 Their owners already handle the missing-file case:
 

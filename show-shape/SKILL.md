@@ -35,9 +35,9 @@ No plan, no file, no deliverable — just a reply mid-conversation whose subject
 
 You may use one of these, you may use several; you will rarely use all of them in one reply. Don't overwhelm the user.
 
-**Measured, not asserted.** Across 92 plan-shaped replies in 13 months of history: **68.5% carry no fenced block at all**, one carries a ```diff, and **zero** carry a component tree. Adherence to the rule overall is **39.1%**. The failure mode is never deciding this rule applies. It applies.
+**Measured, not asserted.** Measured across a large sample of plan-shaped replies, adherence sits under 40% — the failure mode is skipping the rule entirely, not misapplying it. It applies.
 
-Reproduce with `python3 ~/.claude/skills/audit-session/adherence.py --rule plan-pseudocode --all-history`. An earlier version of this line said "122 replies, 56.6% bare" — that denominator counted subagent transcripts and harness JSON payloads that can never carry a plan. The corrected figure is worse on shape and better on rate; the reason for the skill is unchanged, because the cause was structural (the format lived at `skills/_plan-format.md`, opened 14 times in 9,243 transcripts).
+Reproduce with `python3 ~/.claude/skills/audit-session/adherence.py --rule plan-pseudocode --all-history`.
 
 ## When to skip it
 

@@ -7,6 +7,6 @@ description: App Store submission — review queues, metadata, rejections, relea
 
 | Open | When |
 | --- | --- |
-| [`../_domains/app-store/context.md`](../_domains/app-store/context.md) | The whole cell. Review is a queue and not an API — budget days, not minutes. |
+| [`../_domains/app-store/context.md`](../_domains/app-store/context.md) | The whole cell — open before submitting a build or planning a release date. |
 
 Building and signing the thing you are submitting is [`ref-apple`](../ref-apple/SKILL.md).

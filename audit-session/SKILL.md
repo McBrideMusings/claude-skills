@@ -1,7 +1,7 @@
 ---
 name: audit-session
 disable-model-invocation: true
-description: Audit conversation transcripts — this session, this project's history, or all of it — through lenses that ask what was spent, what was steered and ignored, which skills should have fired and didn't, whether the co-loaded steering sources contradict each other, and where the conversation itself wasted the user's time. Replaces the old `skill-audit` (2026-08-20) and absorbs its direct-fix mode.
+description: Audit conversation transcripts — this session, this project's history, or all of it — through lenses that ask what was spent, what was steered and ignored, which skills should have fired and didn't, whether the co-loaded steering sources contradict each other, and where the conversation itself wasted the user's time. Replaces the old `skill-audit` and absorbs its direct-fix mode.
 ---
 
 # audit-session
@@ -64,7 +64,7 @@ A lens finds what went wrong. The **fix shapes** are the structural answers wort
 
 **[HOOKS.md](HOOKS.md) — could this have been enforced, and by what?** An instruction is re-decided every turn by a stochastic process; a machine running code fires every time or never. Three rungs, picked by what the failure *is*: a **harness hook** watches the agent's action, a **project check** (lint, type, test) watches its output, a **filesystem validator** watches the result on disk. Name the rung and its predicate if yes, the reason if no.
 
-> Simulate before proposing. A `Stop` hook for the `show-shape` rule fired 62 times over 13 months at **10% precision**. A hook without a fires-count and a precision sample is a guess, and a low-precision hook is worse than none — it trains the user to ignore it.
+> Simulate before proposing. A hook without a fires-count and a precision sample is a guess, and a hook that fires often at low precision is worse than none — it trains the user to ignore it.
 
 **[SKILL-SHAPE.md](SKILL-SHAPE.md) — is the skill the right shape, or the right thing at all?** Never treat the existing skill set as gospel. Walk the ladder in order and stop at the first rung that fits: delete → hide or relocate → reword the description → combine or embed → split or disclose → add a load trigger.
 

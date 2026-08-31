@@ -28,7 +28,7 @@ This skill diagnoses the symptom, picks exactly one technique, and runs it inlin
 
 This skill is model-invocable, so it can arrive uninvited. **Being loaded is not evidence it applies.** Before anything else, check the target against the one thing this does: generating ideas that do not already exist.
 
-**Stand down in one line and hand the turn back** — no technique, no decision table, no offer — when the work is analytical: debugging, code review, implementation, research, a factual lookup, or any task with a correct answer to be found rather than options to be invented. *Redesigning* such a process is a valid target ("reinvent our code-review ritual" is in scope; "review this PR" is not).
+**Stand down in one line and hand the turn back** — no technique, no decision table, no offer — when the work is analytical: debugging, code review, implementation, research, a factual lookup, or any task with a correct answer to be found rather than options to be invented. Debugging, code review, and implementation are not creative targets. *Redesigning* such a process is a valid target ("reinvent our code-review ritual" is in scope; "review this PR" is not).
 
 Also stand down when the caller is not actually stuck. A first pass at a problem is not stuck. Stuck has a symptom, and the symptom is in the table below — if none of them is present, say so and stop.
 
@@ -37,7 +37,6 @@ Also stand down when the caller is not actually stuck. A first pass at a problem
 1. **Diagnose.** Match the user's symptom to the table. If the symptom is unclear, ask exactly one focused question — do not interrogate. **If a technique was named — by the user or by a calling skill (`lateral <technique>`) — skip diagnosis entirely and run that one.** A caller that names a technique has already diagnosed; re-deciding overrides a decision made with more context than you have.
 2. **Pick exactly one technique.** Never route to a second technique in the same pass. If another looks promising, offer it as a next move once the first has finished.
 3. **Read `techniques/<technique>.md`** — relative to this file — **and follow it inline.** Do not invoke it as a separate skill; read the file and execute its workflow yourself, including its honesty mechanics. Each technique file links its own reference material under `references/` and a real worked session under `examples/`; read the reference when the workflow says to.
-4. **Refuse analytical work** politely. Debugging, code review, and implementation are not creative targets. Suggest an analytical approach instead. Redesigning or ideating about such a process is a valid creative target: "reinvent our code-review ritual" is in scope; "review this PR" is not.
 
 If the target itself is unclear, the chosen technique's own Step 1 will ask for it. Do not ask twice.
 
@@ -70,7 +69,7 @@ Three hosts use these techniques. Each has already diagnosed by the time it call
 - **Don't run two techniques in one pass.** Offer the second as a next move.
 - **Don't skip the chosen technique's honesty mechanics.** The visible abandonments are the point; a session where everything works is a session that was faked.
 - **Don't push the user toward a decision.** These techniques diverge. Convergence belongs to the user.
-- **Don't route analytical work anywhere.** Refuse it and say why.
+- **Don't route analytical work anywhere.** See RULE 0.
 
 ## Provenance
 

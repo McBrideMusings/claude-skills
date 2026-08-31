@@ -47,12 +47,11 @@ project: <basename of repo root>
 ## Write procedure
 
 1. Run `git rev-parse --show-toplevel` in its own Bash call to get the ABSOLUTE `<repo-root>`. If not in a git repo, use the absolute output of `pwd`. **`<repo-root>` MUST be absolute — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory); a bare `/private/tmp/claude/<repo-slug>/handoffs/…` would land the file under whatever subdir the shell is in. Every `mkdir`/`Write`/path below MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug.
-2. Ensure `tmp/` is in `<repo-root>/.gitignore` (Read the file; if absent, Edit to add `tmp/` on its own line).
-3. Run `mkdir -p /private/tmp/claude/<repo-slug>/handoffs` as a separate Bash call.
-4. Build the filename: `/private/tmp/claude/<repo-slug>/handoffs/YYYY-MM-DD-HHMM.md`. If the user passed arguments, append a short kebab slug derived from them: `YYYY-MM-DD-HHMM-<slug>.md` (e.g. `2026-07-17-1432-auth-refactor.md`). Never overwrite an existing file — every handoff is a new file. In the unlikely case the exact minute-stamped name already exists, append `-2`, `-3`, … until unused.
-5. Synthesize the four (or five) fields from the current conversation.
-6. Write the file.
-7. Confirm with one line ending at the path — **no trailing period or other punctuation** after the path, so Ghostty ⌘-click stays clean: `Handoff written to /private/tmp/claude/<repo-slug>/handoffs/2026-07-17-1432.md`
+2. Run `mkdir -p /private/tmp/claude/<repo-slug>/handoffs` as a separate Bash call.
+3. Build the filename: `/private/tmp/claude/<repo-slug>/handoffs/YYYY-MM-DD-HHMM.md`. If the user passed arguments, append a short kebab slug derived from them: `YYYY-MM-DD-HHMM-<slug>.md` (e.g. `2026-07-17-1432-auth-refactor.md`). Never overwrite an existing file — every handoff is a new file. In the unlikely case the exact minute-stamped name already exists, append `-2`, `-3`, … until unused.
+4. Synthesize the four (or five) fields from the current conversation.
+5. Write the file.
+6. Confirm with one line ending at the path — **no trailing period or other punctuation** after the path, so Ghostty ⌘-click stays clean: `Handoff written to /private/tmp/claude/<repo-slug>/handoffs/2026-07-17-1432.md`
 
 Do not print the full handoff content to chat — just confirm the path.
 

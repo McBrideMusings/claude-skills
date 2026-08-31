@@ -1,17 +1,17 @@
 ---
 name: dispatch
-description: "Owner of the delegation-target ladder every skill picks from — Claude agent by default, escalating to a live herdr tab or a Terminal.app window — plus the router behind it: resolver verbs (agent/transport/check/exec), CLAUDE_DELEGATE_AGENT vendor selection (Codex, Reasonix/DeepSeek, or another Claude), and auth health-gating. Read when wiring, debugging, or extending any delegated work."
+description: "Owner of the delegation-target ladder every skill picks from — Claude agent by default, escalating to a live herdr tab or a Terminal.app window — plus the router behind it. Read when wiring, debugging, or extending any delegated work."
 ---
 
 # Delegation backend
 
 How the delegate flavors — `review dual` (the delegate **reviews** the same diff) and `implement delegate` (the delegate **implements** Claude's plan) — hand work to a second coding agent — Codex, Reasonix/DeepSeek, or **another Claude** — running non-interactively in a visible Terminal.app window. The router runs **any** delegated work; review vs implementation is just a difference in the prompt the consuming skill writes.
 
-> ## ⛔ NEVER bypass the router — this is non-negotiable
+> ## Every delegate call runs through `dispatch exec`
 >
-> The delegate **always** runs through the `dispatch exec` script. **NEVER** call a vendor binary directly — not from a Bash tool call, not "just this once," not because it seems quicker, not for any reason. The router is the whole point: it is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the delegate's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-delegate.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct.
+> `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the delegate's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-delegate.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
 >
-> Calling a vendor binary directly runs it **headless in the background with no window** — silently defeating every one of those guarantees. The only correct invocation is `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` — windowed (default) or `--headless`, both go **through the router** (the ban is on calling the vendor binary yourself, not on running without a window; `--headless` is the router's own no-GUI mode for cron/SSH). No exceptions. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
+> **Caller-side check:** trust a delegate result only when the router-owned outfile (`/tmp/<slug>-delegate.md`) exists at the path the router reported. Its absence means the router was bypassed or the run failed — don't proceed as if it succeeded.
 
 > The smoke test showed `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.
 
@@ -134,7 +134,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 `herdr tab create` (never a split — splitting squeezes the pane the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`.
 
-**Never write `/<skill>` into a dispatched prompt.** Slash expansion is an interactive-input feature: text delivered by `herdr agent prompt`, by `--exec`, or by a relay arrives as plain user text, and the harness does not expand it. Write "call `Skill(<name>)` first, then …" instead. Measured across the transcript corpus: 1526 slash commands arrived expanded, 68 arrived raw, and 9 of the raw ones were `/implement` in a dispatched brief — a 23% failure rate for that one command, against a stray leading space for every other skill's raw case. A brief whose skill never loads improvises the phases that skill owned; on 2026-08-20 that improvisation deleted the worker's own working directory.
+**Never write `/<skill>` into a dispatched prompt** — slash expansion is an interactive-input feature; text delivered by herdr agent prompt, `--exec`, or a relay arrives as plain user text and is never expanded. Write "call `Skill(<name>)` first, then …" instead.
 
 What runs is the vendor's **real interactive TUI**, not a piped one-shot. Three consequences:
 

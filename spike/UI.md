@@ -197,8 +197,7 @@ re-triggering, and the tool adds the replay button.
 
 ### Phase 05 — Verify and hand off
 
-**Screenshot every variant and look at them** — not just the first. Each renders, each interaction
-responds, the console is clean. A path is delivery, not verification.
+Hand off per [`CONTRACT.md`](CONTRACT.md) "Before handing it over".
 
 Then present the set and **stop — the choice is the user's**:
 

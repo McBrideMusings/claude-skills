@@ -1,6 +1,6 @@
 ---
 name: research
-description: "Citation-based research: quote sources, admit uncertainty, cite every claim. Use for lookups, fact-checks, factual questions — 'research X', 'look this up', 'is it true that'. Not for code, brainstorming, or opinion."
+description: "Citation-based research. Use for lookups, fact-checks, factual questions — 'research X', 'look this up', 'is it true that'. Not for code, brainstorming, or opinion."
 user_invocable: true
 ---
 
@@ -70,8 +70,8 @@ For each major claim or finding, rate confidence:
 | **Low** | Limited evidence, reasonable inference but unverified |
 | **Unknown** | No evidence found — explicitly flagged |
 
-### 5. Retractions (if any)
-Claims initially generated that failed the self-audit. State what was retracted and why.
+### 5. Self-Audit
+State the count of claims checked and the count retracted (0 is a valid value for either). Never omit this section. For each retracted claim, state what was retracted and why.
 
 ## Rules
 

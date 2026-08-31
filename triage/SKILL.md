@@ -7,7 +7,7 @@ description: "Pick the next work item from the repo's issue backend (beads or Gi
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
-**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (the top recommendation). Interactive callers wait for the user's selection at Phase 08 and see the wrap-up offer at Phase 10.
+**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait, skip the Phase 09 plan-draft question, AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (the top recommendation) and implement directly at Phase 09. Interactive callers wait for the user's selection at Phase 08, see the plan-draft question at Phase 09, and see the wrap-up offer at Phase 10.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 
@@ -226,7 +226,7 @@ If the user rejects a presented candidate with a durable reason ("no, we decided
 - Read each chosen issue in full — `bd show <id> --json` on beads, `gh issue view <N>` on GitHub.
 - **Verify the claim** (bug issues only). Before exploring further, reproduce the bug from the reporter's steps. Report what happened: confirmed (with the code path it hits), failed to reproduce, or insufficient detail to try. A confirmed repro makes the rest of the implementation much more reliable; on failed/insufficient, stop and check with the user before proceeding rather than implementing a fix for an unconfirmed bug.
 - Explore relevant code areas.
-- If scope has 4+ issues or estimate >4 hours, ask if user wants a plan drafted to `/private/tmp/claude/<repo-slug>/plans/` first.
+- If scope has 4+ issues, ask if user wants a plan drafted to `/private/tmp/claude/<repo-slug>/plans/` first.
 - Otherwise implement directly.
 
 For groups, mention all related issue numbers in commit messages (`Relates to #12, #15, #18`).
@@ -249,10 +249,8 @@ Skip when Phase 09 produced no diff (nothing to wrap up).
 
 ## Rules
 
-- Don't favor bugs over features — let project phase decide tilt.
 - No worktrees unless requested; if requested, use `wtree add <number>` (a local helper at `~/bin/wtree`; if missing, fall back to `git worktree add` and note the fallback to the user). Never use `git worktree` directly when `wtree` is available.
 - Never auto-commit — ask first.
 - Repo not checked out locally → stop, tell user.
 - `gh` auth fails → suggest `gh auth login`.
 - Don't implement a whole milestone — focused subset; err small.
-- Roadmap vs. issues conflict on project phase → prefer roadmap, note it.

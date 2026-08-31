@@ -7,7 +7,7 @@ description: Terminal interfaces — keyboard-first navigation, no hover, on-scr
 
 | Open | When |
 | --- | --- |
-| [`../_domains/tui/context.md`](../_domains/tui/context.md) | The core rules: keyboard-first with no hover, state stays on screen, reflow to 80 columns. |
+| [`../_domains/tui/context.md`](../_domains/tui/context.md) | The whole cell — open before designing, building or reviewing a TUI. |
 | [`../_domains/tui/design.md`](../_domains/tui/design.md) | Laying out a full-screen terminal interface. |
 | [`../_domains/tui/review.md`](../_domains/tui/review.md) | Reviewing a TUI change. |
 

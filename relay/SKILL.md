@@ -57,11 +57,7 @@ Otherwise, build 2–3 candidates. Rank them on all four of these, not just the 
 One message. **Every default rides on the item it belongs to, and the ask is one
 sentence.** Numbered so a reply can be terse.
 
-> ⛔ **Never close with a block that restates the sections as a question.** Repeating
-> *"Follow-ups — … / Next work — … / Relay — …"* under headings the reader just read is
-> the same content twice, and a terminal renders the block-quote glyph so it looks like
-> the message is quoting itself. The lists say what the choices are; the ask only says
-> how to answer.
+The closing line is one plain sentence asking how to answer — the lists above already say what the choices are.
 
 Plain markdown, no fenced block — a code fence renders as literal text and reads like
 output rather than a question:
@@ -77,7 +73,7 @@ output rather than a question:
 - **C** — &lt;title&gt;. &lt;one line&gt;
 
 Then one sentence: *Reply* `go` *for the defaults — A, relay on — or override: e.g.*
-`fix 1, B, no relay`.
+`fix 1, B, no relay`. `no relay` is this skill's `park`.
 
 Add a **Relay** line only when the default is not yes — relay unavailable, or you are
 recommending against it. A yes-by-default relay is already named in that sentence.

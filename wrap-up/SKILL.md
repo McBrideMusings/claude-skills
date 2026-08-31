@@ -9,9 +9,8 @@ Work through each phase below. Skip any phase that doesn't apply to this project
 
 ## ⛔ RUN TO COMPLETION — wrap-up is not done until the work is committed, pushed, AND landed
 
-The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 are preparation; Phase 6 resolves follow-ups (which may add commits), summarizes, and lands the branch. If you stop before Phase 5, you have left the user's work uncommitted — the exact failure wrap-up is meant to prevent. This is the #1 way wrap-up fails, so treat it as non-negotiable:
+The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 are preparation; Phase 6 resolves follow-ups (which may add commits), summarizes, and lands the branch. If you stop before Phase 5, you have left the user's work uncommitted — the exact failure wrap-up is meant to prevent. This is the #1 way wrap-up fails, so treat it as non-negotiable — and it is enforced, not just stated: the `Stop` hook (`~/.claude/hooks/wrap-up-stop.sh`) checks the Phase 0 marker below and blocks the turn from ending until `git status` is clean and the branch has landed, naming which phase is unfinished. Don't rely on the hook to catch it — get there yourself:
 
-- **A quality check that finds nothing is a GREEN LIGHT to commit, not a stopping point.** Phase 4 returning `(none)` means proceed *immediately* to Phase 5. A clean review is the single most common false finish line — do not fall for it.
 - **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (a 75+ review issue you cannot auto-fix, a failed push, a merge conflict) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
 - **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run through Step D (relay proposed, then fired or declined), and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
@@ -71,6 +70,20 @@ Two rules that apply to every phase, on either path:
 ## ⛔ BASH COMMAND RULES
 
 When invoked by `implement`, wrap-up runs unattended and a single permission prompt kills the autonomous run. Same hard bans as `implement` — never use `@{u}`/`@{upstream}`/`{…}` refspecs (use `origin/main` or `origin/$(git branch --show-current)`), never chain non-allowlisted sub-commands with `&&`/`;`, never `$(...)` a non-allowlisted inner command, no `#` comments or newlines inside a Bash call, never `cd … && git` (use `git -C <abs-path> …`), and never `cat <file> || echo` existence-checks (use the Read tool). See `implement`'s BASH COMMAND RULES for the full list — they apply here verbatim.
+
+---
+
+## Phase 0: Mark wrap-up in flight
+
+Before anything else, write the marker the `Stop` hook (`~/.claude/hooks/wrap-up-stop.sh`)
+checks: `mkdir -p` and `touch` `<that path>/wrapup/inflight`, where `<that path>` comes
+from `~/.claude/tools/repo-slug --path` (prints `/private/tmp/claude/<repo-slug>` and
+creates it). Never derive the slug by hand — see `relay`'s Step 4 for why a guessed
+slug can put the marker where the hook never looks.
+
+Remove the marker (`rm -f`) as the last action of Phase 6, once Step C has landed the
+branch and Step D has resolved — fired, declined, or skipped — not before. Until it is
+removed, the hook blocks the turn from ending.
 
 ---
 
@@ -151,7 +164,7 @@ Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md]
 5. **Architecture findings are surfaced, never auto-fixed** — they're design calls, and wrap-up often runs unattended. Collect them (the review core's `architecture` and `negative-space` axes) and carry each into Phase 6 as a follow-up titled `Architecture: <finding>`. The only exception: a finding that is *also* a 75+ correctness bug is fixed under step 4.
 6. If all found nothing actionable, proceed to Phase 5.
 
-**⛔ Do not stop here.** A clean review is a green light to Phase 5, NOT a place to end your turn. Architecture findings being open is not a blocker — they become follow-ups in Phase 6.
+A clean review is a green light to Phase 5, NOT a place to end your turn. Architecture findings being open is not a blocker — they become follow-ups in Phase 6.
 
 ---
 
@@ -160,7 +173,7 @@ Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md]
 1. Stage and commit all remaining changes (docs, tracking, quality fixes, straggling code).
    - Use the project's commit conventions (check its CLAUDE.md), then the global rule in `~/.claude/CLAUDE.md` §Git & GitHub, which requires **Conventional Commits** — `type(scope): message`, ≤72 chars, imperative, no trailing period.
    - Two exceptions the global rule names: `~/.claude/` itself uses a plain one-sentence message with no prefix, and a repo whose own CLAUDE.md states a different convention wins.
-   - This step used to say the opposite — "do NOT use conventional-commit prefixes — global rule". That line landed `bf6ee22`, 2026-05-22, 80 days before the global rule it cited (`d9e2ca8`, 2026-08-10), and attributed itself to the rule that requires the prefixes. Do not reinstate it.
+   - Use Conventional Commits per CLAUDE.md §Git & GitHub. Do not revert to a no-prefix convention.
 2. Confirm `git status` is clean.
 3. Push: `git push origin $(git branch --show-current)`. First push on a new branch: `git push -u origin $(git branch --show-current)` (match the branch's own name — never `main`).
 4. Do NOT land here — the merge/PR is Phase 6 Step C, after follow-ups and the summary settle. Leave the branch pushed.
@@ -215,7 +228,7 @@ Parse the reply into per-item dispositions; **unmentioned items default to skip.
 2. **File** — batch-file issues on the resolved backend (`bd create` or `gh issue create`); capture the new IDs/URLs for Step B. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
 3. **Skip** — drop.
 
-**⛔ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or skipped, and `git status` is clean.**
+Do not proceed to Step B until every candidate is fixed-and-committed, filed, or skipped, and `git status` is clean.
 
 ### Step B — Summarize
 

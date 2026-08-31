@@ -38,7 +38,7 @@ implementation, not a handoff).
 | 4 | **Assets** | invoke `generate` (models / images / textures / music / sfx / dialogue) |
 | 5 | **Polish / game-feel** | implement, reading `_domains/game/review.md` + `diagnose.md` (hitstop, screenshake, easing, input feel) |
 | 6 | **Verify** | invoke `review`, `profiling`, `diagnose`, and testing — markers set, so each gets the game overlay |
-| 7 | **Ship** | production build / release, reading `_domains/<stack>/testing.md` |
+| 7 | **Ship** | production build / release, reading `_domains/<stack>/testing.md`. Refuses to start until the ledger has a Phase 6 entry with a review verdict |
 
 ## Design phase — surface structure, never judge fun
 
@@ -50,7 +50,9 @@ decides what's good. This is a hard rule, not a style preference.
 ## Ledger
 
 Keep a short running ledger of which phases ran, what each delegated to, and the evidence (screenshot,
-profile number, review verdict). Don't call prototype-quality work shipped — Phase 6 gates Phase 7.
+profile number, review verdict), at `/private/tmp/claude/<repo-slug>/game-dev-ledger.md`. Don't call
+prototype-quality work shipped — Phase 6 gates Phase 7: Phase 7 refuses to start until the ledger has a
+Phase 6 entry with a review verdict.
 
 ## What this is not
 

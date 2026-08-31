@@ -6,7 +6,7 @@ Each `/implement` pass runs as `workflow('implement', { … })` — a child work
 
 The relay boundary and the workflow boundary **must be the same boundary**: `resumeFromRunId` only works inside the session that launched the run, so relaying mid-workflow would abandon a live run with no way to resume it.
 
-**Never `agent(PASS(item))`.** A pass dispatched as one agent runs all six implement phases in one context that grows for ~300 turns; measured over 24h those were 37% of all token spend. `workflow('implement')` gives each phase its own context. Nesting is one level: this script is the parent, `~/.claude/workflows/implement.js` is the child, and the child's stages are plain agents.
+**Never `agent(PASS(item))`.** A pass dispatched as one agent runs all six implement phases in one growing context — see [SKILL.md](SKILL.md) for why that dominates token spend. `workflow('implement')` gives each phase its own context. Nesting is one level: this script is the parent, `~/.claude/workflows/implement.js` is the child, and the child's stages are plain agents.
 
 Selected by the `workflow` token in the arguments. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise.
 

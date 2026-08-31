@@ -5,16 +5,13 @@ description: "Capture follow-up items — quick 'add a followup' captures and se
 
 Use when the user asks to add a follow-up ("remember to …", "file as a followup") or to generate/surface new follow-ups from the session (also invoked by `/wrap-up`). To **browse, pick, or start** an existing item, that's `triage` — a follow-up is just another tracked item triage reads. This skill only **creates** items.
 
-> ### HARD RULE — never use `AskUserQuestion` / the chip-picker selector
+> ### HARD RULE — ask every filing question as plain chat
 >
-> **Scope:** this governs *this skill's own filing prompt* — the standalone "which of these should I file?" question in Step 5, where answers are free-form and filing is the only action. When `wrap-up` invokes this skill it runs **Generate mode only** (Steps 1–4); `wrap-up` Step A then owns the **Fix now / File / Skip** dispositions, which it also collects as a single batched free-text reply over all candidates — *not* `AskUserQuestion` — so the same no-widget rule applies there.
+> **Ask every filing question as one plain chat sentence; the only input this skill reads is free-form text (numbers, ranges, `go`, 'none').** The numbered candidate list already lives in the chat message above the question, and answers like "3, 5-7" or "go" don't fit a fixed-option chip schema anyway.
 >
-> **Every prompt this skill makes is a plain chat question typed into the message body. NEVER call the `AskUserQuestion` tool, and NEVER render a selector / multi-select / chip-picker UI of any kind — not for "which to file", not for anything.** This is not a stylistic preference; the chip-picker is *wrong here* and breaks the skill:
-> - Answers are free-form — item **numbers, ranges, "all", "none"** — which the fixed-option chip schema literally cannot express.
-> - The numbered candidate list already lives in the chat message above the question, so a picker just duplicates it.
-> - A selector turns "which should I file?" into a list of pre-checked actions, which reads as *intent to act* — exactly the misfire that files issues the user never asked for.
+> **Scope:** this governs *this skill's own filing prompt* — the standalone "which of these should I file?" question in Step 5. When `wrap-up` invokes this skill it runs **Generate mode only** (Steps 1–4); `wrap-up` Step A then owns the **Fix now / File / Skip** dispositions, which it also collects as a single batched free-text reply over all candidates, so the same rule applies there.
 >
-> If you are about to reach for `AskUserQuestion` anywhere in this skill: stop. Write the list as plain markdown, then ask the question as one plain sentence and wait for a free-form reply.
+> **Guardrail: never call the `AskUserQuestion` tool or render a selector / chip-picker for this skill's filing questions.** A selector turns "which should I file?" into a list of pre-checked actions, which reads as *intent to act* — exactly the misfire that files issues the user never asked for.
 
 ## Where followups live
 
@@ -129,10 +126,10 @@ Same applies to stale items in this followups file — flag them inline, don't w
 
 ### Step 5: File
 
-**Default — interactive** (a standalone `/implement`, a manual `/wrap-up`, or a direct `/followups`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, "all", "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
-- **beads repo:** "Which of these should I file as beads issues? (numbers, ranges, 'all', or 'none')"
-- **GitHub repo:** "Which of these should I file as GitHub issues? (numbers, ranges, 'all', or 'none')"
-- **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, 'all', or 'none')"
+**Default — interactive** (a standalone `/implement`, a manual `/wrap-up`, or a direct `/followups`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, `go`, "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
+- **beads repo:** "Which of these should I file as beads issues? (numbers, ranges, `go` for all, or 'none')"
+- **GitHub repo:** "Which of these should I file as GitHub issues? (numbers, ranges, `go` for all, or 'none')"
+- **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, `go` for all, or 'none')"
 
 **Autonomous — only when the caller explicitly signals continuous / no-ask mode** (a `/iterate` pass, i.e. `/implement continuous`): do not ask. File every item that clears the bar (Step 3) to the destination, skipping items whose core idea already appears there. Then report what was filed. The user triages in the tracker / the followups file afterward — never pause a continuous loop to ask which to file. If no items clear the bar, report "Nothing worth flagging this session" and stop.
 

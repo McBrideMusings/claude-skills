@@ -7,6 +7,7 @@ description: Issue tracking — which backend this repo uses, beads or GitHub, a
 
 | Open | When |
 | --- | --- |
+| [`./README.md`](./README.md) | Orientation to the whole tracker cell — open when you need who-reads-what across the files. |
 | [`./_detect.md`](./_detect.md) | **Always first.** Resolves which backend this repo uses before any tracker verb runs. A bare `gh issue list` on a beads repo silently reports an empty backlog — the issues are in a database `gh` cannot see. |
 | [`./beads.md`](./beads.md) | The repo resolved to beads: `bd` verbs, the Dolt store, mirror mode and `external_ref`. |
 | [`./github.md`](./github.md) | The repo resolved to GitHub: `gh issue` verbs and its own conventions. |

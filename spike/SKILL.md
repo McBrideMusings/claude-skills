@@ -102,7 +102,8 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
     coherence, not a second axis). Three variants that differ in accent colour teach nothing, and
     varying every axis at once produces unattributable results: you learn which you liked, not what
     made it work. (Adapted from `jakubkrehel/skills` `variant`, MIT.)
-12. **Every `ui` variant clears the severity floor** in
+12. **Before handing any build over, run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md).
+13. **Every `ui` variant clears the severity floor** in
     [`_domains/gui/review.md`](../_domains/gui/review.md) — accessible names, keyboard reach, visible
     focus, nothing clipped at 320px, no meaning on colour alone — before it enters the picker. A
     variant that wins on looks and fails the floor is not a candidate; it's a bug with a nice

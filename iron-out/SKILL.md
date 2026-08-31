@@ -1,6 +1,6 @@
 ---
 name: iron-out
-description: "Drive a scope's ambiguity to zero so the work can be handed off: scan every in-scope issue with implement's AFK gate, then resolve each failure — a decision by interviewing the user, a fact or a prototype by dispatching a subagent. Also charts a foggy effort from scratch, filing the open questions as issues under a milestone that names the destination. Selectors: issue numbers, #range, label:X, milestone:X, followups, papercuts; bare iron-out takes the whole open backlog."
+description: "Drive a scope's ambiguity to zero so the work can be handed off. Also charts a foggy effort from scratch, filing the open questions as issues under a milestone that names the destination. Selectors: issue numbers, #range, label:X, milestone:X, followups, papercuts; bare iron-out takes the whole open backlog."
 ---
 
 # Iron Out
@@ -77,7 +77,7 @@ Fog only ever gathers *toward* the destination. Work past it is **Out of scope**
 
 Resolve the issue backend by invoking `ref-tracker`, then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context.
 
-**Sonnet, not Haiku — the isolation is the point, not the model.** A Haiku run returned template placeholder text in every `question` field (literally `"Decision or design choice not settled: Which"`) while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone. Re-running on Sonnet produced real questions from the same bodies.
+**Sonnet, not Haiku — the isolation is the point, not the model.** A cheaper model can return template placeholder text in every `question` field while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone.
 
 - **`beads`:** `bd list --status open --json` (filtered per selector) and `bd dep tree <id>` for the edges. The dependency graph is real here, so `Blocked by:` prose in a body is a *finding* — an edge someone never wired — not the source of truth. Note each one and offer to convert it: `bd dep add <id> <blocker-id> -t blocks`.
 - **`github`:** `gh issue list … --json number,title,url,labels,body` plus `gh issue view <n> --json blockedBy`, with the `Blocked by:` prose fallback.
@@ -103,7 +103,7 @@ Sub-agent brief:
 
 **Reject a placeholder before you use it.** A `question` that echoes this brief's own wording, restates the test name, or is under about fifteen words is a non-answer that will read as a finished scan. Re-run rather than printing it.
 
-**Stale claims are reported alongside the verdict, and they change what the pass does.** An issue can pass both gates cleanly and still be false — those are the expensive ones, because nothing downstream doubts them. Observed in a single pass: an issue describing a 659-line diff in a project file that had stopped being tracked the day after filing; a docs issue whose own instructions named two toolbar buttons that had been removed, which would have produced a confidently wrong spec; and two issues sitting labelled human-only for weeks on an asserted tooling limit that was not real. Fix the body as part of the pass — a stale issue is unworkable in exactly the way this skill exists to fix.
+**Stale claims are reported alongside the verdict, and they change what the pass does.** An issue can pass both gates cleanly and still be false — those are the expensive ones, because nothing downstream doubts them. Fix the body as part of the pass — a stale issue is unworkable in exactly the way this skill exists to fix.
 
 If nothing fails and there is no fog, report that the scope is already AFK-workable and go to Phase 4.
 
@@ -141,7 +141,7 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 ### 3b. Record the resolution
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, `Type: HITL` flipped to `Type: AFK` if present. Show the new body, then write it: `bd update <id> --body-file <path>` (plus `--acceptance` for the check, and `--remove-label hitl --add-label afk`) on beads, `gh issue edit <n> --body` on GitHub. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
-- **Question** → post the answer as a comment, then close: `bd comment <id> "<answer>"` + `bd close <id> -r "answered"` on beads, `gh issue comment <n>` + `gh issue close <n>` on GitHub.
+- **Question** → post the answer as a comment, then close: `bd comment <id> "<answer>"` + `bd close <id> -r "answered"` on beads, `gh issue comment <n>` + `gh issue close <n>` on GitHub. **Before any close call, verify the issue's own label set carries `question`.** Phase 1 already tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here.
 
 Assets are linked, never pasted.
 

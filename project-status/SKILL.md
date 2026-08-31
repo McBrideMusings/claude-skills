@@ -1,6 +1,6 @@
 ---
 name: project-status
-description: "Reality check: measure a project's code against its declared vision (README, AGENTS.md, PRD, plan docs) and report goal-by-goal WORKING/PARTIAL/STUB/MISSING status with evidence, gaps, and a steering recommendation. Triggers: 'project status', 'reality check', 'does the code match the README/vision/plan', 'how far along is this actually', 'what actually works', 'is the backlog enough to deliver the vision'."
+description: "Reality check: measure a project's code against its declared vision (README, AGENTS.md, PRD, plan docs) and report where it actually stands, with evidence. Triggers: 'project status', 'reality check', 'does the code match the README/vision/plan', 'how far along is this actually', 'what actually works', 'is the backlog enough to deliver the vision'."
 ---
 
 # Project Status

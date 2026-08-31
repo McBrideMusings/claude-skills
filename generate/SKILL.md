@@ -1,6 +1,6 @@
 ---
 name: generate
-description: "Single front door for generating game/app assets — 3D models, images, video, textures, music, sound effects, voice — picking a health-gated backend (local ComfyUI, or cloud Tripo/Gemini/ElevenLabs) per asset type. Use for any asset-generation request; per-type backends and prompts live in the _generate/ axis."
+description: "Single front door for generating game/app assets — 3D models, images, video, textures, music, sound effects, voice — picking the right backend per asset type. Use for any asset-generation request; per-type backends and prompts live in the _generate/ axis."
 ---
 
 # Generate
@@ -32,8 +32,7 @@ first backend that passes its health check:
 Fall through to the next candidate on a failed gate. If **none** pass, stop and report exactly which
 backends were tried and why each failed (GPU down / key missing) — do **not** fabricate an asset.
 
-> Current machine state: comfy GPU is down and no cloud keys are configured, so most types report
-> dormant today. That is the correct, honest output — a missing backend is a report, not an error.
+A missing backend is a report, not an error.
 
 ## Phase 03 — Prompt + generate
 

@@ -403,6 +403,9 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
    its header and closed to a pill with `×`, with Tweaks, Checks and Comments behind its three tabs,
    and the Comments tab is what turns the review layer on. No keys, so the prototype's own keyboard is
    entirely its own. On `wireframe`: `a` to comment on anything, `c` to check contrast.
+   **State the concrete result of steps 2 and 3 in the hand-off message** — the printed sentence is
+   the artifact, since nothing downstream reads the screenshot or the critique pass otherwise: e.g.
+   "Contrast: pass, both themes. Critique: 2 found, 2 fixed."
 
 ## Getting comments back
 

@@ -20,7 +20,8 @@ Inspect what already exists, then route to the right downstream phase.
 | No `docs/` | [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) |
 | `docs/` exists, no `.vitepress/` | [PHASE-04-MIGRATE.md](PHASE-04-MIGRATE.md) |
 | Both `docs/` and `.vitepress/` exist | [PHASE-03-AUDIT.md](PHASE-03-AUDIT.md) |
-| User asked to write / draft / populate the PRD | [PHASE-05-POPULATE-PRD.md](PHASE-05-POPULATE-PRD.md) (skip layout work) |
+| User asked to write / draft / populate the PRD, AND `docs/PRD.md` exists (stub or filled) | [PHASE-05-POPULATE-PRD.md](PHASE-05-POPULATE-PRD.md) (skip layout work) |
+| User asked to write / draft / populate the PRD, but no `docs/` yet | [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) (creates the stub; offers PHASE-05 once it exists) |
 
 If `docs/PRD.md` exists but is just a stub (H1 + TODO, or near-empty) at the end of Phase 02 / 03, **offer Phase 05 before exiting**.
 

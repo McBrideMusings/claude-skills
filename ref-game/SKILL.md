@@ -9,7 +9,7 @@ Reference only. The end-to-end build workflow is the [`game-dev`](../game-dev/SK
 
 | Open | When |
 | --- | --- |
-| [`../_domains/game/context.md`](../_domains/game/context.md) | The core rules: feel is measured in frames, playable loop first, fixed timestep with interpolated rendering. |
+| [`../_domains/game/context.md`](../_domains/game/context.md) | The whole cell — open before designing, building or reviewing game mechanics. |
 | [`../_domains/game/design.md`](../_domains/game/design.md) | Designing a mechanic, a loop, or a progression. |
 | [`../_domains/game/prototype.md`](../_domains/game/prototype.md) | Building a throwaway to find out whether something is fun. |
 | [`../_domains/game/testing.md`](../_domains/game/testing.md) | Testing gameplay — what is worth asserting and what has to be felt. |

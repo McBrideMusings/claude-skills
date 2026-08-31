@@ -1,6 +1,6 @@
 ---
 name: grill-me
-description: "One-question-at-a-time design interviews — for new ideas (Shape), existing plans (Grill), or existing codebases (Backfill). Captures resolved vocabulary in docs/CONTEXT.md and offers ADRs as decisions crystallise. Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work."
+description: "One-question-at-a-time design interviews — for new ideas (Shape), existing plans (Grill), or existing codebases (Backfill). Captures vocabulary and offers ADRs as a byproduct. Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work."
 ---
 
 Walk the decision tree one question at a time until we reach shared understanding. For every question, recommend an answer — never ask open-ended without taking a position.
@@ -134,7 +134,7 @@ Glossary entries and ADRs are captured *inline* during the session — no end-of
 
 ## Never build by hand what another skill owns
 
-"Never chain into another skill" (below) means **never chain into another interview**. It does not mean build things yourself. The moment the conversation asks for an artifact — a prototype, a spec, a diagram, a plan, tickets — **invoke the skill that owns it**, then come back here. Reading a request as a direct instruction and starting to write is the failure this rule exists to stop: skills carry naming, versioning, and format conventions that hand-written output silently breaks, and the cost lands later, on the user, as a file in the wrong place under the wrong name that can't be iterated on.
+Never chain into another interview. It does not mean build things yourself. The moment the conversation asks for an artifact — a prototype, a spec, a diagram, a plan, tickets — **invoke the skill that owns it**, then come back here. Reading a request as a direct instruction and starting to write is the failure this rule exists to stop: skills carry naming, versioning, and format conventions that hand-written output silently breaks, and the cost lands later, on the user, as a file in the wrong place under the wrong name that can't be iterated on.
 
 | The user asks for | Invoke |
 | --- | --- |
@@ -145,4 +145,4 @@ Glossary entries and ADRs are captured *inline* during the session — no end-of
 
 This is not optional and it is not a judgement call. **If a skill's description covers the artifact, that skill builds it** — even when the request is one sentence, even when you can see exactly what to write, and especially when you can, because that is when skipping it feels most reasonable.
 
-Never auto-commit any artifact. Never chain into another *interview* skill — but always hand a build to the skill that owns it, per "Never build by hand what another skill owns" above.
+Never auto-commit any artifact. Never chain into another interview skill — but always hand a build to the skill that owns it, per "Never build by hand what another skill owns" above.

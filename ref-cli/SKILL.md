@@ -7,6 +7,6 @@ description: Command-line tools — exit codes, stdout versus stderr, TTY detect
 
 | Open | When |
 | --- | --- |
-| [`../_domains/cli/context.md`](../_domains/cli/context.md) | The whole cell. The exit code is the API; stdout is data and stderr is commentary; drop decoration when stdout is not a TTY. |
+| [`../_domains/cli/context.md`](../_domains/cli/context.md) | The whole cell — open before writing or changing a CLI. |
 
 Full-screen keyboard-driven interfaces are [`ref-tui`](../ref-tui/SKILL.md), not this.

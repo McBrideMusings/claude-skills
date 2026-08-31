@@ -17,6 +17,8 @@ This file is the **router**. The survey engine — phases, briefs, scoring, merg
 
 It covers every decision point, not just the ones spelled out: the Phase 02 confirm, trimming the aspect list, the Phase 08 publish confirm and any ticket trimming there, and any ambiguity that needs the user to settle it. It binds the sub-files this skill hands off to and every sub-agent spawned during the pass.
 
+**Enforced, not just written down**: `hooks/improve-askuserquestion-guard.sh` denies `AskUserQuestion` at the tool layer for the lifetime of the marker IMPROVE-CORE.md's first phase writes and Phase 08 removes — so a lapse here is blocked mechanically, not caught on review.
+
 **Do this instead.** Print the options as plain chat text — numbered or keyworded — and say what to type. *"Running: architecture, tests, ui, layout. Type `go`, name a subset, or `skip <aspect>`."*
 
 **`go` is the standing accept-all keyword, and every list that ends in recommendations must say so out loud.** That covers the aspect-list confirm above and, equally, the Phase 08 ticket slate: give your pick per item, then *"Type `go` to file these as described, or name the ones to drop."* Never leave a recommended set with no stated way to accept it whole — the user should not have to enumerate back a list they already agree with.

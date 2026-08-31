@@ -1,6 +1,6 @@
 ---
 name: iterate
-description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, always sequential, worked in chunks of 5 with a `relay` into a fresh context between chunks. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Every pass runs as a staged `/implement` workflow. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
+description: "Continuous walk-away harness: repeatedly cut a fresh branch, run one /implement pass, and land it — up to 20 iterations, chunked to keep context flat. SCOPED mode freezes a given work group (issue numbers, #range, label:X, milestone:X, followups, papercuts) and marches it in order; bare `iterate` picks each next item from the whole backlog via triage. Every pass runs as a staged `/implement` workflow. Use for unattended work across many tracked items; a single item is /implement, many items in parallel is /orchestrate."
 ---
 
 # /iterate — Continuous autonomous iteration harness
@@ -30,7 +30,7 @@ The two modes differ only in **how each iteration's item is chosen** and **what 
 
 → [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)
 
-**Why the session transport is gone.** Running pass after pass in one session context is exactly the shape that made this expensive. Measured across 24h of session logs, implement passes running as a single growing context averaged ~300 turns, peaked between 243k and 406k, and were **37% of all token spend** — and under the session transport every pass in a run piled into the *same* window, on top of each other. The workflow transport gives each pass its own context and each phase within it a fresh one. Keeping both meant keeping the expensive one as the default.
+**Why the session transport is gone.** Running pass after pass in one session context is exactly the shape that made this expensive: implement passes running as a single growing context dominate token spend, and under the session transport every pass in a run piled into the *same* window, on top of each other. The workflow transport gives each pass its own context and each phase within it a fresh one. Keeping both meant keeping the expensive one as the default.
 
 What you lose: watching a pass execute live in this pane. `/workflows` shows per-agent progress, tokens, and a stop control instead, and a run is stoppable and resumable by its `runId`.
 

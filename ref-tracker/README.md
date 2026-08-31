@@ -1,24 +1,26 @@
-# `_tracker/` — shared issue-tracker knowledge store
+# `ref-tracker` — shared issue-tracker knowledge
 
-Not a skill. A **backend axis** for issue/ticket work, read at run time by every skill that
-creates, reads, updates, or closes tracked items. The leading `_` and the absence of any
-`SKILL.md` keep this directory from registering as a skill.
+A skill holding shared issue-tracker knowledge, read at run time by every skill that
+creates, reads, updates, or closes tracked items.
 
 ## Why it exists
 
-Before this axis, `gh issue …` was hardcoded in 19 files across 13 skills. Adding a second
-backend meant editing all 19 the same way and keeping them in step forever. Instead each skill
-holds its *process* once and stays backend-agnostic: it resolves the backend via
+Before this skill existed, `gh issue …` was hardcoded in 19 files across 13 skills. Adding a
+second backend meant editing all 19 the same way and keeping them in step forever. Instead each
+skill holds its *process* once and stays backend-agnostic: it resolves the backend via
 [`_detect.md`](_detect.md), then reads the one verb table for the backend actually in scope.
 
 ## Layout
 
 ```
-_tracker/
-  _detect.md    <- how every skill decides which backend is in scope
-  labels.md     <- the label schema, backend-independent: area: / mode: / platform:
-  beads.md      <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
-  github.md     <- verb table for GitHub (`gh`)
+ref-tracker/
+  SKILL.md          <- the map: which file to open for which task
+  README.md         <- this file — orientation and who-reads-what
+  _detect.md        <- how every skill decides which backend is in scope
+  labels.md         <- the label schema, backend-independent: area: / mode: / platform:
+  beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
+  beads-context.md  <- the store's shape, for work that needs more than the verbs
+  github.md         <- verb table for GitHub (`gh`)
 ```
 
 There is deliberately no file-based fallback. A repo with neither backend stops and offers
@@ -51,9 +53,9 @@ invents a bare one.
 
 Beads has no pull-request concept. Anything touching a PR — `review`'s PR queue and
 `unblock`'s FEEDBACK.md, `wrap-up`'s landing phase, `summary`'s branch read — keeps using `gh pr …`
-unchanged regardless of which issue backend resolved. Only *issues* route through this axis.
+unchanged regardless of which issue backend resolved. Only *issues* route through this skill.
 
 ## Adding a backend
 
-Add `_tracker/<name>.md` with the same verb-table headings and a detection row in `_detect.md`.
-No skill changes — they already read `_tracker/<resolved>.md`.
+Add `ref-tracker/<name>.md` with the same verb-table headings and a detection row in `_detect.md`.
+No skill changes — they already read `ref-tracker/<resolved>.md`.
