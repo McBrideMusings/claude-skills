@@ -43,6 +43,9 @@ Make it look native to the product without importing anything from it:
 - **Type realistic content by hand** — real product copy, plausible names and numbers, a row count
   close to the real one.
 
+**Wire `admin prototype <slug>` in the same pass** so the file is one command away rather than a
+path to retype: [ADMIN.md](ADMIN.md).
+
 Two things this costs, both accepted: a variant cannot use the project's actual components, and
 density can't be judged against genuinely live data. When the whole question is "does our real
 `<DataGrid>` work here", that's a promotion-time question, not a prototype one.

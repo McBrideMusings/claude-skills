@@ -92,42 +92,11 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something, every destructive button shows what it would do — the reject path as much as the approve path. A dead control reads as a bug and derails the conversation the prototype exists to have. A control with nowhere to go does not go in.
 8. **Name the device deliberately** (UI shape). `--device` is a judgement about this design, made fresh each time: `phone` for a phone surface, `desktop` for a desktop one, `tv` for a ten-foot one. It is required, so there is no default to accept — and never draw device chrome by hand, since the harness owns the status bar, notch, window title bar and browser chrome.
 9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a direction wins, implement it properly in the project's stack and conventions, then delete the prototype. Never move the file into the codebase.
-10. **Wire an `admin prototype` action in the same pass that builds it** (any project with an `admin.toml` — load the [`admin`](../admin/SKILL.md) skill for the manifest rules). A prototype nobody can find is a prototype nobody looks at, and the path is a `/private/tmp/claude/…` string too long to retype. Do it without asking: `admin.toml` is globally gitignored and committed nowhere, so this is not a commit question and leaves no trace in the repo.
-
-    **The command is `prototype`.** Not `spike` — that is this skill's name, not the user's word for the thing it produces. The menu says what the entry opens.
-
-    **One `prototype` command with one sub-target per prototype — never a top-level command each.** Several prototypes is the normal case: one per device type is required by the rule above, and one per screen is common. `prototype-tui`, `prototype-phone`, `prototype-settings` as separate verbs is the menu sprawl the fleet layout exists to prevent.
-
-    ```toml
-    [commands.prototype]
-    desc = "Open a prototype"
-    steps = ["prototype"]
-    group = 2
-    priority = 70
-
-    [actions.prototype]
-    kind = "multi-target"
-
-    [actions.prototype.wheelhouse-phone]          # HTML: hand it to the default browser
-    kind = "shell"
-    run  = "open /private/tmp/claude/<repo-slug>/spikes/wheelhouse-phone/wheelhouse-phone.html"
-
-    [actions.prototype.admin-tui]                 # TUI: must delegate — see below
-    action = "prototype-admin-tui"
-
-    [actions.prototype-admin-tui]                 # hands over the real terminal
-    kind        = "shell-passthrough"
-    run         = "go run /private/tmp/claude/<repo-slug>/spikes/admin-tui/"
-    interactive = true
-    ```
-
-    - **The sub-target name is the slug**, so the menu reads as the prototype list and nothing has to be kept in sync.
-    - **A TUI target must delegate to a top-level action, which is `shell-passthrough` with `interactive = true`.** Both halves are load-bearing:
-      - **`interactive = true` shell-passthrough** is a bare `subprocess.call` with no pipes, so the prototype inherits the real terminal — full size, no log tee, no stamping. Every other kind goes through `run_cmd`, whose pump timestamps each line (`_cmd_pump`, `%H:%M:%S.%f`) and sizes the child to admin's frame region. `pty = true` does not help: the pump is still in the path.
-      - **The delegation is not stylistic.** A multi-target sub-target's `kind` is *ignored* — the parent stores each target as a shell string and always runs it through `run_cmd`. `action = "<name>"` is the only branch that dispatches by the target's own kind. Declaring `kind = "shell-passthrough"` directly on the sub-target parses, resolves, passes `admin check`, and then silently runs stamped and truncated anyway.
-    - **A single prototype still gets the sub-target**, not a bare `run` on `[actions.spike]`. The second prototype arrives sooner than you think, and adding it should not mean restructuring the first.
-    - **Point at wherever the prototype actually is** — `/private/tmp/claude/<repo-slug>/spikes/<slug>/` normally, `docs/spikes/<slug>/` once it is kept as ticket reference.
-    - **Delete the sub-target when the prototype is deleted** (Phase 06, and the delete-me issue under "Tickets from a prototype"). A `prototype` menu offering a path that no longer exists is worse than no entry, and nothing else will catch it — `admin check` validates the manifest's shape, never whether a `run` line's path resolves.
+10. **Wire an `admin prototype` action in the same pass that builds it**, on any project with an
+    `admin.toml`, without asking — the manifest is committed nowhere, so it is never a commit
+    question. One `prototype` command, one sub-target per prototype, named for the slug; delete
+    the sub-target when the prototype goes. A prototype nobody can open is a prototype nobody
+    looks at. **The shape, the two silent traps, and how to verify it: [ADMIN.md](ADMIN.md).**
 
 ## Arguments
 

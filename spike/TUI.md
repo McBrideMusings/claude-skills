@@ -42,6 +42,9 @@ A directory holding **three files, of which you write one**:
 Inside an existing module no `go.mod` is written, so the prototype uses the project's own bubbletea
 and lipgloss rather than shadowing them.
 
+**Wire `admin prototype <slug>` in the same pass** — and a TUI target has two extra requirements
+that fail silently if missed. [ADMIN.md](ADMIN.md).
+
 ## What the harness gives you
 
 Never write these by hand — that is the whole reason the subcommand exists.
@@ -50,13 +53,49 @@ Never write these by hand — that is the whole reason the subcommand exists.
 | --- | --- |
 | Variant picker | `[` and `]` cycle directions. Named in the bar, never "Variant A" |
 | State axes | `F1`–`F9`, one per `Axis`. Orthogonal to variant on purpose: flipping direction keeps the state |
+| Key delivery | Every key the harness does not claim reaches `Variant.Key` |
 | Harness bar | Bottom row, reverse video, outside the design's frame — chrome, never part of what is judged |
 | Geometry assertion | Every dumped row must be exactly `DumpWidth`, every frame exactly `DumpHeight`. Non-zero exit, naming the row |
 | Frame dump | `-dump` writes the full variant × state cross product as `.txt`, ANSI stripped |
 | `Pad` / `VW` / `Strip` | Rune-aware width helpers. Byte length is always wrong on a grid with box-drawing characters |
 
-**The harness claims only `[`, `]`, `F1`–`F9` and `⇧Q`.** Every ordinary key belongs to the design, so
-a prototype of a keyboard-driven app is still driveable.
+**The harness claims only `[`, `]`, `F1`–`F9`, `q` and `⇧Q`.** Every other key belongs to the design,
+so a prototype of a keyboard-driven app is still driveable.
+
+## Interactivity is the deliverable, not a stretch goal
+
+SKILL.md rule 7 — *every control is live* — is the easiest rule to fail here, because a variant that
+only implements `Render` looks finished and is a slideshow: the tab bar draws, and pressing Tab does
+nothing. **Implement `Key` unless the design genuinely has no navigation.**
+
+```go
+var Variants = []Variant{{
+	Name:   "Settled",
+	Render: render,
+	Key:    onKey,
+	Reset:  func() { cursor = 0 },
+}}
+
+func onKey(key string, s State, set func(axis, value string)) bool {
+	switch key {
+	case "tab":
+		set("screen", next(s.Get("screen"))) // drive the axis the dump enumerates
+		return true
+	case "down", "j":
+		cursor++
+		return true
+	}
+	return false // unhandled — the harness ignores it
+}
+```
+
+- **Navigation should drive an axis via `set`**, not a private copy of the same state. Then what you
+  drive by hand and what gets dumped cannot diverge — the tab bar and the frame list stay one thing.
+- **Live state that is not an axis** — a cursor offset, a scroll position — is package-level, so it
+  **must** be cleared by `Reset`. The harness calls it at startup and before every dumped frame.
+  Without it the dump is deterministic only by luck, and a test leaks state into the next test.
+- **A key you handle returns `true`.** Returning `false` leaves it unclaimed, which is correct for
+  keys the design does not bind.
 
 ## `variants.go`
 
