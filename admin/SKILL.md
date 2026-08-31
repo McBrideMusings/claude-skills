@@ -12,10 +12,33 @@ description: "Add/edit/audit a project's admin task runner, AND diagnose it when
 There is **no generated `./admin` script** (ADR-0006). The installed tool interprets `admin.toml` at runtime:
 
 - Installed entry: `~/.admin/admin`, on PATH as **`admin`**. Run `admin <command>` from anywhere inside a project — it finds `admin.toml` by walking up from `$PWD`.
-- Tool verbs: `admin new` (detect stack → write a starter `admin.toml`), `admin check` (parse + resolve + consistency validation), `admin compile` (build a standalone `./admin` zipapp for a box without the tool installed).
+- Tool verbs (Go binary, aliased `repo`): `admin check` (parse + resolve + validate the manifest), plus the dashboard verbs `branch`, `prs`, `populate`, `worktree`, `archetypes`. **`admin new` and `admin compile` no longer exist — typing them checks out a git branch by that name (see the trap below).**
+
+## ⚠️ THE BRANCH-FALLBACK TRAP — read before running ANY `admin` command
+
+`admin <word>` dispatches in this order (`cmd/root.go` `dispatchArgs`, ADR-0011 §2):
+(1) a tool verb; (2) a command declared in the **current directory's** valid `admin.toml`;
+(3) **otherwise `branch --yes <word>` — it creates and checks out a git branch named
+`<word>`, with no confirmation and no "unknown command" error.** A repo with no
+`admin.toml`, or a typo'd command name there, silently mutates git state.
+
+Standing rules, no exceptions:
+
+- **`admin check` first, in that exact directory, before any other `admin` command** —
+  `check` is a tool verb, so it can never fall through.
+- Never instruct the user to run an `admin` command in a directory you haven't verified
+  has a valid manifest (a sibling checkout of the same project does not count).
+- Bootstrap is manual: write `admin.toml` by hand per [PLAYBOOK.md](PLAYBOOK.md), then
+  `admin check`, then smoke-run one cheap command.
+- If the trap fires: `git checkout <previous-branch> && git branch -D <word>` — the
+  fallback only creates a branch.
+
+**[PLAYBOOK.md](PLAYBOOK.md) is the distilled fleet pattern** (dispatch details, canonical
+vocabulary with real usage counts, kind selection, sub-target idioms, standard tables) —
+read it before writing or editing any manifest.
 - Editing `admin.toml` takes effect immediately — there is nothing to regenerate, no artifact to commit, no drift to audit.
 
-Source repo: `~/projects/admin-project-tool/` (CLI `admin-run`, runtime `admin_lib/`, interpreter `admin_lib/interp.py`, generator internals `gen/`).
+Source repo: `~/projects/admin-project-tool/` — Go dispatch/dashboard in `cmd/` (`root.go` holds `dispatchArgs`), Python runtime helpers in `admin_lib/`, archetypes in `archetypes/`.
 
 ## Critical rules
 
@@ -128,15 +151,15 @@ For pure `admin.toml` edits (no tool change), skip Phase 0 entirely — edits ta
 
 ### Phase 1: Detect state
 
-- No `admin.toml` → bootstrap (Phase 2a): `admin new`.
+- No `admin.toml` → bootstrap (Phase 2a) by hand — **never type `admin new`; that verb is gone and falls through to a branch checkout.**
 - `admin.toml` present → edit + validate (Phase 2b): `admin check`.
 - A stale committed `./admin` present (old generated bundle) → delete it; the project runs from PATH now.
 
 ### Phase 2a: Bootstrap
 
-1. Run `admin new` (or `admin new <dir>`) — detectors pick the archetype and write `admin.toml`. **Don't explore the project yourself to guess.**
-2. Show user the generated `admin.toml` and the detector match.
-3. Point at any `echo 'TODO: …'` placeholders from the `simple` fallback.
+1. Write `admin.toml` by hand from [PLAYBOOK.md](PLAYBOOK.md) — pick archetypes from the fleet list, lay commands on the canonical slots. (There is no detector; `admin new` does not exist.)
+2. Show user the manifest you wrote.
+3. Smoke-run one cheap real command (`admin test`, `admin audit`) after `admin check` passes — proves dispatch reaches the manifest, not the branch fallback.
 4. Apply standard command ordering (Phase 2c) — archetype defaults are usually wrong.
 5. **Populate `[urls]`** — scan the project for URLs and local dev ports, then write a `[urls]` table. Sources (in order): `wrangler.toml` (`port =`), `vite.config*.ts` (port defaults/env vars), `.env.example` (`_URL=` entries), package.json scripts (proxy targets, `--port`), README/docs. Produce entries for every named environment: local dev variants per app, staging/preview, production, and external community URLs (subreddit, app store page, etc.).
 6. `admin check` to confirm it resolves.
@@ -309,8 +332,8 @@ If `admin dev` is one-shot (compiles and exits), omit this section.
 ## Mental model
 
 - **Archetypes are composable mixins.** `archetypes = ["docker", "apple"]` merges command sets; later archetype wins; manifest `[commands]` wins over all.
-- **The interpreter reads `admin.toml` live.** No generation, no bundling, no artifact. `admin compile` is the one exception — it packages the interpreter + `admin_lib` + the manifest into a standalone zipapp via stdlib `zipapp`, for a machine without the tool installed.
-- **Versioning is global.** The installed tool's version (in `~/.admin/VERSION`) runs every project. Update the tool → all projects move together. `admin compile` freezes a project to a known-good copy when you need a pin.
+- **The tool reads `admin.toml` live.** No generation, no bundling, no artifact.
+- **Versioning is global.** The installed tool's version (in `~/.admin/VERSION`, `linked:` when built from the local source checkout) runs every project. Update the tool → all projects move together.
 - **Env vars are runtime.** `${VAR}` / `${VAR:-default}` resolved by `admin_lib.core.resolve_env()` at run time. Never expand when editing the manifest.
 - **Python 3.11+ required** (stdlib `tomllib`).
 - **Config tables drive archetypes.** `[apple]` / `[server]` tables become `_APPLE_CONFIG` / `_SERVER_CONFIG` dicts in `kind="python"` namespaces. Add keys to configure archetype behavior without inline code.
@@ -637,9 +660,9 @@ Discovery files live at `/tmp/admin-project-tool/<pid>.json`; stale ones (dead P
 
 ---
 
-## Standalone copy (`admin compile`)
+## Standalone copy — retired
 
-For a machine or container without the tool installed, `admin compile` writes a self-contained `./admin` zipapp at the project root that embeds the interpreter + `admin_lib` + the resolved manifest. Run it directly as `./admin <cmd>` there. It's also how you pin a project to a known-good tool version. This is the only thing that produces an `./admin` file — normal projects don't have one.
+`admin compile` no longer exists (typing it checks out a branch named `compile`). A found `./admin` file in a repo is a stale artifact of the retired Python tool — delete it.
 
 ---
 
