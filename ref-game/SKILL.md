@@ -48,7 +48,7 @@ It never declares something fun, engaging, or "better"; present concrete structu
 decides. Hard rule, not a style preference.
 
 **Ledger.** Keep a short running ledger of which phases ran, what each delegated to, and the evidence
-(screenshot, profile number, review verdict) at `/private/tmp/claude/<repo-slug>/game-dev-ledger.md`.
+(screenshot, profile number, review verdict) at `/private/tmp/claude/<repo-slug>/game-ledger.md`.
 Phase 6 gates Phase 7 — don't call prototype-quality work shipped.
 
 (Arc adapted from majidmanzarpour/threejs-game-skills, re-shaped as a thin conductor over the merged
