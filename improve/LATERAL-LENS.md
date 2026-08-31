@@ -22,6 +22,7 @@ Invoke `lateral <technique>` with the technique named in the table below, and ru
 | `tests` | `worst-idea` | The suite that passes while everything is broken — then which of its properties this suite shares. |
 | `gui` | `random-stimulus` | Force-fit an unrelated object onto the interface to break the default arrangement. |
 | `product` | `analogy` | Which other domain solved this job, and what did it do that we didn't? |
+| `behavior` | `provocation` | *"po: the user always stops halfway."* Which mid-interaction states has nobody described, and what does the product do there? |
 | `performance` | `provocation` | Suspend the work itself — *"po: this never runs"* — and ask what makes it necessary. |
 | `docs` | `analogy` | A domain whose explanations land, borrowed structurally. |
 | `claude-md` | `scamper` | Systematic variation over rules that exist: substitute, combine, eliminate. |

@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md, skills) or surveys all applicable aspects when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; improve never implements what it finds. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, interface-safety, tests, gui, product, performance, game, docs, layout, claude-md, skills) or surveys all applicable aspects when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; improve never implements what it finds. `improve workflow` runs the survey fan-out and scoring in a workflow so only surviving findings reach this context. Improvement = opportunities where nothing is broken; defects are `review`. Never uses AskUserQuestion — every choice is plain chat text answered by a typed keyword."
 ---
 
 # Improve
@@ -56,6 +56,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `skills` | [aspects/skills.md](aspects/skills.md) | native — [WRITING-SKILLS.md](WRITING-SKILLS.md), vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md) | a `skills/` or `.claude/skills/` directory exists |
+| `behavior` | [aspects/behavior.md](aspects/behavior.md) | native — [BEHAVIOR.md](BEHAVIOR.md) | product launchable AND drivable (scripting surface, CLI, browser tool, harness) |
 | `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
 | `gui` | [aspects/gui.md](aspects/gui.md) | `gui` critique mode | UI surface exists |
 | `product` | [aspects/product.md](aspects/product.md) | `gui` orient mode | always |
@@ -90,7 +91,9 @@ Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). **RULE 0 holds under 
 
 ## Native aspects
 
-`architecture`, `interface-safety`, `security`, `claude-md`, and `skills` live here because no other skill owns them.
+`architecture`, `behavior`, `interface-safety`, `security`, `claude-md`, and `skills` live here because no other skill owns them.
+
+`behavior` is the one aspect that drives the running product: it drafts feature descriptions from the code, then verifies them against the live app and reports the discrepancies. It carries a stated override of RULE 2 in [BEHAVIOR.md](BEHAVIOR.md) — a defect it verifies live is a full finding, because there is no diff for `review` to run on.
 
 `interface-safety` asks one question the others don't: can a caller do the obvious thing and get the wrong result? It is the proactive half of the footgun test that `review`'s `contracts` axis runs read-only on a diff.
 
