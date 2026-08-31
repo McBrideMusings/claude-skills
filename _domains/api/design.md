@@ -98,3 +98,11 @@ product's basic resources — Jira's issues, projects, users. If those are model
 the API inherits it. His example: comments stored as an in-memory linked list, producing
 either `GET /comments/1 -> { next_comment_id: 2 }` or a nested horror. The fix is in the
 product's model, not the endpoint.
+
+The reverse also holds: **API quality is a marginal feature.** "If your product is valuable
+enough, users will flock to even a terrible API" — Facebook and Jira are his examples,
+integrated with everywhere despite appalling APIs, because the product is the thing wanted
+and the API is only the layer in front of it. Quality decides anything only when a consumer
+is choosing between two basically-equivalent products. The *presence* of an API is a
+different story: technical users demand some way to integrate via code, so having none is a
+real problem even where polish would not be.

@@ -23,5 +23,6 @@ Check, in this order — the first three are the ones that cost real money when 
    linked list, poll for a state machine, or reassemble a record the server could have
    returned whole. The finding belongs against the model, not the route.
 
-Not findings: REST purity, HATEOAS, whether it should have been GraphQL. Goedecke's own
-framing is that this advice is deliberately unfancy.
+Not findings: REST purity, HATEOAS, whether it should have been GraphQL, REST vs SOAP,
+JSON vs XML, or a missing OpenAPI schema — he calls OpenAPI useful but says Markdown docs
+are fine. Goedecke's own framing is that this advice is deliberately unfancy.
