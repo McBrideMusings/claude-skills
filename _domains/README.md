@@ -18,7 +18,7 @@ repo; see `_detect.md`. Nothing is written into a project repo, and the per-repo
 marker this store used to rely on was removed on 2026-08-23.
 
 The **issue backend** a skill writes to (beads / GitHub / local file) is a label in the same map,
-spelled `tracker:<backend>`; its cells live in [`../_tracker/`](../_tracker/README.md).
+spelled `tracker:<backend>`; its cells live in [`../ref-tracker/`](../ref-tracker/README.md).
 
 ## Layout
 

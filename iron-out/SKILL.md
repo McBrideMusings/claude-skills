@@ -75,7 +75,7 @@ Fog only ever gathers *toward* the destination. Work past it is **Out of scope**
 
 ## Phase 1 — Scan
 
-Resolve the issue backend via [`../_tracker/_detect.md`](../_tracker/_detect.md), then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context.
+Resolve the issue backend via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md), then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context.
 
 **Sonnet, not Haiku — the isolation is the point, not the model.** A Haiku run returned template placeholder text in every `question` field (literally `"Decision or design choice not settled: Which"`) while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone. Re-running on Sonnet produced real questions from the same bodies.
 

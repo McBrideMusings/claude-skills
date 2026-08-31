@@ -11,7 +11,7 @@ Break a plan into independently-grabbable tickets using **vertical slices** (tra
 
 **This skill is the single owner of spec/PRD generation.** `docs`, `grill-me`, `gui` and `iron-out` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; a PRD is a by-product of this run (Phase 03), not a prerequisite for it.
 
-**Issue backend:** resolve once via [`../_tracker/_detect.md`](../_tracker/_detect.md) and hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
+**Issue backend:** resolve once via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md) and hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
 
 ## Scratch files
 

@@ -2,7 +2,7 @@
 
 If a selector is present, resolve it to an **ordered list of concrete items** *before* the loop, then freeze it. Print the resolved queue for the user so they see exactly what will be worked and in what order. Each item is one of two kinds:
 
-Resolve the issue backend once via [`../_tracker/_detect.md`](../_tracker/_detect.md) before resolving any selector — the commands below are given per backend.
+Resolve the issue backend once via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md) before resolving any selector — the commands below are given per backend.
 
 - **Issue item** — carries an issue ID (a GitHub number, or a beads ID like `myproj-zb8`). Fed to a pass as `/implement <id> continuous`.
 - **Local item** — a followup or papercut with no issue ID. Fed to a pass as `/implement continuous item:"<one-line description>" source:"<where it came from>"` (see implement Phase 0).

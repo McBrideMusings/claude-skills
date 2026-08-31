@@ -141,7 +141,7 @@ The ranking input is leverage and dependency order — what a change unblocks, w
 
 **This phase is the point of the skill.** A survey that ends with a report and no tickets has produced nothing durable — the context dies with the session and the findings die with it.
 
-1. **Resolve the backend once** via [`../_tracker/_detect.md`](../_tracker/_detect.md) — `beads`, `github`, or `local`. Hold the answer for the rest of the phase.
+1. **Resolve the backend once** via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md) — `beads`, `github`, or `local`. Hold the answer for the rest of the phase.
 2. **Turn each surviving finding into a ticket draft.** One finding, one ticket. The finding already carries the four fields a ticket needs, so this is a translation, not a rewrite:
 
    | Finding field | Ticket field |

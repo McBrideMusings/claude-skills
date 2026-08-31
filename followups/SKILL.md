@@ -20,7 +20,7 @@ Use when the user asks to add a follow-up ("remember to …", "file as a followu
 
 **On the repo's issue tracker, always.** A follow-up is an issue: `bd create` on beads, `gh issue create` on GitHub. There is no file.
 
-A repo with neither backend **halts** — see [`../_tracker/_detect.md`](../_tracker/_detect.md) step 6. Say the repo has no tracker, offer `bd init`, and file nothing. Never write the items to a markdown list instead: a list nobody maintains is where follow-ups go to be forgotten, and it puts a file that must survive inside a tree that gets deleted.
+A repo with neither backend **halts** — see [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md) step 6. Say the repo has no tracker, offer `bd init`, and file nothing. Never write the items to a markdown list instead: a list nobody maintains is where follow-ups go to be forgotten, and it puts a file that must survive inside a tree that gets deleted.
 
 ---
 
@@ -67,7 +67,7 @@ Orient yourself:
 
 **A real tracker whenever the repo has one — owned or not.** A repo with neither beads nor a GitHub remote has no destination: halt and offer `bd init`.
 
-Run the resolution in [`../_tracker/_detect.md`](../_tracker/_detect.md):
+Run the resolution in [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md):
 
 - **`beads`** → the destination is the beads database. No repo argument needed; `bd` finds it.
 - **`github`** → the destination is a `github.com[:/]OWNER/REPO` remote from `git remote -v`.

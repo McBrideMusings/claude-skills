@@ -6,7 +6,7 @@ answer so every downstream skill (`to-tickets`, `triage`, `implement`, `iterate`
 
 ## Step 1 — Detect
 
-Run the resolution in [`../_tracker/_detect.md`](../_tracker/_detect.md). It gives one of:
+Run the resolution in [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md). It gives one of:
 
 | State | Meaning |
 | --- | --- |
@@ -46,7 +46,7 @@ git add .beads/issues.jsonl
 hook only refreshes `issues.jsonl` when a `.beads/` path is already staged, so a file that has
 never been committed is never written, while `bd config get export.auto` cheerfully reports
 `true`. Seed it once by hand and it maintains itself from then on. Full detail:
-[`../_tracker/beads.md`](../_tracker/beads.md) § JSONL export.
+[`../ref-tracker/beads.md`](../ref-tracker/beads.md) § JSONL export.
 
 This does **not** replace the Dolt sync — it is a readable copy, not a backup. Both are on.
 
@@ -94,7 +94,7 @@ Same question, shorter, since there's nothing to migrate:
   until one exists; there is no file-based fallback.
 
 `--skip-agents` is deliberate: this repo's agent instructions live in `CLAUDE.md`, and the bd verb
-tables live in `_tracker/beads.md`. Don't let `bd init` drop an unasked-for `AGENTS.md` into a
+tables live in `ref-tracker/beads.md`. Don't let `bd init` drop an unasked-for `AGENTS.md` into a
 repo the user didn't ask to change.
 
 ## Step 3 — Record the answer
@@ -119,12 +119,12 @@ the issue data off GitHub," which is the opposite of how beads works — the dat
 replicates to the git origin, and that is the point. A later agent read exactly that phrase, took
 the routine `refs/dolt/data` push for a leak, and offered to delete the user's only off-machine
 copy of 23 issues. Say what is ON and what is OFF, separately, every time. Full rule:
-[`../_tracker/beads.md`](../_tracker/beads.md) § Sync.
+[`../ref-tracker/beads.md`](../ref-tracker/beads.md) § Sync.
 
 **If you find an older section using the "local only" phrasing, rewrite it to the wording above** —
 even on a repo where nothing else in this phase needed changing.
 
-Step 2 of `_tracker/_detect.md` reads this section and trusts it over auto-detection, so it is how
+Step 2 of `ref-tracker/_detect.md` reads this section and trusts it over auto-detection, so it is how
 a repo pins a choice that detection would otherwise get wrong.
 
 ## Step 4 — Concurrency note
