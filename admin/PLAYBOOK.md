@@ -11,27 +11,23 @@ in, plus the `admin.toml` runner. `~/.admin/VERSION` says `linked:<source-repo>`
 source is `/Users/pierce/Projects/admin-project-tool` (Go dispatch in `cmd/`, Python
 runtime helpers still in `admin_lib/`, archetypes in `archetypes/`).
 
-**Dispatch order for `admin <word>`** (`cmd/root.go` `dispatchArgs`, ADR-0011 §2):
+**Dispatch order for `admin <word>`** (`cmd/root.go` `dispatchArgs`, ADR-0011 §2 as
+amended by ADR-0014):
 
 1. A tool verb: `archetypes`, `branch`, `check`, `populate`, `prs`, `worktree`, `help`,
    `completion`.
 2. A command declared in the **current project's** `admin.toml` (found from `$PWD`; a
    manifest that exists but fails to parse blocks here with a hard error).
-3. **Otherwise `branch --yes <word>`: it creates/checks out a git branch named `<word>`,
-   no confirmation.** This is the trap. There is no "unknown command" error.
+3. Otherwise: `unknown command "<word>"`, exit 1, nothing touched. The error lists the
+   manifest's real commands, or says there is no `admin.toml` here.
 
 Consequences you must act on:
 
-- **Never run `admin <anything>` in a repo until you have confirmed a valid manifest is
-  present**: `admin check` first, every time, in that directory. `check` is safe in
-  step 1, so it never falls through.
-- **There is no `admin new` and no `admin compile`.** Typing either checks out a branch
-  called `new`/`compile`. Bootstrap = write `admin.toml` by hand from this playbook,
-  then `admin check`.
-- Never tell the user to run an `admin` command in a directory you haven't verified has
-  a manifest (a sibling checkout of the same project does not count).
-- Recovery when the trap fires: `git checkout <previous-branch> && git branch -D <word>`
-  — the fallback only creates a branch; it changes nothing else.
+- **`admin <word>` never creates a git ref.** Branches and worktrees come only from the
+  reserved verbs `admin branch <input>` and `admin worktree <input>`, which take a name,
+  an issue/PR number, a bead id or a GitHub URL. A manifest may not claim either name.
+- **There is no `admin new` and no `admin compile`.** Typing either is an unknown-command
+  error. Bootstrap = write `admin.toml` by hand from this playbook, then `admin check`.
 
 ## Bootstrap procedure (no detector exists)
 
@@ -39,7 +35,7 @@ Consequences you must act on:
    commands on the canonical slots, one `[actions.X]` per `[commands.X]` step.
 2. `( cd <repo> && admin check )` — must print valid.
 3. Smoke-run one cheap real command (`admin test`, `admin audit`) — proves dispatch
-   reaches the manifest, not the branch fallback.
+   reaches the manifest.
 4. `admin.toml` stays uncommitted and out of `.gitignore` (globally excluded). If it
    shows in `git status`, fix the exclusion; never stage it.
 

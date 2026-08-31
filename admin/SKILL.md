@@ -12,27 +12,36 @@ description: "Add/edit/audit a project's admin task runner, AND diagnose a misbe
 There is **no generated `./admin` script** (ADR-0006). The installed tool interprets `admin.toml` at runtime:
 
 - Installed entry: `~/.admin/admin`, on PATH as **`admin`**. Run `admin <command>` from anywhere inside a project — it finds `admin.toml` by walking up from `$PWD`.
-- Tool verbs (Go binary, aliased `repo`): `admin check` (parse + resolve + validate the manifest), plus the dashboard verbs `branch`, `prs`, `populate`, `worktree`, `archetypes`. **`admin new` and `admin compile` no longer exist — typing them checks out a git branch by that name (see the trap below).**
+- Tool verbs (Go binary, aliased `repo`): `admin check` (parse + resolve + validate the manifest), plus the dashboard verbs `branch`, `prs`, `populate`, `worktree`, `archetypes`. **`admin new` and `admin compile` no longer exist — typing either is an unknown-command error.**
 - Editing `admin.toml` takes effect immediately — there is nothing to regenerate, no artifact to commit, no drift to audit.
 
-## ⚠️ THE BRANCH-FALLBACK TRAP — read before running ANY `admin` command
+## Dispatch — `admin <word>` is a command or an error
 
-`admin <word>` dispatches in this order (`cmd/root.go` `dispatchArgs`, ADR-0011 §2):
-(1) a tool verb; (2) a command declared in the **current directory's** valid `admin.toml`;
-(3) **otherwise `branch --yes <word>` — it creates and checks out a git branch named
-`<word>`, with no confirmation and no "unknown command" error.** A repo with no
-`admin.toml`, or a typo'd command name there, silently mutates git state.
+`admin <word>` dispatches in this order (`cmd/root.go` `dispatchArgs`, ADR-0011 §2 as
+amended by ADR-0014): (1) a tool verb; (2) a command declared in the **current
+directory's** valid `admin.toml`; (3) otherwise `unknown command "<word>"`, exit 1,
+nothing touched — the error lists the manifest's real commands, or says there is no
+`admin.toml` in that directory.
 
-Standing rules, no exceptions:
+**A bare word never creates a git ref.** Branches and worktrees come only from the two
+reserved verbs, each taking a name, an issue/PR number, a bead id or a GitHub URL:
 
-- **`admin check` first, in that exact directory, before any other `admin` command** —
-  `check` is a tool verb, so it can never fall through.
-- Never instruct the user to run an `admin` command in a directory you haven't verified
-  has a valid manifest (a sibling checkout of the same project does not count).
+```
+admin branch <input>      # create/check out the branch in this working tree
+admin worktree <input>    # create a separate worktree for it
+```
+
+Until ADR-0014 (2026-08-31) step 3 was `branch --yes <word>`, so any word typed in a repo
+without an `admin.toml` — every fresh clone, since the manifest is never committed —
+silently created and checked out a branch by that name. Meeting that behaviour means the
+installed binary predates the fix: `bash ~/Projects/admin-project-tool/install.sh`.
+
+Standing rules:
+
+- **`admin check` first, in that exact directory, before any other `admin` command** — it
+  is the one verb that reports what the manifest actually offers.
 - Bootstrap is manual: write `admin.toml` by hand per [PLAYBOOK.md](PLAYBOOK.md), then
   `admin check`, then smoke-run one cheap command.
-- If the trap fires: `git checkout <previous-branch> && git branch -D <word>` — the
-  fallback only creates a branch.
 
 **[PLAYBOOK.md](PLAYBOOK.md) is the distilled fleet pattern** (dispatch details, canonical
 vocabulary with real usage counts, kind selection, sub-target idioms, standard tables) —
@@ -151,7 +160,7 @@ For pure `admin.toml` edits (no tool change), skip Phase 0 entirely — edits ta
 
 ### Phase 1: Detect state
 
-- No `admin.toml` → bootstrap (Phase 2a) by hand — **never type `admin new`; that verb is gone and falls through to a branch checkout.**
+- No `admin.toml` → bootstrap (Phase 2a) by hand — **`admin new` does not exist; it is an unknown-command error.**
 - `admin.toml` present → edit + validate (Phase 2b): `admin check`.
 - A stale committed `./admin` present (old generated bundle) → delete it; the project runs from PATH now.
 
@@ -159,7 +168,7 @@ For pure `admin.toml` edits (no tool change), skip Phase 0 entirely — edits ta
 
 1. Write `admin.toml` by hand from [PLAYBOOK.md](PLAYBOOK.md) — pick archetypes from the fleet list, lay commands on the canonical slots. (There is no detector; `admin new` does not exist.)
 2. Show user the manifest you wrote.
-3. Smoke-run one cheap real command (`admin test`, `admin audit`) after `admin check` passes — proves dispatch reaches the manifest, not the branch fallback.
+3. Smoke-run one cheap real command (`admin test`, `admin audit`) after `admin check` passes — proves dispatch reaches the manifest.
 4. Apply standard command ordering (Phase 2c) — archetype defaults are usually wrong.
 5. **Populate `[urls]`** — scan the project for URLs and local dev ports, then write a `[urls]` table. Sources (in order): `wrangler.toml` (`port =`), `vite.config*.ts` (port defaults/env vars), `.env.example` (`_URL=` entries), package.json scripts (proxy targets, `--port`), README/docs. Produce entries for every named environment: local dev variants per app, staging/preview, production, and external community URLs (subreddit, app store page, etc.).
 6. `admin check` to confirm it resolves.
@@ -662,7 +671,7 @@ Discovery files live at `/tmp/admin-project-tool/<pid>.json`; stale ones (dead P
 
 ## Standalone copy — retired
 
-`admin compile` no longer exists (typing it checks out a branch named `compile`). A found `./admin` file in a repo is a stale artifact of the retired Python tool — delete it.
+`admin compile` no longer exists (typing it is an unknown-command error). A found `./admin` file in a repo is a stale artifact of the retired Python tool — delete it.
 
 ---
 
