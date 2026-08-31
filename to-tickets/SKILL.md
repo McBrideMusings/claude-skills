@@ -79,9 +79,10 @@ user** — synthesize what's already been discussed. Interviewing is `grill-me`'
 conversation is too thin to write a real spec, stop and say so, and point at `/grill-me`.
 
 Write it to `/private/tmp/claude/<repo-slug>/spec.md` — absolute path, same `<root>` resolution
-as the proposal file above. Tell the user the path on its own line with no trailing
-punctuation, summarize the problem, solution, and user-story count inline, and **ask for
-approval before slicing**:
+as the proposal file above. The file is plumbing for later phases; don't show its path.
+**Paste the spec's full text in the chat message** — every section, verbatim or faithfully
+condensed with nothing omitted — and **ask for approval before slicing**. The user approves
+what they can read in chat, never a file they'd have to open:
 
 > *"Spec written. Does this match what you want built, or should I adjust before slicing?"*
 
