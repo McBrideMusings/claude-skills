@@ -56,7 +56,7 @@ Reference is SKILL.md-structured, no app code → skills mode. Whole-catalog sca
 
 **Fold as axis:**
 
-> `majidmanzarpour/threejs-game-skills` carries a per-asset-type generation skill per type. The user's `generate` engine already runs that process — fold each type in as a file under `_generate/` (the axis split), not as new skills. (This is how `_generate/` was built.)
+> `majidmanzarpour/threejs-game-skills` carries a per-asset-type generation skill per type. The user's `generate` engine already runs that process — fold each type in as a per-type file inside the `generate` skill (the axis split), not as new skills. (This is how `generate`'s per-type files were built.)
 
 **Rejected:**
 

@@ -1,8 +1,8 @@
-# `_generate/` — asset-type axis for the `generate` engine
+# Asset-type axis for the `generate` engine
 
-Not a skill. A set of per-asset-type knowledge files the `generate` engine reads at run time,
-one file per requested asset type (`model`, `image`, `video`, `texture`, `music`, `sfx`, `dialogue`).
-The leading `_` and the absence of any `SKILL.md` keep this directory from registering as a skill.
+Per-asset-type knowledge files the `generate` engine reads at run time, one file per requested
+asset type (`model`, `image`, `video`, `texture`, `music`, `sfx`, `dialogue`), living beside
+SKILL.md so they never register as skills of their own.
 
 `generate` is the single front door for all asset generation. For each asset type it walks an
 ordered backend preference list from `generate/backends.toml`, health-gates every candidate (key

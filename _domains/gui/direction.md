@@ -106,7 +106,7 @@ When comping:
 ## Image generation goes through `generate`
 
 `gui` has exactly one path to an image: the **`generate`** skill, which health-gates backends in
-`generate/backends.toml` and reads the image asset-type axis at `_generate/image.md`. Today that
+`generate/backends.toml` and reads the image asset-type axis at `generate/image.md`. Today that
 resolves to local ComfyUI.
 
 **`gui` must never learn a second path.** Adding a cloud image backend later is a `backends.toml`

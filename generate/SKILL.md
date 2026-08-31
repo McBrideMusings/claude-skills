@@ -7,15 +7,15 @@ description: "Single front door for generating game/app assets — 3D models, im
 
 One engine for all asset generation. The *process* — pick asset-type → choose a working backend →
 prompt → call → post-process → write a game-ready file + manifest entry — is backend-agnostic. **Which**
-backend and **how to prompt it** come from the asset-type axis in `_generate/<type>.md`.
+backend and **how to prompt it** come from the per-type files beside this skill (`<type>.md`).
 
-Asset types: `model`, `image`, `texture`, `music`, `sfx`, `dialogue`. (Image vs texture are split on
+Asset types: `model`, `image`, `video`, `texture`, `music`, `sfx`, `dialogue`. (Image vs texture are split on
 purpose — texture demands seamless tiling + PBR maps + power-of-two sizing; image is flat 2D art.)
 
 ## Phase 01 — Resolve the asset type
 
 From the request, pick exactly one type. Ambiguous "make art" → ask which (one plain-chat question).
-Load `_generate/<type>.md` — it holds that type's backend candidates, credential gate, prompt
+Load `<type>.md` — it holds that type's backend candidates, credential gate, prompt
 conventions, and output contract.
 
 ## Phase 02 — Choose a working backend (health-gated fallthrough)
@@ -51,7 +51,7 @@ the backend actually used.
 **no** image path of its own — no API key, no direct HTTP call, no per-provider branch. That contract
 is what makes adding a cloud image backend a one-line `backends.toml` edit: change the `[image]` order
 here and `gui` picks it up with no change on its side. Preserve it. UI-comp specifics (model pick,
-three-comps rule, provenance sidecar) live in `_generate/image.md`.
+three-comps rule, provenance sidecar) live in `image.md`.
 
 ## Relationship to the `comfy` skill
 
@@ -59,4 +59,5 @@ three-comps rule, provenance sidecar) live in `_generate/image.md`.
 *may* call comfy as one backend among several — use `generate` when you want "make me an asset, pick
 the right tool"; use `comfy` when you specifically want to drive ComfyUI yourself.
 
-Adapted from majidmanzarpour/threejs-game-skills (asset-generation providers) — see `_generate/`.
+Adapted from majidmanzarpour/threejs-game-skills (asset-generation providers) — the per-type files
+and comfy workflow JSONs live beside this skill.
