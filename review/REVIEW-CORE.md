@@ -593,3 +593,5 @@ A change can pass one axis and fail another. Reporting axis-tagged stops one axi
 ## Uncertain findings → grill-me hand-off
 
 A finding is **uncertain** when it survived the ≥75 cutoff but carries a `low` severity *and* its **Why** hinges on an assumption about intent the diff doesn't settle (a "did you mean X or Y here" rather than a definite defect). When the self-review path produces one or more such findings, the caller ([SKILL.md](SKILL.md)) offers a `grill-me` pass to interrogate them one question at a time. Do not offer grill-me for a clean report or one whose findings are all definite.
+
+**Phase 03c `intent unclear` rows join the uncertain set.** An intent-table row marked `intent unclear` names two readings of a block and picks neither; if no lens turns it into a scored finding, nothing else ever routes it to the user, and the ambiguity dies silently. So each such row counts as an uncertain item for this hand-off: the grill-me pass asks it as one question, the two readings as the options, with a recommended answer. This only widens when the offer fires — it adds no gate, so unattended callers (sweep, `implement` validate, `wrap-up`) are unaffected.
