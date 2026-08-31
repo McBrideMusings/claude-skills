@@ -356,17 +356,18 @@ The offer applies to a reviewer who submitted a **formal review of any state** �
 
 **Reconcile mode owes the row too.** Reading every point and finding it already fixed at HEAD is the case that most looks like nothing left to do and most needs the re-request: the verdict on the PR is unchanged, so the branch still reads as blocked to everyone but you. Draft the replies saying which sha addressed what, and contribute the row anyway.
 
-**This file is not the only thing that produces the row, and it is not the gate on it.** [SKILL.md](SKILL.md) Phase U5 owes a re-request to every prior reviewer whenever the pass pushes at all — including a pass where this file never loaded because the only problem was a conflict or a red check. When both produce a row for the same login it is one row, not two.
+**This file is not the only thing that produces it, and it is not the gate on it.** [SKILL.md](SKILL.md) Phase U5 owes a re-request to every prior reviewer whenever the pass pushes at all — including a pass where this file never loaded because the only problem was a conflict or a red check.
 
-**This phase prints no prompt of its own.** It contributes one row per reviewer to [SKILL.md](SKILL.md) Phase U5's single slate, which is the only thing the whole skill asks:
+**This phase prints no prompt of its own, and contributes no row of its own.** Phase U5 carries the re-request inside its `push + re-request` row, and that row is the whole ask:
 
 ```
-2. **re-request** — @alexthemighty's `CHANGES_REQUESTED` still gates the merge. My pick: re-request.
+1. **push + re-request** — 2 commits to `origin/pierce/leagues-lp`, then re-request
+   @alexthemighty, who reviewed 4c1f9ab before either existed. My pick: both.
 ```
 
-A second prompt under the response block — `re-request` / `skip` on its own line, beneath U5's own question — makes the user answer twice to accept two things you already recommended. One slate, one keyword (RULE 0 — never a selector).
+A second prompt under the response block — `re-request` / `skip` on its own line, beneath U5's own question — makes the user answer twice to accept two things you already recommended. One slate, one keyword (RULE 0 — never a selector). A `re-request` numbered *separately* from the push is the same failure wearing a slate's clothes: `go` already means "push these commits", and leaving a reviewer's verdict standing against commits they have never seen is not a second decision.
 
-On an explicit yes to that row — this is an outward action on someone else's queue, held to the same gate as any send:
+On a `go` that takes the push row — this is an outward action on someone else's queue, run immediately after the push confirms, never deferred to a later message:
 
 ```
 gh pr edit <pr_number> --repo <owner>/<repo> --add-reviewer <login>

@@ -241,8 +241,9 @@ of these rows; it never prints a prompt of its own. Close it with `CLAUDE.md`'s 
 
 > `unblock` made 3 commits on `pierce/leagues-lp`. Outward actions waiting:
 >
-> 1. **push** — 3 commits to `origin/pierce/leagues-lp`. My pick: push.
-> 2. **re-request** — @alexthemighty's `CHANGES_REQUESTED` still gates the merge. My pick: re-request.
+> 1. **push + re-request** — 3 commits to `origin/pierce/leagues-lp`, then re-request
+>    @alexthemighty, who reviewed `4c1f9ab` before any of them existed. My pick: both.
+> 2. **reply** — the consolidated response block, 3 points. My pick: post.
 >
 > Type `go` to take both, or answer per item (`1 push, 2 skip`).
 
@@ -253,27 +254,38 @@ with exactly one outward action still prints the slate, one row, closed with `go
 
 - **Ordering is execution order.** Push is always row 1 when it is present, because every other
   outward action assumes the commits are on the branch.
-- **A push owes a re-request row for every login that has already submitted a formal review** —
-  `CHANGES_REQUESTED`, `COMMENTED` or `APPROVED` alike, and whichever gate produced the commits.
+- **The re-request is PART OF the push row, not a row beside it.** Every login that has already
+  submitted a formal review — `CHANGES_REQUESTED`, `COMMENTED` or `APPROVED` alike — gets
+  re-requested as the second half of the same action, immediately after the push lands, whichever
+  gate produced the commits. Write the row as `push + re-request` and take both on `go`.
+
   A reviewer's verdict is a statement about the diff they read. The moment this pass pushes, that
   diff is gone, and their verdict sits on the PR looking current while describing code that no
   longer exists — an `APPROVED` that now approves unreviewed commits, a `CHANGES_REQUESTED` that
-  still gates a merge over findings that are fixed. Re-requesting is what marks the verdict
-  stale; only the reviewer can replace it.
+  still gates a merge over findings that are fixed. Pushing without re-requesting is what leaves
+  that stale verdict standing, so the two are one action with one approval.
 
-  **This is not the feedback gate's row and does not wait on it.** Gate 3 fires on *unanswered*
-  feedback; this fires on *any* push with a prior reviewer, so a pass that only resolved conflicts
-  or only fixed red CI still owes it. Read the reviewer list directly rather than inferring it
-  from whether U4 fired:
+  **Never split it into its own numbered row, and never leave it to a follow-up message.** A
+  separate row is a second thing to notice at the end of a long pass; a follow-up message is the
+  user approving a consequence of what they already approved. Both are the failure this bullet
+  exists to prevent. The user types `go` once and the branch ends the turn pushed, answered, and
+  back in the reviewer's queue.
+
+  **It does not wait on the feedback gate.** Gate 3 fires on *unanswered* feedback; this fires on
+  *any* push with a prior reviewer, so a pass that only resolved conflicts or only fixed red CI
+  still owes it. Read the reviewer list directly rather than inferring it from whether U4 fired:
 
   ```
   gh pr view <n> --json reviews,author --jq '[.reviews[].author.login] - [.author.login] | unique'
   ```
 
-  Name the reason the row exists in its own words — what the pass pushed, not what the reviewer
-  said. `re-request — @alexthemighty reviewed 1e0555f4; this pass pushed a main merge and a fix
-  on top. My pick: re-request.` When `FEEDBACK.md` Phase 08 also produced a row for that login,
-  they are the same row: merge them, never print two.
+  Name the reason in the row's own words — what the pass pushed, not what the reviewer said:
+  `push + re-request — 2 commits, then re-request @alexthemighty, who reviewed 1e0555f4 before
+  the main merge and the export fix existed.`
+
+- **A skipped push takes the re-request with it.** `1 skip` means neither half happened — say so
+  in one clause. Re-requesting a reviewer against commits that never left the machine asks them
+  to look at nothing.
 - **A row the user skips is reported as not done**, in one clause. Skipping push leaves every
   commit local — say the branch is still blocked on GitHub's side, since the fixes exist only
   here.
