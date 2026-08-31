@@ -104,6 +104,21 @@
   var sizeLabel = null;
   var D = CATALOG[DEVICE];
 
+  /* --size WxH overrides the catalog dimensions, keeping the chrome. A device entry's size
+     is the stock hardware, which is the right answer for a phone and the wrong one for a
+     window: a Mac app opens at whatever size it opens at, and one drawn at the desktop
+     entry's 1440x900 is judged at a size it never has — with `#at-stage > *` stretching the
+     design across the whole width to prove it. The chrome is the part that says which
+     platform this is; the size is the part the app decides. */
+  var SIZE = /^(\d+)\s*[x×]\s*(\d+)$/.exec((root.getAttribute('data-at-size') || '').trim());
+  if (SIZE) {
+    var over = {};
+    for (var k in D) { if (Object.prototype.hasOwnProperty.call(D, k)) over[k] = D[k]; }
+    over.w = +SIZE[1];
+    over.h = +SIZE[2];
+    D = over;
+  }
+
   /* `fill` draws nothing at all — the folio renders straight into the page. The panel still
      gets a device group, because "what am I looking at" is a question the reader asks
      whatever the answer is, and here the live window size is the whole of it. */

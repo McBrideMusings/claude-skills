@@ -487,6 +487,11 @@ def cmd_build(args):
         if device not in DEVICES:
             die("unknown device %r. Known devices: %s" % (device, ", ".join(DEVICES)))
         root_attrs += ' data-at-device-frame="%s"' % html.escape(device, quote=True)
+        if args.size:
+            m = re.match(r"^(\d{2,5})\s*[x×]\s*(\d{2,5})$", args.size.strip())
+            if not m:
+                die("--size must be WxH in CSS pixels, e.g. 420x560 (got %r)" % args.size)
+            root_attrs += ' data-at-size="%sx%s"' % (m.group(1), m.group(2))
         window_parts = split_list(args.window)
         unknown = [w for w in window_parts if w not in WINDOW_PARTS]
         if unknown:
@@ -509,6 +514,8 @@ def cmd_build(args):
             "you turn it on with --with viewport")
     elif args.window:
         die("--window needs the viewport widget and --device desktop")
+    elif args.size:
+        die("--size needs the viewport widget: there is no frame to resize without one")
 
     doc = [
         "<!DOCTYPE html>",
@@ -688,6 +695,10 @@ def main():
     b.add_argument("--device", metavar="D", choices=sorted(DEVICES),
                    help="the one device this prototype is for (see `spike kinds`). "
                         "Required wherever the viewport widget is on")
+    b.add_argument("--size", metavar="WxH",
+                   help="override the frame's dimensions, keeping its chrome. The catalog "
+                        "size is the stock hardware, which is right for a phone and wrong "
+                        "for a window: use it to draw a Mac app at the size it opens at")
     b.add_argument("--window", metavar="bar,lights",
                    help="window chrome for the desktop frame. Default is bar,lights — a "
                         "desktop app is a window. --window none for a design that draws "

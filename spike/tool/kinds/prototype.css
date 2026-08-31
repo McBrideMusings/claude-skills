@@ -15,8 +15,16 @@ body { background: var(--bg); }
    notch — the stage is inset-tall taller than the room it has, and `#at-stage > *` below
    stretches the design to match. A root that pins a footer to its own bottom edge then
    puts that footer off the bottom of the screen. */
+/* max-height as well as min-height, because a floor alone never bounded anything. The
+   stage grew to its content, so an app shell that had opted into being bounded — root
+   `min-height: 0`, scrolling middle, fixed composer — had no definite parent height to
+   shrink against and pushed its own composer off the bottom of the frame. Capping the
+   stage is what makes the opt-in mean something.
+   A document root is unaffected: it keeps `min-height: auto`, so it grows past the cap
+   and the page scrolls, exactly as before. */
 #at-stage {
   min-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
+  max-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
   display: flex;
   flex-direction: column;
 }
