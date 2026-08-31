@@ -119,6 +119,10 @@ Before adding a rule, section or file, pick one of five and say which: **replace
 
 Adding without considering the other four is how **sediment** and **duplication** arrive, and duplication is the condition that later produces a contradiction. Run this before the edit and again after.
 
+## Companion scripts pin the shared contract in a test
+
+A skill whose prose describes what a companion script computes has a seam no single-file read can check: edit either side alone and the doc now tells the model a wrong meaning for a number the script still emits. Pin the shared contract — the flags the prose tells the model to run, the semantics the prose assigns to outputs — in a small test beside the scripts, asserting both directions: every flag the docs name exists in the script's CLI, and every load-bearing claim string is still present in the doc. The drift then fails a test run instead of surfacing as a confidently wrong report. First instance: `../audit-session/test_contract.py`.
+
 ---
 
 ## Audit mode

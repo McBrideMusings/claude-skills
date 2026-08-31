@@ -7,6 +7,14 @@ exist to beat.
 Cheapest and most reversible wins. **Say which shapes you rejected and why**, and prefer the
 fix that removes the condition over one that guards it.
 
+**The prevention gate runs before the five shapes.** A proposed edit to a skill or
+`CLAUDE.md` must name the missing or wrong instruction that *would have prevented the
+specific failure the lens cited* — an edit that merely relates to the failure dies here. An
+instruction that was correct and simply ignored is never reworded: that is model variance,
+and its fix shape is enforcement (`HOOKS.md`) or rehousing (`CONTEXT-PRESSURE.md`), not
+stronger prose. When an edit does survive, prefer replacing existing text over appending —
+appended text is how a rule grows two competing statements.
+
 | Shape | Asks | Answer names |
 | --- | --- | --- |
 | [CONTEXT-PRESSURE.md](CONTEXT-PRESSURE.md) | **Whose window pays for this rule?** | `review/axes/<axis>.md` and the three tests it passed, with the ~1.5% review rate stated — or which test it failed and why it stays always-on. |
