@@ -524,19 +524,26 @@ def cmd_build(args):
         if "none" in window_parts and len(window_parts) > 1:
             die("--window none means no chrome at all, so it cannot be combined with %s"
                 % ", ".join(w for w in window_parts if w != "none"))
-        if device == "desktop":
+        backdrop = (args.backdrop or "none").strip()
+        if backdrop != "none":
+            if device not in BACKDROP_DEVICES:
+                die("--backdrop %s only applies to the %s frames, and --device is %r"
+                    % (backdrop, " and ".join(BACKDROP_DEVICES), device))
+            # A backdrop turns the frame into a screen, and a screen is not a window.
+            # Drawing the desktop default around it put traffic lights on the desktop
+            # itself, with the wallpaper and menu bar inside them.
+            if window_parts:
+                die("--window and --backdrop cannot be combined: with a backdrop the frame "
+                    "is a screen, not a window, and each window on it gets its chrome from "
+                    "data-at-win instead")
+            root_attrs += ' data-at-backdrop="%s"' % html.escape(backdrop, quote=True)
+        if device == "desktop" and backdrop == "none":
             # A desktop app is a window. Saying nothing gets you one; opting out is explicit.
             if not window_parts:
                 window_parts = split_list(WINDOW_DEFAULT)
             if window_parts != ["none"]:
                 root_attrs += ' data-at-window="%s"' % html.escape(
                     ",".join(window_parts), quote=True)
-        backdrop = (args.backdrop or "none").strip()
-        if backdrop != "none":
-            if device not in BACKDROP_DEVICES:
-                die("--backdrop %s only applies to the %s frames, and --device is %r"
-                    % (backdrop, " and ".join(BACKDROP_DEVICES), device))
-            root_attrs += ' data-at-backdrop="%s"' % html.escape(backdrop, quote=True)
     elif args.device:
         die("--device needs the viewport widget: it is on for prototype, and elsewhere "
             "you turn it on with --with viewport")

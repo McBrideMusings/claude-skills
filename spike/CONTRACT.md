@@ -283,7 +283,10 @@ Three things it changes:
   radius, the shadow and the drag — never hand-draw any of them. Add
   `data-at-win-controls="close"` for a `[.titled, .closable]` window, which draws
   minimize and zoom greyed rather than leaving them out. The bar is the window's first
-  child and `flex: none`, so a column layout keeps its own scrolling middle.
+  child and `flex: none`, so a column layout keeps its own scrolling middle. Content that
+  is **absolutely positioned** inside the window does not flow below the bar on its own —
+  it renders straight over it, which looks exactly like no bar was drawn. Reserve it with
+  the published `--at-win-bar`: `top: var(--at-win-bar, 0px)`.
 - **Every window is draggable.** `data-at-win` implies it; mark anything else
   `data-at-drag` and the harness wires it,
   including windows a variant only draws later. Controls inside it keep working: a drag

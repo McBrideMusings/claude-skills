@@ -477,6 +477,10 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-twk):not(.at-twk-
    Mark the element `data-at-win="Title"` and the harness supplies the bar, the lights,
    the shadow and the drag. */
 .at-vp-appwin {
+  /* Published so a layout can reserve the bar. A window whose content is absolutely
+     positioned — a pane stack, an overlay — does not flow below the bar on its own and
+     will render straight over it, which looks exactly like the bar was never drawn. */
+  --at-win-bar: 28px;
   position: absolute;
   border-radius: 10px;
   overflow: hidden;
@@ -493,7 +497,7 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-twk):not(.at-twk-
 .at-vp-appwin-bar {
   flex: none;
   position: relative;
-  height: 28px;
+  height: var(--at-win-bar);
   display: flex;
   align-items: center;
   gap: 8px;
