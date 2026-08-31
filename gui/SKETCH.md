@@ -50,6 +50,8 @@ A sketch presents *one* layout decision. When multiple frames are needed, be exp
 
 Default to the smallest sketch that lets the user say yes/no. Six labelled frames is rarely the smallest sketch.
 
+**Challenge the default layout before rendering it.** The first arrangement that comes to mind is the generic one for the component — header + sidebar + card grid, a modal with two stacked buttons, a settings list — and left alone you will sketch it every time. When the layout you are about to draw is that obvious arrangement, either say in one line what a real alternative arrangement would lose (then sketch the default with that justification stated), or sketch the alternative as `Option B` beside it. A default that survives the challenge is fine; a default that was never challenged is the failure. (This is the in-model tier of **default-challenge** — `improve/SKILL-GLOSSARY.md`.)
+
 ### Output 02 — Sibling .monojson Stub on Disk (opt-in)
 
 **Do not emit the stub unless the user asks for a canvas.** When the ASCII sketch answers the question, the file is pure confusion — and it has already misfired: a user opened it expecting the sketch, found a blank document, and reasonably concluded the export was broken. It cannot ever contain the sketch. Monodraw's CLI is render-only with no import flag, so there is no path from ASCII back into a Monodraw file.

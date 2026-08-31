@@ -13,7 +13,9 @@ Left alone, the model derives a shortlist of directions and then always builds i
 project in a category ships the same one or two designs, no matter how the prompt is worded. Prompting
 harder does not fix it; *"be more original"* moves the argmax, it doesn't remove it.
 
-The fix is structural: **roll the dice outside the model.**
+The fix is structural: **roll the dice outside the model.** (This cell is the external-roll
+tier of **default-challenge** — `improve/SKILL-GLOSSARY.md`. The in-model tier — justify the
+obvious pick — is the one that does *not* work here, for the reason above.)
 
 ## The mechanism
 

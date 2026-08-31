@@ -98,6 +98,10 @@ Hunt for opportunities to refactor skills to use leading words. A triad spelled 
 
 You win twice over: fewer tokens, _and_ a sharper hook for the agent to hang its thinking on. Assume every skill is carrying restatements that leading words retire — go find them.
 
+## Default-challenge — guard every rank-or-pick step
+
+Wherever a skill has the agent rank candidates and take one — a genre, a layout, a variant set, a direction — the pick is deterministic: the model builds its own #1 every run (the argmax rut). Guard the step with a **default-challenge**, at the tier the pick calls for: gradeable picks get the in-model tier (justify the obvious pick by what the alternatives lose, or take the second-line form); taste picks get the external-roll tier, because the model justifies its argmax fluently and prompting harder only moves it. Full definition and the tier decision rule: [`SKILL-GLOSSARY.md`](SKILL-GLOSSARY.md); the worked tier-2 mechanism is `_domains/gui/direction.md`. Deployed at tier 1 in `explain`'s chart-genre pick, `gui`'s sketch mode, and `spike`'s variant set.
+
 ## Failure modes
 
 Use these to diagnose issues the user may be having with the skill.

@@ -108,7 +108,9 @@ re-decide something you have already worked out here. Run one, not both:
 stated axis, and a version that could ship in this product tomorrow. Anything that fails that bar
 gets dropped, same as a hand-written direction would.
 
-**Done when:** every variant has a name and a stated axis, and no two sit at the same axis position.
+**Challenge the default before locking the set.** One direction in any set is usually the obvious pattern for this component — the layout an unprompted model always builds. That direction may stay, but only named as the default and justified in one line by what the alternatives lose; and at least one direction in the set must be a genuinely second-line take, not a variation on the obvious skeleton. A set of three flavours of the default passes the axis test and still teaches nothing. (The in-model tier of **default-challenge** — `improve/SKILL-GLOSSARY.md`.)
+
+**Done when:** every variant has a name and a stated axis, no two sit at the same axis position, and the default-bearing variant is named and justified.
 
 ### Phase 04 — Build
 

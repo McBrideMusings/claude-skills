@@ -8,7 +8,7 @@ Judge whether a skill's **process** will actually run the way it is written. Dis
 
 **Scope: one skill directory at a time.** A contradiction between two skills co-loaded into the same session is real and common, and it is not this aspect's — it belongs to `audit-session`'s [steering-conflict](../../audit-session/axes/steering-conflict.md) lens, which can see which sources actually landed together. Judge each skill as if it were the only one loaded. Say so when a finding smells cross-skill, and route it.
 
-## The ten axes
+## The eleven axes
 
 Run every one against every skill in scope. Each finding quotes the skill's own line.
 
@@ -24,6 +24,7 @@ Run every one against every skill in scope. Each finding quotes the skill's own 
 | 8 | **Additive drift** | A rule sitting beside the older one it should have replaced or narrowed. Before any guidance was added, one of replace / narrow / move / delete should have been considered. Two rules covering one behaviour is the condition that produces axis 7. |
 | 9 | **Retained forensics** | A sha, session id, date, count, or retold incident inside a rule. The rule stays; the evidence goes to the commit message. This is a compress, never a delete — the behaviour is fine, the proof is what costs tokens on every load. One clause of reason is allowed where the agent would otherwise choose wrong. |
 | 10 | **Size** | `SKILL.md` body past 500 lines, or a `description` carrying more than routing and constraints. Measure words per section, never line count. |
+| 11 | **Unguarded pick** | A step where the agent ranks candidates and takes one — a genre, a layout, a variant, a direction — with no **default-challenge** on it (`../SKILL-GLOSSARY.md`), or one guarded at the wrong tier: a taste pick asked to justify itself in-model is the model grading its own argmax. Name the step, and name the tier the fix uses. |
 
 Axes 3–6 are why this aspect exists separately from `claude-md`. They are process failures; a document cannot have them.
 

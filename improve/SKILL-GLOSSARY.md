@@ -132,6 +132,17 @@ A distinct way a skill can be invoked — a case the skill handles — so differ
 
 _Avoid_: path, case, fork
 
+### Default-Challenge
+
+A guard placed on a **rank-or-pick step** — any step where the agent ranks candidates and takes one (a chart genre, a layout, a variant set, a visual direction). Left unguarded, the model builds its own #1 every run — the argmax rut; the pick is deterministic even when it looks like a choice. Two tiers, chosen by whether the pick is *gradeable*:
+
+- **Tier 1 — in-model challenge.** The candidates can be ranked on articulable criteria. When the top pick is also what an unprompted model would reach for, require one line justifying it by what the alternatives lose — or take the second-line form instead. Cheap, and it works because there is a real argument to write.
+- **Tier 2 — external roll.** The pick is taste or resonance, so justification can't help — the model justifies its argmax fluently, and prompting harder only moves the argmax. The choice leaves the model: a grounded shortlist, an index from outside (`secrets.randbelow`), a re-roll. The worked mechanism is `_domains/gui/direction.md`.
+
+Guarding a taste pick at tier 1 is the failure both tiers exist to catch — fluent self-justification is not a challenge.
+
+_Avoid_: anti-default, argmax guard, forced justification
+
 ### Leading Word
 
 A compact concept — also called a _Leitwort_ — already living in the model's pretraining, that the agent thinks with while running the skill. It encodes a behavioural principle in the fewest possible tokens by invoking priors the model already holds (e.g. _lesson_, _proximal zone of development_, _fog of war_, _tracer bullets_). Repeated as a token, never as a sentence, it accumulates a distributed definition across the skill and anchors a whole region of behaviour. Coining your own works if you define it clearly, but a made-up word recruits no priors — you pay in definition tokens what a pretrained word gives free. Reach for an existing word first.
