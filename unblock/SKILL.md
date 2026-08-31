@@ -305,6 +305,26 @@ with exactly one outward action still prints the slate, one row, closed with `go
   lands.
 - **Never `--force`**, never push to the default branch, never open a PR from here.
 
+**After the push, prove CI actually started before saying it did.** A push is not a run. Read both,
+against the new head:
+
+```
+gh pr view <n> --json mergeable,headRefOid --jq '"\(.mergeable) \(.headRefOid[0:9])"'
+gh run list --branch <branch> --limit 5 --json headSha,status,workflowName
+```
+
+- **`CONFLICTING` means no run will ever appear.** GitHub builds a PR's checks against a merge ref
+  it cannot construct while the branch conflicts, so a conflicting PR gets *zero* check runs — not
+  failing ones, none. A pass that pushed a red-CI fix onto a conflicting branch has fixed nothing
+  observable, and the merge that clears the conflict is what starts the first run.
+- **A run can take a minute to register.** Poll it; an empty list one second after the push is not
+  evidence either way. `queued` is the confirmation, not the absence of a row.
+- **Say what you saw, never what should follow from a push.** "CI is re-running" asserted off a
+  successful push, with no run on the new head, is the failure this bullet exists to prevent: it
+  reads as verification, it costs the user a turn to discover it was inference, and the branch sits
+  untested while everyone believes otherwise. Report `queued on <sha>`, or report that no run
+  exists and why.
+
 **A gate that fired and did not finish is reported as unfinished, in the same block.** A test you
 could not get green, a conflict hunk whose two sides genuinely mean different things, a feedback
 point that needs the user's intent — name it and say what you need. Do not roll it into a
