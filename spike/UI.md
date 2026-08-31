@@ -173,6 +173,15 @@ renders the control, and tweak state survives a variant switch on purpose, so fl
 compares the same screen in the same state. Full syntax and the handler boilerplate:
 [`CONTRACT.md`](CONTRACT.md).
 
+### A translucent design needs something behind it
+
+If the thing being judged is glass, vibrancy, or any floating surface you can see through,
+add `--backdrop desktop` (or `desktop-bare`) to a `desktop` or `panel` build. What such a
+design looks like IS what shows through it, so over the host's flat ground you are judging
+a different design. The harness draws the wallpaper, the menu bar and the drag behaviour;
+mark your own window `data-at-drag` and never hand-draw a desktop in the fragment.
+[`CONTRACT.md`](CONTRACT.md) has the whole flag.
+
 ### The device — decide it here, once
 
 `--device` names the one frame this design is judged in, and it is **required**. A phone chat surface

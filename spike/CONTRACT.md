@@ -257,6 +257,45 @@ has to know about. It reserves nothing — drawing under the lights is the entir
 style — and publishes `--at-lights-w` (78px) and `--at-lights-h` (28px) so a layout that wants to
 keep its own controls clear of them can. `--window` is refused unless `--device` is `desktop`.
 
+### `--backdrop` — a fake desktop behind a macOS frame
+
+`--backdrop none|desktop|desktop-bare`, valid only on `--device desktop` and `--device
+panel`. Default `none`: the host's own neutral ground, which is the right answer for an
+opaque app, where a wallpaper is scenery competing with the design.
+
+It stops being scenery the moment the design is **translucent**. Glass, a vibrancy
+material, a floating utility panel — what they look like IS what shows through them, so
+judging one over a flat colour is judging a different design. Reach for it exactly then.
+
+| Value | What is drawn |
+| --- | --- |
+| `none` | nothing. The default |
+| `desktop` | wallpaper, menu bar, and one inactive window behind the frame |
+| `desktop-bare` | the same wallpaper and menu bar, no window behind |
+
+Three things it changes:
+
+- **The frame becomes the screen, not the window.** Your fragment draws its own app
+  window positioned on it — which is what a floating panel is anyway. The harness owns
+  the wallpaper, the menu bar and the drag behaviour; never hand-draw any of them.
+- **Every window is draggable.** Mark yours `data-at-drag` and the harness wires it,
+  including windows a variant only draws later. Controls inside it keep working: a drag
+  never starts from a `button`, `a`, `input`, `select`, `textarea`, `[contenteditable]`
+  or `[role="checkbox"]`. The cursor affordance comes with it, so style nothing.
+- **A `panel` frame's menu bar moves to the screen.** It normally hangs from a strip
+  glued to its own shell; with a screen behind it, it hangs off the screen's bar
+  instead — which is where a real menu bar extra hangs.
+
+The desk layer is injected **inside** the frame document, deliberately. A design cannot
+`backdrop-filter` through an iframe boundary — the filter samples the frame's own
+document and nothing past it — so a wallpaper drawn outside would blur to flat grey,
+which is the one thing this flag exists to prevent.
+
+The device readout gains a **&#9788;** button flipping the wallpaper between light and
+dark, persisted as `?desk=light`. That is the wallpaper's tone, not the folio's theme: a
+light app on a dark desktop is a real combination, and for a translucent design it is a
+different design.
+
 Never draw your own status bar or window chrome in the fragment. Reserve the space instead: the frame
 publishes `--at-safe-top` and `--at-safe-bottom`, and pads `body` by them automatically. Set
 `data-at-safe="none"` on your root element if your layout wants to paint under the status bar itself.

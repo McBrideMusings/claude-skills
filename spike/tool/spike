@@ -21,6 +21,7 @@ no variants, none of the panel/device machinery here.
               --fragment <abs.html> --out <abs.html>
               [--picker switch|list] [--subtitle <s>]
               --device phone|tablet|desktop|panel|web|tv|fill
+              [--backdrop desktop|desktop-bare]
               [--lang en] [--extra-css <abs.css>]
               [--with w1,w2] [--without w1,w2]
   spike tui   --out <abs-dir> --title <t> [--force] [--force-gomod]
@@ -91,6 +92,27 @@ WINDOW_PARTS = collections.OrderedDict([
     ("none",   "no window chrome at all: a bare viewport in a bezel. On its own, never "
                "beside `bar` or `lights`"),
 ])
+
+# What sits BEHIND a macOS frame. Default is nothing — the host's own neutral ground,
+# which is the right answer for an opaque app: a wallpaper behind it is scenery that
+# competes with the design.
+#
+# It stops being scenery the moment the design is translucent. A glass panel, a vibrancy
+# material, a floating utility window — none of them can be judged over a flat ground,
+# because what they look like IS what shows through them. Before this flag every such
+# prototype hand-drew its own desktop in the fragment, which spent the fragment's whole
+# budget on furniture and drew a different Mac every time.
+#
+# `desktop` also moves the menu bar: a `panel` frame normally hangs from a strip attached
+# to its own shell, but once there is a screen to hang from, the strip belongs to the
+# screen and the panel hangs off THAT — which is where a real menu bar extra hangs.
+BACKDROPS = collections.OrderedDict([
+    ("none",         "the host's own ground. The default"),
+    ("desktop",      "a macOS desktop: wallpaper, menu bar, and one inactive window "
+                     "behind the frame so translucency has something to reveal"),
+    ("desktop-bare", "the same wallpaper and menu bar with no window behind it"),
+])
+BACKDROP_DEVICES = ("desktop", "panel")
 
 THEME_TOGGLE_HTML = (
     '<button class="at-theme" type="button" aria-label="Toggle light or dark theme" '
@@ -509,6 +531,12 @@ def cmd_build(args):
             if window_parts != ["none"]:
                 root_attrs += ' data-at-window="%s"' % html.escape(
                     ",".join(window_parts), quote=True)
+        backdrop = (args.backdrop or "none").strip()
+        if backdrop != "none":
+            if device not in BACKDROP_DEVICES:
+                die("--backdrop %s only applies to the %s frames, and --device is %r"
+                    % (backdrop, " and ".join(BACKDROP_DEVICES), device))
+            root_attrs += ' data-at-backdrop="%s"' % html.escape(backdrop, quote=True)
     elif args.device:
         die("--device needs the viewport widget: it is on for prototype, and elsewhere "
             "you turn it on with --with viewport")
@@ -589,6 +617,13 @@ def cmd_kinds(_args):
     dwidth = max(len(d) for d in DEVICES)
     for name, desc in DEVICES.items():
         print("  %-*s  %s" % (dwidth, name, desc))
+    print()
+    print("Backdrops (--backdrop B — desktop and panel frames only, default none):")
+    bwidth = max(len(b) for b in BACKDROPS)
+    for name, desc in BACKDROPS.items():
+        print("  %-*s  %s" % (bwidth, name, desc))
+    print("  Reach for one when the design is translucent: what glass looks like IS what")
+    print("  shows through it, so a flat ground behind it is a different design.")
     print()
     print("A terminal screen is not a kind: `spike tui --out <dir> --title <t>` scaffolds a Go")
     print("harness (variant picker, state axes, geometry assertion, frame dump). See TUI.md.")
@@ -703,6 +738,10 @@ def main():
                    help="window chrome for the desktop frame. Default is bar,lights — a "
                         "desktop app is a window. --window none for a design that draws "
                         "its own top area edge to edge")
+    b.add_argument("--backdrop", metavar="B", choices=sorted(BACKDROPS),
+                   help="what sits behind a desktop or panel frame. Default none. Use "
+                        "desktop when the design is translucent — glass, vibrancy, a "
+                        "floating panel — since what it looks like is what shows through")
     b.add_argument("--lang", default="en")
     b.add_argument("--extra-css", help="absolute path to additional CSS appended last")
     b.add_argument("--with", dest="with_", metavar="W1,W2",

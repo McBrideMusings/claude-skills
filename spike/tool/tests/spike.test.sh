@@ -159,6 +159,28 @@ grep -q '^<html[^>]*data-at-window="bar,lights"' "$WORK/deskdef.html" \
 "$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
   --device desktop --window none,bar --out "$WORK/deskmix.html" >/dev/null 2>&1
 [ $? -ne 0 ] && say ok "--window none cannot be combined" || say f "--window none,bar built"
+
+# --backdrop: a fake desktop behind a macOS frame, for judging a translucent design.
+"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
+  --device desktop --window none --backdrop desktop --out "$WORK/desk.html" >/dev/null 2>&1
+grep -q '^<html[^>]*data-at-backdrop="desktop"' "$WORK/desk.html" \
+  && say ok "--backdrop reaches the <html> element" \
+  || say f "--backdrop did not reach :root"
+"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
+  --device desktop --out "$WORK/nodesk.html" >/dev/null 2>&1
+grep -q '^<html[^>]*data-at-backdrop' "$WORK/nodesk.html" \
+  && say f "a backdrop appeared without --backdrop" \
+  || say ok "no backdrop unless asked for"
+# A phone has no desktop to sit on, and a wallpaper behind one is scenery.
+"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
+  --device phone --backdrop desktop --out "$WORK/bad3.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "--backdrop is rejected off the macOS frames" \
+  || say f "--backdrop built against a phone"
+# The desk layer is injected INSIDE the frame: a design cannot backdrop-filter
+# through an iframe boundary, so a wallpaper drawn outside it would blur to nothing.
+grep -q 'at-vp-desk' "$WORK/desk.html" \
+  && say ok "the desk layer ships with the folio" \
+  || say f "no desk markup in a --backdrop build"
 # `fill` is the window itself — a real device answer, and the one that frames nothing.
 "$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
   --device fill --out "$WORK/fill.html" >/dev/null 2>&1

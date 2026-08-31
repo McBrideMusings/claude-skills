@@ -94,6 +94,14 @@
   var DEVICE = (root.getAttribute('data-at-device-frame') || '').trim();
   if (!CATALOG[DEVICE]) return;
 
+  /* Declared here rather than beside the code that draws it: the readout is built at
+     module level, well before that, and needs to know whether to offer a wallpaper
+     control. A `var` read before its assignment is `undefined`, which silently meant
+     "no backdrop" and dropped the button. */
+  var BACKDROP = (root.getAttribute('data-at-backdrop') || '').trim();
+  var tone = 'dark';
+  var deskBtn = null;
+
   var landscape = false;
   var actual = false;          // 1:1 — show the frame at its real size and scroll to it
   var host = null;
@@ -205,6 +213,19 @@
     actualBtn.title = 'Show at actual size';
     actualBtn.textContent = '1:1';
     actualBtn.addEventListener('click', toggleActual);
+
+    /* The wallpaper's own light/dark, which is not the folio's theme: a light app on a
+       dark desktop is a real combination, and for a translucent design it is a different
+       design. Only offered where there is a wallpaper to flip. */
+    if (BACKDROP) {
+      deskBtn = document.createElement('button');
+      deskBtn.className = cls;
+      deskBtn.type = 'button';
+      deskBtn.title = 'Light or dark desktop behind the window';
+      deskBtn.setAttribute('aria-label', 'Toggle desktop wallpaper tone');
+      deskBtn.innerHTML = '&#9788;';
+      deskBtn.addEventListener('click', toggleTone);
+    }
   }
 
   var panel = window.__atTweaks;
@@ -221,6 +242,7 @@
     readout.appendChild(name);
     readout.appendChild(sizeLabel);
     if (rotateBtn) readout.appendChild(rotateBtn);
+    if (deskBtn) readout.appendChild(deskBtn);
     readout.appendChild(actualBtn);
     panel.meta().appendChild(readout);
   } else {
@@ -247,6 +269,29 @@
   function paintControls() {
     if (rotateBtn) rotateBtn.toggleAttribute('data-active', landscape);
     if (actualBtn) actualBtn.toggleAttribute('data-active', actual);
+    if (deskBtn) deskBtn.toggleAttribute('data-active', tone === 'light');
+  }
+
+  /* Repaints in place — the wallpaper is behind the frame, so flipping it must not
+     rebuild the frame and throw away whatever the prototype is holding. */
+  function toggleTone() {
+    tone = tone === 'dark' ? 'light' : 'dark';
+    try {
+      var d = frame && frame.contentDocument &&
+              frame.contentDocument.querySelector('.at-vp-desk');
+      if (d) d.setAttribute('data-tone', tone);
+    } catch (e) {}
+    paintControls();
+    writeParam('desk', tone === 'light' ? 'light' : null);
+  }
+
+  function writeParam(key, value) {
+    try {
+      var u = new URL(location.href);
+      if (value === null) u.searchParams.delete(key);
+      else u.searchParams.set(key, value);
+      history.replaceState(null, '', u);
+    } catch (e) {}
   }
 
   /* ---------------- inside-the-viewport chrome ---------------- */
@@ -367,6 +412,15 @@
       var body = clone.querySelector('body');
       while (holder.firstChild) body.appendChild(holder.firstChild);
     }
+    /* First child of body, so it is behind everything the fragment draws without
+       needing a z-index war with it. The desk's own rules already come along in the
+       cloned <head> — viewport.css is inlined into the document the frame copies. */
+    if (BACKDROP) {
+      var deskHolder = clone.ownerDocument.createElement('div');
+      deskHolder.innerHTML = backdropMarkup();
+      var dbody = clone.querySelector('body');
+      dbody.insertBefore(deskHolder.firstChild, dbody.firstChild);
+    }
     return '<!DOCTYPE html>\n' + clone.outerHTML;
   }
 
@@ -404,9 +458,134 @@
     // A bare desktop frame is a window with no chrome at all — the default.
     if (d.chrome === 'macos') return WIN_BAR ? MACOS_BAR : '';
     if (d.chrome === 'browser') return BROWSER_BAR;
-    if (d.chrome === 'menubar') return MENUBAR_BAR;
+    /* With a screen behind it the strip belongs to the screen, not to this shell —
+       the panel hangs off the desktop's own menu bar, which is where a real menu bar
+       extra hangs. Drawing both put two menu bars on one screen. */
+    if (d.chrome === 'menubar') return BACKDROP ? '' : MENUBAR_BAR;
     return '';
   }
+
+  /* ---------------- the desktop backdrop (--backdrop) ---------------- */
+
+  /* Off unless asked for. It exists for one case the host's flat ground cannot serve:
+     a translucent design, where what the thing looks like IS what shows through it.
+     Everything it draws is deliberately unreadable — a neutral wallpaper, grey bars
+     instead of text — so nothing in the scenery competes with the design being judged. */
+  /* Built as markup and injected INSIDE the frame, not behind it.
+     A design cannot `backdrop-filter` its way through an iframe boundary — the filter
+     samples the frame's own document and nothing beyond it — so a wallpaper drawn
+     outside the frame would blur to flat grey, which is the one thing this feature
+     exists to avoid. Inside the frame the whole scene is one document and glass
+     resolves for real. The frame therefore IS the screen; the design draws its own
+     window on it and marks it `data-at-drag` to be draggable. */
+  function backdropMarkup() {
+    if (!BACKDROP) return '';
+
+    var deskEl = document.createElement('div');
+    deskEl.className = 'at-vp-desk';
+    // Not aria-hidden as a whole: the window inside it is draggable, and hiding an
+    // operable element from the tree is exactly what the Checks tab exists to catch.
+    // The scenery that IS purely decorative is hidden piece by piece instead.
+    deskEl.setAttribute('data-tone', tone);
+
+    var bar =
+      '<div class="at-vp-deskbar" aria-hidden="true">' +
+        '<i class="at-vp-db-apple"></i><i class="at-vp-db-app"></i>' +
+        '<i class="at-vp-db-i"></i><i class="at-vp-db-i"></i><i class="at-vp-db-i"></i>' +
+        (DEVICE === 'panel' ? '<i class="at-vp-db-status"></i>' : '') +
+        '<i class="at-vp-db-clock"></i>' +
+      '</div>';
+
+    deskEl.innerHTML = '<div class="at-vp-wall" aria-hidden="true"></div>' + bar;
+
+    if (BACKDROP === 'desktop') {
+      deskEl.innerHTML +=
+        '<div class="at-vp-bwin" data-at-drag role="group" ' +
+             'aria-label="Another window, behind — drag to move it" ' +
+             'style="width:42%;height:52%;left:5%;top:22%">' +
+          '<div class="at-vp-bwin-bar">' +
+            '<span class="at-vp-bwin-dot"></span>' +
+            '<span class="at-vp-bwin-dot"></span>' +
+            '<span class="at-vp-bwin-dot"></span>' +
+          '</div>' +
+          '<div class="at-vp-bwin-body">' +
+            '<span style="width:88%"></span><span style="width:72%"></span>' +
+            '<span style="width:81%"></span><span style="width:54%"></span>' +
+            '<span style="width:77%"></span><span style="width:63%"></span>' +
+          '</div>' +
+        '</div>';
+    }
+
+    return deskEl.outerHTML;
+  }
+
+  /* Every window on the fake desktop is draggable — the harness's own inactive window
+     and anything the fragment marks `data-at-drag`. Both live inside the frame, so the
+     coordinate space is the frame's viewport and there is no iframe boundary to cross. */
+  function wireDragging(doc) {
+    if (!BACKDROP || !doc) return;
+    var wins = doc.querySelectorAll('[data-at-drag]');
+    for (var i = 0; i < wins.length; i++) {
+      if (!wins[i].hasAttribute('data-at-drag-wired')) {
+        wins[i].setAttribute('data-at-drag-wired', '');
+        makeDraggable(wins[i]);
+      }
+    }
+  }
+
+  function makeDraggable(el) {
+    var doc = el.ownerDocument;
+    var win = doc.defaultView;
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      /* Never start a drag from something you can operate. A window is dragged by its
+         chrome and its dead space, and every control on it has to keep working —
+         dragging from a button is how a prototype's own buttons stop responding. */
+      if (e.target.closest('button, a, input, select, textarea, [contenteditable="true"], [role="checkbox"]')) return;
+
+      var startX = e.clientX;
+      var startY = e.clientY;
+      var box = el.getBoundingClientRect();
+      var originLeft = box.left;
+      var originTop = box.top;
+      // Percentage sizes/positions become pixels the moment a drag starts, so the
+      // window stops reflowing under the pointer.
+      el.style.width = box.width + 'px';
+      el.style.height = box.height + 'px';
+
+      el.style.left = originLeft + 'px';
+      el.style.top = originTop + 'px';
+      el.setAttribute('data-dragging', '');
+      el.setPointerCapture(e.pointerId);
+      e.preventDefault();
+
+      function move(ev) {
+        /* Clamped so a window can never be dragged off the screen and stranded —
+           40px of it always stays grabbable, and it can never go above the menu bar,
+           which is where a real one stops too. */
+        var maxL = win.innerWidth - 40;
+        var maxT = win.innerHeight - 40;
+        var nx = Math.max(40 - box.width, Math.min(maxL, originLeft + ev.clientX - startX));
+        var ny = Math.max(DESK_BAR_H, Math.min(maxT, originTop + ev.clientY - startY));
+        el.style.left = nx + 'px';
+        el.style.top = ny + 'px';
+      }
+      function up(ev) {
+        el.removeAttribute('data-dragging');
+        try { el.releasePointerCapture(ev.pointerId); } catch (err) {}
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', up);
+        el.removeEventListener('pointercancel', up);
+      }
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    });
+  }
+
+  /* The menu bar's height, matching .at-vp-deskbar in viewport.css. A window dragged
+     under it would slide behind the bar and lose its own title area. */
+  var DESK_BAR_H = 25;
 
   /* ---------------- apply ---------------- */
 
@@ -449,6 +628,7 @@
     // there is anything to receive it, so the fresh frame is synced once on load.
     frame.addEventListener('load', function () {
       syncFrame();
+      try { wireDragging(frame.contentDocument); } catch (e) {}
       // Whatever watches the folio — the contrast verdict, for one — is now looking
       // at a different document and has to be told.
       window.dispatchEvent(new CustomEvent('at:device', { detail: { device: DEVICE } }));
@@ -464,17 +644,18 @@
      lets the host scroll to the rest. */
   function fit() {
     if (!shell || !host) return;
-    shell.style.transform = '';
-    shell.style.marginBottom = '';
-    shell.style.marginRight = '';
+    var box = shell;
+    box.style.transform = '';
+    box.style.marginBottom = '';
+    box.style.marginRight = '';
     host.toggleAttribute('data-actual', actual);
 
     var d = D;
     var land = d.rotates && landscape;
     var vw = land ? d.h : d.w;
     var vh = land ? d.w : d.h;
-    var w = shell.offsetWidth;
-    var h = shell.offsetHeight;
+    var w = box.offsetWidth;
+    var h = box.offsetHeight;
     /* The host's own box is the WRONG ruler while a panel is animating:
        .at-vp-host transitions left/right over 260ms and at:relayout fires at the start of
        it, so host.clientWidth describes the layout the stage is leaving. Expanding the
@@ -486,9 +667,9 @@
     var k = actual ? 1 : Math.min(1, (freeW - 40) / w, (host.clientHeight - 40) / h);
 
     if (k < 1) {
-      shell.style.transform = 'scale(' + k.toFixed(4) + ')';
-      shell.style.marginBottom = -(h * (1 - k)) + 'px';
-      shell.style.marginRight = -(w * (1 - k)) + 'px';
+      box.style.transform = 'scale(' + k.toFixed(4) + ')';
+      box.style.marginBottom = -(h * (1 - k)) + 'px';
+      box.style.marginRight = -(w * (1 - k)) + 'px';
     }
     // Rounded, not raw: a phone that clears the window by two pixels scales to 0.9977 and
     // printed "100%", which says scaled-but-not-really about a frame that is 1:1 to the
@@ -525,8 +706,15 @@
       tweaks: tweaks
     }, '*');
   }
-  window.addEventListener('at:variant', syncFrame);
-  window.addEventListener('at:tweak', syncFrame);
+  /* A variant swap replaces the mounted markup, so a window the new variant draws has
+     never been wired. Re-running is cheap and idempotent — `data-at-drag-wired` marks
+     what is already bound. */
+  function syncAndWire() {
+    syncFrame();
+    try { wireDragging(frame && frame.contentDocument); } catch (e) {}
+  }
+  window.addEventListener('at:variant', syncAndWire);
+  window.addEventListener('at:tweak', syncAndWire);
 
   /* Boot. The frame is always built — there is no "no frame" state to resolve to any
      more, which is what `?d=` used to be able to ask for. Only the two view modifiers
@@ -534,6 +722,7 @@
   var params = new URLSearchParams(location.search);
   actual = params.get('zoom') === '1';
   landscape = params.get('rotate') === '1' && D.rotates;
+  tone = params.get('desk') === 'light' ? 'light' : 'dark';
   paintControls();
   apply();
 })();
