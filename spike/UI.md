@@ -117,7 +117,10 @@ gets dropped, same as a hand-written direction would.
 Write the fragment to `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.body.html`: one
 `<template data-variant="Name" data-caption="...">` per direction, plus the project's tokens in a
 `<style>`, plus a top-level `<script>` that registers one tweak per thing worth changing while
-looking at it — which screen, which error, which empty case, and any value the design turns on. Then:
+looking at it — a dimension, a density, a token, a content volume, and any state the UI gives no
+route to (an error, an empty case, a missing permission). **Navigation and app state are not
+tweaks**: which screen, which record, which mode, which settings group are all reachable by
+clicking, so they are built into the prototype and clicked. See CONTRACT.md § Tweaks. Then:
 
 ```bash
 "$HOME/.claude/skills/spike/tool/spike" build \

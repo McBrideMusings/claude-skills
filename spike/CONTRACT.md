@@ -124,15 +124,17 @@ changes and the row that changes per prototype must not read as two instances of
 </template>
 
 <script>
-  // See "Tweaks" — this is the whole boilerplate for one control.
-  atTweaks.add('screen', [
-    { value: 'home', label: 'Home',       hint: 'the session list' },
-    { value: 'chat', label: 'Agent chat', hint: 'ACP transcript' }
+  // See "Tweaks" — this is the whole boilerplate for one control. Note what it is
+  // NOT: which screen is showing is reachable by clicking, so it belongs in the
+  // prototype, not up here. A server outage is not reachable by clicking at all.
+  atTweaks.add('conn', [
+    { value: 'up',   label: 'Connected' },
+    { value: 'down', label: 'Server unreachable', hint: 'what the list does with no data' }
   ], {
-    label: 'Screen',
+    label: 'Connection',
     onChange: function (v) {
-      document.querySelectorAll('[data-screen]').forEach(function (el) {
-        el.hidden = el.dataset.screen !== v;
+      document.querySelectorAll('[data-conn]').forEach(function (el) {
+        el.hidden = el.dataset.conn !== v;
       });
     }
   });
@@ -154,12 +156,27 @@ changes and the row that changes per prototype must not read as two instances of
   worse than an absent one — it reads as a bug and stops the conversation the prototype exists to
   have. If a control genuinely goes nowhere, it does not go in.
 
-### Tweaks — everything about the design you want to change while looking at it
+### Tweaks — the design parameters you cannot reach by using the prototype
 
-A **tweak** is a named value the panel renders a control for and your fragment reacts to: which
-screen, which error state, how much padding, which accent. It is orthogonal to variant on purpose —
-flipping variant must not reset which screen is showing, because comparing one screen across two
-directions is the entire job.
+A **tweak** is a named value the panel renders a control for and your fragment reacts to. It is
+orthogonal to variant on purpose — flipping variant must not reset what you are looking at,
+because comparing one state across two directions is the entire job.
+
+**The test is one question: can a user of the real app get to this by interacting with it?**
+
+- **Yes → it is not a tweak. Build the control into the prototype and click it.** Which screen
+  is showing, which record is open, whether a mode is on, whether a window is open, which
+  settings group is selected, light versus dark when the app has its own switch. A prototype
+  is interactive so that navigation and state are exercised the way they will really be
+  exercised; moving them into the panel replaces the thing being judged with a remote control
+  for it, and the click path — the part most likely to be wrong — never gets looked at.
+- **No → it is a tweak.** A dimension or density (panel width, gutter, type step), a colour or
+  token, a content volume (0 / 1 / 200 rows), and any state the UI provides no route to: a
+  server outage, a rate-limited response, a permission the user has not granted, a date months
+  away. These are the cases a prototype otherwise cannot show at all.
+
+A panel crowded with navigation is the symptom. If the Tweaks tab reads like a table of
+contents for the prototype, the controls belong in the prototype.
 
 **You declare the value, not the widget.** The control follows the value's type:
 
