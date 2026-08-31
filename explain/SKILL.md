@@ -167,8 +167,10 @@ inferred defaults. The refine loop (step 6) is the escape hatch.
 Read `CONTRACT.md` for the class vocabulary and the symbol cast, then **write a body
 fragment — content only.** No doctype, no `<head>`, no reset, no type scale: the tool
 supplies all of it. Assemble from the archetype skeleton (`ARCHETYPES.md`). Hand-author
-every diagram as inline SVG using the symbol cast. Tag every B-mode code claim with
-`file:line`.
+every diagram as inline SVG using the symbol cast — **except quantitative data, which
+is rendered by `tool/charts`, never hand-drawn** (genre table and the chart discipline
+in `CONTRACT.md` §Charts; ≤20 numbers gets a `.compare-table` instead). Tag every
+B-mode code claim with `file:line`.
 
 Write the fragment to `/private/tmp/claude/<repo-slug>/explainers/<slug>.body.html`, then
 build:

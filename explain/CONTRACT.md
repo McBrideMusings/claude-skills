@@ -135,6 +135,41 @@ a bare `<svg>` inside `.diagram`/`.card` for the Map). The tool-supplied `<defs>
 - `svg text` is Helvetica 11px ink by default; `.lbl` is the muted uppercase sublabel;
   `.mono` is code-styled text (a literal path, a flag, a value).
 
+## Charts — quantitative data is rendered, never hand-drawn
+
+The moment a panel shows *numbers as marks* — a trend, a distribution, a comparison of
+measured values — the diagram is a chart, and a chart comes from `tool/charts`, not from
+hand-laid SVG. Hand-authoring stays for mechanisms (boxes, arrows, symbols); data gets
+the renderer, so the discipline below holds by construction:
+
+- **Axes span exactly the data range**, ends labelled with the min and max — no outward
+  padding to round numbers, no ticks that aren't earned. (Tufte's range frame, *VDQI*.)
+- **Direct labels on the marks** — a line is named at its endpoint, a group under its
+  stroke. Never a legend.
+- **No gridlines, no border box, no background fill.** Every mark either carries data or
+  goes. The two-colour rule applies unchanged: ink for every series, red via `--hot` for
+  at most the one series/group the panel is about.
+- **Honest proportions.** The drawn change is proportional to the data change; a
+  quantity is encoded by position or length, never by area or volume. If you hand-build
+  a bar chart for a genre the tool lacks, bars start at zero.
+- **Wider than tall** — the tool's 640×400 default; keep that orientation when sizing.
+
+Pick the genre by data shape, and challenge the default: line and scatter are what an
+unprompted model always reaches for, so when you pick one, say (in your own working,
+not the page) what multiples/quartile/table would lose — or take the second-line form.
+
+| Data shape | Genre | Invocation |
+|---|---|---|
+| one series over time | line | `tool/charts line --data '[{"x":2000,"y":12.1},…]'` |
+| several series, one x | small multiples | `tool/charts multiples --data '[{"facet":"EU","x":1,"y":900},…]'` |
+| distributions across groups | quartile plot | `tool/charts quartile --data '{"Control":[2.3,…],…}'` |
+| two measured variables | scatter | `tool/charts scatter --data '[{"x":1.2,"y":3.4},…]' [--marginal-dash]` |
+| **≤ 20 numbers total** | **a table, not a chart** | `.compare-table` — at this size a table beats any graphic |
+
+The tool emits a complete `<svg class="scene">` element to stdout (or `--out`); paste
+it into the panel's `.scene` position verbatim. `--title` is usually omitted — the
+panel `<h2>` already says it. It refuses NaN/Infinity and escapes every label.
+
 ## Symbol library
 
 `<use href="#<id>" x=".." y=".." width=".." height="..">` — never hand-draw a glyph the

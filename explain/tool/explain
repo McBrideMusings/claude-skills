@@ -77,6 +77,34 @@ def cmd_build(args):
                 "inline the CSS, embed rasters as data: URIs, and never link a webfont "
                 "or a CDN script." % (shown, m.group(0).strip()))
 
+    # Inert: an explainer is a static page and carries no executable content.
+    # Escaped code samples (&lt;script&gt;) pass — these patterns only match a
+    # real tag or attribute, which an escaped sample can't form.
+    active_checks = (
+        (r"<script\b", "a <script> tag"),
+        (r"<[^>]*\son\w+\s*=", "an on*= event handler attribute"),
+        (r"<(?:\w+:)?foreignObject\b", "a <foreignObject> element"),
+        (r"<(?:\w+:)?(?:animate|animateMotion|animateTransform|set)\b",
+         "a SMIL animation element"),
+        (r"""<use\b[^>]*\b(?:xlink:)?href\s*=\s*["'](?!#)""",
+         "a <use> href that isn't a #fragment reference"),
+    )
+    for pattern, shown in active_checks:
+        m = re.search(pattern, fragment, re.IGNORECASE)
+        if m:
+            die("fragment carries active content (%s: %r). Explainers are inert: "
+                "no script, no handlers, no animation elements, no external <use>."
+                % (shown, m.group(0).strip()))
+
+    # javascript:/vbscript: URLs, including entity- or whitespace-obfuscated
+    # spellings hiding inside an attribute value.
+    for m in re.finditer(r"""\b(?:href|src|xlink:href)\s*=\s*["']([^"']*)["']""",
+                         fragment, re.IGNORECASE):
+        val = re.sub(r"[\s\x00-\x1f]+", "", html.unescape(m.group(1))).lower()
+        if val.startswith("javascript:") or val.startswith("vbscript:"):
+            die("fragment carries a script URL (%r). Explainers are inert."
+                % m.group(0).strip())
+
     base_css = read(os.path.join(ASSETS_DIR, "base.css"))
     symbols = read(os.path.join(ASSETS_DIR, "symbols.html"))
     if args.extra_css:

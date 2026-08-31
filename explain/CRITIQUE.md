@@ -74,6 +74,19 @@ Each is a fact you can check, not a matter of taste.
 - **Real content, real code.** No lorem, no `foo`, no placeholder `file:line`. Every
   `.cite` names a file you actually opened.
 
+When a panel carries a chart (`CONTRACT.md` §Charts), four more checkable facts:
+
+- **The drawn change matches the data change.** Eyeball the ratio: if the data doubles,
+  the mark doubles — a visual change far out of proportion to the numbers is a lie,
+  however clean it looks. Position and length encode quantity; area and volume never do.
+- **No legend, no gridlines, no border box.** Series are named at their marks; the axis
+  lines span exactly the data range with the ends labelled. A swatch key or a grid means
+  the chart was hand-drawn — regenerate it through `tool/charts`.
+- **≤ 20 numbers is a table.** A chart carrying a handful of values gets replaced with
+  `.compare-table`; the exact figures are the content at that size.
+- **At most one red series, and it is the panel's subject** — same rule as everywhere
+  else, restated because `--hot` makes it one flag away.
+
 ## Refuse outright
 
 These never survive a critique, whatever the brief:

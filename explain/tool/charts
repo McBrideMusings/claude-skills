@@ -1,0 +1,336 @@
+#!/usr/bin/env python3
+"""charts — render a data chart as an inline-SVG fragment for an explainer.
+
+Emits one <svg> element styled to the explain contract (ink #111111, red
+#C42A1C for at most one hot element, Helvetica 11px labels) with the chart
+discipline baked in: axes span exactly the data range with the ends labelled,
+every line and group is labelled directly on the marks (never a legend), no
+gridlines, no border box, wider than tall. See ../CONTRACT.md "Charts".
+
+  charts line     --data '[{"x":2000,"y":12.1},...]'            [--hot SERIES]
+  charts multiples --data '[{"facet":"EU","x":1,"y":900},...]'  [--cols 3]
+  charts quartile --data '{"Control":[2.3,2.5],"Drug":[1.8]}'   [--hot GROUP]
+  charts scatter  --data '[{"x":1.2,"y":3.4},...]'              [--marginal-dash]
+
+All numbers must be finite. Output goes to stdout, or --out <abs path>.
+"""
+
+import argparse
+import json
+import math
+import os
+import sys
+from xml.sax.saxutils import escape, quoteattr
+
+INK = "#111111"
+RED = "#C42A1C"
+MUTED = "#6b6b6b"
+FONT = "Helvetica,Arial,sans-serif"
+
+
+def die(msg):
+    print("charts: " + msg, file=sys.stderr)
+    sys.exit(1)
+
+
+def finite(v, where):
+    if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v):
+        die("non-finite or non-numeric value %r in %s" % (v, where))
+    return float(v)
+
+
+def load_data(args):
+    if args.data_file:
+        if not os.path.isabs(args.data_file):
+            die("--data-file must be an absolute path, got %r" % args.data_file)
+        with open(args.data_file, "r", encoding="utf-8") as f:
+            raw = f.read()
+    else:
+        raw = args.data
+    if not raw:
+        die("pass --data or --data-file")
+    try:
+        return json.loads(raw)
+    except ValueError as e:
+        die("data is not valid JSON: %s" % e)
+
+
+def fmt(v):
+    """Label formatting: integers bare, floats trimmed to 4 significant digits."""
+    if v == int(v) and abs(v) < 1e15:
+        return str(int(v))
+    return ("%.4g" % v)
+
+
+def lerp(v, lo, hi, a, b):
+    if hi == lo:
+        return (a + b) / 2.0
+    return a + (v - lo) * (b - a) / (hi - lo)
+
+
+def text(x, y, s, size=11, fill=INK, anchor="start", weight=None, baseline=None):
+    attrs = 'x="%.1f" y="%.1f" font-family=%s font-size="%d" fill=%s' % (
+        x, y, quoteattr(FONT), size, quoteattr(fill))
+    if anchor != "start":
+        attrs += ' text-anchor="%s"' % anchor
+    if weight:
+        attrs += ' font-weight="%s"' % weight
+    if baseline:
+        attrs += ' dominant-baseline="%s"' % baseline
+    return "<text %s>%s</text>" % (attrs, escape(str(s)))
+
+
+def line_el(x1, y1, x2, y2, stroke=INK, width=1.0):
+    return '<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%.1f" stroke="%s" stroke-width="%s"/>' % (
+        x1, y1, x2, y2, stroke, width)
+
+
+class Frame:
+    """One plot area with range-frame axes: axis lines spanning exactly the
+    data range, min and max labelled at the ends, no ticks, no grid."""
+
+    def __init__(self, x, y, w, h, xlo, xhi, ylo, yhi):
+        self.x, self.y, self.w, self.h = x, y, w, h
+        self.xlo, self.xhi, self.ylo, self.yhi = xlo, xhi, ylo, yhi
+
+    def px(self, v):
+        return lerp(v, self.xlo, self.xhi, self.x, self.x + self.w)
+
+    def py(self, v):
+        return lerp(v, self.ylo, self.yhi, self.y + self.h, self.y)
+
+    def axes(self, labels=True):
+        out = []
+        yb = self.y + self.h + 8
+        out.append(line_el(self.px(self.xlo), yb, self.px(self.xhi), yb))
+        xl = self.x - 8
+        out.append(line_el(xl, self.py(self.ylo), xl, self.py(self.yhi)))
+        if labels:
+            out.append(text(self.px(self.xlo), yb + 14, fmt(self.xlo), fill=MUTED))
+            out.append(text(self.px(self.xhi), yb + 14, fmt(self.xhi), fill=MUTED,
+                            anchor="end"))
+            out.append(text(xl - 4, self.py(self.ylo), fmt(self.ylo), fill=MUTED,
+                            anchor="end", baseline="middle"))
+            out.append(text(xl - 4, self.py(self.yhi), fmt(self.yhi), fill=MUTED,
+                            anchor="end", baseline="middle"))
+        return out
+
+
+def svg_open(w, h, label):
+    return ('<svg class="scene" viewBox="0 0 %d %d" role="img" aria-label=%s>'
+            % (w, h, quoteattr(label or "chart")))
+
+
+def emit(args, parts):
+    doc = "\n".join(parts) + "\n"
+    if args.out:
+        if not os.path.isabs(args.out):
+            die("--out must be an absolute path, got %r" % args.out)
+        with open(args.out, "w", encoding="utf-8") as f:
+            f.write(doc)
+        print(args.out)
+    else:
+        sys.stdout.write(doc)
+
+
+def title_parts(args, margin_top):
+    if not args.title:
+        return [], margin_top
+    return [text(16, 22, args.title, size=13, weight="bold")], margin_top + 18
+
+
+def cmd_line(args):
+    rows = load_data(args)
+    if not isinstance(rows, list) or not rows:
+        die("line expects a non-empty JSON list of {x, y[, series]} records")
+    series = {}
+    for r in rows:
+        name = str(r.get("series", args.series))
+        series.setdefault(name, []).append(
+            (finite(r.get("x"), "x"), finite(r.get("y"), "y")))
+    for pts in series.values():
+        pts.sort(key=lambda p: p[0])
+    xs = [p[0] for pts in series.values() for p in pts]
+    ys = [p[1] for pts in series.values() for p in pts]
+    W, H = args.width, args.height
+    head, top = title_parts(args, 24)
+    fr = Frame(56, top, W - 56 - args.label_gutter, H - top - 40,
+               min(xs), max(xs), min(ys), max(ys))
+    parts = [svg_open(W, H, args.title or "line chart")] + head + fr.axes()
+    for name, pts in series.items():
+        hot = args.hot is not None and name == args.hot
+        color = RED if hot else INK
+        coords = " ".join("%.1f,%.1f" % (fr.px(x), fr.py(y)) for x, y in pts)
+        parts.append('<polyline points="%s" fill="none" stroke="%s" stroke-width="1.5"/>'
+                     % (coords, color))
+        lx, ly = pts[-1]
+        if len(series) > 1 or args.hot is not None or name != "value":
+            parts.append(text(fr.px(lx) + 6, fr.py(ly), name, fill=color,
+                              baseline="middle"))
+    parts.append("</svg>")
+    emit(args, parts)
+
+
+def cmd_multiples(args):
+    rows = load_data(args)
+    if not isinstance(rows, list) or not rows:
+        die("multiples expects a non-empty JSON list of {facet, x, y} records")
+    facets = {}
+    for r in rows:
+        name = str(r.get("facet", ""))
+        if not name:
+            die("every record needs a facet key")
+        facets.setdefault(name, []).append(
+            (finite(r.get("x"), "x"), finite(r.get("y"), "y")))
+    for pts in facets.values():
+        pts.sort(key=lambda p: p[0])
+    if args.order:
+        order = [s.strip() for s in args.order.split(",")]
+        missing = [n for n in order if n not in facets]
+        if missing:
+            die("--order names unknown facets: %s" % ", ".join(missing))
+    else:
+        order = sorted(facets, key=lambda n: -sum(p[1] for p in facets[n]))
+    xs = [p[0] for pts in facets.values() for p in pts]
+    ys = [p[1] for pts in facets.values() for p in pts]
+    xlo, xhi, ylo, yhi = min(xs), max(xs), min(ys), max(ys)
+
+    cols = max(1, args.cols)
+    nrows = (len(order) + cols - 1) // cols
+    W = args.width
+    head, top = title_parts(args, 24)
+    cell_w = (W - 56 - 16) / cols
+    cell_h = cell_w * 0.62
+    H = int(top + nrows * (cell_h + 46) + 20)
+    parts = [svg_open(W, H, args.title or "small multiples")] + head
+    for i, name in enumerate(order):
+        cx = 56 + (i % cols) * cell_w
+        cy = top + (i // cols) * (cell_h + 46)
+        fr = Frame(cx, cy + 16, cell_w - 30, cell_h - 16, xlo, xhi, ylo, yhi)
+        hot = args.hot is not None and name == args.hot
+        color = RED if hot else INK
+        parts.append(text(cx, cy + 10, name, fill=color, weight="bold" if hot else None))
+        parts.extend(fr.axes(labels=(i == 0)))
+        coords = " ".join("%.1f,%.1f" % (fr.px(x), fr.py(y)) for x, y in facets[name])
+        parts.append('<polyline points="%s" fill="none" stroke="%s" stroke-width="1.2"/>'
+                     % (coords, color))
+    parts.append("</svg>")
+    emit(args, parts)
+
+
+def quartiles(values):
+    vs = sorted(values)
+    def pct(q):
+        idx = q * (len(vs) - 1)
+        lo = int(math.floor(idx))
+        hi = int(math.ceil(idx))
+        return vs[lo] + (vs[hi] - vs[lo]) * (idx - lo)
+    return vs[0], pct(0.25), pct(0.5), pct(0.75), vs[-1]
+
+
+def cmd_quartile(args):
+    groups = load_data(args)
+    if not isinstance(groups, dict) or not groups:
+        die("quartile expects a JSON object mapping group name to a list of values")
+    stats = {}
+    for name, values in groups.items():
+        if not isinstance(values, list) or not values:
+            die("group %r needs a non-empty list of values" % name)
+        stats[name] = quartiles([finite(v, "group %r" % name) for v in values])
+    W, H = args.width, args.height
+    head, top = title_parts(args, 24)
+    names = list(stats)
+    allv = [v for s in stats.values() for v in (s[0], s[4])]
+    fr = Frame(56, top, W - 56 - 24, H - top - 40, 0, len(names), min(allv), max(allv))
+    parts = [svg_open(W, H, args.title or "quartile plot")] + head
+    yb = fr.y + fr.h + 8
+    xl = fr.x - 8
+    parts.append(line_el(xl, fr.py(fr.ylo), xl, fr.py(fr.yhi)))
+    parts.append(text(xl - 4, fr.py(fr.ylo), fmt(fr.ylo), fill=MUTED,
+                      anchor="end", baseline="middle"))
+    parts.append(text(xl - 4, fr.py(fr.yhi), fmt(fr.yhi), fill=MUTED,
+                      anchor="end", baseline="middle"))
+    for i, name in enumerate(names):
+        mn, q1, med, q3, mx = stats[name]
+        x = fr.px(i + 0.5)
+        hot = args.hot is not None and name == args.hot
+        color = RED if hot else INK
+        parts.append(line_el(x, fr.py(mn), x, fr.py(q1), stroke=color, width=1.5))
+        parts.append(line_el(x, fr.py(q3), x, fr.py(mx), stroke=color, width=1.5))
+        parts.append('<circle cx="%.1f" cy="%.1f" r="2.5" fill="%s"/>'
+                     % (x, fr.py(med), color))
+        parts.append(text(x, yb + 14, name, fill=color, anchor="middle"))
+    parts.append("</svg>")
+    emit(args, parts)
+
+
+def cmd_scatter(args):
+    rows = load_data(args)
+    if not isinstance(rows, list) or not rows:
+        die("scatter expects a non-empty JSON list of {x, y} records")
+    pts = [(finite(r.get("x"), "x"), finite(r.get("y"), "y")) for r in rows]
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    W, H = args.width, args.height
+    head, top = title_parts(args, 24)
+    fr = Frame(56, top, W - 56 - 24, H - top - 40, min(xs), max(xs), min(ys), max(ys))
+    parts = [svg_open(W, H, args.title or "scatter")] + head + fr.axes()
+    yb = fr.y + fr.h + 8
+    xl = fr.x - 8
+    if args.marginal_dash:
+        for x, _ in pts:
+            parts.append(line_el(fr.px(x), yb - 2, fr.px(x), yb + 2, width=0.8))
+        for _, y in pts:
+            parts.append(line_el(xl - 2, fr.py(y), xl + 2, fr.py(y), width=0.8))
+    for x, y in pts:
+        parts.append('<circle cx="%.1f" cy="%.1f" r="2.5" fill="%s"/>'
+                     % (fr.px(x), fr.py(y), INK))
+    parts.append("</svg>")
+    emit(args, parts)
+
+
+def add_common(sp):
+    sp.add_argument("--data", help="inline JSON")
+    sp.add_argument("--data-file", help="absolute path to a JSON file")
+    sp.add_argument("--title", help="drawn top-left; omit when the panel <h2> already says it")
+    sp.add_argument("--out", help="absolute path to write; default stdout")
+    sp.add_argument("--width", type=int, default=640)
+    sp.add_argument("--height", type=int, default=400)
+    sp.add_argument("--hot", help="series/group to draw in red — at most one, and only "
+                                  "when it is the one thing the panel is about")
+
+
+def main():
+    p = argparse.ArgumentParser(prog="charts", description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("line", help="time-series / line chart, direct-labelled")
+    add_common(s)
+    s.add_argument("--series", default="value", help="series name when records carry none")
+    s.add_argument("--label-gutter", type=int, default=90,
+                   help="right margin reserved for direct end labels")
+    s.set_defaults(func=cmd_line)
+
+    s = sub.add_parser("multiples", help="small multiples: one shrunken frame per facet, shared scales")
+    add_common(s)
+    s.add_argument("--cols", type=int, default=3)
+    s.add_argument("--order", help="comma-separated facet order; default: total y descending")
+    s.set_defaults(func=cmd_multiples)
+
+    s = sub.add_parser("quartile", help="quartile plot: range strokes + median dot, no box")
+    add_common(s)
+    s.set_defaults(func=cmd_quartile)
+
+    s = sub.add_parser("scatter", help="range-frame scatter")
+    add_common(s)
+    s.add_argument("--marginal-dash", action="store_true",
+                   help="dash marks along each axis showing the marginal distributions")
+    s.set_defaults(func=cmd_scatter)
+
+    args = p.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
