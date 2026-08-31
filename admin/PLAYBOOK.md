@@ -48,6 +48,25 @@ Group 1 = `setup(5) build(10) dev(20) start(25) deploy(30)`; group 2 =
 `distribute(5) test(10) vet/lint(20) fmt(30) clean(40) kill(45) docs(50)`, project-specific
 at 60+. `deploy` installs the built thing where it runs; a shippable file is `distribute`.
 
+## `kind = "python"` is retired — convert on sight
+
+The Go tool's catalog dropped `python` and `python-script` (`internal/kinds/catalog.go`
+header). A manifest still declaring either fails at dispatch with `unknown kind "python"`,
+and one failing action **blocks every command in that manifest** — the fleet had ~31 such
+actions when the kind was removed, so expect this in any manifest not touched recently.
+Conversion recipe, proven in etv-station:
+
+- The action wraps a script and the python only forwarded args / picked from the script's
+  own `--list`: make the script's bare form print the listing plus a `Run: admin <cmd>
+  <target>` hint (a list is an answer, not a usage error), and the action becomes
+  `kind = "shell-passthrough"` straight to the script.
+- The python was a real interactive cascade (`pick_target` menus): move the cascade into
+  a shell script with numbered menus and make the action `kind = "interactive-shell"` —
+  the kind whose charter is reading the user's keystrokes.
+- Env prefixes built with `resolve_env(...)` in python are unnecessary: the script
+  inherits the environment, and `${VAR:-default}` belongs in the script or a per-command
+  `env` table.
+
 ## Choosing `kind` (365 fleet actions)
 
 - `shell` (197) — one-shot: builds, tests, format, clean.
