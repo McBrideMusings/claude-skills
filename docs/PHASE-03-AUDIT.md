@@ -17,6 +17,8 @@ Both `docs/` and `.vitepress/` exist. Verify alignment, apply mechanical fixes s
 
 ## Substantive (propose with diff, ask first)
 
+Present every substantive hit as one numbered slate, closed with the escape hatch: *"Type `go` to apply every proposal, or answer per item (`1 skip, 2 apply`)."* Default when nobody can answer (findings-only, or an unattended run): propose only, apply nothing.
+
 1. **Legacy planning docs** (`PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/`, non-standard top-level files) → open GitHub issues for genuinely uncovered work, then delete source. Cross-reference existing issues before bulk-creating.
 2. **New opt-in suggestions** if heuristics now match (e.g., project gained HTTP server → suggest `api.md`).
 3. **Update-when table** in `CLAUDE.md` if the section exists but is missing the table.

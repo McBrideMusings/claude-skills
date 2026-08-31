@@ -42,10 +42,11 @@ bd export --output .beads/issues.jsonl
 git add .beads/issues.jsonl
 ```
 
-⛔ **The last two lines are not optional.** `export.auto` alone produces nothing: the pre-commit
-hook only refreshes `issues.jsonl` when a `.beads/` path is already staged, so a file that has
-never been committed is never written, while `bd config get export.auto` cheerfully reports
-`true`. Seed it once by hand and it maintains itself from then on. Full detail:
+**The step is done only when the export file is tracked** — finish with
+`git ls-files --error-unmatch .beads/issues.jsonl` and require exit 0. `export.auto` alone
+produces nothing: the pre-commit hook only refreshes `issues.jsonl` when a `.beads/` path is
+already staged, and `bd config get export.auto` reports `true` either way, so the config check
+cannot stand in for the file check. Seed it once by hand and it maintains itself. Full detail:
 [`../ref-tracker/beads.md`](../ref-tracker/beads.md) § JSONL export.
 
 This does **not** replace the Dolt sync — it is a readable copy, not a backup. Both are on.
@@ -114,11 +115,10 @@ One of these four bodies, **verbatim** — the wording is load-bearing:
 - `GitHub issues via gh`
 - `None — no beads database and no authenticated GitHub remote at bootstrap time; run bd init`
 
-⛔ **Never write "local only" or a bare "no GitHub mirror" for a beads repo.** Both read as "keep
-the issue data off GitHub," which is the opposite of how beads works — the database always
-replicates to the git origin, and that is the point. A later agent read exactly that phrase, took
-the routine `refs/dolt/data` push for a leak, and offered to delete the user's only off-machine
-copy of 23 issues. Say what is ON and what is OFF, separately, every time. Full rule:
+**Say what is ON and what is OFF, separately, every time** — the four verbatim bodies above do
+exactly that. A vaguer phrasing like "local only" reads as "keep the issue data off GitHub,"
+which misdescribes beads: the database always replicates to the git origin, and that is the
+point. Full rule:
 [`../ref-tracker/beads.md`](../ref-tracker/beads.md) § Sync.
 
 **If you find an older section using the "local only" phrasing, rewrite it to the wording above** —

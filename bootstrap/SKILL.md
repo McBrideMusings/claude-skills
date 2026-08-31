@@ -14,7 +14,7 @@ Walk through the standard project layout. **Create what's missing, migrate what'
 
 **Any confirmation you do surface is a plain-chat question** — never the `AskUserQuestion` tool / structured-question schema. Answered inline in free-form ("skip admin", "yes but leave the PRD"), which the chip-picker UI can't carry.
 
-**Don't commit — and don't ask about committing.** Bootstrap prepares the ground and stops; the user (or `/wrap-up`) commits. Do NOT end with "commit to main?" or any variant — that is exactly the dumb question this rule kills. Just do the work, then report in one line what changed and what's staged. The user commits when they choose. (Destructive migrations may shuffle git history — leave the moves staged for the user to review.)
+**Don't commit — and don't ask about committing.** Bootstrap prepares the ground and stops; the user (or `/wrap-up`) commits. Do NOT end with "commit to main?" or any variant — that is exactly the dumb question this rule kills. Just do the work, then report per [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md). The user commits when they choose. (Destructive migrations may shuffle git history — leave the moves staged for the user to review.)
 
 ## Phases
 
@@ -26,7 +26,7 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md) | `CLAUDE.md` (root) + `CLAUDE.local.md` (root) |
 | [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md) | `admin.toml` (delegates to `/admin`) |
 | [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (delegates to `/docs`) |
-| [PHASE-05-DOCS-ARTIFACTS.md](PHASE-05-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`, `docs/PRD.md`, `docs/ROADMAP.md` |
+| [PHASE-05-DOCS-ARTIFACTS.md](PHASE-05-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`, `docs/PRD.md`, `docs/roadmap.md` |
 | [PHASE-06-ISSUE-TRACKER.md](PHASE-06-ISSUE-TRACKER.md) | Resolve the issue backend (beads / GitHub / local), offer `bd init` or a GitHub→beads migration, record the answer |
 | [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/grill-me` Backfill on existing-codebase audits |
 

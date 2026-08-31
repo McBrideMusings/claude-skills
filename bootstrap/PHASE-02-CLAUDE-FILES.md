@@ -61,7 +61,7 @@ This file is gitignored.
 
 ## `.gitignore` (repo root, committed)
 
-Several standing rules are only true if this file says so, and a rule with no file behind it is not enforced — it's a hope. Measured across 79 repos before this phase existed: 19 did not ignore `tmp/`, 39 did not ignore `.env`, and 6 had scratch files committed under `tmp/`. Add the missing lines automatically; this is additive work, so don't ask.
+Several standing rules are only true if this file says so, and a rule with no file behind it is not enforced — it's a hope. Add the missing lines automatically; this is additive work, so don't ask.
 
 **Every project gets these three.** Append any that are missing, under a comment, without touching existing content:
 

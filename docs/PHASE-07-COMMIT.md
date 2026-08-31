@@ -20,4 +20,4 @@ One-sentence message describing what was done. Examples:
 
 No body; the diff speaks for itself.
 
-Per the user's global rule: **never auto-commit unless explicitly asked.** Default behavior is to stage the changes, summarize what's staged, and let the user run the commit.
+Ownership decides whether to run the commit, per the global Git rules: on a repo the user owns (origin owner `mcbridemusings`, or no remote), commit straight to `main` without asking; on someone else's repo, commit on a feature branch. One exception: when this skill was invoked from `/bootstrap`, don't commit — leave everything staged and hand back, since bootstrap's Phase 07 reports and the user commits.

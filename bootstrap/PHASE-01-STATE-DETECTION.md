@@ -13,7 +13,7 @@ For each piece of the standard layout, classify into one of: `missing`, `standar
 | `docs/CONTEXT.md` | `CONTEXT.md` (root), `GLOSSARY.md`, `docs/glossary.md`, `docs/terms.md`, per-context `src/*/CONTEXT.md` without a map |
 | `docs/adr/` | `adr/`, `decisions/`, `docs/decisions/`, `docs/adrs/`, `architecture/decisions/` |
 | `docs/PRD.md` | `PRD.md` (root), `PRODUCT.md`, `PROD-REQS.md`, `docs/product.md`, `docs/spec.md` |
-| `docs/ROADMAP.md` | `ROADMAP.md` (root), `TODO.md`, `docs/roadmap/` (folder), `PLAN.md` |
+| `docs/roadmap.md` | `ROADMAP.md` (root), `docs/ROADMAP.md` (uppercase), `TODO.md`, `docs/roadmap/` (folder), `PLAN.md` |
 
 Also probe:
 
@@ -43,8 +43,8 @@ Bootstrap audit — <project name>
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md                   |
 | docs/adr/              | non-standard at ./decisions/ (3 ADRs)          |
 | docs/PRD.md            | non-standard at ./PRD.md (substantive content) |
-| docs/ROADMAP.md        | missing                                        |
+| docs/roadmap.md        | missing                                        |
 | Issue tracker          | gh ok                                          |
 ```
 
-Then proceed to [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md). The user can skip / accept / redirect each migration as the walk proceeds.
+When the table contains proposed migrations, close it with the escape hatch: *"Type `go` to run every proposed action, or answer per row (`3 skip, 7 accept`)."* Then proceed to [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md); the user can still redirect any migration as the walk proceeds.

@@ -19,7 +19,7 @@ Bootstrap result — <project name>
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md    | migrated + refs updated       |
 | docs/adr/              | non-standard at ./decisions/    | migrated (3 files renumbered) |
 | docs/PRD.md            | non-standard, substantive       | migrated; restructure offered |
-| docs/ROADMAP.md        | missing                         | stub created                  |
+| docs/roadmap.md        | missing                         | stub created                  |
 | Issue tracker          | gh ok                           | no-op                         |
 ```
 
@@ -41,6 +41,10 @@ If the audit found existing artifacts being migrated (this wasn't a greenfield b
 - The migrations already populated `docs/CONTEXT.md` and ADRs from existing files.
 
 The user can accept (parent invokes `/grill-me` — grill-me picks Backfill mode automatically because the codebase exists), or defer.
+
+## Close with the escape hatch
+
+The deferred decisions and the Backfill offer together are one slate proposing next work, so it takes both words: *"Type `go` to run the deferred follow-ups now (`/admin`, `/docs` restructure, `/grill-me` Backfill — whichever apply), or `park` to stop here."* When nothing was deferred and no Backfill applies, skip the sentence.
 
 ## Don't commit
 

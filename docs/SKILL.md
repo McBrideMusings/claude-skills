@@ -23,6 +23,8 @@ docs/
 
 **Opt-in (heuristic-triggered):** `api.md`, `architecture/`, `guide/`, `development/`. Heuristics in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md).
 
+**Config starting point:** [references/vitepress-config.md](references/vitepress-config.md) — open whenever writing or rewriting `docs/.vitepress/config.mts`.
+
 ## Critical rule: VitePress is a black box
 
 Don't read VitePress `node_modules/` or theme internals. Read its config and your markdown only. Build errors referencing VitePress internals are almost always a markdown gotcha or `.mts` rename.

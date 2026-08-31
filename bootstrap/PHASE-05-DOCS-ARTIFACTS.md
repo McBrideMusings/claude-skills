@@ -116,13 +116,15 @@ TBD
 TBD
 ```
 
-## docs/ROADMAP.md
+## docs/roadmap.md
 
-- **Missing** → write the thin stub (Now / Next / Later / Deferred).
-- **Standard** (`docs/ROADMAP.md` or `docs/roadmap.md` lowercase) → no-op. Lowercase is the `docs` skill's convention; either spelling is fine.
-- **Non-standard at root `ROADMAP.md` / `PLAN.md` / `TODO.md`:**
+One canonical name: lowercase `docs/roadmap.md`, matching the `docs` skill. The shape is the `docs` skill's roadmap shape (Phase 02 of `docs`): four sections, every item a GFM checkbox.
+
+- **Missing** → write the thin stub below.
+- **Standard** (`docs/roadmap.md`) → no-op, except convert plain-bullet items to checkboxes per the `docs` skill's shape.
+- **Non-standard at root `ROADMAP.md` / `PLAN.md` / `TODO.md`, or uppercase `docs/ROADMAP.md`:**
   1. Read to see if it's actual roadmap content.
-  2. **Yes:** `git mv <old-path> docs/ROADMAP.md` (or `docs/roadmap.md` to match if the `docs` skill prefers lowercase locally).
+  2. **Yes:** `git mv <old-path> docs/roadmap.md`.
   3. **TODO.md of small tasks** rather than roadmap-shaped content: *"This looks more like a follow-ups list than a roadmap. Want me to file the items on the tracker instead?"*
 - **Non-standard at `docs/roadmap/` (folder):** the `docs` skill's Phase 03 audits this — collapses to `docs/roadmap.md` unless 3+ active initiatives. Defer to docs.
 
@@ -132,6 +134,7 @@ TBD
 # {Project} Roadmap
 
 ## Now
+- [ ] {first active item}
 
 ## Next
 
