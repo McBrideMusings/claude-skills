@@ -269,8 +269,10 @@ Per ready issue, in order:
 
    ```bash
    git -C <repo> rev-parse --absolute-git-dir >/dev/null 2>&1 || echo MISSING
-   test -d <worktree>/.git && test -f "$(git -C <worktree> rev-parse --absolute-git-dir)/SWARM-WORKER" || echo "MISSING <worktree>"
+   d=$(git -C <worktree> rev-parse --absolute-git-dir 2>/dev/null); test -n "$d" && test -f "$d/SWARM-WORKER" || echo "MISSING <worktree>"
    ```
+
+   **Ask git where the admin dir is; never `test -d <worktree>/.git`.** In a *linked* worktree `.git` is a one-line **file** pointing at `<repo>/.git/worktrees/<slug>`, not a directory — so `test -d` is false for every healthy worker worktree there has ever been, and the check reports `MISSING` on all of them. That is a false halt on a correctly built round, and it is indistinguishable from the real failure this check exists to catch. `rev-parse --absolute-git-dir` answers correctly in both a linked worktree and the primary checkout.
 
    **Any `MISSING` halts the round.** Do not dispatch, do not re-create it silently — say which slugs are gone and stop, so the cause gets looked at rather than papered over.
 
@@ -408,9 +410,24 @@ test -f $(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json   # the on
 git -C <worktree> status --short          # must be empty
 git log <default>..<branch>               # must be empty — fully merged
 pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=   # must be empty — nothing is standing in it
+```
+
+**Then clear the marker — in its own Bash call — before removing anything:**
+
+```bash
+rm -f "$(git -C <worktree> rev-parse --absolute-git-dir)/SWARM-WORKER"
+```
+
+```bash
 git -C <repo> worktree remove --force <worktree> \
   && git -C <repo> branch -d <branch>
 ```
+
+**Two calls, not one, and the order is forced.** `hooks/swarm-worker-push-guard.sh` denies any command that *names* a marked worktree — the orchestrator's own `git worktree remove` included — and it also denies every `bd` write anywhere in the repo while any marker is live. So the marker that step 3 created to stop a worker landing its own work is the same thing that stops this skill retiring that worker and closing its issue. Un-marking is the first act of retirement, not a workaround.
+
+They cannot be chained. The guard reads the whole compound before any of it runs, so `rm -f … && git worktree remove …` is denied in full and the marker is never cleared — the deny message names only the `git worktree remove`, which reads like the removal was the problem. Two separate Bash calls, marker first.
+
+Sequence the tracker writes the same way: **retire every worker in the round, then do the `bd close` calls.** A single surviving marker blocks all of them.
 
 **No `push origin --delete`.** Workers do not push, so a worker branch exists only locally and there is nothing on the remote to delete — the command fails with `remote ref does not exist` and, chained with `&&`, makes a clean teardown read as a failed one. Run it only if you pushed the branch yourself for some reason, and then only after `git -C <repo> ls-remote --exit-code origin <branch>` confirms it is there.
 
