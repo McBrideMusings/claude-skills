@@ -39,7 +39,7 @@ needs job 1 done *at generation time* (see below) or it will never tile cleanly.
 
 ## Comfy graphs (local — Tower RTX 3090 24GB)
 
-Ready-to-run API workflows live beside this file in `_generate/comfy-texture/`. Same files as
+Ready-to-run API workflows live beside this file in `comfy-texture/`. Same files as
 `~/Projects/unraid/local-genai/workflows/`.
 
 | Job | Workflow | Time | Notes |

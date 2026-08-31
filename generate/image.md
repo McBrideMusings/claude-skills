@@ -46,8 +46,8 @@ comfy is the free/local first choice; gemini is the cloud fallback.
 ## Comfy model roster (local — Tower RTX 3090 24GB)
 
 Benched 2026-07-21 against a frozen 5-prompt set (see the unraid `local-genai` project, scorecard
-`01-image.md`). Ready-to-run `workflow_api.json` for each lives beside this axis in
-`_generate/comfy-image/`. Pick by job:
+`01-image.md`). Ready-to-run `workflow_api.json` for each lives beside this file in
+`comfy-image/`. Pick by job:
 
 | Model | Job | Workflow | Settings (1024²) | Speed | Peak VRAM |
 | --- | --- | --- | --- | --- | --- |
