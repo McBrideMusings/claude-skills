@@ -1,0 +1,53 @@
+// __TITLE__ — the only file you write.
+//
+// harness.go supplies the variant picker, the state axes, the footer bar, the
+// geometry assertion and the frame dump. Do not edit it; rebuild instead.
+//
+//	go run .                 drive it — [ ] switch variant, F1..F9 cycle an axis
+//	go run . -dump -dir .    write every variant × state as a .txt frame
+package main
+
+// DumpWidth and DumpHeight are the grid every dumped frame must be, exactly.
+// 80 columns is the real floor for a terminal design; go wider only when the
+// design genuinely does not have to survive it.
+const (
+	DumpWidth  = 96
+	DumpHeight = 30
+)
+
+// Axes are state dimensions — which screen, which error, which connection.
+// They are NOT variants: a variant is a direction being compared, a state is a
+// condition the chosen direction has to survive. The first value is the default.
+var Axes = []Axis{
+	// {Key: "conn", Label: "Connection", Values: []string{"up", "down"}},
+}
+
+// Variants are the directions. Each Render returns exactly DumpHeight lines of
+// exactly DumpWidth visible columns — the harness checks both and tells you
+// which row is wrong. Use Pad(s, w) and VW(s); byte length is wrong on a grid
+// containing box-drawing characters.
+var Variants = []Variant{
+	{
+		Name:    "Replace me",
+		Caption: "one line on the axis this direction sits at",
+		Render: func(s State) string {
+			rows := make([]string, DumpHeight)
+			for i := range rows {
+				rows[i] = Pad("", DumpWidth)
+			}
+			rows[0] = Pad("  __TITLE__", DumpWidth)
+			return joinRows(rows)
+		},
+	},
+}
+
+func joinRows(rows []string) string {
+	out := ""
+	for i, r := range rows {
+		if i > 0 {
+			out += "\n"
+		}
+		out += r
+	}
+	return out
+}

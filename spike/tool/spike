@@ -10,6 +10,10 @@ Two fidelities of the same question — what should this look like:
   wireframe  greybox structure, colour withheld on purpose
   prototype  working versions of one UI behind a picker, in the project's own tokens
 
+A TERMINAL screen is `spike tui`, not a --kind: its output is a Go program, because 80
+columns, 16 theme-assigned colours and a keyboard the design owns are the whole question
+and none of them exist in an HTML mock. See ~/.claude/skills/spike/TUI.md.
+
 Explainers are a separate kind of document with their own tool, `explainer` — one look,
 no variants, none of the panel/device machinery here.
 
@@ -19,6 +23,7 @@ no variants, none of the panel/device machinery here.
               --device phone|tablet|desktop|panel|web|tv|fill
               [--lang en] [--extra-css <abs.css>]
               [--with w1,w2] [--without w1,w2]
+  spike tui   --out <abs-dir> --title <t> [--force] [--force-gomod]
   spike kinds
   spike serve <abs-path> [--port 8000]
 """
@@ -578,6 +583,9 @@ def cmd_kinds(_args):
     for name, desc in DEVICES.items():
         print("  %-*s  %s" % (dwidth, name, desc))
     print()
+    print("A terminal screen is not a kind: `spike tui --out <dir> --title <t>` scaffolds a Go")
+    print("harness (variant picker, state axes, geometry assertion, frame dump). See TUI.md.")
+    print()
     print("Fragment contract: %s" % CONTRACT_PATH)
 
 
@@ -589,6 +597,79 @@ def cmd_serve(args):
         print("  http://127.0.0.1:%d/%s" % (args.port, os.path.basename(path)))
     os.execvp("python3", ["python3", "-m", "http.server", str(args.port),
                           "--bind", "127.0.0.1", "--directory", directory])
+
+
+HARNESS_TUI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "harness-tui")
+
+TUI_GOMOD = """module %s
+
+go 1.22
+
+require (
+\tgithub.com/charmbracelet/bubbletea v1.3.10
+\tgithub.com/charmbracelet/lipgloss v1.1.0
+)
+"""
+
+
+def cmd_tui(args):
+    """Scaffold a terminal prototype: the Go harness plus a variants stub.
+
+    A TUI prototype is not HTML, so it is not a --kind: the output is a Go
+    program in the real toolkit, which is the only substrate that can answer a
+    terminal question (80 columns, 16 colours, a keyboard the design owns).
+    """
+    out = require_abs(args.out, "--out")
+    os.makedirs(out, exist_ok=True)
+
+    harness = os.path.join(HARNESS_TUI, "harness.go")
+    tmpl = os.path.join(HARNESS_TUI, "variants.go.tmpl")
+    for src in (harness, tmpl):
+        if not os.path.isfile(src):
+            die("missing harness file: %s" % src)
+
+    written = []
+    dst = os.path.join(out, "harness.go")
+    with open(dst, "w") as fh:
+        fh.write(read(harness))
+    written.append(dst)
+
+    variants = os.path.join(out, "variants.go")
+    if os.path.exists(variants) and not args.force:
+        print("keeping your %s (pass --force to reset it)" % variants)
+    else:
+        with open(variants, "w") as fh:
+            fh.write(read(tmpl).replace("__TITLE__", args.title))
+        written.append(variants)
+
+    # Only write a go.mod when this directory is not already inside a module —
+    # inside one, the project's own deps are what the prototype should use.
+    if not args.force_gomod and _in_go_module(out):
+        print("inside an existing Go module — no go.mod written")
+    else:
+        gm = os.path.join(out, "go.mod")
+        if not os.path.exists(gm):
+            with open(gm, "w") as fh:
+                fh.write(TUI_GOMOD % os.path.basename(out.rstrip("/")))
+            written.append(gm)
+
+    for w in written:
+        print("wrote %s" % w)
+    print()
+    print("Write your variants in %s, then:" % variants)
+    print("  go run %s              # drive it: [ ] switch variant, F1..F9 cycle an axis" % out)
+    print("  go run %s -dump -dir %s   # write every variant x state as a .txt frame" % (out, out))
+
+
+def _in_go_module(path):
+    cur = os.path.abspath(path)
+    while True:
+        if os.path.isfile(os.path.join(cur, "go.mod")):
+            return True
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            return False
+        cur = parent
 
 
 def main():
@@ -618,6 +699,15 @@ def main():
     b.add_argument("--without", metavar="W1,W2",
                    help="harness widgets to leave out")
     b.set_defaults(func=cmd_build)
+
+    t = sub.add_parser("tui", help="scaffold a terminal prototype (Go harness + variants stub)")
+    t.add_argument("--out", required=True, help="absolute path to the prototype directory")
+    t.add_argument("--title", required=True)
+    t.add_argument("--force", action="store_true",
+                   help="overwrite an existing variants.go")
+    t.add_argument("--force-gomod", action="store_true",
+                   help="write a go.mod even inside an existing module")
+    t.set_defaults(func=cmd_tui)
 
     k = sub.add_parser("kinds", help="list the kinds and what each is for")
     k.set_defaults(func=cmd_kinds)

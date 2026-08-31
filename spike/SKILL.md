@@ -1,6 +1,6 @@
 ---
 name: spike
-description: "Build a throwaway prototype to settle a design or technical question before committing — several working UI variations behind a picker, a greybox wireframe, a runnable terminal app for state/logic questions, or competing technical approaches measured against one fixture. Also the meaning of 'artifact': asking for an artifact is asking for a prototype built here, never a hosted page. Use to prototype, mock up, wireframe, try out, experiment, spike, or build a proof of concept; also for 'which approach should we use' and 'let me see it working first'."
+description: "Build a throwaway prototype to settle a design or technical question before committing — several working UI variations behind a picker, a greybox wireframe, competing TUI/terminal-screen designs in the real toolkit (never an HTML mock), a runnable terminal app for state/logic questions, or competing technical approaches measured against one fixture. Also the meaning of 'artifact': asking for an artifact is asking for a prototype built here, never a hosted page. Use to prototype, mock up, wireframe, try out, experiment, spike, or build a proof of concept; also for 'which approach should we use' and 'let me see it working first'."
 ---
 
 # spike — throwaway builds that settle a question
@@ -36,10 +36,11 @@ Identify which question is being answered — from the prompt, the surrounding c
 
 - **"What should this look like?"** → [UI.md](UI.md). Several genuinely different working versions of one piece of UI, in a single standalone HTML file, flipped through with the picker. Built with `~/.claude/skills/spike/tool/spike --kind prototype`.
 - **"Where do the regions sit?"** → `--kind wireframe`, a greybox with colour withheld on purpose. This is the fidelity *below* a prototype, and `gui` sketch mode routes here when an ASCII layout can't carry the question — see [`../gui/SKETCH.md`](../gui/SKETCH.md), which owns when to escalate. The build command is UI.md's with the kind swapped; there are no variants and no picker.
+- **"What should this terminal screen look like?"** → [TUI.md](TUI.md). Several working versions of one TUI screen in the real toolkit, flipped with a key, scaffolded by `~/.claude/skills/spike/tool/spike tui`. A terminal design is judged in a terminal: 80 columns, 16 theme-assigned colours and a keyboard the design owns are the whole question, and none of them exist in an HTML mock. Never build a TUI with `--kind prototype`.
 - **"Does this logic / state model hold up?"** → [LOGIC.md](LOGIC.md). Tiny interactive terminal app that pushes the state machine through cases hard to reason about on paper. Runs in a visible window via the `terminal` skill's session mode.
 - **"Which technical approach should we use?"** → [COMPARE.md](COMPARE.md). Two or three real implementations behind one interface, run against the same fixture. **Splits on what the answer is:** a number goes to `terminal` one-shot and gets measured; a look goes to the UI shape's picker with one variant per approach.
 
-The three shapes produce very different artifacts — getting this wrong wastes the whole prototype. If the question is genuinely ambiguous and the user isn't reachable, default by what the question is about (a page or component → UI; a state model or data shape → logic; a library, storage, or architecture choice → compare) and state the assumption at the top of the prototype.
+The shapes produce very different artifacts — getting this wrong wastes the whole prototype. If the question is genuinely ambiguous and the user isn't reachable, default by what the question is about (a terminal screen → TUI; another page or component → UI; a state model or data shape → logic; a library, storage, or architecture choice → compare) and state the assumption at the top of the prototype.
 
 ## Layer the domain on top
 
@@ -78,7 +79,7 @@ Rules:
 
 Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name directions being compared side by side right now, which is the only thing the picker is for.
 
-## Rules for all three shapes
+## Rules for every shape
 
 1. **The artifact never lives in production files.** Everything is written under `/private/tmp/claude/<repo-slug>/spikes/<slug>/` (gitignored). No new route, no edit to an existing page, no entry added to `package.json` or the task runner. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real file.
    Domain exception: a surface that can't be a file (a Roblox Place) uses the scratch surface named in its domain cell, under the same "throwaway, never production" rule.

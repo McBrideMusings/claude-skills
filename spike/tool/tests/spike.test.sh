@@ -233,5 +233,64 @@ for k in page deck explainer; do
   [ $? -ne 0 ] && say ok "kind '$k' is rejected" || say f "kind '$k' still builds"
 done
 
+echo "--- tui scaffold ---"
+# A terminal prototype is a Go program, not HTML, so it is a subcommand rather
+# than a --kind. The harness is what makes it a spike instead of hand-rolled Go:
+# the variant picker, the state axes and — the part that actually catches bugs —
+# the geometry assertion, which is why a wrong-width row must fail the dump.
+TUI="$WORK/tui"
+"$ART" tui --out "$TUI" --title "Smoke" >/dev/null 2>&1
+for f in harness.go variants.go go.mod; do
+  [ -f "$TUI/$f" ] && say ok "tui scaffolds $f" || say f "tui did not write $f"
+done
+
+# --kind tui must NOT exist: the HTML assembler cannot produce a Go program, and
+# a kind that silently emitted HTML for a terminal design is the whole mistake.
+"$ART" build --kind tui --title T --fragment "$WORK/frag.html" \
+  --out "$WORK/dead.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "--kind tui is rejected" || say f "--kind tui still builds"
+
+# variants.go is the author's file; a re-scaffold must not silently eat it.
+echo "// mine" >> "$TUI/variants.go"
+"$ART" tui --out "$TUI" --title "Smoke" >/dev/null 2>&1
+grep -q '// mine' "$TUI/variants.go" \
+  && say ok "re-scaffold keeps variants.go" || say f "re-scaffold clobbered variants.go"
+"$ART" tui --out "$TUI" --title "Smoke" --force >/dev/null 2>&1
+grep -q '// mine' "$TUI/variants.go" \
+  && say f "--force did not reset variants.go" || say ok "--force resets variants.go"
+
+# Inside an existing module the project's own deps are what a prototype should
+# use, so a second go.mod would shadow them.
+mkdir -p "$WORK/mod/inner" && printf 'module host\n\ngo 1.22\n' > "$WORK/mod/go.mod"
+"$ART" tui --out "$WORK/mod/inner" --title "Inner" >/dev/null 2>&1
+[ -f "$WORK/mod/inner/go.mod" ] \
+  && say f "wrote a go.mod inside an existing module" \
+  || say ok "no go.mod inside an existing module"
+
+if command -v go >/dev/null 2>&1; then
+  cat > "$TUI/variants.go" <<'GOV'
+package main
+
+const (
+	DumpWidth  = 10
+	DumpHeight = 2
+)
+
+var Axes = []Axis{}
+
+var Variants = []Variant{
+	{Name: "Short", Render: func(s State) string { return Pad("a", 10) + "\n" + Pad("b", 10) }},
+	{Name: "Wrong", Render: func(s State) string { return "abc\n" + Pad("b", 10) }},
+}
+GOV
+  ( cd "$TUI" && go mod tidy >/dev/null 2>&1 && go run . -dump -dir . >"$WORK/tui.out" 2>&1 )
+  grep -q 'FAIL' "$WORK/tui.out" \
+    && say ok "dump fails a wrong-width row" || say f "dump passed a 3-col row in a 10-col frame"
+  grep -q 'short-frame\|ok   short' "$WORK/tui.out" \
+    && say ok "dump names frames per variant" || say f "dump did not name per-variant frames"
+else
+  say ok "go absent — tui compile checks skipped"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]
