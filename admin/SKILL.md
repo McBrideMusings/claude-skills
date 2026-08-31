@@ -1,6 +1,6 @@
 ---
 name: admin
-description: "Add/edit/audit a project's admin task runner, AND diagnose it when an `admin` command misbehaves. Load this BEFORE concluding an admin feature is missing, broken, unwired, or inert, and before explaining why a deploy, build, or task did or didn't do something: an `admin deploy` that skipped a step, a `--dry-run` that showed less than expected, a config key with no visible effect, an unknown-command fallback printing the menu. The tool interprets admin.toml at runtime (no generated ./admin)."
+description: "Add/edit/audit a project's admin task runner, AND diagnose a misbehaving `admin` command. Load BEFORE concluding an admin feature is missing, broken, or inert — a deploy that skipped a step, a --dry-run showing less than expected. The tool interprets admin.toml at runtime (no generated ./admin)."
 ---
 
 # /admin — Manifest-Driven Admin Task Runner
@@ -13,6 +13,7 @@ There is **no generated `./admin` script** (ADR-0006). The installed tool interp
 
 - Installed entry: `~/.admin/admin`, on PATH as **`admin`**. Run `admin <command>` from anywhere inside a project — it finds `admin.toml` by walking up from `$PWD`.
 - Tool verbs (Go binary, aliased `repo`): `admin check` (parse + resolve + validate the manifest), plus the dashboard verbs `branch`, `prs`, `populate`, `worktree`, `archetypes`. **`admin new` and `admin compile` no longer exist — typing them checks out a git branch by that name (see the trap below).**
+- Editing `admin.toml` takes effect immediately — there is nothing to regenerate, no artifact to commit, no drift to audit.
 
 ## ⚠️ THE BRANCH-FALLBACK TRAP — read before running ANY `admin` command
 
@@ -36,7 +37,6 @@ Standing rules, no exceptions:
 **[PLAYBOOK.md](PLAYBOOK.md) is the distilled fleet pattern** (dispatch details, canonical
 vocabulary with real usage counts, kind selection, sub-target idioms, standard tables) —
 read it before writing or editing any manifest.
-- Editing `admin.toml` takes effect immediately — there is nothing to regenerate, no artifact to commit, no drift to audit.
 
 Source repo: `~/projects/admin-project-tool/` — Go dispatch/dashboard in `cmd/` (`root.go` holds `dispatchArgs`), Python runtime helpers in `admin_lib/`, archetypes in `archetypes/`.
 
