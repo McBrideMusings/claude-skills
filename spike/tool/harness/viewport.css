@@ -470,6 +470,58 @@ html[data-at-vp] body > *:not(.at-vp-host):not(.at-vp):not(.at-twk):not(.at-twk-
 
 /* --- the inactive window behind the frame --- */
 
+/* The DESIGN's own window on the fake desktop. Same reason the wallpaper and the menu
+   bar are the harness's job: chrome is not the fragment's to draw. Every prototype that
+   hand-drew a title bar drew slightly different lights at slightly different sizes, and
+   got the inactive-window greys wrong, because none of that is the design being judged.
+   Mark the element `data-at-win="Title"` and the harness supplies the bar, the lights,
+   the shadow and the drag. */
+.at-vp-appwin {
+  position: absolute;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.32),
+    0 22px 60px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+  cursor: grab;
+}
+.at-vp-appwin[data-dragging] { cursor: grabbing; z-index: 40; }
+
+/* 28px is the real macOS title bar. flex:none so a column layout inside the window
+   keeps its own scrolling middle instead of the bar being squeezed. */
+.at-vp-appwin-bar {
+  flex: none;
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: var(--bg-elev, rgba(0, 0, 0, 0.05));
+  border-bottom: 0.5px solid var(--hair, rgba(0, 0, 0, 0.18));
+  user-select: none;
+}
+.at-vp-aw-lights { display: flex; align-items: center; gap: 8px; flex: none; }
+.at-vp-aw-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+/* A window whose style mask omits a control still DRAWS it, greyed. Leaving it out
+   instead is the tell that the chrome was hand-drawn. */
+.at-vp-aw-dot.is-off { background: rgba(128, 128, 128, 0.42) !important; }
+/* Centred on the window, not after the lights: a title that starts where the lights
+   end is off-centre by exactly their width, which is what every hand-rolled one did. */
+.at-vp-aw-title {
+  position: absolute;
+  left: 0; right: 0;
+  text-align: center;
+  font: 600 13px -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  color: var(--ink-2, rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 76px;
+}
+
 .at-vp-bwin {
   position: absolute;
   border-radius: 11px;

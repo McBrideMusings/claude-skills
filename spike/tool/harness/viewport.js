@@ -519,11 +519,79 @@
     return deskEl.outerHTML;
   }
 
+  /* `data-at-win="Title"` marks the fragment's own app window. The harness gives it the
+     window styling, a 28px title bar with real traffic lights, and the drag — so every
+     desktop spike gets the same window for free and none of them hand-draw one.
+     `data-at-win-controls="close"` greys minimize and zoom, which is what a
+     `[.titled, .closable]` NSWindow actually shows. */
+  function decorateAppWindows(root) {
+    if (!BACKDROP || !root) return;
+    var doc = root.ownerDocument || root;
+    var wins = root.querySelectorAll('[data-at-win]');
+    for (var i = 0; i < wins.length; i++) {
+      var w = wins[i];
+      if (w.querySelector(':scope > .at-vp-appwin-bar')) continue;
+      w.classList.add('at-vp-appwin');
+      // Implies draggable: a window you cannot move is not a window.
+      w.setAttribute('data-at-drag', '');
+
+      var only = (w.getAttribute('data-at-win-controls') || '').trim();
+      var off = only === 'close' ? ' is-off' : '';
+
+      var bar = doc.createElement('div');
+      bar.className = 'at-vp-appwin-bar';
+
+      var lights = doc.createElement('span');
+      lights.className = 'at-vp-aw-lights';
+      lights.setAttribute('aria-hidden', 'true');
+      lights.innerHTML =
+        '<i class="at-vp-aw-dot" style="background:#ff5f57"></i>' +
+        '<i class="at-vp-aw-dot' + off + '" style="background:#febc2e"></i>' +
+        '<i class="at-vp-aw-dot' + off + '" style="background:#28c840"></i>';
+      bar.appendChild(lights);
+
+      var title = doc.createElement('span');
+      title.className = 'at-vp-aw-title';
+      // textContent, not innerHTML: the title is fragment-supplied text.
+      title.textContent = w.getAttribute('data-at-win') || '';
+      bar.appendChild(title);
+
+      w.insertBefore(bar, w.firstChild);
+    }
+  }
+
+  /* The frame mounts its variant AFTER load, so the one pass at load runs against a
+     document that has no app window in it yet — which is why marking a window changed
+     nothing. A variant can also draw a window later still, and the contract promises
+     those are wired too. An observer is the only thing that covers all three without the
+     frame having to announce anything to the host.
+     Decoration mutates the DOM and so re-triggers this, but both passes are idempotent
+     and the second one changes nothing, so it settles after one extra frame. */
+  function observeFrame(doc) {
+    if (!BACKDROP || !doc || !doc.body || doc.__atWinObserved) return;
+    doc.__atWinObserved = true;
+    var win = doc.defaultView || window;
+    var pending = false;
+    new win.MutationObserver(function () {
+      if (pending) return;
+      pending = true;
+      win.requestAnimationFrame(function () {
+        pending = false;
+        try { wireDragging(doc); } catch (e) {}
+      });
+    }).observe(doc.body, { childList: true, subtree: true });
+  }
+
   /* Every window on the fake desktop is draggable — the harness's own inactive window
      and anything the fragment marks `data-at-drag`. Both live inside the frame, so the
      coordinate space is the frame's viewport and there is no iframe boundary to cross. */
   function wireDragging(doc) {
     if (!BACKDROP || !doc) return;
+    /* Chrome first, so a window mounted by the picker is decorated before it is wired —
+       and so both run on every mount, not once at build time. A [data-at-win] inside a
+       <template data-variant> does not exist yet when the frame's document is
+       serialized, which is where this used to be done and why it drew nothing. */
+    decorateAppWindows(doc);
     var wins = doc.querySelectorAll('[data-at-drag]');
     for (var i = 0; i < wins.length; i++) {
       if (!wins[i].hasAttribute('data-at-drag-wired')) {
@@ -629,6 +697,7 @@
     frame.addEventListener('load', function () {
       syncFrame();
       try { wireDragging(frame.contentDocument); } catch (e) {}
+      try { observeFrame(frame.contentDocument); } catch (e) {}
       // Whatever watches the folio — the contrast verdict, for one — is now looking
       // at a different document and has to be told.
       window.dispatchEvent(new CustomEvent('at:device', { detail: { device: DEVICE } }));

@@ -278,10 +278,21 @@ Three things it changes:
 - **The frame becomes the screen, not the window.** Your fragment draws its own app
   window positioned on it — which is what a floating panel is anyway. The harness owns
   the wallpaper, the menu bar and the drag behaviour; never hand-draw any of them.
-- **Every window is draggable.** Mark yours `data-at-drag` and the harness wires it,
+- **The harness draws your window's chrome.** Mark your window element
+  `data-at-win="Title"` and it gets the 28px macOS title bar, the traffic lights, the
+  radius, the shadow and the drag — never hand-draw any of them. Add
+  `data-at-win-controls="close"` for a `[.titled, .closable]` window, which draws
+  minimize and zoom greyed rather than leaving them out. The bar is the window's first
+  child and `flex: none`, so a column layout keeps its own scrolling middle.
+- **Every window is draggable.** `data-at-win` implies it; mark anything else
+  `data-at-drag` and the harness wires it,
   including windows a variant only draws later. Controls inside it keep working: a drag
   never starts from a `button`, `a`, `input`, `select`, `textarea`, `[contenteditable]`
   or `[role="checkbox"]`. The cursor affordance comes with it, so style nothing.
+- **Position windows with `left`/`top`, never a `transform`.** A drag begins by writing
+  the window's measured `left`/`top` back onto it, so a `translate(-50%, -50%)` centring
+  trick is still applied on top of the new coordinates and the window jumps by half its
+  own size the moment it is grabbed. Give it pixel or percent `left`/`top` and a size.
 - **A `panel` frame's menu bar moves to the screen.** It normally hangs from a strip
   glued to its own shell; with a screen behind it, it hangs off the screen's bar
   instead — which is where a real menu bar extra hangs.
