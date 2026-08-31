@@ -12,10 +12,19 @@ material. Two kinds, and they perform very differently:
 The rates this produces are the evidence behind improve/POINTERS.md. Re-run it
 after rewriting a pointer to see whether the rewrite worked.
 
+A third mode answers a different question: `--fires` reports how often each
+model-invoked skill fires. That is the misfire instrument. A skill newly made
+model-invocable has an untested trigger, and the failure mode is firing on work
+it does not apply to -- which no read-rate number shows, because the skill did
+load, it just should not have. Record a baseline the day the flag comes off, then
+compare.
+
 Usage:
-    python3 ~/.claude/skills/audit-session/pointer_rate.py            # both
+    python3 ~/.claude/skills/audit-session/pointer_rate.py            # cold + warm
     python3 ~/.claude/skills/audit-session/pointer_rate.py --cold     # cold only
     python3 ~/.claude/skills/audit-session/pointer_rate.py --warm     # warm only
+    python3 ~/.claude/skills/audit-session/pointer_rate.py --fires    # per-skill fire rate
+    python3 ~/.claude/skills/audit-session/pointer_rate.py --fires --since 2026-08-30
     python3 ~/.claude/skills/audit-session/pointer_rate.py --target PATH_SUBSTRING
                                                                       # one custom target
 
@@ -54,10 +63,20 @@ COLD = {
 }
 
 
-def transcripts():
-    """Yield (path, text) for every transcript with real work in it."""
+def transcripts(since=None):
+    """Yield (path, text) for every transcript with real work in it.
+
+    `since` is a YYYY-MM-DD string; files modified before it are skipped. Use it
+    to measure a window that starts the day a trigger changed.
+    """
+    cutoff = None
+    if since:
+        import datetime
+        cutoff = datetime.datetime.strptime(since, "%Y-%m-%d").timestamp()
     for jf in ROOT.rglob("*.jsonl"):
         try:
+            if cutoff and jf.stat().st_mtime < cutoff:
+                continue
             raw = jf.read_text(errors="replace")
         except OSError:
             continue
@@ -67,6 +86,52 @@ def transcripts():
         if turns < MIN_TURNS:
             continue
         yield jf, raw
+
+
+def model_invoked_skills():
+    """Every skill the model can fire on its own -- i.e. that has a trigger."""
+    out = []
+    for d in sorted(SKILLS.iterdir()):
+        sk = d / "SKILL.md"
+        if not d.is_dir() or not sk.exists():
+            continue
+        head = sk.read_text(errors="replace")[:2000]
+        if re.search(r'^disable-model-invocation:\s*true', head, re.M):
+            continue
+        out.append(d.name)
+    return out
+
+
+def report_fires(since):
+    """How often does each model-invoked skill actually fire?
+
+    High is not automatically wrong and low is not automatically right -- the
+    question is whether the rate matches what the description claims. A skill
+    whose description names a common case and fires at 0.2% is not selective, it
+    is not working. A narrow-by-design skill that suddenly climbs is misfiring.
+    """
+    names = model_invoked_skills()
+    pats = {n: re.compile(r'"skill"\s*:\s*"%s"' % re.escape(n)) for n in names}
+    fired = Counter()
+    sessions = 0
+    for _, raw in transcripts(since):
+        sessions += 1
+        for n, p in pats.items():
+            if p.search(raw):
+                fired[n] += 1
+    if not sessions:
+        print("no transcripts in window", file=sys.stderr)
+        return 1
+    window = f" since {since}" if since else ""
+    print(f"corpus: {sessions} sessions{window}\n")
+    print(f"  {'skill':24} {'fired':>7} {'rate':>8}")
+    for n in sorted(names, key=lambda x: -fired[x]):
+        print(f"  {n:24} {fired[n]:>7} {fired[n] / sessions * 100:>7.2f}%")
+    print("\n  Compare each rate against what its description claims. A skill that")
+    print("  names a common case and fires near zero is not selective -- it is")
+    print("  missing. A narrow one that climbs after a trigger change is misfiring;")
+    print("  take it to audit-session's skill-misfire lens with the session ids.")
+    return 0
 
 
 def warm_targets():
@@ -94,9 +159,16 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--cold", action="store_true", help="cold pointers only")
     ap.add_argument("--warm", action="store_true", help="warm pointers only")
+    ap.add_argument("--fires", action="store_true",
+                    help="per-skill fire rate -- the misfire instrument")
+    ap.add_argument("--since", metavar="YYYY-MM-DD",
+                    help="only sessions modified on or after this date")
     ap.add_argument("--target", metavar="SUBSTRING",
                     help="measure one custom path substring as a cold target")
     args = ap.parse_args()
+
+    if args.fires:
+        return report_fires(args.since)
 
     do_cold = args.cold or args.target or not args.warm
     do_warm = args.warm or not (args.cold or args.target)

@@ -53,4 +53,8 @@ noise. Rank by that, not by count.
 
 Axis tag: `skill-misfire`.
 
+## The instrument
+
+`python3 ~/.claude/skills/audit-session/pointer_rate.py --fires` gives the fire rate of every model-invoked skill; add `--since YYYY-MM-DD` to window it. Rank against what each description *claims*, not against each other — a skill whose description names a common case and fires at 0.2% is missing, not selective, while a deliberately narrow one that climbs after its trigger changed is misfiring. A skill that recently lost `disable-model-invocation` is the highest-risk case: its trigger has never been tested against real traffic.
+
 **Before writing the `Fix:` line, test it against all five fix shapes** — [../FIX-SHAPES.md](../FIX-SHAPES.md).
