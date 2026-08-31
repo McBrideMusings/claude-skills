@@ -82,6 +82,31 @@ fixed name:
 Ask what the app opens by a fixed name and give each worker its own. Create them in **step 3**
 beside the worktree; state them in the brief; remove them in **step 7**.
 
+**Before handing out a bundle-id suffix, check what the entitlements key off it.** A suffix is the
+obvious way to split `UserDefaults` and an app group, and it is silently unusable whenever the
+entitlements file names a cloud container derived from the bundle id — an iCloud container,
+a push environment, a keychain access group. Those identifiers have to be **registered with Apple**,
+and a per-worker suffix invents one that never has been, so the build dies at `GatherProvisioningInputs`
+with `doesn't include the iCloud capability` / `doesn't support the iCloud.<id> iCloud Container`
+**before a single Swift file compiles**. It reads like a signing misconfiguration on the machine
+rather than a consequence of the isolation you just chose, and forcing `CODE_SIGN_IDENTITY="-"` or
+`CODE_SIGNING_REQUIRED=NO` does not get past it — provisioning is resolved before compilation either
+way. Check with `grep -l icloud <target>/*.entitlements` before choosing the suffix.
+
+Two routes when the entitlements do key off the bundle id, and the repo usually already has one:
+
+- **A worker entitlements file** with the cloud containers stripped, selected by a build setting —
+  `SCRATCHPAD_ENTITLEMENTS=…/Scratchpad-worker.entitlements` in `apple-notepad`. This is the one
+  to prefer: it keeps the per-worker suffix *and* builds. Look for an existing `*-worker.entitlements`
+  before concluding there is no route.
+- **Otherwise, keep the one registered suffix and serialise the macOS-app workers**, per the rule
+  below. A shared container that two workers take turns with beats a suffix neither can build.
+
+Observed 2026-08-31 on `apple-notepad`: two macOS workers ran concurrently on `.dev.rmback` and
+`.dev.neither`. The first found the worker-entitlements route and verified; the second did not,
+correctly refused to disable signing or abandon its isolation, and returned `SKIP` — a whole slice's
+verification lost to an isolation scheme that had no working build behind it.
+
 **Worked example — `term-wheelhouse`.** Both of its singletons are parameterised, so N workers run
 concurrently:
 
