@@ -6,7 +6,7 @@ Axis tag: `performance`. Applicability: the app is launchable through an **exist
 
 ## Aspect-specific rules
 
-- **Infer the metric and the workload from the project type and name both in every finding**, so the premise can be rejected: game → the frame budget in `../../_domains/game/profiling.md`; web → load and interaction; CLI → startup.
+- **Infer the metric and the workload from the project type and name both in every finding**, so the premise can be rejected: game → the frame budget in `../../ref-game-dev/profiling.md`; web → load and interaction; CLI → startup.
 - **Never guess hot paths from reading code.** If you could not launch it or no profiler is available, the answer is `not measurable — <reason>`. A guessed hot path scores 0 under [../GROUNDING.md](../GROUNDING.md) and wastes the one aspect that could have produced a number.
 - Every finding carries the **measured cost** — milliseconds, frames, allocations, requests — and the share of total it represents. This is the aspect most able to make a win checkable; use that.
 - Do not create an entry point, add a script, or install a profiler. All three are writes.

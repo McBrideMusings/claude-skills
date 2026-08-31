@@ -7,6 +7,6 @@ description: tvOS — the focus engine, no touch or cursor, ten-foot viewing dis
 
 | Open | When |
 | --- | --- |
-| [`../_domains/tvos/context.md`](../_domains/tvos/context.md) | The whole cell — open before building or designing for Apple TV. |
+| [`context.md`](context.md) | The whole cell — open before building or designing for Apple TV. |
 
 Build, signing and test tooling are [`ref-apple`](../ref-apple/SKILL.md).

@@ -10,7 +10,7 @@ lenses. Get the structure right here *before* the surface makes changes expensiv
 The interaction structure and flow layer defines how a person interacts with the product: the places they
 navigate, the affordances available, the content presented, and the flow between states. It sits above
 the conceptual model (which defines *what exists*, `conceptual-model.md`) and below the surface (which
-defines *how it looks*, `_domains/gui/`).
+defines *how it looks*, `ref-gui/`).
 
 A breadboard is always for a particular user in a particular situation doing a particular job. Know which
 job story before you start.

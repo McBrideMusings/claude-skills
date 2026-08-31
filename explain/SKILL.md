@@ -152,7 +152,7 @@ capped by how well you understood the code. Do not start rendering until the mec
 is clear and every claim you plan to make is backed by a file you've read. A-mode:
 synthesize from knowledge; if a specific fact is shaky, flag it rather than invent it.
 
-**Check the shared knowledge store.** If the topic maps to a label (`_domains/<label>/`)
+**Check the shared knowledge store.** If the topic maps to a label (`ref-<label>/`)
 this account already carries curated knowledge for, read the relevant cell and use it as
 grounding context. Prefer it over parametric memory; it's the account's vetted take.
 

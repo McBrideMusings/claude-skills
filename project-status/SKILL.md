@@ -62,7 +62,7 @@ Present in chat, in this order:
 
 Skip entirely unless invoked as `project-status push`.
 
-Before presenting, run 2–3 escalation rounds over the draft steering recommendation. Each round: acknowledge what the current draft achieves, then demand dramatically more ambition, depth, and sophistication — models default to safe, obvious next steps unless pushed. Inject domain knowledge (resolve via `_domains/_detect.md`) where it sharpens a recommendation. Revise the recommendation **in place** each round — one recommendation list exists at the end, never a stack of drafts. The Vision Checklist and statuses are facts and are exempt: escalation rewrites where to steer, never what was measured.
+Before presenting, run 2–3 escalation rounds over the draft steering recommendation. Each round: acknowledge what the current draft achieves, then demand dramatically more ambition, depth, and sophistication — models default to safe, obvious next steps unless pushed. Inject domain knowledge (resolve via `_detect.md`) where it sharpens a recommendation. Revise the recommendation **in place** each round — one recommendation list exists at the end, never a stack of drafts. The Vision Checklist and statuses are facts and are exempt: escalation rewrites where to steer, never what was measured.
 
 ### Phase 07 — Steering Slate
 

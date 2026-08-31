@@ -1,6 +1,6 @@
 # Game prototype overlay
 
-Read by the `spike` skill (per `_domains/_detect.md`) when the domain is `game`, **on top of** the
+Read by the `spike` skill (per `_detect.md`) when the domain is `game`, **on top of** the
 shape file. Which shape applies depends on the question, and both are common here:
 
 - **Feel** ("does this jump/dash/recoil feel right") → [`spike/UI.md`](../../spike/UI.md)'s
@@ -67,7 +67,7 @@ Objective things a prototype can establish that description can't:
 - **Input-to-response latency** — frames between input and visible response. Anything above ~2 frames
   at 60 fps is felt even when it isn't consciously noticed.
 - **Frame cost of the mechanic in isolation** — if it's already near budget alone, it won't survive a
-  real scene. Defer raw profiling numbers to `_domains/game/profiling.md` and the platform cell.
+  real scene. Defer raw profiling numbers to `ref-game-dev/profiling.md` and the platform cell.
 - **Reachable states** — including the degenerate ones: infinite hover, softlock, a combo that skips
   the intended sequence. Push the mechanic to break, and report exactly how it broke.
 - **Simulation results** for economy/maths questions — convergence, spread across N runs, where the
@@ -75,8 +75,8 @@ Objective things a prototype can establish that description can't:
 
 ## Handoffs
 
-- The loop already exists and the question is whether it plays → `_domains/game/testing.md`'s "does the
+- The loop already exists and the question is whether it plays → `ref-game-dev/testing.md`'s "does the
   core loop play" gate.
-- Structural design questions before any code (MDA chain, clockwork) → `_domains/game/design.md` via
+- Structural design questions before any code (MDA chain, clockwork) → `ref-game-dev/design.md` via
   `ref-game-dev`.
 - Frame budget on a real scene rather than an isolated mechanic → `profiling`.

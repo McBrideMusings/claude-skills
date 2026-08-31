@@ -44,10 +44,10 @@ The shapes produce very different artifacts — getting this wrong wastes the wh
 
 ## Layer the domain on top
 
-The shape is the *mechanism*. The domain is the *mode of software* — it says what "realistic" and "answered" mean here. Resolve it per [`_domains/_detect.md`](../_domains/_detect.md) (explicit argument → `.claude/domain` marker → classify once), then load the cell **in addition to** the shape file:
+The shape is the *mechanism*. The domain is the *mode of software* — it says what "realistic" and "answered" mean here. Resolve it per [`_detect.md`](../_detect.md) (explicit argument → `.claude/domain` marker → classify once), then load the cell **in addition to** the shape file:
 
-- `ui` → [`_domains/gui/prototype.md`](../_domains/gui/prototype.md) — the craft bar every variant clears, what realistic content means, the axes variants diverge on.
-- `game` → [`_domains/game/prototype.md`](../_domains/game/prototype.md) — feel questions, the surfaces a game prototype runs on (Roblox scratch Place, canvas/three.js HTML file, native scratch target), playtest-by-hand instead of flip-and-compare.
+- `ui` → [`ref-gui/prototype.md`](../ref-gui/prototype.md) — the craft bar every variant clears, what realistic content means, the axes variants diverge on.
+- `game` → [`ref-game-dev/prototype.md`](../ref-game-dev/prototype.md) — feel questions, the surfaces a game prototype runs on (Roblox scratch Place, canvas/three.js HTML file, native scratch target), playtest-by-hand instead of flip-and-compare.
 - No marker → shape file only. A feature or technical spike is the generic path and needs no cell.
 
 ## One prototype, one device type
@@ -104,7 +104,7 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
     made it work. (Adapted from `jakubkrehel/skills` `variant`, MIT.)
 12. **Before handing any build over, run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md).
 13. **Every `ui` variant clears the severity floor** in
-    [`_domains/gui/review.md`](../_domains/gui/review.md) — accessible names, keyboard reach, visible
+    [`ref-gui/review.md`](../ref-gui/review.md) — accessible names, keyboard reach, visible
     focus, nothing clipped at 320px, no meaning on colour alone — before it enters the picker. A
     variant that wins on looks and fails the floor is not a candidate; it's a bug with a nice
     surface. The floor is identical across variants — never an axis, never traded against one.
@@ -177,4 +177,4 @@ comments back has the `pbpaste` watcher. Say which you are doing.
 - Explaining how something already works → `explain`. Same substrate, different tool.
 - Judging or improving an interface that already exists → `gui` critique mode.
 - Deciding whether a *layout* is right, when there's one design and the question is arrangement → `gui` sketch mode (cheaper: ASCII in chat). Come here when the question is *which direction*, and the axes in play are density, motion, personality, or interaction model — the things ASCII can't show.
-- Picking a library for a web task → `_domains/gui/libraries.md` via `gui`. Don't burn a prototype on a question a curated list already answers.
+- Picking a library for a web task → `ref-gui/libraries.md` via `gui`. Don't burn a prototype on a question a curated list already answers.

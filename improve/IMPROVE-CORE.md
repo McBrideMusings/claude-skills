@@ -33,7 +33,7 @@ root=$(git rev-parse --show-toplevel) && cd "$root" && {
 | `gui` | a UI surface in the tree — components, stylesheets, a page, or a TUI |
 | `performance` | `admin=yes` or `scripts=` names a start/dev/run entry |
 | `docs` | `docs=yes` |
-| `game` | per [`../_domains/_detect.md`](../_domains/_detect.md) — an explicit label in the invocation wins, then the `domain=` marker, and only then classification. **Do not read `.claude/domain` directly**: `improve game` on an unmarked repo is an explicit argument and must run, and a marker-less repo gets classified once and persisted rather than silently skipped. |
+| `game` | per [`../_detect.md`](../_detect.md) — an explicit label in the invocation wins, then the `domain=` marker, and only then classification. **Do not read `.claude/domain` directly**: `improve game` on an unmarked repo is an explicit argument and must run, and a marker-less repo gets classified once and persisted rather than silently skipped. |
 
 An aspect that passes here can still turn out inapplicable up close. Its brief tells it to return `not applicable — <reason>` rather than manufacture findings; that string reaches the report as a coverage line, never as a card.
 
@@ -57,7 +57,7 @@ One brief per confirmed aspect: the content of its [`aspects/`](aspects/) file, 
 
 **The finding shape.** Forward verbatim:
 
-> *Return each finding as: **title** (names the change, not the problem area) · **lens** (the specific rule, craft lens, domain cell, or lateral technique that produced it — `ARCHITECTURE.md deletion test`, `_domains/gui/opportunities.md motion`, `worst-idea`, `PHASE-03-AUDIT.md substantive checklist` — never just the aspect name) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **strength** (`Strong` / `Worth exploring` / `Speculative`). **At most 5 findings, at most 120 words each.** If you have more than five, return the five best and say how many you dropped — the count reaches the report, the sixth finding does not.*
+> *Return each finding as: **title** (names the change, not the problem area) · **lens** (the specific rule, craft lens, domain cell, or lateral technique that produced it — `ARCHITECTURE.md deletion test`, `ref-gui/opportunities.md motion`, `worst-idea`, `PHASE-03-AUDIT.md substantive checklist` — never just the aspect name) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **strength** (`Strong` / `Worth exploring` / `Speculative`). **At most 5 findings, at most 120 words each.** If you have more than five, return the five best and say how many you dropped — the count reaches the report, the sixth finding does not.*
 
 The **lens** field is what makes a finding traceable back to the knowledge that produced it. The aspect name says which agent ran; the lens says which sentence in which file fired. It travels unchanged through the report card and into the ticket body, so the reader can open the rule and judge the finding against it.
 

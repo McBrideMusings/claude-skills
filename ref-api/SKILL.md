@@ -7,8 +7,8 @@ description: API contracts — versioning, idempotency, pagination, error shapes
 
 | Open | When |
 | --- | --- |
-| [`../_domains/api/context.md`](../_domains/api/context.md) | The whole cell — open before designing, changing or reviewing an HTTP or RPC interface. |
-| [`../_domains/api/design.md`](../_domains/api/design.md) | Designing a new endpoint or reshaping an existing contract. |
-| [`../_domains/api/review.md`](../_domains/api/review.md) | Reviewing an API change for compatibility and contract breakage. |
+| [`context.md`](context.md) | The whole cell — open before designing, changing or reviewing an HTTP or RPC interface. |
+| [`design.md`](design.md) | Designing a new endpoint or reshaping an existing contract. |
+| [`review.md`](review.md) | Reviewing an API change for compatibility and contract breakage. |
 
 The server side of the same work is [`ref-backend`](../ref-backend/SKILL.md).

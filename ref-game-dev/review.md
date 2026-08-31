@@ -61,4 +61,4 @@ phase). A decorative space that does not change player choices is a finding.
 - [ ] Tuning lives in named constants, and changes are recorded.
 
 Performance readability is a gameplay gate, not just a graphics one — see `profiling.md` for the
-frame budget; use the platform's profiler via `_domains/<p>/profiling.md` for the raw numbers.
+frame budget; use the platform's profiler via `ref-<p>/profiling.md` for the raw numbers.

@@ -32,7 +32,7 @@ unverified — the most dangerous). If a deadline changes the calculus, say so; 
 isn't the most foundational one — name that tradeoff.
 
 **Recommendation:** one specific layer cell to work next, and why. If the bottleneck is **Surface**, the
-next step is this skill's `sketch` or `critique` mode over `_domains/gui/`, not a `layers/` cell. Close
+next step is this skill's `sketch` or `critique` mode over `ref-gui/`, not a `layers/` cell. Close
 with a genuine offer to run it or push back first.
 
 ## Findings-only invocation

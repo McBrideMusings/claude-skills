@@ -55,7 +55,7 @@ Auditing existing surface against the layers below. Use whichever the concern ca
 | **Emotional-register check** | Return to the emotional and social jobs; find where tone, framing, or emphasis misaligns. |
 | **Feedback & error inventory** | For each action and state transition: how does the user know it worked, is in progress, or failed — and what to do next? |
 | **Hierarchy review** | Per key place: what must the user notice or act on, and does the surface make that most prominent? Decide what's primary before how to signal it. |
-| **Accessibility pass** | Contrast, sizing, touch targets, keyboard, screen-reader labels, focus. (The measured a11y values — 4.5:1, 44×44px — are enforced by the engines via `design.md` / `_domains/`.) |
+| **Accessibility pass** | Contrast, sizing, touch targets, keyboard, screen-reader labels, focus. (The measured a11y values — 4.5:1, 44×44px — are enforced by the engines via the label cells' `design.md` / `review.md`.) |
 | **Consistency pass** | Similar things treated similarly, different things differently; medium conventions honoured or deliberately broken. |
 
 ## In a critique

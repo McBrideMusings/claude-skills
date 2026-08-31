@@ -7,9 +7,9 @@ description: Web frontend — semantic HTML, accessibility, narrow viewports, co
 
 | Open | When |
 | --- | --- |
-| [`../_domains/web/context.md`](../_domains/web/context.md) | The whole cell — open before writing, testing or reviewing web UI. |
-| [`../_domains/web/testing.md`](../_domains/web/testing.md) | Testing in a browser. |
-| [`../_domains/web/profiling.md`](../_domains/web/profiling.md) | Load time, bundle size, runtime cost. |
-| [`../_domains/web/review.md`](../_domains/web/review.md) | Reviewing a web frontend change. |
+| [`context.md`](context.md) | The whole cell — open before writing, testing or reviewing web UI. |
+| [`testing.md`](testing.md) | Testing in a browser. |
+| [`profiling.md`](profiling.md) | Load time, bundle size, runtime cost. |
+| [`review.md`](review.md) | Reviewing a web frontend change. |
 
 Visual craft is [`ref-gui`](../ref-gui/SKILL.md). React specifics are [`ref-react`](../ref-react/SKILL.md).

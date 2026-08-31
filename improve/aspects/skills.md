@@ -33,7 +33,7 @@ Axes 3–6 are why this aspect exists separately from `claude-md`. They are proc
 - **Read the skill in full before judging it, including its sibling files.** A finding that does not quote this skill's own text is not a finding.
 - **A rule stated once in `CLAUDE.md` and restated in a skill is duplication**, and duplication across two files is worse than within one — you cannot see both at once to notice they have drifted. Same test as `claude-md`'s: read the global file first.
 - **Never propose cutting a truth rule.** "Only claim what you verified", "flag uncertainty". Those stop invented facts; they are not severity filters.
-- **Coupling between these skills is deliberate, not a defect.** They name each other, hard-require each other, and assume herdr, beads and `admin.toml`. Do not file portability findings against the private set. The one carve-out: `skills/_domains/` is a public repo, where naming a private label or a personal host *is* a finding.
+- **Coupling between these skills is deliberate, not a defect.** They name each other, hard-require each other, and assume herdr, beads and `admin.toml`. Do not file portability findings against the private set. The one carve-out: the skills repo is public, so naming a private label or a personal host anywhere in it *is* a finding.
 - **A gate proposed for axis 3 or 4 is not a finding until its shape is named.** Say what artifact proves the step ran and what reads it. "Add a gate" with no mechanism is the same advisory prose it was meant to replace.
 
 ## Where the evidence is

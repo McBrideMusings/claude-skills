@@ -7,7 +7,7 @@ skill already does, the same way the engines layer platform + domain.
 Sources: **Emil Kowalski's design engineering** (animations.dev) — Sonner/Vaul author. **Apple —
 *Designing Fluid Interfaces*** (WWDC 2018), ***The Details of UI Typography*** (WWDC 2020),
 ***Principles of Great Design***. These are platform-agnostic design ideas; the CSS/SwiftUI that
-*implements* them lives in `_domains/web/` and `_domains/apple/`, not here.
+*implements* them lives in `ref-web/` and `ref-apple/`, not here.
 
 ## The one rule — judge craft, always anchor to a concrete reason
 
@@ -270,7 +270,7 @@ better.
 ## Where the concrete values live
 
 Exact curves, durations, spring parameters, and the GPU-property rules are **implementation** — they
-live in `_domains/web/review.md` and `_domains/apple/review.md`, loaded by the `review` engine.
+live in `ref-web/review.md` and `ref-apple/review.md`, loaded by the `review` engine.
 The reverse glossary of motion terms is `vocabulary.md` in this directory.
 
 ## The rest of this directory

@@ -4,7 +4,7 @@ One pass. Build the whole thing, inspect it once in a batch, fix everything that
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
 
 Adapted from Impeccable's craft floor (`pbakaus/impeccable`, Apache-2.0) and
-`_domains/gui/slop.md`, narrowed to what a hermetic single-file prototype or wireframe can actually
+`ref-gui/slop.md`, narrowed to what a hermetic single-file prototype or wireframe can actually
 get wrong.
 
 ## Measure first, then look

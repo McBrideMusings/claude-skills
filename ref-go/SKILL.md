@@ -7,4 +7,4 @@ description: Go — go test, vet, gofmt, error handling, never discarding an err
 
 | Open | When |
 | --- | --- |
-| [`../_domains/go/context.md`](../_domains/go/context.md) | The whole cell — open before writing, testing or reviewing Go. |
+| [`context.md`](context.md) | The whole cell — open before writing, testing or reviewing Go. |

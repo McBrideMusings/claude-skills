@@ -79,7 +79,7 @@ they load on base SDXL but usually degrade; pair them with a matching Pony/Illus
 
 ## UI comps — the caller is `gui`
 
-`gui`'s `direction` mode (`_domains/gui/direction.md`) renders a UI direction as an image before any
+`gui`'s `direction` mode (`ref-gui/direction.md`) renders a UI direction as an image before any
 code exists, because comping produces bolder and less expected layouts than going straight to HTML.
 **`gui` reaches image generation only through this engine** — it holds no API key, makes no direct
 HTTP call, and has no second path. Adding a cloud image backend is a `generate/backends.toml` edit and

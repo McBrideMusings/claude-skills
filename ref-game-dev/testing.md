@@ -6,7 +6,7 @@ Adapted from majidmanzarpour/threejs-game-skills.
 
 A game that builds, renders, and passes unit tests can still be unplayable. The core game test is
 behavioral: **drive the game through real input and confirm it actually plays** — the objective
-progresses, the player responds, nothing softlocks, no errors. The matched stack label (`_domains/<stack>/
+progresses, the player responds, nothing softlocks, no errors. The matched stack label (`ref-<stack>/
 testing.md`) supplies the harness/driver; this label says what to assert.
 
 ## "Does the core loop play" gate
@@ -68,4 +68,4 @@ Report both runs when difficulty tuning is in scope.
 
 Run WebGL/GPU game suites single-worker (parallel headless contexts share a software rasterizer and
 flake timed phases). Headless/software FPS is functional-only — assert behavior (frames, distance,
-score, softlock, errors), never performance. Real perf numbers come from `_domains/<p>/profiling.md`.
+score, softlock, errors), never performance. Real perf numbers come from `ref-<p>/profiling.md`.

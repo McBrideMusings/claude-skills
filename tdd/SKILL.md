@@ -47,7 +47,7 @@ You can't test everything. Confirm with the user exactly which behaviors matter 
 
 **Seam gate.** A **seam** is the public boundary a test observes behavior at, without reaching inside. Write down the seams under test and confirm them with the user before writing any test — no test is written at an unconfirmed seam. This is the mechanism that makes "confirm which behaviors to test" above a hard gate rather than a checklist formality.
 
-**Domain labels.** Resolve the labels in scope via [`../_domains/_detect.md`](../_domains/_detect.md). For each matched label with a `testing.md` cell, read it for the framework, harness location, and idioms before writing the tracer bullet — it names which seam to prefer (e.g. a view-model over a slow UI test) and which tooling to invoke. No matching label → use the project's existing test setup.
+**Domain labels.** Resolve the labels in scope via [`../_detect.md`](../_detect.md). For each matched label with a `testing.md` cell, read it for the framework, harness location, and idioms before writing the tracer bullet — it names which seam to prefer (e.g. a view-model over a slow UI test) and which tooling to invoke. No matching label → use the project's existing test setup.
 
 ### Phase 02 — Tracer Bullet
 

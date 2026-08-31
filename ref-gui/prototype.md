@@ -1,6 +1,6 @@
 # UI prototype overlay
 
-Read by the `spike` skill (per `_domains/_detect.md`) when the domain is `gui`, **on top of** the
+Read by the `spike` skill (per `_detect.md`) when the domain is `gui`, **on top of** the
 shape file — almost always [`spike/UI.md`](../../spike/UI.md), occasionally `LOGIC.md` when the
 question is about interaction state rather than appearance. The shape file says how to build the
 harness; this cell says what makes the variants worth looking at.
@@ -19,7 +19,7 @@ set, each variant passes:
   the list, including inside the boldest variant.
 - **Motion mechanics** — `ease-out` on entrances (never `ease-in`), UI motion under 300 ms,
   `transform`/`opacity` only, `transform-origin` anchored to the trigger for popovers and menus,
-  reduced-motion handled (gentler, not zero). Exact curves and durations: `_domains/web/review.md`.
+  reduced-motion handled (gentler, not zero). Exact curves and durations: `ref-web/review.md`.
 - **`slop.md`** — run the catalog over each variant. A variant built out of AI tells (hero-metric
   template, gradient text, over-rounded card grid, purple-blue gradient) is dead on arrival regardless
   of its axis.

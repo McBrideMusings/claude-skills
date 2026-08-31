@@ -6,7 +6,7 @@ invocation and reuse the answer for the rest of the run.
 
 **The backend is a domain label.** It lives in the same map as every other label, spelled
 `tracker:beads` / `tracker:github`, and resolves through
-[`../_domains/_detect.md`](../_domains/_detect.md). There is one detection system, not two. The
+[`../_detect.md`](../_detect.md). There is one detection system, not two. The
 steps below are how that label is *derived* when the map has no answer for a repo — the
 classify-once bootstrap, not a parallel runtime path. Once the map answers, it wins.
 

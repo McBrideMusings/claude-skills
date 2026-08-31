@@ -1,10 +1,10 @@
 # Aspect brief: `gui` (delegated → `gui`)
 
-Axis tag: `gui` — matching the `_domains/gui/` label, not the owning skill's name. Applicability: a UI surface exists — rendered components, a stylesheet, a terminal UI, a page. No surface → return `not applicable — <reason>` and stop.
+Axis tag: `gui` — matching the `ref-gui/` label, not the owning skill's name. Applicability: a UI surface exists — rendered components, a stylesheet, a terminal UI, a page. No surface → return `not applicable — <reason>` and stop.
 
 **Read:** `../../gui/SKILL.md`, its **`critique` / `audit` (post-code)** mode and its **Findings-only invocation** contract. Run critique exactly as specified there — it already returns ranked findings with concrete reasons.
 
-Also read `../../_domains/gui/opportunities.md` for missing or weak motion; absent motion is an opportunity this aspect owns and no other one looks for.
+Also read `../../ref-gui/opportunities.md` for missing or weak motion; absent motion is an opportunity this aspect owns and no other one looks for.
 
 ## Aspect-specific rules
 

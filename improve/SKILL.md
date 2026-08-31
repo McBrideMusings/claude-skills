@@ -63,7 +63,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `gui` | [aspects/gui.md](aspects/gui.md) | `gui` critique mode | UI surface exists |
 | `product` | [aspects/product.md](aspects/product.md) | `gui` orient mode | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
-| `game` | [aspects/game.md](aspects/game.md) | `_domains/game/` cells | `.claude/domain` marker includes `game` |
+| `game` | [aspects/game.md](aspects/game.md) | `ref-game-dev/` cells | `.claude/domain` marker includes `game` |
 | `docs` | [aspects/docs.md](aspects/docs.md) | `docs` audit branch | `docs/` + `.vitepress/` exist |
 | `layout` | [aspects/layout.md](aspects/layout.md) | `bootstrap` audit branch | always |
 

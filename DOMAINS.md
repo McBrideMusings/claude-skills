@@ -1,8 +1,10 @@
-# `_domains/` — shared label-knowledge store
+# Domain cells — label knowledge inside the `ref-*` skills
 
-Not a skill. A **matrix of label × engine** knowledge that the workflow-engine skills (`review`,
-`diagnose`, `profiling`, and — via `tdd`/`verify` — testing) read from at run time. The leading `_`
-and the absence of any `SKILL.md` keep this directory from registering as a skill.
+A **matrix of label × engine** knowledge that the workflow-engine skills (`review`,
+`diagnose`, `profiling`, and — via `tdd`/`verify` — testing) read from at run time. Each
+label's cells live inside its `ref-<label>/` skill directory (`game` → `ref-game-dev/`),
+beside that skill's SKILL.md router table — extra files in a skill directory never register
+as skills of their own, so the skill IS the cell and the two cannot drift apart.
 
 ## What a label is
 
@@ -18,28 +20,28 @@ repo; see `_detect.md`. Nothing is written into a project repo, and the per-repo
 marker this store used to rely on was removed on 2026-08-23.
 
 The **issue backend** a skill writes to (beads / GitHub / local file) is a label in the same map,
-spelled `tracker:<backend>`; its cells live in [`../ref-tracker/`](../ref-tracker/README.md).
+spelled `tracker:<backend>`; its cells live in [`ref-tracker/`](ref-tracker/README.md).
 
 ## Layout
 
 ```
-_domains/
-  _detect.md            <- how labels resolve, map grammar, classifier heuristic
-  <label>/
-    context.md          <- two tiers: a `> ` headline INJECTED at session start in every repo
+_detect.md              <- at the skills root: how labels resolve, map grammar, classifier heuristic
+ref-<label>/
+  SKILL.md              <- the label's router table — one row per cell, when to open it
+  context.md            <- two tiers: a `> ` headline INJECTED at session start in every repo
                            carrying this label, and a body engines read on demand (see below)
-    review.md           <- lens the `review` engine adds when this label is in scope
-    diagnose.md          <- what to instrument / watch, read at diagnose's instrument phase
-    profiling.md         <- profiler catalog / performance gate, read by the `profiling` engine
-    testing.md            <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)
-    orchestrate.md        <- what N parallel workers must each get their own of, and how to pin to it
-    design.md             <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
-    prototype.md           <- OPTIONAL: what a throwaway prototype answers for this label, read by `spike`
+  review.md             <- lens the `review` engine adds when this label is in scope
+  diagnose.md           <- what to instrument / watch, read at diagnose's instrument phase
+  profiling.md          <- profiler catalog / performance gate, read by the `profiling` engine
+  testing.md            <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)
+  orchestrate.md        <- what N parallel workers must each get their own of, and how to pin to it
+  design.md             <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
+  prototype.md          <- OPTIONAL: what a throwaway prototype answers for this label, read by `spike`
 ```
 
-A cell may be absent — the engine then runs generic-only for that label. Add a label by adding a
-directory (see `_detect.md`'s "Adding a label"); add an engine column by adding that filename across
-the labels that need it.
+A cell may be absent — the engine then runs generic-only for that label. Add a label by adding its
+`ref-<label>/` skill (see `_detect.md`'s "Adding a label"); add an engine column by adding that
+filename across the labels that need it.
 
 ### `context.md` has two tiers
 
@@ -70,17 +72,17 @@ rather than staying silent, because silence there is indistinguishable from "no 
 
 | Engine | Reads | When |
 | --- | --- | --- |
-| `review` | `<label>/review.md` | Phase 04 — added as one extra lens sub-agent per matched label |
-| `diagnose` | `<label>/diagnose.md`, `<label>/profiling.md` (perf) | Phase 04 (Instrument) |
-| `profiling` | `<label>/profiling.md` | after label detect |
-| `tdd` | `<label>/testing.md` | Phase 01/02 (write the failing test) |
-| project `verify` | `<label>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
-| `orchestrate` | `<label>/orchestrate.md` | step 3 (fan out) and step 7 (retire), per worker |
+| `review` | `ref-<label>/review.md` | Phase 04 — added as one extra lens sub-agent per matched label |
+| `diagnose` | `ref-<label>/diagnose.md`, `ref-<label>/profiling.md` (perf) | Phase 04 (Instrument) |
+| `profiling` | `ref-<label>/profiling.md` | after label detect |
+| `tdd` | `ref-<label>/testing.md` | Phase 01/02 (write the failing test) |
+| project `verify` | `ref-<label>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
+| `orchestrate` | `ref-<label>/orchestrate.md` | step 3 (fan out) and step 7 (retire), per worker |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
 store directly. The testing axis reaches verification two ways instead: `tdd` reads it when writing
 tests, and a **project-local** `verify` skill (which built-in `verify` bootstraps per repo) can read
-`_domains/<label>/testing.md` for stack-specific drive/harness knowledge.
+`ref-<label>/testing.md` for stack-specific drive/harness knowledge.
 
 The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique
 lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `iron-out`, and
@@ -89,9 +91,9 @@ and tradeoffs — they never deliver a fun/good verdict.
 
 ## No precedence
 
-Stacked cells can contradict each other — `apple/review.md` and `gui/review.md` both carry motion
-knowledge today. There is deliberately no precedence table: a conflict is reported as a finding,
-because ranking the cells would guard a duplication that should be removed instead. See
+Stacked cells can contradict each other — `ref-apple/review.md` and `ref-gui/review.md` both carry
+motion knowledge today. There is deliberately no precedence table: a conflict is reported as a
+finding, because ranking the cells would guard a duplication that should be removed instead. See
 `_detect.md`'s "No precedence".
 
 ## Current state
@@ -100,18 +102,18 @@ Every label in the vocabulary now carries a `context.md`, except `node` and `doc
 Those two are deliberately empty for the same reason `tracker:github` is: each sits on half
 of all repos, so a cell would fire constantly to say what was already assumed.
 
-`apple/` has all five engine cells (`review`, `diagnose`, `profiling`, `testing`, `orchestrate`);
-`web/` has `profiling` + `testing` + `review`; `react/` has `review`; `threejs/` has `review` +
-`diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in `game/`). `orchestrate`
-exists only for `apple` today — that column fills the first time a swarm runs on a stack with a
-shared device, port, or database.
+`ref-apple/` has all five engine cells (`review`, `diagnose`, `profiling`, `testing`, `orchestrate`);
+`ref-web/` has `profiling` + `testing` + `review`; `ref-react/` has `review`; `ref-threejs/` has
+`review` + `diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in
+`ref-game-dev/`). `orchestrate` exists only for `apple` today — that column fills the first time a
+swarm runs on a stack with a shared device, port, or database.
 
-`game/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs. numbers
-questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
-majidmanzarpour/threejs-game-skills. `ref-game-dev`'s build arc conducts end-to-end game builds over
-this store and adds the `game` label on scaffold.
+`ref-game-dev/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs.
+numbers questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
+majidmanzarpour/threejs-game-skills. Its SKILL.md also carries the build arc that conducts
+end-to-end game builds over this store and adds the `game` label on scaffold.
 
-`gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +
+`ref-gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +
 `review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
 accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
 sweep, and the required rejected-candidates section, read by `gui` critique mode, which is what
@@ -126,10 +128,10 @@ challenger deal, the comp discipline, and the single path to image generation vi
 reference — the reverse motion-term glossary, read by `gui` and `explain`, not an engine cell) +
 `libraries.md` (a reference — curated web/React library picks, read by `gui` and `implement`).
 Seeded from emilkowalski/skills. The `gui` skill is the planning orchestrator over this store;
-the implementation-level values live in `web/review.md` and `apple/review.md`.
+the implementation-level values live in `ref-web/review.md` and `ref-apple/review.md`.
 
-The `review` / `improve` line inside `gui/`: **`review.md` is what's broken, `opportunities.md` is
-what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
+The `review` / `improve` line inside `ref-gui/`: **`review.md` is what's broken, `opportunities.md`
+is what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
 improvement pass.
 
 `gui/layers/` — the six problem-space and solution-space design layers that used to live
@@ -144,9 +146,9 @@ Add labels as new kinds of software or new stacks appear.
 ## Attribution
 
 Adapted from [MengTo/Skills](https://github.com/MengTo/Skills) — see that repo's LICENSE:
-- `apple/` — `swiftui-pro` (Paul Hudson), `swiftui-debugging`, `performance-profiling`.
-  `apple/profiling/*.md` copied verbatim from its `performance-profiling/references/`.
-- `web/profiling.md` (+ `web/profiling/browser-profiling.md`) — `optimize-web-animations`.
-- `web/review.md` and `apple/review.md`'s motion block — emilkowalski/skills (`emil-design-eng`,
-  `apple-design`, `review-animations`). The platform-agnostic design principles behind them live in
-  `gui/`.
+- `ref-apple/` — `swiftui-pro` (Paul Hudson), `swiftui-debugging`, `performance-profiling`.
+  `ref-apple/profiling/*.md` copied verbatim from its `performance-profiling/references/`.
+- `ref-web/profiling.md` (+ `ref-web/profiling/browser-profiling.md`) — `optimize-web-animations`.
+- `ref-web/review.md` and `ref-apple/review.md`'s motion block — emilkowalski/skills
+  (`emil-design-eng`, `apple-design`, `review-animations`). The platform-agnostic design principles
+  behind them live in `ref-gui/`.

@@ -7,4 +7,4 @@ description: Python — venv and uv rather than a global interpreter, packaging,
 
 | Open | When |
 | --- | --- |
-| [`../_domains/python/context.md`](../_domains/python/context.md) | The whole cell — open before writing or running Python in a project. |
+| [`context.md`](context.md) | The whole cell — open before writing or running Python in a project. |

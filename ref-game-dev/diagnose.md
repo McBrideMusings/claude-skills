@@ -5,7 +5,7 @@ Read by the `diagnose` engine when the `game` label is in scope, stacked alongsi
 Adapted from majidmanzarpour/threejs-game-skills.
 
 What to watch when a game misbehaves — the bug classes a game's shape produces. Stack-agnostic:
-this says *what to instrument and what pattern to look for*; the matched stack label (`_domains/<stack>/
+this says *what to instrument and what pattern to look for*; the matched stack label (`ref-<stack>/
 diagnose.md`) says which tool reads it. Reproduce first, capture errors, identify the owning system,
 fix the root cause there, retest the exact broken path.
 
@@ -54,4 +54,4 @@ unseeded call before anything else.
 5. Fix the structural cause in the owning system; retest the exact broken path.
 
 For perf-shaped bugs (frame drops, GC hitches, spawn hitches) branch to `profiling.md` and read raw
-numbers with the platform profiler via `_domains/<p>/profiling.md`.
+numbers with the platform profiler via `ref-<p>/profiling.md`.

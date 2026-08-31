@@ -7,4 +7,4 @@ description: Rust — cargo test, clippy, fmt, error handling, unwrap discipline
 
 | Open | When |
 | --- | --- |
-| [`../_domains/rust/context.md`](../_domains/rust/context.md) | The whole cell — open before writing, testing or reviewing Rust. |
+| [`context.md`](context.md) | The whole cell — open before writing, testing or reviewing Rust. |

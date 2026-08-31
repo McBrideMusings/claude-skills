@@ -227,7 +227,7 @@ So two workers verifying at the same time can each be looking at the other's bui
 
 **The commands live in the shared domain store, not here** — one project's toolchain is dead weight in every other project's context, and orchestrate is not the only engine that needs them.
 
-Resolve the labels with [../_domains/_detect.md](../_domains/_detect.md) — the same way `review`, `diagnose`, and `profiling` do — then read `../_domains/<label>/orchestrate.md` for each matched label that has one. Do it **in step 3, before creating anything**. Today only [apple](../_domains/apple/orchestrate.md) has that cell; a matched label with no cell is a no-op, not an error — apply the rule above yourself, and add the cell if the run teaches you the commands.
+Resolve the labels with [../_detect.md](../_detect.md) — the same way `review`, `diagnose`, and `profiling` do — then read `../ref-<label>/orchestrate.md` for each matched label that has one. Do it **in step 3, before creating anything**. Today only [apple](../ref-apple/orchestrate.md) has that cell; a matched label with no cell is a no-op, not an error — apply the rule above yourself, and add the cell if the run teaches you the commands.
 
 #### Nothing is watching the workers
 
@@ -263,7 +263,7 @@ Per ready issue, in order:
    **The expensive half is the skills, not the config.** A project's `verify-project` skill is routinely gitignored — it holds machine-specific paths — so it does not ride the branch, and a worker without it reaches Phase 1.5 with no idea how this project is verified. A missing `admin.toml` fails loudly on the first build; a missing verify skill just produces a weaker verdict, so it is caught later and only by someone going looking.
 
    Run it after every `worktree add`, including a recovery dispatch into an existing worktree.
-3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else), and read `../_domains/<label>/orchestrate.md` for the commands. Created here, alongside the worktree.
+3. **Device, if the work has one** — see [A worktree isolates source and nothing else](#a-worktree-isolates-source-and-nothing-else), and read `../ref-<label>/orchestrate.md` for the commands. Created here, alongside the worktree.
 4. **Model check** — resolve the kind, then pick this issue's tier with [Picking the model per issue](#picking-the-model-per-issue), then check the resolved id against [Worker agents and models](#worker-agents-and-models) and refuse the dispatch if either fails. This runs before the transport is touched, so a denied model cannot reach any of them. Record the tier next to the slug; the run report names it.
 5. **Worktree still there?** — the last thing before the transport is touched, for **every** worktree in the batch, not just the one being dispatched:
 

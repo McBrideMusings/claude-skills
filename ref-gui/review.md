@@ -13,8 +13,8 @@ the product's personality — are **not** defects and do not belong in a review.
 mode. If a finding here is really "this would be nicer as X", it is out of scope; drop it.
 
 This lens flags the **principle**; the exact curve/duration/GPU-property values and the
-framework-specific fixes come from the platform cell — `_domains/web/review.md` (CSS/React) or
-`_domains/apple/review.md` (SwiftUI) — which the engine loads alongside this one.
+framework-specific fixes come from the platform cell — `ref-web/review.md` (CSS/React) or
+`ref-apple/review.md` (SwiftUI) — which the engine loads alongside this one.
 
 Also load **`slop.md`** in the same pass and run its catalog against the changed surface: the absolute
 bans, the colour/type tells, and the model-specific defects are objective match-and-refuse checks (a

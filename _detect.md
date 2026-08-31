@@ -1,6 +1,6 @@
 # Domain detection
 
-Every engine that reads from `_domains/` decides which labels are in scope the same way. A
+Every engine that reads domain cells (`ref-<label>/`) decides which labels are in scope the same way. A
 label is a directory of engine cells — `apple`, `web`, `react`, `threejs`, `gui`, `tui`,
 `api`, `game`, and any other name in the vocabulary below. There is no split between
 "stack" labels and "mode" labels: both kinds stack the same way, in the same store.
@@ -18,7 +18,7 @@ Resolve in this order, stop at the first that answers:
 3. **Repo absent from the map, or you disagree with its line** → classify the repo, propose
    the line in plain chat, and add it once the user confirms. Do not silently re-classify a
    repo the map already answers for.
-4. **No `_domains/<label>/` fits** a label you want → offer to author a stub, then add the
+4. **No `ref-<label>/` fits** a label you want → offer to author a stub, then add the
    label. This is how new labels are born; don't fall back to generic-only without offering.
 5. **A repo whose line has an empty label set** is *classified, nothing applies* — not
    unclassified. Generic-only, no overlay, and step 3 does not re-run for it.
@@ -70,7 +70,7 @@ lives with the private store, not here.
 
 ## Stacking, not layering
 
-Load `_domains/<label>/<engine>.md` for **every** matched label — there is no "platform
+Load `ref-<label>/<engine>.md` for **every** matched label — there is no "platform
 first, domain on top" order. A missing cell for a matched label is a no-op.
 
 ## No precedence
@@ -117,9 +117,9 @@ Plus private labels, which are not listed here.
 
 ## Adding a label
 
-Create `_domains/<name>/` with the engine cells that apply, add a `context.md` if something
+Create `ref-<name>/` with the engine cells that apply, add a `context.md` if something
 must be known up front, then add the label to the repos it applies to. No code change — the
-engines already read `_domains/<resolved>/<engine>.md` and no-op when absent.
+engines already read `ref-<resolved>/<engine>.md` and no-op when absent.
 
 ## Classifier heuristic
 

@@ -93,7 +93,7 @@ Two symptoms in an interview are not "ask a better question" problems — they a
 
 ## Domain design lenses
 
-If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_domains/_detect.md`](../_domains/_detect.md); if `../_domains/<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
+If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_detect.md`](../_detect.md); if `../ref-<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
 tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; the design axis carries that same hard rule. No design axis for the domain → skip silently.
 
 ## Product-design elicitation discipline

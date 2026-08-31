@@ -110,4 +110,4 @@ message. Screen-reader names match the visible labels.
 
 This cell is design-time judgement about *which* states exist and what they say. The code-level checks
 — ARIA correctness, focus-trap implementation, network retry logic, memory leaks — belong to the
-`review` engine reading `_domains/web/` and `_domains/apple/`.
+`review` engine reading `ref-web/` and `ref-apple/`.
