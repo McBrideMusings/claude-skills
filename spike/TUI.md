@@ -97,6 +97,18 @@ func onKey(key string, s State, set func(axis, value string)) bool {
 - **A key you handle returns `true`.** Returning `false` leaves it unclaimed, which is correct for
   keys the design does not bind.
 
+### Never block a keypress
+
+`Render` runs on every key, so anything slow in it — a subprocess, a network read, embedding
+another program's frame — stalls the design under judgement, and how it *feels* is most of what
+a prototype is for. Load off the render path, return a placeholder, and let the harness's tick
+(250ms) repaint when the data lands. `Reset` clears the cache between dumps; `OnDump` switches
+to a blocking path for the dump itself, because a reference frame reading "loading…" is worse
+than no frame.
+
+Measure it rather than assume: a test that renders each screen cold and fails over ~100ms is
+four lines and catches the regression the first time someone makes Render do real work.
+
 ## `variants.go`
 
 ```go
