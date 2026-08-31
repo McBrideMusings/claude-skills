@@ -39,14 +39,32 @@ Consequences you must act on:
 4. `admin.toml` stays uncommitted and out of `.gitignore` (globally excluded). If it
    shows in `git status`, fix the exclusion; never stage it.
 
-## Canonical vocabulary (fleet frequency)
+## Standardized commands — same name, same meaning, in every repo
 
-`test` 28 · `build` 28 · `dev` 24 · `clean` 23 · `deploy` 22 · `fmt` 13 · `vet` 10 ·
-`kill` 8 · `logs` 6 · `lint` 6 · `setup` 5 · `docs` 5 · `distribute` 5 · `start` 3 ·
-`audit` 3. Use these names; a new top-level name needs a reason no existing verb covers.
-Group 1 = `setup(5) build(10) dev(20) start(25) deploy(30)`; group 2 =
-`distribute(5) test(10) vet/lint(20) fmt(30) clean(40) kill(45) docs(50)`, project-specific
-at 60+. `deploy` installs the built thing where it runs; a shippable file is `distribute`.
+This playbook documents ONLY the shared vocabulary. A verb from this table means the
+identical thing in every manifest on the machine; anything not in it is repo-specific,
+lives at group 2 priority 60+, and never gets promoted into this playbook.
+
+| Verb | Slot | Meaning | Ends with |
+| --- | --- | --- | --- |
+| `setup` | 1/5 | one-time after a fresh clone: deps, toolchain | a ready working copy |
+| `build` | 1/10 | compile/bundle **in the repo**; nothing leaves the tree | an artifact under `dist/`/`build/`/`target/` |
+| `dev` | 1/20 | run **from source, here, now**; watches/reloads if the stack can | a process in my terminal until I stop it |
+| `start` | 1/25 | launch the **installed** copy (GUI apps with a dev path only) | the app running, not replaced |
+| `deploy` | 1/30 | put the built thing **where it actually runs**, make that copy live | the installed/running copy replaced |
+| `distribute` | 2/5 | a shippable file for other people/machines (.dmg, .xpi, tarball, release) | a file, not an install |
+| `test` | 2/10 | the test suites | pass/fail |
+| `vet`/`lint` | 2/20 | static checks: typecheck, lint | pass/fail |
+| `fmt` | 2/30 | format the tree in place | formatted files |
+| `clean` | 2/40 | remove build outputs | a clean tree |
+| `kill` | 2/45 | force-stop anything `dev`/`build` can orphan; free the ports | nothing listening |
+| `docs` | 2/50 | serve docs locally with hot reload; one command, no sub-targets | a process in my terminal |
+
+Renames this table forces: local install spelled `install` → `deploy`; toolchain
+install → `setup`; `release`/`publish`/`ship` → `distribute`; `run` → `dev` (from
+source) or `start` (installed copy). `deploy` never produces a shippable file.
+A new top-level name needs a reason no verb above covers — and even then it's
+group 2, 60+, in that one repo only.
 
 ## `kind = "python"` is retired — convert on sight
 
