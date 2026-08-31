@@ -97,6 +97,16 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
     question. One `prototype` command, one sub-target per prototype, named for the slug; delete
     the sub-target when the prototype goes. A prototype nobody can open is a prototype nobody
     looks at. **The shape, the two silent traps, and how to verify it: [ADMIN.md](ADMIN.md).**
+11. **Variants diverge on one named axis** — structure, density, emphasis, type, or voice. Secondary
+    choices follow from the primary position (a dense variant may take a smaller type step — that's
+    coherence, not a second axis). Three variants that differ in accent colour teach nothing, and
+    varying every axis at once produces unattributable results: you learn which you liked, not what
+    made it work. (Adapted from `jakubkrehel/skills` `variant`, MIT.)
+12. **Every `ui` variant clears the severity floor** in
+    [`_domains/gui/review.md`](../_domains/gui/review.md) — accessible names, keyboard reach, visible
+    focus, nothing clipped at 320px, no meaning on colour alone — before it enters the picker. A
+    variant that wins on looks and fails the floor is not a candidate; it's a bug with a nice
+    surface. The floor is identical across variants — never an axis, never traded against one.
 
 ## Arguments
 

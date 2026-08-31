@@ -94,6 +94,15 @@ Sometimes a programming concept is better explained from world knowledge than fr
 specific code — that's fine, that's A-mode applied to a code topic. Pick the source per
 request.
 
+**Evidence tiers.** Every factual claim is one of three things, and the reader can tell
+which: **measured** (read from a file, a command's output, a rendered page — reproducible),
+**derived** (computed from measured values), or **inferred** (a judgement about intent or a
+gap you didn't read — stated as such, never as fact). Inventing a plausible value and
+presenting it as measured is the one failure that makes the whole explainer worthless;
+"roughly 50px, unmeasured" is useful, a made-up exact value is not. In B-mode the `.cite`
+pill is what marks a claim measured. (Adapted from `jakubkrehel/skills`
+`explain-interface`, MIT.)
+
 ## The hard rules (never break)
 
 1. **Hermetic.** The output is a single `.html` file: zero network requests, no external

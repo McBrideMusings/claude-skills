@@ -20,6 +20,8 @@ Reference only. The interactive design workflow — orient, sketch, critique, di
 | [`../_domains/gui/opportunities.md`](../_domains/gui/opportunities.md) | Hunting for missing or weak motion — the gap no other lens looks for. |
 | [`../_domains/gui/icons.md`](../_domains/gui/icons.md) | Picking or drawing iconography. |
 | [`../_domains/gui/alt-text.md`](../_domains/gui/alt-text.md) | Writing alt text and accessible labels. |
+| [`../_domains/gui/a11y.md`](../_domains/gui/a11y.md) | Verifying accessibility: the two walks, hit-area floors, announce mechanisms. |
+| [`../_domains/gui/copy.md`](../_domains/gui/copy.md) | Writing the words in the interface: labels, errors, toggles, tone. |
 | [`../_domains/gui/native-first.md`](../_domains/gui/native-first.md) | Tempted to write a component the platform already ships. |
 | [`../_domains/gui/libraries.md`](../_domains/gui/libraries.md) | Choosing a component or styling library. |
 | [`../_domains/gui/prototype.md`](../_domains/gui/prototype.md) | Building a throwaway to settle a design question. |

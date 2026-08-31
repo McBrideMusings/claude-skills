@@ -77,7 +77,7 @@ Every animation must map to one concrete function, or it's decoration on a path 
   predictable (a toast that slides in from the right dismisses to the right).
 - **State indication** — the motion *is* the signal that state changed (a morphing button).
 - **Explanation** — shows how something works (a marketing/onboarding sequence).
-- **Feedback** — confirms input was received (press → `scale(0.97)`).
+- **Feedback** — confirms input was received (press → `scale(0.96)`).
 - **Preventing a jarring change** — bridges an abrupt appear/disappear.
 
 "It looks cool" on a frequently-seen element is decoration, not a purpose — name that as a fact.
@@ -123,6 +123,22 @@ decision serves or violates — structurally, never as a quality verdict.
   balance` on h1–h3, `pretty` on long prose (also kills orphaned last words). Never `user-scalable=no`.
 - **`font-variant-numeric: tabular-nums`** on any column of figures (tables, prices, metrics, timers) so
   digits align vertically and don't jitter as values change. (Taste Skill.)
+- **Properties over raw tags** — `font-weight: 650`, not `font-variation-settings: "wght" 650`;
+  `font-variant-numeric: tabular-nums`, not `font-feature-settings: "tnum" 1`. Properties keep working
+  when a non-variable fallback renders; raw tags only for custom axes with no property. (jakubkrehel.)
+- **Underlines from the font's own metrics** — `text-underline-position: from-font` and
+  `text-decoration-thickness: from-font`, with `text-decoration-skip-ink: auto`. Colour is the only part
+  of a real `text-decoration` that animates reliably; animating anything else means building the
+  underline as a separate element. (jakubkrehel.)
+- **Escape hatches for hostile content** — `overflow-wrap: break-word` where a long word, link or ID
+  could escape its container; `white-space: nowrap` on labels and badges where a break looks broken.
+- **Inputs at 16px on mobile** — iOS Safari zooms the page when a focused input's text is under `16px`.
+  Two fixes hold 16px and look different, so it's a design question, not a default: size the input up on
+  mobile (`text-base sm:text-sm`), or keep `font-size: 16px` and render the intended size with
+  `transform: scale()` compensated. (jakubkrehel.)
+- **Smart punctuation in rendered text** — curly quotes in prose, straight in code; en dash for ranges
+  (`2010–2020`); the single ellipsis character, not three periods; `&nbsp;` to hold `16 px` together
+  across a break; `&shy;` to say where a long word may break.
 
 ## Lens 7 — layout & space (space is the primary tool)
 
@@ -130,6 +146,15 @@ decision serves or violates — structurally, never as a quality verdict.
   too coarse. Arbitrary padding/margins are the tell.
 - **Rhythm = contrast**: tight grouping between siblings (8–12px), generous separation between sections
   (48–96px). Equal spacing everywhere = no hierarchy. Vary it.
+- **Adjacent-group floor: inter-group gap ≥ 2× intra-group gap** (`8px` inside → `16px`+ between), or
+  the grouping reads as noise. Space first, background shapes second, separator lines last and only
+  where space alone can't carry the structure. (jakubkrehel.)
+- **Logical properties for direction-dependent layout** — `padding-inline-start`, `margin-inline-end`;
+  think in leading and trailing, not left and right. Physical `left`/`right` only for genuinely
+  physical geometry. (Implementation detail also in `states.md` § Internationalization.)
+- **A one-word button label is the riskiest thing on the screen** — translated strings grow, short ones
+  proportionally more. No fixed width or height on a text container; test with pseudo-localization and
+  one representative locale rather than budgeting a width percentage. (jakubkrehel.)
 - **Squint test**: blurred, can you still name primary / secondary / groupings? If not, hierarchy is weak.
 - **Hierarchy dimensions** (combine 2–3, don't lean on one):
 
@@ -172,6 +197,18 @@ decision serves or violates — structurally, never as a quality verdict.
   accents; drop body weight a notch. Redefine only the semantic token layer.
 - **Alpha is a design smell** — heavy rgba/hsla usually means an incomplete palette; define explicit
   overlay colours. (Anti-slop colour tells — cream/sand bg, purple-blue gradients — live in `slop.md`.)
+- **A well-formed ramp has four properties** (jakubkrehel): steps step evenly in *perceived* lightness,
+  not the format's lightness channel; hue stays constant end to end; vividness peaks mid-ramp and falls
+  off at both ends; steps sit denser at the light end. Both ends stop short of pure black and white,
+  which cannot carry hue. Build with a colour library, never by eye.
+- **One colour, one meaning — and anything within 15° of hue is the same colour.** If the accent means
+  interactive, that hue on static text tells users to click something that isn't clickable. (jakubkrehel.)
+- **A gradient's interpolation space is a look, not a correctness setting** — `in oklab` is the best
+  default (even brightness, no hue surprises); `in oklch` when a two-hue gradient goes gray in the
+  middle; the sRGB default darkens and mutes the midpoint and is what you get without asking.
+- **Never report a contrast value you did not measure.** Measure the foreground against the background
+  it actually renders on, not the page background. Colour is one of the few interface concerns with an
+  exact answer — produce the exact answer. (jakubkrehel.)
 
 ## Lens 6 — cohesion
 
@@ -199,6 +236,15 @@ ones that get skipped:
   Reach past `transform` and `opacity` — `filter: blur`, `backdrop-filter`, `clip-path`, `mask` and
   shadow belong to the palette when they stay smooth.
 - **Secondary text on a coloured surface is tinted from that hue or from the foreground, never gray.**
+- **Committed polish values** (jakubkrehel; each is a value, not a range to approximate): press
+  feedback is `scale(0.96)` — below `0.95` feels exaggerated. An icon swapping in animates `opacity`,
+  `scale` and `blur` together: scale `0.25→1`, opacity `0→1`, blur `4px→0`; with a motion library,
+  `{type: "spring", duration: 0.3, bounce: 0}` — bounce is always `0`. Images get a `1px` outline of
+  pure black in light mode (`oklch(0 0 0 / 0.1)`) or pure white in dark (`oklch(1 0 0 / 0.1)`) — never
+  a tinted neutral, which picks up the surface underneath and reads as dirt on the image edge.
+- **Suppress transitions on theme switch.** A theme flip changes colour on nearly every element at
+  once; every transition fires together and the switch smears instead of snapping. Inject
+  `*,*::before,*::after{transition:none !important}`, force a reflow, remove it next frame. (jakubkrehel.)
 - **States.** Hover, disabled, loading, error, empty — with real content and working controls. Full
   treatment in `states.md`.
 - **Coverage.** Every requirement in the brief present and findable within seconds.
@@ -243,6 +289,9 @@ The reverse glossary of motion terms is `vocabulary.md` in this directory.
 - `amplitude.md` — turning a shipped surface up or down: bolder, quieter, distill, overdrive.
 - `states.md` — the states only real data reveals: empty, error, loading, permission, i18n, overflow,
   onboarding, and the interface copy that carries them.
+- `copy.md` — how interface words are written: voice, tone by stakes, verb-first buttons, error wording.
+- `a11y.md` — the accessibility procedure and exact values: the two walks, hit-area floors, the
+  announce-mechanism table.
 - `slop.md`, `fidelity.md`, `vocabulary.md` — AI-tell catalog, structural surface audit, motion glossary.
 
 ## Room for more lenses

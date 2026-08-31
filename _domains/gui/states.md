@@ -89,6 +89,17 @@ Get the user to the moment that proves this was worth their time. Not a tour of 
 - Test at 200% zoom, with a 100-character name, with 1000+ list items, and with no data at all.
 - Large datasets get pagination or virtual scrolling, never a full 10,000-item render.
 
+**Stress scenarios, gated by the component's actual props** (adapted from `jakubkrehel/skills`
+`break`, MIT). Run an axis only when its cue matches — the component renders text it doesn't author,
+repeats over items, has the state — and name the axes dropped:
+
+- Text: empty string · one word · typical · several sentences · one unbreakable string
+  (a long URL, `Donaudampfschiffahrtsgesellschaft`).
+- Quantity: zero items · **one item** (grids designed around plural content) · realistic count ·
+  ten times the realistic count.
+- Container: 320px · **squeezed by a flex/grid sibling** (min-content blowout — the `min-width: 0`
+  case above) · very wide (unbounded measure, content pinned to opposite edges).
+
 ## Accessibility resilience
 
 Keyboard reaches everything, in a logical order, with focus managed in and out of modals. Dynamic
