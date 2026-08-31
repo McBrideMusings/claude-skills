@@ -354,6 +354,10 @@ If the user rejects or edits, re-score the affected threads, regenerate the resp
 
 The offer applies to a reviewer who submitted a **formal review of any state** — `CHANGES_REQUESTED`, `COMMENTED`, or `APPROVED` on a since-changed diff. It does **not** apply to someone who only left a conversation comment: there is no review to supersede, and re-requesting reads as a nudge rather than a status change.
 
+**Reconcile mode owes the row too.** Reading every point and finding it already fixed at HEAD is the case that most looks like nothing left to do and most needs the re-request: the verdict on the PR is unchanged, so the branch still reads as blocked to everyone but you. Draft the replies saying which sha addressed what, and contribute the row anyway.
+
+**This file is not the only thing that produces the row, and it is not the gate on it.** [SKILL.md](SKILL.md) Phase U5 owes a re-request to every prior reviewer whenever the pass pushes at all — including a pass where this file never loaded because the only problem was a conflict or a red check. When both produce a row for the same login it is one row, not two.
+
 **This phase prints no prompt of its own.** It contributes one row per reviewer to [SKILL.md](SKILL.md) Phase U5's single slate, which is the only thing the whole skill asks:
 
 ```

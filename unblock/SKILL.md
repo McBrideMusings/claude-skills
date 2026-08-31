@@ -204,6 +204,11 @@ review body, and any non-author conversation comment. Then:
   mode**: some, all or none of it may already be fixed. Read each point against current HEAD and
   classify the already-fixed ones as `reply: already addressed in <sha>`. Reading feedback is
   cheap; skipping it is the expensive mistake.
+
+  **Reconciling every point to "already addressed" is not an exit — it is the strongest case for
+  the re-request.** The findings are fixed and the reviewer is the only one who can say so on the
+  PR; their standing verdict does not lapse because you read it and agreed. Carry the row to U5
+  and say the points are addressed, rather than reporting the gate as clean and stopping.
 - **Else** → no feedback, gate skipped, say nothing.
 
 `lastCommit <= lastFeedback` is the load-bearing heuristic: **if nothing changed on the PR since
@@ -248,6 +253,27 @@ with exactly one outward action still prints the slate, one row, closed with `go
 
 - **Ordering is execution order.** Push is always row 1 when it is present, because every other
   outward action assumes the commits are on the branch.
+- **A push owes a re-request row for every login that has already submitted a formal review** —
+  `CHANGES_REQUESTED`, `COMMENTED` or `APPROVED` alike, and whichever gate produced the commits.
+  A reviewer's verdict is a statement about the diff they read. The moment this pass pushes, that
+  diff is gone, and their verdict sits on the PR looking current while describing code that no
+  longer exists — an `APPROVED` that now approves unreviewed commits, a `CHANGES_REQUESTED` that
+  still gates a merge over findings that are fixed. Re-requesting is what marks the verdict
+  stale; only the reviewer can replace it.
+
+  **This is not the feedback gate's row and does not wait on it.** Gate 3 fires on *unanswered*
+  feedback; this fires on *any* push with a prior reviewer, so a pass that only resolved conflicts
+  or only fixed red CI still owes it. Read the reviewer list directly rather than inferring it
+  from whether U4 fired:
+
+  ```
+  gh pr view <n> --json reviews,author --jq '[.reviews[].author.login] - [.author.login] | unique'
+  ```
+
+  Name the reason the row exists in its own words — what the pass pushed, not what the reviewer
+  said. `re-request — @alexthemighty reviewed 1e0555f4; this pass pushed a main merge and a fix
+  on top. My pick: re-request.` When `FEEDBACK.md` Phase 08 also produced a row for that login,
+  they are the same row: merge them, never print two.
 - **A row the user skips is reported as not done**, in one clause. Skipping push leaves every
   commit local — say the branch is still blocked on GitHub's side, since the fixes exist only
   here.
