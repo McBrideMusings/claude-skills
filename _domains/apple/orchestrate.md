@@ -57,6 +57,42 @@ constraints: [
 button missing, or a timed observation comes out wrong, and both read as a bug in the change under
 test. Suspect the shared device before the diff whenever a worker reports its own change absent.
 
+## React Native: a per-worker simulator is NOT enough — Metro is a second singleton
+
+A React Native app loads its JS bundle from a Metro server, and the port is per-machine. Two
+workers on two simulators still fetch from one Metro, so each can be running the other's bundle —
+the same "my own change is missing" symptom as a shared device, from a different cause.
+
+**`RCT_METRO_PORT` as a shell environment variable does not work.** It is an Xcode *build setting*,
+and exporting it in the shell that invokes `xcodebuild` does not reach the build. A worker told
+`RCT_METRO_PORT=8111 xcodebuild …` builds an app that still points at 8081. Observed on `term`,
+2026-08-31: a worker spent most of a pass testing against a sibling's Metro before spotting the
+port mismatch in the unified log, and only then forced its own.
+
+Two things that do work, and a worker needs both:
+
+```bash
+# 1. Start this worker's own Metro, in its own worktree.
+npx react-native start --port <port>
+
+# 2. Point the INSTALLED APP at it. Either pass the build setting to xcodebuild
+#    directly (not as an env var):
+xcodebuild -destination "id=<udid>" RCT_METRO_PORT=<port> …
+#    or, for a Debug build already installed, set the packager location on the
+#    device and relaunch:
+xcrun simctl spawn <udid> defaults write <bundle-id> RCT_jsLocation -string "localhost:<port>"
+```
+
+**Have the worker prove which Metro it is on before it trusts a single observation**, because
+nothing about the wrong one looks wrong:
+
+```bash
+xcrun simctl spawn <udid> log stream --style compact --predicate 'eventMessage CONTAINS "8081"'
+```
+
+Give each worker a port at least 10 apart from its siblings, state it in `constraints` alongside
+the UDID, and treat "my change is not on screen" as a Metro question before it is a code question.
+
 ## The iCloud key-value store is not a second sharing problem
 
 **One device per worker also isolates the app's stored state, including
