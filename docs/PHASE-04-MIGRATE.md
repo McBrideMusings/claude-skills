@@ -9,7 +9,7 @@
    - Architectural deep-dive → `docs/architecture/<name>.md`
    - User guide → `docs/guide/<name>.md`
    - Contributor doc → `docs/development/<name>.md`
-   - Phase/feature/task doc → migrate to issues on the repo's tracker (see `../ref-tracker/_detect.md`); don't keep in repo
+   - Phase/feature/task doc → migrate to issues on the repo's tracker (invoke `ref-tracker`); don't keep in repo
 3. **Show migration table before moving.** Don't auto-delete originals — present the proposed moves and confirm.
 4. **Wire admin / CLAUDE.md / .gitignore** per [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) (steps 6–8).
 5. Proceed to [PHASE-06-VERIFY.md](PHASE-06-VERIFY.md).

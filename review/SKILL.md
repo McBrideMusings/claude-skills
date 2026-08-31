@@ -147,7 +147,7 @@ When `dual` is in the arguments, after the review core produces Claude's own fin
 
 **Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check`; if it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
-**Dual is the one flavor whose escalation is automatic.** [../dispatch/TARGETS.md](../dispatch/TARGETS.md) defaults all delegation to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
+**Dual is the one flavor whose escalation is automatic.** `dispatch` — invoke it for the ladder — defaults all delegation to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
 
 **Where the delegate runs is resolved, not chosen** — a live herdr tab inside herdr, else a Terminal.app window. `dispatch exec` prints it; put that line in the status message so the user knows whether there is a tab to switch to.
 

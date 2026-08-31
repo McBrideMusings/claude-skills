@@ -75,7 +75,7 @@ Fog only ever gathers *toward* the destination. Work past it is **Out of scope**
 
 ## Phase 1 — Scan
 
-Resolve the issue backend via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md), then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context.
+Resolve the issue backend by invoking `ref-tracker`, then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context.
 
 **Sonnet, not Haiku — the isolation is the point, not the model.** A Haiku run returned template placeholder text in every `question` field (literally `"Decision or design choice not settled: Which"`) while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone. Re-running on Sonnet produced real questions from the same bodies.
 
@@ -162,7 +162,7 @@ Re-order what remains by leverage and continue at 3a.
 
 The pattern for `fact` and `artifact` items. The subagent does the expensive building; the user does the reacting, here, in this session.
 
-The **Agent tool** is the target for this, and it is also the default everywhere ([../dispatch/TARGETS.md](../dispatch/TARGETS.md)). Nothing here meets that ladder's bar for escalating to a separate process: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
+The **Agent tool** is the target for this, and it is also the default everywhere (invoke `dispatch` for the ladder). Nothing here meets that ladder's bar for escalating to a separate process: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
 
 1. **Write the handoff.** Invoke the `handoff` skill with the issue as the argument. It captures what the subagent can't infer from the issue body alone — decisions already made this pass, alternatives ruled out and why, the destination from the milestone brief. Note its absolute path.
 2. **Spawn it.** Use the **Agent tool**, `run_in_background: true`, `model: "sonnet"` unless the work is genuinely heavy. The prompt: read the handoff at `<absolute-path>`, read issue `<url>`, run the `research` skill (for `fact`) or the `spike` skill (for `artifact`), write the output under `/private/tmp/claude/<repo-slug>/`, and return its absolute path plus what it found. Tell it to **stop and report rather than guess** if it hits a decision the user owns.

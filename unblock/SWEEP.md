@@ -166,7 +166,7 @@ name. `agent start` waits up to 30s each — run them in batches of three or fou
 Prompts are one line; a newline followed by `#` trips a path hook.
 
 **2. Terminal.app windows** — not in herdr. Take the ladder from
-[../dispatch/TARGETS.md](../dispatch/TARGETS.md) rather than re-deriving the invocation here. Say
+`dispatch` — invoke it for the ladder — rather than re-deriving the invocation here. Say
 in one line that the sweep is running in Terminal windows and that they are not tracked the way
 herdr panes are.
 

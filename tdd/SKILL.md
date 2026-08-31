@@ -36,7 +36,7 @@ Before writing any code:
 
 - [ ] Confirm with the user what interface changes are needed
 - [ ] Confirm with the user which **behaviors** to test (not implementation steps)
-- [ ] Design the interface for testability (see `MOCKING.md` and `improve`'s [ARCHITECTURE.md](../improve/ARCHITECTURE.md))
+- [ ] Design the interface for testability (see `MOCKING.md`, and invoke `ref-architecture`)
 - [ ] Look for deep-module opportunities (small interface, deep implementation — same file)
 - [ ] List the behaviors to test, in priority order
 - [ ] Get user approval on the plan

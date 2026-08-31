@@ -27,7 +27,7 @@ User may pass a GitHub URL:
 | `github.com/owner/repo/issues` or `github.com/owner/repo` | All open issues |
 | `github.com/orgs/owner/projects/N` | Project board items |
 
-**No URL** → default to the current repo, whichever backend owns its issues (resolve via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md); on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md) step 6. If detection fails for another reason, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
+**No URL** → default to the current repo, whichever backend owns its issues (resolve by invoking `ref-tracker`; on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per `ref-tracker`'s detection step 6. If detection fails for another reason, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
 
 **The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`triage label:auth`, `triage p0`), resolved against the `bd` flags in Phase 02.
 
@@ -39,7 +39,7 @@ If URL passed: strip `https://`, parse `owner/repo`, detect type from path + que
 
 ### Phase 02 — Fetch Issues and Read Docs
 
-**Issues** — resolve the backend once via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md), then read the list from it.
+**Issues** — resolve the backend once by invoking `ref-tracker`, then read the list from it.
 
 **`beads`:**
 

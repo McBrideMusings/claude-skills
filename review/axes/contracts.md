@@ -25,6 +25,6 @@ Two more shapes of the same defect: a schema that accepts states the UI never wa
 
 "Add a comment warning about it" is not on the ladder. Neither is fixing only the one call site the diff touched: if the seam is wrong, the finding is about the seam.
 
-This is the read-only, diff-scoped version. The full refactor process — grep every caller, move the invariant, delete the bypasses, prove it with a test plus a grep — lives in [../../improve/INTERFACE-SAFETY.md](../../improve/INTERFACE-SAFETY.md); point the reader there when a finding clearly warrants the deeper pass.
+This is the read-only, diff-scoped version. The full refactor process — grep every caller, move the invariant, delete the bypasses, prove it with a test plus a grep — lives in `ref-architecture` (invoke it for `INTERFACE-SAFETY.md`); point the reader there when a finding clearly warrants the deeper pass.
 
 Axis tag: `contracts`.

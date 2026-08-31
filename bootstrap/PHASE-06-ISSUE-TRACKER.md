@@ -6,7 +6,7 @@ answer so every downstream skill (`to-tickets`, `triage`, `implement`, `iterate`
 
 ## Step 1 — Detect
 
-Run the resolution in [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md). It gives one of:
+Invoke `ref-tracker` and run its detection step. It gives one of:
 
 | State | Meaning |
 | --- | --- |
@@ -124,7 +124,7 @@ copy of 23 issues. Say what is ON and what is OFF, separately, every time. Full 
 **If you find an older section using the "local only" phrasing, rewrite it to the wording above** —
 even on a repo where nothing else in this phase needed changing.
 
-Step 2 of `ref-tracker/_detect.md` reads this section and trusts it over auto-detection, so it is how
+Step 2 of `ref-tracker`'s detection reads this section and trusts it over auto-detection, so it is how
 a repo pins a choice that detection would otherwise get wrong.
 
 ## Step 4 — Concurrency note

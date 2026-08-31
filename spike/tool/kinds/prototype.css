@@ -9,8 +9,14 @@ body { background: var(--bg); }
    stage is 100vh but the variant is only as tall as its content, so the prototype's own
    background stops partway down and the folio's page background shows below it — a
    seam that reads as a rendering bug in every prototype whose content is short. */
+/* The safe area comes off the same way `.at-list-item` below already takes it. A plain
+   100vh is a full viewport of stage sitting *inside* a body the frame has already padded
+   by the insets, so on a device with any — a television's 60px of overscan, a phone's
+   notch — the stage is inset-tall taller than the room it has, and `#at-stage > *` below
+   stretches the design to match. A root that pins a footer to its own bottom edge then
+   puts that footer off the bottom of the screen. */
 #at-stage {
-  min-height: 100vh;
+  min-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
   display: flex;
   flex-direction: column;
 }

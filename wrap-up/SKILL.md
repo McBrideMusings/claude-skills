@@ -93,7 +93,7 @@ Check for and update ANY of these tracking mechanisms that exist. Do not create 
 
 ### Issues and Milestones
 
-Resolve the backend once via [`../ref-tracker/_detect.md`](../ref-tracker/_detect.md).
+Resolve the backend once — invoke `ref-tracker` and run its detection step before any tracker verb.
 
 **On beads, `bd dolt pull` first — before you list anything.** Issue state moves between machines through Dolt, and nothing in the git checkout carries it, so the local database can be behind another machine's by an entire session's worth of work. Reading first and pulling later means closing issues against a stale backlog. Pull, then list.
 

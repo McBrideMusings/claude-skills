@@ -77,7 +77,7 @@ Use a Haiku agent to locate the root `CLAUDE.md` and any `CLAUDE.md` files in di
 
 (For the Spec sub-agent in Phase 04.) Search in order:
 
-- Issue references in the commit messages (`#123`, `Closes #45`, `Fixes #67`, or a beads ID like `myproj-zb8`) — fetch via `bd show <id> --json` or `gh issue view <N>`, per [`../_tracker/_detect.md`](../_tracker/_detect.md).
+- Issue references in the commit messages (`#123`, `Closes #45`, `Fixes #67`, or a beads ID like `myproj-zb8`) — fetch via `bd show <id> --json` or `gh issue view <N>`, with the backend resolved by invoking `ref-tracker`.
 - A path passed as a second argument or in the conversation context.
 - A PRD / plan / spec file matching the branch name or feature, in: `docs/PRD.md`, `docs/PRD-*.md`, `docs/specs/`, `/private/tmp/claude/<repo-slug>/plans/*<branch-slug>*.md`, `.scratch/`.
 - If nothing found, briefly ask the user where the spec is. If they say "no spec", the Spec sub-agent will skip and report "no spec available".
@@ -395,8 +395,20 @@ Branch state: 12 commits behind origin/main (not merged) · 2 checks red (check-
 Rules for every visual:
 
 - **Real identifiers only.** Real function names, real column names, real env vars, real values pulled from the run. Never `foo`, `bar`, `doThing`, `<value>`.
-- **`-` is what the code does today. `+` is what it should do.** Never the reverse, and never a diff of the author's own patch — the author can already read that.
-- **Twelve lines maximum**, and only the lines carrying the defect; elide untouched context with a bare `…` line. An `architecture` file tree may run to twenty.
+- **`-` is what the code does today. `+` is what it should do.** Never the reverse, and never a diff of the author's own patch — the author can already read that. **This inverts [`../show-shape/SKILL.md`](../show-shape/SKILL.md)'s diff convention, where `-`/`+` is a proposed before/after.** Same syntax, opposite meaning: a reader arriving at a PR review reads a diff as the author's patch by default, so the two conventions collide on the page. Do not harmonize them — annotate, per the next rule.
+- **Annotate the defect on the line that carries it.** Every `-` line the failure actually lives on takes a trailing `// ←` comment naming what goes wrong there; the `+` block takes one naming the postcondition it restores. This is what tells the reader which half is broken — the `-`/`+` symbols alone do not, and a caption above the fence does not either.
+
+     ```diff
+      runAlarmPass(storage, deps)
+        prev = passChains.get(storage) ?? resolved
+     -  run = prev.catch(noop).then(() => runAlarmPassInner(...))   // ← today: no bound, so a `prev` that never settles never releases
+     +  gate = Promise.race([prev.catch(noop), bounded(ALARM_WALL_LIMIT_MS)])
+     +  run = gate.then(() => runAlarmPassInner(...))               // ← every pass starts or fails within the alarm wall limit
+        return run
+     ```
+
+  Annotate the **one** line that breaks, not all six in a block that fails together — an annotation on every line is a second copy of the caption and marks nothing. A visual whose shape carries no comment syntax (a file tree, a two-column table, a Mermaid diagram) is exempt; those name the defect in their own labels.
+- **Twelve lines maximum**, and only the lines carrying the defect; elide untouched context with a bare `…` line. An `architecture` file tree may run to twenty. The `// ←` annotations do not count toward the cap.
 - **Pseudocode, not source.** Strip types, imports, and error plumbing the defect does not touch. Keep the identifiers exact.
 - **One visual per issue.** If the defect needs two, it is two issues or the wrong altitude.
 - **Never print a secret inside a visual.** A cell for a leaked credential holds the *type* and `path:LINE`, never the value.
@@ -433,9 +445,10 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
      ```diff
       [env.production.vars]
         WORKER_NAME = "poker-prod"
-     -  # DISCORD_WEBHOOK_URL inherited from [vars] -> staging hook
-     +  DISCORD_WEBHOOK_URL = "${DISCORD_WEBHOOK_PROD}"
+     -  # DISCORD_WEBHOOK_URL inherited from [vars] -> staging hook   // ← today: prod resolves the staging hook and posts land in the test channel
+     +  DISCORD_WEBHOOK_URL = "${DISCORD_WEBHOOK_PROD}"               // ← prod resolves its own hook, never the shared [vars] value
      ```
+
    - **Verified:** `reproduced` · `repro-1.ts` printed the staging hook URL host for an `[env.production]` resolve, expected the prod host
    - **Fix:** Set `DISCORD_WEBHOOK_URL` in `[env.production.vars]` from `${DISCORD_WEBHOOK_PROD}`. The production worker then resolves its own hook and never falls back to the shared `[vars]` value.
 
@@ -448,12 +461,13 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 
      ```diff
       awardPot(hand)
-     -  winner = bestHand(activePlayers)
-     -  winner.stack += pot.total
+        winner = bestHand(activePlayers)
+     -  winner.stack += pot.total          // ← today: one credit of the whole pot, so a short stack collects chips it never matched
      +  for each sidePot in pot.layers
      +    eligible = players with contribution >= sidePot.cap
-     +    bestHand(eligible).stack += sidePot.amount
+     +    bestHand(eligible).stack += sidePot.amount   // ← each layer pays only players who matched its cap
      ```
+
    - **Verified:** `fix-confirmed` · repro paid 3,200 to the short stack before the fix, 1,100 after; `bun run test` green both ways
    - **Fix:** Award each layer of `pot.layers` to the best hand among players whose contribution meets that layer's cap. A short stack then wins at most the chips it matched.
 
@@ -489,7 +503,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 - **`## Issues (N found)`** — N is the total across all axes. Draft "Outstanding work" gaps are *not* counted in N.
 - **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Security`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Slop`, `Best-practice`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
 - **Numbering is continuous across sections** — 1…N down the whole report, never restarting at 1 per axis. (Above: Spec is 1, Bugs are 2–3, Architecture are 4–5, Contracts is 6.)
-- **Indent every visual under its `- **Why:**` bullet by 5 spaces**, with a blank line above and below the fence. An un-indented fence closes the list and renumbers the rest of the report.
+- **Indent every visual under its `- **Why:**` bullet by 5 spaces**, with a blank line above and below the fence. An un-indented fence closes the list and renumbers the rest of the report. **The blank line *below* is the one that gets dropped** — a closing fence butted straight against `- **Verified:**` runs the block into the next bullet and is hard to read. Every worked example above carries it; copy them.
 - **Small lists may stay flat.** When N is small (≈≤4) and the findings cluster in one or two axes, a single flat ordered list with no `### Axis` headers is fine. Numbering is 1…N either way.
 - **Never include a "Dismissed", "Considered and dismissed", or "Dismissed during reconciliation" section** — in any form. Findings that don't survive scoring are simply absent. The report is the surviving issues and nothing else. (Repo mode is the one exception, and it still never puts a dismissed section *in the report* — its cross-run considered-and-rejected data lives in the separate ledger file described in Phase 01r; the report body remains surviving issues only.)
 - **Never print a secret value** anywhere in the report — no key, token, password, or `.env` value, on any axis, in prose or inside a visual, even one a finding is about. Reference the `file:line` and the credential *type* only ("Stripe live key at `config.ts:12`"), and let the **Fix** recommend **rotation**, not just removal — a committed secret is burned even after it's deleted. The report gets written to disk; a quoted secret re-leaks the thing being flagged.
