@@ -1,5 +1,5 @@
 ---
-name: ref-game
+name: ref-game-dev
 description: Game development — game feel, playable loop, fixed timestep, prototyping, tuning, profiling — plus the end-to-end build arc. Load before designing, building, reviewing or conducting a whole game build.
 ---
 

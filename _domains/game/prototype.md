@@ -78,5 +78,5 @@ Objective things a prototype can establish that description can't:
 - The loop already exists and the question is whether it plays → `_domains/game/testing.md`'s "does the
   core loop play" gate.
 - Structural design questions before any code (MDA chain, clockwork) → `_domains/game/design.md` via
-  `ref-game`.
+  `ref-game-dev`.
 - Frame budget on a real scene rather than an isolated mechanic → `profiling`.

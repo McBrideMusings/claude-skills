@@ -14,4 +14,4 @@ description: Three.js and WebGL — resource disposal, frame-loop allocation, sc
 | [`../_domains/threejs/diagnose.md`](../_domains/threejs/diagnose.md) | Something renders wrong, leaks, or drops frames. |
 | [`../_domains/threejs/review.md`](../_domains/threejs/review.md) | Reviewing 3D code. |
 
-Game loops and feel are [`ref-game`](../ref-game/SKILL.md).
+Game loops and feel are [`ref-game-dev`](../ref-game-dev/SKILL.md).

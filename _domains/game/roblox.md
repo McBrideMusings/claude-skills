@@ -1,7 +1,7 @@
 # Roblox — stack cell
 
 Roblox/Luau/Rojo work has a full knowledge store of its own. This cell exists so the
-game engines (`ref-game`, `review`, `diagnose`, `profiling`, `spike`, `testing`)
+game engines (`ref-game-dev`, `review`, `diagnose`, `profiling`, `spike`, `testing`)
 can find it without the global catalog paying for a description every turn.
 
 **The store moved out of the global catalog on 2026-08-20.** It now lives per-project,
