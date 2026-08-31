@@ -52,7 +52,7 @@ Never write these by hand — that is the whole reason the subcommand exists.
 | You get | How it behaves |
 | --- | --- |
 | Variant picker | `[` and `]` cycle directions. Named in the bar, never "Variant A" |
-| State axes | `F1`–`F9`, one per `Axis`. Orthogonal to variant on purpose: flipping direction keeps the state |
+| Tweaks (axes) | `⌥`+letter when the axis declares a `Hotkey`, plus `F1`–`F9` by position. Orthogonal to variant on purpose: flipping direction keeps the state |
 | Key delivery | Every key the harness does not claim reaches `Variant.Key` |
 | Harness bar | Bottom row, reverse video, outside the design's frame — chrome, never part of what is judged |
 | Geometry assertion | Every dumped row must be exactly `DumpWidth`, every frame exactly `DumpHeight`. Non-zero exit, naming the row |
@@ -106,8 +106,11 @@ const (
 )
 
 // Axes are conditions the chosen direction must survive — not directions.
+// They are this harness's tweaks: the panel equivalent, driven by a key.
 var Axes = []Axis{
-	{Key: "state", Label: "State", Values: []string{"idle", "running", "no-manifest"}},
+	{Key: "state", Label: "State", Values: []string{"idle", "running"}, Hotkey: "s"},
+	{Key: "data", Label: "Data", Values: []string{"populated", "empty"},
+		Hotkey: "e", NoDump: true},
 }
 
 var Variants = []Variant{
@@ -121,6 +124,27 @@ var Variants = []Variant{
 
 `Render` returns the design's own frame. The harness pads the terminal around it and draws its bar
 below; in a dump the bar is absent, so a `.txt` is the design alone.
+
+### Tweaks — the two fields that decide how an axis behaves
+
+- **`Hotkey`** binds `⌥`+that letter. **Prefer it over the positional F-key**: multiplexers and
+  terminal emulators routinely swallow F-keys, and `⌥`+letter is almost never bound by a TUI, so it
+  stays out of the design's way. The bar shows whichever key actually works.
+- **`NoDump`** keeps an axis out of the dump's cross product. Reach for it whenever an axis is worth
+  driving but not worth enumerating — and note the sharp edge it exists for: **every dumped axis
+  multiplies the frame names.** `stateName` joins all dumped axis values, so adding a second dumped
+  axis renames every file, and any ticket citing a frame by path breaks silently. A live-only toggle
+  is `NoDump`; a genuine state dimension is not, and renaming the frames is then the deliberate cost.
+
+### Dumping one variant
+
+`-variant <name>` dumps just that one, **and writes unprefixed filenames**. That is what lets a
+second, exploratory variant exist without renaming the committed reference frames:
+
+```bash
+go run . -dump -dir . -variant Settled   # commands.txt, repo.txt, … — the cited names
+go run . -dump -dir /tmp/x               # every variant, prefixed: settled-commands.txt, …
+```
 
 ## Process
 
