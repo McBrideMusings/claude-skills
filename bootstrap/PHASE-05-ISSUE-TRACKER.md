@@ -1,4 +1,4 @@
-# Phase 06 — Issue Tracker
+# Phase 05 — Issue Tracker
 
 Resolve which issue backend this repo uses, offer to set up beads if it has none, and record the
 answer so every downstream skill (`to-tickets`, `triage`, `implement`, `iterate`, `orchestrate`,

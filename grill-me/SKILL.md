@@ -140,7 +140,7 @@ Never chain into another interview. It does not mean build things yourself. The 
 | --- | --- |
 | a prototype, mockup, variants, "show me a few options" | `spike` |
 | a spec or PRD, tickets, or issues from what was decided | `to-tickets` |
-| a diagram or a visual explanation | `show-me` / `explain` |
+| a diagram or a visual explanation | `explain` |
 | an ASCII layout sketch for one arrangement | `gui` |
 
 This is not optional and it is not a judgement call. **If a skill's description covers the artifact, that skill builds it** — even when the request is one sentence, even when you can see exactly what to write, and especially when you can, because that is when skipping it feels most reasonable.
