@@ -84,7 +84,7 @@ tests, and a **project-local** `verify` skill (which built-in `verify` bootstrap
 
 The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique
 lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `iron-out`, and
-`game-dev`'s design phase read it optionally when the label is in scope. Design cells name structure
+`ref-game`'s design phase read it optionally when the label is in scope. Design cells name structure
 and tradeoffs — they never deliver a fun/good verdict.
 
 ## No precedence
@@ -108,7 +108,7 @@ shared device, port, or database.
 
 `game/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs. numbers
 questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
-majidmanzarpour/threejs-game-skills. The `game-dev` orchestrator conducts end-to-end game builds over
+majidmanzarpour/threejs-game-skills. `ref-game`'s build arc conducts end-to-end game builds over
 this store and adds the `game` label on scaffold.
 
 `gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +

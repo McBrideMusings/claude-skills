@@ -1,6 +1,6 @@
 # Game design axis
 
-Read by **planning** skills (`grill-me`, `iron-out`, `game-dev`'s design phase) when the domain is
+Read by **planning** skills (`grill-me`, `iron-out`, `ref-game`'s design phase) when the domain is
 `game`. Design-time critique lenses — not a code engine. Loaded on top of whatever the planning skill
 already does, the same way the engines layer platform + domain.
 

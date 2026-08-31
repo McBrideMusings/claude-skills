@@ -11,7 +11,7 @@ The front door for design work, **pre-code and post-code**, across all seven lay
 - **`_domains/gui/`** — the surface: craft lenses and the register modes, the AI-slop catalog,
   direction and comps, amplitude, states and copy, fidelity, motion vocabulary.
 
-Parallel to `game-dev` (which orchestrates `_domains/game/`). It does **not** own code *correctness*, tests, or verification — those are the engines (`review`, `tdd`, `verify`, `diagnose`), which gain UI competence by reading `_domains/gui/` and `_domains/{web,apple}/` when the `gui` label is in scope. The split: design judges whether the thing is *well designed*; the engines judge whether the code is *correct*. Don't reimplement the engines here.
+Parallel to `ref-game`'s build arc (which orchestrates `_domains/game/`). It does **not** own code *correctness*, tests, or verification — those are the engines (`review`, `tdd`, `verify`, `diagnose`), which gain UI competence by reading `_domains/gui/` and `_domains/{web,apple}/` when the `gui` label is in scope. The split: design judges whether the thing is *well designed*; the engines judge whether the code is *correct*. Don't reimplement the engines here.
 
 Layers 1–6 adapted from **jamiemill/layers-skills** (MIT) — the Layers of Product Design framework, itself inspired by Jesse James Garrett's *The Elements of User Experience* (2000). Layer-7 craft material adapted from **Impeccable** (`pbakaus/impeccable`, Apache-2.0) and **Taste Skill** (`Leonxlnx/taste-skill`, MIT); each cell carries its own attribution.
 
