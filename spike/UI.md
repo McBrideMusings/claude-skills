@@ -92,14 +92,15 @@ different motion story). Sharing the project's tokens is *not* convergence; ever
 like it could ship in this product tomorrow.
 
 **When the set collapses** — you cannot fill three real axis positions, or the replacement you just
-wrote is the same idea again — the problem is that every direction came from the same place. Read one
-file from [`../lateral/techniques/`](../lateral/techniques/) and run it inline to generate the missing
-directions. Don't invoke `lateral` as a skill, and run one technique, not both:
+wrote is the same idea again — the problem is that every direction came from the same place. Invoke
+`lateral <technique>` with the one that matches, and run its workflow to generate the missing
+directions. **Name the technique** — that skips `lateral`'s own diagnosis, which would otherwise
+re-decide something you have already worked out here. Run one, not both:
 
-- [`scamper`](../lateral/techniques/scamper.md) — there is one direction you like and the others are
+- `lateral scamper` — there is one direction you like and the others are
   weak imitations of it. Systematic variation over that one: substitute the interaction model,
   eliminate an element, reverse the order, combine two states into one screen.
-- [`random-stimulus`](../lateral/techniques/random-stimulus.md) — every direction is a variation of
+- `lateral random-stimulus` — every direction is a variation of
   the screen as it already exists, or of the obvious pattern for this component. Force-fit an
   unrelated object onto it to break the default arrangement.
 

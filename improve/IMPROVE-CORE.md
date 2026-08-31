@@ -71,7 +71,7 @@ The budget is **per finding with a count limit**, not one cap across the respons
 
 **The lateral lens.** Forward verbatim, with `<technique>` resolved from the table in [LATERAL-LENS.md](LATERAL-LENS.md):
 
-> *Before you write your findings, read `~/.claude/skills/lateral/techniques/<technique>.md` and run its workflow once against this aspect's surface. Read that one file only. It generates candidates; it does not lower the bar — the grounding rule below still drops anything you cannot anchor to code you opened. Do not report the technique's scratch output: the provocations, stimulus words, and abandoned branches are working material, not findings. If it produces nothing that survives grounding, say so in one line and return the findings you have.*
+> *Before you write your findings, invoke `lateral <technique>` and run its workflow once against this aspect's surface. Read that one file only. It generates candidates; it does not lower the bar — the grounding rule below still drops anything you cannot anchor to code you opened. Do not report the technique's scratch output: the provocations, stimulus words, and abandoned branches are working material, not findings. If it produces nothing that survives grounding, say so in one line and return the findings you have.*
 
 Rationale, the per-aspect mapping, and why `review` gets no equivalent: [LATERAL-LENS.md](LATERAL-LENS.md).
 

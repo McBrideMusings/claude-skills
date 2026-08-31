@@ -12,7 +12,7 @@ Improve is the opposite job — RULE 2: *an opportunity is not a defect*. Nothin
 
 ## One technique per aspect
 
-Read exactly one file, `~/.claude/skills/lateral/techniques/<technique>.md`, and run its workflow against your aspect's surface. Do not read a second.
+Invoke `lateral <technique>` with the technique named in the table below, and run its workflow against your aspect's surface. Naming it skips `lateral`'s diagnosis step — this table has already decided. Run exactly one; do not reach for a second.
 
 | Aspect | Technique | The question it forces |
 |---|---|---|
