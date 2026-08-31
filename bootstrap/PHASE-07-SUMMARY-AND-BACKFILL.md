@@ -18,14 +18,12 @@ Bootstrap result — <project name>
 | VitePress docs         | bare docs/                      | migrated to VitePress         |
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md    | migrated + refs updated       |
 | docs/adr/              | non-standard at ./decisions/    | migrated (3 files renumbered) |
-| docs/PRD.md            | non-standard, substantive       | migrated; restructure offered |
-| docs/roadmap.md        | missing                         | stub created                  |
 | Issue tracker          | gh ok                           | no-op                         |
 ```
 
 Note deferred decisions:
 
-- *"PRD migrated but format differs from standard — run `/docs` for restructuring offer."*
+- *"No issue tracker — the scope ladder has nowhere to live. Run `bd init`."* Say this when Phase 05 ended with no backend; never write a roadmap instead.
 - *"Run `/admin` to wrap Makefile as admin.toml."*
 
 ## Offer Backfill grill-me

@@ -1,6 +1,51 @@
-# Phase 05 — Docs Artifacts
+# Phase 06 — Docs Artifacts
 
-Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own create/migrate logic.
+Two artifacts under `docs/`: the glossary and the ADR directory. Each has its own
+create/migrate logic.
+
+## The rule that decides what belongs here
+
+**A doc bootstrap creates must record something that already exists.** Never something that
+is going to exist.
+
+A glossary records vocabulary that has been used and resolved. An ADR records a decision that
+was actually made against alternatives that were actually considered. Both are true the moment
+they are written and stay true until the thing they describe changes.
+
+A PRD and a roadmap are the other kind: at bootstrap time there is no product and no plan, so
+the file can only hold a prediction. Measured across 78 repos, that difference shows up in how
+fast each artifact rots — `docs/CONTEXT.md` had zero instances diverging more than 90 days
+from its repo's last commit, against a 37-day median divergence for roadmaps. So neither a PRD
+nor a roadmap is created here, and adding one back needs an argument that beats those numbers.
+
+Their owners already handle the missing-file case:
+
+- **A PRD is `to-tickets`' output**, and that skill declares itself the single owner of spec
+  and PRD generation. It writes one when a spec has been synthesized and the user asks for it
+  committed — from real conversation, not from a template. Creating an empty `docs/PRD.md`
+  here does nothing but trigger that skill's offer to fill it, which it makes anyway.
+- **A roadmap is the issue tracker's job.** Phase 05 runs before this one precisely so that
+  when a tracker exists, the ladder lives there as epics and dependency edges — queryable,
+  ordered, and closed as work lands. `bd ready` cannot go stale; a markdown list of intentions
+  always does.
+
+**If the repo finished Phase 05 with no tracker at all**, say so in the Phase 07 summary and
+name `bd init` as the fix. Do not write a roadmap as a consolation prize — that is how the
+divergence above happens.
+
+## An artifact the user declined, with a source document in hand
+
+The user may decline an artifact — "no PRD", "skip the roadmap" — while handing over a
+document that motivated the project: a spec, a research write-up, a brief, notes.
+
+**Put it in `docs/research/`, under its own name.** It is source material, and source material
+is the record-what-exists kind: it says what the user actually wrote before any code existed.
+
+**Never route it to the declined artifact's path under a different name.** Writing a handed-over
+spec to `docs/spec.md` after the user said "no PRD" recreates the rejected artifact with the
+serial numbers filed off — and `docs/spec.md` is one of the exact non-standard PRD paths this
+skill's own detection table migrates *into* `docs/PRD.md`, so the next run moves it there. Say
+in one line where the document went and that it is being kept as source, not as a spec.
 
 ## docs/CONTEXT.md (project glossary)
 
@@ -51,6 +96,10 @@ Four artifacts under `docs/`: glossary, ADRs, PRD, roadmap. Each has its own cre
   3. Check filenames against the `NNNN-slug.md` convention. If a file is `001-foo.md`, propose renaming to `0001-foo.md` to match four-digit standard. Don't force; offer.
   4. Update internal cross-references (`docs/adr/0001-foo.md` mentions in CLAUDE.md, READMEs, other ADRs).
 
+The empty directory is the whole deliverable. An ADR written before the decision has been
+tested is a prediction wearing a record's clothes — the same failure the rule at the top of
+this file describes.
+
 ### `docs-refs` reverse map (offer)
 
 ADRs (frontmatter `applies-to`) and vocab terms (`_applies-to_` marker in `docs/CONTEXT.md`) can declare the paths they scope, so a source path maps back to the decisions and terms that govern it (formats: `~/.claude/skills/grill-me/ADR-FORMAT.md`, `~/.claude/skills/grill-me/CONTEXT-FORMAT.md`). The lookup is the shared script `~/.claude/tools/docs-refs.py` — no index, scans `docs/adr/*.md` and every `CONTEXT.md` live.
@@ -79,68 +128,4 @@ run = "python3 ~/.claude/tools/docs-refs.py --validate"
 
 Then `admin check`. `admin docs-refs src/checkout/` lists governing refs; `admin docs-refs` dumps the full map; `admin docs-validate` exits non-zero when any `applies-to` glob points at a deleted/moved path. Don't add `applies-to`/`_applies-to_` proactively — it's opt-in per ADR or term when one is genuinely path-scoped.
 
-## docs/PRD.md
-
-- **Missing** → write the thin stub below. Offer to populate via `/docs` Phase 05 if there's substantive conversation context.
-- **Standard, stub-only** (just H1 + TODO, or empty sections) → offer `/docs` Phase 05 to populate.
-- **Standard, substantive** → no-op; respect existing content.
-- **Non-standard at root `PRD.md` / `PRODUCT.md` / `docs/product.md` / `docs/spec.md`:**
-  1. Read the file to gauge substantive vs stub.
-  2. **Substantive:** `git mv <old-path> docs/PRD.md`, update cross-references. **Don't** reformat — even if it doesn't match the template, the content is the user's. Offer separately: *"Want me to restructure it to match the standard PRD sections? (Problem / Solution / User Stories / etc.)"*
-  3. **Stub-only:** delete the old file, write a fresh stub at the standard path.
-
-### Stub
-
-```md
-# {Project} PRD
-
-## Problem Statement
-TBD
-
-## Solution
-TBD
-
-## User Stories
-TBD
-
-## Implementation Decisions
-TBD
-
-## Testing Decisions
-TBD
-
-## Out of Scope
-TBD
-
-## Further Notes
-TBD
-```
-
-## docs/roadmap.md
-
-One canonical name: lowercase `docs/roadmap.md`, matching the `docs` skill. The shape is the `docs` skill's roadmap shape (Phase 02 of `docs`): four sections, every item a GFM checkbox.
-
-- **Missing** → write the thin stub below.
-- **Standard** (`docs/roadmap.md`) → no-op, except convert plain-bullet items to checkboxes per the `docs` skill's shape.
-- **Non-standard at root `ROADMAP.md` / `PLAN.md` / `TODO.md`, or uppercase `docs/ROADMAP.md`:**
-  1. Read to see if it's actual roadmap content.
-  2. **Yes:** `git mv <old-path> docs/roadmap.md`.
-  3. **TODO.md of small tasks** rather than roadmap-shaped content: *"This looks more like a follow-ups list than a roadmap. Want me to file the items on the tracker instead?"*
-- **Non-standard at `docs/roadmap/` (folder):** the `docs` skill's Phase 03 audits this — collapses to `docs/roadmap.md` unless 3+ active initiatives. Defer to docs.
-
-### Stub
-
-```md
-# {Project} Roadmap
-
-## Now
-- [ ] {first active item}
-
-## Next
-
-## Later
-
-## Deferred
-```
-
-Then proceed to [PHASE-06-ISSUE-TRACKER.md](PHASE-06-ISSUE-TRACKER.md).
+Then proceed to [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md).

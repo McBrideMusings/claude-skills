@@ -134,4 +134,4 @@ serves **one writer at a time**, and every worktree shares the main repository's
 keep tracker writes on the orchestrator or re-init with `bd init --server`. Don't change it for
 them — just name it.
 
-Then proceed to [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md).
+Then proceed to [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md).

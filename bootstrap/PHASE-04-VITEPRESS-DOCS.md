@@ -12,4 +12,4 @@ The `docs` skill has its own state-detection and three modes. Match its routing:
 
 When invoking docs, also pass the **legacy planning doc paths** noted in [PHASE-01-STATE-DETECTION.md](PHASE-01-STATE-DETECTION.md) (`PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/`). The `docs` audit phase will offer to convert them into GitHub issues, then delete.
 
-Then proceed to [PHASE-05-DOCS-ARTIFACTS.md](PHASE-05-DOCS-ARTIFACTS.md).
+Then proceed to [PHASE-05-ISSUE-TRACKER.md](PHASE-05-ISSUE-TRACKER.md).

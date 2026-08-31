@@ -12,8 +12,6 @@ For each piece of the standard layout, classify into one of: `missing`, `standar
 | `docs/` + `.vitepress/config.mts` | bare `docs/` (no VitePress), `documentation/`, `wiki/` |
 | `docs/CONTEXT.md` | `CONTEXT.md` (root), `GLOSSARY.md`, `docs/glossary.md`, `docs/terms.md`, per-context `src/*/CONTEXT.md` without a map |
 | `docs/adr/` | `adr/`, `decisions/`, `docs/decisions/`, `docs/adrs/`, `architecture/decisions/` |
-| `docs/PRD.md` | `PRD.md` (root), `PRODUCT.md`, `PROD-REQS.md`, `docs/product.md`, `docs/spec.md` |
-| `docs/roadmap.md` | `ROADMAP.md` (root), `docs/ROADMAP.md` (uppercase), `TODO.md`, `docs/roadmap/` (folder), `PLAN.md` |
 
 Also probe:
 
@@ -42,9 +40,9 @@ Bootstrap audit — <project name>
 | VitePress docs         | non-standard: bare docs/ without VitePress     |
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md                   |
 | docs/adr/              | non-standard at ./decisions/ (3 ADRs)          |
-| docs/PRD.md            | non-standard at ./PRD.md (substantive content) |
-| docs/roadmap.md        | missing                                        |
 | Issue tracker          | gh ok                                          |
 ```
 
 When the table contains proposed migrations, close it with the escape hatch: *"Type `go` to run every proposed action, or answer per row (`3 skip, 7 accept`)."* Then proceed to [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md); the user can still redirect any migration as the walk proceeds.
+
+**A PRD or a roadmap is not probed for and not a row in this table.** Bootstrap neither creates nor migrates either one — see [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md) for why, and for where a handed-over source document goes instead.
