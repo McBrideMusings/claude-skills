@@ -82,6 +82,8 @@ run  = "bun run dev:local"
 
 **`admin check` reports** the merged command/action/module counts and any resolution errors (unknown kinds, missing actions referenced by steps, unknown guards, commands colliding with reserved verbs `new`/`check`/`compile`). It does NOT score inline-code complexity — apply the inline policy above by judgment when editing.
 
+**It also fails on a config-table `${VAR}` that no environment value satisfies**, naming the dotted key and the variable — `apple.development_team = ${IOS_DEVELOPMENT_TEAM} — IOS_DEVELOPMENT_TEAM is not set and the reference has no default`. A variable exported as the empty string reports the same way (`set but empty`): since ADR-0013 an empty value counts as unset everywhere, so `${VAR}` errors rather than resolving to `""`, and `${VAR:-default}` takes the default. `${VAR:-}` stays a legal deliberate empty. Command and action `run` strings are deliberately out of scope — an `interactive-shell` body resolves through `resolve_computed`, which hands an unresolvable `${VAR}` to the shell so shell-locals keep working. When check fails this way, no `ok:` line prints; fix the manifest or the environment rather than reading past it.
+
 When inline code is too heavy, present finding + migration plan to user before proceeding.
 
 ---

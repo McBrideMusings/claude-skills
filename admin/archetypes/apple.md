@@ -116,6 +116,33 @@ config says — usually `CODE_SIGN_IDENTITY = "-"` (ad-hoc) — so `./admin dev`
 its grants while `./admin install` re-prompts on every reinstall. The two paths
 sign differently and only the dev one is fixed.
 
+### `development_team` pointing at a variable nothing exports
+
+`[apple] development_team = "${SOME_VAR}"` used to resolve to `""` when `SOME_VAR`
+was unset or exported empty, and `_compose_sign_settings` dropped the empty result —
+so no `DEVELOPMENT_TEAM` reached `xcodebuild`, macOS fell back to
+`CODE_SIGN_IDENTITY = -`, and **ad-hoc signing strips every entitlement that needs a
+provisioning profile**. The build still printed `** BUILD SUCCEEDED **` and `deploy`
+still installed the app. This shipped an app with no iCloud entitlement for weeks.
+
+Since ADR-0013 the tool refuses instead: `admin check` names the key and the variable
+before a build runs, and `resolve_env` exits 2 at dispatch. Nothing to work around —
+but two habits still matter:
+
+- **Check the variable name against `~/.claude/.env` when you write the manifest.**
+  The team id is exported as `IOS_DEVELOPMENT_TEAM` and shared across every Apple
+  project; a project-specific name like `${HERMES_DEV_TEAM}` is a variable you now
+  also have to create.
+- **Verify signing from the installed app, not the build log.** A correctly signed
+  build carries the entitlements the app actually asked for:
+
+```bash
+codesign -d --entitlements - /Applications/YourApp.app
+# good: com.apple.developer.ubiquity-kvstore-identifier, .aps-environment, .team-identifier
+# bad:  com.apple.security.get-task-allow and nothing else  → ad-hoc, entitlements stripped
+codesign -dvvv /Applications/YourApp.app 2>&1 | grep -E 'Authority|TeamIdentifier'
+```
+
 ### Pattern: thread the stable identity through a custom build script
 
 Reuse the tool's abstraction — **do not** re-implement `security find-identity`
