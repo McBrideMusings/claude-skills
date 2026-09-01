@@ -30,8 +30,12 @@ HIDE_PANEL = """
 """
 
 SERVE = """#!/bin/bash
-# Double-click me. Opens a local web server so a phone on the same Wi-Fi can
-# load this prototype. Close the window or press Ctrl-C to stop.
+# Double-click me. Serves this folder so a phone on the same Wi-Fi can load the
+# prototype. Close the window or press Ctrl-C to stop.
+#
+# No dependencies. python3 on a clean macOS is a Command Line Tools stub that
+# prompts instead of running, so it is probed rather than assumed; ruby is
+# deprecated and may be gone; /usr/bin/nc ships on every macOS and is the floor.
 cd "$(dirname "$0")" || exit 1
 PORT="${PORT:-8080}"
 IP="$(ipconfig getifaddr en0 2>/dev/null \\
@@ -44,7 +48,30 @@ printf '  On your phone      http://%s:%s/\\n\\n' "$IP" "$PORT"
 printf '  Both devices must be on the same Wi-Fi.\\n'
 printf '  Leave this window open. Ctrl-C to stop.\\n\\n'
 
-exec python3 -m http.server "$PORT" --bind 0.0.0.0
+if python3 -c '' >/dev/null 2>&1; then
+  echo "  [serving with python3]"
+  exec python3 -m http.server "$PORT" --bind 0.0.0.0
+fi
+
+if ruby -e '' >/dev/null 2>&1; then
+  echo "  [serving with ruby]"
+  exec ruby -run -e httpd . -p "$PORT" -b 0.0.0.0
+fi
+
+# Floor: one file, one connection at a time, using only /usr/bin/nc. The page is
+# hermetic, so answering every path with index.html is a complete server.
+echo "  [serving with nc]"
+LEN="$(wc -c < index.html | tr -d ' ')"
+while :; do
+  {
+    printf 'HTTP/1.1 200 OK\\r\\n'
+    printf 'Content-Type: text/html; charset=utf-8\\r\\n'
+    printf 'Content-Length: %s\\r\\n' "$LEN"
+    printf 'Cache-Control: no-store\\r\\n'
+    printf 'Connection: close\\r\\n\\r\\n'
+    cat index.html
+  } | nc -l "$PORT" >/dev/null 2>&1 || sleep 1
+done
 """
 
 
