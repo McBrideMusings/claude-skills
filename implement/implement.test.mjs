@@ -183,7 +183,31 @@ const noRoot = await run({ issue: 'proj-1', worktree: '/wt', branch: 'feat' })
 check('with no repo/cwd, no Tracker call is made', noRoot.calls.includes('Tracker'), false)
 check('  ...and Resolve still runs', noRoot.calls.includes('Resolve'), true)
 
-// 11. name-pass.sh generates a per-pass copy naming the item, and the result
+// 11. The Tracker stage used to be told, in the same breath, to work
+//     exclusively inside the worktree AND to walk up from TRACKER_ROOT — a
+//     path outside the worktree by construction (the `.beads` it must find
+//     commonly lives one repo up from a submodule checkout). The confinement
+//     sentence forbade the exact walk the stage exists to perform. The
+//     Tracker prompt must be scoped to TRACKER_ROOT, never to the worktree.
+const scoped = await run(
+  { repo: '/tmp/repo', worktree: '/tmp/wt', issue: 'proj-1' },
+  { Tracker: { backend: 'beads', db: '/tmp/repo/.beads' } },
+)
+const trackerPrompt = scoped.prompts.find((p) => p.phase === 'Tracker').prompt
+check(
+  'the Tracker prompt does not confine the agent to the worktree',
+  trackerPrompt.includes('Work exclusively inside `/tmp/wt`'),
+  false,
+)
+check('  ...and does confine it to TRACKER_ROOT instead', trackerPrompt.includes('Work exclusively inside `/tmp/repo`'), true)
+
+// 12. The refactor that scopes the Tracker prompt must not silently unscope
+//     every other stage's prompt — Locate, in the happy path, still gets the
+//     worktree confinement exactly as before.
+const locatePrompt = scoped.prompts.find((p) => p.phase === 'Locate').prompt
+check('the Locate prompt still confines the agent to the worktree', locatePrompt.includes('Work exclusively inside `/tmp/wt`'), true)
+
+// 13. name-pass.sh generates a per-pass copy naming the item, and the result
 //    is still a pure `meta` literal — the whole reason this generation
 //    exists rather than passing a name at call time.
 const scratchDir = mkdtempSync(join(tmpdir(), 'implement-name-pass-'))

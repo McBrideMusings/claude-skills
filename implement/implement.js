@@ -69,15 +69,25 @@ const model = a.model || 'sonnet'
 // already has every commit this pass makes. There is nothing to push.
 
 // Every agent starts outside the working directory, so say so once, here.
-const WHERE = dir
-  ? `Work exclusively inside \`${dir}\` — every command either runs with \`git -C ${dir}\` or inside a \`( cd ${dir} && … )\` subshell. You did not start there. Never leave the Bash working directory somewhere it did not start.`
-  : ''
+// `where(d)` is a function of the directory rather than a bound constant
+// because one stage — Tracker — is confined to a different directory than
+// every other stage (see TRACKER_ROOT below).
+const where = (d) =>
+  d
+    ? `Work exclusively inside \`${d}\` — every command either runs with \`git -C ${d}\` or inside a \`( cd ${d} && … )\` subshell. You did not start there. Never leave the Bash working directory somewhere it did not start.`
+    : ''
 
-const COMMON = `${WHERE}
+const WHERE = where(dir)
 
-Read \`${RULES}\` — the rules every stage of this pass obeys, including its Bash command rules. What follows is the whole of your job; finish it, and do not read another implement document to find more of it.
+const RULES_AND_ASK = `Read \`${RULES}\` — the rules every stage of this pass obeys, including its Bash command rules. What follows is the whole of your job; finish it, and do not read another implement document to find more of it.
 
 **Nobody is watching this run. Never call \`AskUserQuestion\` and never end your stage on a question** — the session that started this pass is blocked on it. A decision your prompt does not settle goes into the object you return, as a halt or an unresolved note, and the script decides.`
+
+const commonFor = (d) => `${where(d)}
+
+${RULES_AND_ASK}`
+
+const COMMON = commonFor(dir)
 
 // --- schemas ---------------------------------------------------------------
 
@@ -361,8 +371,13 @@ if (a.resolved) {
   const TRACKER_ROOT = a.repo || a.cwd || null
   let db = null
   if (TRACKER_ROOT) {
+    // This stage is scoped to TRACKER_ROOT, not `dir` (the worktree): it is
+    // read-only, never touches the worktree, and the `.beads` directory it
+    // must walk up to find lives outside the worktree by construction — the
+    // whole reason this stage exists is to reach a path the worktree
+    // confinement would otherwise forbid.
     const tracker = await agent(
-      `${COMMON}
+      `${commonFor(TRACKER_ROOT)}
 
 Detect the tracker backend via \`${DETECT}\`. If it is beads, walk UP from \`${TRACKER_ROOT}\` for the nearest ancestor directory (including \`${TRACKER_ROOT}\` itself) that contains a \`.beads\` directory — the tracker commonly lives one repo up from a submodule checkout — and return that \`.beads\` directory's absolute path in \`db\`. If none is found, return \`backend: "beads"\` with no \`db\`. If the backend is GitHub, return \`backend: "github"\` and no \`db\` — \`gh\` resolves its own repo from the git remote and needs no path from you.
 
