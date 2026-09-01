@@ -78,11 +78,68 @@ implement is a walk-away tool, and a single permission prompt kills the whole un
 
 Run before invoking any other skill. If it fails, print the reason and stop.
 
-implement runs on whichever branch is currently checked out — including `main`/`master`. The user opted into auto-commits on the current branch by invoking the skill; do not refuse based on branch name. (When invoked by `/iterate`, the harness has already created and checked out a fresh feature branch — implement still just runs on the current branch.)
+**Refuse to start with a dirty working tree.** Run `git status --short -- . ':(exclude).beads' ':(exclude).claude'` — the exclusions are part of the check, not something to apply by eye afterwards. If the result is non-empty, halt: *"Uncommitted changes present — commit, stash, or run /wrap-up before iterating."*
 
-**Refuse to start with a dirty working tree.** Run `git status --short`. If non-empty, halt: *"Uncommitted changes present — commit, stash, or run /wrap-up before iterating."* (Untracked files in `.claude/` like `scheduled_tasks.lock` are harness artifacts — ignore them.)
+**Two path families are exempt, and a diff in either is not a dirty tree.** Both are the session's own bookkeeping rather than work in progress:
+
+- **`.claude/`** — harness artifacts: `scheduled_tasks.lock`, `papercuts.md`, `review-rejected.md`.
+- **`.beads/`** — the tracker's export churn. `issues.jsonl` and `interactions.jsonl` are a passive export of a local Dolt database, rewritten by `bd` commands including the `bd show` this pass runs to resolve its own item. They are tracked, so they appear in `git status`, but a diff there records the tracker's state and never the code's. Halting on them means no pass can start after any earlier `bd` command, which is nearly every pass. Do not stash them and do not commit them to clear the check — leave them, and let wrap-up's commit pick them up or not.
+
+Anything else dirty is a real halt, including a file the user left half-edited.
+
+Where the pass runs is settled next, by **Isolation** below.
 
 There is deliberately **no commit-count guard here.** A single pass produces at most one commit, so a branch can never accumulate its way to a threshold within implement. Counting commits across passes and pausing for review is `/iterate`'s concern (its iteration cap), not implement's. If a single pass ever produces more than one commit, that is a wrap-up bug to fix, not a threshold to enforce.
+
+---
+
+## Isolation — a standalone pass on the default branch cuts its own worktree
+
+Decided here, once, before the workflow is invoked. Three cases, and the first that matches wins:
+
+1. **A `worktree` argument was passed** — `/orchestrate` and `/iterate` both create the worktree themselves, because they also own landing and teardown across many passes. Use what you were given; this section does nothing.
+2. **HEAD is a feature branch** — run in place. The user picked the branch by standing on it, and a second isolation layer on top of an already-isolated branch buys nothing.
+3. **HEAD is the repo's default branch and this is a standalone pass** — create a worktree and run the pass there.
+
+Case 3 is the one this section exists for. `main` is not a place to write code: a pass that halts at Green or Verify leaves the primary checkout holding a half-finished change, and that is the checkout the user returns to. A worktree makes a halt free — the work sits in a directory nothing else looks at, and the primary checkout never left the default branch.
+
+**Create it from the primary checkout, immediately before invoking the workflow.** Four commands, run separately:
+
+```
+git rev-parse --show-toplevel                       # → <repo>
+git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
+CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
+```
+
+`<slug>` is the tracker id lowercased (`admin-rc82`, `1118`); `<branch>` is `<type>/<slug>-<short-title>` (`fix/admin-rc82-log-materialize`).
+
+A plain `git worktree add`, **not** `herdr worktree create` — that form exists to nest a worktree's *pane* under its repo in the sidebar, and no pane is being opened here. The link hook is invoked by hand because its normal trigger is a Claude session entering the directory, and none ever does: the workflow's stage agents inherit *this* session's `CLAUDE_PROJECT_DIR`, which is the primary checkout. Skip it and the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project` — the first two fail loudly on the first build, and the last one fails quietly, producing a weak Verify verdict that reads exactly like a real one.
+
+**Then invoke the workflow with all five arguments:**
+
+```
+Workflow({ name: 'implement', args: {
+  issue:    '<item id>',
+  worktree: '~/.worktrees/<repo-name>/<slug>',
+  repo:     '<the primary checkout>',
+  branch:   '<branch>',
+  mode:     'standalone',
+  land:     'self',
+} })
+```
+
+**`land: 'self'` is not optional, and forgetting it is the failure this section is written to prevent.** The workflow defaults an unset `land` to `'caller'` whenever a `worktree` is present — a safe default for a swarm, and exactly wrong here. A pass that cuts its own worktree and omits the argument silently adopts the swarm-worker rules: it commits, stops, pushes nothing, lands nothing, and closes nothing. The code ships into a directory you are about to delete and the tracker still reads open.
+
+`repo` matters for the same reason. A linked worktree cannot check out the default branch — the primary checkout holds it — so the merge runs from `repo` while the commit runs from `worktree`. Pass both or the pass has no route to land.
+
+**Teardown is yours, from the primary checkout, after the workflow returns.** Never the pass's: a session cannot outlive its own working directory, so nothing running inside the worktree may remove it.
+
+```
+git -C <repo> worktree remove ~/.worktrees/<repo-name>/<slug>
+git -C <repo> branch -d <branch>
+```
+
+Remove it **only when the pass landed.** On any halt, leave the worktree standing and say where it is in your closing message — the work is in there and it is the only copy. A removed worktree with an unlanded branch is the one state nothing can recover from.
 
 ---
 
@@ -94,6 +151,20 @@ One pass behaves slightly differently depending on whether it runs alone or insi
 - **Standalone** — a bare `/implement` with no `continuous` token. Still autonomous through commit + push + land, but two points are allowed to involve the user: if item-resolution finds no context it runs **interactive triage** (recommend + ask which one), and the Phase 6 follow-ups step **halts** so the user reviews what the work uncovered and chooses fix-now / file / skip. These are the only sanctioned pauses in a standalone pass.
 
 Resolve the mode once, here, and carry it into item-resolution (Phase 0) and the Phase 2 wrap-up override below.
+
+### A continuous pass has no interactive surface at all
+
+Stronger than "prefer not to ask". The parent — `/orchestrate` or `/iterate` — is itself running unattended, often several passes wide, and its own turn is blocked on this one. There is no terminal a question reaches and nothing to read an answer back from, so a pass that asks does not get a slow answer; it gets none, and stalls the entire run until a human notices something stopped moving.
+
+Every decision a standalone pass would put to the user is already settled by the arguments the parent passed — `issue`/`item`, `worktree`, `repo`, `branch`, `land`, `model`, `mode`. That is what those arguments are for. So, in a continuous pass:
+
+- **Never call `AskUserQuestion`.** Banned outright, at every phase and in every stage agent.
+- **Never end a turn on a question in chat text and wait.** A question nobody is watching is a hang.
+- **A decision the arguments do not settle is a halt, not a question.** File the follow-up via `followups`, return the halt reason, hand control back to the parent. That is the only legal exit.
+
+The four points that would otherwise prompt are each already routed by mode, and they are the complete list: item resolution (Phase 0 → non-interactive triage), the AFK-ability gate (Phase 0.5 → file a follow-up and halt), the follow-ups step (Phase 2 → file autonomously), and the delegate flavor's implementer choice (→ default to the sub-agent). **If you reach a fifth, that is a bug in this skill — halt and name it. Do not invent a prompt for it.**
+
+A **standalone** pass keeps exactly the sanctioned pauses named above and no others.
 
 ---
 

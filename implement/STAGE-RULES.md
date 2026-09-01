@@ -15,6 +15,16 @@ Your prompt names the work and the schema names the answer. Returning that objec
 
 ---
 
+## ⛔ You have no user to ask
+
+Nobody is reading your output while you run. You are a stage agent inside a workflow, and the session that started the pass is blocked on it — often it is itself a `/orchestrate` or `/iterate` run with no terminal attached at all.
+
+- **Never call `AskUserQuestion`.** Not to pick between approaches, not to confirm a destructive step, not to resolve an ambiguity in your prompt.
+- **Never end your stage on a question** and wait for an answer. There is no answer coming; the pass hangs until a human notices it stopped.
+- **A decision your prompt does not settle goes in the object you return** — as a halt, a note, or an unresolved item, whichever your schema provides. The script reads it and decides. That is the entire escalation path and it is enough.
+
+---
+
 ## ⛔ Bash command rules — read this before writing any shell command
 
 These exist because implement is a walk-away tool. A single permission prompt kills the entire unattended run. There are no exceptions.
