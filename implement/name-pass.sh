@@ -37,18 +37,29 @@ fi
 mkdir -p "$out_dir"
 
 # Sanitize the title for a JS single-quoted string: collapse CR/LF/tab to a
-# single space, escape backslashes before quotes (escaping the other order
-# would double-escape the backslashes it just inserted), truncate to 80
-# characters. The raw title is passed through the environment rather than
-# `awk -v`, because `-v` re-processes backslash escapes in its argument and
-# would corrupt an already-escaped title.
+# single space, truncate to 80 characters, then escape — backslashes before
+# quotes, since escaping the other order would double-escape the backslashes
+# it just inserted.
+#
+# TRUNCATE BEFORE ESCAPING, never after. Cutting an escaped string at a fixed
+# width can land the cut between a backslash and the character it escapes: an
+# 80-character title ending in an apostrophe becomes 81 characters once the
+# quote is escaped, and truncating that to 80 leaves a trailing lone `\`. The
+# generated line is then `description: '...\',` — the backslash escapes the
+# closing quote, the literal runs on, and the file fails to parse, killing the
+# whole pass at load. Truncating first means every escape in the result is
+# whole by construction.
+#
+# The raw title is passed through the environment rather than `awk -v`,
+# because `-v` re-processes backslash escapes in its argument and would
+# corrupt a title that legitimately contains one.
 sanitized_title=$(TITLE="$item_title" awk '
   BEGIN {
     t = ENVIRON["TITLE"]
     gsub(/[\r\n\t]/, " ", t)
+    if (length(t) > 80) t = substr(t, 1, 80)
     gsub(/\\/, "\\\\", t)
     gsub(/\x27/, "\\\x27", t)
-    if (length(t) > 80) t = substr(t, 1, 80)
     print t
   }
 ')

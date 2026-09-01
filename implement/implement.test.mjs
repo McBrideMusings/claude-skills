@@ -181,6 +181,22 @@ try {
   ).trim()
   const trickyMeta = metaOf(readFileSync(trickyPath, 'utf8'))
   check('a quote+newline title still parses', trickyMeta.description, "It's a trap with a line break")
+
+  // The 80-character cut must happen before escaping, not after. A title
+  // whose 80th character needs an escape becomes 81 characters once escaped,
+  // and cutting *that* to 80 leaves a trailing lone backslash that escapes
+  // the literal's own closing quote — the file then fails to parse and the
+  // pass dies at load. One case per character that grows under escaping.
+  for (const [label, tail] of [["apostrophe", "'"], ['backslash', '\\']]) {
+    const boundary = 'a'.repeat(79) + tail
+    const boundaryPath = execFileSync(
+      'bash',
+      [namePassSh, `term-90-${label}`, boundary, scratchDir],
+      { encoding: 'utf8' },
+    ).trim()
+    const boundaryMeta = metaOf(readFileSync(boundaryPath, 'utf8'))
+    check(`a title ending in a ${label} at the 80-char cut still parses`, boundaryMeta.description, boundary)
+  }
 } finally {
   rmSync(scratchDir, { recursive: true, force: true })
 }
