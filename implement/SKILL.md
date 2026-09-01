@@ -1,109 +1,109 @@
 ---
 name: implement
-description: "Autonomous single-pass work on one tracked item, ending in commit/push/land. `implement <issue>` works that issue; bare `implement` discovers one; `implement delegate` hands it to a cheaper model. One pass, one item — continuous mode is /iterate."
+description: "Autonomous work on tracked items, one workflow pass per item. `implement <issue>` works that issue; bare `implement` discovers one; `implement <selector>` walks a queue one at a time; `implement swarm <selector>` runs several at once. Each pass ends at a commit and this session lands it."
 ---
 
-# /implement — Single-pass autonomous iteration
+# /implement — run passes, verify them, land them
 
-One pass on one tracked item: resolve what to work on → implement → wrap-up. Then **stop**. The user is walking away, not watching — minimize prompts, halt cleanly when something needs human judgment.
+One **pass** is one tracked item, worked end to end by `implement.js` in its own worktree, ending at a commit. This session is the orchestrator: it decides what to run, re-checks what came back, lands it, and closes the item.
 
-**One pass = one item = at most one commit, then done.** implement carries no looping logic of its own: it does not pull the next backlog item, it does not re-invoke itself, it does not manage cadence across passes. Continuous walk-away work across many items is `/iterate`'s job — a separate harness that drives implement. If you find yourself starting a second item in one invocation, that is the bug this skill exists to prevent.
+**Arity is the only difference between the three ways to use this.** A pass does not know or care which one is happening.
 
-## ⛔ Run the pass as a workflow — `~/.claude/workflows/implement.js`
+| | What this session does |
+|---|---|
+| `implement <issue>` | one pass, land it, stop |
+| `implement <selector>` | a pass, land it, then the next — one at a time |
+| `implement swarm <selector>` | N passes launched without waiting, each landed as it returns |
 
-**A pass runs staged, not as one long context.** `~/.claude/workflows/implement.js` runs one `agent()` per phase, each starting fresh and handing the next a small validated object.
-
-**This document is not what those agents read.** Each stage prompt in the script is the whole of that stage's brief, and [`STAGE-RULES.md`](STAGE-RULES.md) carries the rest — the Bash command rules, the build-runner and screenshot-checker rules. What is below is written for a whole-pass reader — you, deciding to run a pass, and anyone maintaining one. Twelve of its sixteen sections address that reader and only four address a single stage, so a stage agent handed the whole thing reads mostly instructions for work that is not its own, including a transition into wrap-up it must not take.
-
-**So an edit here does not reach a running pass.** Change what a stage does by changing that stage's prompt in `implement.js`; change what every stage does in `STAGE-RULES.md`. The phase descriptions below say what each stage is *for*, and `tools/tests/implement-workflow.test.sh` is what holds the script to it.
-
-Invoke it with `Workflow({ name: 'implement', args: { … } })`. Arguments: `issue` or `item` (or `resolved` when the caller already fetched and gated the item), `worktree`/`repo`, `branch`, `mode` (`standalone` | `continuous`), `model`, `land`.
-
-**`land` says who owns the outcome, and it is the argument that decides whether the pass closes its item.** `'self'` — this pass lands its own branch and closes its own item in the Track stage. `'caller'` — a swarm worker: commit and push, then stop, and leave the tracker alone for `/orchestrate` to record after it re-verifies and lands. Unset defaults to `'caller'` when a `worktree` was given, `'self'` otherwise.
-
-Pass it explicitly on a standalone pass that runs in a worktree. That case is the reason the argument exists: the role used to be inferred from `worktree` being set, so a normal `/implement` in an isolated checkout — which is most of them — silently adopted the worker rules and neither landed nor closed anything. Work shipped and the tracker still read open. `mode` cannot carry this, because `/orchestrate` and `/iterate` both pass `continuous` and only one of them may land.
-
-**Why this is not optional.** Measured across 24h of session logs: 40 implement passes that ran as a single agent averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend**. The cost was never the code — it was one context that grew all pass and was re-read on every turn. Staging removes the growth curve; running the phases inline puts it back.
-
-**Two rules keep that saving, and they live in [`STAGE-RULES.md`](STAGE-RULES.md) because they bind every stage:** no stage runs a build, test, lint or typecheck itself (that goes through `build-runner`), and no stage reads a screenshot (that goes through `screenshot-checker`). Raw build output was the largest single source of growth inside a pass; images were 84% of all tool-result bytes in the measured day.
-
-**Nesting is one level deep.** When `/orchestrate` or `/iterate` calls `workflow('implement')`, this script is already a child — its stages are plain agents and cannot open a further workflow. That is why the Wrap phase inlines wrap-up's phases rather than calling `workflow('wrap-up')`.
-
-### Running the phases inline
-
-Correct in one case: a pass already executing inside a subagent that has no `Workflow` tool. Follow the phases below in order, in context, and keep the two rules above. **You are then the only reader for whom the next paragraph is addressed** — the staged harness enforces it structurally, because no stage's prompt mentions the stage after it.
-
-**⛔ There is no stopping point between Phase 1, Phase 1.5 and Phase 2.** What a reader checks for this — a human, `/orchestrate`, a follow-up session — is whether `$(~/.claude/tools/repo-slug --path <checkout>)/verify/<item>.json` exists for this item: if it does not exist when the turn ends, Phase 1.5 was skipped.
-
-The single most common inline failure is stopping at green: code written, tests passing, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line; a *verified*, wrapped-up pass is. The moment implementation lands green with no halt fired, invoke the `verify` skill (Phase 1.5), then `wrap-up`. Specifically:
-
-- **Do NOT emit a summary, recap, or "next steps" message and end your turn.** Catching yourself about to write "Next: commit and push" IS the signal to invoke `wrap-up` instead — the recap is the work wrap-up does.
-- **Do NOT do any wrap-up work by hand** — no ad-hoc `git commit`, no manually-run `code-review`/`code-simplifier`, no manual followups filing. Those run *inside* the wrap-up invocation.
-- **The pass is complete ONLY after** the `wrap-up` skill has returned. Until then you are mid-pass — keep going.
-
-The only legal exits from Phase 1 are: a halt condition fired (surface it and stop), or implementation succeeded (invoke `verify` and continue). There is no third option.
+A pass takes no `mode` argument and has no idea how many siblings it has. Running two is this session calling the workflow twice.
 
 ---
 
-## Flavors — solo vs delegate
+## ⛔ The pass is a workflow, and it is addressed by path
 
-- **`implement`** (default) — Claude does everything itself: resolve → implement → wrap-up.
-- **`implement delegate`** — Claude stays the **orchestrator and validator**; the **implementation** (where most of the token cost lives) is handed to a cheaper model. The token `delegate` anywhere in the arguments turns it on; it flows through `/iterate … delegate` the same way `continuous` does, and is independent of the standalone/continuous mode. Everything outside the implement step — pre-flight, item resolution, wrap-up, halt conditions, output — is identical to solo. The delegate flavor **replaces Phase 1** (see below); the delegate is the *implementer*, never a reviewer.
+```js
+Workflow({
+  scriptPath: '/Users/pierce/.claude/skills/implement/implement.js',
+  args: { issue, worktree, repo, branch, model },
+})
+```
 
----
+**Never `Workflow({name: 'implement'})` and never `workflow('implement', …)`.** Name resolution reads the *project's* `.claude/workflows/`, not `~/.claude/`, so it fails in exactly the place every pass runs — a worktree — with `Workflow "implement" not found. Available: deep-research, code-review`. The absolute path has no registry between it and the file.
 
-## When to Use
+**Only this session may call `Workflow` at all.** It is not available inside subagents: a subagent that tries gets `No such tool available`. So the orchestrator is always the chat session, never something it spawned.
 
-- The user says "implement", "/implement", "implement 1118", "do a pass", or otherwise signals walk-away work on **one** item
-- One specific tracked item needs to be moved end-to-end (issue or filed follow-up)
-- The user wants commit / push / land / follow-up-filing handled without confirmation prompts
+**Why staged and not one long agent.** Passes that ran as a single agent averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend** in a measured day. The cost was never the code — it was one context that grew all pass and was re-read every turn. `implement.js` runs one `agent()` per stage, each starting fresh and handing the next a small validated object.
 
-## When NOT to Use
+**Editing this file does not change what a pass does.** Stage prompts live in `implement.js`; rules binding every stage live in [`STAGE-RULES.md`](STAGE-RULES.md) — including the Bash command rules, and the two that protect the saving above: no stage runs a build or test itself (that goes through `build-runner`), and no stage reads a screenshot (that goes through `screenshot-checker`). Raw build output was the largest single source of growth inside a pass; images were 84% of all tool-result bytes.
 
-- Continuous work across many items in one sitting — use `/iterate`
-- Exploratory work with no concrete tracked item — file a follow-up first, or run `triage` interactively
-- Bundling multiple unrelated issues into one pass — one item per pass
-- The user is actively pairing and wants step-by-step confirmation
-- A bug fix that needs design discussion before code
+`tools/tests/implement-workflow.test.sh` and `skills/implement/implement.test.mjs` are what hold the script to its contract. Run both after editing it.
 
 ---
 
-## Bash command rules
+## What a pass returns
 
-implement is a walk-away tool, and a single permission prompt kills the whole unattended run. Seven shell shapes prompt unconditionally and must never appear in a pass. They are in [`STAGE-RULES.md`](STAGE-RULES.md), which is where every stage agent reads them — that file is the only copy, so a rule added here would bind nobody.
+```js
+{ ok: true, item, title, verdict, commit, branch, worktree,
+  recheck: [{cmd, expect}],   // how YOU re-check it — empty means nothing machine-checkable
+  blockers: [],               // empty means nothing the pass can see stops it landing
+  review: {findings, blocking}, files, followups, summary }
+```
 
----
+A halt returns `{ok: false, halted_on, detail}` instead. **Branch on `ok` first** — a halt carries no `blockers` array, and reading one as "no blockers" is how broken work gets merged.
 
-## Pre-flight guard
-
-Run before invoking any other skill. If it fails, print the reason and stop.
-
-**Refuse to start with a dirty working tree.** Run `git status --short -- . ':(exclude).beads' ':(exclude).claude'` — the exclusions are part of the check, not something to apply by eye afterwards. If the result is non-empty, halt: *"Uncommitted changes present — commit, stash, or run /wrap-up before iterating."*
-
-**Two path families are exempt, and a diff in either is not a dirty tree.** Both are the session's own bookkeeping rather than work in progress:
-
-- **`.claude/`** — harness artifacts: `scheduled_tasks.lock`, `papercuts.md`, `review-rejected.md`.
-- **`.beads/`** — the tracker's export churn. `issues.jsonl` and `interactions.jsonl` are a passive export of a local Dolt database, rewritten by `bd` commands including the `bd show` this pass runs to resolve its own item. They are tracked, so they appear in `git status`, but a diff there records the tracker's state and never the code's. Halting on them means no pass can start after any earlier `bd` command, which is nearly every pass. Do not stash them and do not commit them to clear the check — leave them, and let wrap-up's commit pick them up or not.
-
-Anything else dirty is a real halt, including a file the user left half-edited.
-
-Where the pass runs is settled next, by **Isolation** below.
-
-There is deliberately **no commit-count guard here.** A single pass produces at most one commit, so a branch can never accumulate its way to a threshold within implement. Counting commits across passes and pausing for review is `/iterate`'s concern (its iteration cap), not implement's. If a single pass ever produces more than one commit, that is a wrap-up bug to fix, not a threshold to enforce.
+`blockers` empty is the pass's opinion, not a verdict. Yours comes next.
 
 ---
 
-## Isolation — a standalone pass on the default branch cuts its own worktree
+## The verify loop — this session's job, not the pass's
 
-Decided here, once, before the workflow is invoked. Three cases, and the first that matches wins:
+The implementer does not get to certify its own work. `implement.js` has a Verify stage run by a different agent than the one that wrote the code, and that is a filter, not the authority. **You re-run `recheck` yourself, in the worktree, and your result is what decides whether the branch lands.**
 
-1. **A `worktree` argument was passed** — `/orchestrate` and `/iterate` both create the worktree themselves, because they also own landing and teardown across many passes. Use what you were given; this section does nothing.
-2. **HEAD is a feature branch** — run in place. The user picked the branch by standing on it, and a second isolation layer on top of an already-isolated branch buys nothing.
-3. **HEAD is the repo's default branch and this is a standalone pass** — create a worktree and run the pass there.
+```text
+r = Workflow(pass)
+round = 1
+loop
+  if !r.ok                     -> halt: report r.halted_on and r.detail
+  run every r.recheck[].cmd in r.worktree, compare against .expect
+  review r's diff against the sha the pass started from
+  if all clear and r.blockers is empty  -> land
+  if round == 5                -> halt: leave the worktree standing, report the path
+  SendMessage(the pass's agent, the failures); round++
+```
 
-Case 3 is the one this section exists for. `main` is not a place to write code: a pass that halts at Green or Verify leaves the primary checkout holding a half-finished change, and that is the checkout the user returns to. A worktree makes a halt free — the work sits in a directory nothing else looks at, and the primary checkout never left the default branch.
+**Rounds 2..N go back to the same pass by `SendMessage`.** Launching a second `Workflow` cuts a fresh worktree that has never seen round 1's code.
 
-**Create it from the primary checkout, immediately before invoking the workflow.** Four commands, run separately:
+**On exhaustion, halt — in every arity, including sequential and swarm.** Leave the worktree standing, print its absolute path, the failing command and its real output. The work is in there and it is the only copy; a removed worktree holding an unlanded branch is the one state nothing recovers from. In sequential this stalls the rest of the queue, and that is deliberate: five rounds failing is evidence the brief was wrong, which is a judgment the user holds.
+
+**A verdict describes one tree.** If anything is touched after a clean recheck — a review nit, a last tidy-up — the verdict no longer describes what you are about to land. Re-run the recheck.
+
+---
+
+## Verification itself
+
+`verify` owns what verification means; do not re-derive its method. Two things sit on top of it.
+
+**Where `verify` lives, so you don't conclude it is missing.** It is bundled into the Claude Code binary — no file under `~/.claude/skills/`, absent from the skill listing. `find` comes up empty and the listing looks like it was never built; neither is evidence. `Skill(verify)` loads it anyway. Do not hand-roll the check, do not substitute a test run, and do not log a papercut about a missing skill.
+
+**The project's own `verify` is the real one; the bundled skill is its bootstrap.** Driving a surface is never generic — a TUI needs a headless frame dump, an iOS app a simulator, a Worker a request against a dev server. The bundled skill works that out once per repo and writes `.claude/skills/verify-project/`, which shadows it afterwards.
+
+- If `<repo>/.claude/skills/verify-project/` exists, that is the skill running. Trust it.
+- If not, let the bundled skill write one, and check that what it writes names *this* repo's real surface and commands rather than a recipe that would read the same anywhere.
+- **Keep it out of git.** Add `.claude/skills/verify-project` to `<repo>/.git/info/exclude` — never `.gitignore`, which is committed. If you find it tracked, untrack it.
+
+**A pass that touched tests must prove the tests discriminate.** A test is evidence only if it fails without the change. `implement.js`'s Verify stage captures the production half as a patch, reverses it, runs only the new tests, and records `mutation.discriminates`. A `PASS` on a test-touching diff with no `mutation` block, or with `discriminates: false`, arrives in `blockers` — the work still commits, because a weak test is no reason to strand a correct implementation, but the item does not close on it.
+
+Agents have landed tests that rebuilt the production logic inside the test body and asserted against their own copy — one carried the comment `// Replicate the padding logic from the fix`. Reverting the fix and re-running them printed `ok`. They passed against the exact bug they were written to catch.
+
+---
+
+## Where a pass runs
+
+**Every pass runs in a worktree. No exceptions, however small the change.** The user is usually standing in the primary checkout, and an agent committing underneath them is a collision they did not agree to.
+
+Which worktree depends on whether the repo is collaborative — check the `origin` owner, not the directory:
+
+**Solo (remote owned by `mcbridemusings`, or no remote).** Cut a throwaway worktree per pass from the primary checkout:
 
 ```
 git rev-parse --show-toplevel                       # → <repo>
@@ -111,253 +111,175 @@ git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-
 CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
 ```
 
-`<slug>` is the tracker id lowercased (`admin-rc82`, `1118`); `<branch>` is `<type>/<slug>-<short-title>` (`fix/admin-rc82-log-materialize`).
+`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the workflow returns**, because a session cannot outlive its own working directory.
 
-A plain `git worktree add`, **not** `herdr worktree create` — that form exists to nest a worktree's *pane* under its repo in the sidebar, and no pane is being opened here. The link hook is invoked by hand because its normal trigger is a Claude session entering the directory, and none ever does: the workflow's stage agents inherit *this* session's `CLAUDE_PROJECT_DIR`, which is the primary checkout. Skip it and the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project` — the first two fail loudly on the first build, and the last one fails quietly, producing a weak Verify verdict that reads exactly like a real one.
-
-**Then invoke the workflow with all five arguments:**
+**Collaborative (remote owned by anyone else).** The long-lived thing is the feature, not the pass. Make one herdr worktree for the body of work and keep it:
 
 ```
-Workflow({ name: 'implement', args: {
-  issue:    '<item id>',
-  worktree: '~/.worktrees/<repo-name>/<slug>',
-  repo:     '<the primary checkout>',
-  branch:   '<branch>',
-  mode:     'standalone',
-  land:     'self',
-} })
+herdr worktree create --workspace <repo-workspace-id> --branch <feature>
 ```
 
-**`land: 'self'` is not optional, and forgetting it is the failure this section is written to prevent.** The workflow defaults an unset `land` to `'caller'` whenever a `worktree` is present — a safe default for a swarm, and exactly wrong here. A pass that cuts its own worktree and omits the argument silently adopts the swarm-worker rules: it commits, stops, pushes nothing, lands nothing, and closes nothing. The code ships into a directory you are about to delete and the tracker still reads open.
+Targeting `--workspace` is what nests it under the repo in the sidebar instead of detaching it to top level; never `herdr workspace create --cwd`, and never a custom `--label`. Checkouts land under `~/.worktrees/<repo>/<branch>`. Passes cut their throwaway worktrees off *that* branch and merge back into it, and only the feature branch ever becomes a PR.
 
-`repo` matters for the same reason. A linked worktree cannot check out the default branch — the primary checkout holds it — so the merge runs from `repo` while the commit runs from `worktree`. Pass both or the pass has no route to land.
+**The link hook is run by hand and skipping it fails quietly.** Its normal trigger is a Claude session entering the directory, and none ever does — the workflow's stage agents inherit *this* session's `CLAUDE_PROJECT_DIR`. Without it the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project`. The first two fail loudly on the first build; the last one produces a weak Verify verdict that reads exactly like a real one.
 
-**Teardown is yours, from the primary checkout, after the workflow returns.** Never the pass's: a session cannot outlive its own working directory, so nothing running inside the worktree may remove it.
+**Never `git worktree remove` or `rm -rf` from inside the checkout being removed.** `hooks/no-self-delete-guard.py` blocks it, and the reason is real: delete the directory a session runs in and every later hook fails to spawn with `ENOENT` before reaching its first line, so every PreToolUse, PostToolUse and Stop guard is silently skipped for the rest of that session.
 
-```
-git -C <repo> worktree remove ~/.worktrees/<repo-name>/<slug>
-git -C <repo> branch -d <branch>
-```
-
-Remove it **only when the pass landed.** On any halt, leave the worktree standing and say where it is in your closing message — the work is in there and it is the only copy. A removed worktree with an unlanded branch is the one state nothing can recover from.
+**The branch is not yours to delete on a collaborative repo.** Its PR has not merged when the worktree finishes. `tools/git-sweep.sh`, run daily from `hooks/daily-git-sweep.sh`, collects branches proven merged along with any worktree still holding them.
 
 ---
 
-## Pass mode — standalone vs continuous
+## Pre-flight
 
-One pass behaves slightly differently depending on whether it runs alone or inside `/iterate`. The difference is confined to two places: **whether item-resolution may prompt**, and **the end-of-pass follow-ups step**. Everything else (implement, commit, push, land, tracking) is autonomous either way.
+Run before anything else. If it fails, print the reason and stop.
 
-- **Continuous** — this pass is one iteration of `/iterate`. The signal: your invocation ARGUMENTS contain the token `continuous` (injected by `/iterate`). A continuous pass must never stop for a prompt, so item-resolution falls straight through to **non-interactive triage** and the Phase 6 follow-ups step files **autonomously**.
-- **Standalone** — a bare `/implement` with no `continuous` token. Still autonomous through commit + push + land, but two points are allowed to involve the user: if item-resolution finds no context it runs **interactive triage** (recommend + ask which one), and the Phase 6 follow-ups step **halts** so the user reviews what the work uncovered and chooses fix-now / file / skip. These are the only sanctioned pauses in a standalone pass.
+**Refuse to start with a dirty working tree.** `git status --short -- . ':(exclude).beads' ':(exclude).claude'` — the exclusions are part of the check, not something to apply by eye afterwards. Non-empty means halt: *"Uncommitted changes present — commit, stash, or run /wrap-up first."*
 
-Resolve the mode once, here, and carry it into item-resolution (Phase 0) and the Phase 2 wrap-up override below.
+Two path families are exempt because both are the session's own bookkeeping, not work in progress:
 
-### A continuous pass has no interactive surface at all
+- **`.claude/`** — `scheduled_tasks.lock`, `papercuts.md`, `review-rejected.md`.
+- **`.beads/`** — the tracker's export churn. `issues.jsonl` and `interactions.jsonl` are a passive export of a local Dolt database, rewritten by `bd` commands including the `bd show` a pass runs to resolve its own item. Halting on them means no pass can start after any earlier `bd` command, which is nearly every pass. Do not stash them and do not commit them to clear the check.
 
-Stronger than "prefer not to ask". The parent — `/orchestrate` or `/iterate` — is itself running unattended, often several passes wide, and its own turn is blocked on this one. There is no terminal a question reaches and nothing to read an answer back from, so a pass that asks does not get a slow answer; it gets none, and stalls the entire run until a human notices something stopped moving.
+Anything else dirty is a real halt, including a file the user left half-edited.
 
-Every decision a standalone pass would put to the user is already settled by the arguments the parent passed — `issue`/`item`, `worktree`, `repo`, `branch`, `land`, `model`, `mode`. That is what those arguments are for. So, in a continuous pass:
-
-- **Never call `AskUserQuestion`.** Banned outright, at every phase and in every stage agent.
-- **Never end a turn on a question in chat text and wait.** A question nobody is watching is a hang.
-- **A decision the arguments do not settle is a halt, not a question.** File the follow-up via `followups`, return the halt reason, hand control back to the parent. That is the only legal exit.
-
-The four points that would otherwise prompt are each already routed by mode, and they are the complete list: item resolution (Phase 0 → non-interactive triage), the AFK-ability gate (Phase 0.5 → file a follow-up and halt), the follow-ups step (Phase 2 → file autonomously), and the delegate flavor's implementer choice (→ default to the sub-agent). **If you reach a fifth, that is a bug in this skill — halt and name it. Do not invent a prompt for it.**
-
-A **standalone** pass keeps exactly the sanctioned pauses named above and no others.
+**No commit-count guard.** A pass produces at most one commit, so a branch cannot accumulate its way to a threshold. If a pass ever produces two, that is a bug in the Wrap stage.
 
 ---
 
-## Phase 0 — Resolve the work item (context first, triage last)
+## Picking the model
 
-implement discovers **one** item to work, in this order. Stop at the first that resolves:
+**Sonnet by default; Haiku for mechanical work** — a rename, a string, a bounds check. Pass `model` explicitly on every call: omitting it makes the pass inherit this session's model, which is frequently Opus, and that is exactly the path a wrong tier takes into a run.
 
-1. **Explicit item text (passed by `/iterate`).** If the arguments contain an `item:"…"` token, that text **is** the work item — a papercut or other local note that has no issue number. An optional `source:"…"` token records where it came from (e.g. `.claude/papercuts.md`, a `file:line`). Skip triage entirely; the caller already chose the item. This branch exists so `/iterate` can freeze a scoped queue of local items and feed them one at a time. **Still run the Phase 0.5 AFK-ability gate on the text** — a vague local item must fail the gate and be handled per pass mode, exactly like a triage pick, never guessed.
-2. **Explicit argument.** If the arguments contain a bare issue number (e.g. `/implement 1118`) or an issue reference (a beads ID like `myproj-zb8`), that issue **is** the work item. Resolve the backend by invoking `issues` and confirm it exists — `bd show <id> --json` on beads, `gh issue view <n> --json number,title,state` on GitHub; if it's closed or missing, halt and say so. Skip triage entirely — the user named the target.
-3. **Branch-name context.** Otherwise, inspect the current branch name for an embedded issue ID (e.g. `fix/1118-login`, `1118-foo`, `issue-1118`, `myproj-zb8-login`). If one is present and matches an open issue on the resolved backend, that issue is the work item. Skip triage.
-4. **Triage.** Only if none of the above resolve, invoke the `triage` skill via the Skill tool to discover the item — with these overrides:
-   - **Standalone pass:** run triage **interactively** — let it recommend and ask the user which one item to work. Work exactly the one they pick, then this pass is done.
-   - **Continuous pass:** run triage **non-interactively** — skip the "wait for user confirmation" step at triage Step 7 and proceed with the top recommendation. (`/iterate` supplies the fresh backlog each iteration; a single continuous pass still works exactly one item.)
-   - **Skip triage's Step 9 (offer wrap-up).** implement runs wrap-up itself in Phase 2; don't let triage invoke it or it will double-commit.
-   - **Refuse untracked items.** The item must be an existing issue on the resolved backend. If triage's top pick is a fresh idea, a "while we're here" cleanup, or an invented refactor, halt and surface it for the user to file or reject. Never invent feature work autonomously.
-   - **Empty queue:** if triage finds nothing actionable, print *"Nothing to iterate on."* and stop.
+**Never Opus for a pass, and never Fable at all.** A pass follows a brief that already survived the readiness gate, in an isolated worktree, with its result re-checked before it lands. That is Sonnet's job. Opus is for deciding what to execute — which is what this session is doing. Fable is only ever chosen by the user, explicitly.
 
-Whichever branch resolved it, implement now has exactly **one** item. Proceed to Phase 0.5.
+In swarm arity, say the split in the report: `slug → sonnet|haiku`, or a count per tier when it is large.
 
 ---
 
-## Phase 0.5 — AFK-ability self-assessment (the gate)
+## Sequential arity
 
-Before writing any code, judge whether the resolved item is actually walk-away work. implement is built to run unwatched with minimal prompts, and it assumes the item is objective enough to finish without a human judgment call. That assumption is untested until this gate tests it. Run this on **every** resolved item — a named issue (`implement 1118`), an `item:"…"` local item from `/iterate`, a branch-context match, or a triage pick — because any of them can be underspecified.
+Resolve the selector into a frozen queue first — issue numbers, `#range`, `label:X`, `milestone:X`, `epic:X`, `followups`, `papercuts`. Then work it one at a time: pass, verify loop, land, next. Re-resolving the selector between items gets a different queue, because the backlog moved while you were landing branches.
 
-Judge the item on two tests:
-
-1. **Plan test.** Can I state a concrete plan *right now* — the files to touch, the changes to make, and an objective acceptance check (which tests/commands prove it done)? If I can't name the files or can't name a check that would prove completion, I don't understand the problem well enough to work it unwatched.
-2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product, or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity I would have to *invent* an answer to in order to proceed? If yes, it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
-
-**Pass both → proceed to Phase 1.** (In the delegate flavor, the plan test *is* Phase 1-delegate step 1 — Claude writing the plan. The gate sits before the delegate branch: if Claude cannot write the plan, do not hand anything off.)
-
-**Fail either test → act by pass mode:**
-
-- **Standalone pass — resolve with the user, routed by which test failed:**
-  - **Plan test failed** (missing facts, unclear scope, don't-know-the-files): ask the user targeted clarifying questions — one at a time, in plain chat, never the `AskUserQuestion` tool. Read the codebase for anything the repo can answer; only ask for what it can't. This is a factual gap-fill, not a design interview — don't reach for `grill-me` here.
-  - **Objectivity test failed** (a qualitative / product / design call the user owns): invoke `grill-me` via the Skill tool — the design interview that surfaces and records the decision.
-  - After the interview resolves, **re-run this gate once.** If it now passes, proceed to Phase 1. If it still fails, **halt** and surface the specific residual uncertainty — do not loop the interview a second time, and do not proceed anyway.
-
-- **Continuous pass — cannot prompt.** Do **not** attempt the item. File a follow-up (via the `followups` skill) titled `needs human input: <item> — <what's ambiguous>`, with a one-line note on which test failed and why, then **halt the iteration** and hand control back to `/iterate`. Never guess-and-commit an item that failed the gate.
-
-Only an item that passes both tests reaches Phase 1.
+- **Start from the default branch.** A continuous run branches from the head of the canonical line, never from a half-finished feature branch.
+- **Land each before starting the next.** Each pass branches from the *current* head, so two in flight would race into the default branch. This is why sequential is sequential and not a `pipeline()`.
+- **Cap the run at 20 items.** The cap is a safety valve, not a target.
+- **An item-level failure skips to the next; an environment failure ends the run.** A tree that will not come back clean, or a pull that no longer fast-forwards, is the second kind — do not attempt the next item.
+- **A halted pass stops the queue** (see the verify loop). Report which items never ran.
 
 ---
 
-## Phase 1 — Implement
+## Swarm arity
 
-Work the resolved item on the current branch (following triage's Step 8 for the mechanics of a code change).
+Every pass gets its own worktree and they run at once. The human is involved at exactly two moments: the gate before anything is dispatched, and the report after. In between there is no channel from a pass back to a person, and no way for one to exist. An item that turns out to be ambiguous costs its whole dispatch and waits for an `iron-out` pass.
 
-- If implementation produces no diff after 1–2 attempts (false start, blocked, needs design), halt with a one-line blocker explanation. Do not commit empty changes.
-- If tests fail and the cause isn't trivially fixable in 1–2 attempts, halt with the failure surfaced.
+**The scope gate, before anything is dispatched.** Read every in-scope issue and confirm each one is actually ready — a concrete plan, named files, an objective acceptance check. Exclude automatically and without asking: anything unlabelled or untriaged, anything whose body is a question, and anything touching migrations, auth, payments, or deletion paths. State what you excluded and why.
 
-Green tests are not the finish line; a *verified*, wrapped-up pass is. Phase 1.5 and Phase 2 follow with nothing in between — see [Running the phases inline](#running-the-phases-inline) for what that costs a reader who is executing these phases by hand.
+**No pass ever lands its own work.** `implement.js` ends at a commit and has no push in it at all — a stage that runs no `git push` has nothing to route around. `hooks/subagent-push-guard.sh` makes that structural rather than remembered: it denies `git push`, `git merge` into the default branch, `gh pr`/`gh issue` writes and `bd` writes from any implementation subagent. Prose instructions not to push have not held on their own; agents merged into `main` and closed their own issues against explicit clauses repeated four times.
 
----
+**You land each pass as it returns**, from the primary checkout, after re-verifying against a base that may have moved. A linked worktree shares the object store, so every commit is already visible there — no fetch needed.
 
-## Phase 1 (delegate flavor) — orchestrate, delegate the implementation, validate
+**Copy each verdict into the repo's own directory before removing a worktree.** `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json` is keyed to a directory that is about to stop existing. The repo's copy is the one a later reader can find; without it, the outside view is indistinguishable from a swarm that skipped verification.
 
-When the `delegate` token is present, Phase 1 is **not** Claude writing the code. Claude plans, hands the implementation to a cheaper model, and validates the result. Claude never hands off the plan-making or the validation — only the typing. Everything else (the ⛔ mandatory transition into Phase 2, halt conditions) is unchanged.
+**Never edit files that every change appends a row to** — a changelog, a file map, a component registry. Every sibling branch collides on them by construction. Passes return the rows in `followups` instead and you write them after landing.
 
-1. **Plan (Claude).** From the resolved item, write a concrete implementation plan: the files to touch, the changes, and the acceptance check (which tests/commands must pass). This is the expensive thinking — it stays with Claude.
-2. **Pick the implementer (ask in-flow).** Ask in **plain chat text** — name the two options and the keyword for each (`subagent` / `delegate`), and let the user type one. **Never use the `AskUserQuestion` tool** — the selector is banned in this workflow, same as in [review](../review/SKILL.md) RULE 0, and an `implement` pass routes into review at validate. Two options, chosen per run, and the order below is the recommendation order from `dispatch` (invoke it for the target ladder):
-   - **`subagent` — a cheaper Claude sub-agent (the default).** A Haiku/Sonnet implementer via the **Agent tool** with a model override and the plan as a tight brief. Cheapest, best plan-follower, no window, no second auth. Take this unless the user wants to watch or take over the implementer, needs it to outlive this session, or specifically wants a non-Claude model on the work.
-   - **`delegate` — a separate agent process.** Via the `dispatch` router. **Always go through `dispatch exec` — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md). The surface is resolved, not chosen: inside herdr it is a **live agent in its own tab that you can switch to and type at**, otherwise a Terminal.app window; run `dispatch transport` and say which, so the user knows whether there is a tab to open. Gate with `dispatch check` first; if it fails, surface it and offer to fall back to the sub-agent or to solo `implement`. (In a **continuous** pass, don't prompt for the implementer — default to the last choice, or to the sub-agent; never stall the loop on a menu.)
-3. **Implement.** Hand the plan to the chosen implementer; it writes the code against the plan. Brief either implementer the same way: *implement this plan exactly, do not exceed its scope, run the project's checks when done.*
-4. **Validate (Claude).** Run the `review` skill's core ([../review/REVIEW-CORE.md](../review/REVIEW-CORE.md)) over the implementer's diff in **plain mode** — review this diff, no routing, no offers, no posting — plus the project's test/check suite. This judgment is Claude's, never delegated.
-5. **Loop.** Feed concrete fixes back to the implementer (or fix trivial things itself) and re-validate, until the diff passes review + checks or a stop condition fires: max 3 implement→validate rounds, or two consecutive check failures → **halt and surface**. A diff that won't pass after 3 rounds is a halt, not a "commit anyway".
-6. On a clean validate, take the ⛔ mandatory transition into Phase 1.5, exactly as solo.
+**Keep rounds small enough that a bad brief does not burn the frontier.** A round of N items is N passes at once; watch the running total in `/workflows`.
 
 ---
 
-## Phase 1.5 — Verify
+## Retiring a worktree
 
-Passing tests are not evidence the item works — they prove CI runs. Before wrap-up, prove it at its **surface**: invoke the `verify` skill via the Skill tool, scoped to this pass's diff.
+Teardown is yours because it is **structurally impossible for the pass**: git refuses to delete a branch a worktree still has checked out, and the pass is standing in it. Whatever created a resource retires it.
 
-`verify` owns what verification means and how to get a handle on the app; do not restate or re-derive its method here. This phase adds exactly two things on top of it.
-
-**Where `verify` lives, so you don't conclude it is missing.** It is bundled into the Claude Code binary — there is no file for it under `~/.claude/skills/`, and it does not appear in the skill listing. `find` will come up empty and the listing will look like it was never built; neither is evidence. `Skill(verify)` loads it anyway (confirmed on 2.1.224–2.1.226). Do not hand-roll the verification, do not substitute a test run, and do not log a papercut about a missing skill.
-
-**The project's own `verify` is the real one — the bundled skill is only its bootstrap.** How you drive a surface is never generic: a TUI needs a headless frame dump, an iOS app needs a simulator, a Worker needs a request against a dev server. The bundled skill exists to figure that out once per repo and write it down as `.claude/skills/verify-project/`, which then shadows it for every later pass. So:
-
-- If `<repo>/.claude/skills/verify-project/` exists, that is the skill you are running. Trust it over anything the bundled version would have done.
-- If it does not exist, let the bundled skill write one, and make sure what it writes names *this* repo's actual surface and commands — not a generic recipe that would read the same in any project.
-- **Keep it out of git.** A `verify` skill is per-checkout tooling, not shipped code: add `.claude/skills/verify-project` to `<repo>/.git/info/exclude` (never `.gitignore`, which is committed) the moment you create one. If you find it already tracked in a repo, untrack it — `git rm --cached -r .claude/skills/verify-project` plus the exclude line — on a branch if the repo is not the user's own.
-
-**1. Persist the verdict.** `verify` reports inline in chat, which nothing outside this session can read — and when the pass runs in a pane, that transcript is often unrecoverable. Write the verdict to `$(~/.claude/tools/repo-slug --path <checkout>)/verify/<item>.json` — run that command rather than assembling the path, since it is the one definition of the directory and it creates it. In a worktree `<checkout>` is the worktree, so the verdict files under the worktree's own slug and never inside the repo:
-
-```json
-{"item": "<the tracker id — never the title>", "verdict": "PASS|FAIL|BLOCKED|SKIP",
- "surface": "<what you drove>", "findings": ["…"],
- "branch": "<current branch>", "verified_parent": "<HEAD sha, read now>"}
+```bash
+ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/*.json    # every verdict in there, by name
+test -f $(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json   # the copy you made
+git -C <worktree> status --short          # must be empty
+git log <default>..<branch>               # must be empty — fully merged
+pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=   # must be empty — nothing is standing in it
 ```
 
-Write it on **every** verdict, `SKIP` included. A missing file is not a pass — it is indistinguishable from a pass that never ran, which is exactly what a reader must never have to guess.
-
-**`<item>` is the tracker id, in the filename and in the `item` field, and a pass with no id stops rather than inventing one.** The id is the only key: a reader matches the file to the work by it, and the title is already on the issue. `undefined.json` is what JS renders for a missing value — a worker that writes that filename has put the id in neither place. Do not substitute a slug, a title, or a branch name: a verdict that files neatly under a name nothing looks for is worse than one that never got written, because the second announces itself.
-
-**A verdict describes one tree, and touching the code voids it.** If you change anything after `verify` returns — fixing a finding, a last tidy-up, a review nit — the verdict no longer describes what you are about to land: **re-run `verify` and rewrite the file.** Observed: a worker verified `PASS`, committed one more change, and shipped it unverified under the earlier verdict.
-
-**The verdict records `verified_parent`, not `commit`, and the name carries the whole contract.** `verify` runs before wrap-up commits, so the sha it can read is the *parent* of the commit this work becomes. Writing that under `commit` would claim a commit was verified before it existed, and a later stage would then have to rewrite the file to make the claim true. Name it truthfully once and nothing has to correct it.
-
-**The sha comes out of `git -C <checkout> rev-parse HEAD`, run at the moment you write the file.** Never recalled from earlier in the pass, never reconstructed from a log line, never typed. A reader resolves it with `git -C <checkout> cat-file -e <verified_parent>^{commit}` before comparing anything, so a sha that names no object does not read as a stale verdict — it reads as no verdict at all, and voids the whole file.
-
-**How a reader checks it:** `verified_parent` must be the parent of the branch head (`git -C <worktree> rev-parse <branch>^`). Wrap makes exactly one commit, so on an honest pass they match. If they don't, something was committed after `verify` returned and is shipping unverified — which is the staleness this field exists to catch. Fill in `branch` too; measured across three worktrees in one swarm, two verdict files had it null, which strands the verdict with no route back to the work.
-
-**There is no re-stamping stage, and adding one back is a mistake.** A `restamp` agent used to rewrite `commit` to the wrap sha after the fact. It was refused by the safety classifier as audit tampering, and the refusal was right: it asked an agent to write "this commit was verified" about a commit no stage had verified. Rewording the prompt to justify it harder read as bad-faith tunneling and was refused harder. The field name is the fix.
-
-**1b. If the pass added or changed a test, prove the test discriminates — and put the proof in the verdict file.**
-
-A test is evidence only if it fails without the change. Adding one is not evidence that anything was fixed, and "I added tests" is the most common way a pass looks green while the bug is still there.
-
-Capture the production half as a patch and reverse it out — `git -C <root> diff -- <non-test paths> > /private/tmp/claude/<repo-slug>/mutation.patch`, then `git -C <root> apply -R` it. Run **only** the new or changed tests, narrowed by name. Read what it printed. Restore with `git -C <root> apply <the patch>` and confirm `git status --short` matches what it showed before.
-
-**Not `git stash`.** `refs/stash` lives in the shared git directory, so in a swarm two workers in different worktrees share one stash stack and each can pop the other's entry. A patch file inside the worktree cannot collide. An untracked new production file is not in `diff` — `mv` it aside and back instead.
-
-Then add to the verdict file:
-
-```json
-"mutation": {"method": "<what you removed and how>", "command": "<the exact test invocation>",
-             "output": "<the real failure text>", "discriminates": true,
-             "tests": ["<test names>"]}
+```bash
+git -C <repo> worktree remove --force <worktree> \
+  && git -C <repo> branch -d <branch>
 ```
 
-**Report `discriminates: false` honestly when they pass anyway** — that is the answer this check exists to surface, and a false `true` is the one unrecoverable one. For genuinely new behaviour with nothing to revert, `discriminates: false` with `"no prior implementation to revert"` as the `method`.
+**The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy is missing, make it now rather than removing the worktree — this is the check that stops a run's evidence disappearing one worktree at a time, each teardown looking perfectly clean as it goes.
 
-Observed 2026-08-16: a swarm worker landed three tests that each rebuilt the production logic inside the test body and asserted on their own copy — one carried the comment `// Replicate the padding logic from the fix`. Reverting the fix commit and re-running them printed `ok  powerhour/internal/tui/dashboard  0.283s`. They passed against the exact bug they were written to catch, and nothing in the pass had asked otherwise.
+**List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the pass wrote a differently-named file, and `--force` then deletes the only copy — including a complete `FAIL` verdict naming the exact cause, found only by listing. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the item and branch, then decide. Two passes in one round can both write a same-named stray file, and once copied to the primary checkout they are indistinguishable — so never copy one out under the name it already has.
 
-**2. Gate on it.**
+**A live process in the worktree forbids teardown exactly as uncommitted work does.** `worktree remove --force` deletes the directory out from under whatever is standing in it, and that process keeps running against a path that no longer exists — a bundler or dev server left running inside keeps serving from a path that is now gone, and the failure surfaces later, inside whatever was consuming it, reading as a broken build rather than as teardown. A clean, fully-merged tree passes every other check and gives no warning.
 
-- `PASS` or `SKIP` → continue into Phase 2.
-- A `PASS` on a diff that touched tests, with no `mutation` block or with `discriminates: false`, **does not close the item.** The work still commits — a weak test is no reason to strand a correct implementation in an uncommitted worktree — and the pass reports the missing proof in `item_open_because`. `~/.claude/workflows/implement.js` makes that call from the file list; it is not the verifying agent's to soften.
-- `FAIL` or `BLOCKED` → **halt before wrap-up.** Nothing commits, pushes, or lands. Surface the verdict with the evidence `verify` captured; in a **continuous** pass, file a follow-up and hand control back to `/iterate`.
+**Refuse, do not name-and-remove.** In a queued or swarmed run this happens unattended, so "removed, and this killed the process" is still an unattended removal — the sentence lands in a report nobody reads until the app is already broken. Deferring costs one worktree's disk; the branch is already merged. Say which condition fired and which process holds it — worktree, item, pid, command — so the next pass retires it rather than re-deriving why it was skipped.
 
-`verify` admits no partial pass and resolves doubt as `FAIL`. Do not soften a `FAIL` into a follow-up and proceed — a failed verification is a halt, not a note.
+`pgrep -f` matches the command line, not the working directory: it catches a bundler, dev server or watch process launched with the path in its argv, and misses a bare shell that `cd`'d in. When it is empty and you still suspect a hold, `lsof +D <worktree>` walks the tree and answers for certain — slower, and worth it only then. Quote the path (it contains no metacharacters today, but a branch slug can), and use `xargs -r`: without it, BSD xargs still runs `ps` once when pgrep found nothing, with no pids to select on, so what prints depends on the calling terminal rather than on the worktree. Never `pgrep -fl` — an npm-exec process carries its whole inherited environment in the command column, so one match can run tens of thousands of characters.
+
+**A gitignored file the pass created is invisible to every check above, and `hooks/worktree-remove-locals-guard.sh` denies the removal when one exists.** `git status --short` reads git's view, so a file git is told to ignore leaves it empty — a pass-created `admin.toml`, gitignored globally and never committed, passes every teardown check and then `--force` takes the repo's only copy of its build, test and dev commands. The guard compares the worktree against the primary checkout on the `pattern` names in `~/.config/repo/config.toml`, the same list `repo populate` brings in, and names the file it found. Copy that file to the primary checkout, then re-run the removal.
+
+**No `push origin --delete`.** A pass does not push, so its branch exists only locally and there is nothing on the remote to delete — the command fails with `remote ref does not exist` and, chained with `&&`, makes a clean teardown read as a failed one.
+
+**Retire the pass's device too**, if you gave it one — the platform cell has the teardown commands. It survives its pass and holds resources; a long run that skips this ends with one per item still alive.
 
 ---
 
-## Phase 2 — Wrap-up (non-interactive overrides)
+## Reading a verdict someone else wrote
 
-**This phase is reached by actually calling the `wrap-up` skill via the Skill tool — not by performing wrap-up's steps inline.** Invoke it now. The overrides below are instructions you carry *into* that invocation; they do not replace it. If you find yourself running `git commit`, `code-review`, or `followups` without having invoked `wrap-up`, stop and invoke `wrap-up` first.
+A verdict file is evidence, and these are the ways it lies.
 
-Invoke the `wrap-up` skill via the Skill tool with these overrides:
+| Symptom | What it means |
+|---|---|
+| verdict `PASS`/`SKIP` but `verified_parent` **names no object** | there is no verdict at all — the file is void, so **never land** the branch on it |
+| `verified_parent` resolves and is **not** the branch head's parent | stale: something was committed after verification and is shipping unverified |
+| a `PASS` in a returned object with no file on disk | not a pass |
 
-- **Pass mode — pass it explicitly.** Tell wrap-up whether this is a **standalone** or **continuous** pass, using the mode resolved above. wrap-up defaults to the interactive/standalone posture and will halt for human disposition unless it is *told* `continuous` — so a continuous pass MUST pass the `continuous` token through. Never leave the mode implicit.
-- **Tracking:** wrap-up does NOT write to the tracker. The Track stage after it does, so there is exactly one writer and a skipped close is visible instead of silent. Closing is automatic and unprompted when all three hold: `land` resolves to `'self'`, verification returned `PASS`, and something was committed. Otherwise the item stays open and the pass reports `item_open_because`. `SKIP` is not `PASS` — an item nobody managed to verify is not one to close on a machine's say-so. Moving resolved followup items to the Resolved section and closing emptied milestones stay with wrap-up.
-- **Docs:** apply mechanical doc updates automatically (file-map.md, CLAUDE.md doc-table additions). For substantive doc updates that would normally prompt, do NOT prompt — append them as follow-up items with titles like *"Update PRD section X to reflect Y"*.
-- **Quality:** run code-simplifier and code-review. Auto-apply simplifications. Auto-fix any 75+ issues. If a 75+ issue can't be auto-fixed in 1–2 attempts, halt before committing.
-- **Commit + push + land:** commit with project conventions, push, and land per wrap-up's own ownership rules (merge on an owned repo; PR on a collaborative one). wrap-up owns the merge/PR choreography — implement does not duplicate it.
-- **Follow-ups:** in a **standalone** pass the follow-up step is **interactive** (surface findings, user chooses fix-now / file / skip). In a **continuous** pass it files **autonomously** with no prompt. This is driven entirely by the mode token you passed above.
+Resolve the sha before comparing anything:
 
----
-
-## Output
-
-**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The three sections (**Files changed / Unchanged / Follow-up needed**) and the **Run:** / **Look for:** steps still close the pass; the status line and snapshot below go after them.
-
-End the pass with a status line followed by a backlog snapshot:
-
-```
-Iteration complete: <one-sentence summary>. Halt: <reason | none>.
-
-Backlog: X open issues (closed Y this pass). Roadmap: Z of W items complete (P%).
+```bash
+git -C <worktree> cat-file -e <verified_parent>^{commit}   # void if this fails
+git -C <worktree> rev-parse <branch>^                      # must equal verified_parent
 ```
 
-**Computing the snapshot:**
+A pass makes exactly one commit, so on an honest run those match. `cat-file -e` is what separates the first row from the second: a fabricated 40-hex string is valid hex naming nothing, and without this check it reads as an ordinary mismatch rather than as a void file.
 
-1. **Open issues** — on beads, `bd count --status open` (add `bd ready --json | jq length` for the unblocked figure, which is the more useful number when the backlog has real dependency edges); on GitHub, `gh issue list --state open --json number --limit 1000` and count. "Closed this pass" is the number wrap-up's tracking step closed (usually 1, occasionally 0).
-2. **Roadmap** — check `ROADMAP.md`, `docs/ROADMAP.md`, `docs/roadmap.md` in order. If found, count checkbox lines: `[x]`/`[X]` complete, `[ ]` remaining. Report "Z of W items complete (P%)". If no roadmap file, omit the roadmap part.
-3. If the backend's CLI is unavailable or errors, omit the issues line rather than halting.
+**The sha comes out of `git -C <checkout> rev-parse HEAD`, run at the moment you write the file.** Never recalled from earlier in the pass, never reconstructed from a log line, never typed.
+
+**The field is `verified_parent`, not `commit`, and the name carries the contract.** Verification runs before anything commits, so the sha it can read is the *parent* of the commit the work becomes. Writing it under `commit` would claim a commit was verified before it existed, and something downstream would then have to rewrite the file to make the claim true. Name it truthfully once and nothing has to correct it. There is no re-stamping stage and adding one back is a mistake: an agent asked to rewrite `commit` after the fact is being asked to write "this commit was verified" about a commit no stage verified, and the safety classifier refuses it as audit tampering — correctly.
 
 ---
 
 ## Halt conditions
 
-The pass stops and surfaces to the user when any of these fire:
-
 - Pre-flight failed (dirty tree)
-- An explicit-argument issue is closed or missing
-- Triage found nothing actionable (empty queue)
-- Triage's top pick is not an already-tracked item
-- Phase 0.5 gate failed and the interview couldn't resolve it (standalone), or the gate failed at all (continuous → filed follow-up + halt)
+- A named issue is closed or missing
+- Triage found nothing actionable, or its top pick is not already tracked
+- The pass's AFK-ability gate failed — the item hides a decision the user owns. File `needs human input: <item> — <what's ambiguous>` via `followups` and stop; never guess-and-commit
 - Implementation produced no diff
-- Tests fail and the cause isn't trivially fixable in 1–2 attempts
-- Phase 1.5 verification returned `FAIL` or `BLOCKED`
-- code-review surfaced a 75+ issue that auto-fix didn't resolve
-- (delegate flavor) the delegate's diff won't pass review + checks after 3 implement→validate rounds
+- The build will not go green
+- Verification returned `FAIL` or `BLOCKED`
+- The verify loop exhausted five rounds
+- Review surfaced a blocking finding that was not resolved
 
-When implement is running inside `/iterate`, any halt ends that iteration and hands control back to the loop, which decides whether the whole run stops.
+`verify` admits no partial pass and resolves doubt as `FAIL`. Do not soften a `FAIL` into a follow-up and proceed.
+
+---
+
+## Output
+
+**Additive to `CLAUDE.md` §Finishing work, not a replacement.** **Files changed / Unchanged / Follow-up needed** and the **Run:** / **Look for:** steps still close the work — once for the run as a whole, not once per item. Then:
+
+```
+Implement complete: <one-sentence summary>. Halt: <reason | none>.
+
+Backlog: X open issues (closed Y). Roadmap: Z of W items complete (P%).
+```
+
+In sequential or swarm arity also name: every item and its outcome, the `slug → model` split, every worktree still standing and why, and the verdict files now in the primary checkout. A run that lands six items should leave six verdicts behind; anything less means evidence went out with a worktree.
+
+Computing the snapshot: on beads, `bd count --status open` (plus `bd ready --json | jq length` for the unblocked figure); on GitHub, `gh issue list --state open --json number --limit 1000` and count. For the roadmap, check `ROADMAP.md`, `docs/ROADMAP.md`, `docs/roadmap.md` in order and count `[x]` against `[ ]`. If the backend errors, omit the line rather than halting.
 
 ---
 
 ## Notes
 
-- One pass works **one** item. Never bundle multiple issues, never pull the next item — that is `/iterate`'s job.
-- A pass produces at most one commit (wrap-up's).
-- This skill never invokes itself. Continuous mode lives entirely in `/iterate`.
+- One pass works **one** item. Never bundle two.
+- This skill never invokes itself, and a pass never invokes it.
+- A pass never writes to the tracker. This session closes the item, after landing, and only when verification returned `PASS` and something was actually committed. `SKIP` is not `PASS`.

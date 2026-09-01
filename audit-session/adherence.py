@@ -159,15 +159,15 @@ MIN_REPLY = 600   # chars; below this a reply is an acknowledgement, not an answ
 MAX_ASK   = 3000  # chars; above this the user message is a pasted brief, not a question
 
 # A slash command reaches the transcript as TWO user messages: a short wrapper
-# carrying <command-name>/orchestrate</command-name> and the args, then the
+# carrying <command-name>/implement</command-name> and the args, then the
 # whole skill body as its own message. The bodies are enormous — 55,561 / 8,561
 # / 7,622 chars in one measured session — so MAX_ASK alone discarded every
-# slash-command turn, which is most substantive work: /orchestrate, /implement,
-# /review, /wrap-up. Raising the cap on that session took its turn count from
+# slash-command turn, which is most substantive work: /implement, /review,
+# /wrap-up, /improve. Raising the cap on that session took its turn count from
 # 87 to 143, a 39% blind spot falling exactly where the finishing rules apply.
 # So the body is made TRANSPARENT instead: it neither becomes the user's ask nor
 # clears the wrapper that already is one. The wrapper stays the ask, because
-# "/orchestrate ui ios work" is what the user actually said.
+# "/implement swarm label:ui" is what the user actually said.
 COMMAND_WRAPPER = re.compile(r"<command-name>")
 COMMAND_BODY    = re.compile(r"\A(?:Base directory for this skill:|# /\w[\w-]*\s)")
 

@@ -22,7 +22,7 @@ prefix}` — use its exit code as the beads-present test.
 
 `~/.claude/settings.json` is tracked, and `~/.claude-work/settings.json` is a symlink to it, so
 these entries follow you to a new machine and into the work profile once committed. Without them
-every `bd` call prompts, which kills any unattended `implement` / `iterate` / `orchestrate` run.
+every `bd` call prompts, which kills any unattended `implement` run.
 Add them under `permissions` once:
 
 ```jsonc
@@ -33,8 +33,8 @@ Add them under `permissions` once:
 **Every `bd` verb runs unprompted, destructive ones included.** There is no `ask` gate on
 `bd delete`, `prune`, `purge`, `flatten`, or `admin reset`. Those five were gated until
 2026-08-21; Pierce removed them, and the reason is worth carrying: beads writes land in a repo,
-git is the undo, and a prompt on every `bd delete` breaks unattended `implement` / `iterate` /
-`orchestrate` runs for no safety that git doesn't already provide. Don't reinstate them, and
+git is the undo, and a prompt on every `bd delete` breaks unattended `implement`
+a swarm runs for no safety that git doesn't already provide. Don't reinstate them, and
 don't route around the allow by asking in chat first.
 
 ## Verb table

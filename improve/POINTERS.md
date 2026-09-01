@@ -57,7 +57,7 @@ Baselines on this machine, measured over 9,363 sessions with three or more assis
 | --- | --- |
 | **cold** — a `CLAUDE.md` line naming a doc | 0.8% – 3.1% |
 | **warm** — a `SKILL.md` naming a sibling, in sessions where that skill fired | 7.4% weighted |
-| warm, best case (`orchestrate`, 3 siblings) | 68.2% |
+| warm, best case (a 3-sibling skill) | 68.2% |
 | warm, worst case (`herdr`, 40 siblings) | 0.0% |
 
 Two things follow, and both are load-bearing:
@@ -66,7 +66,7 @@ Two things follow, and both are load-bearing:
   pointer sitting in always-loaded steering. Put must-reach material behind a skill that
   fires, not behind a `CLAUDE.md` line.
 - **The 0–68% spread is wording and structure, not mechanism.** Read rate falls as the
-  pointing document's own body grows: `orchestrate` (3 siblings) 68%, `to-tickets` (2) 51%,
+  pointing document's own body grows: a 3-sibling skill 68%, `to-tickets` (2) 51%,
   `review` (15) 27%, `herdr` (40) 0%. A document big enough to act on without opening
   anything gets acted on without opening anything. **Thinness is the forcing function** — it
   is why a knowledge skill's body is a file map and nothing else.

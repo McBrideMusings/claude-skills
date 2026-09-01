@@ -15,7 +15,7 @@ never called at any point.**
 
 This is a hard, non-negotiable ban with the same standing as the no-AI-attribution rule. It
 holds regardless of how the pass was entered — typed `/review` or `/unblock`, routed here from
-`implement`, `iterate`, `wrap-up`, or any other skill. A caller's habits do not unlock the
+`implement`, `wrap-up`, or any other skill. A caller's habits do not unlock the
 tool; the pass is a no-selector zone from the moment this file loads until it ends, **including
 every sub-file** ([REVIEW-CORE.md](REVIEW-CORE.md), [POSTING.md](POSTING.md),
 [../unblock/FEEDBACK.md](../unblock/FEEDBACK.md), [../unblock/CONFLICTS.md](../unblock/CONFLICTS.md),

@@ -80,7 +80,7 @@ rather than staying silent, because silence there is indistinguishable from "no 
 | `profiling` | `ref-<label>/profiling.md` | after label detect |
 | `tdd` | `ref-<label>/testing.md` | Phase 01/02 (write the failing test) |
 | project `verify` | `ref-<label>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
-| `orchestrate` | `ref-<label>/orchestrate.md` | step 3 (fan out) and step 7 (retire), per worker |
+| `implement swarm` | `ref-<label>/orchestrate.md` | fan-out and retirement, per pass |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
 store directly. The testing axis reaches verification two ways instead: `tdd` reads it when writing
@@ -108,7 +108,7 @@ of all repos, so a cell would fire constantly to say what was already assumed.
 `ref-apple/` has all five engine cells (`review`, `diagnose`, `profiling`, `testing`, `orchestrate`);
 `ref-web/` has `profiling` + `testing` + `review`; `ref-react/` has `review`; `ref-threejs/` has
 `review` + `diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in
-`ref-game-dev/`). `orchestrate` exists only for `apple` today — that column fills the first time a
+`ref-game-dev/`). the fan-out cell exists only for `apple` today — that column fills the first time a
 swarm runs on a stack with a shared device, port, or database.
 
 `ref-game-dev/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs.

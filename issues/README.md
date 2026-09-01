@@ -42,7 +42,7 @@ invents a bare one.
 | `to-tickets` | create, epic/parent, dep | publishes a slate of tickets |
 | `triage` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
-| `iterate` / `orchestrate` | list, ready, claim, close | selector resolution lives in `iterate/SELECTORS.md` |
+| `implement` | list, ready, claim, close | selector resolution lives in `implement/SELECTORS.md` |
 | `iron-out` | list, create, dep, label | files open questions, wires blockers |
 | `followups` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |

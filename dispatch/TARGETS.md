@@ -9,7 +9,7 @@
 
 Every skill that hands work to another agent picks from the **same three targets**, in the
 same order. This file is the single owner of that order. `review dual`, `implement delegate`,
-`orchestrate`, and `iron-out` link here rather than each inventing a menu.
+and `iron-out` link here rather than each inventing a menu.
 
 | | **Claude agent** | **herdr tab** | **Terminal.app window** |
 |---|---|---|---|
@@ -119,7 +119,7 @@ scheduled agents have no GUI session and no herdr session to put anything in.
 ## An explicit token always wins
 
 A target named in the user's arguments beats the whole ladder, and no menu is printed.
-`orchestrate herdr`, `implement delegate`, `iterate workflow`. Naming a target that is not
+`implement delegate`, `review dual herdr`. Naming a target that is not
 available — `herdr` outside herdr — is an error to state and stop on, never a silent
 fallback to something else.
 
@@ -134,4 +134,4 @@ tabbing over to watch a delegate that was only ever an in-session agent.
 - The resolver, the vendors, and the auth gate → [SKILL.md](SKILL.md)
 - The herdr live-agent transport → `herdr-agent` in this directory
 - The Terminal.app transport → [TRANSPORT-TERMINAL.md](TRANSPORT-TERMINAL.md)
-- Swarms, which layer a `workflow` target and many parallel worktrees on top of this → [../orchestrate/SKILL.md](../orchestrate/SKILL.md)
+- Implementation passes, which do not use this ladder at all — they are `Workflow` calls made by the main session, one worktree each → [../implement/SKILL.md](../implement/SKILL.md)

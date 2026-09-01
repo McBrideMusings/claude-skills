@@ -9,7 +9,7 @@ The goal state is **AFK**: every issue in scope passes `implement`'s Phase 0.5 g
 
 **Worth doing on its own.** An issue that cannot state its own plan or its own definition of done is a bad issue whether or not an agent ever touches it — you re-derive the missing decision every time you read it. Run `iron-out` because the backlog is vague, not because something is about to consume it.
 
-It happens to also be what the autonomous harnesses require, and they say so themselves — `/orchestrate` stops its whole run on a gate failure and hands the scope here. That dependency points one way: they know about this skill; this skill does not need to know about them.
+It happens to also be what the autonomous harnesses require, and they say so themselves — a swarmed `/implement` stops its whole run on a gate failure and hands the scope here. That dependency points one way: they know about this skill; this skill does not need to know about them.
 
 ## Two kinds of item, one loop
 
@@ -36,7 +36,7 @@ Every issue has a title. In everything the user reads — the queue, an intervie
 
 ## Scope
 
-Selector forms are shared with `iterate` — one table, in [../iterate/SELECTORS.md](../iterate/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `iron-out` = every open issue in the current repo. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
+Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `iron-out` = every open issue in the current repo. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
 
 **Dependencies are real edges, never prose.** On beads: `bd dep add <id> <blocker-id> -t blocks`, read back with `bd dep tree`, `bd blocked` and `bd ready`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is a **finding** — an edge someone never wired — and Phase 0 offers to convert it. An item is unblocked when every blocker is closed.
 
@@ -304,7 +304,7 @@ Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Th
 Scope is clear. Reply with a number, or tell me something else.
 
 1. Cut the tickets — invoke to-tickets on the decisions made. (Answered questions, nothing implementable yet.)
-2. Fan it out — invoke orchestrate on this scope. (Work items, all AFK-ready.)
+2. Fan it out — invoke `implement swarm` on this scope. (Work items, all AFK-ready.)
 3. March it sequentially — invoke iterate on this scope.
 4. Stop here.
 ```

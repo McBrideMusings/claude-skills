@@ -1,6 +1,6 @@
 ---
 name: relay
-description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `iterate`. Requires HERDR_ENV=1. Handing work SIDEWAYS is `dispatch`, not this."
+description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`. Requires HERDR_ENV=1. Handing work SIDEWAYS is `dispatch`, not this."
 ---
 
 # Relay
@@ -27,7 +27,7 @@ instead of reimplementing it, then relay this pane to the orchestration/watch ro
 ## Never fire blind
 
 Relay always proposes and waits, with one exception: the `auto` token (passed by
-`iterate`), which takes every default without asking.
+a queued `implement`), which takes every default without asking.
 
 The proposal is **one message, plain markdown, one free-text reply**. Never
 `AskUserQuestion`, never a chip-picker — the answer is free-form (numbers, ranges,
@@ -164,9 +164,9 @@ never skip), writes the marker, ends the turn.
 
 Two callers, and they differ in who writes the prompt:
 
-- **`iterate` and `orchestrate` hand you the brief.** They know what the next chunk or
-  round is — the remaining queue, the iteration count, the frontier — and none of it is
-  rediscoverable from the tracker. Write their brief through to the marker; do **not**
+- **A multi-item `implement` run hands you the brief.** It knows what the rest of the run
+  is — the remaining queue, the item count, the frontier — and none of it is
+  rediscoverable from the tracker. Write its brief through to the marker; do **not**
   run Step 1's ranking and do not substitute your own pick.
 - **Everyone else** — run Step 1, take the top-ranked candidate, write it up per Step 4.
 

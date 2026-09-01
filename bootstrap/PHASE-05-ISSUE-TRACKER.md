@@ -1,7 +1,7 @@
 # Phase 05 — Issue Tracker
 
 Resolve which issue backend this repo uses, offer to set up beads if it has none, and record the
-answer so every downstream skill (`to-tickets`, `triage`, `implement`, `iterate`, `orchestrate`,
+answer so every downstream skill (`to-tickets`, `triage`, `implement`,
 `iron-out`, `followups`, `wrap-up`) picks it up without re-deriving it.
 
 ## Step 1 — Detect
@@ -129,7 +129,7 @@ a repo pins a choice that detection would otherwise get wrong.
 
 ## Step 4 — Concurrency note
 
-If the repo is one the user runs `/orchestrate` against, say once: beads' default embedded engine
+If the repo is one the user runs `/implement swarm` against, say once: beads' default embedded engine
 serves **one writer at a time**, and every worktree shares the main repository's `.beads`. Either
 keep tracker writes on the orchestrator or re-init with `bd init --server`. Don't change it for
 them — just name it.

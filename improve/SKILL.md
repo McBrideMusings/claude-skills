@@ -43,7 +43,7 @@ Mapping, rules, and why `review` has no equivalent: [LATERAL-LENS.md](LATERAL-LE
 
 ## RULE 3 — improve writes tickets, never code
 
-**No route through this skill edits a source file, and no route implements a finding.** The deliverable of an improve pass is a set of tickets on the repo's issue backend, each one ready for `implement` / `iterate` / `orchestrate` to pick up later. That holds for a full survey, for a two-aspect survey, and for a single-aspect interactive run.
+**No route through this skill edits a source file, and no route implements a finding.** The deliverable of an improve pass is a set of tickets on the repo's issue backend, each one ready for `implement` to pick up later. That holds for a full survey, for a two-aspect survey, and for a single-aspect interactive run.
 
 If the user asks to build a finding during the pass, the answer is: file it, then run `implement <id>`. Filing first is what makes the work resumable by a different session on a different day, and what stops a survey from collapsing into one unplanned refactor while the other ten findings evaporate.
 

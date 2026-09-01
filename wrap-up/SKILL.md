@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Also implement's final phase."
+description: "Close out the current session: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Also how /implement lands each item it runs."
 ---
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
@@ -26,7 +26,7 @@ Wrap-up runs in one of two postures, and getting this wrong either stalls an una
 > **Assume INTERACTIVE (standalone) unless you can point to an explicit `continuous` token in this invocation's arguments.** Autonomy is opt-in and must be *proven*, never inferred — if the token isn't unambiguously present, you are in an interactive pass, and every step that could act on the user's behalf **halts for their disposition**. Ambiguity resolves to "ask the human," always.
 
 - **Interactive pass** (default; a manual `/wrap-up`, or a **standalone** `/implement`): the Phase 6 follow-up step **halts** so the user reviews what the session uncovered and chooses fix-now / file / skip per item.
-- **Continuous pass** (only when the `continuous` token is present, injected by `/iterate`): the follow-up step files **autonomously** with no prompt, so the loop never stalls.
+- **Continuous pass** (only when the `continuous` token is present, injected by `/implement` when it is landing one item out of a queue or a swarm): the follow-up step files **autonomously** with no prompt, so the run never stalls.
 
 This gate governs Phase 6 Step A (follow-ups) below. Resolve the posture once, here.
 
@@ -58,7 +58,7 @@ Phases 1–4 are near-pure fan-out with compact returns, so they run staged — 
 
 **Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see.
 
-**When `implement` invokes wrap-up it does not call this script.** Workflow nesting is one level deep, and an implement pass launched by `/orchestrate` or `/iterate` is already a child. implement's own Wrap stage runs these phases as an agent pointed at this file, which is why the phases below are the single source of truth for both paths.
+**An `implement` pass never reaches this file.** Its own Wrap stage is a plain commit — it does not land the branch and does not write to the tracker, so there is no wrap-up in it to call. `/implement` invokes this skill afterwards, from the session that owns landing, once per item it is about to land.
 
 Two rules that apply to every phase, on either path:
 
@@ -256,9 +256,9 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 
 **PR body format.** Short. A 2-4 sentence summary, then a flat `## Changes` bullet list, one line per bullet — never a paragraph packed into a bullet, never a sub-clause explaining a bullet's own rationale at length. No `## Test plan` checklist: which commands passed is for us, not the reviewer, and CI already shows it. A genuine manual reviewer step (open this screen, confirm X) gets its own short `## How to verify` line — a step for *them* to do, not a log of what you already did. Deep investigation detail (a forensic timeline, "why this took 3 days to find") belongs in a linked doc, not the body — link it, don't inline it. Every paragraph and every bullet is one continuous line: GitHub renders a mid-paragraph newline as a real line break, not a soft wrap, so terminal-style wrapping shows up as choppy broken lines. Reference shape: `Forevr-Games/social-poker#1912`'s body after its rewrite.
 - **Interactive pass** → **offer** the PR (only on an explicit yes in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines). If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
-- **Continuous pass authorized by `/iterate`** → **create the PR autonomously.** Starting an `/iterate` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the loop's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
+- **Continuous pass authorized by a queued or swarmed `/implement`** → **create the PR autonomously.** Starting `/implement <selector>` or `/implement swarm <selector>` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the run's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
 
-  > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy `/iterate`'s "PR on collaborative repos" contract. A raw `/loop /implement continuous` that did **not** come through `/iterate` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the loop authorized publishing, treat the pass as interactive and offer rather than create.
+  > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy the multi-item run's "PR on collaborative repos" contract. A single `/implement <issue>` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the run authorized publishing, treat the pass as interactive and offer rather than create.
 
 ### Step D — Relay into the next body of work
 
@@ -269,8 +269,8 @@ precondition, not a nicety.
 - **Interactive pass** — the user already answered this in Step A's single ask. `yes`
   (or `go`) → invoke `relay` and hand it the chosen next work; it writes the marker and
   you end the turn. `no relay`, or relay was unavailable → stop here as normal.
-- **Continuous pass** — invoke `relay auto`. `/iterate` relays between passes rather
-  than looping inside one context, so this is how the next pass gets a clean window.
+- **Continuous pass** — invoke `relay auto`. A queued `/implement` relays between items
+  rather than looping inside one context, so this is how the next item gets a clean window.
 - **Outside herdr** (`HERDR_ENV` unset) — skip silently. There is no pane to clear.
 
 Do not clear the pane, send keys, or call `herdr` yourself. `relay` writes a marker;

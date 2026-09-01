@@ -5,7 +5,7 @@ description: "The path from conversation to filed work: synthesize a spec, get i
 
 # To Tickets
 
-Break a plan into independently-grabbable tickets using **vertical slices** (tracer bullets). Tickets become inputs to `implement` / `iterate`.
+Break a plan into independently-grabbable tickets using **vertical slices** (tracer bullets). Tickets become inputs to `implement`.
 
 **The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that.
 
@@ -195,7 +195,7 @@ Per slice:
   - Capture the printed ID; later slices need it for their blocker edges.
   - Milestone group → `--parent <epic-id>` from Phase 06.
   - **A UI slice's Visual acceptance block goes in `--design-file <path>`, not the body.** `bd show` renders design separately, so the agent gets the reference frame, the state list, and the copy strings as their own section instead of buried in prose. Write the block to a scratch file and pass the path. Non-UI slices omit the flag.
-  - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `triage` and `iterate` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
+  - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `triage` and `implement` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
   - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
 - **`github`:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`

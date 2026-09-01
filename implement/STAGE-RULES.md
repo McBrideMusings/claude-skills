@@ -1,6 +1,6 @@
 # Rules for one stage of an implement pass
 
-An `/implement` pass runs staged — `~/.claude/workflows/implement.js` spawns one agent per stage, and you are one of them. **This file and the prompt you were handed are the whole of your instructions.** Do not go looking for `SKILL.md`: it describes a pass end to end, addressed to a reader who owns all of it, and you own one stage of it.
+An `/implement` pass runs staged — `~/.claude/skills/implement/implement.js` spawns one agent per stage, and you are one of them. **This file and the prompt you were handed are the whole of your instructions.** Do not go looking for `SKILL.md`: it describes a pass end to end, addressed to a reader who owns all of it, and you own one stage of it.
 
 Your prompt names the work and the schema names the answer. Returning that object ends your stage; the script decides what happens next.
 
@@ -17,7 +17,7 @@ Your prompt names the work and the schema names the answer. Returning that objec
 
 ## ⛔ You have no user to ask
 
-Nobody is reading your output while you run. You are a stage agent inside a workflow, and the session that started the pass is blocked on it — often it is itself a `/orchestrate` or `/iterate` run with no terminal attached at all.
+Nobody is reading your output while you run. You are a stage agent inside a workflow, and the session that started the pass is blocked on it — often while several other passes run alongside yours.
 
 - **Never call `AskUserQuestion`.** Not to pick between approaches, not to confirm a destructive step, not to resolve an ambiguity in your prompt.
 - **Never end your stage on a question** and wait for an answer. There is no answer coming; the pass hangs until a human notices it stopped.
