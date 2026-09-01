@@ -21,12 +21,28 @@ A pass takes no `mode` argument and has no idea how many siblings it has. Runnin
 
 ## ⛔ The pass is a workflow, and it is addressed by path
 
+Every pass shares the same `scriptPath`, and `meta` must stay a pure literal
+— no interpolation, no `args` — so every row in the workflow list would
+otherwise render identically and two concurrent passes would be
+indistinguishable. Before calling `Workflow`, generate a per-pass copy whose
+`meta` literal already names the item, and pass *that* path:
+
+```sh
+generated=$(bash /Users/pierce/.claude/skills/implement/name-pass.sh "$issue" "$title")
+```
+
 ```js
 Workflow({
-  scriptPath: '/Users/pierce/.claude/skills/implement/implement.js',
+  scriptPath: generated,
   args: { issue, worktree, repo, branch, model },
 })
 ```
+
+The generated copy is disposable — it lands under
+`$(~/.claude/tools/repo-slug --path <repo>)`, which macOS reaps after three
+days idle. `implement.js` is the only file edited by hand; never edit a
+generated `implement-<id>.js` directly, and never point `scriptPath` at
+`implement.js` itself.
 
 **Never `Workflow({name: 'implement'})` and never `workflow('implement', …)`.** Name resolution reads the *project's* `.claude/workflows/`, not `~/.claude/`, so it fails in exactly the place every pass runs — a worktree — with `Workflow "implement" not found. Available: deep-research, code-review`. The absolute path has no registry between it and the file.
 

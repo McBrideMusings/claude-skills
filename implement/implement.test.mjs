@@ -10,12 +10,25 @@
 // only thing standing between a broken change and the caller merging it.
 //
 // Run:  node skills/implement/implement.test.mjs
-import { readFileSync } from 'node:fs'
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const SRC = readFileSync(new URL('./implement.js', import.meta.url), 'utf8').replace(
   /^export const meta/m,
   'const meta',
 )
+
+// Evaluates a script's `meta` literal in isolation, with no globals injected
+// — this is what proves it is still a pure literal (no `args`, no
+// interpolation), the same property name-pass.sh must preserve.
+const metaOf = (src) => {
+  const body = src.replace(/^export const meta/m, 'const meta')
+  const closeIdx = body.indexOf('\n}')
+  const literal = body.slice(0, closeIdx + 2)
+  return new Function(`${literal}\nreturn meta`)()
+}
 
 // Stub returns keyed by phase, so a case overrides only the phase it cares
 // about (e.g. Verify -> SKIP) and inherits a happy path for the rest.
@@ -135,6 +148,42 @@ const failedVerify = await run(BASE, { Verify: { verdict: 'FAIL', failures: ['ro
 check('a FAIL halts the pass', failedVerify.result.ok, false)
 check('  ...and names the stage it halted on', failedVerify.result.halted_on, 'verify')
 check('  ...and never reaches Wrap', failedVerify.calls.includes('Wrap'), false)
+
+// 8. name-pass.sh generates a per-pass copy naming the item, and the result
+//    is still a pure `meta` literal — the whole reason this generation
+//    exists rather than passing a name at call time.
+const scratchDir = mkdtempSync(join(tmpdir(), 'implement-name-pass-'))
+try {
+  const namePassSh = new URL('./name-pass.sh', import.meta.url).pathname
+
+  const genPath = execFileSync(
+    'bash',
+    [namePassSh, 'term-88', 'Make the row name its own pass', scratchDir],
+    { encoding: 'utf8' },
+  ).trim()
+
+  check('prints an absolute path ending in the item id', genPath.startsWith('/') && genPath.endsWith('implement-term-88.js'), true)
+
+  const genSrc = readFileSync(genPath, 'utf8')
+  const genMeta = metaOf(genSrc)
+  check('meta.name is rewritten to the item id', genMeta.name, 'implement term-88')
+  check('meta.description is the item title', genMeta.description, 'Make the row name its own pass')
+  check('meta.phases is unchanged from the template', JSON.stringify(genMeta.phases), JSON.stringify(metaOf(SRC).phases))
+
+  // A title with a single quote and an embedded newline must still produce
+  // a file whose meta parses: the newline collapses to a space and the
+  // quote is escaped for the single-quoted string literal.
+  const trickyTitle = "It's a trap\nwith a line break"
+  const trickyPath = execFileSync(
+    'bash',
+    [namePassSh, 'term-89', trickyTitle, scratchDir],
+    { encoding: 'utf8' },
+  ).trim()
+  const trickyMeta = metaOf(readFileSync(trickyPath, 'utf8'))
+  check('a quote+newline title still parses', trickyMeta.description, "It's a trap with a line break")
+} finally {
+  rmSync(scratchDir, { recursive: true, force: true })
+}
 
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)
