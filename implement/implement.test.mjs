@@ -322,5 +322,42 @@ const greenP = promptRun.prompts.find((x) => x.phase === 'Green').prompt
 check('the Green prompt forbids advancing the branch itself', greenP.includes('do not advance the branch yourself'), true)
 check('  ...and names a later stage as the only one that does', /A later stage is the only one that does that/.test(greenP), true)
 
+// 19. Round 1 deleted the commit sentinel and moved the whole "did a stage
+//     commit early" invariant onto Verify's `tree_clean` check — but nothing
+//     exercised that check, so a reversal of the halt left every test above
+//     still green. The case that matters is `tree_clean: true` paired with a
+//     PASS verdict: a stage that commits early and then verifies its own work
+//     successfully is exactly the failure this exists to catch, and a case
+//     that only pairs `tree_clean: true` with FAIL/BLOCKED would pass even
+//     with the halt removed, since the FAIL/BLOCKED branch below it would
+//     catch it on its own. BASE (no worktree) is used so `salvage()` returns
+//     before making a second 'Verify' call and no verdict_path is required.
+const treeCleanPass = await run(BASE, { Verify: { ...HAPPY.Verify, tree_clean: true } })
+check('tree_clean:true halts even with a PASS verdict', treeCleanPass.result.ok, false)
+check('  ...naming the verify stage', treeCleanPass.result.halted_on, 'verify')
+check('  ...with a detail naming an earlier commit', /an earlier stage committed/.test(treeCleanPass.result.detail), true)
+check('  ...never the generic FAIL/BLOCKED shape', /^(FAIL|BLOCKED):/.test(treeCleanPass.result.detail), false)
+check('  ...and never reaches Wrap', treeCleanPass.calls.includes('Wrap'), false)
+
+// The tree_clean halt runs BEFORE the FAIL/BLOCKED branch, so a BLOCKED
+// verdict carrying tree_clean:true — the exact shape the Verify prompt asks
+// the stage to return — must still report the tree_clean detail, not the
+// generic `BLOCKED: ` shape the branch below it would otherwise produce.
+// This pins the ordering: reversing the halt makes this fall through to that
+// branch and the detail starts with `BLOCKED: `.
+const treeCleanBlocked = await run(BASE, {
+  Verify: { verdict: 'BLOCKED', tree_clean: true, evidence: 'status --short was empty' },
+})
+check('tree_clean:true wins ordering over the BLOCKED branch', treeCleanBlocked.result.halted_on, 'verify')
+check('  ...reporting the tree_clean detail, not "BLOCKED: "', treeCleanBlocked.result.detail.startsWith('BLOCKED:'), false)
+
+// The normal path: tree_clean:false with a PASS verdict reaches Wrap and
+// lands with no blockers, exactly as it does today — the guard that the halt
+// above is not over-triggering on every pass.
+const treeDirty = await run({ ...BASE, worktree: '/tmp/wt' }, { Verify: { ...WT_VERIFY, tree_clean: false } })
+check('tree_clean:false reaches Wrap and reports ok', treeDirty.result.ok, true)
+check('  ...with no blockers', treeDirty.result.blockers, [])
+check('  ...and Wrap is called', treeDirty.calls.includes('Wrap'), true)
+
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)
