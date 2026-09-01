@@ -161,8 +161,10 @@ grep -q '^<html[^>]*data-at-window="bar,lights"' "$WORK/deskdef.html" \
 [ $? -ne 0 ] && say ok "--window none cannot be combined" || say f "--window none,bar built"
 
 # --backdrop: a fake desktop behind a macOS frame, for judging a translucent design.
+# No --window here: the tool rejects the pair, because with a backdrop the frame is a
+# screen rather than a window and each window on it takes its chrome from data-at-win.
 "$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device desktop --window none --backdrop desktop --out "$WORK/desk.html" >/dev/null 2>&1
+  --device desktop --backdrop desktop --out "$WORK/desk.html" >/dev/null 2>&1
 grep -q '^<html[^>]*data-at-backdrop="desktop"' "$WORK/desk.html" \
   && say ok "--backdrop reaches the <html> element" \
   || say f "--backdrop did not reach :root"

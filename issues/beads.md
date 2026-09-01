@@ -129,6 +129,25 @@ edge(A blocks B) is valid only if B *requires* A's output.
 
 A temporal edge is reported as a structural error, so a wrong edge costs more than a missing one.
 
+### ⛔ `--notes`, `--description` and `--design` REPLACE. They never append.
+
+`bd update <id> --notes "…"` overwrites whatever the field held. There is no confirmation and
+no diff — the old text is gone, and the only sign is that the issue is shorter than you left
+it. Observed 2026-09-01: a reproduction note written earlier in the same session was destroyed
+by a one-line `--notes` probe, and noticed only because the issue happened to be re-read.
+
+Nothing warns you, so the discipline has to be yours:
+
+- **Read the field before writing it** — `bd show <id>` — and re-send the old text plus the new
+  text when you mean to add rather than supersede.
+- **Prefer `bd comment` for anything additive.** A comment is append-only by construction and
+  keeps the chronology; `--notes` is for content that genuinely replaces what was there.
+- Treat a `--notes` on an issue you did not just author as a rewrite of someone else's writing,
+  because that is what it is.
+
+The same applies to `--description` and `--design`. `--acceptance` too, which matters more than
+it looks: an acceptance criterion is often the only record of what "done" meant.
+
 ### ⛔ `bd ready` trusts a flag that can go stale
 
 `is_blocked` is denormalized and maintained by local writes plus a post-pull recompute scoped to

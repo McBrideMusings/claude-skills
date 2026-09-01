@@ -33,7 +33,7 @@ Pass it explicitly on a standalone pass that runs in a worktree. That case is th
 
 Correct in one case: a pass already executing inside a subagent that has no `Workflow` tool. Follow the phases below in order, in context, and keep the two rules above. **You are then the only reader for whom the next paragraph is addressed** — the staged harness enforces it structurally, because no stage's prompt mentions the stage after it.
 
-**⛔ There is no stopping point between Phase 1, Phase 1.5 and Phase 2.** What a reader checks for this — a human, `/orchestrate`, a follow-up session — is whether `verify/<item>.json` exists for this item: if it does not exist when the turn ends, Phase 1.5 was skipped.
+**⛔ There is no stopping point between Phase 1, Phase 1.5 and Phase 2.** What a reader checks for this — a human, `/orchestrate`, a follow-up session — is whether `$(~/.claude/tools/repo-slug --path <checkout>)/verify/<item>.json` exists for this item: if it does not exist when the turn ends, Phase 1.5 was skipped.
 
 The single most common inline failure is stopping at green: code written, tests passing, and the run ends on a "here's what I did / next: commit and push" recap **without ever invoking wrap-up**. That is a bug, not a completion — green tests are not the finish line; a *verified*, wrapped-up pass is. The moment implementation lands green with no halt fired, invoke the `verify` skill (Phase 1.5), then `wrap-up`. Specifically:
 
