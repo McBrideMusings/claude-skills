@@ -129,6 +129,23 @@ because they are detection-time decisions, not usage-time ones:
   they never need to travel. **No hook can enforce this split** — which tier an issue belongs to
   is intent, and a guard that blocked `bd create` would delete the private tier. The push guard
   works because "never push the database" takes no input; this rule does.
+
+- **⛔ On a bead with an `external_ref`, GitHub owns title and description — a local edit to
+  either is destroyed by the next pull, silently.** `bd update <id> --description "…"` followed
+  by `bd github sync --pull-only` reported `0 created, 1 updated` and left GitHub's body in
+  place; the local text was gone with no warning and no conflict. So a mirrored bead is a
+  read-model for those fields: change them with `gh issue edit` and pull. Priority,
+  dependencies, and any bead with **no** `external_ref` are yours to edit freely — a pull has
+  no path that touches them. Status is safe from either side; closing on GitHub propagates
+  down, setting `status: closed` and `closed_at`.
+
+- **A bare `--pull-only` can silently miss an upstream body edit.** After `gh issue edit`, four
+  consecutive bare `bd github sync --pull-only` runs — one of them with `--prefer-github` —
+  each exited 0 and left the bead stale. Only the scoped form,
+  `bd github sync --pull-only --issues <bead-id>`, refetched it. A close on the same issue came
+  down on the first bare try. **Exit 0 from a pull is not evidence the pull saw anything**, so
+  when a specific upstream edit needs to land, scope it with `--issues`. Why the unscoped path
+  misses it is not established — do not repeat a cause for this you cannot cite.
 - **Say the limit out loud once.** `.beads/` still sits in the working directory. `git status`
   cannot see it; anyone with filesystem access to that checkout can.
 
