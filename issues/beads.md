@@ -170,6 +170,44 @@ are in [`_detect.md`](_detect.md) under Mirror mode.
 
 `bd` also ships `jira`, `linear`, `gitlab` and `ado` command families on the same shape.
 
+## Initialising a repo — always `--skip-agents`
+
+```bash
+bd init --skip-agents
+```
+
+**`bd init` writes an `AGENTS.md` into the repo by default. Never take it.** What it generates is
+a worse copy of this file — the Dolt architecture note, a five-verb quick reference, a
+session-close protocol — restated inside the repo, where it goes stale on the next `bd` release
+and where nothing updates it. The repo gets the issues; the instructions live here.
+
+Nothing is lost by refusing it. The SessionStart hook runs `bd prime`, which injects the current
+workflow context every session, generated fresh instead of committed.
+
+The same reasoning retires the editor recipes. `bd setup <recipe>` writes a marker-delimited
+block *plus a tracked toolchain* — `bd setup codex` adds `.agents/skills/beads/`,
+`.codex/hooks.json` and `.codex/config.toml`. Install a recipe only for an editor actually in
+use. `bd setup claude` earns its place because it installs the SessionStart hook; the rest do not.
+
+**`bd` owns marker-delimited blocks, not whole files.** `<!-- BEGIN BEADS INTEGRATION -->` …
+`<!-- END BEADS INTEGRATION -->` is its region, and hand-written content outside it survives
+regeneration. Two consequences: an edit inside those markers is lost on the next `bd setup`, and
+**never symlink `AGENTS.md` to `CLAUDE.md`** — `bd` would write through the link and start
+editing `CLAUDE.md`.
+
+### Retrofitting a repo that already carries one
+
+```bash
+bd setup <recipe> --check      # what a recipe installed, before touching anything
+bd setup codex --remove        # or whichever recipe wrote the block
+git rm -r --cached .agents .codex
+git rm AGENTS.md
+```
+
+An `AGENTS.md` in a repo predating this rule is usually 100% generated. Diff it against the
+markers before deleting: everything outside them is the only thing that could be yours, and it is
+often a duplicate of a section already in `CLAUDE.md`.
+
 ## Stealth: beads in a repo that must not carry it
 
 For a work, client, or someone else's repo — beads locally, nothing committed, no collaborator
@@ -182,7 +220,8 @@ bd setup claude --stealth
 
 - `--stealth` configures git so beads files are never committed (`.git/info/exclude`, which is
   never pushed). No `.gitignore` diff appears.
-- `--skip-agents` writes no `AGENTS.md` into the repo; `--skip-hooks` installs no git hooks.
+- `--skip-agents` is not stealth-specific — it is the default everywhere, for the reasons above.
+  `--skip-hooks` installs no git hooks, and that part *is* stealth-specific.
 - `--setup-exclude` is the exclude-file half on its own, for forks.
 - Auto-export is **off by default**, so no `.beads/issues.jsonl` is written. Leave it off —
   `bd config set export.auto true` would put a file in the tree.
