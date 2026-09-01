@@ -285,12 +285,14 @@ A pass makes exactly one commit, so on an honest run those match. `cat-file -e` 
 ```
 Implement complete: <one-sentence summary>. Halt: <reason | none>.
 
-Backlog: X open issues (closed Y). Roadmap: Z of W items complete (P%).
+Backlog: X open issues (closed Y), Z ready.
 ```
 
 In sequential or swarm arity also name: every item and its outcome, the `slug → model` split, every worktree still standing and why, and the verdict files now in the primary checkout. A run that lands six items should leave six verdicts behind; anything less means evidence went out with a worktree.
 
-Computing the snapshot: on beads, `bd count --status open` (plus `bd ready --json | jq length` for the unblocked figure); on GitHub, `gh issue list --state open --json number --limit 1000` and count. For the roadmap, check `ROADMAP.md`, `docs/ROADMAP.md`, `docs/roadmap.md` in order and count `[x]` against `[ ]`. If the backend errors, omit the line rather than halting.
+Computing the snapshot: on beads, `bd count --status open` plus `bd ready --json | jq length` for the unblocked figure; on GitHub, `gh issue list --state open --json number --limit 1000` and count. If the backend errors, omit the line rather than halting.
+
+**The tracker is the only source for this line.** There is no roadmap file to consult — the dependency graph is the roadmap, and `iron-out` is what reads it. Never probe for `ROADMAP.md` or report its absence; a repo that keeps everything in beads is the normal case, not a gap worth a line of output.
 
 ---
 

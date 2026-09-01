@@ -14,7 +14,7 @@ Commit everything the docs skill touched together so the history is one coherent
 
 One-sentence message describing what was done. Examples:
 
-- *"Bootstrap VitePress docs site at /docs with universal layout (PRD, roadmap, file-map) and admin wiring."*
+- *"Bootstrap VitePress docs site at /docs with universal layout (PRD, file-map) and admin wiring."*
 - *"Audit /docs and apply mechanical fixes (config.mts rename, .gitignore entries, missing CLAUDE.md section)."*
 - *"Migrate plain-markdown /docs to VitePress, categorizing loose docs into architecture/guide/development."*
 

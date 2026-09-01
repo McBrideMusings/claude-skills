@@ -132,12 +132,12 @@ Resolve the backend once — invoke `issues` and run its detection step before a
 - Do NOT post a comment on issues unless the user explicitly asks ("comment on #123 that this is done").
 - In the session summary, list matches as **"Issues resolved by this session (not closed — owned by `<owner>`): #12, #34"** so the user can hand them off.
 
-### Roadmap / TODO documents
-- Check for roadmap or TODO files: `ROADMAP.md`, `TODO.md`, `docs/roadmap.md`, or similar
-- If found: mark completed items, update status, add notes on what was accomplished
+### Checklist documents
+- Do not probe for a roadmap file. The tracker holds forward-looking work; closing the issue above is what records the progress, and a second copy in markdown only creates a way for the two to disagree.
+- A `TODO.md` that already exists is a legacy planning doc: its finished items are covered by the issues you just closed, so propose migrating the rest to the tracker rather than ticking boxes in it.
 
 ### CLAUDE.md task tracking
-- If CLAUDE.md contains a roadmap, milestone list, or task tracking section: update it to reflect completed work
+- If CLAUDE.md contains a milestone list or task tracking section: update it to reflect completed work
 
 ### In-repo issue tracking
 - Check for `.github/`, `docs/issues/`, or any other in-repo tracking

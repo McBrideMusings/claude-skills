@@ -4,7 +4,7 @@
 
 ## Steps
 
-1. **Run Phase 02 install + universal file creation** — but **don't overwrite** existing content in `PRD.md` / `roadmap.md` / `file-map.md`. Only create what's missing.
+1. **Run Phase 02 install + universal file creation** — but **don't overwrite** existing content in `PRD.md` / `file-map.md`. Only create what's missing.
 2. **Categorize each loose `docs/*.md`** into the standard buckets:
    - Architectural deep-dive → `docs/architecture/<name>.md`
    - User guide → `docs/guide/<name>.md`

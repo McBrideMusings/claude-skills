@@ -17,7 +17,6 @@ docs/
 ├── .vitepress/config.mts   # note .mts — ESM-only
 ├── index.md                # home with `layout: home`
 ├── PRD.md                  # the "what"
-├── roadmap.md              # Now / Next / Later / Deferred
 └── file-map.md             # repo navigation
 ```
 

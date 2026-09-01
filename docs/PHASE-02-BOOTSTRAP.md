@@ -8,7 +8,7 @@
 2. **Apply opt-in heuristics** (table below). Tell the user which matched and why.
 3. **Create universal files.** See `references/vitepress-config.md` for the config starting point.
    - `docs/index.md` — `layout: home` frontmatter
-   - `docs/PRD.md`, `docs/roadmap.md`, `docs/file-map.md` — stubs with H1 + TODO
+   - `docs/PRD.md`, `docs/file-map.md` — stubs with H1 + TODO
 4. **Create opt-in scaffolds** for matched heuristics (H1 + "TODO: fill in").
 5. **Wire `package.json`:** `"docs:dev": "vitepress dev docs --port 5193"` (or main app port + 20).
 
@@ -32,28 +32,7 @@
 | `guide/` | User-facing surface (web app, CLI tool — not a library) |
 | `development/` | Git repo with >1 contributor, OR CI configured, OR open source (LICENSE + non-private remote) |
 
-**Roadmap shape:** single file with four sections (Now / Next / Later / Deferred). Every item is a GFM checkbox (`- [ ] item` for incomplete, `- [x] item` for shipped). This is mandatory — not prose bullets, not numbered lists, not bare dashes. Checkboxes let agents and humans scan completion state at a glance.
-
-Example stub:
-
-```md
-# Roadmap
-
-## Now
-- [ ] First active item
-- [ ] Second active item
-
-## Next
-- [ ] Upcoming item
-
-## Later
-- [ ] Future idea
-
-## Deferred
-- [ ] On hold — reason
-```
-
-Don't create `docs/roadmap/` folder unless 3+ active long-running tracks; collapse on audit.
+**No roadmap file, and none is created here.** Forward-looking work lives in the repo's issue tracker, where a dependency graph orders it; `iron-out` reads that graph and prints the roadmap on demand. A markdown checklist cannot express a blocking edge, so it drifts from the tracker the day after it is written and there is no way to tell which one is wrong. If a repo has no tracker, the fix is `bd init` — never a roadmap file as a consolation prize. Same reasoning as [`bootstrap`'s PHASE-06](../bootstrap/PHASE-06-DOCS-ARTIFACTS.md).
 
 ## `CLAUDE.md` Documentation section template
 
@@ -69,12 +48,11 @@ Keep these in sync as you work:
 | File | Update when |
 |---|---|
 | `docs/PRD.md` | Product behavior, scope, or surface area changes |
-| `docs/roadmap.md` | Direction shifts, an initiative ships, or a decision is deferred |
 | `docs/file-map.md` | Major files/folders are added, removed, renamed, or moved |
 | `docs/api.md` | (if exists) external API surface changes |
 | `docs/architecture/*` | (if exists) subsystem behavior changes |
 
-Don't write new top-level planning / phase / feature docs in `docs/` — file an issue on the repo's tracker instead (invoke `issues`). `roadmap.md` is the only forward-looking doc.
+Don't write new top-level planning / phase / feature docs in `docs/` — file an issue on the repo's tracker instead (invoke `issues`). Nothing in `docs/` is forward-looking; the tracker owns everything not yet built.
 ```
 
 ## `[commands.docs]` shape for admin.toml

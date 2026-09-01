@@ -27,7 +27,7 @@ User may pass a GitHub URL:
 | `github.com/owner/repo/issues` or `github.com/owner/repo` | All open issues |
 | `github.com/orgs/owner/projects/N` | Project board items |
 
-**No URL** → default to the current repo, whichever backend owns its issues (resolve by invoking `issues`; on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per `issues`'s detection step 6. If detection fails for another reason, fall back to docs-only signals (`docs/PRD.md`, `docs/roadmap.md`). If neither repo nor docs exist, stop.
+**No URL** → default to the current repo, whichever backend owns its issues (resolve by invoking `issues`; on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per `issues`'s detection step 6. If detection fails for another reason, fall back to the one docs-only signal there is (`docs/PRD.md`). If neither repo nor docs exist, stop.
 
 **The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`triage label:auth`, `triage p0`), resolved against the `bd` flags in Phase 02.
 
@@ -57,7 +57,7 @@ Filters map onto the same flags: `--label <name>` (repeatable, AND), `--label-an
 ```bash
 # All open / label / search
 gh issue list --repo owner/repo --state open [--label X | --search "q" | --milestone N] \
-  --json number,title,labels,body,createdAt,comments,assignees --limit 100
+  --json number,title,labels,body,createdAt,comments,assignees,milestone --limit 100
 
 # Project board
 gh project item-list <N> --owner <owner> --format json --limit 100
@@ -69,15 +69,15 @@ On auth/repo-not-found errors (or `bd` missing with a `.beads/` present): report
 
 **Exclude questions.** Drop any issue carrying the `human` label (`bd human list` enumerates them) from the candidate set — a question is a decision to be made, owned by `iron-out`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
 
-**Docs** (if in local repo): read `docs/PRD.md` (what the project is) and `docs/roadmap.md` (Now / Next / Later / Deferred). If neither default path exists, glob `**/PRD.md` and `**/roadmap.md` once before giving up. Use whichever exist; if both, use both as project-phase inputs.
+**Docs** (if in local repo): read `docs/PRD.md` — what the project is. If that path does not exist, glob `**/PRD.md` once before giving up. There is no roadmap file to read: the tracker's dependency graph is the roadmap, and the issue list above already carries it.
 
 ### Phase 03 — Off-load Analysis to a Haiku Sub-Agent
 
-Phases 04, 05, and 06 (project-phase assessment, grouping, scoring/ranking) are all mechanical — pure analysis on data the parent already has. Hand them to a Haiku sub-agent so the issue bodies, comments, and roadmap text stay out of parent context.
+Phases 04, 05, and 06 (project-phase assessment, grouping, scoring/ranking) are all mechanical — pure analysis on data the parent already has. Hand them to a Haiku sub-agent so the issue bodies and comments stay out of parent context.
 
 Brief (treat the rules in Phases 04–06 below as the sub-agent's brief, not the parent's own work):
 
-> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees`) or beads' (`id, title, status, priority, issue_type, created_at, dependency_count, comment_count`; labels and body come from `bd show`). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; (b) the contents of `docs/PRD.md` and `docs/roadmap.md` if present.
+> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees, milestone`) or beads' (`id, title, status, priority, issue_type, created_at, labels, description, parent, dependency_count, dependent_count, comment_count` — `bd list --json` returns all of these directly). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; `parent` is the epic and `dependent_count` is how many issues this one blocks; (b) the contents of `docs/PRD.md` if present.
 >
 > Do three things and return a compact JSON result:
 >
@@ -104,21 +104,21 @@ The parent receives the JSON and proceeds to Phase 07 with it. Don't ask the sub
 
 Three buckets: **early** (MVP not done), **mature** (shipped, has users), **unclear**.
 
-**Roadmap is the strongest signal:**
+**The dependency graph is the strongest signal.** It is computed from the tracker, so it cannot drift the way a hand-maintained file does.
 
-- "Now" lists core/foundational features → **early**
-- "Now" empty/small, "Next/Later" is polish/refactor/incremental → **mature**
+- Wave 1 (ready, unblocked) is core/foundational features → **early**
+- Wave 1 is small and the open work is polish, refactor or incremental → **mature**
 - PRD phase numbers, milestones, or "MVP" framing → read literally
 
-**Issue-tracker fallbacks (no roadmap):**
+**Fallbacks when the graph has no edges wired** — a flat backlog nobody has ironed out yet:
 
 - High feature:bug ratio with foundational features → **early**
 - Releases beyond v0.x, mature CI, bug-heavy mix → **mature**
 - Recent repo (<90 days, few commits) with feature-heavy issues → **early**
 
-**Conflicts:** prefer roadmap (planned > filed). Note the conflict in summary.
+**Conflicts:** prefer the graph over the flat signals. Note the conflict in summary.
 
-**`unclear` rule (load-bearing for autonomous callers):** if no roadmap exists AND no single issue-tracker fallback signal fires unambiguously, set `unclear` and apply no tilt. Don't guess — `implement` and other autonomous callers depend on deterministic phase output.
+**`unclear` rule (load-bearing for autonomous callers):** if the backlog has no dependency edges AND no single fallback signal fires unambiguously, set `unclear` and apply no tilt. Don't guess — `implement` and other autonomous callers depend on deterministic phase output.
 
 ### Phase 05 — Group Related Issues (sub-agent brief)
 
@@ -141,8 +141,8 @@ Apply in order:
 | `priority:medium` | +1 |
 | Stale (age > 30 days, no comments in last 30) | +1 |
 | Active discussion (>3 comments in last 30 days) | +1 |
-| In roadmap "Now" | +2 |
-| In roadmap "Next" | +1 |
+| In an open milestone (GitHub) or an epic with other open members (beads) | +2 |
+| Unblocks 2+ other issues when closed | +1 |
 | `good-first-issue` AND no priority label | −1 |
 
 Stale and active-discussion are mutually exclusive (one or the other, not both). `good-first-issue` only subtracts when the issue carries no `priority:*` label — a high-priority approachable issue should not be penalized for being approachable.

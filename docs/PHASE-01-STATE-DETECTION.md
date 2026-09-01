@@ -6,7 +6,7 @@ Inspect what already exists, then route to the right downstream phase.
 
 - `docs/` existence
 - `.vitepress/config.{mts,ts}` existence
-- Universal files: `docs/index.md`, `docs/PRD.md`, `docs/roadmap.md`, `docs/file-map.md`
+- Universal files: `docs/index.md`, `docs/PRD.md`, `docs/file-map.md`
 - Other `docs/*.md` (loose markdown — feeds Phase 04 categorization)
 - `package.json` `docs:dev` script + `vitepress` devDep
 - `admin.toml` `[commands.docs]`

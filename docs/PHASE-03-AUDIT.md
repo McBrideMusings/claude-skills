@@ -6,20 +6,22 @@ Both `docs/` and `.vitepress/` exist. Verify alignment, apply mechanical fixes s
 
 1. Rename `config.ts` → `config.mts` (build fails otherwise on CommonJS).
 2. Rename `api-surface.md` → `api.md`, update refs.
-3. Collapse `docs/roadmap/` to `docs/roadmap.md` if folder has ≤ 2 files. Skip if 3+ initiative files.
-4. Create missing universal stubs (`index.md`, `PRD.md`, `roadmap.md`, `file-map.md`).
-4a. Convert any `roadmap.md` that uses plain bullets or prose items to GFM checkboxes (`- [ ]` / `- [x]`). Preserve section headings (Now / Next / Later / Deferred) and item text. Items that are clearly shipped get `- [x]`; everything else gets `- [ ]`.
-5. Add `.gitignore` cache/dist entries (`docs/.vitepress/cache`, `docs/.vitepress/dist`).
-6. Install VitePress if missing from devDeps.
-7. Add `docs:dev` script if missing (port 5193 or main app port + 20).
-8. Fix `admin.toml` `[commands.docs]` if missing or has sub-targets — see [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) for the canonical shape.
-9. Add `CLAUDE.md` Documentation section if missing — template in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md).
+3. Create missing universal stubs (`index.md`, `PRD.md`, `file-map.md`).
+4. Add `.gitignore` cache/dist entries (`docs/.vitepress/cache`, `docs/.vitepress/dist`).
+5. Install VitePress if missing from devDeps.
+6. Add `docs:dev` script if missing (port 5193 or main app port + 20).
+7. Fix `admin.toml` `[commands.docs]` if missing or has sub-targets — see [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) for the canonical shape.
+8. Add `CLAUDE.md` Documentation section if missing — template in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md).
+
+**A roadmap file is never created here and never repaired in place.** An existing one migrates to the tracker — that is a substantive proposal, item 1 below, not a mechanical fix.
 
 ## Substantive (propose with diff, ask first)
 
 Present every substantive hit as one numbered slate, closed with the escape hatch: *"Type `go` to apply every proposal, or answer per item (`1 skip, 2 apply`)."* Default when nobody can answer (findings-only, or an unattended run): propose only, apply nothing.
 
-1. **Legacy planning docs** (`PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/`, non-standard top-level files) → open GitHub issues for genuinely uncovered work, then delete source. Cross-reference existing issues before bulk-creating.
+1. **Legacy planning docs** (`docs/roadmap.md`, `docs/roadmap/`, `ROADMAP.md`, `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/`, non-standard top-level files) → open issues on the repo's tracker for genuinely uncovered work, then delete source. Cross-reference existing issues before bulk-creating.
+
+   A roadmap file is this category, not a universal file. It cannot express a blocking edge, so it drifts from the tracker and neither copy can be shown wrong. Its items become issues with real dependency edges; `iron-out` then prints the roadmap from the graph. Never leave both standing.
 2. **New opt-in suggestions** if heuristics now match (e.g., project gained HTTP server → suggest `api.md`).
 3. **Update-when table** in `CLAUDE.md` if the section exists but is missing the table.
 

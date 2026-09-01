@@ -105,7 +105,7 @@ wire the file into a VitePress site.
 
 Break the plan into **tracer-bullet** tickets. Each slice cuts through ALL layers end-to-end (schema + API + UI + tests). **NOT** a horizontal slice of one layer.
 
-If the source plan implies milestone boundaries (e.g. "MVP vs Post-MVP", explicit phases, or a separate roadmap doc), group slices under `## Milestone: <name>` headings in the proposal file. Phase 06 reads these headings to create real GitHub milestones.
+If the source plan implies milestone boundaries (e.g. "MVP vs Post-MVP" or explicit phases), group slices under `## Milestone: <name>` headings in the proposal file. Phase 06 reads these headings to create real GitHub milestones.
 
 Classify each:
 

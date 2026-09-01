@@ -23,7 +23,6 @@ export default defineConfig({
           text: 'Reference',
           items: [
             { text: 'Product spec (PRD)', link: '/PRD' },
-            { text: 'Roadmap', link: '/roadmap' },
             { text: 'File map', link: '/file-map' },
             // { text: 'API surface', link: '/api' },  // if exists
           ],

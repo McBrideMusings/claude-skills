@@ -19,7 +19,7 @@ Bare invocation → the full assessment. Any other argument scopes it: extract f
 
 ### Phase 01 — Extract Vision
 
-Read every doc that describes what the project SHOULD be: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/PRD.md`, `docs/roadmap.md`, `docs/CONTEXT.md`, plan/spec files (glob `**/PLAN*.md`, `**/*spec*.md`, `docs/adr/` once if defaults miss). Distill them into a numbered **Vision Checklist**: concrete, testable goals, each with its source (file + section). "Fast" is not a goal; "p95 wrapper latency <10ms" is. Merge restatements — one goal per promise, however many docs repeat it.
+Read every doc that describes what the project SHOULD be: `README.md`, `AGENTS.md`, `CLAUDE.md`, `docs/PRD.md`, `docs/CONTEXT.md`, plan/spec files (glob `**/PLAN*.md`, `**/*spec*.md`, `docs/adr/` once if defaults miss). Distill them into a numbered **Vision Checklist**: concrete, testable goals, each with its source (file + section). "Fast" is not a goal; "p95 wrapper latency <10ms" is. Merge restatements — one goal per promise, however many docs repeat it.
 
 Without explicit goals you assess code against vibes instead of promises — if no vision doc exists at all, stop and say so; there is nothing to measure against.
 
