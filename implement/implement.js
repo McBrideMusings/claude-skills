@@ -1,7 +1,7 @@
 export const meta = {
   name: 'implement',
-  description: 'One autonomous pass on one tracked item, staged so each phase gets its own context, ending at a commit',
-  whenToUse: 'Called by /implement for every pass it runs — once, N times in series, or N at once. Not invoked directly by a human, and never by name: the caller passes this file\'s absolute path as scriptPath.',
+  description: 'One tracked item, worked end to end to a commit',
+  whenToUse: 'Called by /implement for every pass it runs — once, N times in series, or N at once. Not invoked directly by a human, and never by name: the caller runs name-pass.sh to generate a per-pass copy of this file and passes that copy\'s absolute path as scriptPath.',
   phases: [
     { title: 'Resolve', detail: 'fetch the tracked item' },
     { title: 'Gate', detail: 'AFK-ability self-assessment' },
