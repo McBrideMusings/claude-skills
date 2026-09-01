@@ -133,13 +133,15 @@ The **answer** is the only thing worth keeping. Capture it somewhere durable (co
 
 To look at a prototype on a real phone, or to give it to someone who does not have
 this repo, run `~/.claude/skills/spike/tool/spike-export`. It writes one folder
-(default `~/Desktop/<slug>/`) holding three files:
+(default `~/Desktop/<slug>/`) holding four files:
 
 ```
 <slug>.html     the device-framed build — open it on this Mac
 index.html      no device frame, no Tweaks panel — what the phone renders
 serve.command   double-click: opens Terminal, serves the folder on the LAN,
                 prints the http://<lan-ip>:8080/ URL to type into the phone
+README.md       standard, generated: what the folder is, how to view it on a
+                phone, how to read the panel, how to send comments back
 ```
 
 ```bash

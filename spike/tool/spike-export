@@ -14,6 +14,7 @@ useless for judging whether a design works in the hand, and the Tweaks panel
 covers the thing being judged.
 """
 import argparse
+import datetime
 import os
 import shutil
 import stat
@@ -27,6 +28,60 @@ TOOL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spike")
 # not one of the --without widgets. Hiding it is the supported escape hatch.
 HIDE_PANEL = """
 .at-twk, .at-twk-pill { display: none !important; }
+"""
+
+README = """# __TITLE__
+
+A throwaway prototype. It exists to answer a question about how something should
+look or feel, not to be correct, complete, or shipped. Nothing here is production
+code and none of it is wired to a real backend — every value on screen is fixed
+sample content.
+
+Exported __DATE__ for the __DEVICE__ frame.
+
+## What is in this folder
+
+| File | What it is |
+| --- | --- |
+| `__SLUG__.html` | The framed build. Double-click it. Opens in your browser and draws the __DEVICE__ frame around the design, so you are judging it at the right size. |
+| `index.html` | The same prototype with **no frame and no controls panel** — just the interface. This is what a phone should load. Opening it directly on a desktop shows it at whatever size the window happens to be. |
+| `serve.command` | Double-click to put `index.html` on your local network so a phone can open it. |
+
+Both HTML files are self-contained: no internet, no install, no assets alongside
+them. You can email one, drop it in Slack, or open it on a plane.
+
+## Looking at it on a phone
+
+1. Double-click **`serve.command`**. A Terminal window opens.
+2. It prints two addresses. Type the `http://192.168.…` one into your phone's browser.
+3. Your phone and this Mac must be on the **same Wi-Fi**.
+4. Leave the Terminal window open while you use it. Close it, or press `Ctrl-C`, to stop.
+
+If port 8080 is taken, run it from Terminal as `PORT=9000 ./serve.command`.
+
+The server needs nothing installed. It uses whichever of `python3`, `ruby` or
+`nc` your Mac has, and prints which one it picked.
+
+## Using the framed build
+
+The floating card is the control panel. Drag it by its header; the `×` shrinks it
+to a pill in the corner, and the pill opens it again.
+
+- **Tweaks** — the variant picker plus every parameter this prototype exposes.
+- **Checks** — standing pass/fail checks (contrast, tap targets, overflow, and so on).
+- **Comments** — opening this tab turns on the markup layer. Click anything to leave
+  a note, then press **Copy comments** and paste the result back to whoever sent you
+  this; it comes out as markdown with the prototype's name at the top.
+
+The address bar remembers only what you actually change. An untouched control is
+absent from the URL, so a link you send carries your changes and nothing else, and
+a rebuilt prototype's new defaults still reach you.
+
+## Reporting something
+
+Say what you did, what you expected, and what happened. A screen recording beats a
+description. If it was a specific control, the URL from the address bar pins the
+exact state you were looking at.
 """
 
 SERVE = """#!/bin/bash
@@ -119,6 +174,13 @@ def main():
               ["--picker", args.picker, "--extra-css", css,
                "--without", "viewport,checks,annotate,contrast"])
 
+    with open(os.path.join(dest, "README.md"), "w", encoding="utf-8") as fh:
+        fh.write(README
+                 .replace("__TITLE__", args.title)
+                 .replace("__SLUG__", args.slug)
+                 .replace("__DEVICE__", args.device)
+                 .replace("__DATE__", datetime.date.today().isoformat()))
+
     script = os.path.join(dest, "serve.command")
     with open(script, "w", encoding="utf-8") as fh:
         fh.write(SERVE.replace("__TITLE__", args.title))
@@ -131,6 +193,7 @@ def main():
     print("  %-20s %s   framed (%s) — open on this Mac" % (args.slug + ".html", kb(framed), args.device))
     print("  %-20s %s   bare, no panel — what the phone gets" % ("index.html", kb(bare)))
     print("  %-20s %s   double-click to serve on the LAN" % ("serve.command", kb(script)))
+    print("  %-20s %s   what it is and how to use it" % ("README.md", kb(os.path.join(dest, "README.md"))))
 
 
 if __name__ == "__main__":
