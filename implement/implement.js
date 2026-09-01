@@ -93,8 +93,9 @@ const COMMON = commonFor(dir)
 
 const ITEM = {
   type: 'object',
-  required: ['id', 'title', 'body'],
+  required: ['found', 'id', 'title', 'body'],
   properties: {
+    found: { type: 'boolean' },
     id: { type: 'string' },
     title: { type: 'string' },
     body: { type: 'string' },
@@ -356,7 +357,9 @@ phase('Resolve')
 let item
 if (a.resolved) {
   // The caller (or iron-out) already resolved and gated this one; don't re-fetch.
-  item = a.resolved
+  // Default `found: true` for a caller that doesn't set it — an explicit
+  // `found: false` from the caller still wins, since it's spread after.
+  item = { found: true, ...a.resolved }
   log(`item pre-resolved by caller: ${item.id} ${item.title}`)
 } else {
   // Resolve the tracker database BEFORE the Resolve agent runs, against the
@@ -405,16 +408,25 @@ Target: ${a.issue ? `issue ${a.issue}` : a.item ? `the local item ${JSON.stringi
 
 Resolve the tracker backend via \`${DETECT}\`, then work down this ladder and stop at the first rung that answers.${DB ? ` Every \`bd\` read in this stage carries \`${DB}\`; a bare \`bd\` resolves from the worktree's own working directory and can answer from a different database than the one this item actually lives in.` : ''}
 
-1. **An issue number or id in the target above** (\`1118\`, or a beads id like \`myproj-zb8\`) — that issue IS the item. Confirm it exists and is open: \`bd${DB} show <id> --json\` on beads, \`gh issue view <n> --json number,title,state\` on GitHub. **If it is closed or missing, return nothing** rather than substituting another item.
+1. **An issue number or id in the target above** (\`1118\`, or a beads id like \`myproj-zb8\`) — that issue IS the item. Confirm it exists and is open: \`bd${DB} show <id> --json\` on beads, \`gh issue view <n> --json number,title,state\` on GitHub. **If it is closed or missing, do not substitute another item** — report it unfound per the shape below.
 2. **Item text in the target above** — a papercut or local note with no issue number. That text IS the item; carry the id the caller gave it. Do not go looking for a matching issue.
 3. **The current branch name**, for an embedded issue id — \`fix/1118-login\`, \`1118-foo\`, \`issue-1118\`, \`myproj-zb8-login\`. It counts only if it matches an item that is open on the backend (\`bd${DB} show <id> --json\`).
-4. **Triage.** Invoke the \`triage\` skill via the Skill tool **non-interactively** — skip its wait-for-confirmation step and take the top recommendation. Skip triage's offer-wrap-up step; this pass does not wrap up. **The pick must be an item that already exists on the tracker.** A fresh idea, a "while we're here" cleanup or an invented refactor is not one — return nothing instead. If triage finds nothing actionable, return nothing.
+4. **Triage.** Invoke the \`triage\` skill via the Skill tool **non-interactively** — skip its wait-for-confirmation step and take the top recommendation. Skip triage's offer-wrap-up step; this pass does not wrap up. **The pick must be an item that already exists on the tracker.** A fresh idea, a "while we're here" cleanup or an invented refactor is not one — report it unfound per the shape below. Same if triage finds nothing actionable.
 
-Return the item itself. Put every question the tracker thread left unanswered into \`unresolved\` — that field is what the next stage gates on, and an empty \`unresolved\` you did not actually check for is the failure mode here.`,
+Return the item itself, with \`found: true\`. Put every question the tracker thread left unanswered into \`unresolved\` — that field is what the next stage gates on, and an empty \`unresolved\` you did not actually check for is the failure mode here.
+
+If no rung above answers, do not fabricate a record — the schema has no way to express "nothing", so a fabricated record is exactly the failure this instruction exists to prevent. Instead return \`{"found": false, "id": "<the target exactly as given>", "title": "", "body": "<what you checked and what each rung returned>"}\`.`,
     { agentType: 'issue-reader', phase: 'Resolve', schema: ITEM },
   )
   if (!item) return halt('resolve', 'item resolution returned nothing')
 }
+
+// A missing or closed item must halt HERE, at resolve, naming what was
+// actually checked — not fall through as a fabricated record that Gate then
+// judges as if it were real. Checked before the id guard below so a
+// found:false record (whose id may be empty) halts with its own explanation
+// rather than the id complaint.
+if (!item.found) return halt('resolve', item.body)
 
 // The id is the key for everything downstream, and one path can arrive without
 // it: `a.resolved` comes from the caller and is never schema-checked, while the
