@@ -11,6 +11,10 @@ Read-only. This skill writes no code, files no tickets, and edits no docs — br
 
 `project-status push` runs the same assessment, then escalates the steering recommendation through ambition rounds before presenting (Phase 06).
 
+## Input
+
+Bare invocation → the full assessment. Any other argument scopes it: extract from the same vision docs only the goals the argument names or touches, then run Phases 02–04 on just those goals and report in the same shape — statuses still code-derived, evidence still per row, coverage still checked for those goals. A scoped run answers the question asked and stops; it never expands into the full checklist unasked. `push` is the one reserved argument (Phase 06); it composes with a scope (`push <area>`).
+
 ## Phases
 
 ### Phase 01 — Extract Vision
@@ -27,7 +31,7 @@ Rate each goal from code inspection, never from self-reported progress — a REA
 
 Statuses: **WORKING** / **PARTIAL** / **STUB** / **MISSING** / **EXCEEDED** (shipped beyond the promise). Qualify where honesty needs it ("WORKING (component level)", "PARTIAL — hard-gated on X"). Every status carries one line of evidence: the test suite, the LOC/reality of the module, the live probe result, the absent file.
 
-For a large checklist, fan the inspection out to parallel read-only `Explore` subagents (Sonnet), one per goal cluster; the parent keeps only their per-goal verdicts and evidence.
+Inspect inline by default, and keep the running context lean: carry forward only each goal's verdict plus its one evidence line — read and judge files where they sit, never paste their bodies into the conversation. Where the session permits unsolicited subagents, fan a checklist past ~8 goals out to parallel read-only `Explore` subagents (Sonnet), one per goal cluster, each returning verdicts and evidence lines only.
 
 Completion: every checklist row has a status AND a code-derived evidence line.
 
