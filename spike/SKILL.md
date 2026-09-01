@@ -129,6 +129,34 @@ Picking a winner needs no verb — say it in chat ("go with Dense") and the prom
 
 The **answer** is the only thing worth keeping. Capture it somewhere durable (commit message, ADR in `docs/adr/`, a tracked issue) along with the question it was answering and which variant won — if the user is around, that's a quick conversation; if not, leave `NOTES.md` in `/private/tmp/claude/<repo-slug>/spikes/<slug>/` with the verdict blank. Then delete the whole topic directory.
 
+## Handing one over — `spike-export`
+
+To look at a prototype on a real phone, or to give it to someone who does not have
+this repo, run `~/.claude/skills/spike/tool/spike-export`. It writes one folder
+(default `~/Desktop/<slug>/`) holding three files:
+
+```
+<slug>.html     the device-framed build — open it on this Mac
+index.html      no device frame, no Tweaks panel — what the phone renders
+serve.command   double-click: opens Terminal, serves the folder on the LAN,
+                prints the http://<lan-ip>:8080/ URL to type into the phone
+```
+
+```bash
+~/.claude/skills/spike/tool/spike-export \
+  --fragment /abs/path/fragment.html --slug wheelhouse-phone \
+  --title "Wheelhouse Phone" --device phone --dest ~/Desktop
+```
+
+**The bare copy is the reason this exists.** A phone drawing a phone frame inside a
+phone answers nothing about how the design feels in the hand, and the Tweaks panel
+covers the thing being judged. `--without viewport,checks,annotate,contrast` drops
+the frame; the panel is generated from the fragment's own `atTweaks` calls rather
+than being a widget, so it is hidden with `--extra-css` instead.
+
+`PORT=9000 ./serve.command` overrides the port. Both devices must be on the same
+Wi-Fi.
+
 ## Keeping one
 
 Ephemeral by default — `/private/tmp/claude/<repo-slug>/spikes/` is age-pruned. If the user asks to keep it,

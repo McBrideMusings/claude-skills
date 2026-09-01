@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+"""spike-export — hand a prototype to someone, or to your own phone.
+
+Writes a self-contained directory holding three things:
+
+  <slug>.html     the device-framed build, for looking at on this Mac
+  index.html      the same prototype with no device frame and no Tweaks panel,
+                  so a phone renders it as the real interface
+  serve.command   double-clickable on macOS: opens Terminal, starts a LAN web
+                  server, and prints the URL to type into the phone
+
+The bare build is the point. A phone showing a phone frame inside a phone is
+useless for judging whether a design works in the hand, and the Tweaks panel
+covers the thing being judged.
+"""
+import argparse
+import os
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+
+TOOL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spike")
+
+# The panel is generated from the fragment's atTweaks registrations, so it is
+# not one of the --without widgets. Hiding it is the supported escape hatch.
+HIDE_PANEL = """
+.at-twk, .at-twk-pill { display: none !important; }
+"""
+
+SERVE = """#!/bin/bash
+# Double-click me. Opens a local web server so a phone on the same Wi-Fi can
+# load this prototype. Close the window or press Ctrl-C to stop.
+cd "$(dirname "$0")" || exit 1
+PORT="${PORT:-8080}"
+IP="$(ipconfig getifaddr en0 2>/dev/null \\
+   || ipconfig getifaddr en1 2>/dev/null \\
+   || echo 127.0.0.1)"
+
+printf '\\n  %s\\n\\n' "__TITLE__"
+printf '  On this Mac        http://localhost:%s/\\n' "$PORT"
+printf '  On your phone      http://%s:%s/\\n\\n' "$IP" "$PORT"
+printf '  Both devices must be on the same Wi-Fi.\\n'
+printf '  Leave this window open. Ctrl-C to stop.\\n\\n'
+
+exec python3 -m http.server "$PORT" --bind 0.0.0.0
+"""
+
+
+def build(fragment, out, title, extra):
+    cmd = [TOOL, "build", "--kind", "prototype", "--title", title,
+           "--fragment", fragment, "--out", out] + extra
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        sys.stderr.write(proc.stdout + proc.stderr)
+        sys.exit(proc.returncode)
+    return proc.stdout.strip().splitlines()[-1]
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Export a prototype as a folder you can hand over.")
+    ap.add_argument("--fragment", required=True, help="absolute path to the body fragment")
+    ap.add_argument("--slug", required=True, help="kebab-case name; becomes the folder name")
+    ap.add_argument("--title", required=True)
+    ap.add_argument("--device", required=True,
+                    help="device for the framed copy: phone|tablet|desktop|panel|web|tv|fill")
+    ap.add_argument("--dest", default=os.path.expanduser("~/Desktop"),
+                    help="where to write the folder (default: ~/Desktop)")
+    ap.add_argument("--picker", default="switch", choices=["switch", "list"])
+    args = ap.parse_args()
+
+    fragment = os.path.abspath(os.path.expanduser(args.fragment))
+    if not os.path.isfile(fragment):
+        sys.exit("spike-export: no such fragment: " + fragment)
+
+    dest = os.path.join(os.path.abspath(os.path.expanduser(args.dest)), args.slug)
+    if os.path.isdir(dest):
+        shutil.rmtree(dest)
+    os.makedirs(dest)
+
+    framed = os.path.join(dest, args.slug + ".html")
+    build(fragment, framed, args.title,
+          ["--device", args.device, "--picker", args.picker])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        css = os.path.join(tmp, "bare.css")
+        with open(css, "w", encoding="utf-8") as fh:
+            fh.write(HIDE_PANEL)
+        bare = os.path.join(dest, "index.html")
+        build(fragment, bare, args.title,
+              ["--picker", args.picker, "--extra-css", css,
+               "--without", "viewport,checks,annotate,contrast"])
+
+    script = os.path.join(dest, "serve.command")
+    with open(script, "w", encoding="utf-8") as fh:
+        fh.write(SERVE.replace("__TITLE__", args.title))
+    os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+    def kb(p):
+        return "%.0f KB" % (os.path.getsize(p) / 1024)
+
+    print(dest)
+    print("  %-20s %s   framed (%s) — open on this Mac" % (args.slug + ".html", kb(framed), args.device))
+    print("  %-20s %s   bare, no panel — what the phone gets" % ("index.html", kb(bare)))
+    print("  %-20s %s   double-click to serve on the LAN" % ("serve.command", kb(script)))
+
+
+if __name__ == "__main__":
+    main()
