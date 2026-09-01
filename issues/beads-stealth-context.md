@@ -1,13 +1,16 @@
 # beads:stealth — injected context
 
-> Beads runs here, nothing about it is committed; `bd github sync` refused.
+> Beads runs here, nothing about it is committed, and nothing pushes out.
 
-- `.beads/` sits in the working directory and is invisible to `git status`. Anyone with
-  filesystem access to the checkout can still read it. Say that limit out loud once.
-- **`bd github sync` is refused, not defaulted off.** One sync pushes a private graph into
-  someone else's GitHub organisation. Mirror mode and stealth are mutually exclusive.
-- The repo belongs to someone else, so nothing about beads reaches a commit or a PR —
-  including `AGENTS.md`, git hooks, and any note explaining why they are absent.
+- **Pull is the only permitted direction.** `bd github sync --pull-only` seeds your local
+  graph from their backlog — that is what stealth is for. Bare `bd github sync` is
+  bidirectional and would file a GitHub issue for every bead you own.
+- **`bd dolt push` needs a `file://` remote you own.** With `sync.remote` unset it adopts the
+  git origin and pushes the whole database to their repo. `beads-stealth-guard.sh` denies both
+  mistakes; do not go looking for a way around it.
+- `.beads/` sits in the working directory, invisible to `git status`, readable by anyone with
+  filesystem access to the checkout. Say that limit out loud once.
+- Nothing about beads reaches a commit or PR — `AGENTS.md`, git hooks, or a note explaining
+  their absence included.
 
-Depth: [_detect.md](_detect.md) § Stealth for how the posture is decided, [beads.md](beads.md)
-for the command surface and what each `--stealth` flag suppresses.
+Depth: [_detect.md](_detect.md) § Stealth, [beads.md](beads.md) for the command surface.

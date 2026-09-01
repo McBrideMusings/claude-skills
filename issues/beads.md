@@ -190,9 +190,12 @@ bd setup claude --stealth
 **The one thing stealth does not hide:** `.beads/` still sits in the working directory. It is
 invisible to `git status`, visible to anyone with filesystem access to that checkout.
 
-**Never run `bd github sync` in a stealth repo.** It pushes the private graph to that repo's
-GitHub. `iron-out` refuses it outright for a repo labelled `tracker:beads-stealth` in
-`~/.claude/domains-map`.
+**In a stealth repo, pull is permitted and push never is.** `bd github sync --pull-only` seeds
+your private graph from their backlog — the reason stealth and GitHub coexist. Bare
+`bd github sync` is bidirectional and would file a real issue in their tracker for every bead
+you own; `bd config` has no key that pins direction, so `hooks/beads-stealth-guard.sh` denies
+any `bd github sync` without `--pull-only`, and any `bd dolt push` whose `sync.remote` is not a
+`file://` path you own. Scope is the `beads:stealth` label in `~/.claude/domains-map`.
 
 ## Grouping: epic or label
 

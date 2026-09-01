@@ -97,16 +97,23 @@ runs once; the label runs forever.
 
 ```bash
 bd init --stealth --skip-agents --skip-hooks
+bd dolt remote add origin file:///path/you/own    # required — see below
 ```
 
 Details of what each flag suppresses are in [`beads.md`](beads.md). Two rules that live here
 because they are detection-time decisions, not usage-time ones:
 
-- **`bd github sync` is refused in a stealth repo** — refused with a one-line reason, not
-  defaulted off and not offered with a warning. One sync pushes a private graph into someone
-  else's GitHub organisation. **Mirror mode and stealth are mutually exclusive**; if
-  `bd github status` somehow reports configured in a stealth-labelled repo, stop and say so
-  rather than syncing.
+- **Pull is permitted; push never is.** `bd github sync --pull-only` seeds a private local
+  graph from the client's GitHub backlog, and that is a legitimate reason to set
+  `github.repository` in a stealth repo. Stealth does **not** mean "no GitHub". What it means
+  is that nothing travels outward: bare `bd github sync` is bidirectional and would file a real
+  issue in their tracker for every bead you own. `bd config` has no key that pins direction —
+  the flag is the only control — so `hooks/beads-stealth-guard.sh` enforces it.
+- **`sync.remote` must be set before the first `bd dolt push`.** Unset is the state
+  `bd init --stealth` leaves behind, and `bd dolt push` fills it from the git origin without
+  asking, then pushes the entire database to their remote. A `file://` directory you own takes
+  a real push and `bd bootstrap` recovers every issue from it, so redirecting costs no backup.
+  The same guard denies a push while `sync.remote` is anything else.
 - **Say the limit out loud once.** `.beads/` still sits in the working directory. `git status`
   cannot see it; anyone with filesystem access to that checkout can.
 

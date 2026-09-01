@@ -7,8 +7,8 @@
 - **Writes push one item, scoped:** `bd github sync --push-only --issues <id>`. Bare
   `bd github sync` is bidirectional across the whole backlog.
 - Mirror mode changes no verb table; it appends one push per write.
-- **Mutually exclusive with [beads:stealth](beads-stealth-context.md).** If both resolve for one
-  repo, stop and say so rather than syncing.
+- **This is the push half only.** A [beads:stealth](beads-stealth-context.md) repo may also
+  pull from GitHub; what it may never do is push. Do not read a stealth label as "no GitHub".
 
 Depth: [_detect.md](_detect.md) § Mirror mode for detection, [beads.md](beads.md) § GitHub sync
 for the flags.
