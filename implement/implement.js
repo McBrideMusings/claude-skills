@@ -51,6 +51,18 @@ const SKILLS = '/Users/pierce/.claude/skills'
 const RULES = `${SKILLS}/implement/STAGE-RULES.md`
 const DETECT = `${SKILLS}/_tracker/_detect.md`
 
+// Wrap is the only stage that commits, and Verify's `verified_parent` is only
+// truthful while that holds. A `hooks/subagent-push-guard.sh` PreToolUse guard
+// denies `git commit` (and `git merge`) from every subagent UNLESS the command
+// carries this exact token, unquoted, in command position — so the guard is the
+// structural half of the invariant and this constant is its one spelling. It is
+// handed out to exactly two prompts below: `salvage()` and the Wrap prompt. No
+// other stage prompt may reference it — a stage that saw the token could just
+// copy it, so it is a discriminator the hook checks for, not a secret, and its
+// value is kept out of every prompt except the two stages that legitimately
+// commit.
+const COMMIT_OK = 'IMPLEMENT_COMMIT_OK=1'
+
 const a = args || {}
 const dir = a.worktree || a.repo || a.cwd
 const model = a.model || 'sonnet'
@@ -151,6 +163,11 @@ const EDIT = {
     diffstat: { type: 'string' },
     notes: { type: 'array', items: { type: 'string' } },
     unresolved: { type: 'array', items: { type: 'string' } },
+    // True only if this stage committed or merged anyway, despite the
+    // instruction not to. It exists so the script can halt on the report
+    // rather than let a commit this stage made reach Verify unnoticed — see
+    // the halt right after this schema is used.
+    committed: { type: 'boolean' },
   },
 }
 
@@ -162,6 +179,9 @@ const GREEN = {
     attempts: { type: 'number' },
     remaining: { type: 'array', items: { type: 'string' } },
     extra_files_touched: { type: 'array', items: { type: 'string' } },
+    // Same purpose as EDIT.committed: a truthful self-report the script halts
+    // on, because this stage has no business running `git commit` either.
+    committed: { type: 'boolean' },
   },
 }
 
@@ -232,6 +252,14 @@ const VERDICT = {
     failures: { type: 'array', items: { type: 'string' } },
     mutation: MUTATION,
     verdict_path: { type: 'string' },
+    // True when `git status --short` on the worktree came back empty at the
+    // moment this stage read HEAD for `verified_parent`. A clean tree here
+    // means the work is already committed — an earlier stage committed
+    // despite being told not to — so the sha about to be written under
+    // `verified_parent` would be HEAD-of-the-work, not its parent, and the
+    // field's name would be false the instant it is written. The script halts
+    // on this rather than trusting the prose that asks Verify to catch it.
+    tree_clean: { type: 'boolean' },
     // How the CALLER re-checks this work. This pass's own verdict is a
     // first-pass filter, not the authority: the caller re-runs these commands
     // itself, in its own context, and only its result decides whether the
@@ -339,6 +367,7 @@ The ${stage} stage just returned ${outcome} for this item and the pass is haltin
 
 Commit every source change in the tree. Then stop.
 
+- Wrap is the only stage that normally commits; you are the other one, because you exist to rescue work a halt would otherwise strand. A guard denies \`git commit\` from every other stage in this pass — prefix your commit command with \`${COMMIT_OK} \` (unquoted, at the start of the line) so it is recognised, e.g. \`${COMMIT_OK} git -C ${a.worktree} commit -m "..."\`.
 - Stage the files the pass actually changed. Never \`git add -A\`.
 - Do not commit gitignored local files linked into the worktree — \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\`, anything under \`.claude/skills/\`.
 - Write a commit message that says plainly this work halted at ${stage} and names the outcome above, so nobody reading the log mistakes it for finished work. Conventional Commits, and no mention of Claude, AI, or any assistant.
@@ -524,6 +553,8 @@ Open ONLY those files. If the change genuinely requires a file that is not liste
 
 Write the code. Do not run the build; another stage owns that.
 
+**You edit the tree and return. You stage nothing and commit nothing — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits; a commit made here reaches Verify already on HEAD, and the \`verified_parent\` field Verify writes is false the moment that happens. If you commit anyway despite this instruction, report it truthfully as \`committed: true\` — the pass halts on that report rather than continuing with a lie.
+
 **If you cannot produce a diff after one or two attempts** — a false start, a blocker, something that needs a design call — return \`touched: []\` and say plainly in \`unresolved\` what stopped you. That ends the pass cleanly. Do not commit to a guess to have written something, and do not commit anything at all.`,
   { phase: 'Edit', model, schema: EDIT },
 )
@@ -533,6 +564,14 @@ Write the code. Do not run the build; another stage owns that.
 // reads it. An empty `touched` reaching Green means Green builds an unchanged
 // tree, goes green, and the pass ships a commit of nothing.
 if (!edit) return halt('edit', 'implementation stage returned nothing')
+// Wrap is the only stage that commits. If Edit committed anyway, everything
+// downstream — Review's diff base, Verify's `verified_parent` — is built on a
+// tree that is no longer what the contract expects, so this halts before
+// Review or Verify ever runs rather than let a false `verified_parent` through.
+if (edit.committed) {
+  await salvage('Edit', 'a commit made outside of Wrap')
+  return halt('edit', 'implementation stage committed — Wrap is the only stage that commits, so downstream verification would be built on a tree it did not expect')
+}
 if (!edit.touched || !edit.touched.length) {
   return halt('edit', `implementation produced no diff${(edit.unresolved || []).length ? `: ${edit.unresolved.join('; ')}` : ''}`)
 }
@@ -563,10 +602,16 @@ ${plan.test_command ? `Test command: \`${plan.test_command}\`` : ''}
 
 Loop: spawn build-runner → read the failures → fix them → spawn again. Stop when it reports \`ok: true\`, or after 6 attempts with no reduction in the error count — in that case set \`green: false\` and list what is still failing rather than continuing to churn.
 
-Record any file you had to touch beyond the previous stage's list in \`extra_files_touched\`.`,
+Record any file you had to touch beyond the previous stage's list in \`extra_files_touched\`.
+
+**You edit the tree and return. Leave the git index untouched — no \`git add\`, no \`git merge\`, and do not advance the branch yourself.** A later stage is the only one that does that; advancing it here would put Verify's \`verified_parent\` field to work on a tree it did not expect. If you advance it anyway despite this instruction, report that truthfully through the boolean field this schema provides for it — the pass halts on that report rather than continuing on a false premise.`,
   { phase: 'Green', model, schema: GREEN },
 )
 
+if (green && green.committed) {
+  await salvage('Green', 'a commit made outside of Wrap')
+  return halt('green', 'build stage committed — Wrap is the only stage that commits, so downstream verification would be built on a tree it did not expect')
+}
 if (!green || !green.green) {
   return halt('green', green ? `still failing after ${green.attempts} attempts: ${(green.remaining || []).join('; ')}` : 'build stage returned nothing')
 }
@@ -653,7 +698,7 @@ Judge only the diff. Correctness first — a bug the change introduces or fails 
 
 Severity means: \`blocking\` — the change is wrong, incomplete against the item, or breaks something that worked. \`major\` — real defect, does not invalidate the change. \`minor\` — worth a follow-up.
 
-**Do not edit anything.** A later stage commits this tree, and an edit you make here ships unverified.
+**Do not edit anything, and do not stage or commit anything — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits. An edit you make here ships unverified, and a commit you make here reaches Verify already on HEAD, making its \`verified_parent\` field false the moment it is written.
 
 **Nobody can answer you.** If \`${DIFF}\` and \`status --short\` both come back empty, that is a fact to report, not a question to ask: return \`reviewed: false\` with \`findings: []\` and say in \`note\` exactly what the two commands printed. It halts the pass — it is not a way to pass the stage, so do not reach for it to get unstuck. Never ask what to review, and never return \`reviewed: true\` for a diff you did not actually read — an empty \`findings\` is a claim that you read the change and it was clean.`,
   { phase: 'Review', model, schema: REVIEW },
@@ -761,7 +806,9 @@ Return that as \`mutation\`: \`method\` (what you removed and how), \`command\` 
 
 **Write the verdict to \`<dir>/verify/${item.id}.json\` before you finish — for every verdict, \`SKIP\` and \`FAIL\` included** — where \`<dir>\` is what \`${VERDICT_DIR_CMD}\` prints. Run that command; do not assemble the path from this sentence. It is the single definition of this worktree's disposable directory and it creates the directory, so \`mkdir -p <dir>/verify\` is the only other thing you need. **The verdict does not go inside the worktree** — \`tmp/\` there is the repo, the file would ride the branch or die with the worktree at teardown, and nothing that reads verdicts looks in it. This pass runs staged and its transcript is not recoverable; that file is the only evidence a later reader gets, and a verdict returned without one is treated as no verdict at all. Include at least \`{"item", "verdict", "evidence", "verified_parent", "branch"${touchedTests.length ? ', "mutation"' : ''}}\` — \`verified_parent\` from \`git -C ${a.worktree} rev-parse HEAD\` and \`branch\` from \`git -C ${a.worktree} branch --show-current\`. Fill \`branch\` in; leaving it null strands the verdict with no way back to the work.
 
-**Run that \`rev-parse\` at the moment you write the file.** Never recalled from earlier in this stage, never reconstructed from a log line, never typed. A reader resolves the sha with \`git -C ${a.worktree} cat-file -e <verified_parent>^{commit}\` before comparing anything, so a sha that names no object does not read as a stale verdict — it reads as no verdict at all, and voids the whole file. Observed: a verdict carrying \`bb85bca17fe86dfa3c7a26b8c4c6a5b7d9e2f3a4\`, 40 valid hex characters naming no object, on a branch whose real fork point was \`25bee4a\`.
+**Run that \`rev-parse\` at the moment you write the file, alongside \`git -C ${a.worktree} status --short\`.** Never recalled from earlier in this stage, never reconstructed from a log line, never typed. A reader resolves the sha with \`git -C ${a.worktree} cat-file -e <verified_parent>^{commit}\` before comparing anything, so a sha that names no object does not read as a stale verdict — it reads as no verdict at all, and voids the whole file. Observed: a verdict carrying \`bb85bca17fe86dfa3c7a26b8c4c6a5b7d9e2f3a4\`, 40 valid hex characters naming no object, on a branch whose real fork point was \`25bee4a\`.
+
+**Assert this instead of assuming it: if \`status --short\` comes back empty, the work is already committed, and the sha you just read is HEAD-of-the-work — not its parent.** That means an earlier stage committed despite being told not to, and \`verified_parent\` would be false the instant you write it under that name. Do not write the file in that case. Set \`tree_clean: true\` and return \`verdict: "BLOCKED"\` naming which stage's report you have no way to trust, and let the caller sort out what actually happened. If \`status --short\` shows changes (the normal case — this is what "verify BEFORE anything commits" means), set \`tree_clean: false\` and proceed as below.
 
 **Then \`cat\` the file back and return the absolute path you actually wrote in \`verdict_path\`.** Read it back before you answer — the point of the field is that it is false unless the file is on disk, so a \`verdict_path\` you filled in from the instruction above rather than from a file you just read is a lie the pass cannot detect. If it is not there, write it, then read it again. A verdict returned without \`verdict_path\`, or with one that is not under \`/private/tmp/claude/\` and named \`${item.id}.json\`, halts this pass regardless of what it says.
 
@@ -772,6 +819,15 @@ Return that as \`mutation\`: \`method\` (what you removed and how), \`command\` 
 }`,
   { phase: 'Verify', model, schema: VERDICT },
 )
+
+// A clean tree at this point means the work was already committed before
+// Verify ran, so the sha it read is HEAD-of-the-work rather than the parent
+// `verified_parent` claims to be — the exact inversion this pass exists to
+// stop, so it halts here rather than trust the prose above to have caught it.
+if (verdict && verdict.tree_clean === true) {
+  await salvage('Verify', 'a tree that was already committed when Verify ran')
+  return halt('verify', 'the worktree was already clean when Verify checked — an earlier stage committed despite being told not to, so verified_parent would name HEAD-of-the-work rather than its parent')
+}
 
 if (!verdict || verdict.verdict === 'FAIL' || verdict.verdict === 'BLOCKED') {
   await salvage('Verify', verdict ? verdict.verdict : 'nothing')
@@ -848,7 +904,7 @@ ${WORK}
 1. \`~/.claude/tools/repo-snapshot ${dir || '.'}\` once — not several separate git calls.
 2. Run the project's formatter **on the files listed above and no others**. Never a repo-wide format or \`lint --fix\`: it rewrites files no sibling worker touched, so every other branch in the round conflicts on whitespace alone, and the conflict surfaces at landing long after you are gone. If the only formatter available is repo-wide, skip formatting and say so in \`summary\`.
 3. \`git -C ${a.worktree || dir} add\` **the listed paths, explicitly**. Never \`git add -A\` and never \`git add .\`. \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\` and everything under \`.claude/skills/\` are gitignored local files linked into this worktree so the pass could build at all — they are not yours to track, and the bulk adds are how they reach a diff.
-4. Commit. Conventional Commits subject unless this repo's own \`CLAUDE.md\` says otherwise, referencing \`${item.id}\`. No mention of Claude, an AI, or an assistant anywhere in the message.
+4. Commit. Conventional Commits subject unless this repo's own \`CLAUDE.md\` says otherwise, referencing \`${item.id}\`. No mention of Claude, an AI, or an assistant anywhere in the message. **You are the one stage allowed to commit — a guard denies \`git commit\` from every other stage in this pass, and it recognises this one by a token you must prefix the command with, unquoted, at the start of the line: \`${COMMIT_OK} git -C ${a.worktree || dir} commit -m "..."\`.**
 5. Read back what you actually produced: \`git -C ${a.worktree || dir} rev-parse HEAD\` and \`git -C ${a.worktree || dir} status --short\`. Return the sha in \`commit\`, the branch in \`branch\`, \`committed: true\`, and a clean \`status\` is what \`committed\` asserts — if the tree is still dirty, say which paths in \`summary\`.
 6. Stop. Return \`pushed: false\` and \`landed: false\`; both are correct and neither is a failure.
 

@@ -282,5 +282,57 @@ const preResolved = await run({ resolved: { id: 'proj-1', title: 'A thing', body
 check('a pre-resolved item with no explicit found still runs', preResolved.result.halted_on !== 'resolve', true)
 check('  ...and reaches Gate', preResolved.calls.includes('Gate'), true)
 
+// 16. Wrap is the only stage that commits. If Edit reports it committed anyway
+//     — the exact shape observed on cc-22k round 2, where the Edit stage
+//     committed and Verify's `verified_parent` then read the branch head
+//     instead of its parent — the pass must halt right there, before Green,
+//     Review or Verify ever run on a tree they no longer expect.
+const editCommitted = await run(BASE, { Edit: { touched: ['a.ts'], summary: 'edited a.ts', committed: true } })
+check('an Edit stage that committed halts the pass', editCommitted.result.ok, false)
+check('  ...naming the edit stage', editCommitted.result.halted_on, 'edit')
+check('  ...never reaching Green', editCommitted.calls.includes('Green'), false)
+check('  ...never reaching Verify', editCommitted.calls.includes('Verify'), false)
+check('  ...never reaching Wrap', editCommitted.calls.includes('Wrap'), false)
+
+// 17. Same guarantee at Green: a committed report there halts before Review
+//     or Verify run, for the same reason.
+const greenCommitted = await run(BASE, { Green: { green: true, attempts: 1, committed: true } })
+check('a Green stage that committed halts the pass', greenCommitted.result.ok, false)
+check('  ...naming the green stage', greenCommitted.result.halted_on, 'green')
+check('  ...never reaching Review', greenCommitted.calls.includes('Review'), false)
+check('  ...never reaching Verify', greenCommitted.calls.includes('Verify'), false)
+check('  ...never reaching Wrap', greenCommitted.calls.includes('Wrap'), false)
+
+// 18. Prose alone failed to stop stages committing before (the cc-fyt finding
+//     this pass exists to fix), so the Edit, Green and Review prompts each
+//     carry an explicit no-commit sentence, in the same words every time —
+//     naming Wrap as the only stage that commits and `git commit` by name.
+const promptRun = await run({ ...BASE, worktree: '/tmp/wt' }, { Verify: WT_VERIFY })
+for (const stagePhase of ['Edit', 'Review']) {
+  const p = promptRun.prompts.find((x) => x.phase === stagePhase).prompt
+  check(`the ${stagePhase} prompt names git commit as forbidden`, p.includes('no `git commit`'), true)
+  check(`  ...and names Wrap as the only stage that commits`, /Wrap is the only stage that commits/.test(p), true)
+}
+// Green carries the same prohibition, worded differently: the external
+// implement-workflow.test.sh (cc-rbz) bans the literal words "commit" and
+// "wrap-up" from Green's prompt specifically, since Green is the one stage a
+// routing instruction toward wrap-up would be dangerous for — so its version
+// of this sentence conveys the rule without using either.
+const greenP = promptRun.prompts.find((x) => x.phase === 'Green').prompt
+check('the Green prompt forbids advancing the branch itself', greenP.includes('do not advance the branch yourself'), true)
+check('  ...and names a later stage as the only one that does', /A later stage is the only one that does that/.test(greenP), true)
+
+// 19. The commit sentinel that lets the push guard tell Wrap and salvage
+//     apart from every other stage is handed out in exactly one prompt in the
+//     happy path — Wrap — and to no other stage. A stage that never sees the
+//     token cannot copy it into a command the guard would then wave through.
+const SENTINEL = 'IMPLEMENT_COMMIT_OK=1'
+const wrapPromptText = promptRun.prompts.find((x) => x.phase === 'Wrap').prompt
+check('the Wrap prompt carries the commit sentinel', wrapPromptText.includes(SENTINEL), true)
+for (const stagePhase of ['Edit', 'Green', 'Review', 'Locate', 'Gate']) {
+  const p = promptRun.prompts.find((x) => x.phase === stagePhase).prompt
+  check(`the ${stagePhase} prompt does not carry the commit sentinel`, p.includes(SENTINEL), false)
+}
+
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)
