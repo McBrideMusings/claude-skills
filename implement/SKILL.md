@@ -84,10 +84,14 @@ loop
   review r's diff against the sha the pass started from
   if all clear and r.blockers is empty  -> land
   if round == 5                -> halt: leave the worktree standing, report the path
-  SendMessage(the pass's agent, the failures); round++
+  r = Workflow(pass, worktree: r.worktree, args.resolved: {...item, body: the failures}); round++
 ```
 
-**Rounds 2..N go back to the same pass by `SendMessage`.** Launching a second `Workflow` cuts a fresh worktree that has never seen round 1's code.
+**Rounds 2..N relaunch `Workflow` on the SAME `worktree`, carrying the failures as the item body.** Pass `args.worktree` as the worktree round 1 already committed into, and `args.resolved` as the original item with `body` replaced by round 1's failure list — the recheck commands that failed and their real output. The pass re-enters the existing checkout with round 1's commit already in place; `name-pass.sh` still generates a fresh `scriptPath` per launch, so round 2 gets its own generated copy, and that is expected.
+
+**Only *omitting* `worktree` cuts a fresh checkout that has never seen round 1's code.** Passing the same `worktree` reuses it.
+
+**Tested 2026-09-01: a `Workflow`'s stage agents are not addressable.** They do not appear in `ListAgents`, and `SendMessage` to a stage's `agentId` returns `No transcript found for agent ID: …`. `resumeFromRunId` does not help either — an unchanged `(prompt, opts)` replays from cache, and round 2's new information (the orchestrator's failures) is not in any stage's prompt, so nothing about resuming re-runs anything.
 
 **On exhaustion, halt — in every arity, including sequential and swarm.** Leave the worktree standing, print its absolute path, the failing command and its real output. The work is in there and it is the only copy; a removed worktree holding an unlanded branch is the one state nothing recovers from. In sequential this stalls the rest of the queue, and that is deliberate: five rounds failing is evidence the brief was wrong, which is a judgment the user holds.
 
@@ -158,7 +162,7 @@ Two path families are exempt because both are the session's own bookkeeping, not
 
 Anything else dirty is a real halt, including a file the user left half-edited.
 
-**No commit-count guard.** A pass produces at most one commit, so a branch cannot accumulate its way to a threshold. If a pass ever produces two, that is a bug in the Wrap stage.
+**No commit-count guard.** The invariant is one commit per *pass*, not per branch — a branch that goes N verify-loop rounds carries one commit per round, and that is correct, not accumulation. If a single pass ever produces two commits, that is a bug in the Wrap stage.
 
 ---
 
