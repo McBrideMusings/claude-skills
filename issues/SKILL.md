@@ -20,3 +20,31 @@ injected line to know this — it is true of every repo.
 | [`./labels.md`](./labels.md) | Choosing or creating a label on either backend. |
 
 `gh pr …` is exempt from backend resolution — pull requests are GitHub-only on every backend.
+
+## Which tracker — decide before you file, not after
+
+**The tracker is chosen by the code that has to change, never by the directory you are standing
+in.** `bd` writes to whatever repo you happen to be in, so filing is silently wrong by default:
+the bug you hit while working repo A goes into A's tracker even when the fix lives in B, where
+nobody working B can see it.
+
+Ask one question: **which repo holds the file that closes this issue?**
+
+| The fix edits | Files in |
+| --- | --- |
+| Claude Code itself, its hooks, its skills, its agents, its commands, `~/.claude/CLAUDE.md`, `settings.json` | `bd -C ~/.claude` — **never an individual repo**, however you came to notice it |
+| A machine, a service, a deployment, a fleet host's config | `bd -C ~/Systems` |
+| The product you are working on | that repo |
+
+A repo's own `CLAUDE.md` or `CLAUDE.local.md` may name further destinations — a project whose
+backend runs on a host you administer separates *the product* from *that host's configuration*,
+and they are two different trackers. Read it before filing.
+
+**Filing in the wrong place is not a small error.** It puts the issue where the person who can
+fix it will never look, and it distorts the receiving repo's counts and every `bd ready`. When
+you find one already misfiled, move it — create in the right tracker with a `Moved from <repo>
+(<old-id>)` line, close the original naming the new id — without asking.
+
+**Labels get reconciled to [`./labels.md`](./labels.md) on sight, without asking.** A label that
+is off-schema is drift, not a local convention: delete it, or map it onto the schema. This is
+never a question to put to the user.

@@ -84,6 +84,28 @@ declared in that repo's `CLAUDE.md` and nowhere else. Typical: `platform:macos`,
 A single-platform repo uses no `platform:` label at all. Labelling every issue with the one
 platform you have is noise.
 
+## Reconciling an off-schema label — always, unasked
+
+**When you touch a tracker and see a label this file does not define, fix it in the same pass.**
+Do not ask, do not file a ticket to do it later, do not treat it as the repo's local convention.
+An off-schema label is drift by definition: this file is the vocabulary, and a label outside it
+carries an attribute nobody else's tooling can read.
+
+Three outcomes, in order of preference:
+
+1. **Maps onto the schema** — rewrite it. `hitl` → `human`. `area:companion` on an iOS bug →
+   `area:ui` + `platform:ios`.
+2. **Restates a tracker field, or restates another label in reverse** — delete it outright, no
+   replacement. `afk` is the whole of this case: absence of `human` already means AFK.
+3. **Genuinely doesn't map** — it is a tenth `area:`, so it gets a line in that repo's
+   `CLAUDE.md` under a "Labels" heading saying what it owns. An undocumented tenth is drift
+   wearing a prefix.
+
+**A label whose name collides with a word the repo already spends on something else is renamed,
+even if it is otherwise legal.** `area:harness` in a repo that was building its own agent harness
+read as that harness; it meant Claude Code's. The reader cannot tell, and the reader is who the
+label is for.
+
 ## Extending
 
 - **The nine `area:` values do not grow globally.** A repo that needs a tenth — a subsystem
