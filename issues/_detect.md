@@ -114,6 +114,21 @@ because they are detection-time decisions, not usage-time ones:
   asking, then pushes the entire database to their remote. A `file://` directory you own takes
   a real push and `bd bootstrap` recovers every issue from it, so redirecting costs no backup.
   The same guard denies a push while `sync.remote` is anything else.
+- **Two tiers of issue, and the tier decides where you create it.** Stealth forbids publishing
+  the *database*, not collaborating. `gh issue create` is ordinary work in a client's repo and
+  is deliberately not blocked by the guard — what it sends is one issue you wrote on purpose,
+  where `bd github sync` would send every bead you own.
+
+  | | Create it with | How it travels |
+  | --- | --- | --- |
+  | **Client-visible** — a bug or request they should act on | `gh issue create` **first** | `bd github sync --pull-only` brings it back as a bead carrying `external_ref: gh-<n>` |
+  | **Yours** — task breakdown, dependency edges, notes on their code | `bd create` | never travels; this tier is the reason beads is here at all |
+
+  Same split for updates: `gh issue edit` / `gh issue comment` / `gh issue close` for what they
+  can see, then pull. Priority and dependencies are beads-only fields GitHub cannot hold, so
+  they never need to travel. **No hook can enforce this split** — which tier an issue belongs to
+  is intent, and a guard that blocked `bd create` would delete the private tier. The push guard
+  works because "never push the database" takes no input; this rule does.
 - **Say the limit out loud once.** `.beads/` still sits in the working directory. `git status`
   cannot see it; anyone with filesystem access to that checkout can.
 

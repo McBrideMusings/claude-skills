@@ -190,6 +190,11 @@ bd setup claude --stealth
 **The one thing stealth does not hide:** `.beads/` still sits in the working directory. It is
 invisible to `git status`, visible to anyone with filesystem access to that checkout.
 
+**In a stealth repo, a client-visible issue is created with `gh issue create` and then pulled
+down — not created in beads and pushed up.** `gh` sends one issue you wrote deliberately;
+`bd github sync` sends the whole database. See [`_detect.md`](_detect.md) § Stealth for the
+two-tier split and why no hook can enforce it.
+
 **In a stealth repo, pull is permitted and push never is.** `bd github sync --pull-only` seeds
 your private graph from their backlog — the reason stealth and GitHub coexist. Bare
 `bd github sync` is bidirectional and would file a real issue in their tracker for every bead
