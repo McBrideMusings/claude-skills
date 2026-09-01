@@ -48,8 +48,10 @@ most — run it once per invocation and reuse the answer for the rest of the run
 
 ## Mirror mode (beads + GitHub together)
 
-When step 3 resolved `beads`, check once whether the beads database is configured to mirror to
-GitHub Issues:
+**The `beads:mirror` label in `~/.claude/domains-map` decides this** when it is present; it is
+what gets [`beads-mirror-context.md`](beads-mirror-context.md) injected. With no label, check
+once whether the beads database is configured to mirror to GitHub Issues, then write the answer
+into the map:
 
 ```bash
 bd github status

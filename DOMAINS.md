@@ -22,8 +22,8 @@ marker this store used to rely on was removed on 2026-08-23.
 The **issue backend** is not a label. Beads is the standing assumption for every repo, carried in
 the `issues` skill description, which is in context every session without a map lookup. Only a
 departure from that assumption earns a label: `beads:stealth` for a repo that carries beads and
-commits none of it, and `tracker:github` for one with no beads yet. Cells live in
-[`issues/`](issues/README.md).
+commits none of it, `beads:mirror` for one whose beads are copied into GitHub Issues, and
+`tracker:github` for one with no beads yet. Cells live in [`issues/`](issues/README.md).
 
 ## Layout
 

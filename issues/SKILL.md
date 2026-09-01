@@ -16,6 +16,7 @@ injected line to know this — it is true of every repo.
 | [`./beads.md`](./beads.md) | `bd` verbs, the Dolt store, mirror mode and `external_ref`. |
 | [`./github.md`](./github.md) | The repo has no beads yet and resolved to GitHub: `gh issue` verbs and its own conventions. |
 | [`./beads-stealth-context.md`](./beads-stealth-context.md) | Working in a stealth repo and needing the posture rather than the verbs. |
+| [`./beads-mirror-context.md`](./beads-mirror-context.md) | The repo mirrors beads to GitHub Issues: what reads and writes may touch. |
 | [`./labels.md`](./labels.md) | Choosing or creating a label on either backend. |
 
 `gh pr …` is exempt from backend resolution — pull requests are GitHub-only on every backend.

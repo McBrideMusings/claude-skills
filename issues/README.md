@@ -20,6 +20,7 @@ issues/
   labels.md         <- the label schema, backend-independent: area: / mode: / platform:
   beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   beads-stealth-context.md  <- injected in a stealth repo: the posture, not the verbs
+  beads-mirror-context.md   <- injected where GitHub Issues mirrors beads: read/write rules
   github.md         <- verb table for a repo with no beads yet (`gh`)
 ```
 
