@@ -1,6 +1,6 @@
 # Apple orchestrate axis
 
-Read by `orchestrate` at step 3 (fan out) and step 7 (retire) when the platform is `apple`.
+Read by `implement swarm` when it fans out and retires passes, if the platform is `apple`.
 Supplies the commands behind that skill's platform-neutral rule: *a worktree isolates source and
 nothing else — whatever verification touches beyond it, give each worker its own and pin every
 command to it by id*.
@@ -69,19 +69,33 @@ and exporting it in the shell that invokes `xcodebuild` does not reach the build
 2026-08-31: a worker spent most of a pass testing against a sibling's Metro before spotting the
 port mismatch in the unified log, and only then forced its own.
 
-Two things that do work, and a worker needs both:
+**On React Native 0.86 the build setting does not work either — only the runtime default does.**
+0.86 ships React-Core as a *prebuilt* xcframework (`Pods/React-Core-prebuilt/React.xcframework`)
+whose `RCTBundleURLProvider.mm` Meta compiled with `RCT_METRO_PORT=8081` baked in. An
+`xcodebuild … RCT_METRO_PORT=<port>` override resolves correctly in `-showBuildSettings` for the
+React-Core pod target and still cannot reach that binary: the app's first request is literally
+`http://localhost:8081/status`, after a full DerivedData wipe and clean rebuild. Confirmed
+independently by two workers on `term`, 2026-09-01. Symptom when Metro is not running on 8081 at
+all: a red screen reading `No script URL provided`.
+
+So the build-setting line below is **the 0.75-era route, and it is not enough on 0.86**. Use the
+runtime override, which `RCTBundleURLProvider` supports for exactly this case:
 
 ```bash
 # 1. Start this worker's own Metro, in its own worktree.
 npx react-native start --port <port>
 
-# 2. Point the INSTALLED APP at it. Either pass the build setting to xcodebuild
-#    directly (not as an env var):
+# 2. Point the INSTALLED APP at it. Pass the build setting AND set the runtime
+#    default — on RN 0.86 only the second one actually takes effect:
 xcodebuild -destination "id=<udid>" RCT_METRO_PORT=<port> …
-#    or, for a Debug build already installed, set the packager location on the
-#    device and relaunch:
 xcrun simctl spawn <udid> defaults write <bundle-id> RCT_jsLocation -string "localhost:<port>"
+xcrun simctl terminate <udid> <bundle-id>   # the default is read at launch
+xcrun simctl launch <udid> <bundle-id>
 ```
+
+Note the bundle id is the *installed* one — a Debug build may carry a `.dev` suffix
+(`com.piercemakes.term.dev` on `term`), and writing the default under the release id silently
+does nothing.
 
 **Have the worker prove which Metro it is on before it trusts a single observation**, because
 nothing about the wrong one looks wrong:
