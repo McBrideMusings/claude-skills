@@ -322,17 +322,5 @@ const greenP = promptRun.prompts.find((x) => x.phase === 'Green').prompt
 check('the Green prompt forbids advancing the branch itself', greenP.includes('do not advance the branch yourself'), true)
 check('  ...and names a later stage as the only one that does', /A later stage is the only one that does that/.test(greenP), true)
 
-// 19. The commit sentinel that lets the push guard tell Wrap and salvage
-//     apart from every other stage is handed out in exactly one prompt in the
-//     happy path — Wrap — and to no other stage. A stage that never sees the
-//     token cannot copy it into a command the guard would then wave through.
-const SENTINEL = 'IMPLEMENT_COMMIT_OK=1'
-const wrapPromptText = promptRun.prompts.find((x) => x.phase === 'Wrap').prompt
-check('the Wrap prompt carries the commit sentinel', wrapPromptText.includes(SENTINEL), true)
-for (const stagePhase of ['Edit', 'Green', 'Review', 'Locate', 'Gate']) {
-  const p = promptRun.prompts.find((x) => x.phase === stagePhase).prompt
-  check(`the ${stagePhase} prompt does not carry the commit sentinel`, p.includes(SENTINEL), false)
-}
-
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)

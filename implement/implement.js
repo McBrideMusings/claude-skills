@@ -51,17 +51,18 @@ const SKILLS = '/Users/pierce/.claude/skills'
 const RULES = `${SKILLS}/implement/STAGE-RULES.md`
 const DETECT = `${SKILLS}/_tracker/_detect.md`
 
-// Wrap is the only stage that commits, and Verify's `verified_parent` is only
-// truthful while that holds. A `hooks/subagent-push-guard.sh` PreToolUse guard
-// denies `git commit` (and `git merge`) from every subagent UNLESS the command
-// carries this exact token, unquoted, in command position — so the guard is the
-// structural half of the invariant and this constant is its one spelling. It is
-// handed out to exactly two prompts below: `salvage()` and the Wrap prompt. No
-// other stage prompt may reference it — a stage that saw the token could just
-// copy it, so it is a discriminator the hook checks for, not a secret, and its
-// value is kept out of every prompt except the two stages that legitimately
-// commit.
-const COMMIT_OK = 'IMPLEMENT_COMMIT_OK=1'
+// Wrap is the only stage that commits. Edit and Green carry `committed` in
+// their result schemas, and the script halts the pass the instant either
+// reports a true self-report — the weaker backstop, which catches the partial
+// case where a stage commits some files and leaves others dirty. What
+// actually makes the invariant hold is Verify's `tree_clean` check: it reads
+// `git status --short` at the same moment it reads HEAD, using a DIFFERENT
+// agent than the one that would have committed, and returns BLOCKED instead
+// of writing a false `verified_parent` when the tree is already clean. There
+// is no PreToolUse hook for this: `git commit` is not a session-boundary act
+// like push, merge, worktree lifecycle, or tracker writes, and
+// `hooks/subagent-push-guard.sh` can see that its caller is a subagent but
+// not which stage is calling — so no unfakeable rule can be written there.
 
 const a = args || {}
 const dir = a.worktree || a.repo || a.cwd
@@ -367,7 +368,7 @@ The ${stage} stage just returned ${outcome} for this item and the pass is haltin
 
 Commit every source change in the tree. Then stop.
 
-- Wrap is the only stage that normally commits; you are the other one, because you exist to rescue work a halt would otherwise strand. A guard denies \`git commit\` from every other stage in this pass — prefix your commit command with \`${COMMIT_OK} \` (unquoted, at the start of the line) so it is recognised, e.g. \`${COMMIT_OK} git -C ${a.worktree} commit -m "..."\`.
+- Wrap is the only stage that normally commits; you are the other one, because you exist to rescue work a halt would otherwise strand, e.g. \`git -C ${a.worktree} commit -m "..."\`.
 - Stage the files the pass actually changed. Never \`git add -A\`.
 - Do not commit gitignored local files linked into the worktree — \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\`, anything under \`.claude/skills/\`.
 - Write a commit message that says plainly this work halted at ${stage} and names the outcome above, so nobody reading the log mistakes it for finished work. Conventional Commits, and no mention of Claude, AI, or any assistant.
@@ -904,7 +905,7 @@ ${WORK}
 1. \`~/.claude/tools/repo-snapshot ${dir || '.'}\` once — not several separate git calls.
 2. Run the project's formatter **on the files listed above and no others**. Never a repo-wide format or \`lint --fix\`: it rewrites files no sibling worker touched, so every other branch in the round conflicts on whitespace alone, and the conflict surfaces at landing long after you are gone. If the only formatter available is repo-wide, skip formatting and say so in \`summary\`.
 3. \`git -C ${a.worktree || dir} add\` **the listed paths, explicitly**. Never \`git add -A\` and never \`git add .\`. \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\` and everything under \`.claude/skills/\` are gitignored local files linked into this worktree so the pass could build at all — they are not yours to track, and the bulk adds are how they reach a diff.
-4. Commit. Conventional Commits subject unless this repo's own \`CLAUDE.md\` says otherwise, referencing \`${item.id}\`. No mention of Claude, an AI, or an assistant anywhere in the message. **You are the one stage allowed to commit — a guard denies \`git commit\` from every other stage in this pass, and it recognises this one by a token you must prefix the command with, unquoted, at the start of the line: \`${COMMIT_OK} git -C ${a.worktree || dir} commit -m "..."\`.**
+4. Commit. Conventional Commits subject unless this repo's own \`CLAUDE.md\` says otherwise, referencing \`${item.id}\`. No mention of Claude, an AI, or an assistant anywhere in the message. **You are the one stage that commits: \`git -C ${a.worktree || dir} commit -m "..."\`.**
 5. Read back what you actually produced: \`git -C ${a.worktree || dir} rev-parse HEAD\` and \`git -C ${a.worktree || dir} status --short\`. Return the sha in \`commit\`, the branch in \`branch\`, \`committed: true\`, and a clean \`status\` is what \`committed\` asserts — if the tree is still dirty, say which paths in \`summary\`.
 6. Stop. Return \`pushed: false\` and \`landed: false\`; both are correct and neither is a failure.
 
