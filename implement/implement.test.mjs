@@ -33,6 +33,7 @@ const metaOf = (src) => {
 // Stub returns keyed by phase, so a case overrides only the phase it cares
 // about (e.g. Verify -> SKIP) and inherits a happy path for the rest.
 const HAPPY = {
+  Tracker: { backend: 'beads', db: '/repo/.beads' },
   Resolve: { id: 'proj-1', title: 'A thing', body: 'do it' },
   Gate: { pass: true, reason: 'concrete' },
   // `base_sha` must look like a real sha: the script rejects anything else at
@@ -57,6 +58,7 @@ const HAPPY = {
 async function run(args, overrides = {}) {
   const stubs = { ...HAPPY, ...overrides }
   const calls = []
+  const prompts = []
   // The runtime evaluates the script as an async function body with these
   // globals injected, which is why top-level `return` is legal in it.
   const body = new (async function () {}).constructor(
@@ -72,9 +74,10 @@ async function run(args, overrides = {}) {
   let current = 'Resolve'
   const result = await body(
     args,
-    async (_prompt, opts) => {
+    async (prompt, opts) => {
       const p = (opts && opts.phase) || current
       calls.push(p)
+      prompts.push({ phase: p, prompt })
       return stubs[p] ?? {}
     },
     async () => [],
@@ -85,7 +88,7 @@ async function run(args, overrides = {}) {
     },
     async () => ({}),
   )
-  return { result, calls }
+  return { result, calls, prompts }
 }
 
 const BASE = { resolved: HAPPY.Resolve, repo: '/tmp/repo' }
@@ -149,7 +152,38 @@ check('a FAIL halts the pass', failedVerify.result.ok, false)
 check('  ...and names the stage it halted on', failedVerify.result.halted_on, 'verify')
 check('  ...and never reaches Wrap', failedVerify.calls.includes('Wrap'), false)
 
-// 8. name-pass.sh generates a per-pass copy naming the item, and the result
+// 8. A submodule's tracker is not on any ancestor path of its worktree — the
+//    code repo nests inside the tracker repo. A pass launched there used to
+//    halt at the Gate with "issue cc-xne does not exist in this tracker"
+//    because `bd` fell back to an unrelated database and answered "not
+//    found" with exit 0. The database has to be resolved against the
+//    ORCHESTRATOR's checkout (`args.repo`), and a beads backend with no
+//    `.beads` found anywhere above it halts BEFORE Resolve runs, naming the
+//    database — not the issue.
+const noDb = await run({ repo: '/tmp/repo', issue: 'proj-1' }, { Tracker: { backend: 'beads' } })
+check('a missing tracker database halts before Resolve', noDb.result.ok, false)
+check('  ...naming the stage', noDb.result.halted_on, 'resolve')
+check('  ...mentioning the beads database, not the issue', /beads database/.test(noDb.result.detail), true)
+check('  ...never claiming the issue does not exist', /does not exist/.test(noDb.result.detail), false)
+check('  ...and never reaches the Resolve agent', noDb.calls.includes('Resolve'), false)
+
+// 9. When the walk finds the database, every `bd` read in the Resolve prompt
+//    carries `--db <path>` — a bare `bd show` resolves from the worktree's
+//    own cwd and silently answers from a different database.
+const found = await run({ repo: '/tmp/repo', issue: 'proj-1' }, { Tracker: { backend: 'beads', db: '/tmp/repo/.beads' } })
+const resolvePrompt = found.prompts.find((p) => p.phase === 'Resolve').prompt
+check('the Resolve prompt carries --db from the resolved database', resolvePrompt.includes('--db /tmp/repo/.beads'), true)
+check('  ...and no bare `bd show <id> --json` survives alongside it', /(?<!--db \/tmp\/repo\/\.beads )bd show <id> --json/.test(resolvePrompt), false)
+
+// 10. No `repo` and no `cwd` — only `worktree`/`issue`, the shape the bash
+//     suite's harness passes — gives the walk no root to start from. It must
+//     skip the Tracker call entirely and let Resolve run exactly as before
+//     this change, or the bash suite's 48 passing assertions break.
+const noRoot = await run({ issue: 'proj-1', worktree: '/wt', branch: 'feat' })
+check('with no repo/cwd, no Tracker call is made', noRoot.calls.includes('Tracker'), false)
+check('  ...and Resolve still runs', noRoot.calls.includes('Resolve'), true)
+
+// 11. name-pass.sh generates a per-pass copy naming the item, and the result
 //    is still a pure `meta` literal — the whole reason this generation
 //    exists rather than passing a name at call time.
 const scratchDir = mkdtempSync(join(tmpdir(), 'implement-name-pass-'))

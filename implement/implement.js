@@ -275,6 +275,35 @@ const LANDED = {
   },
 }
 
+// The tracker database this pass's Resolve stage must read from, resolved
+// against the ORCHESTRATOR's checkout — never the worktree `bd` would
+// auto-discover from by walking up from its own cwd.
+//
+// A submodule's tracker is not on any ancestor path of its worktree: the code
+// repo is nested inside the tracker repo, so a worktree at
+// `~/.worktrees/claude-skills/<id>` has no `.beads` above it at all, and `bd`
+// silently falls back to whatever *is* above the worktree — an empty or
+// unrelated database — and answers "not found" with exit 0. A pass launched
+// on the `skills` submodule halted at the Gate reading exactly that: "issue
+// cc-xne does not exist in this tracker", against an issue that was open.
+//
+// The walk has to be an agent, not inline JS: a Workflow script has no
+// filesystem or Node API access, so `implement.js` itself cannot stat a
+// directory. And it has to target the nearest `.beads` DIRECTORY, not a
+// `.beads/*.db` file — this install's tracker is `~/.claude/.beads/`, which
+// holds `embeddeddolt` and `issues.jsonl`, no `.db` file at all. A literal
+// `*.db` glob would find nothing and halt every pass on this machine.
+const TRACKER = {
+  type: 'object',
+  required: ['backend'],
+  properties: {
+    backend: { type: 'string' },
+    // Absolute path to the tracker's `.beads` directory. beads only.
+    db: { type: 'string' },
+    searched: { type: 'string' },
+  },
+}
+
 const halt =(stage, detail) => ({ ok: false, halted_on: stage, detail, item: a.item || a.issue })
 
 // A halt before Wrap must not also destroy the work that provoked it.
@@ -320,6 +349,38 @@ if (a.resolved) {
   item = a.resolved
   log(`item pre-resolved by caller: ${item.id} ${item.title}`)
 } else {
+  // Resolve the tracker database BEFORE the Resolve agent runs, against the
+  // ORCHESTRATOR's checkout (`args.repo`/`args.cwd`) — never `dir`, which
+  // prefers the worktree and is exactly the path that produced the bug.
+  //
+  // Skipped entirely when neither is known: a caller that supplies only
+  // `worktree` (or nothing at all) gives this walk no root to start from, and
+  // there is nothing above the worktree itself to search from here — the
+  // Resolve agent below falls back to whatever `bd` auto-discovers, same as
+  // before this change.
+  const TRACKER_ROOT = a.repo || a.cwd || null
+  let db = null
+  if (TRACKER_ROOT) {
+    const tracker = await agent(
+      `${COMMON}
+
+Detect the tracker backend via \`${DETECT}\`. If it is beads, walk UP from \`${TRACKER_ROOT}\` for the nearest ancestor directory (including \`${TRACKER_ROOT}\` itself) that contains a \`.beads\` directory — the tracker commonly lives one repo up from a submodule checkout — and return that \`.beads\` directory's absolute path in \`db\`. If none is found, return \`backend: "beads"\` with no \`db\`. If the backend is GitHub, return \`backend: "github"\` and no \`db\` — \`gh\` resolves its own repo from the git remote and needs no path from you.
+
+This is read-only. Run no \`bd\` write of any kind.`,
+      { phase: 'Tracker', label: 'tracker-db', model, effort: 'low', schema: TRACKER },
+    )
+    if (!tracker) return halt('resolve', `could not determine the tracker database above ${TRACKER_ROOT}`)
+    if (tracker.backend === 'beads' && !tracker.db) {
+      return halt('resolve', `no beads database found above ${TRACKER_ROOT}`)
+    }
+    db = tracker.db || null
+  }
+  // Interpolated into every `bd` read in the Resolve prompt below. A bare `bd`
+  // discovers its database by walking up from the CURRENT WORKING DIRECTORY,
+  // which for this stage is the worktree — not the tracker's repo — so it
+  // silently answers from a different, usually empty, database.
+  const DB = db ? ` --db ${db}` : ''
+
   item = await agent(
     `${COMMON}
 
@@ -327,11 +388,11 @@ Resolve exactly **one** tracked work item and return it. Resolving it is the who
 
 Target: ${a.issue ? `issue ${a.issue}` : a.item ? `the local item ${JSON.stringify(a.item)}` : 'no explicit target — resolve it from the branch name, then from non-interactive triage'}.
 
-Resolve the tracker backend via \`${DETECT}\`, then work down this ladder and stop at the first rung that answers:
+Resolve the tracker backend via \`${DETECT}\`, then work down this ladder and stop at the first rung that answers.${DB ? ` Every \`bd\` read in this stage carries \`${DB}\`; a bare \`bd\` resolves from the worktree's own working directory and can answer from a different database than the one this item actually lives in.` : ''}
 
-1. **An issue number or id in the target above** (\`1118\`, or a beads id like \`myproj-zb8\`) — that issue IS the item. Confirm it exists and is open: \`bd show <id> --json\` on beads, \`gh issue view <n> --json number,title,state\` on GitHub. **If it is closed or missing, return nothing** rather than substituting another item.
+1. **An issue number or id in the target above** (\`1118\`, or a beads id like \`myproj-zb8\`) — that issue IS the item. Confirm it exists and is open: \`bd${DB} show <id> --json\` on beads, \`gh issue view <n> --json number,title,state\` on GitHub. **If it is closed or missing, return nothing** rather than substituting another item.
 2. **Item text in the target above** — a papercut or local note with no issue number. That text IS the item; carry the id the caller gave it. Do not go looking for a matching issue.
-3. **The current branch name**, for an embedded issue id — \`fix/1118-login\`, \`1118-foo\`, \`issue-1118\`, \`myproj-zb8-login\`. It counts only if it matches an item that is open on the backend.
+3. **The current branch name**, for an embedded issue id — \`fix/1118-login\`, \`1118-foo\`, \`issue-1118\`, \`myproj-zb8-login\`. It counts only if it matches an item that is open on the backend (\`bd${DB} show <id> --json\`).
 4. **Triage.** Invoke the \`triage\` skill via the Skill tool **non-interactively** — skip its wait-for-confirmation step and take the top recommendation. Skip triage's offer-wrap-up step; this pass does not wrap up. **The pick must be an item that already exists on the tracker.** A fresh idea, a "while we're here" cleanup or an invented refactor is not one — return nothing instead. If triage finds nothing actionable, return nothing.
 
 Return the item itself. Put every question the tracker thread left unanswered into \`unresolved\` — that field is what the next stage gates on, and an empty \`unresolved\` you did not actually check for is the failure mode here.`,
