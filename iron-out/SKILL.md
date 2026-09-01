@@ -187,7 +187,7 @@ Sub-agent brief:
 > 1. **Plan test** — could an agent state a concrete plan right now: the files to touch, the changes to make, an objective acceptance check?
 > 2. **Objectivity test** — is "done" verifiable without a qualitative, product, or design call the user owns? Does the body hide an unmade decision, missing information, or an ambiguity an agent would have to invent an answer to?
 >
-> Textual markers are fast-path flags feeding the same judgment, not a separate rule: `Type: HITL`, "TBD", "decide whether", "either … or", a `needs human input:` followup naming the issue. A marked issue still gets judged; an unmarked one can still fail.
+> Markers are fast-path flags feeding the same judgment, not a separate rule: the `human` label, a legacy `Type: HITL` line left in an old body, "TBD", "decide whether", "either … or", a `needs human input:` followup naming the issue. A marked issue still gets judged; an unmarked one can still fail.
 >
 > Then say what resolving it would take: `decision` (a call the user owns), `fact` (something knowable by reading docs, APIs, or code), `artifact` (needs something concrete to react to), `manual` (needs the user to go do a thing offline).
 >
@@ -244,7 +244,7 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 
 ### 3b. Record the resolution
 
-- **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, `Type: HITL` flipped to `Type: AFK` if present. Show the new body, then write it: `bd update <id> --body-file <path>` (plus `--acceptance` for the check, and `--remove-label hitl --add-label afk`) on beads, `gh issue edit <n> --body` on GitHub. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
+- **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, any legacy `Type: HITL` marker deleted from the body. Show the new body, then write it: `bd update <id> --body-file <path> --acceptance "<check>"` plus `bd label remove <id> human` on beads, `gh issue edit <n> --body --remove-label human` on GitHub. Removing `human` is what makes it AFK — there is no positive AFK label to add. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
 - **Question** → `bd human respond <id> "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue's own label set carries `human`.** Phase 0 tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here.
 
 Assets are linked, never pasted.
