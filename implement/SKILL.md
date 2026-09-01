@@ -84,7 +84,7 @@ loop
   review r's diff against the sha the pass started from
   if all clear and r.blockers is empty  -> land
   if round == 5                -> halt: leave the worktree standing, report the path
-  r = Workflow(pass, worktree: r.worktree, args.resolved: {...item, body: the failures}); round++
+  r = Workflow(pass, args: {...args, worktree: r.worktree, resolved: {...item, body: the failures}}); round++
 ```
 
 **Rounds 2..N relaunch `Workflow` on the SAME `worktree`, carrying the failures as the item body.** Pass `args.worktree` as the worktree round 1 already committed into, and `args.resolved` as the original item with `body` replaced by round 1's failure list — the recheck commands that failed and their real output. The pass re-enters the existing checkout with round 1's commit already in place; `name-pass.sh` still generates a fresh `scriptPath` per launch, so round 2 gets its own generated copy, and that is expected.
