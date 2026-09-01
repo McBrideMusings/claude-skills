@@ -121,6 +121,8 @@ bd find-duplicates               # semantically similar issues
 
 Hand every in-scope body to a **Sonnet** sub-agent — same isolation rule as Phase 1, and the same read serves both phases where possible. It returns, per issue: `issue_type`, `area:` and `platform:` labels, `priority` (0–4), a proposed epic, and proposed `blocks` edges.
 
+**When the Agent tool is unavailable, degrade — do not skip the isolation.** A session carrying a harness-injected "do not call the Agent tool unless the user requested it" instruction cannot spawn the reader, and that instruction wins. The fallback: write a paging script under the scratchpad that prints one truncated line per issue (ID, title, first ~700 characters), read it in chunks, and classify from that. Say in the report that the read ran inline. **Never page full bodies into the main context** — a 111-issue backlog read whole costs upward of 100k tokens per turn for the rest of the pass, which is the exact cost the sub-agent exists to avoid.
+
 **The edge rule comes first in the brief, because it is the failure mode:**
 
 ```text
@@ -141,7 +143,11 @@ Labelled: 142 area:ui, 88 area:data, 41 area:infra, 17 area:perf.
 
 The unclassifiable remainder is the part worth the user's eyes; it would be buried in a 294-row list. Every tier-1 write is one command to undo.
 
-**Tier 2 — judgment, slated.** Proposed **epics** (name, member count, member issue names) and proposed **edges**. Roughly fifteen rows, never three hundred. Grouping and ordering are what the user cannot recover by eye; a wrong `area:` costs one `--remove-label`, a wrong epic reorganises how they think about the project.
+**⛔ Tier 1 may only write labels that already exist as vocabulary.** That is the nine `area:` values in [`../ref-tracker/labels.md`](../ref-tracker/labels.md), plus any `area:` or `platform:` value the repo's own `CLAUDE.md` declares under a "Labels" heading. **A value outside that set is not a tier-1 write** — it goes to the tier-2 slate as a proposed new label, carrying the one-line definition of what it owns and what existing value it was preferred over. Inventing a taxonomy is the single most expensive thing this phase can do wrong: it is applied at backlog scale, reported as a count rather than a row, and every later search and filter is built on it. `bd label list-all` after the pass must return no value this rule did not authorise.
+
+**Tier 2 — judgment, slated.** Proposed **epics** (name, member count, member issue names), proposed **edges**, proposed **new label values**, and one **migration row per bare label**. Roughly fifteen rows, never three hundred. Grouping and ordering are what the user cannot recover by eye; a wrong `area:` costs one `--remove-label`, a wrong epic reorganises how they think about the project.
+
+**Bare labels are drift and Phase 0 retires them.** `labels.md` permits exactly one, `human`. Run `bd label list-all`, and for every other unprefixed value give the slate a row naming the mapping: `hitl` → `human`, `afk` → removed (its absence is the answer), `enhancement`/`bug` → the `issue_type` they restate, anything else → an `area:` value or deletion. A pass that adds a taxonomy without retiring the one it supersedes leaves two vocabularies where there was one.
 
 Priority is `0-4` / `P0-P4` — **never** high/medium/low, and never a `priority:*` label. Beads carries it as a field; `labels.md` forbids a label that restates one.
 
@@ -173,7 +179,7 @@ This is the deliverable for a user who wanted the lay of the land and nothing el
 
 ## Phase 1 — Scan
 
-Resolve the issue backend by invoking `ref-tracker`, then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context.
+Resolve the issue backend by invoking `ref-tracker`, then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context. If the Agent tool is unavailable, take 0c's paging fallback — the isolation degrades, it never gets skipped.
 
 **Sonnet, not Haiku — the isolation is the point, not the model.** A cheaper model can return template placeholder text in every `question` field while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone.
 
@@ -245,7 +251,7 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 ### 3b. Record the resolution
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, any legacy `Type: HITL` marker deleted from the body. Show the new body, then write it: `bd update <id> --body-file <path> --acceptance "<check>"` plus `bd label remove <id> human` on beads, `gh issue edit <n> --body --remove-label human` on GitHub. Removing `human` is what makes it AFK — there is no positive AFK label to add. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
-- **Question** → `bd human respond <id> "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue's own label set carries `human`.** Phase 0 tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here.
+- **Question** → `bd human respond <id> "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue's own label set carries `human`.** Phase 0 tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here. The one exception is Phase 0's hygiene close, in Rules; it does not apply anywhere in Phase 3.
 
 Assets are linked, never pasted.
 
@@ -304,7 +310,7 @@ Option 1 loops back: `to-tickets` synthesizes a spec from the decisions, gets it
 ## Rules
 
 - **Never invent an answer.** Every resolution comes from the interview or a dispatched agent's cited findings. If the user declines to decide, the issue stays flagged and is reported as such.
-- **Don't implement, don't commit code.** Body edits, posted answers, closing answered questions, and grill-me's ADRs are the only writes. Never close a work item.
+- **Don't implement, don't commit code.** Body edits, posted answers, closing answered questions, and grill-me's ADRs are the only writes. Never close a work item — with **one exception**: Phase 0 may close a backlog-hygiene item whose entire content it just performed (retype these, label those, parent that set), and the close reason must name the tier-1 action that satisfied it. The item has to be hygiene the phase actually did; a work item that merely *looks* finished still stays open.
 - **Interview one issue at a time** — never batch questions across issues into one message.
 - **Every issue named to the user carries its full clickable URL.** `#121` on its own is not enough.
 - **Never re-implement what `bd` computes.** Ready fronts, cycle detection, orphan checks, transitive blocking, duplicate detection, staleness — `bd swarm validate`, `bd ready`, `bd blocked`, `bd orphans`, `bd find-duplicates`, `bd stale`, `bd doctor --check=conventions`. A second implementation here is free to disagree with the one beads ships.
