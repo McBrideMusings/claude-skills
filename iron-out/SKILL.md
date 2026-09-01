@@ -85,7 +85,7 @@ Runs first, every time, before the AFK gate. A backlog with no types, no groupin
 
 ### 0a. Backend readiness
 
-Resolve the backend by invoking `ref-tracker`. Beads is the target: the graph work below is `bd dep`, `bd swarm validate`, `bd ready` and `bd graph`, none of which has a GitHub equivalent worth hand-writing.
+Resolve the backend by invoking `issues`. Beads is the target: the graph work below is `bd dep`, `bd swarm validate`, `bd ready` and `bd graph`, none of which has a GitHub equivalent worth hand-writing.
 
 **No `.beads/` in the repo** → offer it once, as one slate row:
 
@@ -143,7 +143,7 @@ Labelled: 142 area:ui, 88 area:data, 41 area:infra, 17 area:perf.
 
 The unclassifiable remainder is the part worth the user's eyes; it would be buried in a 294-row list. Every tier-1 write is one command to undo.
 
-**⛔ Tier 1 may only write labels that already exist as vocabulary.** That is the nine `area:` values in [`../ref-tracker/labels.md`](../ref-tracker/labels.md), plus any `area:` or `platform:` value the repo's own `CLAUDE.md` declares under a "Labels" heading. **A value outside that set is not a tier-1 write** — it goes to the tier-2 slate as a proposed new label, carrying the one-line definition of what it owns and what existing value it was preferred over. Inventing a taxonomy is the single most expensive thing this phase can do wrong: it is applied at backlog scale, reported as a count rather than a row, and every later search and filter is built on it. `bd label list-all` after the pass must return no value this rule did not authorise.
+**⛔ Tier 1 may only write labels that already exist as vocabulary.** That is the nine `area:` values in [`../issues/labels.md`](../issues/labels.md), plus any `area:` or `platform:` value the repo's own `CLAUDE.md` declares under a "Labels" heading. **A value outside that set is not a tier-1 write** — it goes to the tier-2 slate as a proposed new label, carrying the one-line definition of what it owns and what existing value it was preferred over. Inventing a taxonomy is the single most expensive thing this phase can do wrong: it is applied at backlog scale, reported as a count rather than a row, and every later search and filter is built on it. `bd label list-all` after the pass must return no value this rule did not authorise.
 
 **Tier 2 — judgment, slated.** Proposed **epics** (name, member count, member issue names), proposed **edges**, proposed **new label values**, and one **migration row per bare label**. Roughly fifteen rows, never three hundred. Grouping and ordering are what the user cannot recover by eye; a wrong `area:` costs one `--remove-label`, a wrong epic reorganises how they think about the project.
 
@@ -179,7 +179,7 @@ This is the deliverable for a user who wanted the lay of the land and nothing el
 
 ## Phase 1 — Scan
 
-Resolve the issue backend by invoking `ref-tracker`, then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context. If the Agent tool is unavailable, take 0c's paging fallback — the isolation degrades, it never gets skipped.
+Resolve the issue backend by invoking `issues`, then fetch every in-scope issue plus its dependencies. Hand the bodies to a **Sonnet** sub-agent so they stay out of parent context. If the Agent tool is unavailable, take 0c's paging fallback — the isolation degrades, it never gets skipped.
 
 **Sonnet, not Haiku — the isolation is the point, not the model.** A cheaper model can return template placeholder text in every `question` field while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone.
 

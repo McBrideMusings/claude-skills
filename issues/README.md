@@ -1,4 +1,4 @@
-# `ref-tracker` — shared issue-tracker knowledge
+# `issues` — shared issue-tracker knowledge
 
 A skill holding shared issue-tracker knowledge, read at run time by every skill that
 creates, reads, updates, or closes tracked items.
@@ -13,14 +13,14 @@ skill holds its *process* once and stays backend-agnostic: it resolves the backe
 ## Layout
 
 ```
-ref-tracker/
+issues/
   SKILL.md          <- the map: which file to open for which task
   README.md         <- this file — orientation and who-reads-what
-  _detect.md        <- how every skill decides which backend is in scope
+  _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
   labels.md         <- the label schema, backend-independent: area: / mode: / platform:
   beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
-  beads-context.md  <- the store's shape, for work that needs more than the verbs
-  github.md         <- verb table for GitHub (`gh`)
+  beads-stealth-context.md  <- injected in a stealth repo: the posture, not the verbs
+  github.md         <- verb table for a repo with no beads yet (`gh`)
 ```
 
 There is deliberately no file-based fallback. A repo with neither backend stops and offers
@@ -57,5 +57,5 @@ unchanged regardless of which issue backend resolved. Only *issues* route throug
 
 ## Adding a backend
 
-Add `ref-tracker/<name>.md` with the same verb-table headings and a detection row in `_detect.md`.
-No skill changes — they already read `ref-tracker/<resolved>.md`.
+Add `issues/<name>.md` with the same verb-table headings and a detection row in `_detect.md`.
+No skill changes — they already read `issues/<resolved>.md`.

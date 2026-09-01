@@ -64,7 +64,7 @@ avoid. So when a skill you are writing touches one of these, route it:
 
 | If the skill … | it reads | never hardcode |
 | --- | --- | --- |
-| creates, reads, closes, comments on, or labels a tracked item | invokes `ref-tracker`, then the resolved backend's verb table | `gh issue …`, `bd …` |
+| creates, reads, closes, comments on, or labels a tracked item | invokes `issues`, then the resolved backend's verb table | `gh issue …`, `bd …` |
 | needs stack-specific knowledge (test framework, profiler, idioms) | [`../_detect.md`](../_detect.md) | a hardcoded stack assumption |
 | needs mode-specific knowledge (game loop, UI craft, product layers) | [`../_detect.md`](../_detect.md) | a hardcoded domain assumption |
 

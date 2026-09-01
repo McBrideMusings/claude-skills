@@ -6,7 +6,7 @@ answer so every downstream skill (`to-tickets`, `triage`, `implement`, `iterate`
 
 ## Step 1 — Detect
 
-Invoke `ref-tracker` and run its detection step. It gives one of:
+Invoke `issues` and run its detection step. It gives one of:
 
 | State | Meaning |
 | --- | --- |
@@ -47,7 +47,7 @@ git add .beads/issues.jsonl
 produces nothing: the pre-commit hook only refreshes `issues.jsonl` when a `.beads/` path is
 already staged, and `bd config get export.auto` reports `true` either way, so the config check
 cannot stand in for the file check. Seed it once by hand and it maintains itself. Full detail:
-[`../ref-tracker/beads.md`](../ref-tracker/beads.md) § JSONL export.
+[`../issues/beads.md`](../issues/beads.md) § JSONL export.
 
 This does **not** replace the Dolt sync — it is a readable copy, not a backup. Both are on.
 
@@ -95,7 +95,7 @@ Same question, shorter, since there's nothing to migrate:
   until one exists; there is no file-based fallback.
 
 `--skip-agents` is deliberate: this repo's agent instructions live in `CLAUDE.md`, and the bd verb
-tables live in `ref-tracker/beads.md`. Don't let `bd init` drop an unasked-for `AGENTS.md` into a
+tables live in `issues/beads.md`. Don't let `bd init` drop an unasked-for `AGENTS.md` into a
 repo the user didn't ask to change.
 
 ## Step 3 — Record the answer
@@ -119,12 +119,12 @@ One of these four bodies, **verbatim** — the wording is load-bearing:
 exactly that. A vaguer phrasing like "local only" reads as "keep the issue data off GitHub,"
 which misdescribes beads: the database always replicates to the git origin, and that is the
 point. Full rule:
-[`../ref-tracker/beads.md`](../ref-tracker/beads.md) § Sync.
+[`../issues/beads.md`](../issues/beads.md) § Sync.
 
 **If you find an older section using the "local only" phrasing, rewrite it to the wording above** —
 even on a repo where nothing else in this phase needed changing.
 
-Step 2 of `ref-tracker`'s detection reads this section and trusts it over auto-detection, so it is how
+Step 2 of `issues`'s detection reads this section and trusts it over auto-detection, so it is how
 a repo pins a choice that detection would otherwise get wrong.
 
 ## Step 4 — Concurrency note

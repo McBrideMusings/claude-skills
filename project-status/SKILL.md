@@ -44,7 +44,7 @@ Integration gaps are the ones progress metrics hide: 72% of tasks done can coexi
 
 ### Phase 04 — Coverage Check
 
-Resolve the tracker by invoking `ref-tracker`, then answer: **if every open and in-progress item were completed, would the vision be fully delivered?** Map each gap to the open items that would close it (`bd list --status open --json` on beads; `gh issue list --state open` on GitHub). Hunt specifically for goals with zero tracked coverage — those are invisible to any burndown. Also flag the inverse: a plan doc or checklist that contradicts the tracker (stale measuring stick).
+Resolve the tracker by invoking `issues`, then answer: **if every open and in-progress item were completed, would the vision be fully delivered?** Map each gap to the open items that would close it (`bd list --status open --json` on beads; `gh issue list --state open` on GitHub). Hunt specifically for goals with zero tracked coverage — those are invisible to any burndown. Also flag the inverse: a plan doc or checklist that contradicts the tracker (stale measuring stick).
 
 A repo with no tracker gets the answer "no tracker — coverage unmeasurable" and the slate offers `bd init` via `to-tickets`, not a halt.
 

@@ -1,43 +1,43 @@
 # Issue-tracker detection
 
-Every skill that touches issues resolves the backend the same way. Resolve in this order and
-stop at the first that answers. This is cheap — three shell calls at most — run it once per
-invocation and reuse the answer for the rest of the run.
+**Beads is the assumption.** Every repo tracks work in `bd`; a repo without it is one that has
+not been migrated yet, not a repo that chose GitHub. Detection exists to confirm that and to
+resolve the two things that genuinely vary — mirror mode and stealth — not to pick a side.
 
-**The backend is a domain label.** It lives in the same map as every other label, spelled
-`tracker:beads` / `tracker:github`, and resolves through
-[`../_detect.md`](../_detect.md). There is one detection system, not two. The
-steps below are how that label is *derived* when the map has no answer for a repo — the
-classify-once bootstrap, not a parallel runtime path. Once the map answers, it wins.
+Resolve in this order and stop at the first that answers. This is cheap — two shell calls at
+most — run it once per invocation and reuse the answer for the rest of the run.
 
 1. **Explicit argument.** If the invocation named a backend (`triage beads`, `to-tickets github`),
    use it. An explicit name overrides everything below — if the user said `beads` and `.beads/` is
    absent, offer `bd init` rather than silently using GitHub.
 
-2. **The map.** A `tracker:<backend>` label for this repo → use it.
+2. **Project override.** If the repo's root `CLAUDE.local.md` has an `## Issue tracker` section
+   naming a backend, trust it. `bootstrap` writes this section; it is how a repo pins an
+   exception to the assumption.
 
-3. **Project override.** If the repo's root `CLAUDE.local.md` has an `## Issue tracker` section
-   naming a backend, trust it. `bootstrap` writes this section; it is how a repo pins its choice.
-
-4. **Beads marker.** `bd where` exits 0 (authoritative — it follows `BEADS_DIR` and resolves a
+3. **Beads.** `bd where` exits 0 (authoritative — it follows `BEADS_DIR` and resolves a
    worktree back to the main repository's `.beads`, which a bare `test -d .beads` does not) →
-   **`beads`**, read [`beads.md`](beads.md).
+   **`beads`**, read [`beads.md`](beads.md). This is the expected answer.
 
    ```bash
    bd where --json
    ```
 
+   It reports `database_path`, `path`, `prefix` and `schema_version` — **never the stealth
+   posture.** Stealth is not derivable at runtime; see § Stealth below.
+
    **`.beads/` exists at the repo root but `bd` is not on PATH → stop and say so.** Tell the user
    `brew install beads`. Never fall through to GitHub — the issues are in the Dolt database and a
    GitHub read would report an empty or stale backlog as if it were the whole picture.
 
-5. **GitHub remote.** `git remote -v` contains a `github.com` remote **and** `gh auth status`
-   exits 0 → **`github`**, read [`github.md`](github.md).
+4. **Not migrated yet.** No beads, but `git remote -v` contains a `github.com` remote **and**
+   `gh auth status` exits 0 → **`github`**, read [`github.md`](github.md). Say in one line that
+   the repo has no beads yet and `bd init` would give it one; then get on with the task. Do not
+   stop, and do not migrate mid-task.
 
-6. **Neither** → **stop and say the repo has no tracker.** There is no file-based fallback: a
+5. **Neither** → **stop and say the repo has no tracker.** There is no file-based fallback: a
    markdown list of follow-ups is a tracker nobody maintains, and work filed into one is work
-   that never gets picked up again. Offer `bd init` — beads is the default for a repo that
-   needs a tracker and has no reason to prefer GitHub — and do nothing else until it exists.
+   that never gets picked up again. Offer `bd init` and do nothing else until it exists.
 
    ```
    This repo has no issue tracker: no .beads/, no authenticated GitHub remote.
@@ -45,9 +45,6 @@ classify-once bootstrap, not a parallel runtime path. Once the map answers, it w
    ```
 
    A bare `go` in reply means `bd init`.
-
-Whatever steps 3–5 resolve, write it back to the map as `tracker:<backend>` so this never
-runs again for that repo.
 
 ## Mirror mode (beads + GitHub together)
 
@@ -80,8 +77,9 @@ Mirror mode does not change which verb table you read — it appends one push pe
 
 Some repos get beads locally and commit none of it — work, client, and anyone else's repo.
 
-**The `tracker:beads-stealth` label in `~/.claude/domains-map` is the source of truth.** Read it
-first; if it is there, it decides and nothing below runs.
+**The `beads:stealth` label in `~/.claude/domains-map` is the source of truth**, and it is the
+only thing that is: `bd where --json` does not report the posture, so there is no runtime signal
+to fall back on. Read the label first; if it is there, it decides and nothing below runs.
 
 **No label yet** → propose a default from two signals, either of which is sufficient:
 

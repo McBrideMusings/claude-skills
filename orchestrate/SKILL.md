@@ -182,7 +182,7 @@ Refusal is by substring, not by exact match — `opus` and `fable` appearing any
 
 The **frontier** is the open issues whose blockers are all closed. Only the frontier is ever dispatched.
 
-Resolve the issue backend by invoking `ref-tracker`, then read dependencies per issue, in this order:
+Resolve the issue backend by invoking `issues`, then read dependencies per issue, in this order:
 
 1. **Native** — on beads, `bd ready --json` *is* the frontier, already computed (`bd ready --explain --json` names each blocker for the report); on GitHub, `gh issue view <n> --json blockedBy --jq '.blockedBy.totalCount'`.
 2. **Prose fallback** — a `Blocked by: #70, #72` line in the body.
