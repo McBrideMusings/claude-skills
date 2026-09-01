@@ -67,7 +67,7 @@ GitHub cannot compute a ready queue — Phase 06's blocker handling stays as wri
 
 On auth/repo-not-found errors (or `bd` missing with a `.beads/` present): report and stop.
 
-**Exclude questions.** Drop any issue carrying the `question` label from the candidate set — a question is a decision to be made, owned by `iron-out`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
+**Exclude questions.** Drop any issue carrying the `human` label (`bd human list` enumerates them) from the candidate set — a question is a decision to be made, owned by `iron-out`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
 
 **Docs** (if in local repo): read `docs/PRD.md` (what the project is) and `docs/roadmap.md` (Now / Next / Later / Deferred). If neither default path exists, glob `**/PRD.md` and `**/roadmap.md` once before giving up. Use whichever exist; if both, use both as project-phase inputs.
 

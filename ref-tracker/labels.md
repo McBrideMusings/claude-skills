@@ -9,20 +9,21 @@ not already carry.** `bd` has `issue_type` (feature/task/bug/epic/decision), `pr
 `enhancement`, `bug`, or `p1` is a second copy of a field that already exists, and second
 copies drift. Delete them.
 
-## The three axes
+## The two axes
 
-Every label belongs to exactly one axis and carries its axis as a prefix. The prefix is not
-decoration — it is what lets `area:` be swept, counted, and grepped without matching a mode or
-a platform by accident, and what stops the next label from landing on the wrong axis.
+Every prefixed label belongs to exactly one axis and carries its axis as a prefix. The prefix is
+not decoration — it is what lets `area:` be swept, counted, and grepped without matching a
+platform by accident, and what stops the next label from landing on the wrong axis.
 
 | Axis | Prefix | Answers |
 | --- | --- | --- |
 | Area | `area:` | Which part of the product does this touch? |
-| Mode | `mode:` | Can an agent do this alone? |
 | Platform | `platform:` | Which build does this ship in? |
 
-An issue carries **zero or more `area:`**, **at most one `mode:`**, **zero or more
-`platform:`**. Nothing else. No bare labels.
+An issue carries **zero or more `area:`** and **zero or more `platform:`**.
+
+**One bare label is legal, and only one: `human`.** It is not an axis — it is the name `bd human`
+queries on, so it is a tracker field wearing a label's clothes. See below.
 
 ## `area:` — the nine
 
@@ -47,16 +48,26 @@ correct. "Presentation of the app at a glance" is `bd list --label-any area:ui,a
 
 An issue with no `area:` is unclassified, not neutral. Sweep it.
 
-## `mode:` — two values
+## `human` — the one bare label, and it isn't ours
 
-| Label | Meaning |
-| --- | --- |
-| `mode:afk` | An agent can carry this start→finish unattended. |
-| `mode:hitl` | Needs a human: hardware, an account, a physical device, a judgement call, an offline step. Autonomous passes must skip it. |
+Needs a person: hardware, an account, a physical device, a judgement call, an offline step.
+Autonomous passes skip it.
 
-At most one. **Unlabelled is not a third value** — every issue gets one of these two, because
-"is this AFK-able" is exactly the question an unattended pass has to answer without reading
-prose.
+**Do not invent a prefix for this.** `bd` ships the queries keyed on the literal string `human`:
+
+```bash
+bd human list                      # every issue awaiting a person
+bd human respond <id> "<answer>"   # comments and closes in one call
+bd human dismiss <id>
+bd human stats
+```
+
+Prefixing it (`mode:hitl`) would break every one of those. Pair it with `-t decision` when the
+whole content of the issue is an unmade call.
+
+**Unlabelled means AFK.** There is no `mode:afk` and no positive marker for "an agent can do
+this alone" — the absence of `human` is the answer. A second label saying the same thing in
+reverse is a second copy of a field, and second copies drift.
 
 ## `platform:` — the axis is global, the values are per repo
 
@@ -83,7 +94,8 @@ platform you have is noise.
 bd label add <id> area:ui
 bd label remove <id> enhancement
 bd list --label-any area:ui,area:ux --status open      # the presentation sweep
-bd label list-all                                      # audit for drift / bare labels
+bd label list-all                                      # audit for drift; `human` is the only legal bare label
+bd human list                                          # the awaiting-a-person queue
 
 # GitHub — labels must exist before use.
 gh label create area:ui --description "Presentation: layout, theme, typography, icons, chrome" --color 1D76DB
@@ -91,12 +103,12 @@ gh issue edit <n> --add-label area:ui --remove-label enhancement
 gh issue list --label area:ui --state open
 ```
 
-Colour convention on GitHub, so the axis reads at a glance in the issue list:
+Colour convention on GitHub, so the label reads at a glance in the issue list:
 
-| Axis | Colour |
+| Label | Colour |
 | --- | --- |
 | `area:` | `1D76DB` (blue) |
-| `mode:` | `0E8A16` for `afk`, `B60205` for `hitl` |
+| `human` | `B60205` (red) |
 | `platform:` | `5319E7` (purple) |
 
 ## What to delete on adoption

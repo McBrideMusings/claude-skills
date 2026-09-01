@@ -63,7 +63,7 @@ don't route around the allow by asking in chat first.
 | **comment** | `bd comment <id> "<text>"` (`--file <path>` / `--stdin`) |
 | **label add / remove** | `bd label add <id> <label>` / `bd label remove <id> <label>` — which label: [`labels.md`](labels.md) |
 | set labels wholesale | `bd update <id> --set-labels a,b` |
-| audit label drift | `bd label list-all` — anything without an `area:`/`mode:`/`platform:` prefix is drift |
+| audit label drift | `bd label list-all` — anything that is not `human` and has no `area:`/`platform:` prefix is drift |
 | **assign** | `bd update <id> -a <who>` |
 | **count open** | `bd count --status open` (`--by-label`, `--by-priority`, `--by-status`) |
 | **link** (dependency) | `bd dep add <id> <blocker-id> -t blocks` |
@@ -74,6 +74,13 @@ don't route around the allow by asking in chat first.
 | epic progress | `bd epic status` (all epics; `--eligible-only` for those whose children are all done) |
 | **defer** | `bd defer <id> --until "+2w"` — hidden from `bd ready` until then |
 | **external ref** | `--external-ref gh-<n>` on create/update — records the GitHub issue it came from |
+| **search** | `bd search "<text>"` — keyword search across issues |
+| **query** | `bd query "<expr>"` — the structured query language, for filters `bd list` can't express |
+| **graph** | `bd graph` — render the dependency graph |
+| **validate an epic** | `bd swarm validate <epic-id>` (`--verbose` for the issue graph) |
+| **flag for a human** | the `human` label; `bd human list \| respond <id> \| dismiss <id> \| stats` |
+| **acceptance criteria** | `--acceptance "<check>"` on create/update; `--validate` refuses a body missing required sections |
+| **repair blocked flags** | `bd recompute-blocked` |
 
 ## Field mapping from GitHub
 
@@ -91,6 +98,102 @@ don't route around the allow by asking in chat first.
 Prefer the structured fields over stuffing everything into the description — `--acceptance` is
 what `implement` checks against, and `bd ready` only works if blockers are real edges.
 
+## The graph engine — don't re-implement any of it
+
+`bd` computes structure quality itself. Any skill that needs ordering, validation or hygiene
+calls these rather than traversing the graph by hand; a second traversal is free to disagree
+with the one beads ships.
+
+```bash
+bd doctor --check=conventions   # lint + stale + orphans in one pass
+bd orphans                      # broken dependency references
+bd lint                         # issues missing required sections
+bd stale                        # no recent activity
+bd find-duplicates              # semantically similar issues (text analysis or AI)
+bd preflight                    # pre-PR: lint, stale, orphans
+bd swarm validate <epic-id>     # the big one, below
+```
+
+**`bd swarm validate` is the roadmap primitive.** It checks dependency direction
+(**requirement-based, not temporal**), orphaned roots, missing dependencies on leaves, cycles,
+and disconnected subgraphs — then reports **ready fronts** (waves of parallel work), estimated
+worker-sessions, and maximum parallelism.
+
+The direction rule is the one that bites an agent inferring edges from prose:
+
+```text
+edge(A blocks B) is valid only if B *requires* A's output.
+  "do A before B"       -> temporal. NOT an edge. Drop it.
+  "B needs A's schema"  -> requirement. Emit it.
+```
+
+A temporal edge is reported as a structural error, so a wrong edge costs more than a missing one.
+
+### ⛔ `bd ready` trusts a flag that can go stale
+
+`is_blocked` is denormalized and maintained by local writes plus a post-pull recompute scoped to
+what the merge changed. Skip that recompute — a recompute that failed after its merge committed,
+or a conflicted pull resolved by hand — and the flag goes stale; a later pull that merges nothing
+never refreshes it. `bd ready` reads the flag, so stale values **silently hide ready work**. Run
+`bd recompute-blocked` before any read that orders work.
+
+## `human` — the native HITL surface
+
+An issue carrying the `human` label is one that needs a person. It is not a convention a skill
+invents; `bd` ships the queries:
+
+```bash
+bd human list          # every issue awaiting a human
+bd human respond <id> "<answer>"   # comments and closes in one call
+bd human dismiss <id>              # permanently, when the question stopped applying
+bd human stats
+```
+
+Pair it with `-t decision` (`bd types` ships `decision`, plus `spike`, `story` and `milestone`).
+`human` is the only bare label the schema permits — see [`labels.md`](labels.md).
+
+## GitHub sync — beads and GitHub are not exclusive
+
+```bash
+bd github sync                     # bidirectional
+bd github sync --pull-only         # import an existing GitHub backlog
+bd github sync --push-only --issues <id>
+bd github sync --parent <id>       # push a bead and its descendants
+bd github sync --dry-run
+bd github status | bd github repos | bd github pull | bd github push
+```
+
+Conflicts: `--prefer-newer` (default), `--prefer-github`, `--prefer-local`. Config via
+`bd config` or `GITHUB_TOKEN` / `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_REPOSITORY`.
+Operational rules for a mirrored repo — beads is the source of truth, reads never touch `gh` —
+are in [`_detect.md`](_detect.md) under Mirror mode.
+
+`bd` also ships `jira`, `linear`, `gitlab` and `ado` command families on the same shape.
+
+## Stealth: beads in a repo that must not carry it
+
+For a work, client, or someone else's repo — beads locally, nothing committed, no collaborator
+the wiser:
+
+```bash
+bd init --stealth --skip-agents --skip-hooks
+bd setup claude --stealth
+```
+
+- `--stealth` configures git so beads files are never committed (`.git/info/exclude`, which is
+  never pushed). No `.gitignore` diff appears.
+- `--skip-agents` writes no `AGENTS.md` into the repo; `--skip-hooks` installs no git hooks.
+- `--setup-exclude` is the exclude-file half on its own, for forks.
+- Auto-export is **off by default**, so no `.beads/issues.jsonl` is written. Leave it off —
+  `bd config set export.auto true` would put a file in the tree.
+
+**The one thing stealth does not hide:** `.beads/` still sits in the working directory. It is
+invisible to `git status`, visible to anyone with filesystem access to that checkout.
+
+**Never run `bd github sync` in a stealth repo.** It pushes the private graph to that repo's
+GitHub. `iron-out` refuses it outright for a repo labelled `tracker:beads-stealth` in
+`~/.claude/domains-map`.
+
 ## Grouping: epic or label
 
 Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has no
@@ -100,7 +203,7 @@ Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has
   reports a fraction and `bd epic close-eligible` closes it once every child is done.
   "M9: Native App", "Auth rewrite", a release — these are epics.
 - **A label is a cross-cutting attribute that never completes.** `area:ui`, `platform:ios`,
-  `mode:hitl`. Nothing ever finishes being presentation work. The permitted vocabulary is
+  `human`. Nothing ever finishes being presentation work. The permitted vocabulary is
   [`labels.md`](labels.md) — and note that a label restating `issue_type` (`enhancement`,
   `bug`) is a duplicate field, not an attribute.
 

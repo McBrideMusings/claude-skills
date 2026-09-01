@@ -76,6 +76,40 @@ read as a status code.
 
 Mirror mode does not change which verb table you read — it appends one push per write.
 
+## Stealth: beads in a repo that must not carry it
+
+Some repos get beads locally and commit none of it — work, client, and anyone else's repo.
+
+**The `tracker:beads-stealth` label in `~/.claude/domains-map` is the source of truth.** Read it
+first; if it is there, it decides and nothing below runs.
+
+**No label yet** → propose a default from two signals, either of which is sufficient:
+
+- **Path.** Under `~/Work/**` or `~/Freelance/**` → stealth.
+- **Owner.** `gh repo view --json owner --jq .owner.login` ≠ `gh api user --jq .login` → stealth.
+  No remote at all → stealth. Path alone is not enough: a repo can sit in `~/Projects/` and
+  belong to someone else.
+
+Confirm the proposal with the user, then **write the answer into `domains-map`**. The inference
+runs once; the label runs forever.
+
+**Initialising a stealth repo:**
+
+```bash
+bd init --stealth --skip-agents --skip-hooks
+```
+
+Details of what each flag suppresses are in [`beads.md`](beads.md). Two rules that live here
+because they are detection-time decisions, not usage-time ones:
+
+- **`bd github sync` is refused in a stealth repo** — refused with a one-line reason, not
+  defaulted off and not offered with a warning. One sync pushes a private graph into someone
+  else's GitHub organisation. **Mirror mode and stealth are mutually exclusive**; if
+  `bd github status` somehow reports configured in a stealth-labelled repo, stop and say so
+  rather than syncing.
+- **Say the limit out loud once.** `.beads/` still sits in the working directory. `git status`
+  cannot see it; anyone with filesystem access to that checkout can.
+
 ### ⛔ Two different things live on GitHub. Learn them apart before you say a word about either.
 
 | | **GitHub Issues mirror** | **The Dolt remote** |

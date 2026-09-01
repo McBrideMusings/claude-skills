@@ -19,8 +19,8 @@ written `#42` in prose).
 | list by label | `gh issue list --label <label> --json number,title` |
 | list by milestone | `gh issue list --milestone "<name>" --json number,title,state` |
 | list all incl. closed | `gh issue list --state all --json number,title,state` |
-| **ready** (unblocked) | *no native equivalent* — read "Blocked by #N" from bodies and filter by hand, or say the backend can't compute it |
-| **blocked** | *no native equivalent* — same as above |
+| **ready** (unblocked) | no single query — list, then filter on `blockedBy.totalCount == 0` (see below). GitHub computes the edges; it does not compute the front |
+| **blocked** | same list, filtered on `blockedBy.totalCount > 0` |
 | **show** | `gh issue view <n> --json number,title,body,labels,state,milestone,comments` |
 | **claim** | `gh issue edit <n> --add-assignee @me` (no in-progress state; use a label if the repo has one) |
 | **update** | `gh issue edit <n> --title "<t>" --body "<b>" --add-label <l> --remove-label <l>` |
@@ -30,8 +30,37 @@ written `#42` in prose).
 | **label add / remove** | `gh issue edit <n> --add-label <l>` / `--remove-label <l>` |
 | **assign** | `gh issue edit <n> --add-assignee <who>` |
 | **count open** | `gh issue list --state open --limit 300 --json number --jq 'length'` |
-| **link** (dependency) | *no native equivalent* — write `Blocked by #N` into the body |
+| **link** (dependency) | native: `gh issue view <n> --json blockedBy,blocking` reads them. **Never** write `Blocked by #N` into a body — that is prose nothing queries |
+| **parent / children** | native sub-issues: the GraphQL `parent` and `subIssues` fields on `Issue` |
+| **type** | native: the GraphQL `issueType` field on `Issue` |
 | **milestone** | `gh api repos/:owner/:repo/milestones -f title="<name>"`; assign with `gh issue edit <n> --milestone "<name>"` |
+
+## Structure lives in GraphQL, not in `gh issue list`
+
+`gh issue list --json` does not expose `issueType`, `parent`, or `subIssues`. Reach them
+through GraphQL, in one call per page:
+
+```bash
+gh api graphql -f query='
+query { repository(owner:"<owner>", name:"<repo>") {
+  issues(first:100, states:OPEN) { nodes {
+    number title
+    issueType { name }
+    parent { number }
+    subIssues(first:50) { totalCount }
+    labels(first:20) { nodes { name } }
+  } } } }'
+```
+
+`blockedBy` and `blocking` are the exception — they are on `gh issue view <n> --json
+blockedBy,blocking` directly.
+
+**GitHub has the primitives but not the engine.** It stores types, parents and edges; it does
+not compute ready fronts, detect cycles, find orphans, flag wrong-direction edges, or report
+maximum parallelism. Beads does all of that (`bd swarm validate`, `bd ready`, `bd orphans`,
+`bd doctor --check=conventions`). That gap is the whole reason beads is the default backend and
+why `iron-out` offers `bd init` on a GitHub-only repo rather than reproducing the graph work
+here.
 
 ## Multi-line bodies
 

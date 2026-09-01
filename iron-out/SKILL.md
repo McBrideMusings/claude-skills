@@ -1,6 +1,6 @@
 ---
 name: iron-out
-description: "Drive a scope's ambiguity to zero so the work can be handed off; also charts a foggy effort from scratch, filing open questions as issues under a milestone. Selectors: issue numbers, #range, label:X, milestone:X, followups, papercuts; bare iron-out takes the whole backlog."
+description: "Iron out a backlog's structure and its ambiguity: type and label every issue, group them into epics, infer the dependency edges nobody wired, print a validated roadmap of ready-fronts, then drive the remaining ambiguity to zero. Also charts a foggy effort from scratch. Triggers: 'what should I work on next', 'map the dependencies', 'build a roadmap', 'these issues aren't organized'. Selectors: issue numbers, #range, label:X, milestone:X, epic:X, followups, papercuts; bare iron-out takes the whole backlog."
 ---
 
 # Iron Out
@@ -16,7 +16,9 @@ It happens to also be what the autonomous harnesses require, and they say so the
 Every item is an ordinary issue in the ordinary backlog. There is no parallel planning surface.
 
 - **Work item** — describes something to build. Resolving it **rewrites its body** so the gate passes; the issue stays open and gets implemented later.
-- **Question** — its whole content is a decision nobody has made. Resolving it **posts the answer and closes it**, and often files new issues. Carries the `question` label, so `triage` and `implement` skip it — nothing is built *from* a question.
+- **Question** — its whole content is a decision nobody has made. Resolving it **posts the answer and closes it**, and often files new issues. Carries beads' native `human` label (`bd human list` / `respond` / `dismiss` / `stats`) and `issue_type: decision`, so `triage` and `implement` skip it — nothing is built *from* a question.
+
+**A question is a roadmap node, not a step before the roadmap.** `bd types` ships `decision` as a first-class type, so a decision sits in the dependency graph next to the work it gates. On a fresh backlog, wave 1 of the roadmap is frequently all decisions — the next three things are calls the user owes, not code. That is why ordering and ironing out live in one skill: they are the same graph read twice.
 
 The loop is identical for both. Only the write step differs. An issue that fails the gate because it *hides* an unmade decision usually wants splitting: the decision becomes a question, the buildable remainder stays a work item blocked by it.
 
@@ -36,7 +38,9 @@ Every issue has a title. In everything the user reads — the queue, an intervie
 
 Selector forms are shared with `iterate` — one table, in [../iterate/SELECTORS.md](../iterate/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `iron-out` = every open issue in the current repo. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
 
-**Dependencies** are a `Blocked by #<n>` line in the body (one per blocker), plus GitHub's native `blockedBy`. An item is unblocked when every blocker is closed.
+**Dependencies are real edges, never prose.** On beads: `bd dep add <id> <blocker-id> -t blocks`, read back with `bd dep tree`, `bd blocked` and `bd ready`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is a **finding** — an edge someone never wired — and Phase 0 offers to convert it. An item is unblocked when every blocker is closed.
+
+**`bd ready` trusts a denormalized `is_blocked` flag that can go stale** after a pull whose scoped recompute was skipped, or a merge conflict resolved by hand. Run `bd recompute-blocked` before any read that orders work, or the roadmap silently hides ready issues.
 
 **Free text that isn't a selector is a loose idea, not a scope** — `iron-out a 3D storefront browser for my Plex library`. There is no backlog to scan yet, so go to [Charting a foggy effort](#charting-a-foggy-effort) first; the loop runs afterwards over the milestone it creates.
 
@@ -46,7 +50,7 @@ When the user arrives with an idea rather than a backlog — a greenfield build,
 
 1. **Name the destination.** Run `grill-me` to pin down what this effort finds its way to — a spec, a decision, a change made in place. The destination fixes the scope, so it is settled first.
 2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space rather than deep on one thread, surfacing the open decisions and the first steps takeable now. **If no fog surfaces**, the way is already clear: say so and send the user to `/to-tickets`. No milestone needed.
-3. **Create the milestone.** Its title is the effort; its description is the brief:
+3. **Create the epic.** `bd create "<effort>" -t epic -d "<brief>"` on beads (`bd types` also ships a distinct `milestone` type — that one marks completion of a set and holds no work, so it is not this); a GitHub milestone where there is no beads store. Its title is the effort; its description is the brief:
 
 ```markdown
 ## Destination
@@ -66,12 +70,106 @@ When the user arrives with an idea rather than a backlog — a greenfield build,
      via ../ref-game-dev/design.md, `ui` via ../ref-gui/design.md), point Notes at it so every
      pass's interviews consult the domain's design lenses. Structure + tradeoffs only, never a fun-verdict. -->
 
-4. **File the questions you can state now** as issues on that milestone, labelled `question`. Then wire `Blocked by` edges in a **second pass** — issues need numbers before they can reference each other.
-5. Run the loop below over `milestone:<name>`.
+4. **File the questions you can state now** as children of that epic (`--parent <epic-id>`), `-t decision`, carrying the `human` label. Then wire edges in a **second pass** with `bd dep add` — issues need IDs before they can reference each other.
+5. Run the loop below over `epic:<id>`.
 
 **Fog or issue?** The test is whether you can state the question precisely now — *not* whether you can answer it now. Sharp enough to phrase → file it, even if it's blocked. Not sharp enough → leave it in **Not yet specified**. Don't pre-slice fog into issue-sized pieces; one patch may graduate into several issues, or none.
 
 Fog only ever gathers *toward* the destination. Work past it is **Out of scope**, not fog — and if an existing issue turns out to sit past the destination, close it and leave one line in Out of scope saying why.
+
+## Phase 0 — Structure
+
+Runs first, every time, before the AFK gate. A backlog with no types, no grouping and no edges cannot be ordered, cannot be searched, and cannot be scoped down to something smaller than "everything" — so the gate would produce a queue nobody finishes. Phase 0 fixes the shape; Phase 1 judges the contents.
+
+**A clean backlog skips it.** If every in-scope issue already has a type, an `area:`, and a parent, and `bd swarm validate` reports no warnings, say so in one line and go to Phase 1.
+
+### 0a. Backend readiness
+
+Resolve the backend by invoking `ref-tracker`. Beads is the target: the graph work below is `bd dep`, `bd swarm validate`, `bd ready` and `bd graph`, none of which has a GitHub equivalent worth hand-writing.
+
+**No `.beads/` in the repo** → offer it once, as one slate row:
+
+```
+<repo> has <n> GitHub issues and no beads store. `bd init` plus
+`bd github sync --pull-only` imports them, and Phase 0 can then build epics,
+edges, and a validated ready-front order. Decline and I do tier 1 only.
+```
+
+Before that row, resolve **stealth**:
+
+- The `tracker:beads-stealth` label in `~/.claude/domains-map` is the source of truth.
+- **No label yet** → propose a default from the repo's path (`~/Work/**`, `~/Freelance/**` → stealth) *and* its owner (`gh repo view --json owner --jq .owner.login` ≠ `gh api user --jq .login` → stealth; no remote at all → stealth). Either signal alone is enough. Confirm with the user, then write the label into `domains-map` — from then on the label decides, not the inference.
+- **Stealth** → `bd init --stealth --skip-agents --skip-hooks`. Stealth mode configures `.git/info/exclude`, which is never pushed, so no `.gitignore` diff appears and no collaborator sees anything. Auto-export is off by default, so no `.beads/issues.jsonl` lands either.
+- **Stealth forbids sync.** `bd github sync` is **refused** in a stealth repo with a one-line error, never offered and never merely defaulted off. One sync pushes a private graph into someone else's GitHub organisation.
+- Tell the user the one thing stealth does not hide: `.beads/` still sits in the working directory, invisible to `git status` but visible to anyone with filesystem access to that checkout.
+
+**On decline**, run tier 1 only (below), then report exactly what was skipped and what it would have bought. Do not hand-implement the graph engine on GitHub primitives — `bd swarm validate` is not worth reproducing.
+
+### 0b. Ask the tracker what it already knows
+
+Beads computes structure drift natively. Run these before inferring anything, and treat the output as findings:
+
+```bash
+bd doctor --check=conventions    # lint + stale + orphans in one pass
+bd orphans                       # broken dependency references
+bd lint                          # issues missing required sections
+bd stale                         # no recent activity
+bd find-duplicates               # semantically similar issues
+```
+
+### 0c. One read, two tiers
+
+Hand every in-scope body to a **Sonnet** sub-agent — same isolation rule as Phase 1, and the same read serves both phases where possible. It returns, per issue: `issue_type`, `area:` and `platform:` labels, `priority` (0–4), a proposed epic, and proposed `blocks` edges.
+
+**The edge rule comes first in the brief, because it is the failure mode:**
+
+```text
+edge(A blocks B) is valid only if B *requires* A's output.
+  "do A before B"       -> temporal. NOT an edge. Drop it.
+  "B needs A's schema"  -> requirement. Emit it.
+```
+
+`bd swarm validate` rejects temporal edges as a structural error, so an inferred edge of that shape is worse than no edge.
+
+**Tier 1 — mechanical, applied without a slate.** `issue_type`, `area:`/`platform:` labels, `priority`. Apply in bulk (`bd update`, `bd label add`, `bd priority`), and **report as counts, not rows**:
+
+```
+294 typed: 168 bug, 91 task, 35 feature.
+Labelled: 142 area:ui, 88 area:data, 41 area:infra, 17 area:perf.
+6 unclassifiable — listed below.
+```
+
+The unclassifiable remainder is the part worth the user's eyes; it would be buried in a 294-row list. Every tier-1 write is one command to undo.
+
+**Tier 2 — judgment, slated.** Proposed **epics** (name, member count, member issue names) and proposed **edges**. Roughly fifteen rows, never three hundred. Grouping and ordering are what the user cannot recover by eye; a wrong `area:` costs one `--remove-label`, a wrong epic reorganises how they think about the project.
+
+Priority is `0-4` / `P0-P4` — **never** high/medium/low, and never a `priority:*` label. Beads carries it as a field; `labels.md` forbids a label that restates one.
+
+### 0d. Apply, then validate
+
+```bash
+bd create "<epic name>" -t epic -d "<what done looks like>" --silent   # epics first, keep title -> ID
+bd update <id> --parent <epic-id>                                      # members second
+bd dep add <id> <blocker-id> -t blocks                                 # edges third
+bd recompute-blocked
+bd swarm validate <epic-id>
+```
+
+Two passes for a reason: children need their epic's real ID before they can reference it, and edges need both endpoints to exist.
+
+### 0e. Print the roadmap
+
+`bd swarm validate <epic>` per epic plus `bd ready --json` across the scope. Print:
+
+- **Waves** — ready fronts, in order. Wave 1 is what is workable now.
+- **Warnings** — cycles, orphans, disconnected subgraphs, wrong-direction edges.
+- **Max parallelism** and estimated worker-sessions.
+
+This is the deliverable for a user who wanted the lay of the land and nothing else. Close on it:
+
+> Type `go` to apply my picks and continue into the AFK gate, or `park` to apply them and stop.
+
+**Two orderings exist here and they are not the same list.** The roadmap is *every* issue by dependency wave — what to build next. Phase 2's queue is *only* gate-failing issues by unblock leverage — what to iron out next.
 
 ## Phase 1 — Scan
 
@@ -79,8 +177,8 @@ Resolve the issue backend by invoking `ref-tracker`, then fetch every in-scope i
 
 **Sonnet, not Haiku — the isolation is the point, not the model.** A cheaper model can return template placeholder text in every `question` field while producing perfectly valid JSON: right array length, every field present, content empty. Nothing downstream catches that — Phase 2 prints those strings straight to the user as the queue, and the whole pass has to be redone.
 
-- **`beads`:** `bd list --status open --json` (filtered per selector) and `bd dep tree <id>` for the edges. The dependency graph is real here, so `Blocked by:` prose in a body is a *finding* — an edge someone never wired — not the source of truth. Note each one and offer to convert it: `bd dep add <id> <blocker-id> -t blocks`.
-- **`github`:** `gh issue list … --json number,title,url,labels,body` plus `gh issue view <n> --json blockedBy`, with the `Blocked by:` prose fallback.
+- **`beads`:** `bd list --status open --json` (filtered per selector) and `bd dep tree <id>` for the edges. Phase 0 has already wired the graph, so read it rather than re-deriving it from prose.
+- **`github`:** `gh issue list … --json number,title,url,labels,body` plus `gh issue view <n> --json blockedBy`.
 
 Sub-agent brief:
 
@@ -107,9 +205,15 @@ Sub-agent brief:
 
 If nothing fails and there is no fog, report that the scope is already AFK-workable and go to Phase 4.
 
-## Phase 2 — Order by leverage
+## Phase 2 — Order the interview queue
 
-Order the failing issues by **unblock leverage**: how many in-scope issues each transitively blocks. Highest first — a decision gating three issues outranks a leaf. Tiebreak: `priority:*` label, then ascending number. Print the queue with each issue's name, URL, one-line question, and what it needs, so the user sees the whole shape before the first interview.
+Order the **failing** issues by unblock leverage: how many in-scope issues each transitively blocks. Highest first — a decision gating three issues outranks a leaf.
+
+**Read the leverage off the graph; never recompute it.** `bd dep tree <id>` gives the transitive closure, `bd blocked` the blocked set, `bd ready` the unblocked one. A second traversal written here would be free to disagree with the one beads runs, and two orderings over one graph is the drift condition, not a check against it. Run `bd recompute-blocked` first.
+
+Tiebreak on the native `priority` field (`0-4`), then ascending ID. Print the queue with each issue's name, URL, one-line question, and what it needs, so the user sees the whole shape before the first interview.
+
+This queue is **not** the roadmap. Phase 0 printed the roadmap: every issue by dependency wave, what to build next. This is only the gate-failing subset, ordered by what unblocks the most interviewing.
 
 ## Phase 3 — The loop
 
@@ -141,7 +245,7 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 ### 3b. Record the resolution
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, `Type: HITL` flipped to `Type: AFK` if present. Show the new body, then write it: `bd update <id> --body-file <path>` (plus `--acceptance` for the check, and `--remove-label hitl --add-label afk`) on beads, `gh issue edit <n> --body` on GitHub. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
-- **Question** → post the answer as a comment, then close: `bd comment <id> "<answer>"` + `bd close <id> -r "answered"` on beads, `gh issue comment <n>` + `gh issue close <n>` on GitHub. **Before any close call, verify the issue's own label set carries `question`.** Phase 1 already tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here.
+- **Question** → `bd human respond <id> "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue's own label set carries `human`.** Phase 0 tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here.
 
 Assets are linked, never pasted.
 
@@ -152,6 +256,8 @@ Re-run the two tests on the resolved item. Fail → the interview missed somethi
 ### 3d. Cascade and graduate
 
 - **Cascade** — re-judge the remaining flagged issues with the decisions made so far in hand; one answer often settles siblings. Any now passing get their body edits drafted from the recorded decisions, shown, applied.
+- **Move the roadmap.** Pass `--suggest-next` on every close; it prints the issues that closing just unblocked. Emit **one line, only when a wave actually moved** — *"Closing `Which conflict policy for sync` unblocked 4 issues; wave 1 is now 7."* Silence otherwise; a status line every turn is a status line nobody reads. Wave 1 growing is the signal that ironing out is paying off, and it is what tells the user they have reached a good place to stop.
+- **After a structural change** — fog graduated into new issues, an issue closed as out of scope, a new edge wired — run `bd recompute-blocked` then `bd swarm validate <epic>` for the affected epic. New nodes and edges make new waves; a reshuffle does not.
 - **Graduate** — if there is a milestone brief, file whatever fog the answer just made statable as fresh issues (create, then wire `Blocked by` in a second pass), and clear those patches from **Not yet specified**. If the answer reveals an issue sits past the destination, rule it Out of scope rather than resolving it. If it invalidates other issues, update or delete them.
 
 Re-order what remains by leverage and continue at 3a.
@@ -178,7 +284,11 @@ The **Agent tool** is the target for this, and it is also the default everywhere
 
 ## Phase 4 — Report and hand off
 
-Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, fog graduated, items still parked, ADRs written. Then offer next steps in plain chat — never via the `AskUserQuestion` tool. The exit is a **fork**, picked by what is actually in the pile:
+Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, fog graduated, items still parked, ADRs written.
+
+**End with the recomputed roadmap beside Phase 0's.** `bd recompute-blocked`, then `bd swarm validate` per epic and `bd ready --json`. Show the two side by side — waves before, waves after — so the session's effect on what is workable is visible rather than asserted. Also report the structure Phase 0 wrote: epics created, members parented, edges wired, tier-1 counts.
+
+Then offer next steps in plain chat — never via the `AskUserQuestion` tool. The exit is a **fork**, picked by what is actually in the pile:
 
 ```
 Scope is clear. Reply with a number, or tell me something else.
@@ -197,3 +307,7 @@ Option 1 loops back: `to-tickets` synthesizes a spec from the decisions, gets it
 - **Don't implement, don't commit code.** Body edits, posted answers, closing answered questions, and grill-me's ADRs are the only writes. Never close a work item.
 - **Interview one issue at a time** — never batch questions across issues into one message.
 - **Every issue named to the user carries its full clickable URL.** `#121` on its own is not enough.
+- **Never re-implement what `bd` computes.** Ready fronts, cycle detection, orphan checks, transitive blocking, duplicate detection, staleness — `bd swarm validate`, `bd ready`, `bd blocked`, `bd orphans`, `bd find-duplicates`, `bd stale`, `bd doctor --check=conventions`. A second implementation here is free to disagree with the one beads ships.
+- **An inferred edge is a requirement, never a sequence.** "Do A then B" is not an edge. `bd swarm validate` reports temporal edges as a structural error, so a wrong edge costs more than a missing one.
+- **`bd github sync` is refused outright in a repo labelled `tracker:beads-stealth`** — not defaulted off, not offered with a warning. Refused, with a one-line reason.
+- **Tier 1 writes without asking; tier 2 never does.** Types, `area:`/`platform:` labels and priority are one-command-to-undo and are reported as counts. Epics and edges always reach the user as a slate.
