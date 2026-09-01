@@ -316,5 +316,24 @@ else
   say ok "go absent — tui compile checks skipped"
 fi
 
+# --- the URL carries only tweaks the reader changed -------------------------
+# A default written into the query string pins it: reopening that URL after the
+# fragment's default moves serves the old value to someone who never touched a
+# control. writeUrl deletes a key whose value still equals its declared default.
+TW="$(cd "$(dirname "$0")/.." && pwd)/harness/tweaks.js"
+if [ -f "$TW" ]; then
+  grep -q 'defaults\[key\] = initial' "$TW" \
+    && say ok "register records each tweak's declared default" \
+    || say f "register does not record defaults; writeUrl cannot compare"
+  grep -q 'String(state\[k\]) === String(defaults\[k\])' "$TW" \
+    && say ok "writeUrl compares against the default" \
+    || say f "writeUrl writes every key regardless of default"
+  grep -q 'url.searchParams.delete(k)' "$TW" \
+    && say ok "writeUrl drops an unchanged key from the query string" \
+    || say f "writeUrl never deletes, so defaults stay pinned in the URL"
+else
+  say f "harness/tweaks.js missing"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

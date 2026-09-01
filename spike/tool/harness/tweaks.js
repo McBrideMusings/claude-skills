@@ -54,6 +54,7 @@
 
   var current = 0;          // which variant is mounted
   var state = {};           // tweak key -> live value, survives every variant swap
+  var defaults = {};        // tweak key -> the value the fragment declared
   var controls = [];        // [{ key, apply }] in declaration order
 
   var q = new URLSearchParams(location.search);
@@ -80,7 +81,14 @@
     try {
       var url = new URL(location);
       url.searchParams.set('v', current + 1);
-      Object.keys(state).forEach(function (k) { url.searchParams.set(k, String(state[k])); });
+      /* Only carry what the reader actually changed. Writing a value that still
+         equals its default pins it: reopening that URL after the fragment's
+         default moves would silently serve the old number, and a reader who
+         never touched a control would be looking at a stale build's settings. */
+      Object.keys(state).forEach(function (k) {
+        if (String(state[k]) === String(defaults[k])) url.searchParams.delete(k);
+        else url.searchParams.set(k, String(state[k]));
+      });
       history.replaceState(null, '', url);
     } catch (e) {}
   }
@@ -209,6 +217,7 @@
     var seed = seedFor(key);
     var value = seed === undefined ? initial : coerce(seed, initial);
     state[key] = value;
+    defaults[key] = initial;
 
     var onChange = typeof opts.onChange === 'function' ? opts.onChange : null;
 
