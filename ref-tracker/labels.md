@@ -25,6 +25,12 @@ An issue carries **zero or more `area:`** and **zero or more `platform:`**.
 **One bare label is legal, and only one: `human`.** It is not an axis — it is the name `bd human`
 queries on, so it is a tracker field wearing a label's clothes. See below.
 
+**The `<prefix>:<value>` shape is beads' own convention, not ours** — `bd set-state --help`
+documents it and ships examples (`patrol:active`, `health:healthy`). That means prefixes are a
+shared namespace, and **`mode:`, `patrol:` and `health:` belong to beads**. `bd set-state` writes
+a dimension's label by *removing any existing label for that dimension first*, so a label parked
+in a beads-owned prefix is a label beads will delete. Never define an axis on one of those names.
+
 ## `area:` — the nine
 
 Fixed and global. These nine exist in every software product; do not rename them per repo.
@@ -93,6 +99,7 @@ platform you have is noise.
 # beads — labels are free-form; nothing to create up front.
 bd label add <id> area:ui
 bd label remove <id> enhancement
+bd label propagate <parent-id> area:ui                 # push a label to every child
 bd list --label-any area:ui,area:ux --status open      # the presentation sweep
 bd label list-all                                      # audit for drift; `human` is the only legal bare label
 bd human list                                          # the awaiting-a-person queue
