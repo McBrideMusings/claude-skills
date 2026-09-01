@@ -34,7 +34,7 @@ const metaOf = (src) => {
 // about (e.g. Verify -> SKIP) and inherits a happy path for the rest.
 const HAPPY = {
   Tracker: { backend: 'beads', db: '/repo/.beads' },
-  Resolve: { id: 'proj-1', title: 'A thing', body: 'do it' },
+  Resolve: { found: true, id: 'proj-1', title: 'A thing', body: 'do it' },
   Gate: { pass: true, reason: 'concrete' },
   // `base_sha` must look like a real sha: the script rejects anything else at
   // Locate, and a stub without it halts every case here before it reaches the
@@ -258,6 +258,29 @@ try {
 } finally {
   rmSync(scratchDir, { recursive: true, force: true })
 }
+
+// 14. A Resolve agent that could not find the item must halt AT resolve, with
+//     the checked-and-returned explanation as the detail — never fall through
+//     as a fabricated record for Gate to judge.
+const notFoundBody = 'bd show proj-9 returned not found; branch carried no id; triage had nothing open'
+const notFound = await run(
+  { repo: '/tmp/repo', issue: 'proj-9' },
+  {
+    Tracker: { backend: 'beads', db: '/tmp/repo/.beads' },
+    Resolve: { found: false, id: 'proj-9', title: '', body: notFoundBody },
+  },
+)
+check('a not-found item halts', notFound.result.ok, false)
+check('  ...naming the resolve stage', notFound.result.halted_on, 'resolve')
+check('  ...never reaching Gate', notFound.calls.includes('Gate'), false)
+check('  ...with the checked explanation as detail', notFound.result.detail, notFoundBody)
+
+// 15. `a.resolved` without an explicit `found` (the shape every existing
+//     caller passes) must still run — the default must not accidentally halt
+//     a caller-supplied item.
+const preResolved = await run({ resolved: { id: 'proj-1', title: 'A thing', body: 'do it' }, repo: '/tmp/repo' })
+check('a pre-resolved item with no explicit found still runs', preResolved.result.halted_on !== 'resolve', true)
+check('  ...and reaches Gate', preResolved.calls.includes('Gate'), true)
 
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)
