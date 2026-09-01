@@ -31,6 +31,8 @@ Load a file only once you've routed to it — that keeps context small.
 
 ## Phase 00 — Route by context
 
+**Run this pass from inside the checkout being reviewed.** A subagent this skill spawns is permission-scoped to the session's working directory, so reviewing repo B from a session sitting in repo A gives every reader agent a directory it cannot read — and the failure looks like an empty diff or a thin review, not like a permission error. There is no argument that lifts the scope: `review <path>` pointed across repos hits the same wall. Change directory first, or run the pass in a session already there.
+
 **An explicit argument wins over everything below.** `review <branch>`, `review <PR#>`, `review <path>`, `review repo` — take it and skip the rest of this phase.
 
 With no argument, four contexts, resolved in this order. Every one is decidable from the commands below; **none of them is a question to the user.**
