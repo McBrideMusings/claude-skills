@@ -8,7 +8,7 @@ Both callers share everything below except two things:
 
 | | `unblock` on `main` | `review` on `main` |
 | --- | --- | --- |
-| **selects** | branches I own that are blocked — conflicts, red checks, or unanswered feedback | PRs waiting on **my** review |
+| **selects** | branches I own that are blocked — conflicts, red checks, or unanswered feedback | PRs waiting on **my** review that are **not** blocked |
 | **the session runs** | `/unblock` on that branch | `/review` on that PR |
 
 [RULES.md](../review/RULES.md) binds this file. Every question here is typed chat text.
@@ -57,6 +57,42 @@ gh pr list --search "involves:@me -author:@me -reviewed-by:@me" --state open --l
 
 `-reviewed-by:@me` excludes only PRs carrying a *submitted* review from me; comment-only
 participation still shows. Mention the gap only if a result looks off.
+
+**Then drop every selected PR that is itself blocked.** A PR is not reviewable when either is
+true, and this test runs on the same `gh pr list` fields `unblock` uses:
+
+| condition | field |
+| --- | --- |
+| merge conflicts | `mergeable == "CONFLICTING"` |
+| CI red | any `statusCheckRollup[].conclusion == "FAILURE"` |
+
+**The author has to change the code either way, and their fix invalidates the review you just
+wrote.** A conflict gets resolved by editing the same lines you commented on; a red job gets
+fixed by a commit you have not seen. Both hand the reviewer a diff that no longer matches the
+one they read, so every finding has to be re-checked against the new head and the pass is spent
+twice. Worse, findings posted against the pre-fix diff sit on the PR as review comments the
+author must answer about code that is already gone.
+
+**This is not a judgement about how bad the conflict is, and there is no "review it anyway"
+option.** Blocked is blocked, at one conflicted file or forty, at one red shard or all of them.
+
+**Reviewing a blocked PR is also not `unblock`'s job on someone else's branch** — `unblock`
+already refuses to push to a PR it does not own, for the same ownership reason. So a blocked PR
+belonging to someone else is nobody's work in this sweep: it goes in the skipped list with its
+author and what blocks it, and the author gets it back.
+
+Name them in the skipped list with the reason, so the user can see it was a decision:
+
+```
+skipped, blocked (author must fix first):
+  #1973 alexthemighty  CONFLICTING + 4 red    #1951 alexthemighty  CONFLICTING
+```
+
+**Re-read `mergeable` immediately before starting each session, not once at selection time.** A
+PR that was `MERGEABLE` when the table was printed can be `CONFLICTING` by the time its worktree
+is cut — the default branch moves while a sweep runs. A session already started on a PR that has
+since gone blocked is stopped, told why in one line, and told not to commit, push or post
+anything further; whatever it already posted is named in the report.
 
 **`mergeable == "UNKNOWN"` is not a conflict** — GitHub has not finished computing the merge.
 Re-read it rather than treating it as either.
