@@ -61,7 +61,7 @@ const DETECT = `${SKILLS}/_tracker/_detect.md`
 // of writing a false `verified_parent` when the tree is already clean. There
 // is no PreToolUse hook for this: `git commit` is not a session-boundary act
 // like push, merge, worktree lifecycle, or tracker writes, and
-// `hooks/subagent-push-guard.sh` can see that its caller is a subagent but
+// `hooks/landing-guard.sh` can see that its caller is a subagent but
 // not which stage is calling — so no unfakeable rule can be written there.
 
 const a = args || {}
