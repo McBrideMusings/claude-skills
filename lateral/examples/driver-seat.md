@@ -53,9 +53,13 @@ Change: extract the shared verification shape into one `admin.toml` task with a 
 
 ## Driver-seat changes
 
-- **Renamed PRD section headers to match tracker epic titles** — closes the intuitive gap between "Billing rework" (tracker) and "Payments overhaul" (PRD); same concept now has one name across both surfaces.
-- **Added a `blocked-by` edge from ticket 14 to ticket 9, and named the shared fixture in ticket 14's body** — the prose "pattern from ticket 9" reference had no programmatic path back to what 9 actually built; the accretive gap is now a real dependency edge.
-- **Replaced vague acceptance thresholds ("fast enough") with `admin bench dashboard` and a number (400ms) across the epic** — turns an unmeasurable criterion into one an agent can run and read back.
-- **Added an `admin.toml` `verify <slice>` task and pointed all 40 tickets' verification steps at it** — removes 40 copy-pasted blocks in favor of one shared, accretive surface the next epic's tickets can also call.
+The backlog is your document, so nothing above got edited yet — here's the slate:
 
-Next moves, your call: run driver-seat again once the next epic is sliced, or start `implement` on ticket 1 now that the tower has handles at every level.
+1. **Rename PRD section headers to match tracker epic titles** ("Payments overhaul" → "Billing rework"), in `docs/PRD.md`, because the intuitive gap means an agent reading the PRD for context and the tracker for status has to infer they're the same epic.
+2. **Add a `blocked-by` edge from ticket 14 to ticket 9, and name the shared fixture in ticket 14's body**, in the tracker, because the prose "pattern from ticket 9" reference has no programmatic path back to what 9 actually built.
+3. **Replace vague acceptance thresholds ("fast enough") with `admin bench dashboard` and a number (400ms) across the epic**, in each ticket's acceptance criteria, because an unmeasurable criterion can't be run and read back by an agent.
+4. **Add an `admin.toml` `verify <slice>` task and point all 40 tickets' verification steps at it**, in `admin.toml` plus every ticket body, because 40 copy-pasted blocks have no shared, accretive surface for the next epic's tickets to call.
+
+Type `go` to apply every row, or answer per row (`1 apply, 3 skip`).
+
+Once the accepted rows land: run driver-seat again after the next epic is sliced, or start `implement` on ticket 1 now that the tower has handles at every level.

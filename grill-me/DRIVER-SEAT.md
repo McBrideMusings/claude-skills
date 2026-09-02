@@ -34,7 +34,13 @@ Write the system as a tower of linked abstractions, top to bottom, one line per 
 
 ## Output contract
 
-The lens edits the plan, spec, or docs in place. It then reports a **"Driver-seat changes"** list above the rewritten text — one line per change, naming what moved and why. Never a verdict, never scratch output: the tower, the per-level questions, and any abandoned branch are working material, not the deliverable.
+The output shape depends on who wrote the target text — the host names which shape it uses.
+
+**Shape A — agent-written text** (for example, a spec the agent itself just drafted, like `to-tickets` Phase 03): edit the text in place, then report a **"Driver-seat changes"** list above the rewritten text — one line per change, naming what moved and why. Both land in the same approval message.
+
+**Shape B — user-written text** (for example, the plan `grill-me` Grill mode is interviewing): make no edit. Emit the changes as a numbered slate in chat — one row per change, stating what moves, where (section), and why, in the plan's own vocabulary — closing with: *"Type `go` to apply every row, or answer per row (`1 apply, 3 skip`)."* Apply only the accepted rows, and only once the reply arrives.
+
+The lens never touches text the user wrote without the slate. Never a verdict, never scratch output either way: the tower, the per-level questions, and any abandoned branch are working material, not the deliverable.
 
 ## Rules
 

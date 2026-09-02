@@ -7,7 +7,7 @@ description: Put the agent in the driver's seat of a settled plan or system and 
 
 ## What this technique does
 
-Puts the agent in the driver's seat of a plan or system that already has a shape, and asks what would most enable *that agent* to understand the situation accurately and drive it to correct results with the least wasted motion. It is not a divergence technique in the usual lateral sense — it does not generate options to choose between. It walks the system as a tower of linked abstractions and asks, level by level, whether the tower is legible, drivable, and accretive; then it edits the plan in place to close what it finds.
+Puts the agent in the driver's seat of a plan or system that already has a shape, and asks what would most enable *that agent* to understand the situation accurately and drive it to correct results with the least wasted motion. It is not a divergence technique in the usual lateral sense — it does not generate options to choose between. It walks the system as a tower of linked abstractions and asks, level by level, whether the tower is legible, drivable, and accretive; then it closes what it finds, in the shape the target's authorship calls for.
 
 Source: [`../../grill-me/DRIVER-SEAT.md`](../../grill-me/DRIVER-SEAT.md) — read it in full before running this technique. It holds the prompt this technique embodies.
 
@@ -35,13 +35,17 @@ For each level of the tower, in order, ask the three checkable questions from DR
 
 Not every level yields a change — a level with a clean programmatic handle and a consistent name gets no edit, and that is a correct result, not a gap in the pass.
 
-### Step 5: Edit the plan in place
+### Step 5: Choose the output shape by authorship
 
-For every level that failed one of the three questions, make the smallest edit that adds the missing surface — a command, a schema, a fixture, a doc section, a renamed term. Edit the actual plan/spec/docs file; do not produce a separate report file.
+For every level that failed one of the three questions, name the smallest change that adds the missing surface — a command, a schema, a fixture, a doc section, a renamed term. Then check who wrote the target text, per [DRIVER-SEAT.md](../../grill-me/DRIVER-SEAT.md)'s output contract: agent-written text (a spec the agent itself drafted) takes shape A; user-written text (a plan or backlog the human wrote) takes shape B. Never invent a third shape or restate the contract here.
 
-### Step 6: Emit the changes list
+### Step 6: Apply the changes
 
-Above the rewritten text, print the **"Driver-seat changes"** list: one line per change, what moved and why. Never a verdict on the plan as a whole, never the tower or the per-level questions as visible output — those are working material.
+**Shape A (agent-written target):** edit the actual plan/spec/docs file in place — do not produce a separate report file — then print the **"Driver-seat changes"** list above the rewritten text: one line per change, what moved and why, in the same approval message.
+
+**Shape B (user-written target):** make no edit. Print the changes as a numbered slate instead — one row per change, what moves, where, why, in the plan's own vocabulary — closing with the escape hatch: "Type `go` to apply every row, or answer per row (`1 apply, 3 skip`)." Apply only the accepted rows, only after the reply.
+
+Either way: never a verdict on the plan as a whole, never the tower or the per-level questions as visible output — those are working material.
 
 ## Honesty mechanics
 
@@ -51,7 +55,7 @@ A level that yields no change is shown as such in the tower walk, not silently s
 
 - **Don't invent structure.** If the plan has no settled shape yet, refuse per Step 1 rather than designing one under this technique's name.
 - **Don't quote the prompt block.** Point at DRIVER-SEAT.md; never copy its text into a technique run, a finding, or a ticket body.
-- **Don't produce a verdict.** "This plan is agent-ergonomic" or "this plan fails driver-seat" are not this technique's output — only the changes list and the edited text are.
+- **Don't produce a verdict.** "This plan is agent-ergonomic" or "this plan fails driver-seat" are not this technique's output — only the changes list, and (shape A only) the edited text, are.
 - **Don't run it more than once per pass.** One driver-seat rewrite per settled plan; re-running it on the same plan without new structure just relitigates the same tower.
 
 ## References

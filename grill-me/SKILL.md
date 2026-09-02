@@ -95,7 +95,7 @@ Two symptoms in an interview are not "ask a better question" problems — they a
 
 A third lens, distinct from the two reframers above and not subject to their "never both in one session" rule — it runs alongside inversion or concept-fan, at a different moment, because it asks a different question. The reframers attack an unexamined premise; this one asks whether the settled plan is legible and drivable by an agent.
 
-**Grill mode only, run once, after the plan's structure has settled.** Invoke `lateral driver-seat` and follow its workflow. Output per [DRIVER-SEAT.md](DRIVER-SEAT.md)'s contract: the plan edited in place, with a "Driver-seat changes" list above the rewritten text. Then continue the interview — the pass is a stretch of the conversation, not an exit from it.
+**Grill mode only, run once, after the plan's structure has settled.** Invoke `lateral driver-seat` and follow its workflow. The plan under interview is the human's own document, so [DRIVER-SEAT.md](DRIVER-SEAT.md)'s contract puts this pass in shape B: no edit — emit the changes as a numbered slate, one row per change (what moves, where, why, in the plan's own vocabulary), closing with: "Type `go` to apply every row, or answer per row (`1 apply, 3 skip`)." The slate is the interview's next message, waiting on the human like every other question in this pass. Apply only the accepted rows, once the reply arrives, then continue the interview from there.
 
 ## Domain design lenses
 
