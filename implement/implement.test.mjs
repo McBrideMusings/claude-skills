@@ -392,5 +392,69 @@ const minorFinding = await run(BASE, {
 check('a minor review finding reports no blockers', minorFinding.result.blockers, [])
 check('  ...and reports ok', minorFinding.result.ok, true)
 
+// The mutation gate itself has zero coverage above this point: no case yet
+// touches a test path (HAPPY.Edit touches only `a.ts`), so `touchedTests` is
+// empty in every case run so far and this whole block of logic never runs.
+// Every case below overrides Edit to touch a test file too, to actually reach
+// it.
+const EDIT_WITH_TEST = { touched: ['a.ts', 'a.test.ts'], summary: 'edited a.ts' }
+
+// 20. `discriminates: null` means the change was removal-only — there was
+//     nothing to discriminate, so it must NOT block landing on its own.
+const removalNull = await run(BASE, {
+  Edit: EDIT_WITH_TEST,
+  Verify: {
+    ...HAPPY.Verify,
+    mutation: {
+      method: 'n/a — removal only',
+      command: "grep -rn 'COMMIT_OK' .",
+      output: '(no matches)',
+      discriminates: null,
+    },
+  },
+})
+check('discriminates:null reports no blockers', removalNull.result.blockers, [])
+check('  ...and reports ok', removalNull.result.ok, true)
+
+// 21. `discriminates: false` still blocks — a test was added and it does not
+//     discriminate. This is the case `null` must NOT be confused with.
+const removalFalse = await run(BASE, {
+  Edit: EDIT_WITH_TEST,
+  Verify: {
+    ...HAPPY.Verify,
+    mutation: { method: 'reverted the fix', command: 'npm test -- a.test.ts', output: 'ok', discriminates: false },
+  },
+})
+check('discriminates:false still blocks', removalFalse.result.blockers.length > 0, true)
+check('  ...mentioning that the tests do not discriminate', /do not discriminate/.test(removalFalse.result.blockers.join(' ')), true)
+
+// 22. `discriminates: null` paired with a named, unexercised mechanism in
+//     `failures` is the cc-fyt shape — a null must not silently swallow a real
+//     gap the change itself reported. This is what makes the `failures`
+//     branch inside the null arm discriminate: reverting it makes this case
+//     fall through to case 20's happy path and fail.
+const removalNullUncovered = await run(BASE, {
+  Edit: EDIT_WITH_TEST,
+  Verify: {
+    ...HAPPY.Verify,
+    mutation: {
+      method: 'n/a — removal only',
+      command: "grep -rn 'tree_clean' implement.test.mjs",
+      output: '(no matches)',
+      discriminates: null,
+    },
+    failures: ['tree_clean promoted to "the enforcement" but has zero test coverage'],
+  },
+})
+check('discriminates:null with an unexercised replacement mechanism blocks', removalNullUncovered.result.blockers.length > 0, true)
+check('  ...naming the unexercised mechanism', /tree_clean/.test(removalNullUncovered.result.blockers.join(' ')), true)
+
+// 23. The Verify prompt itself carries the classify-before-choosing-a-method
+//     instruction — this is the bulk of the change and is otherwise
+//     untested.
+const mutationPromptRun = await run({ ...BASE, worktree: '/tmp/wt' }, { Edit: EDIT_WITH_TEST, Verify: WT_VERIFY })
+const verifyPrompt = mutationPromptRun.prompts.find((x) => x.phase === 'Verify').prompt
+check('the Verify prompt tells the agent to classify the diff before choosing a method', /Classify the production half of the diff before picking a method/.test(verifyPrompt), true)
+
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)

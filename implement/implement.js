@@ -222,6 +222,23 @@ const REVIEW = {
 //
 // So a test now has to be shown failing without the change. The agent runs the
 // revert and reports the output; the script decides what a missing report costs.
+//
+// `discriminates` has three states, not two. `true` is evidence the test would
+// have caught the regression. `false` is a blocker — a test was added and it
+// does not discriminate. `null` means there was no behaviour to reverse in the
+// first place: a removal-only change (deleted production code, comment- or
+// doc-only edits) restores exactly the deleted code when reversed, so the
+// retained tests pass exactly as they did before — `false` by construction,
+// on every removal, whether or not anything is actually wrong. Observed
+// 2026-09-01, run wf_1c7f6439-4e8 (cc-fyt round 1): a change deleted the
+// `COMMIT_OK` sentinel and its six tests, and promoted `tree_clean` to "the
+// enforcement" in prose — with zero test coverage of `tree_clean` itself. The
+// mutation report read `false`, with a correct, self-consistent explanation of
+// why reverting a deletion changes nothing the retained tests check, and it
+// nearly landed on the strength of that explanation. `null` exists so a
+// removal-only change stops manufacturing a `false` that means nothing, and so
+// the one time the gate is pointing at something real does not read as the
+// same noise it produces on every ordinary deletion.
 const MUTATION = {
   type: 'object',
   required: ['method', 'command', 'output'],
@@ -229,7 +246,7 @@ const MUTATION = {
     method: { type: 'string' },
     command: { type: 'string' },
     output: { type: 'string' },
-    discriminates: { type: 'boolean' },
+    discriminates: { type: ['boolean', 'null'] },
     tests: { type: 'array', items: { type: 'string' } },
   },
 }
@@ -780,7 +797,16 @@ ${
     ? `
 **This pass touched test files: ${touchedTests.join(', ')}. Prove they discriminate before you return a verdict.** A test that passes whether or not the change is present is not evidence of anything, and adding one is the most common way a pass looks green while fixing nothing.
 
-Do this, literally:
+**Classify the production half of the diff before picking a method.** Read it. If every hunk outside the test files only deletes production code, or only touches comments or documentation, there is no behaviour left to reverse — reversing a pure deletion restores exactly the deleted code, and the retained tests pass exactly as they did before, by construction. Running the patch/reverse/re-run procedure below on a diff like that produces \`discriminates: false\` every time, on every legitimate removal, whether or not anything is actually wrong — which is worse than useless: it teaches whoever reads this report to expect \`false\` and discount it, which is exactly the moment a real gap hides best. New behaviour with nothing to revert is NOT removal-only — that stays \`false\` per the paragraph below, not \`null\`.
+
+**If the diff is removal-only:** skip the patch/reverse/re-run procedure entirely. Instead run these two checks, both real commands with real output, not an inference:
+
+  (a) Does anything still reference what was removed? Grep the repo for the removed name(s) — symbol, constant, config key, whatever the diff deleted. Paste the command and its output (empty is a fine, real answer).
+  (b) Does anything the change now describes as load-bearing — a mechanism promoted in a comment or in \`method\` to "the enforcement", "the check", "what actually stops it" — have a test exercising it? Grep the test files for that mechanism's name. Paste the command and its output.
+
+  Return \`mutation\` with \`method: "n/a — removal only"\`, \`command\`/\`output\` carrying the check (a) command and its real output (both fields are required — put real text in them, not a placeholder), \`discriminates: null\`, and \`tests\` naming whichever tests you narrowed the check (b) grep to. **If check (b) comes back empty — something is now claimed load-bearing with no test exercising it — name that mechanism and the empty grep in \`failures\`.** That is the shape that hid a real defect once (run wf_1c7f6439-4e8, cc-fyt round 1): do not let a clean \`null\` swallow it.
+
+**Otherwise (the diff adds or changes behaviour), do this, literally:**
 
 1. Capture the production half of the change as a patch, then reverse it out of the tree. \`PATCH\` puts it in this checkout's disposable directory, **outside the repo** — a patch written to \`<checkout>/tmp/\` is inside the working tree, so \`git status\` sees it, \`git add\` can catch it, and it rides the branch:
    \`\`\`
@@ -862,7 +888,18 @@ const mutationBlockers = []
 if (touchedTests.length) {
   const m = verdict.mutation
   if (!m) mutationBlockers.push(`tests were added or changed (${touchedTests.join(', ')}) and no mutation check was reported — nothing shows they fail without the change`)
-  else if (m.discriminates !== true) mutationBlockers.push(`the added tests do not discriminate: with the change removed, \`${m.command}\` still reported ${JSON.stringify((m.output || '').slice(0, 200))}`)
+  else if (m.discriminates === null) {
+    // Removal-only: there was no behaviour to reverse, so `false` was never
+    // going to be evidence of anything — this is not a blocker on its own.
+    // But `null` is the shape that concealed a real gap once (cc-fyt round
+    // 1), so a `null` paired with a named, unexercised "load-bearing"
+    // mechanism still blocks landing — just on the actual gap, not on the
+    // absence of a mutation to run.
+    log(`mutation check: removal only, nothing to discriminate — ${m.method}`)
+    if ((verdict.failures || []).length) {
+      mutationBlockers.push(`the removal-only change reported an unexercised mechanism it now relies on: ${verdict.failures.join('; ')}`)
+    }
+  } else if (m.discriminates !== true) mutationBlockers.push(`the added tests do not discriminate: with the change removed, \`${m.command}\` still reported ${JSON.stringify((m.output || '').slice(0, 200))}`)
   else log(`mutation check: tests fail without the change — ${(m.output || '').slice(0, 120)}`)
 }
 
