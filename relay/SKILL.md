@@ -170,7 +170,9 @@ is either running or returned-but-unlanded:
   branch: <branch>
   worktree: <absolute path>
   workflow: running | returned
-  run_id: <id>                 # when workflow: running
+  base: <sha the pass started from>   # when workflow: running
+  run_id: <id>                 # breadcrumb for a human reading /workflows — a fresh
+                                # session cannot query it; when workflow: running
   ok: true | false              # when workflow: returned
   halted_on: <reason or ->      # when workflow: returned
   verdict: <absolute path or -> # when a verdict file was written
@@ -180,11 +182,25 @@ is either running or returned-but-unlanded:
 
 **The refusal.** A pass whose `Workflow` call has not returned has no outcome this
 session can write — relay does not guess it and does not sit and wait for it either.
-Record it as `workflow: running` with its run id, and put checking that run first in
-the fresh session's Step 4 "First action" field. If a pass is in flight and this
-session cannot even name its run id or worktree — visibility genuinely lost, not just
-still running — refuse the relay: say which pass it cannot account for and stop
-rather than clearing over it.
+`resumeFromRunId` is same-session only, so a fresh session has no way to query a run
+id; a run id in the manifest is a breadcrumb for a human reading `/workflows`, never
+an instruction to the fresh session. Record the pass as `workflow: running` with its
+worktree and the base sha it started from, and put these four on-disk checks in the
+prompt's **First action** field (Step 4, item 4) so they are the first thing the
+fresh session does:
+
+- `git -C <worktree> log --oneline <base>..HEAD` — did a commit appear after the relay?
+- `git -C <worktree> status --short` — a dirty tree means it stopped mid-edit
+- `ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/` — was a verdict written?
+- `pgrep -f <worktree>` — is anything still working in it?
+
+Those four answer whether the pass finished and whether its work is safe, but they
+cannot recover its return value — a relay loses `recheck`, `blockers`, `followups`,
+and `review` for any pass still running at relay time. A pass with a commit and a
+verdict on disk is verifiable from those artifacts; one with neither is work to redo.
+If a pass is in flight and this session cannot even name its worktree — visibility
+genuinely lost, not just still running — refuse the relay: say which pass it cannot
+account for and stop rather than clearing over it.
 
 This applies to `relay auto` too. A queued/mid-run `implement` skips Step 2's
 proposal, but the manifest is not one of the defaults it gets to skip — every running
@@ -199,7 +215,8 @@ or unlanded pass still gets an entry.
   branch: cc-7qz
   worktree: /Users/pierce/.worktrees/claude-skills/cc-7qz
   workflow: running
-  run_id: run_01HXYZ9K2M
+  base: 3f1a76d2c9e8b4a015f6d7c2e1b0a9f8d7c6b5a4
+  run_id: run_01HXYZ9K2M   # breadcrumb only — a fresh session cannot query this
   recheck: bash /Users/pierce/.claude/tools/tests/implement-workflow.test.sh
 
 - item: cc-8rf
@@ -208,7 +225,7 @@ or unlanded pass still gets an entry.
   workflow: returned
   ok: true
   halted_on: -
-  verdict: /private/tmp/claude/claude-skills/verdicts/cc-8rf.md
+  verdict: /private/tmp/claude/claude-skills/verify/cc-8rf.json
   recheck: bash /Users/pierce/.claude/tools/tests/implement-workflow.test.sh
 ```
 
