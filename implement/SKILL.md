@@ -155,6 +155,16 @@ Targeting `--workspace` is what nests it under the repo in the sidebar instead o
 
 ---
 
+## Cross-repo items
+
+**A pass works exactly one repo.** The worktree confinement above is load-bearing, and this section does not lift it — an item that needs two repos gets split, never worked in one pass.
+
+`~/.claude` and `~/.claude/skills` (`claude-skills`) are **two separate repos**, not one. The second is a git submodule nested inside the first, and its files sit right there in the parent's directory tree — `hooks/`, `tools/`, `tools/tests/` and `CLAUDE.md` live in `~/.claude`, while every skill, including `implement` itself, lives in `claude-skills`. Reading the directory tree does not tell you which repo a path belongs to; check its repo root before assuming a pass confined to one can touch it. Any repo with a nested submodule, or any item whose test lives in a harness repo beside the code repo, has the same shape.
+
+An item touching both is split into one item per repo, wired with a dependency edge, and each half's brief says which repo it owns and names the other half's item id.
+
+The Gate stage's third test (reachability) catches this automatically: an item naming a file, or carrying an acceptance criterion, outside the repo the pass is confined to fails the gate with a `missing` entry naming the out-of-repo path. That costs one cheap stage instead of a whole pass discovering the same thing at Verify, its last stage.
+
 ## Pre-flight
 
 Run before anything else. If it fails, print the reason and stop.
@@ -198,7 +208,7 @@ Resolve the selector into a frozen queue first — issue numbers, `#range`, `lab
 
 Every pass gets its own worktree and they run at once. The human is involved at exactly two moments: the gate before anything is dispatched, and the report after. In between there is no channel from a pass back to a person, and no way for one to exist. An item that turns out to be ambiguous costs its whole dispatch and waits for an `iron-out` pass.
 
-**The scope gate, before anything is dispatched.** Read every in-scope issue and confirm each one is actually ready — a concrete plan, named files, an objective acceptance check. Exclude automatically and without asking: anything unlabelled or untriaged, anything whose body is a question, and anything touching migrations, auth, payments, or deletion paths. State what you excluded and why.
+**The scope gate, before anything is dispatched.** Read every in-scope issue and confirm each one is actually ready — a concrete plan, named files, an objective acceptance check. Exclude automatically and without asking: anything unlabelled or untriaged, anything whose body is a question, anything touching migrations, auth, payments, or deletion paths, and anything naming paths in two repos (see Cross-repo items above) — split it into one item per repo before it is dispatched. State what you excluded and why.
 
 **No pass ever lands its own work.** `implement.js` ends at a commit and has no push in it at all — a stage that runs no `git push` has nothing to route around. `hooks/subagent-push-guard.sh` makes that structural rather than remembered: it denies `git push`, `git merge` into the default branch, `gh pr`/`gh issue` writes and `bd` writes from any implementation subagent. Prose instructions not to push have not held on their own; agents merged into `main` and closed their own issues against explicit clauses repeated four times.
 
@@ -293,6 +303,7 @@ Worked example, with an override. The verdict at `/private/tmp/claude/.claude-sk
 - A named issue is closed or missing
 - Triage found nothing actionable, or its top pick is not already tracked
 - The pass's AFK-ability gate failed — the item hides a decision the user owns. File `needs human input: <item> — <what's ambiguous>` via `followups` and stop; never guess-and-commit
+- The gate's reachability test failed — the item names a path, or an acceptance criterion, outside the repo the pass is confined to (see Cross-repo items above). Split it into one item per repo and wire a dependency edge; never lift the confinement to reach the other repo from this pass
 - Implementation produced no diff
 - The build will not go green
 - Verification returned `FAIL` or `BLOCKED`

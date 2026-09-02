@@ -66,6 +66,7 @@ const DETECT = `${SKILLS}/_tracker/_detect.md`
 
 const a = args || {}
 const dir = a.worktree || a.repo || a.cwd
+const REPO_ROOT = a.repo || a.cwd || dir
 const model = a.model || 'sonnet'
 
 // This pass NEVER lands and NEVER writes the tracker. It ends at a commit on
@@ -484,18 +485,22 @@ Judge whether this item is walk-away work — objective enough for an unwatched 
 
 ${JSON.stringify(item, null, 2)}
 
-Read whatever the repo can tell you about it before answering. Then apply two tests, and **both** must pass:
+Read whatever the repo can tell you about it before answering. Then apply three tests, and **all three** must pass:
 
 1. **Plan test.** Can you state a concrete plan *right now* — the files to touch, the changes to make, and an objective acceptance check that would prove it done? If you cannot name the files, or cannot name a check whose result would settle whether it is finished, the item is not understood well enough to work unwatched.
 2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity you would have to *invent* an answer to in order to proceed? If so it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
+3. **Reachability test.** This pass is confined to one repo, rooted at \`${REPO_ROOT}\`. Does every file the item names, and every acceptance criterion, live under that root? A nested submodule (for example \`claude-skills\` inside \`~/.claude\`) is a *different* repo even though it sits inside the parent's directory tree — a path under the submodule is out of reach from a pass confined to the parent, and vice versa. If any named path or acceptance criterion falls outside \`${REPO_ROOT}\`, this test fails: the item spans two repos and must be split into one item per repo before it can be worked. Give the out-of-repo path its own \`missing\` entry, worded exactly \`"<path> is outside ${REPO_ROOT} — this item spans two repos and must be split"\`.
 
-Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work. \`pass: false\` with a precise \`reason\` — naming which test failed and why — is a good outcome, not a failure. Put each specific thing you would have had to invent or ask about in \`missing\`.`,
+Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work. \`pass: false\` with a precise \`reason\` — naming which test failed and why — is a good outcome, not a failure. Put each specific thing you would have had to invent or ask about, and every out-of-repo path, in \`missing\`.`,
   { phase: 'Gate', model, schema: GATE },
 )
 
 if (!gate || !gate.pass) {
-  log(`gate failed: ${gate ? gate.reason : 'gate agent returned nothing'}`)
-  return halt('gate', gate ? gate.reason : 'gate agent returned nothing')
+  const gateDetail = gate
+    ? [gate.reason, ...(gate.missing || [])].join(' — ')
+    : 'gate agent returned nothing'
+  log(`gate failed: ${gateDetail}`)
+  return halt('gate', gateDetail)
 }
 
 // --- Locate ----------------------------------------------------------------
