@@ -53,7 +53,7 @@ At session start, check for these in the current repo:
 
 ### Live glossary maintenance
 
-As terms resolve during the conversation, **update `docs/CONTEXT.md` inline** — don't batch. Format per [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
+As terms resolve during the conversation, capture them per the `docs` skill's vocabulary rule: each is a slate row (term, one-line meaning, where it's already used), and the write to `docs/CONTEXT.md` happens on `go` — never inline mid-conversation. See [../docs/SKILL.md](../docs/SKILL.md)'s "Standing rules" and [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md) for the format.
 
 **Keep `docs/CONTEXT.md` a glossary and nothing else.** It must stay totally devoid of implementation details — it is not a spec, not a scratchpad, not a home for implementation decisions. Resolved vocabulary only; decisions go to ADRs, plans go to plan files.
 
@@ -70,13 +70,7 @@ If the user states how something works and the code disagrees, surface it: *"You
 
 ### ADRs, sparingly
 
-Offer to create an ADR only when **all three** are true:
-
-1. Hard to reverse — cost of changing your mind later is meaningful
-2. Surprising without context — a future reader will look at the code and wonder "why on earth?"
-3. The result of a real trade-off — genuine alternatives existed
-
-Skip otherwise. See [ADR-FORMAT.md](ADR-FORMAT.md) for the template and qualifiers.
+Apply the `docs` skill's any-session ADR rule (three-conditions test; a passing decision is a slate row that turn). See [../docs/ADR-FORMAT.md](../docs/ADR-FORMAT.md) for the template and qualifiers.
 
 ## Assumption-breaking lenses
 
@@ -136,7 +130,7 @@ If a written record is useful at the end, offer it — don't assume:
 - Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
 - Durable product spec → invoke `/to-tickets`, which synthesizes the spec as its Phase 03 and offers to commit it as `docs/PRD.md` before slicing. (`/to-tickets` owns spec generation; don't write the PRD by hand here.)
 
-Glossary entries and ADRs are captured *inline* during the session — no end-of-session sweep needed.
+Glossary entries and ADRs are captured *as slate rows* during the session, per the `docs` skill's standing rules — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
 
 ## Never build by hand what another skill owns
 

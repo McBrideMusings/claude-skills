@@ -6,7 +6,7 @@ Surface architectural friction and propose **deepening opportunities** — refac
 
 Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component", "service", "API", or "boundary."
 
-These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../grill-me/CONTEXT-FORMAT.md](../grill-me/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
+These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
 
 - **Module** — anything with an interface and an implementation (function, class, package, slice). Scale-agnostic.
   _Avoid_: unit, component, service, layer, wrapper.
@@ -114,7 +114,7 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 Side effects happen inline as decisions crystallize:
 
-- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term right there. Format per [../grill-me/CONTEXT-FORMAT.md](../grill-me/CONTEXT-FORMAT.md).
-- **Sharpening a fuzzy term?** Update `docs/CONTEXT.md` right there.
-- **User rejects the candidate with a load-bearing reason?** Offer an ADR: *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [../grill-me/ADR-FORMAT.md](../grill-me/ADR-FORMAT.md).
+- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term as a slate row per the `docs` skill's vocabulary rule. Format per [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md).
+- **Sharpening a fuzzy term?** Same rule — a row, written on `go`.
+- **User rejects the candidate with a load-bearing reason?** Apply the `docs` skill's any-session ADR rule: *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [../docs/ADR-FORMAT.md](../docs/ADR-FORMAT.md).
 - **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).

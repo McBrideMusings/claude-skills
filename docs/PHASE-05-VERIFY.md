@@ -1,4 +1,4 @@
-# Phase 06 — Verify
+# Phase 05 — Verify
 
 Boot the dev server briefly to confirm the wiring works.
 
@@ -24,4 +24,4 @@ Boot the dev server briefly to confirm the wiring works.
 
 Failures here usually point at one of the gotchas in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) — `.mts` rename, `{{ }}` template syntax, missing `layout: home`.
 
-When verify passes, proceed to [PHASE-07-COMMIT.md](PHASE-07-COMMIT.md).
+When verify passes, proceed to [PHASE-06-COMMIT.md](PHASE-06-COMMIT.md).

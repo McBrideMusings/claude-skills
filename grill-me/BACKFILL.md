@@ -26,13 +26,13 @@ For each item in the report, ask the user to confirm / refine / reject. Recommen
 
 > "I see `Order` used 47 times consistently across the API layer, domain types, and tests. Capture as a canonical term in `docs/CONTEXT.md`?"
 
-Default: yes. One question per term.
+Default: yes. One question per term during the walk, but don't write any of them yet — collect every term that resolves during this recon pass into one slate at the end (term, one-line meaning, where it's used), and write to `docs/CONTEXT.md` on `go`, per the `docs` skill's vocabulary rule.
 
 ### Divergences
 
 > "You call this both `Customer` (12 uses) and `Account` (8 uses) — `Customer` in newer code, `Account` in `legacy/`. Which is canonical going forward?"
 
-Then capture the chosen term and list the other as `_Avoid_:` per [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
+Then capture the chosen term and list the other as `_Avoid_:` per [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md), as a row in the same end-of-pass slate.
 
 ### Conventions
 
@@ -44,7 +44,7 @@ Most conventions belong in `CLAUDE.md`, not `docs/CONTEXT.md`. CONTEXT is for vo
 
 > "You're using Postgres for the write model and Redis for read caching, with explicit `outbox` table for event publishing. Looks like a deliberate event-sourced-write / cached-read split — was this a real decision? Worth an ADR?"
 
-Apply the three-conditions test from [ADR-FORMAT.md](ADR-FORMAT.md). Don't manufacture ADRs from accidental code shapes.
+Apply the three-conditions test from [../docs/ADR-FORMAT.md](../docs/ADR-FORMAT.md). Don't manufacture ADRs from accidental code shapes.
 
 ## Don't fabricate
 

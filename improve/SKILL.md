@@ -65,7 +65,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `product` | [aspects/product.md](aspects/product.md) | `gui` orient mode | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
 | `game` | [aspects/game.md](aspects/game.md) | `ref-game-dev/` cells | `.claude/domain` marker includes `game` |
-| `docs` | [aspects/docs.md](aspects/docs.md) | `docs` audit branch | `docs/` + `.vitepress/` exist |
+| `docs` | [aspects/docs.md](aspects/docs.md) | `docs` audit branch | always |
 | `layout` | [aspects/layout.md](aspects/layout.md) | `bootstrap` audit branch | always |
 
 **The brief column is what a survey sub-agent gets** — a short file naming exactly what to read and what this aspect asks, so no agent burns a read of a 300-line `SKILL.md` hunting for one section. The owner column is what an *interactive* single-aspect run loads, in full, grilling loop included.

@@ -6,7 +6,7 @@ Both `docs/` and `.vitepress/` exist. Verify alignment, apply mechanical fixes s
 
 1. Rename `config.ts` → `config.mts` (build fails otherwise on CommonJS).
 2. Rename `api-surface.md` → `api.md`, update refs.
-3. Create missing universal stubs (`index.md`, `PRD.md`, `file-map.md`).
+3. Create missing universal stubs (`index.md`, `file-map.md`).
 4. Add `.gitignore` cache/dist entries (`docs/.vitepress/cache`, `docs/.vitepress/dist`).
 5. Install VitePress if missing from devDeps.
 6. Add `docs:dev` script if missing (port 5193 or main app port + 20).
@@ -29,6 +29,4 @@ Present every substantive hit as one numbered slate, closed with the escape hatc
 
 Report: what was applied mechanically, what was proposed substantively, what's pending.
 
-If `docs/PRD.md` exists but is stub-only → offer [PHASE-05-POPULATE-PRD.md](PHASE-05-POPULATE-PRD.md) before exiting.
-
-Then proceed to [PHASE-06-VERIFY.md](PHASE-06-VERIFY.md).
+Then proceed to [PHASE-05-VERIFY.md](PHASE-05-VERIFY.md).
