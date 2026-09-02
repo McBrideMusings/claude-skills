@@ -9,7 +9,7 @@ Break a plan into independently-grabbable tickets using **vertical slices** (tra
 
 **The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that.
 
-**This skill is the single owner of spec synthesis.** `docs`, `grill-me`, `gui` and `iron-out` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; the spec is a transitory by-product of this run (Phase 03), not a committed document and not a prerequisite for it.
+**This skill is the single owner of spec synthesis.** `docs`, `grill-me`, `gui` and `iron-out` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; the spec is not a committed file — its durable home is the run epic's body (Phase 06), or the single ticket's `## Spec` section when there's no epic — and it is not a prerequisite for this run.
 
 **Issue backend:** resolve once by invoking `issues` and running its detection step, then hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
 
@@ -19,12 +19,12 @@ This skill writes two files, both disposable, both under `/private/tmp/claude/<r
 
 | File | Written by | Holds |
 | --- | --- | --- |
-| `spec.md` | Phase 03 | the synthesized spec — problem, solution, user stories, testing decisions |
+| `spec.md` | Phase 03 | the synthesized spec — problem, solution, user stories, testing decisions. Durable copy: the run epic's body (Phase 06), or the single ticket's `## Spec` section when there's no epic |
 | `to-tickets.md` | Phase 05 | the slice breakdown awaiting approval |
 
-**Both are transitory.** They exist to produce the tickets and die with the tmp sweep; the
-tickets carry the durable content forward. Never write either into the repo on your own
-initiative.
+**Both scratch files are transitory.** They exist to produce the tickets and die with the tmp
+sweep; the tickets — and, for the spec, the epic body or `## Spec` section it's published into
+— carry the durable content forward. Never write either into the repo on your own initiative.
 
 Draft slices to `/private/tmp/claude/<repo-slug>/to-tickets.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
 
@@ -93,14 +93,17 @@ what they can read in chat, never a file they'd have to open:
 
 Iterate on the spec until approved. Only then continue.
 
-The approved spec is not committed to a file — it lives in the epic issue's body on the
-tracker (Phase 06), and the scratch `spec.md` dies with the tmp sweep.
+The approved spec is not committed to a file. When there are two or more slices, Phase 06
+creates one run epic per run and writes the full spec text into its body — that's its durable
+home. When the slate is a single slice, there's no epic; Phase 07 prepends the spec text to
+that ticket's body under a `## Spec` heading instead. Either way the scratch `spec.md` dies
+with the tmp sweep once the durable copy exists.
 
 ### Phase 04 — Draft vertical slices
 
 Break the plan into **tracer-bullet** tickets. Each slice cuts through ALL layers end-to-end (schema + API + UI + tests). **NOT** a horizontal slice of one layer.
 
-If the source plan implies milestone boundaries (e.g. "MVP vs Post-MVP" or explicit phases), group slices under `## Milestone: <name>` headings in the proposal file. Phase 06 reads these headings to create real GitHub milestones.
+If the source plan implies milestone boundaries (e.g. "MVP vs Post-MVP" or explicit phases), group slices under `## Milestone: <name>` headings in the proposal file. Phase 06 reads these headings to create child epics (beads) or milestones (GitHub) nested under the run-level epic/milestone it always creates.
 
 Classify each:
 
@@ -150,35 +153,64 @@ Ask:
 
 Iterate until approved.
 
-### Phase 06 — Milestones (if grouped)
+### Phase 06 — Run epic (spec's durable home)
 
-If the proposal groups slices under `## Milestone: <name>` headings, confirm before publishing:
+**Runs whenever the slate has two or more slices.** This is where the approved spec gets its
+durable home: one run epic per `to-tickets` run, titled from the spec's `# {Project} Spec`
+title, carrying the full spec text as its body. A single-slice slate skips this phase entirely
+— see the fallback at the end.
 
-> "These slices fall into N milestones: <list>. Create them?"
+For each epic/milestone (run-level, and any milestone-grouped child), **reuse existing ones by
+exact title match** — never create duplicates. Keep the run epic and any milestone child epics
+as two distinct lookups; don't collapse them, or a second run can reuse a milestone epic as the
+run epic and overwrite an unrelated spec.
 
-For each confirmed milestone, **reuse existing ones by exact title match** — never create duplicates.
+**`beads`** — the epic type carries both the run epic and, when the proposal groups slices under
+`## Milestone: <name>` headings, a child epic per group:
 
-**`beads`** — the milestone equivalent is an epic, and membership is a real parent link:
+1. Run epic: look for an existing one — `bd list -t epic --status open --json` and match on the
+   spec's title.
+   - **Exact title match → reuse its ID.**
+   - **No match → create it, with the spec as its body:**
+     `bd create "<spec title>" -t epic --body-file /private/tmp/claude/<repo-slug>/spec.md --silent`
+     — capture the printed ID as `<run-epic-id>`.
+2. If the proposal has `## Milestone: <name>` groupings, confirm before publishing:
+   > "These slices fall into N milestones: <list>. Create them?"
 
-1. Look for an existing one: `bd list -t epic --status open --json` and match on title.
-2. **Exact title match → reuse its ID.**
-3. **No match → create it:** `bd create "<name>" -t epic --silent` — capture the printed ID.
+   For each confirmed milestone, look it up the same way (`bd list -t epic --status open --json`,
+   match on title), reuse on an exact match, and otherwise create it as a child of the run epic:
+   `bd create "<name>" -t epic --parent <run-epic-id> --silent` — capture each printed ID.
 
-**`github`:**
+**`github`** — there's no epic type, so the run-level spec rides on a milestone:
 
-1. List open milestones and check for a name match:
+1. Run milestone: check for a name match on the spec's title:
    ```bash
    gh api "repos/{owner}/{repo}/milestones?state=open" --jq '.[].title'
    ```
    (`{owner}` and `{repo}` are auto-resolved by `gh api` from the current repo.)
-2. **If a milestone with that exact title exists, reuse it.** Report which were reused vs newly created when done.
-3. **If it doesn't exist, create it:**
+   - **Exact title match → reuse it.**
+   - **No match → create it, with the spec as its description:**
+     ```bash
+     gh api "repos/{owner}/{repo}/milestones" -X POST -f title="<spec title>" -f description="$(cat <<'EOF'
+     <full spec text>
+     EOF
+     )"
+     ```
+     Report whether it was reused or newly created.
+2. If the proposal has `## Milestone: <name>` groupings, confirm before publishing (same
+   question as above), then look each up the same way and create any missing ones as plain
+   milestones (no parent — GitHub milestones don't nest):
    ```bash
    gh api "repos/{owner}/{repo}/milestones" -X POST -f title="<name>"
    ```
-   Before creating, ask the user whether to set a description or due date (`-f description=...`, `-f due_on=<ISO8601>`). Skip both if they say no.
+   These are the milestones Phase 07 assigns grouped slices to; ungrouped slices in a 2+-slice
+   slate get the run milestone instead.
 
-Skip this phase entirely if the proposal has no milestone groupings.
+**One-slice fallback — no epic at all.** When the slate is exactly one slice, skip this phase.
+Instead, in Phase 07, prepend the full spec text to that slice's body under a `## Spec` heading
+before creating it (both backends): the ticket body becomes `## Spec\n\n<spec text>\n\n<rest of
+TICKET-TEMPLATE.md body>`. This is the spec's only durable home for a one-slice run, so it must
+be written for whichever backend is in play.
 
 ### Phase 07 — Publish
 
@@ -188,13 +220,18 @@ Per slice:
 
 - **`beads`:** `bd create "<title>" -t <task|bug|feature> -p <0-4> --body-file <path> --silent`
   - Capture the printed ID; later slices need it for their blocker edges.
-  - Milestone group → `--parent <epic-id>` from Phase 06.
+  - **Every slice gets a `--parent`:** the milestone group's child epic ID when it belongs to
+    one, otherwise the run epic ID from Phase 06 directly. A one-slice slate has no epic at all
+    (see Phase 06's fallback) and omits `--parent`.
   - **A UI slice's Visual acceptance block goes in `--design-file <path>`, not the body.** `bd show` renders design separately, so the agent gets the reference frame, the state list, and the copy strings as their own section instead of buried in prose. Write the block to a scratch file and pass the path. Non-UI slices omit the flag.
   - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `triage` and `implement` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
   - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
 - **`github`:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
-  - `--milestone` only when the slice belongs to a milestone group (omit otherwise). The milestone name must match a title from Phase 06.
+  - **Every slice gets `--milestone`:** the milestone group's name when it belongs to one,
+    otherwise the run milestone's name from Phase 06. The name must match a title created or
+    reused there. A one-slice slate has no milestone at all (see Phase 06's fallback) and omits
+    `--milestone`.
   - **GitHub has no design field**, so a UI slice keeps its Visual acceptance block as a `## Visual acceptance` section in the body. Same content, different shape — this is the one place the two backends diverge.
   - **A `docs/spikes/` path in a GitHub issue body does not render as an image.** Cite it as a path in backticks, never as `![](…)` markdown that will show a broken image. The agent opens it from the checkout; that's the consumer that matters.
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
