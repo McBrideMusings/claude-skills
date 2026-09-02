@@ -103,6 +103,8 @@ loop
 
 **A verdict describes one tree.** If anything is touched after a clean recheck — a review nit, a last tidy-up — the verdict no longer describes what you are about to land. Re-run the recheck, and append the result to the verdict as a `rechecks` entry in the same breath — the re-verification and its record never separate. The file to append to is `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json`.
 
+**When this session's own context fills mid-run, relay rather than pushing on** — the `relay` skill's in-flight manifest is what makes handing off passes still running or returned-but-unlanded safe.
+
 ---
 
 ## Verification itself
