@@ -17,6 +17,8 @@ One **pass** is one tracked item, worked end to end by `implement.js` in its own
 
 A pass takes no `mode` argument and has no idea how many siblings it has. Running two is this session calling the workflow twice.
 
+**How a cleared tracked item becomes a launched pass lives in [`HANDOFF.md`](HANDOFF.md)** — the three cheap queries that make an item dispatchable, reading swarm-vs-sequential shape off the dependency graph instead of asking, and offering the result as one more slate row rather than a new accept word.
+
 ---
 
 ## ⛔ The pass is a workflow, and it is addressed by path
