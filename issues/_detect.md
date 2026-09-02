@@ -80,8 +80,8 @@ Not edit-on-GitHub-then-pull. A push carries title, description and status out o
 faithfully, so nothing is lost going that way; a pull silently resets `issue_type`, `priority`
 and the whole label set (see the ⛔ notes below), so it is for collecting a human's GitHub-UI
 edit, not for routine round-tripping. Read
-[`beads-mirror-context.md`](beads-mirror-context.md) for the working loop and the `::`-label
-cleanup a push requires.
+[`beads-mirror-context.md`](beads-mirror-context.md) for the working loop, and
+[`beads.md`](beads.md) § Mirror mode for the `::`-label cleanup a push requires.
 
 **Beads is canonical everywhere except repos other people file issues in.** In your own repos
 you are the only author, so the beads-first disposition applies without qualification — file in
@@ -214,15 +214,12 @@ because they are detection-time decisions, not usage-time ones:
   them. Type and priority have no GitHub representation and reset regardless, so scope the
   pull with `--issues <id>` and re-apply those two afterwards.
 
-- **⛔ `bd github sync --push-only` invents its own labels and pushes no `area:` label.**
-  Measured on `bd 1.2.x`: pushing one bead carrying `area:perf`, `area:reliability` created
-  `type::bug` and `priority::medium` **in the repo**, applied both to the issue, pushed none
-  of the `area:` labels, and left the issue's stale labels in place. Those two restate
-  `issue_type` and `priority`, which [`labels.md`](labels.md) forbids as second copies of a
-  tracker field, and `::` is a third prefix scheme on top of `area:`/`platform:` and beads'
-  own `mode:`/`patrol:`. There is no config key to disable it. **Reconcile GitHub labels with
-  `gh`, never with a push**, and if a push does run, delete the two `::` labels repo-wide
-  afterwards (`gh label delete` removes a label from every issue in one call).
+- **⛔ A push invents `type::`/`priority::` labels in their repo and pushes no `area:` label.**
+  It applies both to the issue and leaves the issue's stale labels in place. That matters more
+  here than in your own repos, because the labels appear in a tracker other people read.
+  Reconcile GitHub labels with `gh issue edit`, never with a push, and run the repo-wide
+  cleanup afterwards — the measurement and the one-line command are in
+  [`beads.md`](beads.md) § Mirror mode.
 
 - **A bare `--pull-only` can silently miss an upstream body edit.** After `gh issue edit`, four
   consecutive bare `bd github sync --pull-only` runs — one of them with `--prefer-github` —

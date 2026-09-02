@@ -1,42 +1,20 @@
 # beads:mirror — injected context
 
-> Beads is the source of truth. GitHub Issues is a copy you publish to.
+> Beads is the truth; GitHub Issues is a copy you push to.
 
-**Edit beads, then push. That is the disposition everywhere the two are paired.** A change
-starts as a `bd` write and reaches GitHub because you pushed it — not the reverse.
+**Edit the bead, then push. Never author on GitHub.**
 
 ```bash
-bd update <id> --body-file <path>          # or --priority, -t, label add/remove
-bd github sync --push-only --issues <id>   # publish that one item
+bd update <id> --body-file <path>
+bd github sync --push-only --issues <id>
 ```
 
-- **Reads never touch `gh issue`.** The copy lags by design, so `gh issue list` reports a stale
-  backlog as if it were the whole picture. Read `bd`.
-- **A push writes title, description and status from the bead** — so beads-first loses nothing
-  on the way out.
-- **⛔ Delete the `::` labels a push invents.** Each push creates and applies `type::<type>` and
-  `priority::<level>` in the repo — second copies of fields beads already owns, in a prefix
-  scheme that is neither ours nor beads'. No config disables it. After a push:
-  `gh label list --json name --jq '.[].name' | grep -E '^(type|priority)::' | xargs -r -I{} gh label delete {} --yes`
-  (deleting a label removes it from every issue in one call).
-- **A push does not carry `area:`/`human`.** Apply those to GitHub with `gh issue edit`, or
-  leave GitHub unlabelled — never expect a sync to move them.
-
-## Pulling
-
-Not forbidden, not routine. Pull to collect an edit a person made in the GitHub UI.
-
-**⛔ A pull overwrites labels, `issue_type` and `priority` from GitHub, which holds no type or
-priority at all** — so they reset to defaults and the bead's label set becomes GitHub's. Scope
-it (`--issues <id>`) and re-apply those three fields afterwards. Details and the measurement
-are in [_detect.md](_detect.md) § Mirror mode.
-
-## Repos with other contributors
-
-The beads-first disposition is for repos you alone write to, which is nearly all of them.
-Freelance and job repos are the exception and they invert the rule: other people author on
-GitHub, so **GitHub is canonical there and beads runs stealth** — never pushed, used for your
-own breakdown, with client-visible work created via `gh issue create` and pulled back. See
-[_detect.md](_detect.md) § Stealth for the two-tier split.
+- **Reads never touch `gh issue`** — the copy lags by design. Read `bd`.
+- **A push writes title, description and status out faithfully.** Beads-first loses nothing.
+- **⛔ Every push invents `type::`/`priority::` labels in the repo.** No config disables it;
+  delete them after — cleanup in [beads.md](beads.md) § Mirror mode.
+- **⛔ A pull resets labels, `issue_type` and `priority`.** Pull only to collect a person's UI
+  edit, scoped `--issues <id>`, then re-apply.
+- **`area:`/`human` never travel outward.** Apply them with `gh issue edit`.
 
 Depth: [_detect.md](_detect.md) § Mirror mode, [beads.md](beads.md) § GitHub sync.

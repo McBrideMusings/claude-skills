@@ -465,3 +465,21 @@ bd github sync --push-only --issues <id>
 
 Full bidirectional reconcile is `bd github sync` (conflict policy `--prefer-newer` by default,
 or `--prefer-local` / `--prefer-github`). Preview anything unfamiliar with `--dry-run`.
+
+### ⛔ A push invents `::` labels in the repo. Delete them afterwards.
+
+Measured on `bd 1.2.x`: pushing one bead carrying `area:perf`, `area:reliability` created
+`type::bug` and `priority::medium` **in the GitHub repo**, applied both to the issue, pushed
+none of the `area:` labels, and left the issue's stale labels in place. Those two restate
+`issue_type` and `priority`, which [`labels.md`](labels.md) forbids as second copies of a
+tracker field, and `::` is a third prefix scheme on top of `area:`/`platform:` and beads' own
+`mode:`/`patrol:`. **There is no config key to disable it.** After any push:
+
+```bash
+gh label list --json name --jq '.[].name' | grep -E '^(type|priority)::' \
+    | xargs -r -I{} gh label delete {} --yes
+```
+
+Deleting a label removes it from every issue in one call, so this is one command however many
+issues the push touched. Reconcile GitHub's labels with `gh issue edit`, never with a push —
+`area:` and `human` do not travel outward at all.
