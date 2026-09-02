@@ -18,6 +18,7 @@ Invoke `lateral <technique>` with the technique named in the table below, and ru
 |---|---|---|
 | `architecture` | `provocation` | Which structural constraint is treated as fixed? Suspend it and see what the code would look like. |
 | `interface-safety` | `worst-idea` | Design the most dangerous version of this interface, then find which of its footguns the real one already has. |
+| `agent-ergonomics` | `driver-seat` | Sit in the driver's seat: which level of the tower has no handle? |
 | `security` | `worst-idea` | Same move, aimed at trust: the maximally exploitable design, then the overlap with today's. |
 | `tests` | `worst-idea` | The suite that passes while everything is broken — then which of its properties this suite shares. |
 | `gui` | `random-stimulus` | Force-fit an unrelated object onto the interface to break the default arrangement. |

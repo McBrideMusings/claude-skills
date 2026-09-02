@@ -55,6 +55,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | --- | --- | --- | --- |
 | `architecture` | [aspects/architecture.md](aspects/architecture.md) | native — [ARCHITECTURE.md](ARCHITECTURE.md) | always |
 | `interface-safety` | [aspects/interface-safety.md](aspects/interface-safety.md) | native — [INTERFACE-SAFETY.md](INTERFACE-SAFETY.md) | always |
+| `agent-ergonomics` | [aspects/agent-ergonomics.md](aspects/agent-ergonomics.md) | native — [AGENT-ERGONOMICS.md](AGENT-ERGONOMICS.md) | always |
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `skills` | [aspects/skills.md](aspects/skills.md) | native — [WRITING-SKILLS.md](WRITING-SKILLS.md), vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md) | a `skills/` or `.claude/skills/` directory exists |
@@ -93,11 +94,13 @@ Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). **RULE 0 holds under 
 
 ## Native aspects
 
-`architecture`, `behavior`, `interface-safety`, `security`, `claude-md`, and `skills` live here because no other skill owns them.
+`architecture`, `behavior`, `interface-safety`, `agent-ergonomics`, `security`, `claude-md`, and `skills` live here because no other skill owns them.
 
 `behavior` is the one aspect that drives the running product: it drafts feature descriptions from the code, then verifies them against the live app and reports the discrepancies. It carries a stated override of RULE 2 in [BEHAVIOR.md](BEHAVIOR.md) — a defect it verifies live is a full finding, because there is no diff for `review` to run on.
 
 `interface-safety` asks one question the others don't: can a caller do the obvious thing and get the wrong result? It is the proactive half of the footgun test that `review`'s `contracts` axis runs read-only on a diff.
+
+`agent-ergonomics` asks a different one: which level of the tower has no programmatic handle, or a name that differs between surfaces? It runs the `driver-seat` lateral technique (see [LATERAL-LENS.md](LATERAL-LENS.md)) and is the planning-time half of `interface-safety` — instead of asking whether the obvious call breaks, it asks whether the obvious call exists at all and is named the same thing everywhere an agent looks for it.
 
 Interactive runs use the full native files including their grilling loops and, for `claude-md`, the rebuild. Survey sub-agents get the `aspects/` brief, which points at the same file and names which sections stop applying.
 
