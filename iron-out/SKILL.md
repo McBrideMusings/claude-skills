@@ -9,7 +9,7 @@ The goal state is **AFK**: every issue in scope passes `implement`'s Phase 0.5 g
 
 **Worth doing on its own.** An issue that cannot state its own plan or its own definition of done is a bad issue whether or not an agent ever touches it — you re-derive the missing decision every time you read it. Run `iron-out` because the backlog is vague, not because something is about to consume it.
 
-It happens to also be what the autonomous harnesses require, and they say so themselves — a swarmed `/implement` stops its whole run on a gate failure and hands the scope here. That dependency points one way: they know about this skill; this skill does not need to know about them.
+It happens to also be what the autonomous harnesses require, and they say so themselves — a swarmed `/implement` stops its whole run on a gate failure and hands the scope here. That dependency mostly points one way — they know about this skill, this skill does not need to know about them to run — but the exit does reach back: a cleared item is handed to `implement` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md), from Phase 3 onward.
 
 ## Two kinds of item, one loop
 
@@ -255,6 +255,8 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 ### 3b. Record the resolution
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, any legacy `Type: HITL` marker deleted from the body. Show the new body, then write it: `bd update <id> --body-file <path> --acceptance "<check>"` plus `bd label remove <id> human` on beads, `gh issue edit <n> --body --remove-label human` on GitHub. Removing `human` is what makes it AFK — there is no positive AFK label to add. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
+
+  The item is now dispatchable — don't wait for Phase 4 to say so. Check it against [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, `human` gone, listed by `bd ready --json` after `bd recompute-blocked`), and if it clears, add a row to this item's slate in HANDOFF §3's shape (`N. Dispatch <id> as an implement pass — AFK, nothing blocks it. My pick: dispatch.`). `go`, `N skip`, and `park` are the only words — never a new one, never `AskUserQuestion`. The row is offered, not automatic: declining leaves the item open, AFK, and waiting, exactly as today. Running inside an `Agent` call rather than the chat session, skip the row — HANDOFF.md's pre-flight notes `Workflow` is unavailable there, so the offer can't be taken.
 - **Question** → `bd human respond <id> "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue's own label set carries `human`.** Phase 0 tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here. The one exception is Phase 0's hygiene close, in Rules; it does not apply anywhere in Phase 3.
 
 Assets are linked, never pasted.
@@ -298,23 +300,23 @@ Report: issues ironed out (with what was decided), questions answered and closed
 
 **End with the recomputed roadmap beside Phase 0's.** `bd recompute-blocked`, then `bd swarm validate` per epic and `bd ready --json`. Show the two side by side — waves before, waves after — so the session's effect on what is workable is visible rather than asserted. Also report the structure Phase 0 wrote: epics created, members parented, edges wired, tier-1 counts.
 
-Then offer next steps in plain chat — never via the `AskUserQuestion` tool. The exit is a **fork**, picked by what is actually in the pile:
+Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Recompute the graph per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 (`bd recompute-blocked`, `bd ready --json`, edges from `bd blocked` / `bd swarm validate`) and present what it computed as slate rows — never a strategy menu:
 
 ```
 Scope is clear. Reply with a number, or tell me something else.
 
 1. Cut the tickets — invoke to-tickets on the decisions made. (Answered questions, nothing implementable yet.)
-2. Fan it out — invoke `implement swarm` on this scope. (Work items, all AFK-ready.)
-3. March it sequentially — invoke iterate on this scope.
+2. Dispatch the front as a swarm — cc-105, cc-140, cc-162 (no edges between them).
+3. Queue the rest behind it — cc-171 (blocked by cc-140), in dependency order.
 4. Stop here.
 ```
 
-Option 1 loops back: `to-tickets` synthesizes a spec from the decisions, gets it approved, files work issues onto the same milestone → `iron-out` again. Name the next step and stop — never auto-chain into it.
+Already dispatched from Phase 3 (cc-111) is not offered again — name it in a line above the rows instead. Rows 2 and 3 appear only when the graph has a front or a queue left to offer; a scope with nothing left to dispatch drops straight to rows 1 and 4. Row 1 loops back: `to-tickets` synthesizes a spec from the decisions, gets it approved, files work issues onto the same milestone → `iron-out` again. Name the next step and stop — never auto-chain into it.
 
 ## Rules
 
 - **Never invent an answer.** Every resolution comes from the interview or a dispatched agent's cited findings. If the user declines to decide, the issue stays flagged and is reported as such.
-- **Don't implement, don't commit code.** Body edits, posted answers, closing answered questions, and grill-me's ADRs are the only writes. Never close a work item — with **one exception**: Phase 0 may close a backlog-hygiene item whose entire content it just performed (retype these, label those, parent that set), and the close reason must name the tier-1 action that satisfied it. The item has to be hygiene the phase actually did; a work item that merely *looks* finished still stays open.
+- **Don't implement, don't commit code.** This skill never writes product code and never commits it — body edits, posted answers, closing answered questions, and grill-me's ADRs are the only writes it makes itself. Offering a cleared item to `implement`, and dispatching it on `go`, is not implementing — it is this skill's exit, available from Phase 3 onward, not only at Phase 4. Never close a work item — with **one exception**: Phase 0 may close a backlog-hygiene item whose entire content it just performed (retype these, label those, parent that set), and the close reason must name the tier-1 action that satisfied it. The item has to be hygiene the phase actually did; a work item that merely *looks* finished still stays open.
 - **Interview one issue at a time** — never batch questions across issues into one message.
 - **Every issue named to the user carries its full clickable URL.** `#121` on its own is not enough.
 - **Never re-implement what `bd` computes.** Ready fronts, cycle detection, orphan checks, transitive blocking, duplicate detection, staleness — `bd swarm validate`, `bd ready`, `bd blocked`, `bd orphans`, `bd find-duplicates`, `bd stale`, `bd doctor --check=conventions`. A second implementation here is free to disagree with the one beads ships.
