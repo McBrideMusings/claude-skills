@@ -359,5 +359,38 @@ check('tree_clean:false reaches Wrap and reports ok', treeDirty.result.ok, true)
 check('  ...with no blockers', treeDirty.result.blockers, [])
 check('  ...and Wrap is called', treeDirty.calls.includes('Wrap'), true)
 
+// A `major` review finding is a real defect in the diff the pass just wrote —
+// it must gate landing the way a weak-test verdict does, without halting the
+// pass itself: the work still commits, Wrap still runs, but `blockers` is
+// non-empty so the caller does not land it.
+const majorFinding = await run(BASE, {
+  Review: {
+    reviewed: true,
+    findings: [{ file: 'a.ts', line: 45, severity: 'major', summary: 'title sanitization truncates mid-escape' }],
+    files_reviewed: ['a.ts'],
+  },
+})
+check('a major review finding still commits', majorFinding.result.ok, true)
+check('  ...and Wrap is called', majorFinding.calls.includes('Wrap'), true)
+check('  ...with commit abc1234', majorFinding.result.commit, 'abc1234')
+check('  ...but blockers is non-empty', majorFinding.result.blockers.length > 0, true)
+check(
+  '  ...mentioning the major finding',
+  /major finding/.test(majorFinding.result.blockers.join(' ')),
+  true,
+)
+
+// A `minor` review finding is a note, not a defect — it must not gate
+// landing.
+const minorFinding = await run(BASE, {
+  Review: {
+    reviewed: true,
+    findings: [{ file: 'a.ts', line: 45, severity: 'minor', summary: 'could be a one-liner' }],
+    files_reviewed: ['a.ts'],
+  },
+})
+check('a minor review finding reports no blockers', minorFinding.result.blockers, [])
+check('  ...and reports ok', minorFinding.result.ok, true)
+
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)

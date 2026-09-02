@@ -62,12 +62,14 @@ generated `implement-<id>.js` directly, and never point `scriptPath` at
 { ok: true, item, title, verdict, commit, branch, worktree,
   recheck: [{cmd, expect}],   // how YOU re-check it — empty means nothing machine-checkable
   blockers: [],               // empty means nothing the pass can see stops it landing
-  review: {findings, blocking}, files, followups, summary }
+  review: {findings, blocking, major}, files, followups, summary }
 ```
 
 A halt returns `{ok: false, halted_on, detail}` instead. **Branch on `ok` first** — a halt carries no `blockers` array, and reading one as "no blockers" is how broken work gets merged.
 
 `blockers` empty is the pass's opinion, not a verdict. Yours comes next.
+
+`followups` is for work outside this item's scope — something noticed and not fixed, an append-only index row. It is never a defect in the diff the pass just wrote. A defect in this pass's own diff comes back as a Review finding, and at `major` severity or above it also lands in `blockers` — see below.
 
 ---
 
@@ -114,6 +116,8 @@ loop
 **A pass that touched tests must prove the tests discriminate.** A test is evidence only if it fails without the change. `implement.js`'s Verify stage captures the production half as a patch, reverses it, runs only the new tests, and records `mutation.discriminates`. A `PASS` on a test-touching diff with no `mutation` block, or with `discriminates: false`, arrives in `blockers` — the work still commits, because a weak test is no reason to strand a correct implementation, but the item does not close on it.
 
 Agents have landed tests that rebuilt the production logic inside the test body and asserted against their own copy — one carried the comment `// Replicate the padding logic from the fix`. Reverting the fix and re-running them printed `ok`. They passed against the exact bug they were written to catch.
+
+A `major` Review finding gates landing the same way: the work still commits, but `blockers` is non-empty, so the item does not close on it. Resolve it with another round of the verify loop — re-running the pass, or a follow-up pass targeted at the finding — never by editing the worktree by hand.
 
 ---
 
@@ -281,6 +285,8 @@ A pass makes exactly one commit, so on an honest run those match. `cat-file -e` 
 - Review surfaced a blocking finding that was not resolved
 
 `verify` admits no partial pass and resolves doubt as `FAIL`. Do not soften a `FAIL` into a follow-up and proceed.
+
+A `major` Review finding is not on this list — it does not halt the pass, the work still commits — but it does gate landing: it lands in `blockers`, exactly like a weak-test verdict, and the item does not close on it.
 
 ---
 
