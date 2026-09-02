@@ -83,6 +83,7 @@ round = 1
 loop
   if !r.ok                     -> halt: report r.halted_on and r.detail
   run every r.recheck[].cmd in r.worktree, compare against .expect
+  append a rechecks entry to r.verdict recording the sha, the commands and their results
   review r's diff against the sha the pass started from
   if all clear and r.blockers is empty  -> land
   if round == 5                -> halt: leave the worktree standing, report the path
@@ -97,7 +98,7 @@ loop
 
 **On exhaustion, halt — in every arity, including sequential and swarm.** Leave the worktree standing, print its absolute path, the failing command and its real output. The work is in there and it is the only copy; a removed worktree holding an unlanded branch is the one state nothing recovers from. In sequential this stalls the rest of the queue, and that is deliberate: five rounds failing is evidence the brief was wrong, which is a judgment the user holds.
 
-**A verdict describes one tree.** If anything is touched after a clean recheck — a review nit, a last tidy-up — the verdict no longer describes what you are about to land. Re-run the recheck.
+**A verdict describes one tree.** If anything is touched after a clean recheck — a review nit, a last tidy-up — the verdict no longer describes what you are about to land. Re-run the recheck, and append the result to the verdict as a `rechecks` entry in the same breath — the re-verification and its record never separate. The file to append to is `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json`.
 
 ---
 
@@ -202,7 +203,7 @@ Every pass gets its own worktree and they run at once. The human is involved at 
 
 **You land each pass as it returns**, from the primary checkout, after re-verifying against a base that may have moved. A linked worktree shares the object store, so every commit is already visible there — no fetch needed.
 
-**Copy each verdict into the repo's own directory before removing a worktree.** `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json` is keyed to a directory that is about to stop existing. The repo's copy is the one a later reader can find; without it, the outside view is indistinguishable from a swarm that skipped verification.
+**Copy each verdict into the repo's own directory before removing a worktree.** `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json` is keyed to a directory that is about to stop existing. The repo's copy is the one a later reader can find; without it, the outside view is indistinguishable from a swarm that skipped verification. Take the copy *after* the last `rechecks` append — a copy taken before a later round leaves the repo's copy reading stale for a branch that was actually re-verified. If you append a `rechecks` entry after already copying, re-copy before `worktree remove --force`.
 
 **Never edit files that every change appends a row to** — a changelog, a file map, a component registry. Every sibling branch collides on them by construction. Passes return the rows in `followups` instead and you write them after landing.
 
@@ -227,7 +228,7 @@ git -C <repo> worktree remove --force <worktree> \
   && git -C <repo> branch -d <branch>
 ```
 
-**The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy is missing, make it now rather than removing the worktree — this is the check that stops a run's evidence disappearing one worktree at a time, each teardown looking perfectly clean as it goes.
+**The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy is missing, make it now rather than removing the worktree — this is the check that stops a run's evidence disappearing one worktree at a time, each teardown looking perfectly clean as it goes. If a `rechecks` entry was appended after the copy was made, the copy is stale in the same way a missing one is: re-copy before removing.
 
 **List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the pass wrote a differently-named file, and `--force` then deletes the only copy — including a complete `FAIL` verdict naming the exact cause, found only by listing. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the item and branch, then decide. Two passes in one round can both write a same-named stray file, and once copied to the primary checkout they are indistinguishable — so never copy one out under the name it already has.
 
@@ -253,7 +254,10 @@ A verdict file is evidence, and these are the ways it lies.
 |---|---|
 | verdict `PASS`/`SKIP` but `verified_parent` **names no object** | there is no verdict at all — the file is void, so **never land** the branch on it |
 | `verified_parent` resolves and is **not** the branch head's parent | stale: something was committed after verification and is shipping unverified |
+| `verified_parent` resolves, is not `branch^`, **and** a `rechecks` entry names `branch^` | re-verified by the orchestrator at the shipping tree — the verdict is current; land it |
 | a `PASS` in a returned object with no file on disk | not a pass |
+
+Absent such a `rechecks` entry, the stale row above still applies — a mismatch with no matching entry means shipping unverified, not a benefit of the doubt.
 
 Resolve the sha before comparing anything:
 
@@ -267,6 +271,10 @@ A pass makes exactly one commit, so on an honest run those match. `cat-file -e` 
 **The sha comes out of `git -C <checkout> rev-parse HEAD`, run at the moment you write the file.** Never recalled from earlier in the pass, never reconstructed from a log line, never typed.
 
 **The field is `verified_parent`, not `commit`, and the name carries the contract.** Verification runs before anything commits, so the sha it can read is the *parent* of the commit the work becomes. Writing it under `commit` would claim a commit was verified before it existed, and something downstream would then have to rewrite the file to make the claim true. Name it truthfully once and nothing has to correct it. There is no re-stamping stage and adding one back is a mistake: an agent asked to rewrite `commit` after the fact is being asked to write "this commit was verified" about a commit no stage verified, and the safety classifier refuses it as audit tampering — correctly.
+
+**`rechecks` — the orchestrator's own rounds.** Only the orchestrator appends to this array, never a stage: a stage that wrote one would be making a claim about work it does not own. Each entry is `{by: "orchestrator", parent: <sha the tree was at>, commands: [{cmd, expect, result}], at: <ISO timestamp>}`, appended *beside* `verified_parent`, which is still never rewritten or re-stamped — the refusal above stands unchanged; this only adds somewhere for the orchestrator's own verification to live.
+
+Worked example. A pass commits `c1b5700`; the verdict it writes carries `verified_parent: 4f72046` (`c1b5700`'s parent). The orchestrator then makes a tidy-up commit `fa9eea6` on top, re-runs every recheck command against the new tree, and appends one `rechecks` entry: `{by: "orchestrator", parent: "c1b5700", commands: [...], at: "2026-09-01T19:18:00Z"}`. Reading it later: `branch^` is `c1b5700`, which is not `verified_parent` (`4f72046`) — but a `rechecks` entry names `c1b5700` as its `parent`, so the branch is verified after all, at exactly the tree that shipped.
 
 **The second row above depends on "Wrap is the only stage that commits" actually holding, and it now does.** Edit and Green both halt the pass the instant they report they committed anyway, and Verify's `tree_clean` check — reading `git status --short` at the same moment it reads HEAD, by a different agent than the one that would have committed — returns `BLOCKED` instead of writing `verified_parent` when the tree is already clean, so a `verified_parent` that is not the branch head's parent really does mean something committed after verification, not before this was enforced. A verdict written before this held can still show the strongest possible case misread as the weakest: **observed on cc-22k round 2**, the Edit stage committed, Verify then read `verified_parent` as the branch head itself (not its parent), and the second row's check flagged a branch that had in fact been verified against exactly the tree that shipped. If you find a pre-existing verdict where `verified_parent` equals the branch head rather than its parent, that shape — not the general mismatch row above — is what it means: read the recheck commands and confirm them against the shipping tree yourself rather than discarding the verdict as stale.
 
