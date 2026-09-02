@@ -4,13 +4,14 @@
 
 ## 1. What "cleared" means
 
-An item is dispatchable when three cheap queries all say so — this is a check, not a judgement call:
+An item is dispatchable when four cheap queries all say so — this is a check, not a judgement call:
 
+- **A slice.** `bd show <id> --json` carries a parent, `bd children <id>` is empty, and the title does not begin `Verify:` or `Land:`. A parent is broken down first (`issues/breakdown.md`) and its slices are what get offered; the Verify and Land children are this session's and never dispatch.
 - **Open.** `bd show <id> --json` reads its status.
 - **Not carrying the `human` label.** `human` is beads' one legal bare label, and there is deliberately no positive "AFK" label — removing `human` from an item is what makes it AFK. Check for its absence; do not invent a label to check for its presence.
 - **Listed by `bd ready --json`.** Nothing blocks it. Run `bd recompute-blocked` first — `bd ready` reads a denormalized flag that goes stale after a hand-resolved merge and will silently hide ready work.
 
-Passing all three makes an item eligible to offer, not verified. The `implement` pass runs its own Gate stage regardless, on every item, every time — this three-query check is a filter that keeps unready items off the offer, never a substitute for the pass's own gate.
+Passing all four makes an item eligible to offer, not verified. The `implement` pass runs its own Gate stage regardless, on every item, every time — this four-query check is a filter that keeps unready items off the offer, never a substitute for the pass's own gate.
 
 ## 2. The shape comes from the graph
 

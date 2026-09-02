@@ -17,6 +17,14 @@ One **pass** is one tracked item, worked end to end by `implement.js` in its own
 
 A pass takes no `mode` argument and has no idea how many siblings it has. Running two is this session calling the workflow twice.
 
+## The unit is a slice, and the bookends are yours
+
+A pass takes **one slice child** of a broken-down issue — `myproj-25.1`, never `myproj-25`. The breakdown in `issues/breakdown.md` puts slices, a Verify bead and a Land bead under every issue at the moment it is picked up, and a pass is the thing that works exactly one slice to a commit. So `implement <parent>` means: break it down now if `bd children <parent>` is empty (in chat, where the slices are visible), then walk the slice children in dependency order, one pass each, landing each before the next. A parent with no breakdown is never handed to `implement.js`; a Verify or Land child is never handed to it either.
+
+**The Verify bead is this session's**, worked after the last slice lands, through the project's `verify-project` skill with the worktrees still standing to be looked at. A Verify bead carrying `human` stops here and says what a person has to look at; nothing below runs until they have.
+
+**The Land bead is a slate row**, offered after Verify passes and taken with `go`: on an owned repo the merge, on a collaborative one the PR, with the bead's `--design` body as the draft. It is never inside a pass and never inside a brief. The one run that carried "push and open the PR" into the worker did exactly that, with four unanswered product questions pasted into the PR body, and the only reason the questions existed was that nobody had been asked. `implement.js` cannot open a PR because it runs no `git push`; this section is why the orchestrator does not either until the row is accepted.
+
 **How a cleared tracked item becomes a launched pass lives in [`HANDOFF.md`](HANDOFF.md)** — the three cheap queries that make an item dispatchable, reading swarm-vs-sequential shape off the dependency graph instead of asking, and offering the result as one more slate row rather than a new accept word.
 
 ---

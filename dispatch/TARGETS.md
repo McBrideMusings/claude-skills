@@ -71,34 +71,38 @@ changes when it moves. So `pane split --cwd <worktree-path>` is not a way to kee
 in the current workspace; it is a slower way to arrive at the same place. Read the new ID
 from `herdr agent list` rather than the one `pane split` returned.
 
-**The dispatch decides where the work happens, never what the work is.** Verifying, building,
-merging, opening a PR — those belong to the prompt, because only the prompt knows whether this
-delegate is implementing a feature, chasing a bug, or reading logs. What dispatch owes the
-worker is the *capacity* to finish and clear out.
+**The dispatch decides where the work happens, and where it stops.** What the work *is* —
+a feature, a bug, a log read — belongs to the prompt. Where it ends does not: every worker
+that writes code ends at the same place an `implement` pass does, and the prompt may not
+move it. Put this in the prompt verbatim, whatever the work is:
 
-**Give every worktree worker the retire line.** Put this in the prompt verbatim, whatever the
-work is:
+> Your work ends at a commit on this branch. You do not push, merge, rebase, open a PR,
+> close or comment on any tracker item, or remove this worktree. A linked worktree shares
+> the primary checkout's object store, so the caller already has every commit you make. Your
+> last message is your report, in chat: files changed, unchanged, follow-up needed, and the
+> manual testing steps with the exact commands you ran. Then stop and stay open.
 
-> When your work is done, retire yourself: `herdr worktree remove --workspace "$HERDR_WORKSPACE_ID" --force`.
-
-The herdr **server** performs the deletion, not the pane's shell, so nothing loses its footing
-when the directory goes. Removal is asynchronous — a check that runs immediately afterwards
-will still see the checkout, so never make the worker confirm it.
+This is the contract `implement.js`'s Wrap stage holds, written for a worker that is a whole
+session instead of a stage. It exists because the prompt is exactly the wrong place to
+decide landing: a brief written before the work knows nothing about what the work found. A
+worker that carried `push the branch, open the PR` and `retire yourself` did both, with four
+unanswered product questions pasted into the PR body, and the person who owed those answers
+first learned of the PR from `gh pr list`. Landing is the dispatching session's slate row,
+answered with `go`; verification against the project's `verify-project` skill happens there
+too, with the worktree still standing to be looked at.
 
 **Never `git worktree remove <path>` or `rm -rf` on its own checkout.** That is the shape
 `no-self-delete-guard.py` blocks, and the reason is real: delete the directory a session is
 running in and every shell hook afterwards fails to spawn with `ENOENT` on `posix_spawn`
 before reaching its first line, so the PreToolUse, PostToolUse and Stop guards are silently
-skipped for the rest of that session — non-blocking failures, so nothing stops. The
-`--workspace` form carries no path argument and is not affected.
+skipped for the rest of that session — non-blocking failures, so nothing stops.
 
-**The branch is not the worker's to delete, and not yours either.** At the moment a worktree
-finishes, its PR has not merged; the branch has to outlive every session involved. A hook
-cannot know *done* — that is a judgment only the agent holds — but it can know *merged*, which
-is a fact that arrives later. `tools/git-sweep.sh`, run daily from `hooks/daily-git-sweep.sh`,
-collects branches proven merged (reachable from the default branch, or a `gh`-confirmed
-squash-merge) along with any worktree still holding them. So a worker that never retires itself
-is collected anyway once its PR lands; the retire line is the fast path, not the mechanism.
+**The worktree and the branch are the dispatching session's to remove, after landing, from
+the main checkout.** Inside herdr that is `herdr worktree remove --workspace <id> --force`
+against the worker's workspace; the herdr server performs the deletion, so nothing loses its
+footing. A worktree that outlives its landing is collected anyway: `tools/git-sweep.sh`, run
+daily from `hooks/daily-git-sweep.sh`, collects branches proven merged (reachable from the
+default branch, or a `gh`-confirmed squash-merge) along with any worktree still holding them.
 
 **The exception is work that only reads.** A build, a test run, a log tail, a probe, a
 review that reports findings — those belong in a pane on the main checkout, because
