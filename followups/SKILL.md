@@ -42,6 +42,8 @@ First resolve the destination with the **same rule as Generate** (see Step 2 und
 - **`beads`** → dedup first against `bd list --all --json` (skip if the core idea already appears), then `bd create "<title>" -t task -d "<body>" --silent` with a provenance line in the body. If the item was discovered while working another issue, wire that provenance as a real edge: `--deps discovered-from:<id>`.
 - **`github`** → file it as an issue. Dedup first against `gh issue list --repo OWNER/REPO --state all --limit 50` (skip if the core idea already appears), then `gh issue create --repo OWNER/REPO` with the body via HEREDOC (never an inline quoted `--body`), including a provenance line. Same mechanics as Generate's Step 5 GitHub branch.
 
+On a beads repo, a freshly-filed item that happens to clear all three conditions gets the same dispatch-row offer as Generate's Step 5 — see that section's **Dispatch offer** below.
+
 ### Cleanup (only when explicitly asked)
 
 There is nothing to clean — follow-ups are issues, and closing them is `/wrap-up`'s job. Say so and route there.
@@ -143,6 +145,8 @@ If no suggestions exist, just report "Nothing worth flagging this session" and s
 If the user says "none", write nothing. Do not split items across destinations. Do not infer intent from silence.
 
 **Multiple repos:** Present a separate list per repo and ask independently for each.
+
+**Dispatch offer (interactive filing only, beads only — skip in autonomous mode, and on GitHub, which has no labels or `bd ready`).** Most follow-ups are notes, not briefs — a follow-up is usually raised, not scoped and cleared for AFK work — so expect this to come up empty most of the time. After filing, check each item just filed against the three conditions in [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, no `human` label, listed by `bd ready --json` after `bd recompute-blocked`). Append one slate row, in HANDOFF.md §3's shape, for the items that pass — no new accept word, `go` on the filing report takes it. **If nothing passes, add no row at all** — an empty offer is noise on every wrap-up, and silence is the correct output here.
 
 ### Scope: this skill stops at filing
 

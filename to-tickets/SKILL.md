@@ -213,6 +213,8 @@ Per slice:
 
 Do NOT close or modify any parent issue.
 
+**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only the `afk`-labelled slices are candidates — never `hitl`. Read the shape (swarm vs. sequential queue) off `bd ready --json` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 rather than asking, and add one slate row to this report naming the count against the filed set, e.g. `Dispatch 4 of 7 filed — the AFK slices; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
+
 ## Principles for writing good agent briefs
 
 Issues from this skill go into AFK pipelines. The issue body is the contract.

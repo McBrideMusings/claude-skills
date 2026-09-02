@@ -7,7 +7,7 @@ description: "Pick the next work item from the repo's issue backend (beads or Gi
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
-**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait, skip the Phase 09 plan-draft question, AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself. Proceed immediately with option 1 at Phase 08 (the top recommendation) and implement directly at Phase 09. Interactive callers wait for the user's selection at Phase 08, see the plan-draft question at Phase 09, and see the wrap-up offer at Phase 10.
+**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait, skip the Phase 08 dispatch-row offer, skip the Phase 09 plan-draft question, AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself, and a pass dispatching another pass recurses (`Workflow` is unavailable inside a subagent). Proceed immediately with option 1 at Phase 08 (the top recommendation) and implement directly at Phase 09. Interactive callers wait for the user's selection at Phase 08, see the dispatch-row offer at Phase 08, see the plan-draft question at Phase 09, and see the wrap-up offer at Phase 10.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 
@@ -215,6 +215,8 @@ Build 2–4 options, lettered under question 1 per `CLAUDE.md` §Deciding & desi
 - **1C.** (Optional) Third meaningfully-different alternative. No need to add a "pick something else" escape — a free-form reply is always open.
 
 Every option gets a named label in plain language; issue numbers in parens after.
+
+**Dispatch row for the top pick (1A).** 1A is an open item by definition — check the other two conditions from [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1: it doesn't carry the `human` label, and `bd ready --json` lists it (run `bd recompute-blocked` first). Both hold: append one more row to the same numbered prompt offering to dispatch 1A as an implement pass instead of working it here, per HANDOFF.md §3's slate-row shape — no new accept word, `go` takes it with the rest of the reply, a per-row `skip` declines just it. Either condition fails: add no row, and say in one line which one failed (`human`-labelled, or not in `bd ready`) so the omission isn't silent. Skip this whole check on a GitHub backend — HANDOFF.md's queries are all `bd`.
 
 Wait for the reply (a number or a free-form override) before implementing.
 
