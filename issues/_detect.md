@@ -83,10 +83,16 @@ edit, not for routine round-tripping. Read
 [`beads-mirror-context.md`](beads-mirror-context.md) for the working loop and the `::`-label
 cleanup a push requires.
 
-**Repos with other contributors are the unsettled exception.** Where other people file and
-edit issues — multi-contributor and freelance work — their edits exist only on GitHub, and a
-push-only posture overwrites them. That case is not decided; do not apply beads-first there
-and do not invent a rule for it.
+**Beads is canonical everywhere except repos other people file issues in.** In your own repos
+you are the only author, so the beads-first disposition applies without qualification — file in
+`bd`; where a mirror is configured, push. GitHub Issues there is a copy, never a second place
+to look, and never a place to author.
+
+**Freelance and job repos invert it: GitHub is canonical and beads runs stealth.** Their
+contributors author on GitHub, so GitHub holds the truth and a push-only posture would
+overwrite it. Beads is a private local graph that never travels: create client-visible work
+with `gh issue create` and pull it back, keep your own breakdown in `bd`. These are the same
+repos § Stealth already routes by path and owner, and its two-tier table is how you work them.
 
 ## Stealth: beads in a repo that must not carry it
 

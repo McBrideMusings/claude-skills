@@ -31,11 +31,12 @@ priority at all** — so they reset to defaults and the bead's label set becomes
 it (`--issues <id>`) and re-apply those three fields afterwards. Details and the measurement
 are in [_detect.md](_detect.md) § Mirror mode.
 
-## Unsettled: repos with other contributors
+## Repos with other contributors
 
-The beads-first disposition is for repos you alone write to. Where other people file and edit
-issues — multi-contributor and freelance work — their edits only exist on GitHub, so a
-push-only posture silently overwrites them. **That case is not decided.** Do not apply
-beads-first there and do not invent a rule for it; ask.
+The beads-first disposition is for repos you alone write to, which is nearly all of them.
+Freelance and job repos are the exception and they invert the rule: other people author on
+GitHub, so **GitHub is canonical there and beads runs stealth** — never pushed, used for your
+own breakdown, with client-visible work created via `gh issue create` and pulled back. See
+[_detect.md](_detect.md) § Stealth for the two-tier split.
 
 Depth: [_detect.md](_detect.md) § Mirror mode, [beads.md](beads.md) § GitHub sync.
