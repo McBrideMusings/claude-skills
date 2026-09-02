@@ -101,9 +101,10 @@ finding, because ranking the cells would guard a duplication that should be remo
 
 ## Current state
 
-Every label in the vocabulary now carries a `context.md`, except `node` and `docs-site`.
-Those two are deliberately empty for the same reason `tracker:github` is: each sits on half
-of all repos, so a cell would fire constantly to say what was already assumed.
+Every label in the vocabulary now carries a `context.md`, except `node`. It is deliberately
+empty for the same reason `tracker:github` is: it sits on half of all repos, so a cell would
+fire constantly to say what was already assumed. Docs are a standing assumption owned by the
+`docs` skill, not a label.
 
 `ref-apple/` has all five engine cells (`review`, `diagnose`, `profiling`, `testing`, `orchestrate`);
 `ref-web/` has `profiling` + `testing` + `review`; `ref-react/` has `review`; `ref-threejs/` has
