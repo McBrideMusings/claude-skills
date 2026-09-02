@@ -66,6 +66,17 @@ const DETECT = `${SKILLS}/_tracker/_detect.md`
 
 const a = args || {}
 const dir = a.worktree || a.repo || a.cwd
+// Root of the REPO the item is scoped to — not the worktree stages edit in
+// (that's `dir`, below). Resolves `a.repo` first and must NOT become `dir`:
+// item briefs name paths in primary-checkout terms
+// (`/Users/pierce/.claude/skills/implement/SKILL.md`, or repo-relative
+// `implement/SKILL.md`), so rooting the Gate's reachability test at the
+// worktree (`/Users/pierce/.worktrees/<repo>/<id>`) would judge every
+// absolute path in a perfectly reachable brief as out-of-repo and fail
+// almost every item. (Round 2 on cc-32bc: a reviewer read this line as
+// inconsistent with `where()` below and proposed swapping in `dir` — it
+// isn't inconsistent, it's a different question. See `where()`'s comment
+// for the other half.)
 const REPO_ROOT = a.repo || a.cwd || dir
 const model = a.model || 'sonnet'
 
@@ -83,9 +94,11 @@ const model = a.model || 'sonnet'
 // already has every commit this pass makes. There is nothing to push.
 
 // Every agent starts outside the working directory, so say so once, here.
-// `where(d)` is a function of the directory rather than a bound constant
-// because one stage — Tracker — is confined to a different directory than
-// every other stage (see TRACKER_ROOT below).
+// `where(d)` governs where commands RUN — the worktree checkout a stage's
+// Bash calls must stay inside — not which repo the item belongs to (that
+// question is `REPO_ROOT`, above). `where(d)` is a function of the directory
+// rather than a bound constant because one stage — Tracker — runs in a
+// different directory than every other stage (see TRACKER_ROOT below).
 const where = (d) =>
   d
     ? `Work exclusively inside \`${d}\` — every command either runs with \`git -C ${d}\` or inside a \`( cd ${d} && … )\` subshell. You did not start there. Never leave the Bash working directory somewhere it did not start.`
@@ -489,7 +502,7 @@ Read whatever the repo can tell you about it before answering. Then apply three 
 
 1. **Plan test.** Can you state a concrete plan *right now* — the files to touch, the changes to make, and an objective acceptance check that would prove it done? If you cannot name the files, or cannot name a check whose result would settle whether it is finished, the item is not understood well enough to work unwatched.
 2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity you would have to *invent* an answer to in order to proceed? If so it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
-3. **Reachability test.** This pass is confined to one repo, rooted at \`${REPO_ROOT}\`. Does every file the item names, and every acceptance criterion, live under that root? A nested submodule (for example \`claude-skills\` inside \`~/.claude\`) is a *different* repo even though it sits inside the parent's directory tree — a path under the submodule is out of reach from a pass confined to the parent, and vice versa. If any named path or acceptance criterion falls outside \`${REPO_ROOT}\`, this test fails: the item spans two repos and must be split into one item per repo before it can be worked. Give the out-of-repo path its own \`missing\` entry, worded exactly \`"<path> is outside ${REPO_ROOT} — this item spans two repos and must be split"\`.
+3. **Reachability test.** This item is scoped against one repo, rooted at \`${REPO_ROOT}\` — a separate question from which worktree the pass's stages edit inside, since that worktree is itself just a checkout of this same repo. Does every file the item names, and every acceptance criterion, live under \`${REPO_ROOT}\`? A nested submodule (for example \`claude-skills\` inside \`~/.claude\`) is a *different* repo even though it sits inside the parent's directory tree — a path under the submodule is out of reach from an item scoped to the parent, and vice versa. If any named path or acceptance criterion falls outside \`${REPO_ROOT}\`, this test fails: the item spans two repos and must be split into one item per repo before it can be worked. Give the out-of-repo path its own \`missing\` entry, worded exactly \`"<path> is outside ${REPO_ROOT} — this item spans two repos and must be split"\`.
 
 Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work. \`pass: false\` with a precise \`reason\` — naming which test failed and why — is a good outcome, not a failure. Put each specific thing you would have had to invent or ask about, and every out-of-repo path, in \`missing\`.`,
   { phase: 'Gate', model, schema: GATE },
