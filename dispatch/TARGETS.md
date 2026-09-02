@@ -103,6 +103,8 @@ against the worker's workspace; the herdr server performs the deletion, so nothi
 footing. A worktree that outlives its landing is collected anyway: `tools/git-sweep.sh`, run
 daily from `hooks/daily-git-sweep.sh`, collects branches proven merged (reachable from the
 default branch, or a `gh`-confirmed squash-merge) along with any worktree still holding them.
+For `~/.claude`, a SELF-LAND dispatch lands with `~/.claude/tools/claude-land <worktree>` run
+from inside its own worktree, and never merges in the primary checkout.
 
 **The exception is work that only reads.** A build, a test run, a log tail, a probe, a
 review that reports findings — those belong in a pane on the main checkout, because

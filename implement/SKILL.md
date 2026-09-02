@@ -151,7 +151,7 @@ git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-
 CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
 ```
 
-`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the workflow returns**, because a session cannot outlive its own working directory.
+`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the workflow returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/claude-land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
 
 **Collaborative (remote owned by anyone else).** The long-lived thing is the feature, not the pass. Make one herdr worktree for the body of work and keep it:
 
@@ -191,6 +191,8 @@ Two path families are exempt because both are the session's own bookkeeping, not
 - **`.beads/`** — the tracker's export churn. `issues.jsonl` and `interactions.jsonl` are a passive export of a local Dolt database, rewritten by `bd` commands including the `bd show` a pass runs to resolve its own item. Halting on them means no pass can start after any earlier `bd` command, which is nearly every pass. Do not stash them and do not commit them to clear the check.
 
 Anything else dirty is a real halt, including a file the user left half-edited.
+
+The dirty-tree halt is judged in the checkout the pass will branch from. When that checkout is the primary `~/.claude`, a dirty file there belongs to another concurrent session sharing that index, not to this pass — it is not a halt, and the pass cuts its worktree from `main` regardless.
 
 **No commit-count guard.** The invariant is one commit per *pass*, not per branch — a branch that goes N verify-loop rounds carries one commit per round, and that is correct, not accumulation. If a single pass ever produces two commits, that is a bug in the Wrap stage.
 

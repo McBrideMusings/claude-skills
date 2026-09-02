@@ -14,6 +14,7 @@ The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 a
 - **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (a 75+ review issue you cannot auto-fix, a failed push, a merge conflict) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
 - **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run through Step D (relay proposed, then fired or declined), and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
+- In the primary `~/.claude` checkout specifically, the Stop hook skips the dirty-`git status` check: a dirty file there belongs to whichever other concurrent session is using the shared index, not to this pass.
 
 When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
 
@@ -251,6 +252,8 @@ Reuse the Phase 2 ownership verdict.
 8. End state: on `main`, `git status` clean, feature branch gone. Report the merge in the summary.
 
 No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push.
+
+**`~/.claude` is the one owned repo where this recipe never runs.** The primary `~/.claude` checkout's index is shared by every concurrent session, and a merge commit built there is the exact shape that reverted 54 files (cc-lfzq) — so never `git -C ~/.claude checkout main` or `merge` in steps 3–4 above. Instead, from inside the worktree: `git merge origin/main` (or rebase) so `origin/main` is an ancestor of the worktree's HEAD, re-run the step 1 pre-check (clean `git status`, Phase 4 clean-or-fixed), then run `~/.claude/tools/claude-land <worktree>` — it fast-forward-pushes the worktree's HEAD to `origin main` and pulls the primary. Delete the branch (step 7) and remove the worktree from the primary (Step C's usual cleanup) exactly as above; only steps 3–6 are replaced.
 
 **Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never close an issue here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (On a beads repo in mirror mode, `#<n>` is the mirrored GitHub number — it's the `external_ref` field on the bead, `gh-<n>`. A bead with no external ref has no GitHub issue to close; list it in the summary instead.) (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
 
