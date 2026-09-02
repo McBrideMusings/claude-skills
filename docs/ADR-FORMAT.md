@@ -63,6 +63,10 @@ Add `applies-to` only when the ADR is genuinely path-scoped. A repo-wide decisio
 
 ## When to offer an ADR
 
+This test applies in **any** session, not only a `grill-me` interview — architecture work,
+implementation, a code review, a stray decision made in passing. A passing decision becomes a
+slate row the turn it is made, not a batch swept up later.
+
 All three must be true:
 
 1. **Hard to reverse** — the cost of changing your mind later is meaningful

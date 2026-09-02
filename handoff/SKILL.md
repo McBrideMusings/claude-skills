@@ -13,7 +13,7 @@ If the user passed arguments (e.g. `/handoff working on the auth refactor next`)
 
 ## What to capture
 
-**Don't duplicate content already in other artifacts** — PRDs, plans, ADRs, issues, commits, diffs. Reference them by path or URL. Capture only the **invisible context** that isn't in the code or those artifacts (e.g. "we ruled out approach A because the JWT lib doesn't expose a refresh hook").
+**Don't duplicate content already in other artifacts** — plans, ADRs, issues, commits, diffs. Reference them by path or URL. Capture only the **invisible context** that isn't in the code or those artifacts (e.g. "we ruled out approach A because the JWT lib doesn't expose a refresh hook").
 
 Redact anything sensitive — API keys, passwords, hostnames, personally identifying info. Never write those into the file.
 

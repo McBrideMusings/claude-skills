@@ -12,7 +12,6 @@ export default defineConfig({
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'Architecture', link: '/architecture/overview' },
       { text: 'Development', link: '/development/setup' },
-      { text: 'Reference', link: '/PRD' },
     ],
     sidebar: {
       '/guide/': [{ text: 'Guide', items: [/* ... */] }],
@@ -22,7 +21,6 @@ export default defineConfig({
         {
           text: 'Reference',
           items: [
-            { text: 'Product spec (PRD)', link: '/PRD' },
             { text: 'File map', link: '/file-map' },
             // { text: 'API surface', link: '/api' },  // if exists
           ],

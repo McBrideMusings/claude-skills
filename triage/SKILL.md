@@ -27,7 +27,7 @@ User may pass a GitHub URL:
 | `github.com/owner/repo/issues` or `github.com/owner/repo` | All open issues |
 | `github.com/orgs/owner/projects/N` | Project board items |
 
-**No URL** → default to the current repo, whichever backend owns its issues (resolve by invoking `issues`; on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per `issues`'s detection step 6. If detection fails for another reason, fall back to the one docs-only signal there is (`docs/PRD.md`). If neither repo nor docs exist, stop.
+**No URL** → default to the current repo, whichever backend owns its issues (resolve by invoking `issues`; on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per `issues`'s detection step 6. If detection fails for another reason, fall back to whatever docs-only signal exists (`README.md`, `docs/CONTEXT.md`). If neither repo nor docs exist, stop.
 
 **The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`triage label:auth`, `triage p0`), resolved against the `bd` flags in Phase 02.
 
@@ -69,7 +69,7 @@ On auth/repo-not-found errors (or `bd` missing with a `.beads/` present): report
 
 **Exclude questions.** Drop any issue carrying the `human` label (`bd human list` enumerates them) from the candidate set — a question is a decision to be made, owned by `iron-out`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
 
-**Docs** (if in local repo): read `docs/PRD.md` — what the project is. If that path does not exist, glob `**/PRD.md` once before giving up. There is no roadmap file to read: the tracker's dependency graph is the roadmap, and the issue list above already carries it.
+**Docs** (if in local repo): read `README.md` and `docs/CONTEXT.md` — what the project is. There is no roadmap file to read: the tracker's dependency graph is the roadmap, and the issue list above already carries it.
 
 ### Phase 03 — Off-load Analysis to a Haiku Sub-Agent
 
@@ -77,7 +77,7 @@ Phases 04, 05, and 06 (project-phase assessment, grouping, scoring/ranking) are 
 
 Brief (treat the rules in Phases 04–06 below as the sub-agent's brief, not the parent's own work):
 
-> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees, milestone`) or beads' (`id, title, status, priority, issue_type, created_at, labels, description, parent, dependency_count, dependent_count, comment_count` — `bd list --json` returns all of these directly). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; `parent` is the epic and `dependent_count` is how many issues this one blocks; (b) the contents of `docs/PRD.md` if present.
+> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees, milestone`) or beads' (`id, title, status, priority, issue_type, created_at, labels, description, parent, dependency_count, dependent_count, comment_count` — `bd list --json` returns all of these directly). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; `parent` is the epic and `dependent_count` is how many issues this one blocks; (b) the contents of `README.md` and `docs/CONTEXT.md` if present.
 >
 > Do three things and return a compact JSON result:
 >

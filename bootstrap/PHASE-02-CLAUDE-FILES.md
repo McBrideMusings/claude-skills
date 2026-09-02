@@ -66,7 +66,7 @@ Several standing rules are only true if this file says so, and a rule with no fi
 **Every project gets these three.** Append any that are missing, under a comment, without touching existing content:
 
 ```gitignore
-# Agent scratch — plans, PRDs, summaries, handoffs. Never committed.
+# Agent scratch — plans, summaries, handoffs. Never committed.
 tmp/
 
 # Local-only notes and settings (CLAUDE.local.md, *.local.json).

@@ -18,10 +18,9 @@ a PRD nor a roadmap is created here, and adding one back needs an argument that 
 
 Their owners already handle the missing-file case:
 
-- **A PRD is `to-tickets`' output**, and that skill declares itself the single owner of spec
-  and PRD generation. It writes one when a spec has been synthesized and the user asks for it
-  committed — from real conversation, not from a template. Creating an empty `docs/PRD.md`
-  here does nothing but trigger that skill's offer to fill it, which it makes anyway.
+- **A spec is `to-tickets`' output**, and that skill declares itself the single owner of spec
+  synthesis. A synthesized spec lives in the tracker's epic issue body (its Phase 06), never
+  in a file — no PRD is ever written.
 - **A roadmap is the issue tracker's job.** Phase 05 runs before this one precisely so that
   when a tracker exists, the ladder lives there as epics and dependency edges — queryable,
   ordered, and closed as work lands. `bd ready` cannot go stale; a markdown list of intentions
@@ -41,9 +40,8 @@ is the record-what-exists kind: it says what the user actually wrote before any 
 
 **Never route it to the declined artifact's path under a different name.** Writing a handed-over
 spec to `docs/spec.md` after the user said "no PRD" recreates the rejected artifact with the
-serial numbers filed off — and `docs/spec.md` is one of the exact non-standard PRD paths this
-skill's own detection table migrates *into* `docs/PRD.md`, so the next run moves it there. Say
-in one line where the document went and that it is being kept as source, not as a spec.
+serial numbers filed off. Say in one line where the document went and that it is being kept as
+source, not as a spec.
 
 ## docs/CONTEXT.md (project glossary)
 
@@ -55,7 +53,7 @@ in one line where the document went and that it is being kept as source, not as 
 - **Non-standard at `GLOSSARY.md` / `docs/glossary.md` / `docs/terms.md`**:
   1. Confirm: *"Found `GLOSSARY.md` — looks like project vocabulary. Rename + move to `docs/CONTEXT.md`?"* (Default: yes.)
   2. Move and update internal references.
-  3. If the file's format doesn't match `~/.claude/skills/grill-me/CONTEXT-FORMAT.md` (no `## Language`, `## Relationships`, etc.), leave the content but add standard headings around it. Don't reformat the user's existing entries.
+  3. If the file's format doesn't match `~/.claude/skills/docs/CONTEXT-FORMAT.md` (no `## Language`, `## Relationships`, etc.), leave the content but add standard headings around it. Don't reformat the user's existing entries.
 - **Per-context files at `src/*/CONTEXT.md` without a CONTEXT-MAP.md**: multi-context bounded-context pattern. Don't migrate — offer to create `docs/CONTEXT-MAP.md` listing them.
 
 ### Empty-glossary template
@@ -100,7 +98,7 @@ this file describes.
 
 ### `docs-refs` reverse map (offer)
 
-ADRs (frontmatter `applies-to`) and vocab terms (`_applies-to_` marker in `docs/CONTEXT.md`) can declare the paths they scope, so a source path maps back to the decisions and terms that govern it (formats: `~/.claude/skills/grill-me/ADR-FORMAT.md`, `~/.claude/skills/grill-me/CONTEXT-FORMAT.md`). The lookup is the shared script `~/.claude/tools/docs-refs.py` — no index, scans `docs/adr/*.md` and every `CONTEXT.md` live.
+ADRs (frontmatter `applies-to`) and vocab terms (`_applies-to_` marker in `docs/CONTEXT.md`) can declare the paths they scope, so a source path maps back to the decisions and terms that govern it (formats: `~/.claude/skills/docs/ADR-FORMAT.md`, `~/.claude/skills/docs/CONTEXT-FORMAT.md`). The lookup is the shared script `~/.claude/tools/docs-refs.py` — no index, scans `docs/adr/*.md` and every `CONTEXT.md` live.
 
 If the project has an `admin.toml`, offer to wire the two shell convenience commands (agents can call the script directly regardless):
 

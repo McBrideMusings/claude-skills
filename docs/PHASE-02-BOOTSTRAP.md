@@ -8,7 +8,7 @@
 2. **Apply opt-in heuristics** (table below). Tell the user which matched and why.
 3. **Create universal files.** See `references/vitepress-config.md` for the config starting point.
    - `docs/index.md` — `layout: home` frontmatter
-   - `docs/PRD.md`, `docs/file-map.md` — stubs with H1 + TODO
+   - `docs/file-map.md` — stub with H1 + TODO
 4. **Create opt-in scaffolds** for matched heuristics (H1 + "TODO: fill in").
 5. **Wire `package.json`:** `"docs:dev": "vitepress dev docs --port 5193"` (or main app port + 20).
 
@@ -21,7 +21,7 @@
    docs/.vitepress/cache
    docs/.vitepress/dist
    ```
-9. Proceed to [PHASE-06-VERIFY.md](PHASE-06-VERIFY.md).
+9. Proceed to [PHASE-05-VERIFY.md](PHASE-05-VERIFY.md).
 
 ## Opt-in heuristics (any one is sufficient)
 
@@ -47,7 +47,6 @@ Keep these in sync as you work:
 
 | File | Update when |
 |---|---|
-| `docs/PRD.md` | Product behavior, scope, or surface area changes |
 | `docs/file-map.md` | Major files/folders are added, removed, renamed, or moved |
 | `docs/api.md` | (if exists) external API surface changes |
 | `docs/architecture/*` | (if exists) subsystem behavior changes |
