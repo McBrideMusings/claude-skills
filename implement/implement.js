@@ -697,7 +697,7 @@ Files it names: ${[...edit.touched, ...(green.extra_files_touched || [])].join('
 
 Judge only the diff. Correctness first — a bug the change introduces or fails to fix; then reuse and simplification against what the repo already has; then efficiency. Skip style the repo's own formatter owns.
 
-Severity means: \`blocking\` — the change is wrong, incomplete against the item, or breaks something that worked. \`major\` — real defect, does not invalidate the change. \`minor\` — worth a follow-up.
+Severity means: \`blocking\` — the change is wrong, incomplete against the item, or breaks something that worked; this halts the pass. \`major\` — a real defect in this diff that must be fixed before the branch lands — the work still commits, but the branch does not land until another round fixes it. \`minor\` — a note, worth a follow-up, not a defect that gates landing.
 
 **Do not edit anything, and do not stage or commit anything — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits. An edit you make here ships unverified, and a commit you make here reaches Verify already on HEAD, making its \`verified_parent\` field false the moment it is written.
 
@@ -717,7 +717,8 @@ if (!review || !review.reviewed) {
 }
 
 const blockingFindings = (review.findings || []).filter((f) => f.severity === 'blocking')
-log(`review: ${review.findings.length} findings (${blockingFindings.length} blocking) over ${(review.files_reviewed || []).length} files`)
+const majorFindings = (review.findings || []).filter((f) => f.severity === 'major')
+log(`review: ${review.findings.length} findings (${blockingFindings.length} blocking, ${majorFindings.length} major) over ${(review.files_reviewed || []).length} files`)
 
 // --- Verify ----------------------------------------------------------------
 
@@ -880,7 +881,7 @@ Verification: ${verdict.verdict}${verdict.evidence ? ` — ${verdict.evidence}` 
 ${edit.notes && edit.notes.length ? `Notes from implementation:\n${edit.notes.map((n) => `- ${n}`).join('\n')}` : ''}
 ${
   review.findings.length
-    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here):\n${review.findings.map((f) => `- [${f.severity}] ${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}`).join('\n')}\nPut every one of them into \`followups\`, verbatim, severity included.`
+    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here):\n${review.findings.map((f) => `- [${f.severity}] ${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}`).join('\n')}\nPut only the \`minor\` findings into \`followups\`, verbatim, severity included. \`blocking\` and \`major\` findings are gated by the orchestrator, not by you — do NOT file them as followups.`
     : 'Code review of this diff: already done, no findings. Do NOT run another review.'
 }`
 
@@ -939,6 +940,7 @@ if (verdict.verdict !== 'PASS') blockers.push(`verification returned ${verdict.v
 if (!landed.committed) blockers.push('nothing was committed')
 blockers.push(...mutationBlockers)
 if (blockingFindings.length) blockers.push(`code review returned ${blockingFindings.length} blocking finding(s): ${blockingFindings.map((f) => `${f.file} — ${f.summary}`).join('; ')}`)
+if (majorFindings.length) blockers.push(`code review returned ${majorFindings.length} major finding(s) in this diff: ${majorFindings.map((f) => `${f.file} — ${f.summary}`).join('; ')}`)
 
 if (blockers.length) log(`not ready to land: ${blockers.join('; ')}`)
 
@@ -949,7 +951,7 @@ return {
   verdict: verdict.verdict,
   tests_touched: touchedTests,
   mutation: touchedTests.length ? verdict.mutation || null : undefined,
-  review: { findings: review.findings.length, blocking: blockingFindings.length },
+  review: { findings: review.findings.length, blocking: blockingFindings.length, major: majorFindings.length },
   files: [...edit.touched, ...(green.extra_files_touched || [])],
   attempts: green.attempts,
   commit: landed.commit,
