@@ -17,6 +17,7 @@ issues/
   SKILL.md          <- the map: which file to open for which task
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
+  breakdown.md      <- standard practice: slicing one issue, plus the verify and land bookends
   labels.md         <- the label schema, backend-independent: area: / mode: / platform:
   beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   beads-stealth-context.md  <- injected in a stealth repo: the posture, not the verbs
@@ -39,7 +40,7 @@ invents a bare one.
 
 | Skill | Uses | Notes |
 | --- | --- | --- |
-| `to-tickets` | create, epic/parent, dep | publishes a slate of tickets |
+| `to-tickets` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
 | `triage` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
 | `implement` | list, ready, claim, close | selector resolution lives in `implement/SELECTORS.md` |

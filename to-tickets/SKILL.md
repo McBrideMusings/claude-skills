@@ -126,6 +126,21 @@ Slice rules:
 - A completed slice is demoable or verifiable on its own
 - Prefer many thin slices over a few thick ones
 
+**Every slice set ends in the same two bookends: a verify ticket and a land ticket.** They are
+not optional and not a judgement call — the shape is standard practice for all tracked work and
+is specified in [`../issues/breakdown.md`](../issues/breakdown.md). Read it before drafting.
+
+- **Verify** — one per set, blocked by every slice. Its `--acceptance` is what "done" means.
+  Label it `human` when a person has to look: always for anything visual, almost always for a
+  feature, and for backend or text work only when the tests do not actually cover the claim.
+  A `human` verify ticket is HITL by definition.
+- **Land** — one per set, blocked by verify. It carries the PR or merge body while it is being
+  written: `--design` holds the current draft, `bd comment` holds the log.
+
+On the `beads` backend both are real beads, children of the group's parent. On `github` they are
+two more issues — GitHub has no `--design` or `--acceptance`, so the draft body and the
+acceptance criteria become `## PR draft` and `## Acceptance` sections instead.
+
 ### Wide refactors — the exception to vertical slicing
 
 A **wide refactor** is one mechanical change — rename a column, retype a shared symbol — whose **blast radius** fans across the whole codebase: a single edit breaks thousands of call sites at once, so no vertical slice can land green. Don't force it into a tracer bullet — sequence it as **expand–contract**, one ticket per stage:
@@ -210,6 +225,16 @@ Per slice:
   - **A `docs/spikes/` path in a GitHub issue body does not render as an image.** Cite it as a path in backticks, never as `![](…)` markdown that will show a broken image. The agent opens it from the checkout; that's the consumer that matters.
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
   - Blockers are prose only (`Blocked by #N` in the body) — GitHub has no dependency edges.
+
+The two bookends publish last, after every slice, so their blocker edges can name real IDs:
+
+```bash
+V=$(bd create "Verify: <what done looks like>" -t task --parent "<parent>" \
+      --acceptance "<criteria>" --silent)         # add -l human when a person must look
+L=$(bd create "Land: <PR title>" -t task --parent "<parent>" --silent)
+for s in $SLICE_IDS; do bd dep add "$V" "$s" -t blocks; done
+bd dep add "$L" "$V" -t blocks
+```
 
 Do NOT close or modify any parent issue.
 

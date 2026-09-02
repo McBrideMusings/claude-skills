@@ -13,6 +13,7 @@ injected line to know this — it is true of every repo.
 | --- | --- |
 | [`./README.md`](./README.md) | Orientation to the whole cell — open when you need who-reads-what across the files. |
 | [`./_detect.md`](./_detect.md) | **Always first.** Confirms the backend and resolves the two things that vary: mirror mode and stealth. |
+| [`./breakdown.md`](./breakdown.md) | **Standard practice.** Breaking one issue into slices plus the two bookends every breakdown carries — a verify bead and a land bead. Open before slicing any issue into tracked work. |
 | [`./beads.md`](./beads.md) | `bd` verbs, the Dolt store, mirror mode and `external_ref`. |
 | [`./github.md`](./github.md) | The repo has no beads yet and resolved to GitHub: `gh issue` verbs and its own conventions. |
 | [`./beads-stealth-context.md`](./beads-stealth-context.md) | Working in a stealth repo and needing the posture rather than the verbs. |
@@ -20,6 +21,13 @@ injected line to know this — it is true of every repo.
 | [`./labels.md`](./labels.md) | Choosing or creating a label on either backend. |
 
 `gh pr …` is exempt from backend resolution — pull requests are GitHub-only on every backend.
+
+## Every issue you work gets broken down, the same way every time
+
+Planning an issue means creating its children in `bd`: the vertical slices, then a **verify**
+bead and a **land** bead, wired with `bd dep add`. This is standard practice on both backends
+and in every repo — [`./breakdown.md`](./breakdown.md) is the shape, and it is not a decision to
+re-take per project. Stealth and mirror differ only in whether the children are pushed.
 
 ## Which tracker — decide before you file, not after
 
