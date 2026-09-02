@@ -17,7 +17,7 @@ issues/
   SKILL.md          <- the map: which file to open for which task
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
-  breakdown.md      <- standard practice: slicing one issue, plus the verify and land bookends
+  breakdown.md      <- standard practice at pickup: slicing one issue + verify/land bookends
   labels.md         <- the label schema, backend-independent: area: / mode: / platform:
   beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   beads-stealth-context.md  <- injected in a stealth repo: the posture, not the verbs

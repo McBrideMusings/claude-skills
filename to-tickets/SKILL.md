@@ -133,6 +133,11 @@ On the `beads` backend both are real beads, children of the group's parent. On `
 two more issues — GitHub has no `--design` or `--acceptance`, so the draft body and the
 acceptance criteria become `## PR draft` and `## Acceptance` sections instead.
 
+**The bookends belong to the slate this run is filing, and to nothing else.** They close out one
+approved spec being published now. They are never added to issues already sitting in the
+backlog, and this rule never licenses a pass that walks open issues creating structure for them
+— see the ⛔ in [`../issues/breakdown.md`](../issues/breakdown.md).
+
 ### Wide refactors — the exception to vertical slicing
 
 A **wide refactor** is one mechanical change — rename a column, retype a shared symbol — whose **blast radius** fans across the whole codebase: a single edit breaks thousands of call sites at once, so no vertical slice can land green. Don't force it into a tracer bullet — sequence it as **expand–contract**, one ticket per stage:

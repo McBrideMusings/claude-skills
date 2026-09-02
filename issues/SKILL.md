@@ -22,12 +22,19 @@ injected line to know this — it is true of every repo.
 
 `gh pr …` is exempt from backend resolution — pull requests are GitHub-only on every backend.
 
-## Every issue you work gets broken down, the same way every time
+## Starting an issue means breaking it down — and only then
 
-Planning an issue means creating its children in `bd`: the vertical slices, then a **verify**
-bead and a **land** bead, wired with `bd dep add`. This is standard practice on both backends
+**When you pick an issue up**, create its children in `bd`: the vertical slices, then a
+**verify** bead and a **land** bead, wired with `bd dep add`. Standard practice on both backends
 and in every repo — [`./breakdown.md`](./breakdown.md) is the shape, and it is not a decision to
-re-take per project. Stealth and mirror differ only in whether the children are pushed.
+re-take per project. Stealth and mirror differ only in whether the children get pushed.
+
+**⛔ Never create children for an issue nobody has started.** The trigger is picking it up, not
+filing it, prioritizing it, or sweeping the backlog. Do not retrofit a breakdown across open
+issues, do not scaffold one ahead of the work, and do not offer to — slices written before the
+code is open are guesses, and they poison `bd ready` and `bd human list`, whose only value is
+that everything in them is real. Wiring `bd dep add` edges between issues that already exist is
+not this and is always fine.
 
 ## Which tracker — decide before you file, not after
 

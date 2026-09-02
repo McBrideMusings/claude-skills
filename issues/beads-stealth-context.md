@@ -9,8 +9,8 @@
   `bd rename <import-id> <prefix>-<n>`. A pull rewrites mirrored beads; private ones it
   cannot see.
 - **Read `bd list`, never `gh issue list`.**
-- **Working an issue means slices plus a verify bead and a land bead under it**, all private,
-  all dotted (`neutrino-7.1`). Shape: [breakdown.md](breakdown.md).
+- **Starting an issue — never before — means slices plus a verify and a land bead under it**,
+  private, dotted (`neutrino-7.1`). Shape: [breakdown.md](breakdown.md).
 - **`bd dolt push` needs a `file://` remote you own**, or it adopts the git origin.
 
 Depth: [_detect.md](_detect.md) § Stealth, [beads.md](beads.md) for verbs.

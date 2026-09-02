@@ -4,11 +4,36 @@
 two bookends: a verify bead and a land bead.** This is not a per-project convention to decide
 each time. It is how work is tracked in every repo, on both backends.
 
+## ⛔ Create the children when work starts. Never in advance.
+
+**The trigger is picking the issue up** — you are about to write code against it in this
+session. Not when it is filed, not when it is prioritized, not when it looks likely, not while
+sweeping the backlog. An issue nobody has started has **zero** children.
+
+Never create a breakdown for an issue you are not starting now. Never fan a skeleton across a
+backlog. Never offer to. If you catch yourself proposing to "retrofit", "pre-populate",
+"scaffold ahead", or "set up the structure for the open issues", that is this mistake wearing a
+different verb — stop.
+
+Three reasons it is not a style preference:
+
+- **The slices would be guesses.** You learn the real seams by opening the code. Children
+  written before that are fiction that has to be deleted and rewritten at pickup, and deleting
+  them is work the guess created.
+- **It poisons the two queues whose whole value is that they are real.** `bd ready` is supposed
+  to answer "what can I start"; `bd human list` is supposed to be what a person actually owes.
+  Both stop meaning anything once they fill with hypothetical work.
+- **It inflates every count.** Twenty backlog issues become a hundred beads, and the backlog no
+  longer says how much is outstanding.
+
+The one adjacent thing that is always fine, and is not this: **wiring dependency edges between
+issues that already exist.** `bd dep add <blocked> <blocker>` creates nothing. See practice 1.
+
 The only thing that varies is what leaves the machine, and that is settled by
 [`_detect.md`](_detect.md): in a **stealth** repo the breakdown stays local and only the parent
 exists upstream; in a **mirror** repo you push the children too. Same structure either way.
 
-## The skeleton
+## The skeleton — built at pickup, in one pass
 
 ```
 neutrino-25                    parent — from GitHub #25 in a stealth repo, or authored in bd

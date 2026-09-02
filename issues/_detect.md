@@ -167,10 +167,12 @@ because they are detection-time decisions, not usage-time ones:
   mirrored; a hashed `neutrino-a3f2` from `bd create` is yours until you push it; a dotted
   `neutrino-7.1` is your breakdown of theirs and never leaves.
 
-- **Working one of their issues means breaking it down under it.** Slices plus a verify bead
-  plus a land bead, all children of the mirrored parent, all private. That is standard
-  practice, not a stealth-only trick — the shape is in [`breakdown.md`](breakdown.md) and it is
-  the same in a mirror repo, where the children get pushed instead of kept.
+- **Picking one of their issues up means breaking it down under it, at that moment.** Slices
+  plus a verify bead plus a land bead, all children of the mirrored parent, all private. That
+  is standard practice, not a stealth-only trick — the shape is in
+  [`breakdown.md`](breakdown.md) and it is the same in a mirror repo, where the children get
+  pushed instead of kept. **An issue nobody has started has no children**, and a pull that
+  brings down 15 of their issues creates 15 beads, not 60.
 
 - **Rename every pulled bead to its GitHub issue number, in the same breath as the pull.**
   `bd github sync --pull-only` does not assign a hash ID. It assigns the import-path form
