@@ -371,6 +371,37 @@ check('tree_clean:false reaches Wrap and reports ok', treeDirty.result.ok, true)
 check('  ...with no blockers', treeDirty.result.blockers, [])
 check('  ...and Wrap is called', treeDirty.calls.includes('Wrap'), true)
 
+// The Gate's third test (cc-32bc): an item naming a file outside the repo the
+// pass is confined to must halt at Gate, and the halt detail must survive
+// carrying the out-of-repo path and the word "split" back to the caller. This
+// exists because of a real run, wf_1f0c6156-132 (cc-fyt attempt 1): the item's
+// acceptance criteria spanned `~/.claude` and its `claude-skills` submodule, the
+// pass did the entire in-repo half correctly — 578,768 subagent tokens, 18
+// minutes — and only discovered the unreachable criterion at the very last
+// stage, Verify. Catching it here costs one cheap stage instead of a whole pass.
+const gateReachability = await run(BASE, {
+  Gate: {
+    pass: false,
+    reason: 'reachability test failed',
+    missing: [
+      'hooks/subagent-push-guard.sh is outside /tmp/repo — this item spans two repos and must be split',
+    ],
+  },
+})
+check('an out-of-repo path halts at gate', gateReachability.result.ok, false)
+check('  ...naming the gate stage', gateReachability.result.halted_on, 'gate')
+check('  ...with the out-of-repo path in the detail', /subagent-push-guard\.sh/.test(gateReachability.result.detail), true)
+check('  ...and the word "split" in the detail', /split/.test(gateReachability.result.detail), true)
+
+// Companion guard: a plain gate failure with no `missing` array (the common
+// case — an ambiguous or underspecified item) must still halt at gate with a
+// detail containing the reason, and must not blow up or leave a stray
+// separator from joining against an undefined array.
+const gateNoMissing = await run(BASE, { Gate: { pass: false, reason: 'ambiguous' } })
+check('a gate failure with no missing array still halts at gate', gateNoMissing.result.halted_on, 'gate')
+check('  ...with the reason in the detail', /ambiguous/.test(gateNoMissing.result.detail), true)
+check('  ...and no stray trailing separator', gateNoMissing.result.detail, 'ambiguous')
+
 // A `major` review finding is a real defect in the diff the pass just wrote —
 // it must gate landing the way a weak-test verdict does, without halting the
 // pass itself: the work still commits, Wrap still runs, but `blockers` is
