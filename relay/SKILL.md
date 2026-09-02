@@ -19,10 +19,17 @@ instead of reimplementing it, then relay this pane to the orchestration/watch ro
 
 ## Preconditions — check these before proposing anything
 
-1. `test "${HERDR_ENV:-}" = 1`. Outside herdr there is no pane to clear. Say so and stop.
-2. The current work is **finished and landed** — `wrap-up` has committed, pushed and
-   landed. A relay clears the context; anything uncommitted is gone. Never relay over
-   dirty work.
+1. `test "${HERDR_ENV:-}" = 1`. Outside herdr there is no pane to clear. Say so and
+   stop — today there is no forward-handoff mechanism outside herdr, so the session
+   keeps its context and either pushes on or ends normally. Do not invent a substitute.
+2. This pane's own checkout is **finished and landed** — `wrap-up` has committed,
+   pushed and landed. A relay clears the context; anything uncommitted in *this*
+   checkout is gone. Never relay over a dirty working tree.
+
+   This does not forbid relaying while passes dispatched from this session are still
+   running, or while a branch they returned sits unlanded in its own worktree — that
+   is live state in a different checkout, not dirty work in this one, and it is
+   carried forward by the in-flight manifest (below), not left behind.
 
 ## Never fire blind
 
@@ -140,6 +147,69 @@ Context you can't get from the code:
 Start by: <exact first action>
 
 When it's done and landed, run /wrap-up.
+```
+
+## Relaying mid-run — the in-flight manifest
+
+A session that dispatches passes also lands them — that is the architecture, and it
+makes this session the bottleneck. Relay is its only valve. But a relay that carries
+only "the next body of work" drops the state that is genuinely in flight: passes
+still running, and branches already returned but not yet landed. Neither is next
+work — both are live state, in worktrees this session alone knows about. Lose them
+and the worktrees still sit on disk, but nothing in the fresh context knows they
+exist, and `tools/git-sweep.sh` only collects branches it can prove merged — an
+unlanded branch is stranded, and its commit is the only copy of that work.
+
+So a mid-run relay appends a manifest section to the marker, one entry per pass that
+is either running or returned-but-unlanded:
+
+```markdown
+## In-flight passes
+
+- item: <id>
+  branch: <branch>
+  worktree: <absolute path>
+  workflow: running | returned
+  run_id: <id>                 # when workflow: running
+  ok: true | false              # when workflow: returned
+  halted_on: <reason or ->      # when workflow: returned
+  verdict: <absolute path or -> # when a verdict file was written
+  recheck: <command>            # repeat per not-yet-run recheck command
+  recheck: <command>
+```
+
+**The refusal.** A pass whose `Workflow` call has not returned has no outcome this
+session can write — relay does not guess it and does not sit and wait for it either.
+Record it as `workflow: running` with its run id, and put checking that run first in
+the fresh session's Step 4 "First action" field. If a pass is in flight and this
+session cannot even name its run id or worktree — visibility genuinely lost, not just
+still running — refuse the relay: say which pass it cannot account for and stop
+rather than clearing over it.
+
+This applies to `relay auto` too. A queued/mid-run `implement` skips Step 2's
+proposal, but the manifest is not one of the defaults it gets to skip — every running
+or unlanded pass still gets an entry.
+
+**Worked example** — one pass still running, one returned and unlanded:
+
+```markdown
+## In-flight passes
+
+- item: cc-7qz
+  branch: cc-7qz
+  worktree: /Users/pierce/.worktrees/claude-skills/cc-7qz
+  workflow: running
+  run_id: run_01HXYZ9K2M
+  recheck: bash /Users/pierce/.claude/tools/tests/implement-workflow.test.sh
+
+- item: cc-8rf
+  branch: cc-8rf
+  worktree: /Users/pierce/.worktrees/claude-skills/cc-8rf
+  workflow: returned
+  ok: true
+  halted_on: -
+  verdict: /private/tmp/claude/claude-skills/verdicts/cc-8rf.md
+  recheck: bash /Users/pierce/.claude/tools/tests/implement-workflow.test.sh
 ```
 
 ## Step 5 — hand off and stop
