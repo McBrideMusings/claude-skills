@@ -90,9 +90,10 @@ to look, and never a place to author.
 
 **Freelance and job repos invert it: GitHub is canonical and beads runs stealth.** Their
 contributors author on GitHub, so GitHub holds the truth and a push-only posture would
-overwrite it. Beads is a private local graph that never travels: create client-visible work
-with `gh issue create` and pull it back, keep your own breakdown in `bd`. These are the same
-repos § Stealth already routes by path and owner, and its two-tier table is how you work them.
+overwrite it. Beads is a private local graph, and only the beads you name by ID ever leave it:
+publish one with `bd github push <id>`, pull their edits back, keep your own breakdown
+unpushed. These are the same repos § Stealth already routes by path and owner, and its
+two-tier table is how you work them.
 
 ## Stealth: beads in a repo that must not carry it
 
@@ -122,32 +123,48 @@ bd dolt remote add origin file:///path/you/own    # required — see below
 Details of what each flag suppresses are in [`beads.md`](beads.md). Two rules that live here
 because they are detection-time decisions, not usage-time ones:
 
-- **Pull is permitted; push never is.** `bd github sync --pull-only` seeds a private local
+- **Scope is the line, not direction.** `bd github sync --pull-only` seeds a private local
   graph from the client's GitHub backlog, and that is a legitimate reason to set
-  `github.repository` in a stealth repo. Stealth does **not** mean "no GitHub". What it means
-  is that nothing travels outward: bare `bd github sync` is bidirectional and would file a real
-  issue in their tracker for every bead you own. `bd config` has no key that pins direction —
-  the flag is the only control — so `hooks/beads-stealth-guard.sh` enforces it.
+  `github.repository` in a stealth repo. Stealth does **not** mean "no GitHub", and it does not
+  mean "no push". It means nothing travels outward that you did not name.
+
+  `bd github push <id> [<id>...]` — the documented short spelling of
+  `bd github sync --push-only --issues <ids>` — sends exactly the beads on the command line and
+  nothing else. `hooks/beads-stealth-guard.sh` turns it into a confirmation prompt rather than
+  a denial, because the failure mode it guards is a mistyped ID, which is public the moment it
+  lands. The unscoped forms it denies outright: bare `bd github sync` (bidirectional),
+  `--push-only` with no `--issues`, and `bd github push` with no IDs. Each of the three files a
+  real issue in their tracker for every bead you own. `bd config` has no key that pins
+  direction or scope — the flags are the only control, which is why the hook requires them.
+  `--dry-run` writes nothing in either direction and is always allowed, never prompted.
 - **`sync.remote` must be set before the first `bd dolt push`.** Unset is the state
   `bd init --stealth` leaves behind, and `bd dolt push` fills it from the git origin without
   asking, then pushes the entire database to their remote. A `file://` directory you own takes
   a real push and `bd bootstrap` recovers every issue from it, so redirecting costs no backup.
   The same guard denies a push while `sync.remote` is anything else.
-- **Two tiers of issue, and the tier decides where you create it.** Stealth forbids publishing
-  the *database*, not collaborating. `gh issue create` is ordinary work in a client's repo and
-  is deliberately not blocked by the guard — what it sends is one issue you wrote on purpose,
-  where `bd github sync` would send every bead you own.
+- **Two tiers of issue, and nothing in the database marks them apart.** Stealth forbids
+  publishing the *database*, not collaborating. A bead is private for exactly one reason: you
+  have never named it in a push. There is no flag, no field, no config key — the tier is
+  decided by what you type, which is why no hook can enforce it and why the guard bounds reach
+  instead.
 
   | | Create it with | How it travels |
   | --- | --- | --- |
-  | **Client-visible** — a bug or request they should act on | `gh issue create` **first** | `bd github sync --pull-only` brings it back as a bead carrying `external_ref: gh-<n>` |
-  | **Yours** — task breakdown, dependency edges, notes on their code | `bd create` | never travels; this tier is the reason beads is here at all |
+  | **Client-visible** — a bug or request they should act on | `gh issue create`, then `bd github sync --pull-only` — **or** `bd create` then `bd github push <id>` | either way it ends up a bead carrying `external_ref` |
+  | **Yours** — task breakdown, dependency edges, notes on their code | `bd create`, and never push it | never travels; this tier is the reason beads is here at all |
 
-  Same split for updates: `gh issue edit` / `gh issue comment` / `gh issue close` for what they
-  can see, then pull. Priority and dependencies are beads-only fields GitHub cannot hold, so
-  they never need to travel. **No hook can enforce this split** — which tier an issue belongs to
-  is intent, and a guard that blocked `bd create` would delete the private tier. The push guard
-  works because "never push the database" takes no input; this rule does.
+  **Promotion is one command.** `bd github push <id>` on a private bead files the GitHub issue,
+  stamps `external_ref`, and from then on that bead is mirrored. That is the whole mechanism
+  for "I drafted it locally and now they should see it" — there is no separate publish verb.
+
+  For updates to something already mirrored, the choice is which side you author on.
+  `bd update <id>` then `bd github push <id>` keeps beads canonical and pushes title,
+  description and status out faithfully. `gh issue edit` then a scoped pull is the other
+  direction and is **lossy** — see the pull-overwrite entries below. Priority and dependencies
+  are beads-only fields GitHub cannot hold, so they never travel in either direction.
+
+  **The ID shape names the tier at a glance.** A pulled bead renamed to `neutrino-7` is
+  mirrored; a hashed `neutrino-a3f2` from `bd create` is yours until you push it.
 
 - **Rename every pulled bead to its GitHub issue number, in the same breath as the pull.**
   `bd github sync --pull-only` does not assign a hash ID. It assigns the import-path form
@@ -167,8 +184,9 @@ because they are detection-time decisions, not usage-time ones:
 
   The convention pays twice. One number then means one thing across the bead, the branch, the PR
   and the issue. And since `bd create` still emits a hash, **the ID shape alone names the tier**:
-  numeric came from their GitHub and is a read-model for title and description; hashed
-  (`neutrino-a3f2`) is yours and never travels.
+  numeric came from their GitHub and a pull rewrites its title and description; hashed
+  (`neutrino-a3f2`) is yours and has not travelled. Pushing a hashed bead promotes it —
+  rename it to its new issue number in the same breath, so the shape keeps telling the truth.
 
 - **⛔ A pull overwrites the bead's title and description from GitHub, silently.** `bd update
   <id> --description "…"` followed by `bd github sync --pull-only` reported `0 created, 1
