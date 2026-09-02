@@ -130,6 +130,27 @@ because they are detection-time decisions, not usage-time ones:
   is intent, and a guard that blocked `bd create` would delete the private tier. The push guard
   works because "never push the database" takes no input; this rule does.
 
+- **Rename every pulled bead to its GitHub issue number, in the same breath as the pull.**
+  `bd github sync --pull-only` does not assign a hash ID. It assigns the import-path form
+  `<prefix>-<epoch_ms>-<batch_counter>-<hash8>` — `neutrino-1788274151270-5-9a129200` for issue
+  #7 — which is neither documented `issue_id_mode` (`hash` and `counter` are the only two) and
+  carries 33 characters into every branch name, every `bd show` and every `--deps` argument.
+
+  ```bash
+  bd rename neutrino-1788274151270-5-9a129200 neutrino-7   # <prefix>-<github issue number>
+  ```
+
+  **The ID is not the sync key** — `external_ref` and `source_system` are, and `bd rename` does
+  not touch either. Verified on `bd 1.2.2`: after renaming all five neutrino beads, an unscoped
+  `bd github sync --pull-only --dry-run` proposed zero creations, and a real
+  `bd github pull neutrino-7` updated in place with the count still at 5. A broken link would
+  have re-created each issue as a new bead.
+
+  The convention pays twice. One number then means one thing across the bead, the branch, the PR
+  and the issue. And since `bd create` still emits a hash, **the ID shape alone names the tier**:
+  numeric came from their GitHub and is a read-model for title and description; hashed
+  (`neutrino-a3f2`) is yours and never travels.
+
 - **⛔ On a bead with an `external_ref`, GitHub owns title and description — a local edit to
   either is destroyed by the next pull, silently.** `bd update <id> --description "…"` followed
   by `bd github sync --pull-only` reported `0 created, 1 updated` and left GitHub's body in

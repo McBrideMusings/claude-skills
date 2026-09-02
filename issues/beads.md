@@ -12,6 +12,13 @@ prints it), the suffix is hashed so concurrent agents don't collide. A repo init
 `--prefix myproj` produces IDs like `myproj-zb8`. Add `--json` (a global flag) to any read
 command for machine output.
 
+`bd rename <old-id> <new-id>` changes an ID and rewrites every reference to it — dependencies,
+labels, comments, events, and mentions in other issues' bodies. It does **not** touch
+`external_ref` or `source_system`, so renaming a GitHub-linked bead leaves its sync intact.
+Beads pulled from GitHub arrive with the import-path ID `<prefix>-<epoch_ms>-<counter>-<hash8>`
+rather than a hash; a [stealth](_detect.md#stealth-beads-in-a-repo-that-must-not-carry-it) repo
+renames those to `<prefix>-<github issue number>` on arrival.
+
 `bd list --json` and `bd ready --json` return a bare array; each element carries
 `id, title, status, priority, issue_type, owner, created_at, updated_at, dependency_count,
 dependent_count, comment_count`. `bd count --json` returns `{"count": N, "schema_version": 1}`;
@@ -86,7 +93,7 @@ don't route around the allow by asking in chat first.
 
 | GitHub | beads |
 | --- | --- |
-| issue number `#42` | ID `<prefix>-<hash>`, e.g. `myproj-zb8` |
+| issue number `#42` | `external_ref` + `source_system` — **not** the ID. In a [stealth](_detect.md#stealth-beads-in-a-repo-that-must-not-carry-it) repo the ID is renamed to match anyway: `myproj-42` |
 | labels | labels (same) |
 | milestone | epic (`-t epic` + `--parent`) |
 | assignee | assignee |
