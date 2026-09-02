@@ -23,6 +23,7 @@ This skill diagnoses the symptom, picks exactly one technique, and runs it inlin
 | We have one idea and need variations | `scamper` |
 | A decision is being made too fast / everyone agrees | `six-hats` |
 | Everything feels timid, safe, cautious | `worst-idea` |
+| The plan is settled but nothing says how an agent drives or reads the system | `driver-seat` |
 
 ## RULE 0 — stay narrow, and stand down when you were fired at nothing
 
@@ -45,20 +46,21 @@ If the target itself is unclear, the chosen technique's own Step 1 will ask for 
 ```
 lateral/
   SKILL.md          <- this router; the only file loaded by default
-  techniques/       <- the eight technique workflows, one file each
+  techniques/       <- the nine technique workflows, one file each
   references/       <- stimulus pools, domain pool, question bank, Po templates, hats guide
   examples/         <- one real worked session per technique
 ```
 
 ## Other skills invoke this with a technique already named
 
-Three hosts use these techniques. Each has already diagnosed by the time it calls, so each invokes `lateral <technique>` and RULE 0's step 1 runs that one without re-deciding. None of them copies the content:
+Three hosts use these techniques, plus a fourth for `driver-seat` alone. Each has already diagnosed by the time it calls, so each invokes `lateral <technique>` and RULE 0's step 1 runs that one without re-deciding. None of them copies the content:
 
 | Host | Techniques it reads | Where |
 |---|---|---|
-| `improve` | the five generators — provocation, random-stimulus, analogy, scamper, worst-idea | [`../improve/LATERAL-LENS.md`](../improve/LATERAL-LENS.md) maps aspect → technique, forwarded to every survey aspect |
-| `grill-me` | the two reframers — inversion, concept-fan | its "Assumption-breaking lenses" section |
+| `improve` | the five generators — provocation, random-stimulus, analogy, scamper, worst-idea — plus `driver-seat` | [`../improve/LATERAL-LENS.md`](../improve/LATERAL-LENS.md) maps aspect → technique, forwarded to every survey aspect; `agent-ergonomics` maps to `driver-seat` |
+| `grill-me` | the two reframers — inversion, concept-fan — plus `driver-seat` as a third, distinct lens | its "Assumption-breaking lenses" section and its "Driver-seat pass" subsection |
 | `spike` | scamper, random-stimulus | UI.md Phase 03, when the variant set collapses onto one axis |
+| `to-tickets` | `driver-seat` | Phase 03, over the spec just before approval |
 
 `six-hats` has no host: it converges a decision, and every host above diverges. It stays here.
 

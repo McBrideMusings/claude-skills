@@ -66,8 +66,8 @@ Look for prefactoring opportunities — changes that make the upcoming implement
 Slicing needs a stated problem, solution, user stories, and testing decisions. Write them now —
 skipping this is why a slate ends up with slices nobody can trace to a user story.
 
-**Skip this phase entirely when the source is already structured** and say in one line that
-you're skipping it:
+**Skip this phase entirely when the source is already structured** — and skip the driver-seat
+pass below along with it — and say in one line that you're skipping both:
 
 - `docs/PRD.md` or another spec document — read it and slice from it
 - an issue body fetched in Phase 01
@@ -80,6 +80,12 @@ conversation is too thin to write a real spec, stop and say so, and point at `/g
 
 Write it to `/private/tmp/claude/<repo-slug>/spec.md` — absolute path, same `<root>` resolution
 as the proposal file above. The file is plumbing for later phases; don't show its path.
+
+**Run `lateral driver-seat` over the written spec** before pasting it for approval. Apply its
+changes to `spec.md` in place. Its "Driver-seat changes" list goes above the spec's own text in
+the single approval message below — the user sees what moved and why before reading the spec
+itself.
+
 **Paste the spec's full text in the chat message** — every section, verbatim or faithfully
 condensed with nothing omitted — and **ask for approval before slicing**. The user approves
 what they can read in chat, never a file they'd have to open:

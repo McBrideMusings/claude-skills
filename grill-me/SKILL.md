@@ -91,6 +91,12 @@ Two symptoms in an interview are not "ask a better question" problems — they a
 
 **Don't reach for either on a settled question.** A human who has already justified a constraint is not stuck; inverting it there wastes a turn and reads as contrarianism.
 
+### Driver-seat pass
+
+A third lens, distinct from the two reframers above and not subject to their "never both in one session" rule — it runs alongside inversion or concept-fan, at a different moment, because it asks a different question. The reframers attack an unexamined premise; this one asks whether the settled plan is legible and drivable by an agent.
+
+**Grill mode only, run once, after the plan's structure has settled.** Invoke `lateral driver-seat` and follow its workflow. The plan under interview is the human's own document, so [DRIVER-SEAT.md](DRIVER-SEAT.md)'s contract puts this pass in shape B: no edit — emit the changes as a numbered slate, one row per change (what moves, where, why, in the plan's own vocabulary), closing with: "Type `go` to apply every row, or answer per row (`1 apply, 3 skip`)." The slate is the interview's next message, waiting on the human like every other question in this pass. Apply only the accepted rows, once the reply arrives, then continue the interview from there.
+
 ## Domain design lenses
 
 If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_detect.md`](../_detect.md); if `../ref-<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface

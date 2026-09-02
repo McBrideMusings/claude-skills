@@ -27,7 +27,7 @@ root=$(git rev-parse --show-toplevel) && cd "$root" && {
 
 | Aspect | Condition |
 |---|---|
-| `architecture`, `interface-safety`, `security`, `product`, `layout` | always |
+| `architecture`, `interface-safety`, `agent-ergonomics` (runs `lateral driver-seat`), `security`, `product`, `layout` | always |
 | `tests` | always — an absent suite is the lead finding |
 | `claude-md` | `claude-md=` non-empty |
 | `gui` | a UI surface in the tree — components, stylesheets, a page, or a TUI |
