@@ -50,7 +50,7 @@ generated `implement-<id>.js` directly, and never point `scriptPath` at
 
 **Why staged and not one long agent.** Passes that ran as a single agent averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend** in a measured day. The cost was never the code — it was one context that grew all pass and was re-read every turn. `implement.js` runs one `agent()` per stage, each starting fresh and handing the next a small validated object.
 
-**Editing this file does not change what a pass does.** Stage prompts live in `implement.js`; rules binding every stage live in [`STAGE-RULES.md`](STAGE-RULES.md) — including the Bash command rules, and the two that protect the saving above: no stage runs a build or test itself (that goes through `build-runner`), and no stage reads a screenshot (that goes through `screenshot-checker`). Raw build output was the largest single source of growth inside a pass; images were 84% of all tool-result bytes.
+**Editing this file does not change what a pass does.** Stage prompts live in `implement.js`; rules binding every stage live in [`STAGE-RULES.md`](STAGE-RULES.md) — including the Bash command rules, and the two that protect the saving above: a stage runs its own build or test but must bound the output (`2>&1 | tail -40`), and no stage reads a screenshot. Raw build output was the largest single source of growth inside a pass; images were 84% of all tool-result bytes. Neither goes through a `build-runner` or `screenshot-checker` subagent — a stage cannot spawn one at all (tested 2026-09-01, see below).
 
 `tools/tests/implement-workflow.test.sh` and `skills/implement/implement.test.mjs` are what hold the script to its contract. Run both after editing it.
 
