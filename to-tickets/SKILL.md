@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: "The path from conversation to filed work: synthesize a spec, get it approved, slice it into vertical-slice tracer-bullet tickets, publish to the repo's issue backend (beads or GitHub). The single owner of spec/PRD generation. Classifies slices as HITL or AFK."
+description: "The path from conversation to filed work: synthesize a spec, get it approved, slice it into vertical-slice tracer-bullet tickets, publish to the repo's issue backend (beads or GitHub). The single owner of spec synthesis. Classifies slices as HITL or AFK."
 ---
 
 # To Tickets
@@ -9,7 +9,7 @@ Break a plan into independently-grabbable tickets using **vertical slices** (tra
 
 **The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that.
 
-**This skill is the single owner of spec/PRD generation.** `docs`, `grill-me`, `gui` and `iron-out` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; a PRD is a by-product of this run (Phase 03), not a prerequisite for it.
+**This skill is the single owner of spec synthesis.** `docs`, `grill-me`, `gui` and `iron-out` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; the spec is a transitory by-product of this run (Phase 03), not a committed document and not a prerequisite for it.
 
 **Issue backend:** resolve once by invoking `issues` and running its detection step, then hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
 
@@ -24,8 +24,7 @@ This skill writes two files, both disposable, both under `/private/tmp/claude/<r
 
 **Both are transitory.** They exist to produce the tickets and die with the tmp sweep; the
 tickets carry the durable content forward. Never write either into the repo on your own
-initiative — the one exception is the `docs/PRD.md` copy in Phase 03, which only happens when
-the user asks for it.
+initiative.
 
 Draft slices to `/private/tmp/claude/<repo-slug>/to-tickets.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
 
@@ -94,18 +93,8 @@ what they can read in chat, never a file they'd have to open:
 
 Iterate on the spec until approved. Only then continue.
 
-#### Committing the spec as `docs/PRD.md`
-
-The spec is transitory by default — it exists to produce the tickets. Copy it into the repo
-only when the user asks, or when a `docs/PRD.md` stub already exists (a `/docs` or `/bootstrap`
-run creates one), in which case offer once and don't insist:
-
-> *"There's an empty `docs/PRD.md` in this repo — want this spec written there too?"*
-
-If they say yes and `docs/PRD.md` already holds substantive content, ask which: **(a)**
-overwrite, **(b)** append a new section, **(c)** write `docs/PRD-{slug}.md` for a
-feature-scoped spec. If there's no `docs/` directory, create it, and mention that `/docs` can
-wire the file into a VitePress site.
+The approved spec is not committed to a file — it lives in the epic issue's body on the
+tracker (Phase 06), and the scratch `spec.md` dies with the tmp sweep.
 
 ### Phase 04 — Draft vertical slices
 

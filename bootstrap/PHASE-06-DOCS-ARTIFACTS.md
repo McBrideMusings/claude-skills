@@ -18,10 +18,9 @@ a PRD nor a roadmap is created here, and adding one back needs an argument that 
 
 Their owners already handle the missing-file case:
 
-- **A PRD is `to-tickets`' output**, and that skill declares itself the single owner of spec
-  and PRD generation. It writes one when a spec has been synthesized and the user asks for it
-  committed — from real conversation, not from a template. Creating an empty `docs/PRD.md`
-  here does nothing but trigger that skill's offer to fill it, which it makes anyway.
+- **A spec is `to-tickets`' output**, and that skill declares itself the single owner of spec
+  synthesis. A synthesized spec lives in the tracker's epic issue body (its Phase 06), never
+  in a file — no PRD is ever written.
 - **A roadmap is the issue tracker's job.** Phase 05 runs before this one precisely so that
   when a tracker exists, the ladder lives there as epics and dependency edges — queryable,
   ordered, and closed as work lands. `bd ready` cannot go stale; a markdown list of intentions

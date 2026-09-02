@@ -1,14 +1,13 @@
 # Spec template
 
-The shape of the spec `to-tickets` Phase 03 synthesizes before slicing. Normally written to
-scratch and thrown away; optionally copied to `docs/PRD.md` when the repo wants a committed
-product doc.
+The shape of the spec `to-tickets` Phase 03 synthesizes before slicing. It is written to
+scratch and thrown away; its text becomes the epic issue body published in Phase 06.
 
 Every section is required. Leave a one-line `TBD — open question` placeholder only if the
 conversation truly doesn't cover it.
 
 ```md
-# {Project} PRD
+# {Project} Spec
 
 ## Problem Statement
 {The problem from the user's perspective. One paragraph.}
