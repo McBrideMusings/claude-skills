@@ -322,6 +322,18 @@ const greenP = promptRun.prompts.find((x) => x.phase === 'Green').prompt
 check('the Green prompt forbids advancing the branch itself', greenP.includes('do not advance the branch yourself'), true)
 check('  ...and names a later stage as the only one that does', /A later stage is the only one that does that/.test(greenP), true)
 
+// 18b. cc-5b8: a stage agent has no `Agent` tool and cannot spawn a
+//      subagent, so neither `build-runner` nor `screenshot-checker` is
+//      reachable from inside a stage. The Green prompt must run the build
+//      itself with output bounded rather than naming a subagent to spawn,
+//      and the Verify prompt must not tell the agent to dispatch one for a
+//      screenshot either — this is what stops the unreachable instruction
+//      from being restored.
+check('the Green prompt names no build-runner subagent', greenP.includes('build-runner'), false)
+check('  ...and bounds build output itself', greenP.includes('tail -40'), true)
+const verifyP = promptRun.prompts.find((x) => x.phase === 'Verify').prompt
+check('the Verify prompt names no screenshot-checker subagent', verifyP.includes('screenshot-checker'), false)
+
 // 19. Round 1 deleted the commit sentinel and moved the whole "did a stage
 //     commit early" invariant onto Verify's `tree_clean` check — but nothing
 //     exercised that check, so a reversal of the halt left every test above

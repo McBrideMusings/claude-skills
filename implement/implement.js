@@ -24,8 +24,16 @@ export const meta = {
 // every turn.
 //
 // Each stage below starts fresh and hands the next one a small validated
-// object. Exploration output dies at the end of Locate; build logs never
-// enter any context at all (see the Green stage).
+// object. Exploration output dies at the end of Locate; build logs are
+// bounded to their last ~40 lines before they enter any context (see the
+// Green stage).
+//
+// Tested 2026-09-02: a stage agent has no `Agent` tool and `ToolSearch`
+// cannot reach one, so no stage can spawn a subagent. That is why the Green
+// prompt below tells the stage to run the build itself behind `| tail -40`
+// instead of naming `build-runner`, why Verify forbids reading a screenshot
+// instead of naming `screenshot-checker`, and why STAGE-RULES.md says the
+// same. Do not restore any of the three.
 //
 // Each stage prompt below is the whole of that stage's brief.
 //
@@ -597,9 +605,9 @@ if (!edit.touched || !edit.touched.length) {
 // --- Green -----------------------------------------------------------------
 // The one stage that genuinely needs continuity across attempts, so it stays a
 // single agent. Its growth was never the code — it was raw build output
-// accumulating, thousands of lines per attempt, none of it ever leaving. It is
-// forbidden from running the build itself; `build-runner` absorbs the log and
-// hands back only failures.
+// accumulating, thousands of lines per attempt, none of it ever leaving. A
+// stage cannot spawn a subagent, so it runs the build itself, with the output
+// always truncated before it lands in context.
 
 phase('Green')
 
@@ -612,13 +620,9 @@ Files changed by the previous stage: ${edit.touched.join(', ')}
 ${plan.build_command ? `Build command: \`${plan.build_command}\`` : 'Work out the build command from the repo.'}
 ${plan.test_command ? `Test command: \`${plan.test_command}\`` : ''}
 
-⛔ **You must not run the build or the test suite yourself.** Every build, test, lint and typecheck run goes through the \`build-runner\` subagent, which returns only the failures. Raw build output is the single largest source of context growth in this stage and it must never land here.
+⛔ **Run the build and test suite yourself, in the foreground, and always bound the output.** Raw build output is the single largest source of context growth in this stage, so pipe every run — \`<cmd> 2>&1 | tail -40\` (add \`| grep -E 'error|FAIL' | head -40\` first when the runner is chatty) — never let the full log land here. Pass \`timeout\` explicitly (up to 600000) and never background the run.
 
-**Spawn it with the Agent tool** — \`Agent({ subagent_type: "build-runner", description: "...", prompt: "..." })\` — a fresh one each attempt. It is a subagent type you CREATE, not a running agent you address: it will never appear in \`ListAgents\`, and \`SendMessage\` to it always fails. Hunting for it there and halting when it is absent is the observed failure this sentence exists to prevent.
-
-**If the Agent tool is genuinely unavailable to you, run the commands yourself in the foreground and carry on.** Pass \`timeout\` explicitly (up to 600000) and never background them. Letting raw output into your own context is a cost; halting the whole pass over an instruction you cannot follow is a total loss. Note in \`remaining\` that you ran them directly.
-
-Loop: spawn build-runner → read the failures → fix them → spawn again. Stop when it reports \`ok: true\`, or after 6 attempts with no reduction in the error count — in that case set \`green: false\` and list what is still failing rather than continuing to churn.
+Loop: run the command → read the tail → fix what it names → run it again. Stop when it passes clean, or after 6 attempts with no reduction in the error count — in that case set \`green: false\` and list what is still failing rather than continuing to churn.
 
 Record any file you had to touch beyond the previous stage's list in \`extra_files_touched\`.
 
@@ -781,7 +785,7 @@ Item: ${item.id} — ${item.title}
 ${item.acceptance && item.acceptance.length ? `Acceptance criteria:\n${item.acceptance.map((x) => `- ${x}`).join('\n')}` : 'No acceptance criteria were written down; verify the behaviour the item describes.'}
 Files changed: ${[...edit.touched, ...(green.extra_files_touched || [])].join(', ')}
 
-If verification needs a screenshot, dispatch the \`screenshot-checker\` subagent rather than reading the image here.${
+**Do not read a screenshot into this context — a stage cannot delegate that to another agent.** Prove the result from text the surface already produces: logs, exit codes, a DOM or text dump. If an image genuinely must be captured, save it to a path and assert on it via text or exit code, naming the path in \`evidence\` rather than reading the image here.${
   a.constraints
     ? `
 

@@ -8,10 +8,10 @@ Your prompt names the work and the schema names the answer. Returning that objec
 
 ## Two rules the harness depends on
 
-- **Never run a build, test, lint or typecheck directly.** Spawn the `build-runner` subagent with the Agent tool — `Agent({ subagent_type: "build-runner", … })` — which returns only the failures. Raw build output is the largest single source of context growth in a pass. `build-runner` is a subagent type you CREATE, not a running agent you address: it never appears in `ListAgents`, and `SendMessage` to it always fails.
-- **Never read a screenshot to check something.** Spawn `screenshot-checker` and ask it the question. Images were 84% of all tool-result bytes across a measured day, and an image stays in context for every turn after it lands.
+A stage agent has no `Agent` tool — `ToolSearch` cannot reach one either — so it cannot spawn a subagent. `build-runner` and `screenshot-checker` exist as subagent types elsewhere in this project, but a workflow stage cannot address them: do not go hunting for a way to reach them, and do not restore an instruction to spawn them.
 
-**When the session forbids subagents, it wins.** Some sessions carry a harness-injected "do not call the Agent tool unless the user requested it" instruction, which cannot be edited from this repo. Fall back to running the command yourself in the foreground with an explicit `timeout` (up to 600000), never backgrounded, and truncate — `… 2>&1 | tail -40`. Letting raw output into your context is a cost; halting a stage over an instruction you cannot follow is a total loss. Say in your returned object that you ran it directly.
+- **Run a build, test, lint or typecheck yourself, in the foreground, and always bound the output.** Use an explicit `timeout` (up to 600000), never background it, and pipe — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the runner is chatty). Raw build output is the largest single source of context growth in a pass; the tail is the mitigation, not a subagent. Say in your returned object that you ran it directly.
+- **Never read a screenshot into this context.** There is no reachable way to hand one to another agent, so prove the result from text instead — logs, exit codes, a DOM or text dump the app already emits. Images were 84% of all tool-result bytes across a measured day, and an image stays in context for every turn after it lands.
 
 ---
 
