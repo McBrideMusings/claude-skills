@@ -155,10 +155,35 @@ because they are detection-time decisions, not usage-time ones:
   either is destroyed by the next pull, silently.** `bd update <id> --description "…"` followed
   by `bd github sync --pull-only` reported `0 created, 1 updated` and left GitHub's body in
   place; the local text was gone with no warning and no conflict. So a mirrored bead is a
-  read-model for those fields: change them with `gh issue edit` and pull. Priority,
-  dependencies, and any bead with **no** `external_ref` are yours to edit freely — a pull has
-  no path that touches them. Status is safe from either side; closing on GitHub propagates
-  down, setting `status: closed` and `closed_at`.
+  read-model for those fields: change them with `gh issue edit` and pull. Status is safe from
+  either side; closing on GitHub propagates down, setting `status: closed` and `closed_at`.
+
+- **⛔ A pull also overwrites `labels`, `issue_type` and `priority` — not just title and
+  description.** GitHub holds no type or priority, so a pull resets them to defaults and
+  replaces the bead's label set with GitHub's. Measured on `bd 1.2.x` across seven mirrored
+  beads: after `gh issue edit` + `bd github sync --pull-only --issues <id>`, every `area:`
+  label was gone (two beads came back carrying only GitHub's stale `bug`, one carrying
+  nothing), two beads had the wrong `issue_type` and three the wrong `priority`. No warning,
+  no conflict. Only dependencies, parent, and beads with **no** `external_ref` survive a pull.
+
+  So the edit-on-GitHub-then-pull loop is lossy for every field GitHub cannot hold. Two ways
+  to live with it, and the repo should pick one:
+
+  - **Make GitHub carry the label set** (create the `area:`/`human` labels there and apply
+    them with `gh`), so a pull rewrites labels with the same values. Type and priority still
+    reset on every pull and must be re-applied after — keep the intended values in a file.
+  - **Never pull.** Treat GitHub as a write-only mirror: edit in beads, push, and accept that
+    a change made in the GitHub UI does not come back.
+
+- **⛔ `bd github sync --push-only` invents its own labels and pushes no `area:` label.**
+  Measured on `bd 1.2.x`: pushing one bead carrying `area:perf`, `area:reliability` created
+  `type::bug` and `priority::medium` **in the repo**, applied both to the issue, pushed none
+  of the `area:` labels, and left the issue's stale labels in place. Those two restate
+  `issue_type` and `priority`, which [`labels.md`](labels.md) forbids as second copies of a
+  tracker field, and `::` is a third prefix scheme on top of `area:`/`platform:` and beads'
+  own `mode:`/`patrol:`. There is no config key to disable it. **Reconcile GitHub labels with
+  `gh`, never with a push**, and if a push does run, delete the two `::` labels repo-wide
+  afterwards (`gh label delete` removes a label from every issue in one call).
 
 - **A bare `--pull-only` can silently miss an upstream body edit.** After `gh issue edit`, four
   consecutive bare `bd github sync --pull-only` runs — one of them with `--prefer-github` —
