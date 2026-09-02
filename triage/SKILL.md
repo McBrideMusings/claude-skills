@@ -201,7 +201,7 @@ Why: <one sentence>
 Append this prompt:
 
 ```
-**1. Which should I start on?** Answer `1A`, or tell me something else.
+**1. Which should I start on?** Answer `1A`, or type `go` to take my pick. Add `skip` to a row to decline just it, or tell me something else.
 
 1A. <option>
 1B. <option>
@@ -216,7 +216,7 @@ Build 2–4 options, lettered under question 1 per `CLAUDE.md` §Deciding & desi
 
 Every option gets a named label in plain language; issue numbers in parens after.
 
-**Dispatch row for the top pick (1A).** 1A is an open item by definition — check the other two conditions from [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1: it doesn't carry the `human` label, and `bd ready --json` lists it (run `bd recompute-blocked` first). Both hold: append one more row to the same numbered prompt offering to dispatch 1A as an implement pass instead of working it here, per HANDOFF.md §3's slate-row shape — no new accept word, `go` takes it with the rest of the reply, a per-row `skip` declines just it. Either condition fails: add no row, and say in one line which one failed (`human`-labelled, or not in `bd ready`) so the omission isn't silent. Skip this whole check on a GitHub backend — HANDOFF.md's queries are all `bd`.
+**Dispatch row for the top pick (1A).** 1A is a group of 1–3 issues, not a single item — Phase 05 groups issues and Phase 06 ranks groups — so run HANDOFF.md §1's three conditions (open, no `human` label, listed by `bd ready --json`) per member issue, not once for 1A as a whole; run `bd recompute-blocked` once before checking any member, not per member. All members clear: append one more row to the same numbered prompt offering to dispatch the whole group, naming the members (and the count, when there's more than one), with the shape read from HANDOFF.md §2 across the members' edges rather than assumed — members with no edge between them swarm (`implement swarm <ids>`), members with an edge queue in dependency order (`implement <ids>`), and a mixed set gets both — per HANDOFF.md §3's slate-row shape: no new accept word, `go` takes it with the rest of the reply, a per-row `skip` declines just it. Some members clear and some don't: offer a row for only the cleared members, named, and add one line saying which members were held back and which of the three conditions each failed. No member clears: add no row, same one-line non-silent explanation naming which condition failed for each. A single-issue 1A is just the one-member case of this same rule — no separate branch for it. Skip this whole check on a GitHub backend — HANDOFF.md's queries are all `bd`.
 
 Wait for the reply (a number or a free-form override) before implementing.
 
