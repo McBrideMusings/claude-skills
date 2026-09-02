@@ -392,5 +392,62 @@ const minorFinding = await run(BASE, {
 check('a minor review finding reports no blockers', minorFinding.result.blockers, [])
 check('  ...and reports ok', minorFinding.result.ok, true)
 
+// The script owns followups for review findings, not Wrap: a major finding
+// must never reach `followups`, however Wrap's own stub behaves, and Wrap
+// must never even be shown the major finding's text.
+const mixedFindings = await run(BASE, {
+  Review: {
+    reviewed: true,
+    findings: [
+      { file: 'a.ts', line: 45, severity: 'major', summary: 'title sanitization truncates mid-escape' },
+      { file: 'a.ts', line: 12, severity: 'minor', summary: 'could be a one-liner' },
+    ],
+    files_reviewed: ['a.ts'],
+  },
+  Wrap: { ...HAPPY.Wrap, followups: [] },
+})
+check(
+  'the minor finding reaches followups verbatim',
+  mixedFindings.result.followups.includes('minor — a.ts:12 — could be a one-liner'),
+  true,
+)
+check(
+  'no followup row mentions the major finding',
+  mixedFindings.result.followups.some((f) => f.includes('title sanitization truncates mid-escape')),
+  false,
+)
+check(
+  '  ...and blockers still mentions the major finding',
+  /major finding/.test(mixedFindings.result.blockers.join(' ')),
+  true,
+)
+const mixedWrapPrompt = mixedFindings.prompts.find((p) => p.phase === 'Wrap').prompt
+check(
+  '  ...and the Wrap prompt never contains the major finding text',
+  mixedWrapPrompt.includes('title sanitization truncates mid-escape'),
+  false,
+)
+
+// Wrap can still invent or echo a major/blocking-labelled row on its own —
+// belt-and-braces: a stray one is dropped rather than trusted, while a plain
+// observation from Wrap survives untouched.
+const wrapPollution = await run(BASE, {
+  Review: { reviewed: true, findings: [], files_reviewed: ['a.ts'] },
+  Wrap: {
+    ...HAPPY.Wrap,
+    followups: ['major — a.ts:45 — title sanitization truncates mid-escape', 'noticed the README is stale'],
+  },
+})
+check(
+  "a Wrap-invented 'major —' row is dropped",
+  wrapPollution.result.followups.some((f) => f.startsWith('major —')),
+  false,
+)
+check(
+  "  ...but Wrap's plain observation survives",
+  wrapPollution.result.followups.includes('noticed the README is stale'),
+  true,
+)
+
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)

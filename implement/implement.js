@@ -718,6 +718,7 @@ if (!review || !review.reviewed) {
 
 const blockingFindings = (review.findings || []).filter((f) => f.severity === 'blocking')
 const majorFindings = (review.findings || []).filter((f) => f.severity === 'major')
+const minorFindings = (review.findings || []).filter((f) => f.severity === 'minor')
 log(`review: ${review.findings.length} findings (${blockingFindings.length} blocking, ${majorFindings.length} major) over ${(review.files_reviewed || []).length} files`)
 
 // --- Verify ----------------------------------------------------------------
@@ -880,9 +881,9 @@ Files: ${[...edit.touched, ...(green.extra_files_touched || [])].join(', ')}
 Verification: ${verdict.verdict}${verdict.evidence ? ` — ${verdict.evidence}` : ''}
 ${edit.notes && edit.notes.length ? `Notes from implementation:\n${edit.notes.map((n) => `- ${n}`).join('\n')}` : ''}
 ${
-  review.findings.length
-    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here):\n${review.findings.map((f) => `- [${f.severity}] ${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}`).join('\n')}\nPut only the \`minor\` findings into \`followups\`, verbatim, severity included. \`blocking\` and \`major\` findings are gated by the orchestrator, not by you — do NOT file them as followups.`
-    : 'Code review of this diff: already done, no findings. Do NOT run another review.'
+  minorFindings.length
+    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here) found ${minorFindings.length} minor finding(s):\n${minorFindings.map((f) => `- [minor] ${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}`).join('\n')}\nThe orchestrator files these itself; \`followups\` in your response is for your own observations only, so there is no reason to copy these rows into it. \`blocking\` and \`major\` findings are gated by the orchestrator, not by you — you were not shown them, and do NOT file anything under those labels as followups.`
+    : 'Code review of this diff: already done. Do NOT run another review.'
 }`
 
 // This stage is written as its own text, NOT as wrap-up's SKILL.md with clauses
@@ -944,6 +945,19 @@ if (majorFindings.length) blockers.push(`code review returned ${majorFindings.le
 
 if (blockers.length) log(`not ready to land: ${blockers.join('; ')}`)
 
+// followups for review findings are built here, not by Wrap: Wrap was never
+// shown the blocking/major rows (see the WORK template above), but it still
+// might invent or echo one from context, so a stray row bearing that label is
+// stripped rather than trusted.
+const reviewFollowups = minorFindings.map((f) => `minor — ${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}`)
+const nonMinorSummaries = [...blockingFindings, ...majorFindings].map((f) => f.summary)
+const wrapFollowups = (landed.followups || []).filter((row) => {
+  if (/^\s*[-[]*\s*(blocking|major)\b/i.test(row)) return false
+  if (reviewFollowups.includes(row)) return false
+  if (nonMinorSummaries.some((summary) => summary && row.includes(summary))) return false
+  return true
+})
+
 return {
   ok: true,
   item: item.id,
@@ -965,6 +979,6 @@ return {
   // Empty means nothing this pass can see stands in the way of landing. It is
   // never absent: a caller must be able to tell "clear" from "nobody looked".
   blockers,
-  followups: landed.followups || [],
+  followups: [...reviewFollowups, ...wrapFollowups],
   summary: landed.summary || edit.summary,
 }
