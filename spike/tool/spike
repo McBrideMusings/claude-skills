@@ -164,6 +164,15 @@ WIDGETS = collections.OrderedDict([
         kinds=frozenset({"prototype"}), css="viewport.css", js="viewport.js",
         html=None, stamp=False,
         desc="one device frame with real chrome; named by --device")),
+    # Loads after tweaks.js so the fragment's registrations have drained and the key list
+    # is real; renders nothing for a spike that declared no tweaks. On for every kind that
+    # can have a panel, because a spike you tuned and cannot get the numbers out of is a
+    # spike whose finding died with the tab.
+    ("settings", Widget(
+        kinds=ALL_KINDS, css=None, js="settings.js", html=None, stamp=False,
+        desc="Settings group in the panel: copy every tweak value to the clipboard, "
+             "paste them back, reset to defaults. Reads ./tweaks.json at load when the "
+             "page is served, so an edited file sets every control's starting value")),
 ])
 
 

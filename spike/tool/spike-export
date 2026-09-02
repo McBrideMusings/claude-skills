@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
 """spike-export — hand a prototype to someone, or to your own phone.
 
-Writes a self-contained directory holding three things:
+Writes a self-contained directory holding:
 
+  index.html      routes the reader to the right build: a desktop gets the framed
+                  one, a phone gets the bare one. One link, correct either way.
   <slug>.html     the device-framed build, for looking at on this Mac
-  index.html      the same prototype with no device frame and no Tweaks panel,
+  bare.html       the same prototype with no device frame and no Tweaks panel,
                   so a phone renders it as the real interface
   serve.command   double-clickable on macOS: opens Terminal, starts a LAN web
                   server, and prints the URL to type into the phone
+  RUN.bat         the same on Windows, using PowerShell and .NET, which ship with
+                  the OS — nothing to download and nothing to install
 
 The bare build is the point. A phone showing a phone frame inside a phone is
 useless for judging whether a design works in the hand, and the Tweaks panel
-covers the thing being judged.
+covers the thing being judged. Handing over both files and saying which to open
+is a step that gets skipped, which is what index.html is for.
 """
 import argparse
 import datetime
@@ -43,24 +48,28 @@ Exported __DATE__ for the __DEVICE__ frame.
 
 | File | What it is |
 | --- | --- |
+| `index.html` | Sends you to the right one of the two below. Open this if you are unsure. |
 | `__SLUG__.html` | The framed build. Double-click it. Opens in your browser and draws the __DEVICE__ frame around the design, so you are judging it at the right size. |
-| `index.html` | The same prototype with **no frame and no controls panel** — just the interface. This is what a phone should load. Opening it directly on a desktop shows it at whatever size the window happens to be. |
-| `serve.command` | Double-click to put `index.html` on your local network so a phone can open it. |
+| `bare.html` | The same prototype with **no frame and no controls panel** — just the interface. This is what a phone should load. |
+| `serve.command` | **Mac:** double-click to put this on your local network so a phone can open it. |
+| `RUN.bat` | **Windows:** the same. |
 
-Both HTML files are self-contained: no internet, no install, no assets alongside
+Every HTML file is self-contained: no internet, no install, no assets alongside
 them. You can email one, drop it in Slack, or open it on a plane.
 
 ## Looking at it on a phone
 
-1. Double-click **`serve.command`**. A Terminal window opens.
+1. Double-click **`serve.command`** (Mac) or **`RUN.bat`** (Windows).
 2. It prints two addresses. Type the `http://192.168.…` one into your phone's browser.
-3. Your phone and this Mac must be on the **same Wi-Fi**.
-4. Leave the Terminal window open while you use it. Close it, or press `Ctrl-C`, to stop.
+3. Your phone and this computer must be on the **same Wi-Fi**.
+4. Leave that window open while you use it. Close it to stop.
 
-If port 8080 is taken, run it from Terminal as `PORT=9000 ./serve.command`.
+Neither launcher installs anything. On Windows the first run may show *"Windows
+protected your PC"* — click **More info → Run anyway**. That is Windows being
+cautious about a file that came from somewhere else.
 
-The server needs nothing installed. It uses whichever of `python3`, `ruby` or
-`nc` your Mac has, and prints which one it picked.
+Both pick their own free port and print it. To force one:
+`PORT=8850 ./serve.command`, or `set PORT=8850` before `RUN.bat`.
 
 ## Using the framed build
 
@@ -92,7 +101,31 @@ SERVE = """#!/bin/bash
 # prompts instead of running, so it is probed rather than assumed; ruby is
 # deprecated and may be gone; /usr/bin/nc ships on every macOS and is the floor.
 cd "$(dirname "$0")" || exit 1
-PORT="${PORT:-8080}"
+clear
+
+# NOT 8080. Every dev server on a Mac wants that port, and python's http.server sets
+# SO_REUSEADDR — so binding 0.0.0.0:8080 SUCCEEDS while another process already owns
+# 127.0.0.1:8080. It prints "Serving HTTP", and the browser reaches that other app.
+# The symptom is someone else's login page where the prototype should be, with a
+# server that says it started. So: refuse any port something already answers on.
+taken() { /usr/bin/nc -z -G 1 127.0.0.1 "$1" >/dev/null 2>&1; }
+
+if [ -n "$PORT" ]; then
+  if taken "$PORT"; then
+    printf '\\n  Port %s is already in use by something else. Pick another:\\n' "$PORT"
+    printf '      PORT=8795 ./serve.command\\n\\n'
+    exit 1
+  fi
+else
+  for p in 8791 8792 8793 8794 8795 8796 8797 8798 8799; do
+    if ! taken "$p"; then PORT="$p"; break; fi
+  done
+  if [ -z "$PORT" ]; then
+    printf '\\n  Every port from 8791 to 8799 is in use. Free one, or set PORT.\\n\\n'
+    exit 1
+  fi
+fi
+
 IP="$(ipconfig getifaddr en0 2>/dev/null \\
    || ipconfig getifaddr en1 2>/dev/null \\
    || echo 127.0.0.1)"
@@ -113,10 +146,11 @@ if ruby -e '' >/dev/null 2>&1; then
   exec ruby -run -e httpd . -p "$PORT" -b 0.0.0.0
 fi
 
-# Floor: one file, one connection at a time, using only /usr/bin/nc. The page is
-# hermetic, so answering every path with index.html is a complete server.
-echo "  [serving with nc]"
-LEN="$(wc -c < index.html | tr -d ' ')"
+# Floor: one file, one connection at a time, using only /usr/bin/nc. It cannot route,
+# so it answers every path with the BARE build — the phone case, which is the only one
+# that needs a server at all. The framed build is a double-click away on this Mac.
+echo "  [serving with nc — bare build only]"
+LEN="$(wc -c < bare.html | tr -d ' ')"
 while :; do
   {
     printf 'HTTP/1.1 200 OK\\r\\n'
@@ -124,9 +158,174 @@ while :; do
     printf 'Content-Length: %s\\r\\n' "$LEN"
     printf 'Cache-Control: no-store\\r\\n'
     printf 'Connection: close\\r\\n\\r\\n'
-    cat index.html
+    cat bare.html
   } | nc -l "$PORT" >/dev/null 2>&1 || sleep 1
 done
+"""
+
+
+# A .bat, because it is the only thing on Windows that runs when double-clicked. The
+# server is System.Net.HttpListener driven by PowerShell 5.1 — both ship with every
+# Windows 10 and 11, so there is nothing to download and nothing to install. The whole
+# PowerShell program lives after the #POWERSHELL# marker in this same file and is read
+# back off its own path, so there is one file to hand over.
+#
+# Two things in it are load-bearing and look odd:
+#   - the marker is built from [char]35 rather than written literally, so the command
+#     line does not plant a second copy of it ABOVE the real one for IndexOf to find.
+#   - the file is written with CRLF. cmd.exe mishandles a .bat with bare LF endings.
+WINDOWS_BAT = """@echo off
+setlocal
+set "SPIKE_ROOT=%~dp0"
+set "SPIKE_TITLE=__TITLE__"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$c=[IO.File]::ReadAllText('%~f0'); $i=$c.IndexOf([char]35+'POWERSHELL'+[char]35); Invoke-Expression $c.Substring($i+13)"
+if errorlevel 1 (
+  echo.
+  echo   It did not start. Send whatever is printed above to whoever gave you this.
+  echo.
+  pause
+)
+endlocal
+exit /b
+#POWERSHELL#
+$ErrorActionPreference = 'Stop'
+$root  = (Resolve-Path $env:SPIKE_ROOT).Path.TrimEnd('\\')
+$title = $env:SPIKE_TITLE
+
+$mime = @{
+  '.html'='text/html; charset=utf-8'; '.htm'='text/html; charset=utf-8';
+  '.js'='application/javascript'; '.css'='text/css'; '.json'='application/json';
+  '.png'='image/png'; '.jpg'='image/jpeg'; '.jpeg'='image/jpeg';
+  '.gif'='image/gif'; '.svg'='image/svg+xml'; '.webp'='image/webp';
+  '.glb'='model/gltf-binary'; '.gltf'='model/gltf+json';
+  '.txt'='text/plain; charset=utf-8'; '.md'='text/plain; charset=utf-8';
+  '.woff'='font/woff'; '.woff2'='font/woff2'; '.ico'='image/x-icon'
+}
+
+if (-not (Test-Path (Join-Path $root 'index.html'))) {
+  Write-Host ''
+  Write-Host '  index.html is missing. Unzip the WHOLE folder and run this from inside it.'
+  Write-Host ''
+  Read-Host '  Press Enter to close'
+  exit 1
+}
+
+function Test-PortFree([int]$p) {
+  try {
+    $t = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $p)
+    $t.Start(); $t.Stop(); return $true
+  } catch { return $false }
+}
+
+$port = 0
+if ($env:PORT) {
+  if (Test-PortFree ([int]$env:PORT)) { $port = [int]$env:PORT }
+  else { Write-Host ''; Write-Host "  Port $env:PORT is already in use."; Write-Host ''; Read-Host '  Press Enter to close'; exit 1 }
+} else {
+  foreach ($p in 8791..8799) { if (Test-PortFree $p) { $port = $p; break } }
+}
+if ($port -eq 0) {
+  Write-Host ''; Write-Host '  Every port from 8791 to 8799 is in use.'; Write-Host ''
+  Read-Host '  Press Enter to close'; exit 1
+}
+
+# http://+:port/ reaches the phone but Windows reserves it for administrators.
+# Try it, and drop to localhost-only rather than demanding elevation — looking
+# at it on this PC is the common case and must never need a UAC prompt.
+$listener = New-Object System.Net.HttpListener
+$lan = $true
+try {
+  $listener.Prefixes.Add("http://+:$port/")
+  $listener.Start()
+} catch {
+  $lan = $false
+  $listener = New-Object System.Net.HttpListener
+  $listener.Prefixes.Add("http://localhost:$port/")
+  try { $listener.Start() } catch {
+    Write-Host ''; Write-Host "  Could not open port $port : $($_.Exception.Message)"; Write-Host ''
+    Read-Host '  Press Enter to close'; exit 1
+  }
+}
+
+$url = "http://localhost:$port/"
+Clear-Host
+Write-Host ''
+Write-Host "  $title"
+Write-Host ''
+Write-Host "  On this PC:   $url"
+if ($lan) {
+  # Get-NetIPAddress is a Windows cmdlet. Not being able to list the addresses
+  # must never take the server down with it — the PC URL above still works.
+  try {
+    foreach ($ip in (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+                     Where-Object { $_.IPAddress -notmatch '^(127\\.|169\\.254\\.)' })) {
+      Write-Host "  On a phone:   http://$($ip.IPAddress):$port/   (same Wi-Fi)"
+    }
+  } catch {
+    Write-Host '  On a phone:   use this PC''s IP address with the port above'
+  }
+} else {
+  Write-Host '  On a phone:   run this as administrator (right-click > Run as administrator)'
+}
+Write-Host ''
+Write-Host '  Close this window to stop.'
+Write-Host ''
+Start-Process $url
+
+try {
+  while ($listener.IsListening) {
+    $ctx = $listener.GetContext()
+    $req = $ctx.Request; $res = $ctx.Response
+    try {
+      $rel = [Uri]::UnescapeDataString($req.Url.AbsolutePath).TrimStart('/')
+      if ($rel -eq '') { $rel = 'index.html' }
+      $rel = $rel.Replace('/', '\\')
+      $full = [IO.Path]::GetFullPath((Join-Path $root $rel))
+
+      # Nothing outside this folder, ever.
+      if (-not $full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) -or
+          -not (Test-Path $full -PathType Leaf)) {
+        $res.StatusCode = 404
+        $res.ContentLength64 = 0
+      } else {
+        $ext = [IO.Path]::GetExtension($full).ToLower()
+        $res.ContentType = $(if ($mime.ContainsKey($ext)) { $mime[$ext] } else { 'application/octet-stream' })
+        $res.Headers.Add('Cache-Control', 'no-store')
+        $bytes = [IO.File]::ReadAllBytes($full)
+        $res.ContentLength64 = $bytes.Length
+        # A page may HEAD-probe a file before fetching it, so HEAD has to answer
+        # with the headers and an empty body rather than 404.
+        if ($req.HttpMethod -ne 'HEAD') { $res.OutputStream.Write($bytes, 0, $bytes.Length) }
+      }
+    } catch {
+      $res.StatusCode = 500
+    } finally {
+      try { $res.OutputStream.Close() } catch {}
+    }
+  }
+} finally {
+  try { $listener.Stop() } catch {}
+}
+"""
+
+# One URL that lands the reader on the right build. Shipping a framed file and a bare
+# file and telling someone which to open is a step that gets skipped: the phone gets the
+# desktop frame, or the Mac gets an unframed page at whatever size the window happens to
+# be. Coarse pointer AND a narrow screen, so a desktop browser dragged narrow keeps its
+# panel rather than silently losing it.
+CHOOSER = """<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>__TITLE__</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html,body{margin:0;height:100%;background:#14161a;color:#8b93a1;
+font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+p{padding:2rem}</style></head>
+<body><p>Loading&hellip; <a href="__SLUG__.html" style="color:#7aa2f7">open the framed build</a></p>
+<script>
+  var touch = window.matchMedia('(pointer: coarse)').matches;
+  var narrow = Math.min(screen.width, screen.height) < 820;
+  location.replace(touch && narrow ? 'bare.html' : '__SLUG__.html');
+</script></body></html>
 """
 
 
@@ -169,10 +368,16 @@ def main():
         css = os.path.join(tmp, "bare.css")
         with open(css, "w", encoding="utf-8") as fh:
             fh.write(HIDE_PANEL)
-        bare = os.path.join(dest, "index.html")
+        bare = os.path.join(dest, "bare.html")
         build(fragment, bare, args.title,
               ["--picker", args.picker, "--extra-css", css,
                "--without", "viewport,checks,annotate,contrast"])
+
+    # index.html routes rather than being one of the two builds, so a single link is
+    # correct on whatever the reader opens it on.
+    chooser = os.path.join(dest, "index.html")
+    with open(chooser, "w", encoding="utf-8") as fh:
+        fh.write(CHOOSER.replace("__TITLE__", args.title).replace("__SLUG__", args.slug))
 
     with open(os.path.join(dest, "README.md"), "w", encoding="utf-8") as fh:
         fh.write(README
@@ -186,13 +391,20 @@ def main():
         fh.write(SERVE.replace("__TITLE__", args.title))
     os.chmod(script, os.stat(script).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
+    # CRLF: cmd.exe mishandles a .bat with bare LF line endings.
+    winbat = os.path.join(dest, "RUN.bat")
+    with open(winbat, "w", encoding="utf-8", newline="\r\n") as fh:
+        fh.write(WINDOWS_BAT.replace("__TITLE__", args.title))
+
     def kb(p):
         return "%.0f KB" % (os.path.getsize(p) / 1024)
 
     print(dest)
+    print("  %-20s %s   routes: desktop -> framed, phone -> bare" % ("index.html", kb(chooser)))
     print("  %-20s %s   framed (%s) — open on this Mac" % (args.slug + ".html", kb(framed), args.device))
-    print("  %-20s %s   bare, no panel — what the phone gets" % ("index.html", kb(bare)))
-    print("  %-20s %s   double-click to serve on the LAN" % ("serve.command", kb(script)))
+    print("  %-20s %s   bare, no panel — what the phone gets" % ("bare.html", kb(bare)))
+    print("  %-20s %s   macOS: double-click to serve on the LAN" % ("serve.command", kb(script)))
+    print("  %-20s %s   Windows: same, needs nothing installed" % ("RUN.bat", kb(winbat)))
     print("  %-20s %s   what it is and how to use it" % ("README.md", kb(os.path.join(dest, "README.md"))))
 
 

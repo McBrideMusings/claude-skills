@@ -510,6 +510,41 @@ html[data-at-embedded] .at-twk-pill { display: none !important; }
 .at-twk-pill[data-dragging] { cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28); }
 .at-twk-pill:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
 
+/* settings.js's fallback surfaces. Shown only when the Clipboard API is refused —
+   no permission, an insecure context, or Safari, which has no readText at all. */
+.at-twk-io-wrap {
+  position: fixed;
+  inset: 10% 6%;
+  z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--at-c-edge);
+  border-radius: 10px;
+  background: var(--at-c-panel);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+.at-twk-io-title { color: var(--at-c-ink); font-size: 13px; }
+.at-twk-io-row { display: flex; gap: 8px; justify-content: flex-end; }
+.at-twk-io {
+  flex: 1;
+  min-height: 120px;
+  padding: 8px;
+  border: 1px solid var(--at-c-edge);
+  border-radius: 6px;
+  background: var(--at-c-bg);
+  color: var(--at-c-ink);
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+  resize: none;
+}
+/* The bare copy fallback has no wrapper to position it, so it places itself. */
+textarea.at-twk-io:not(.at-twk-io-wrap textarea) {
+  position: fixed;
+  inset: 12% 8%;
+  z-index: 2147483000;
+}
+
 @media print {
-  .at-twk, .at-twk-pill { display: none !important; }
+  .at-twk, .at-twk-pill, .at-twk-io-wrap, .at-twk-io { display: none !important; }
 }

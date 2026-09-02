@@ -335,5 +335,85 @@ else
   say f "harness/tweaks.js missing"
 fi
 
+# --- the settings widget: values out of the panel and back in ----------------
+# A spike gets tuned by dragging sliders, and that tuning IS the finding. Without a
+# way out of the page it dies with the tab.
+SET="$(cd "$(dirname "$0")/.." && pwd)/harness/settings.js"
+if [ -f "$SET" ]; then
+  cat > "$WORK/twk.html" <<'EOF'
+<template data-variant="One"><div class="frame">one</div></template>
+<template data-variant="Two"><div class="frame">two</div></template>
+<script>
+  atTweaks.section('T');
+  atTweaks.add('alpha', 12, { label: 'Alpha', min: 0, max: 100, step: 1, onChange: function () {} });
+</script>
+EOF
+  "$ART" build --kind prototype --title Twk --fragment "$WORK/twk.html" \
+    --out "$WORK/twk.out.html" --device phone >/dev/null 2>&1
+  has "$WORK/twk.out.html" 'Copy settings' \
+    && say ok "settings widget ships the panel's copy action" \
+    || say f "no Copy settings action in a prototype build"
+  has "$WORK/twk.out.html" 'tweaks.json' \
+    && say ok "settings reads ./tweaks.json at load" \
+    || say f "settings never fetches tweaks.json"
+  "$ART" build --kind prototype --title Twk --fragment "$WORK/twk.html" \
+    --out "$WORK/twk.off.html" --device phone --without settings >/dev/null 2>&1
+  has "$WORK/twk.off.html" 'Copy settings' \
+    && say f "--without settings still shipped the widget" \
+    || say ok "--without settings drops it"
+  # A set inside the device frame has to move the panel the reader can SEE. Without
+  # this the slider keeps its old number while the scene moves — a half-applied
+  # state that looks like it worked.
+  grep -q 'up.atTweaks.set(key, value)' "$TW" \
+    && say ok "set forwards to the parent realm's panel" \
+    || say f "set only writes its own realm; the visible slider goes stale"
+  grep -q 'ignored.push(k)' "$TW" \
+    && say ok "apply reports keys it did not recognise" \
+    || say f "apply swallows unknown keys silently"
+else
+  say f "harness/settings.js missing"
+fi
+
+# --- what spike-export hands over -------------------------------------------
+EXP="$(cd "$(dirname "$0")/.." && pwd)/spike-export"
+if [ -x "$EXP" ]; then
+  "$EXP" --fragment "$WORK/twk.html" --slug xp --title Xp --device phone \
+    --dest "$WORK/exp" >/dev/null 2>&1
+  X="$WORK/exp/xp"
+  [ -f "$X/RUN.bat" ] && say ok "export writes a Windows launcher" \
+    || say f "no RUN.bat: half the readers get nothing"
+  [ -f "$X/bare.html" ] && [ -f "$X/index.html" ] \
+    && say ok "export separates the chooser from the bare build" \
+    || say f "bare build and chooser are not both present"
+  # index.html IS the chooser. Routing a phone to it redirects forever.
+  if grep -q "location.replace" "$X/index.html"; then
+    grep -q "'bare.html' : 'xp.html'" "$X/index.html" \
+      && say ok "chooser routes a phone to the bare build" \
+      || say f "chooser routes to the wrong file — check for a redirect loop"
+  else
+    say f "index.html does not route"
+  fi
+  # 8080 is the port every dev server on a Mac wants, and http.server's SO_REUSEADDR
+  # lets the bind SUCCEED while another process owns 127.0.0.1:8080.
+  grep -q 'PORT:-8080' "$X/serve.command" \
+    && say f "serve.command still defaults to 8080" \
+    || say ok "serve.command does not default to 8080"
+  grep -q 'taken()' "$X/serve.command" \
+    && say ok "serve.command refuses a port already answering" \
+    || say f "serve.command opens the browser without checking the port"
+  if [ -f "$X/RUN.bat" ]; then
+    # cmd.exe mishandles a .bat with bare LF endings.
+    [ "$(grep -c $'\r' "$X/RUN.bat")" -gt 0 ] \
+      && say ok "RUN.bat is written with CRLF" || say f "RUN.bat has bare LF endings"
+    # The marker must appear once. The batch line builds it from [char]35 so it does
+    # not plant a decoy copy above the real one for IndexOf to find.
+    [ "$(grep -c '#POWERSHELL#' "$X/RUN.bat")" -eq 1 ] \
+      && say ok "RUN.bat carries exactly one #POWERSHELL# marker" \
+      || say f "RUN.bat marker is duplicated; the slice starts in the wrong place"
+  fi
+else
+  say f "spike-export missing or not executable"
+fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

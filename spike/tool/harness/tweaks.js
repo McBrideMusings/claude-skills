@@ -614,7 +614,44 @@
     get: function (key) { return state[key]; },
     set: function (key, value) {
       if (handles[key]) handles[key].set(value);
+      /* A device frame is a srcdoc iframe running its own copy of this file, so it has
+         its own handles, its own state and its own (invisible) panel. Setting there moves
+         that realm and leaves the panel the reader can actually see showing the old
+         number — a half-applied state that looks like it worked. Forward to the parent,
+         which owns the visible controls and publishes back down. Guarded by a value
+         comparison rather than a flag, so a parent that syncs down cannot bounce back. */
+      try {
+        var up = window.parent;
+        if (up && up !== window && up.atTweaks && !up.atTweaks.__queue &&
+            String(up.atTweaks.get(key)) !== String(value)) {
+          up.atTweaks.set(key, value);
+        }
+      } catch (e) { /* cross-origin parent: this realm is all there is */ }
       return api;
+    },
+    /* Enough of the registry for a widget to serialise and restore the whole panel
+       without reaching into these closures. */
+    keys: function () { return Object.keys(handles); },
+    values: function () {
+      var out = {};
+      Object.keys(handles).forEach(function (k) { out[k] = state[k]; });
+      return out;
+    },
+    defaults: function () {
+      var out = {};
+      Object.keys(handles).forEach(function (k) { out[k] = defaults[k]; });
+      return out;
+    },
+    /* Applies what it recognises and reports what it did not, so a caller can tell the
+       difference between "nothing matched" and "it worked". */
+    apply: function (obj) {
+      var applied = [], ignored = [];
+      Object.keys(obj || {}).forEach(function (k) {
+        if (!handles[k]) { ignored.push(k); return; }
+        api.set(k, obj[k]);
+        applied.push(k);
+      });
+      return { applied: applied, ignored: ignored };
     }
   };
 
