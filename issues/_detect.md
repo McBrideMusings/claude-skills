@@ -75,6 +75,19 @@ read as a status code.
 
 Mirror mode does not change which verb table you read — it appends one push per write.
 
+**The disposition is beads-first, everywhere the two are paired: edit the bead, then push.**
+Not edit-on-GitHub-then-pull. A push carries title, description and status out of beads
+faithfully, so nothing is lost going that way; a pull silently resets `issue_type`, `priority`
+and the whole label set (see the ⛔ notes below), so it is for collecting a human's GitHub-UI
+edit, not for routine round-tripping. Read
+[`beads-mirror-context.md`](beads-mirror-context.md) for the working loop and the `::`-label
+cleanup a push requires.
+
+**Repos with other contributors are the unsettled exception.** Where other people file and
+edit issues — multi-contributor and freelance work — their edits exist only on GitHub, and a
+push-only posture overwrites them. That case is not decided; do not apply beads-first there
+and do not invent a rule for it.
+
 ## Stealth: beads in a repo that must not carry it
 
 Some repos get beads locally and commit none of it — work, client, and anyone else's repo.
@@ -151,12 +164,13 @@ because they are detection-time decisions, not usage-time ones:
   numeric came from their GitHub and is a read-model for title and description; hashed
   (`neutrino-a3f2`) is yours and never travels.
 
-- **⛔ On a bead with an `external_ref`, GitHub owns title and description — a local edit to
-  either is destroyed by the next pull, silently.** `bd update <id> --description "…"` followed
-  by `bd github sync --pull-only` reported `0 created, 1 updated` and left GitHub's body in
-  place; the local text was gone with no warning and no conflict. So a mirrored bead is a
-  read-model for those fields: change them with `gh issue edit` and pull. Status is safe from
-  either side; closing on GitHub propagates down, setting `status: closed` and `closed_at`.
+- **⛔ A pull overwrites the bead's title and description from GitHub, silently.** `bd update
+  <id> --description "…"` followed by `bd github sync --pull-only` reported `0 created, 1
+  updated` and left GitHub's body in place; the local text was gone with no warning and no
+  conflict. This is a reason not to pull casually — **not** a reason to author on GitHub. Under
+  the beads-first disposition you edit the bead and push, and a push writes title and
+  description out faithfully. Status is safe from either side; closing on GitHub propagates
+  down, setting `status: closed` and `closed_at`.
 
 - **⛔ A pull also overwrites `labels`, `issue_type` and `priority` — not just title and
   description.** GitHub holds no type or priority, so a pull resets them to defaults and
@@ -166,14 +180,15 @@ because they are detection-time decisions, not usage-time ones:
   nothing), two beads had the wrong `issue_type` and three the wrong `priority`. No warning,
   no conflict. Only dependencies, parent, and beads with **no** `external_ref` survive a pull.
 
-  So the edit-on-GitHub-then-pull loop is lossy for every field GitHub cannot hold. Two ways
-  to live with it, and the repo should pick one:
+  So the edit-on-GitHub-then-pull loop is lossy for every field GitHub cannot hold. This is
+  the reason the disposition is beads-first: authoring in beads and pushing never crosses this
+  path at all.
 
-  - **Make GitHub carry the label set** (create the `area:`/`human` labels there and apply
-    them with `gh`), so a pull rewrites labels with the same values. Type and priority still
-    reset on every pull and must be re-applied after — keep the intended values in a file.
-  - **Never pull.** Treat GitHub as a write-only mirror: edit in beads, push, and accept that
-    a change made in the GitHub UI does not come back.
+  When you do pull — to collect a person's GitHub-UI edit — reduce what it costs first:
+  **make GitHub carry the label set**, creating the `area:`/`human` labels there and applying
+  them with `gh issue edit`, so a pull rewrites labels with the same values instead of wiping
+  them. Type and priority have no GitHub representation and reset regardless, so scope the
+  pull with `--issues <id>` and re-apply those two afterwards.
 
 - **⛔ `bd github sync --push-only` invents its own labels and pushes no `area:` label.**
   Measured on `bd 1.2.x`: pushing one bead carrying `area:perf`, `area:reliability` created
