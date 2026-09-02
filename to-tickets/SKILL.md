@@ -203,8 +203,10 @@ run epic and overwrite an unrelated spec.
    ```bash
    gh api "repos/{owner}/{repo}/milestones" -X POST -f title="<name>"
    ```
+   Before creating, ask the user whether to set a due date (`-f due_on=<ISO8601>`). Skip it if they say no.
    These are the milestones Phase 07 assigns grouped slices to; ungrouped slices in a 2+-slice
    slate get the run milestone instead.
+   Report which milestones were reused vs newly created when done.
 
 **One-slice fallback — no epic at all.** When the slate is exactly one slice, skip this phase.
 Instead, in Phase 07, prepend the full spec text to that slice's body under a `## Spec` heading
