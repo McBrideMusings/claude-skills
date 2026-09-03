@@ -428,11 +428,20 @@ def cmd_build(args):
             die("fragment contains %s — %s. Write body content only (see CONTRACT.md)."
                 % (shown, why))
 
-    net = re.search(r"""<link\b[^>]*\bhref\s*=|@import\s+url\(|src\s*=\s*["']https?:""",
+    # Matches a literal absolute or protocol-relative URL, never a relative fetch of a
+    # sibling file the build itself writes (settings.js's own './tweaks.json' is exempt).
+    net = re.search(r"""<link\b[^>]*\bhref\s*=|@import\s+url\(|"""
+                    r"""src\s*=\s*["'](?:https?:|//)|"""
+                    r"""\bfetch\s*\(\s*["'](?:https?:|//)|"""
+                    r"""\bimport\s*\(\s*["'](?:https?:|//)|"""
+                    r"""\bnew\s+XMLHttpRequest\b""",
                     fragment, re.IGNORECASE)
     if net:
         die("fragment makes a network request (%r). Folios are hermetic: inline the CSS, "
-            "embed rasters as data: URIs, and never link a webfont." % net.group(0).strip())
+            "embed rasters as data: URIs, never link a webfont, and never fetch/XHR an "
+            "absolute or protocol-relative URL. Need real user data instead of a baked "
+            "fixture? Use <input type=\"file\"> + FileReader — see CONTRACT.md."
+            % net.group(0).strip())
 
     widgets = resolve_widgets(kind, set(split_list(args.with_)), set(split_list(args.without)))
 

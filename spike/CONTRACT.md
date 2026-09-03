@@ -41,8 +41,13 @@ frames, and none of what follows applies to it.
 
 - Plain HTML. It may include its own `<style>` and `<script>`; the tool hoists them into the single
   output file, so the result stays hermetic.
-- **Never a network request.** No `<link>`, no `@import url()`, no CDN, no webfont, no remote image.
-  A raster goes in as a `data:` URI.
+- **Never a network request.** No `<link>`, no `@import url()`, no CDN, no webfont, no remote image,
+  no `fetch`/`XMLHttpRequest`/`import()` of an absolute or protocol-relative URL. A raster goes in
+  as a `data:` URI. The build's own hermetic check (`tool/spike`) rejects all of these.
+- **Real user data beats a baked fixture, and doesn't cost hermeticity.** `<input type="file">` plus
+  `FileReader` reads the user's actual CSV, log, image, or JSON straight off their disk — no server,
+  no network request, still one file. Reach for this whenever the prototype's whole point is how it
+  handles real content, rather than writing a fixture that happens to look plausible.
 - Non-void elements closed, attributes double-quoted.
 - Real content from the first draft. No lorem ipsum, no `foo`/`bar`, no dead buttons.
 - Broad content (tables, code, wide diagrams) goes in `<div class="scroll-x">` so horizontal scrolling

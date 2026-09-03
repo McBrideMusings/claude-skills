@@ -95,3 +95,15 @@ svg .box{fill:#fff;stroke:var(--ink);stroke-width:1.5}
 .mapedge--dashed{stroke-dasharray:5 4}
 .maplabel{font-size:11px;fill:var(--ink);font-family:Helvetica,Arial,sans-serif}
 .maplabel--lbl{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;fill:var(--soft)}
+
+/* Print — an explainer is a document; ⌘P is its "downloadable file". Force the light
+   ground the design already commits to, keep panels/cards/gotchas whole across page
+   breaks, and don't let a wide SVG clip at the margin. Explainers carry no <script>
+   by contract (they're inert), so a closed depth-reveal stays closed here exactly as
+   on screen — the panel above it is written to read fine without it either way. */
+@media print{
+  html,body{background:#fff}
+  .hero{background:#fff}
+  .panel,.card,.gotcha,.compare-table{break-inside:avoid;page-break-inside:avoid}
+  svg{max-width:100%;height:auto}
+}
