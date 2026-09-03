@@ -19,15 +19,21 @@ Git history is what makes the deletion safe. Never run this on a file git can't 
 
 Which one you're rebuilding changes what belongs in it. Establish this before Phase 1.
 
-| | **Global** (`~/.claude/CLAUDE.md`) | **Project** (`<repo>/CLAUDE.md`) |
-| --- | --- | --- |
-| Holds | Voice, judgment, permission gates, git policy, how to dispatch work, environment, a knowledge map | What the project is in two lines, the commands table, where things live, project-specific conventions, domain vocabulary, gotchas that have actually bitten |
-| Never holds | Anything about one project | **Anything the global file already says** |
-| Size threshold | 4,000 words, watched by `hooks/claude-md-size-check.sh` | ~1,200 words, watched by nothing |
-| Audience | Just the user | On a collaborative repo, teammates and their agents too — so no personal preferences |
-| Structure owner | This file | `bootstrap` — defer to its layout rather than inventing a competing one |
+| | **Global** (`~/.claude/CLAUDE.md`) | **Project** (`<repo>/CLAUDE.md`) | **Local** (`<repo>/CLAUDE.local.md`) |
+| --- | --- | --- | --- |
+| Holds | Voice, judgment, permission gates, git policy, how to dispatch work, environment, a knowledge map | What the project is in two lines, the commands table, where things live, project-specific conventions, domain vocabulary, gotchas that have actually bitten | Personal calibration for this one checkout — what the user doesn't know here (`Explain until removed`), pointers into a local doc cache |
+| Never holds | Anything about one project | **Anything the global file already says** | Anything a teammate needs — shared conventions belong in the tracked project file |
+| Size threshold | 4,000 words, watched by `hooks/claude-md-size-check.sh` | ~1,200 words, watched by nothing | No fixed budget — the explain algorithm lives once in the global file; this file holds only variable data (concept, symbols, doc cache path), so it stays short by construction |
+| Audience | Just the user | On a collaborative repo, teammates and their agents too — so no personal preferences | Just the user, this checkout only |
+| Structure owner | This file | `bootstrap` — defer to its layout rather than inventing a competing one | This file — see "The local file has no git safety net" below |
 
 **The hard rule for a project rebuild: read the global `CLAUDE.md` first, then delete everything the project file restates.** A project file repeating "commit straight to main" or "write short sentences" is pure duplication, and duplication *across* two files is worse than within one — you can't see both at once to notice they've drifted apart.
+
+### The local file has no git safety net
+
+`CLAUDE.local.md` is deliberately untracked — kept out of git via `.git/info/exclude`, never `.gitignore`, so the tracked ignore rules stay clean. Everything else in this document assumes a commit is recoverable; a local file has no such backstop, and it doesn't even propagate between worktrees of the same repo — each worktree is a separate directory, and an untracked file only exists where it was created.
+
+**Never rebuild, rewrite, or delete a `CLAUDE.local.md` the way Phase 1 rebuilds a tracked file.** It isn't subject to the empty-and-rebuild method at all — there's no git log to fall back on if a cut turns out wrong. Treat it as append-only: read it before touching the checkout, add or compress entries under `## Explain until removed` on request, and confirm with the user before removing anything from it. An `Explain until removed` entry is a protected rule-shape in Phase 6's triage table below, not a candidate for the vague-instruction or role-padding deletes — the whole point of the section is that its content only leaves when the user says so.
 
 ## Phase 1 — Commit the current file, don't copy it
 
@@ -43,6 +49,21 @@ So Phase 1 is only: **make sure the working tree is clean and the current file i
 - `3a7dcd3` deleted the shell-command-shape rules outright. Fixed in `82100ad`.
 
 So: compress wording, merge overlapping rules, move mechanics into a skill and link it. **When a cut would remove a behavior the file was covering, name that behavior and get the user's answer before making it.** Hitting the word target by deleting rules is the opposite of the job.
+
+## Phase 1b — Coverage check (project file only)
+
+CLAUDE-MD.md's method is otherwise purely subtractive — triage tables, verdicts, cuts — and nothing else in it checks a project file for what's *missing* as a distinct step from whether each existing rule earns its place. Before Phase 2, print one table, present/missing, one line each:
+
+| Area | Present? |
+| --- | --- |
+| Commands (build/test/run, with real flags — not just tool names) | |
+| Testing (how to run one test, how to add one) | |
+| Project structure (where things live) | |
+| Code style (a real example over a description) | |
+| Git workflow (branch/PR conventions, if they diverge from the global file's) | |
+| Boundaries (what to never touch — secrets, vendor dirs, prod config, specific paths) | |
+
+A missing row is a candidate to raise in Phase 8 rather than left for the user to think of unprompted — Phase 8 still asks its own open questions on top, this table just makes sure the known list gets checked first. Skip this phase entirely for a global-file rebuild — the global table's own rows (voice, permission gates, git policy, environment) already cover its equivalent ground.
 
 ## Phase 2 — Measure
 
@@ -196,7 +217,7 @@ If most of the file should go, say so plainly. The scaffolding the user is proud
 
 ## Audit mode
 
-For `improve`'s survey fan-out: no writes, no commits, no questions. Run phases 2, 3, 5, and 6 read-only and return findings.
+For `improve`'s survey fan-out: no writes, no commits, no questions. Run phases 1b (project file only), 2, 3, 5, and 6 read-only and return findings. Never audit a `CLAUDE.local.md` — it's append-only per "The local file has no git safety net" above, and a survey pass has no standing to propose cuts to it.
 
 Each finding: the **gap** (what's flat, duplicated, guard-shaped, stale, or vague), **evidence** (the actual line quoted — never a generic complaint), **fix** (the concrete rewrite: narrowed condition, the hook to write, the path to substitute), **strength** (`Strong` / `Worth exploring` / `Speculative`). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
 
