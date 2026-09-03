@@ -217,7 +217,8 @@ the formal "Request changes" button or just typed a comment. Timestamps are ISO-
 compare orders them; within a few seconds, treat it as reconcile mode rather than assuming
 addressed.
 
-**When it fires** → [FEEDBACK.md](FEEDBACK.md), which owns fetching, scoring, and — the part that
+**When it fires, read** [FEEDBACK.md](FEEDBACK.md) — a file, not a skill; never re-invoke `Skill(unblock)`
+to pull it in. It owns fetching, scoring, and — the part that
 is its own problem — **how a response to feedback is written**. That is a different formatting
 job from how `review` writes its own findings, and the two documents are deliberately separate:
 `review/POSTING.md` formats findings you are handing *to* an author; `FEEDBACK.md` formats
