@@ -175,6 +175,7 @@ A clean review is a green light to Phase 5, NOT a place to end your turn. Archit
    - Use the project's commit conventions (check its CLAUDE.md), then the global rule in `~/.claude/CLAUDE.md` §Git & GitHub, which requires **Conventional Commits** — `type(scope): message`, ≤72 chars, imperative, no trailing period.
    - Two exceptions the global rule names: `~/.claude/` itself uses a plain one-sentence message with no prefix, and a repo whose own CLAUDE.md states a different convention wins.
    - Use Conventional Commits per CLAUDE.md §Git & GitHub. Do not revert to a no-prefix convention.
+   - **In `~/.claude`, you cannot commit where you stand.** The primary checkout denies `git commit`, so this step runs from a linked worktree — `git -C ~/.claude worktree add -b <branch> ~/.worktrees/.claude/<slug> main`, commit there, push there. Edits under `skills/` commit and push inside the submodule first, then the worktree bumps the pointer with a `-- skills` pathspec. Step C then lands it with `tools/claude-land`. Full mechanics in `~/.claude/CONTRIBUTING.md`; do not re-derive them.
 2. Confirm `git status` is clean.
 3. Push: `git push origin $(git branch --show-current)`. First push on a new branch: `git push -u origin $(git branch --show-current)` (match the branch's own name — never `main`).
 4. Do NOT land here — the merge/PR is Phase 6 Step C, after follow-ups and the summary settle. Leave the branch pushed.
