@@ -335,6 +335,10 @@ once something is being reported, its Bites/Fix/evidence detail (below) is exact
 the format already requires. Zero findings and thorough prose about zero findings are not a
 tradeoff the user asked for.
 
+**Collapses the report body only, not the pass.** [POSTING.md](POSTING.md) still runs after a
+clean report — on a teammate's PR, propose Approve with the one-liner as its body and wait for
+`go`. Stopping at the one-liner with no verdict proposed is a phase skipped.
+
 ### Any code reference, in any report, is backtick-quoted
 
 A bare identifier, path, or line of code in prose reads as an English word and gets misparsed —
