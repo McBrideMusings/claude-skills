@@ -87,6 +87,13 @@ const dir = a.worktree || a.repo || a.cwd
 // for the other half.)
 const REPO_ROOT = a.repo || a.cwd || dir
 const model = a.model || 'sonnet'
+// Which launch of this item this is. `1` (the default) runs every stage. `2`
+// and up is a fix round relaunched by the verify loop after a FAIL: round 1
+// already settled the approach and the files, and the diff Review would read
+// is now the whole branch rather than just this round's fix — so Gate,
+// Locate and Review are skipped and Edit is handed round 1's files directly.
+// See SKILL.md's "The verify loop" for the caller side of this contract.
+const round = a.round || 1
 
 // This pass NEVER lands and NEVER writes the tracker. It ends at a commit on
 // its own branch, and the caller — the chat session that launched it — reviews
@@ -423,6 +430,16 @@ Return one sentence: the sha you committed, or that there was nothing to commit.
 
 phase('Resolve')
 
+// A fix round has no Gate or Locate stage to fall back on — it relies
+// entirely on what round 1 already produced. `a.resolved` carries the item
+// (with `body` replaced by the failure list) and `a.resolved.files` carries
+// round 1's files; `a.worktree` is where Edit will make the fix. Either
+// missing means the caller did not pass what the verify loop's relaunch line
+// is supposed to pass, and there is nothing here to recover from that.
+if (round >= 2 && (!a.resolved || !a.worktree)) {
+  return halt('resolve', `round ${round} requires both resolved and worktree from the previous round — got resolved=${!!a.resolved} worktree=${!!a.worktree}`)
+}
+
 let item
 if (a.resolved) {
   // The caller (or iron-out) already resolved and gated this one; don't re-fetch.
@@ -516,8 +533,13 @@ item = { ...item, id: `${item.id}`.trim() }
 
 phase('Gate')
 
-const gate = await agent(
-  `${COMMON}
+// Round 1 only. A fix round already passed the gate once — round 1 could
+// state a plan and it was reachable and objective enough to work unwatched —
+// and the item body it re-judges here is now just the failure list, which is
+// not the shape Gate's three tests are written to read.
+if (round === 1) {
+  const gate = await agent(
+    `${COMMON}
 
 Judge whether this item is walk-away work — objective enough for an unwatched agent to finish it without a human judgment call. Judging is the whole job: do not fix anything, and do not start on it if it passes.
 
@@ -530,15 +552,18 @@ Read whatever the repo can tell you about it before answering. Then apply three 
 3. **Reachability test.** This item is scoped against one repo, rooted at \`${REPO_ROOT}\` — a separate question from which worktree the pass's stages edit inside, since that worktree is itself just a checkout of this same repo. Does every file the item names, and every acceptance criterion, live under \`${REPO_ROOT}\`? A nested submodule (for example \`claude-skills\` inside \`~/.claude\`) is a *different* repo even though it sits inside the parent's directory tree — a path under the submodule is out of reach from an item scoped to the parent, and vice versa. If any named path or acceptance criterion falls outside \`${REPO_ROOT}\`, this test fails: the item spans two repos and must be split into one item per repo before it can be worked. Give the out-of-repo path its own \`missing\` entry, worded exactly \`"<path> is outside ${REPO_ROOT} — this item spans two repos and must be split"\`.
 
 Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work. \`pass: false\` with a precise \`reason\` — naming which test failed and why — is a good outcome, not a failure. Put each specific thing you would have had to invent or ask about, and every out-of-repo path, in \`missing\`.`,
-  { phase: 'Gate', model, schema: GATE },
-)
+    { phase: 'Gate', model, schema: GATE },
+  )
 
-if (!gate || !gate.pass) {
-  const gateDetail = gate
-    ? [gate.reason, ...(gate.missing || [])].join(' — ')
-    : 'gate agent returned nothing'
-  log(`gate failed: ${gateDetail}`)
-  return halt('gate', gateDetail)
+  if (!gate || !gate.pass) {
+    const gateDetail = gate
+      ? [gate.reason, ...(gate.missing || [])].join(' — ')
+      : 'gate agent returned nothing'
+    log(`gate failed: ${gateDetail}`)
+    return halt('gate', gateDetail)
+  }
+} else {
+  log(`round ${round}: skipping Gate — round 1 already passed it`)
 }
 
 // --- Locate ----------------------------------------------------------------
@@ -548,8 +573,10 @@ if (!gate || !gate.pass) {
 
 phase('Locate')
 
-const plan = await agent(
-  `${COMMON}
+let plan
+if (round === 1) {
+  plan = await agent(
+    `${COMMON}
 
 Work out **where** this change goes and **what** it should be. Stop before writing any of it — you have no edit tools; do not attempt one.
 
@@ -563,19 +590,34 @@ Also report the project's real build and test commands. Prefer an \`admin\` task
 **Report \`base_sha\`: the output of \`git -C ${dir || '.'} rev-parse HEAD\`, run now, before anything has been edited.** A later stage uses it as the earliest point the review's diff may start from, and it is only truthful if you read it before the first edit. Return the full 40-character sha and nothing else in that field.
 
 \`files\` must be complete and it must be minimal. If it is wrong the next stage re-explores and this stage's whole purpose is lost.`,
-  { agentType: 'Explore', phase: 'Locate', model, schema: PLAN },
-)
+    { agentType: 'Explore', phase: 'Locate', model, schema: PLAN },
+  )
 
-if (!plan) {
-  return halt('locate', 'Locate agent returned nothing — likely a failed or overloaded request, not a bad brief')
+  if (!plan) {
+    return halt('locate', 'Locate agent returned nothing — likely a failed or overloaded request, not a bad brief')
+  }
+  if (!plan.files || !plan.files.length) {
+    return halt('locate', 'no files identified for the change')
+  }
+  if (!/^[0-9a-f]{7,40}$/.test(plan.base_sha || '')) {
+    return halt('locate', `no usable base_sha — got ${JSON.stringify(plan.base_sha)}; the Review stage has nothing to diff against`)
+  }
+  log(`plan: ${plan.files.length} files — ${plan.files.map((f) => f.path).join(', ')}`)
+} else {
+  // Round 1 already found the files and settled the approach; re-deriving
+  // both from a Locate agent that only sees the failure list would rediscover
+  // what round 1 already knew, at the cost of another full exploration pass.
+  // `a.resolved.files` is `r.files` from the round-1 result — see SKILL.md's
+  // "The verify loop" — which is `[...edit.touched, ...(green.extra_files_touched
+  // || [])]`: an array of plain path strings, not `{path, why}` objects. Edit's
+  // prompt template reads `f.path` and `f.why`, so those strings are wrapped
+  // here rather than left for Edit to guess at.
+  const files = (a.resolved.files || []).map((p) =>
+    typeof p === 'string' ? { path: p, why: 'touched by the previous round; fix the failures listed in the item body' } : p,
+  )
+  plan = { files, approach: 'fix the failures listed in the item body; touch nothing else' }
+  log(`round ${round}: skipping Locate — reusing ${plan.files.length} files from the previous round — ${plan.files.map((f) => f.path).join(', ')}`)
 }
-if (!plan.files || !plan.files.length) {
-  return halt('locate', 'no files identified for the change')
-}
-if (!/^[0-9a-f]{7,40}$/.test(plan.base_sha || '')) {
-  return halt('locate', `no usable base_sha — got ${JSON.stringify(plan.base_sha)}; the Review stage has nothing to diff against`)
-}
-log(`plan: ${plan.files.length} files — ${plan.files.map((f) => f.path).join(', ')}`)
 
 // --- Edit ------------------------------------------------------------------
 
@@ -713,11 +755,21 @@ if (!green || !green.green) {
 
 phase('Review')
 
+let review, blockingFindings, majorFindings, minorFindings
+
+// Used again later, in Verify's mutation check — module-scoped rather than
+// declared inside the `round === 1` block below.
 const G = dir ? `git -C ${dir}` : 'git'
+
+// Round 1 only. By round 2 the diff Review would read is the whole branch —
+// round 1's already-accepted work plus this round's fix — not just the fix,
+// so re-running it would re-flag what already passed instead of judging what
+// changed. A fix round's Green stage is the check that the fix itself works.
+if (round === 1) {
 const BASE = `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${plan.base_sha}); ${G} merge-base --is-ancestor "$BASE" ${plan.base_sha} && BASE=${plan.base_sha}`
 const DIFF = `${G} diff "$BASE"`
 
-const review = await agent(
+review = await agent(
   `${WHERE}
 
 Review the change this pass just made. **You are not looking for something to review — the change is everything in \`${dir || 'this repository'}\` that this pass added on top of what everyone else already has.** Read it with exactly these two commands, the first one exactly as written including the \`BASE=\` part:
@@ -758,10 +810,17 @@ if (!review || !review.reviewed) {
   return halt('review', review ? review.note || 'review read no diff and gave no note' : 'review stage returned nothing')
 }
 
-const blockingFindings = (review.findings || []).filter((f) => f.severity === 'blocking')
-const majorFindings = (review.findings || []).filter((f) => f.severity === 'major')
-const minorFindings = (review.findings || []).filter((f) => f.severity === 'minor')
+blockingFindings = (review.findings || []).filter((f) => f.severity === 'blocking')
+majorFindings = (review.findings || []).filter((f) => f.severity === 'major')
+minorFindings = (review.findings || []).filter((f) => f.severity === 'minor')
 log(`review: ${review.findings.length} findings (${blockingFindings.length} blocking, ${majorFindings.length} major) over ${(review.files_reviewed || []).length} files`)
+} else {
+  review = { reviewed: true, findings: [] }
+  blockingFindings = []
+  majorFindings = []
+  minorFindings = []
+  log(`round ${round}: skipping Review — the diff is now the whole branch, not just this round's fix`)
+}
 
 // --- Verify ----------------------------------------------------------------
 
@@ -1028,10 +1087,13 @@ return {
   ok: true,
   item: item.id,
   title: item.title,
+  round,
   verdict: verdict.verdict,
   tests_touched: touchedTests,
   mutation: touchedTests.length ? verdict.mutation || null : undefined,
-  review: { findings: review.findings.length, blocking: blockingFindings.length, major: majorFindings.length },
+  review: round >= 2
+    ? { findings: 0, blocking: 0, major: 0, skipped: 'fix round' }
+    : { findings: review.findings.length, blocking: blockingFindings.length, major: majorFindings.length },
   files: [...edit.touched, ...(green.extra_files_touched || [])],
   attempts: green.attempts,
   commit: landed.commit,

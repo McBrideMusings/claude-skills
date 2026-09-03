@@ -98,10 +98,12 @@ loop
   review r's diff against the sha the pass started from
   if all clear and r.blockers is empty  -> land
   if round == 5                -> halt: leave the worktree standing, report the path
-  r = Workflow(pass, args: {...args, worktree: r.worktree, resolved: {...item, body: the failures}}); round++
+  r = Workflow(pass, args: {...args, worktree: r.worktree, round: round, resolved: {...item, body: failures, files: r.files}}); round++
 ```
 
-**Rounds 2..N relaunch `Workflow` on the SAME `worktree`, carrying the failures as the item body.** Pass `args.worktree` as the worktree round 1 already committed into, and `args.resolved` as the original item with `body` replaced by round 1's failure list — the recheck commands that failed and their real output. The pass re-enters the existing checkout with round 1's commit already in place; `name-pass.sh` still generates a fresh `scriptPath` per launch, so round 2 gets its own generated copy, and that is expected.
+**Rounds 2..N relaunch `Workflow` on the SAME `worktree`, carrying the failures as the item body.** Pass `args.worktree` as the worktree round 1 already committed into, `args.round` as the loop's own counter, and `args.resolved` as the original item with `body` replaced by round 1's failure list — the recheck commands that failed and their real output — plus `files: r.files`, round 1's touched files. The pass re-enters the existing checkout with round 1's commit already in place; `name-pass.sh` still generates a fresh `scriptPath` per launch, so round 2 gets its own generated copy, and that is expected.
+
+**A fix round (`round >= 2`) skips Gate, Locate and Review.** Round 1 already settled the approach and the files, so Gate and Locate would only re-derive what is already known; Review is skipped because by round 2 the diff is the whole branch, not just this round's fix, and re-reading it would re-flag round 1's already-accepted work. Edit receives round 1's files directly and fixes only the failures named in the item body — Green, Verify and Wrap still run in full.
 
 **Only *omitting* `worktree` cuts a fresh checkout that has never seen round 1's code.** Passing the same `worktree` reuses it.
 
