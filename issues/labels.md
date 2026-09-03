@@ -132,6 +132,12 @@ gh issue edit <n> --add-label area:ui --remove-label enhancement
 gh issue list --label area:ui --state open
 ```
 
+The same "must exist before use" rule binds `bd github push` too, and there it's enforced
+automatically: `bd` derives `type::`/`priority::`/`status::` labels from a bead's own fields and
+sends them with the push, and GitHub's API will silently define a brand-new repo-level label for
+any name in that set the repo doesn't already have. `hooks/beads-github-label-guard.sh` blocks a
+push that would do that — see [`beads.md`](beads.md) § GitHub sync.
+
 Colour convention on GitHub, so the label reads at a glance in the issue list:
 
 | Label | Colour |
