@@ -121,7 +121,7 @@ Slice rules:
 
 - Each slice delivers a narrow but COMPLETE path through every layer it touches
 - A completed slice is demoable or verifiable on its own
-- Prefer many thin slices over a few thick ones
+- A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can swarm; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs eight fixed stages and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
 
 **Every slice set ends in the same two bookends: a verify ticket and a land ticket.** They are
 not optional and not a judgement call — the shape is standard practice for all tracked work and
