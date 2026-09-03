@@ -10,12 +10,21 @@ An item is dispatchable when four cheap queries all say so — this is a check, 
 - **Open.** `bd show <id> --json` reads its status.
 - **Not carrying the `human` label.** `human` is beads' one legal bare label, and there is deliberately no positive "AFK" label — removing `human` from an item is what makes it AFK. Check for its absence; do not invent a label to check for its presence.
 - **Listed by `bd ready --json`.** Nothing blocks it. Run `bd recompute-blocked` first — `bd ready` reads a denormalized flag that goes stale after a hand-resolved merge and will silently hide ready work.
+- **Sized.** Count the distinct files the item's body names — paths, backticked or bare, under the repo root. Fewer than three, and the body does not state that the item is a fan-out root or an expand–contract stage, means the item is under `to-tickets`' slice-size floor. This is checked here, against the whole queue, rather than in the pass's own Gate, because Gate sees one item at a time and can only halt it — merging needs the neighbour, which only the orchestrator can see. An under-floor item is not excluded here; it is flagged for the merge offer in § 2.
 
-Passing all four makes an item eligible to offer, not verified. The `implement` pass runs its own Gate stage regardless, on every item, every time — this four-query check is a filter that keeps unready items off the offer, never a substitute for the pass's own gate.
+Passing all five makes an item eligible to offer, not verified. The `implement` pass runs its own Gate stage regardless, on every item, every time — this five-query check is a filter that keeps unready items off the offer, never a substitute for the pass's own gate.
 
 ## 2. The shape comes from the graph
 
-Never ask the user which shape to use — compute it. `bd ready --json` is the unblocked front:
+Before computing shape, apply the floor from § 1 across the whole queue. Every under-floor item is paired with the in-scope neighbour it is joined to by an edge — its blocker, or the item it blocks. When both are in scope, pair it with its blocker: a sequential queue commits to landing the blocker first regardless, so folding the smaller item into the one already ahead of it in line adds no new ordering decision. Each pair becomes one slate row:
+
+```
+2. Merge cc-111 into cc-112 — cc-111 names 2 files (src/tokens.js, src/styles.css) and cc-112 consumes both. My pick: merge.
+```
+
+`go` performs the merge in `bd`: the surviving item's body gains the absorbed item's body under a `## Absorbed from <id>` heading, dependencies are re-pointed onto the surviving item with `bd dep add`/`bd dep remove`, and the absorbed item is closed with `bd close <id> --reason "merged into <survivor-id>"`. A merged item runs as one pass. `<id> skip` leaves that item as is — offered on its own, under floor.
+
+With merges applied, compute the shape. `bd ready --json` is the unblocked front:
 
 - Items in the front with no edges between them dispatch as a swarm — `implement swarm <ids>`.
 - Items in the front with edges between them become a sequential queue, each behind its blocker — `implement <ids>` in dependency order.
