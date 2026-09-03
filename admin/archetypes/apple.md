@@ -250,6 +250,35 @@ Mac: Xcode → Window → Devices and Simulators → select the Apple TV → typ
 PIN. Before that, `devicectl` does not list the device at all, so it looks like
 `deploy tv` is broken rather than not-yet-paired.
 
+## Seeding the launched process's environment — `[apple] dev_env`
+
+`dev_ios` / `dev_tv` / `dev_device` build, install and launch, but nothing in
+the archetype used to let a project hand the launched app an environment
+variable — no equivalent of the shell-script pattern `SIMCTL_CHILD_FOO=...
+xcrun simctl launch`. That mattered for a project seeding its own debug
+session (Keychain, a feature flag, a fixture path) at launch time, which
+otherwise had to fall back to a hand-written `interactive-shell` action
+duplicating `install_and_launch_sim`/`dev_loop_device`.
+
+```toml
+[apple]
+dev_env = { MYAPP_DEBUG_JAR = "${MYAPP_JAR:-$HOME/.admin/myapp/jar.txt}" }
+```
+
+- Values go through `resolve_env` (`${VAR}` / `${VAR:-default}`), same as any
+  other `[apple]` string — but only `dev_env`'s values get this treatment;
+  other free-form `[apple]` keys do not auto-resolve.
+- **Simulator** (`dev_ios`/`dev_tv`): delivered via `SIMCTL_CHILD_<NAME>` on
+  the `simctl launch` subprocess's environment — the only mechanism `simctl`
+  recognizes; there is no direct `-e` flag the way `devicectl` has.
+- **Device** (`dev_device`): delivered via `devicectl device process launch
+  -e '<json>'`, merged over the archetype's own `OS_ACTIVITY_DT_MODE=YES`
+  (dev_env values win on key collision).
+- A caller can still pass `env={...}` directly to `dev_simulator`/`dev_ios`/
+  `dev_tv`/`dev_device` from a `kind="python"` action body to override or
+  compute it per-invocation; `[apple] dev_env` is only the config-driven
+  default used when no explicit `env` is passed.
+
 ## Dev-output streaming
 
 If a `dev`/launch command's output collapses or elides, the action needs
