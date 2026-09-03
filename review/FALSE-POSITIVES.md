@@ -9,7 +9,7 @@ These are the rules the Haiku scoring sub-agents apply when deciding whether a f
 ## What counts as a false positive
 
 - **Pre-existing issues** not introduced by these changes
-- **Things a linter / compiler / typechecker would catch** — ESLint, Prettier, tsc, Biome already enforce these
+- **Things the repo's own tooling actually reports on this diff** — configured, running, and failing where the author will see it; not wired up, or green while the problem is real, is not a false positive
 - **General quality issues** (missing tests, missing docs) unless `CLAUDE.md` explicitly requires them
 - **Issues on lines the user didn't modify** — out of scope for this review
 - **Intentional functionality changes** related to the broader change being made

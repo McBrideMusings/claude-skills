@@ -1,6 +1,6 @@
 # Standards / CLAUDE.md compliance lens
 
-Review the changes against the `CLAUDE.md` files located in Phase 02. Only flag violations of **specific, stated rules**. **Skip anything tooling enforces** (ESLint / Prettier / tsc / Biome — your linter already catches it).
+Review the changes against the `CLAUDE.md` files located in Phase 02. Only flag violations of **specific, stated rules**. **Skip what the repo's own tooling actually reports on this diff** — configured, running, and failing where the author will see it; anything not wired up, or green while the problem is real, is ours.
 
 On top of whatever CLAUDE.md documents, this axis always carries the **smell baseline** below — a fixed set of Fowler code smells (_Refactoring_, ch. 3) that applies even when a repo documents nothing. Two rules bind it:
 
@@ -36,6 +36,7 @@ Mysterious Name above catches the name a reader can't decode. These catch the na
 
 - **Derivability — don't pass or store what's already computable.** If a value can be derived from values already in scope, it should not also be a parameter, a field, or stored state. A function taking both `content` and an `isDirty` flag that is always `content !== baseline` should take one. Removing derivable state usually simplifies the signature, the type, and the control flow in one move. Platform-neutral: it applies to a React component's state, a Swift initializer taking `items` and `count`, and a Go struct caching `total` beside the slice it sums.
 - **Inverted pyramid within a file.** Exported and significant functions go at the top; private helpers below them. Don't make a reader scroll past six helpers to reach the function the file is named after.
+- **Complexity is measured, not asserted.** A cyclomatic-complexity or similar count is evidence attached to a finding raised on other grounds — Repeated Switches, Mysterious Name, a bug — never a finding by itself: "`parseOrder` (`parser.py:88`, CC 14) switches on order type in three places." Tool per language: Python `radon cc -s -a <path>`; JS/TS the eslint `complexity` rule; Go `gocyclo`; polyglot `lizard <path>`. The repo under review sets its own threshold (eslintrc, radon, sonar config) — carry no threshold of our own. No tool available: count decision points by hand and show the count — `if`, `else if`, `case`, loops, `catch`, ternary, `&&`, `||`, plus 1.
 
 ## The reuse rule — search before accepting anything new
 

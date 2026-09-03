@@ -60,6 +60,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `skills` | [aspects/skills.md](aspects/skills.md) | native — [WRITING-SKILLS.md](WRITING-SKILLS.md), vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md) | a `skills/` or `.claude/skills/` directory exists |
 | `behavior` | [aspects/behavior.md](aspects/behavior.md) | native — [BEHAVIOR.md](BEHAVIOR.md) | product launchable AND drivable (scripting surface, CLI, browser tool, harness) |
+| `complexity` | [aspects/complexity.md](aspects/complexity.md) | native | a complexity tool is available for the repo's language |
 | `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
 | `gui` | [aspects/gui.md](aspects/gui.md) | `gui` critique mode | UI surface exists |
 | `product` | [aspects/product.md](aspects/product.md) | `gui` orient mode | always |

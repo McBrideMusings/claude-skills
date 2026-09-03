@@ -29,11 +29,12 @@ Each of these is a *prompt to look*, not an automatic finding:
 - Several new types introduced to support one local function.
 - A large comment explaining why a prop or flag has to exist.
 - New callback/memo/effect code that would disappear entirely if state ownership were simplified.
+- A dense ternary chain or boolean-soup expression compressing several branches into one line — the opposite failure from Helper slop: complexity that should live in well-named units instead disappears into cleverness, and it currently passes every other check here. → split back into named branches (an if-chain, a lookup map, extracted predicates).
 
 ## Bounds
 
 - **Slop findings are never blocking.** They don't make behavior wrong. Score them accordingly and expect most to land `low`.
-- **Skip anything tooling enforces** — formatting, import order, unused-variable warnings belong to the linter.
+- **Skip what the repo's own tooling actually reports on this diff** — configured, running, and failing where the author will see it; anything not wired up, or green while the problem is real, is ours.
 - **Don't flag brevity for its own sake.** A helper with two real callers, a type that names a domain concept, a comment explaining *why* a non-obvious choice was made — none of those are slop.
 - **Overlap with `standards`**: duplicated logic and Fowler smells stay on the `standards` axis. If a finding is "this already exists elsewhere in the repo", that's the reuse rule in `standards.md`, not here. Don't double-report.
 
