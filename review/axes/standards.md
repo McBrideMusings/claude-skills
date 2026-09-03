@@ -5,7 +5,7 @@ Review the changes against the `CLAUDE.md` files located in Phase 02. Only flag 
 On top of whatever CLAUDE.md documents, this axis always carries the **smell baseline** below — a fixed set of Fowler code smells (_Refactoring_, ch. 3) that applies even when a repo documents nothing. Two rules bind it:
 
 - **CLAUDE.md overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.
-- **Always a judgement call.** Each smell is a labelled heuristic ("possible Feature Envy"), never a hard violation — and, like any standard here, skip anything tooling already enforces.
+- **Always a judgement call.** Each smell is a labelled heuristic ("possible Feature Envy"), never a hard violation — and, like any standard here, subject to the tooling rule above.
 
 Each smell reads *what it is* → *how to fix*; match it against the diff:
 
@@ -24,7 +24,7 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 ## Names and comments are prose — the word rules
 
-Mysterious Name above catches the name a reader can't decode. These catch the names that read fine and are still wrong. Same bind as the smells: judgement calls, CLAUDE.md overrides, skip anything tooling enforces. Adapted from bholmesdev/skills `simplify`, which applies Orwell's rules from "Politics and the English Language" to code.
+Mysterious Name above catches the name a reader can't decode. These catch the names that read fine and are still wrong. Same bind as the smells: judgement calls, CLAUDE.md overrides, the tooling rule at the top. Adapted from bholmesdev/skills `simplify`, which applies Orwell's rules from "Politics and the English Language" to code.
 
 - **One word per concept, one concept per word.** A repo keeps a vocabulary. If `sync` names "pull remote changes," it cannot also name "flush edits to disk" — rename one. A finding names both uses and their `file:line`; a word used twice for two jobs is the whole evidence.
 - **Cut words the context already carries.** A name repeating what its module, file, or type already says is padding: inside `workspaceWatcher.ts`, `startNativeWorkspaceWatcher` says nothing `watchWorkspace` doesn't.
