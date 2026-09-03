@@ -396,7 +396,7 @@ const TRACKER = {
   },
 }
 
-const halt =(stage, detail) => ({ ok: false, halted_on: stage, detail, item: a.item || a.issue })
+const halt =(stage, detail) => ({ ok: false, halted_on: stage, detail, item: a.item || a.issue, worktree: a.worktree })
 
 // A halt before Wrap must not also destroy the work that provoked it.
 //

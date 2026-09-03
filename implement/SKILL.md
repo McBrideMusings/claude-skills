@@ -76,7 +76,7 @@ generated `implement-<id>.js` directly, and never point `scriptPath` at
   review: {findings, blocking, major}, files, followups, summary }
 ```
 
-A halt returns `{ok: false, halted_on, detail}` instead. **Branch on `ok` first** — a halt carries no `blockers` array, and reading one as "no blockers" is how broken work gets merged.
+A halt returns `{ok: false, halted_on, detail, worktree}` instead. **Branch on `ok` first** — a halt carries no `blockers` array, and reading one as "no blockers" is how broken work gets merged.
 
 `blockers` empty is the pass's opinion, not a verdict. Yours comes next.
 

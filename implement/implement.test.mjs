@@ -403,6 +403,7 @@ check('a closed surface halts the pass', surfaceDown.result.ok, false)
 check('  ...naming "surface", not "verify"', surfaceDown.result.halted_on, 'surface')
 check('  ...with a detail naming the unreachable surface', /surface unreachable: 127\.0\.0\.1:2024/.test(surfaceDown.result.detail), true)
 check('  ...and never reaches Wrap', surfaceDown.calls.includes('Wrap'), false)
+check('  ...and carries the worktree arg passed in', surfaceDown.result.worktree, BASE.worktree)
 
 // The Gate's third test (cc-32bc): an item naming a file outside the repo the
 // pass is confined to must halt at Gate, and the halt detail must survive
