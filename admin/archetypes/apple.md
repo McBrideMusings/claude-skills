@@ -194,11 +194,19 @@ absent on a fresh clone and stale after a spec edit. Declare the generator once:
 prebuild_cmd = "xcodegen generate"
 ```
 
-It runs once per invocation from `_detect_project_path`, which every apple
-action funnels through, so `build`, `dev`, `deploy`, and `icons` all get a
-project matching its spec. A non-zero exit aborts the command. Do **not** add a
-project-level `generate` command alongside it — that's a second way to do the
-same thing.
+It runs once per invocation from `_detect_project_path` (`appleProject` in the
+Go port), which every `build`/`dev`/`deploy` apple action funnels through, so
+they all get a project matching its spec. A non-zero exit aborts the command.
+Do **not** add a project-level `generate` command alongside it — that's a
+second way to do the same thing.
+
+The Go port (`internal/kinds/apple_darwin.go`) dropped this call entirely
+until 2026-09-03 — every apple verb failed with `"<project>" does not exist`
+on a fresh clone or after a `project.yml` edit, with no mention of
+`prebuild_cmd` anywhere in the error. Fixed by wiring `appleProject` through
+the same prereq-once-per-process gate the Python original had. If a project
+on an older installed `admin` hits this, `bash
+~/projects/admin-project-tool/install.sh` picks up the fix.
 
 ```toml
 [apple]
