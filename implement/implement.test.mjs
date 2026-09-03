@@ -59,6 +59,11 @@ async function run(args, overrides = {}) {
   const stubs = { ...HAPPY, ...overrides }
   const calls = []
   const prompts = []
+  // Every `agent()` call's full options object, in call order — lets a case
+  // assert on `model` (or any other option) without adding a bespoke array
+  // per option. Keyed by call order, not phase, so a phase called more than
+  // once (salvage reusing an earlier phase name) still records each call.
+  const callOpts = []
   // The runtime evaluates the script as an async function body with these
   // globals injected, which is why top-level `return` is legal in it.
   const body = new (async function () {}).constructor(
@@ -78,7 +83,11 @@ async function run(args, overrides = {}) {
       const p = (opts && opts.phase) || current
       calls.push(p)
       prompts.push({ phase: p, prompt })
-      return stubs[p] ?? {}
+      callOpts.push({ phase: p, opts })
+      // `in` rather than `??` so a case can stub an explicit `null`/`undefined`
+      // return (e.g. simulating a swallowed 529) without it being papered over
+      // by the happy-path fallback — `null ?? {}` would silently become `{}`.
+      return p in stubs ? stubs[p] : {}
     },
     async () => [],
     async () => [],
@@ -88,7 +97,7 @@ async function run(args, overrides = {}) {
     },
     async () => ({}),
   )
-  return { result, calls, prompts }
+  return { result, calls, prompts, callOpts }
 }
 
 const BASE = { resolved: HAPPY.Resolve, repo: '/tmp/repo' }
@@ -111,6 +120,18 @@ const WT_VERIFY = { ...HAPPY.Verify, verdict_path: '/private/tmp/claude/wt/verif
 const clean = await run({ ...BASE, worktree: '/tmp/wt' }, { Verify: WT_VERIFY })
 check('a clean pass reports no blockers', clean.result.blockers, [])
 check('  ...and reports ok', clean.result.ok, true)
+
+// 1b. cc-rh2q: every `agent()` call in a full pass must pin `model` — an
+// unpinned call inherits whatever model the ORCHESTRATOR session runs on, so
+// a pass launched from an Opus session silently runs an Opus agent for that
+// stage (Locate, historically). This fails loudly the moment a new stage, or
+// an edited one, drops `model` from its options object.
+check('  ...and the happy path actually makes some calls', clean.callOpts.length > 0, true)
+check(
+  'every agent() call in a full pass carries a model',
+  clean.callOpts.map((c) => `${c.phase}:${Boolean(c.opts && c.opts.model)}`),
+  clean.callOpts.map((c) => `${c.phase}:true`),
+)
 
 // 2. The pass never closes an item and never lands a branch, whatever it is
 //    given. There is no argument that turns either back on — that is the point
@@ -554,6 +575,46 @@ check('  ...naming the unexercised mechanism', /tree_clean/.test(removalNullUnco
 const mutationPromptRun = await run({ ...BASE, worktree: '/tmp/wt' }, { Edit: EDIT_WITH_TEST, Verify: WT_VERIFY })
 const verifyPrompt = mutationPromptRun.prompts.find((x) => x.phase === 'Verify').prompt
 check('the Verify prompt tells the agent to classify the diff before choosing a method', /Classify the production half of the diff before picking a method/.test(verifyPrompt), true)
+
+// 24. cc-rh2q: the Locate halt distinguishes "the agent returned nothing" (a
+//     swallowed 529, or any request that errored) from "the agent returned a
+//     plan with no files" (a legitimately underspecified brief). Conflating
+//     them into one message is what turned five straight 529s into five
+//     reports of a bad brief. A null/undefined Locate return must halt with
+//     wording naming the agent itself, not the files.
+const locateNothing = await run(BASE, { Locate: null })
+check('a Locate agent returning nothing halts', locateNothing.result.ok, false)
+check('  ...naming the locate stage', locateNothing.result.halted_on, 'locate')
+check(
+  '  ...blaming the agent, not the brief',
+  /returned nothing/.test(locateNothing.result.detail),
+  true,
+)
+check(
+  '  ...and never claiming no files were identified',
+  /no files identified/.test(locateNothing.result.detail),
+  false,
+)
+
+// 25. A Locate agent that returned a real plan with an empty `files` array is
+//     the other branch — a real answer that legitimately found nothing to
+//     change. This must halt with the files-specific wording, not the
+//     agent-returned-nothing one, so the two causes stay distinguishable.
+const locateNoFiles = await run(BASE, {
+  Locate: { files: [], approach: 'n/a', base_sha: HAPPY.Locate.base_sha },
+})
+check('a Locate plan with no files halts', locateNoFiles.result.ok, false)
+check('  ...naming the locate stage', locateNoFiles.result.halted_on, 'locate')
+check(
+  '  ...naming the missing files, not a failed agent',
+  /no files identified/.test(locateNoFiles.result.detail),
+  true,
+)
+check(
+  '  ...and never claiming the agent returned nothing',
+  /returned nothing/.test(locateNoFiles.result.detail),
+  false,
+)
 
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)

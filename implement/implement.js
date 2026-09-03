@@ -485,7 +485,7 @@ Resolve the tracker backend via \`${DETECT}\`, then work down this ladder and st
 Return the item itself, with \`found: true\`. Put every question the tracker thread left unanswered into \`unresolved\` — that field is what the next stage gates on, and an empty \`unresolved\` you did not actually check for is the failure mode here.
 
 If no rung above answers, do not fabricate a record — the schema has no way to express "nothing", so a fabricated record is exactly the failure this instruction exists to prevent. Instead return \`{"found": false, "id": "<the target exactly as given>", "title": "", "body": "<what you checked and what each rung returned>"}\`.`,
-    { agentType: 'issue-reader', phase: 'Resolve', schema: ITEM },
+    { agentType: 'issue-reader', phase: 'Resolve', model, schema: ITEM },
   )
   if (!item) return halt('resolve', 'item resolution returned nothing')
 }
@@ -563,10 +563,13 @@ Also report the project's real build and test commands. Prefer an \`admin\` task
 **Report \`base_sha\`: the output of \`git -C ${dir || '.'} rev-parse HEAD\`, run now, before anything has been edited.** A later stage uses it as the earliest point the review's diff may start from, and it is only truthful if you read it before the first edit. Return the full 40-character sha and nothing else in that field.
 
 \`files\` must be complete and it must be minimal. If it is wrong the next stage re-explores and this stage's whole purpose is lost.`,
-  { agentType: 'Explore', phase: 'Locate', schema: PLAN },
+  { agentType: 'Explore', phase: 'Locate', model, schema: PLAN },
 )
 
-if (!plan || !plan.files || !plan.files.length) {
+if (!plan) {
+  return halt('locate', 'Locate agent returned nothing — likely a failed or overloaded request, not a bad brief')
+}
+if (!plan.files || !plan.files.length) {
   return halt('locate', 'no files identified for the change')
 }
 if (!/^[0-9a-f]{7,40}$/.test(plan.base_sha || '')) {
