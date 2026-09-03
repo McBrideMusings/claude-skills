@@ -59,7 +59,7 @@ Reached only via explicit `review repo` or an accepted offer above. The target i
 
   **Do not silently sample.** If a slice is still too big after partitioning, say so and narrow it explicitly — never review part of a slice and report as though you covered it.
 
-  Under the workflow transport this is a `pipeline()` over slices; under the session transport it is one lens fan-out per slice, sequentially. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
+  **Repo mode defaults to the `workflow` transport** — the `session` token forces the session transport back. Under the workflow transport this is a `pipeline()` over slices; under the session transport it is one lens fan-out per slice, sequentially. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
 - **Gating is off.** Every scored lens runs, including the normally-gated `security` and `best-practice` lenses — forward "repo mode: gating disabled, review the code as it stands (not a diff)" into each Phase 04 sub-agent so they read whole files rather than hunting for changed lines. `best-practice` still routes its flags through Phase 04b verification.
 - **History/blame lens** still works (it reads `git blame`/`log` on the files in scope). The **Spec** lens has no single diff to check against — point it at the repo's PRD/spec from Phase 03 and let it report drift, or skip if there's no spec.
 - Everything downstream (Phase 05 scoring, Phase 06 filter, Phase 07 report) is unchanged. Expect a larger report; the ≥75 filter still applies.
@@ -119,7 +119,7 @@ Carry both into Phase 04. The intent table also survives into Phase 06b, where t
 
 ### Phase 04 — Launch Parallel Lens Sub-Agents
 
-**Transport fork.** Phases 04–06 run either here (the default) or inside a workflow script when the `workflow` token was given — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which lenses run, what each brief contains, and every forwarded directive below are identical either way*; only where the agents execute differs. Everything from Phase 07 onward is unaffected.
+**Transport fork.** Phases 04–06 run either here in the session (the default outside repo mode, or when the `session` token overrides repo mode's default) or inside a workflow script (the default for `review repo`, or when the `workflow` token was given on any other route) — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which lenses run, what each brief contains, and every forwarded directive below are identical either way*; only where the agents execute differs. Everything from Phase 07 onward is unaffected.
 
 One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/) — **all of them run by default**. For each lens file, launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers, and a **Bites** line). Cap each sub-agent's response at **under 400 words** — forward that cap as part of the brief.
 

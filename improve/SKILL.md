@@ -87,9 +87,9 @@ All three end at **Phase 08 — Ticket the survivors** in [IMPROVE-CORE.md](IMPR
 
 ## Transport — where the aspects run
 
-Orthogonal to the routing above, and only meaningful in survey mode. The `workflow` token moves **Phases 04–06b only** — the fan-out, the scoring, the filter and merge, the ranking — into a workflow script, so only surviving findings enter this context instead of every aspect report. Applicability, the confirm, the report, the ticketing, and every question stay in the session. `improve workflow`, `improve architecture tests workflow`.
+Orthogonal to the routing above, and only meaningful in survey mode. Phases 04–06b — the fan-out, the scoring, the filter and merge, the ranking — are what this token moves into a workflow script, so only surviving findings enter this context instead of every aspect report. Applicability, the confirm, the report, the ticketing, and every question stay in the session either way.
 
-No token → the session transport: [IMPROVE-CORE.md](IMPROVE-CORE.md) exactly as written, Agent-tool sub-agents launched in parallel from this loop. That is the default.
+**Survey with 3 or more aspects surviving Phase 02 → the workflow transport by default**, no token needed. `workflow` is then a redundant, valid confirmation (`improve workflow`, `improve architecture tests workflow`); `session` forces the session transport back (`improve architecture tests security session`). **Fewer than 3 aspects — including the single-named-aspect interactive route — default to the session transport**, [IMPROVE-CORE.md](IMPROVE-CORE.md) exactly as written with Agent-tool sub-agents launched in parallel from this loop; `workflow` there is still the explicit request for the `Workflow` tool, and it auto-downgrades back to the session transport when the count doesn't pay (see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)).
 
 Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). **RULE 0 holds under both** — the workflow contains no question, because every question in a survey falls outside Phases 04–06b.
 

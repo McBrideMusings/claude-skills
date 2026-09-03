@@ -4,7 +4,7 @@ The phases a survey runs, the brief every aspect sub-agent gets, the scoring, th
 
 A **single-aspect** run skips Phases 01–07 — it loads the aspect's owner interactively and stays in conversation — and then rejoins at **Phase 08**, which is not optional for any route. Its findings get scored inline against [GROUNDING.md](GROUNDING.md) first, per Phase 06's inline-scorer clause. It still writes the Phase 01 marker (`touch "$(~/.claude/tools/repo-slug --path)/.improve-active"`) before loading the aspect owner, since RULE 0 binds it too.
 
-Two transports. The default runs Phases 04–06b in this session with Agent-tool sub-agents. The `workflow` token moves those same phases into a workflow script so only surviving findings enter this context — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which aspects run and what each brief contains are identical either way.*
+Two transports. Survey with 3 or more aspects surviving Phase 02 defaults to the workflow transport — Phases 04–06b move into a workflow script, no token needed, so only surviving findings enter this context. Fewer than 3 aspects — including the single-named-aspect interactive route — default to the session transport, running Phases 04–06b in this session with Agent-tool sub-agents. `workflow` is a redundant, valid confirmation on the 3+ path and the explicit request for the `Workflow` tool below it (where it auto-downgrades back to the session transport, since the transport doesn't pay under three); `session` forces the session transport back on a 3+-aspect run. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which aspects run and what each brief contains are identical either way.*
 
 ## Phase 01 — Detect applicability, and build the repo map
 
