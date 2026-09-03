@@ -25,6 +25,8 @@ Never re-implement what `bd` computes. `bd ready`, `bd blocked`, and `bd swarm v
 
 One constraint the graph does not carry: **two items whose briefs name the same file do not swarm**, because sibling branches collide by construction. Queue them instead. This is the general form of the append-target rule a swarm pass already has to honor for a single file everyone edits — a changelog, a file map, a component registry — extended to any file two briefs both name; the briefs say which files they touch, so this is readable without running anything.
 
+A refinement to that rule: when the only file two briefs share is a **mount file** — a root component such as `App.jsx`, a router table, a barrel `index.*`, a plugin list — they do swarm. The test for a mount file: across the sibling briefs, the only change it ever takes is adding a line or a block that references the new work, never logic. When that test holds, rewrite each brief before dispatch: drop the mount file from its file list, and add the line `Mount: return the exact lines to add to <file> in followups; do not edit <file>`. The orchestrator applies the returned mount lines itself after landing each pass, one commit per pass, then re-runs that pass's `recheck`.
+
 ## 3. The offer is a slate row, never a new word
 
 When an item clears, it does not invent vocabulary — it becomes one more row on the slate already in front of the user, in plain chat, never a tool-driven picker:
