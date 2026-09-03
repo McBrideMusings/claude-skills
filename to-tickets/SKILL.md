@@ -45,9 +45,14 @@ Work from whatever is in the conversation. If the user passes an issue reference
 **If the source is a prototype or an explainer**, read `../spike/SKILL.md` § Tickets from a
 prototype before writing the slate. It gets committed as a directory — `docs/spikes/<slug>/`
 for a prototype or wireframe, `docs/explainers/<slug>/` for an explainer — holding the build
-**and one screenshot per named state**, and the slate ends with a teardown issue that depends
-on every other issue in it. That last ticket is not optional: without it the reference
-outlives its subject and starts contradicting the shipped code.
+**and one screenshot per named state**.
+
+**Whether the slate ends in a teardown issue depends on which kind of prototype it is**, and
+that section is the authority. An expiring prototype gets one, and it is not optional there.
+A **living** prototype — one whose README declares it the design source of truth, maintained
+ahead of the code — never gets one, because the teardown would delete the artifact the next
+slate is supposed to cite. Read the README before writing the last ticket; if it does not
+say which kind it is, ask in one line before publishing.
 
 **If the work is UI and there is no prototype yet, stop and say so.** A UI slice needs a
 reference frame to cite, and inventing the visual target inside a ticket body is how a slate

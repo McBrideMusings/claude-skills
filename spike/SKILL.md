@@ -198,9 +198,8 @@ losing direction's frames come out once the question is settled.
 
 ## Tickets from a prototype
 
-A prototype that a ticket slate is cut from is **reference material with an expiry**, and
-the expiry is tracked, not remembered. When `to-tickets` (or any other pass) turns one
-into issues:
+When `to-tickets` (or any other pass) turns a prototype into issues, two steps always
+happen:
 
 1. It gets committed to `docs/spikes/<slug>/` — a directory, not a bare file — so every
    ticket can cite a path that resolves from any checkout.
@@ -211,15 +210,21 @@ into issues:
    gives you something to check the result against without launching anything. Capture
    them with the `screenshot-checker` agent or the folios harness; never hand-wave a state
    you didn't render.
-3. **File one last issue: delete it.** That issue depends on every other issue in the
-   slate, so it surfaces as ready only once the work it described is done. Closing it
-   removes the whole `docs/spikes/<slug>/` directory — build and screenshots together —
-   and closes the loop.
 
-Without step 3 the reference outlives its subject and starts contradicting the shipped
-code. The dependency is what makes the cleanup arrive on its own instead of needing to be
-noticed. Screenshots make step 3 more urgent, not less: a stale picture is argued with
-more readily than stale markup.
+**Whether a third step follows depends on which kind of prototype it is, and only the user
+decides that.**
+
+### The expiring kind — file the teardown
+
+The default. The prototype existed to get the slate written and has no job afterwards.
+
+**File one last issue: delete it.** That issue depends on every other issue in the slate,
+so it surfaces as ready only once the work it described is done. Closing it removes the
+whole `docs/spikes/<slug>/` directory — build and screenshots together — and closes the
+loop. Without it the reference outlives its subject and starts contradicting the shipped
+code; the dependency is what makes the cleanup arrive on its own instead of needing to be
+noticed. Screenshots make it more urgent, not less: a stale picture is argued with more
+readily than stale markup.
 
 **The teardown issue's dependencies make it *ready*, never *done*.** Those are different
 facts and reading the first as the second deletes a live specification. A prototype is
@@ -228,6 +233,25 @@ project's `verify` skill owns — not when the tickets it produced are closed. A
 finds the teardown issue at the top of `bd ready` must run that comparison first and, if the
 shipped surface still differs, leave the issue open and say which frames still do not match.
 A slate can close in full against a prototype the code has never matched.
+
+### The living kind — no teardown, ever
+
+A prototype the user has declared the **design source of truth** for a surface: it is
+maintained alongside the code, changed *first* when the design changes, and the code
+follows it. Cutting tickets from it does not end it — the next slate cites the same
+directory.
+
+This is the same object § *A committed prototype is UPDATED, never duplicated* already
+describes as "the **current** reference the surface it depicts is measured against". A
+teardown issue would delete the thing that section tells the next pass to open and edit.
+
+**Never file a teardown for one, and never offer to.** Its README says which kind it is —
+a living prototype states it in the first lines, as `docs/spikes/agent-chat/README.md`
+does with "This is the design source of truth for `apps/phone`. It is not a spike with an
+expiry." Read that before writing the last ticket.
+
+**When the README does not say, ask — one line, before publishing.** Getting it wrong in
+this direction destroys a maintained artifact, and the answer costs a sentence.
 
 **Getting comments back.** Every build carries the comment layer: the user presses the
 speech-bubble button (or `a`), marks things up, and presses **Copy comments**. The
