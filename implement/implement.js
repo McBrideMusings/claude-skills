@@ -307,6 +307,12 @@ const VERDICT = {
     // field's name would be false the instant it is written. The script halts
     // on this rather than trusting the prose that asks Verify to catch it.
     tree_clean: { type: 'boolean' },
+    // True when the reachability preflight (below) found a host:port or URL
+    // the item names as closed. The script reads this to distinguish a real
+    // BLOCKED — something wrong in the code — from an environment that was
+    // never brought up, which halts on 'surface' instead of 'verify' so the
+    // caller starts the surface rather than re-diagnosing the change.
+    surface_down: { type: 'boolean' },
     // How the CALLER re-checks this work. This pass's own verdict is a
     // first-pass filter, not the authority: the caller re-runs these commands
     // itself, in its own context, and only its result decides whether the
@@ -853,6 +859,8 @@ const verdict = await agent(
 
 Prove this item's behaviour works at the surface a person would actually use, and report a verdict. Passing tests are not that proof — they prove CI runs, and the previous stage already established the code compiles.
 
+**Before any of that, check that every surface this item names is actually up.** Collect every \`host:port\` (e.g. \`127.0.0.1:2024\`) and every \`http(s)://\` URL mentioned in the item body below, in its acceptance criteria, and in \`${REPO_ROOT}/.claude/skills/verify-project/SKILL.md\` (read it now if you have not yet, just to scan for these — you read it properly in the next step regardless). For each one, run \`nc -z -G 3 <host> <port>\` (or, for a URL, \`curl -s -o /dev/null -m 3 -w '%{http_code}' <url>\` — any response code at all, even an error page, counts as reachable; a curl exit failure does not). **If any of them is closed, stop here and return immediately**: \`verdict: "BLOCKED"\`, \`surface_down: true\`, and \`failures\` containing one entry per closed surface reading \`surface unreachable: <host:port or url> (from <item body|acceptance criteria|verify-project/SKILL.md>)\`. Do nothing else in that case — no further verification, no mutation-testing step, no \`recheck\` beyond the reachability commands themselves. Only once every named surface answers do you go on to read and follow \`verify-project/SKILL.md\` in full.
+
 **Verification runs through this project's own \`verify-project\` skill, read as a file.** Read \`${REPO_ROOT}/.claude/skills/verify-project/SKILL.md\` and follow it. It owns what verification means for this repo and how to get a handle on its surface; do not re-derive its method, do not hand-roll the check, and do not substitute a test run.
 
 **Do not invoke \`Skill(verify)\`, and do not conclude anything is broken when you notice you cannot.** The bundled \`verify\` skill is model-invocation-disabled: from inside this stage the Skill tool returns \`Skill verify cannot be used with Skill tool ... Ask the user to run /verify themselves\` and nothing loads. That is the tool working as designed, not a missing skill and not a papercut. Reading the project skill as a file above is this stage's method, not a fallback from it.
@@ -863,7 +871,7 @@ Prove this item's behaviour works at the surface a person would actually use, an
 
 **Resolve doubt as \`FAIL\`.** There is no partial pass, and a \`FAIL\` is a real answer this stage exists to produce — not something to soften into a note so the pass can continue.
 
-**But an unreachable surface is \`SKIP\`, not \`FAIL\` and not \`BLOCKED\`.** If the behaviour genuinely cannot be driven from here — no surface exists to drive, or reaching it needs something this environment does not have — return \`SKIP\` with \`evidence\` naming what you could not reach and why you could not. \`FAIL\` is for behaviour you observed to be wrong; \`SKIP\` is for behaviour you could not observe. The caller treats \`SKIP\` as a blocker on closing the item, so the work is not lost and the gap is not hidden.
+**A surface this item names that is not listening is \`BLOCKED\` with \`surface_down: true\` (handled above, before you get here) — never \`SKIP\`.** \`SKIP\` remains only for behaviour that cannot be observed for a reason other than a closed port: no fixture data, no device, no way to drive the behaviour from this environment even though every named surface answered. \`FAIL\` is for behaviour you observed to be wrong; \`SKIP\` is for behaviour you could not observe for some other reason. The caller treats \`SKIP\` as a blocker on closing the item, so the work is not lost and the gap is not hidden.
 
 Item: ${item.id} — ${item.title}
 ${item.acceptance && item.acceptance.length ? `Acceptance criteria:\n${item.acceptance.map((x) => `- ${x}`).join('\n')}` : 'No acceptance criteria were written down; verify the behaviour the item describes.'}
@@ -948,6 +956,9 @@ if (verdict && verdict.tree_clean === true) {
 
 if (!verdict || verdict.verdict === 'FAIL' || verdict.verdict === 'BLOCKED') {
   await salvage('Verify', verdict ? verdict.verdict : 'nothing')
+  if (verdict && verdict.surface_down === true) {
+    return halt('surface', `surface unreachable: ${(verdict.failures || []).join('; ')}`)
+  }
   return halt('verify', verdict ? `${verdict.verdict}: ${(verdict.failures || []).join('; ')}` : 'verify stage returned nothing')
 }
 

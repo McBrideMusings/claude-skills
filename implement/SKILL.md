@@ -89,9 +89,12 @@ A halt returns `{ok: false, halted_on, detail}` instead. **Branch on `ok` first*
 The implementer does not get to certify its own work. `implement.js` has a Verify stage run by a different agent than the one that wrote the code, and that is a filter, not the authority. **You re-run `recheck` yourself, in the worktree, and your result is what decides whether the branch lands.**
 
 ```text
+check every host:port / URL named in the item, its acceptance criteria, and verify-project/SKILL.md
+  -> start whatever is down, before the first launch
 r = Workflow(pass)
 round = 1
 loop
+  if !r.ok && r.halted_on == 'surface'  -> start the named surface, then relaunch below on the SAME worktree (never a fresh checkout)
   if !r.ok                     -> halt: report r.halted_on and r.detail
   run every r.recheck[].cmd in r.worktree, compare against .expect
   append a rechecks entry to the verdict file at r.verdict_path, recording the head sha, the commands and their results
@@ -100,6 +103,10 @@ loop
   if round == 5                -> halt: leave the worktree standing, report the path
   r = Workflow(pass, args: {...args, worktree: r.worktree, round: round, resolved: {...item, body: failures, files: r.files}}); round++
 ```
+
+**Run the same reachability check the Verify stage runs, yourself, before the first `Workflow(pass)` launch** — every `host:port` and `http(s)://` URL named in the item, its acceptance criteria, and `verify-project/SKILL.md`, checked with `nc -z -G 3 <host> <port>` or `curl`. Start whatever is down before launching; a pass that starts against a closed surface just re-derives the same halt the Verify stage would have caught anyway, one Workflow launch later.
+
+**On `r.halted_on == 'surface'`, start the surface named in `r.detail` and relaunch — on the SAME `worktree`, passing `round: round` (not a fresh checkout), exactly as a normal round 2+ relaunch does.** This does not count against the five-round exhaustion limit above; it is the environment catching up, not the work failing. If starting the surface does not succeed — the command that should bring it up errors, or the reachability check still fails after trying — fall through to the normal halt: leave the worktree standing and report `r.detail`, rather than retrying indefinitely.
 
 **Rounds 2..N relaunch `Workflow` on the SAME `worktree`, carrying the failures as the item body.** Pass `args.worktree` as the worktree round 1 already committed into, `args.round` as the loop's own counter, and `args.resolved` as the original item with `body` replaced by round 1's failure list — the recheck commands that failed and their real output — plus `files: r.files`, round 1's touched files. The pass re-enters the existing checkout with round 1's commit already in place; `name-pass.sh` still generates a fresh `scriptPath` per launch, so round 2 gets its own generated copy, and that is expected.
 
@@ -129,7 +136,7 @@ loop
 - **Never name it `verify`.** That collides with the bundled skill, which is why the project skill has its own name.
 - **Keep it out of git.** Add `.claude/skills/verify-project` to `<repo>/.git/info/exclude` — never `.gitignore`, which is committed. If you find it tracked, untrack it.
 
-**An unreachable surface is `SKIP`, not `FAIL` and not `BLOCKED`.** `FAIL` is behaviour observed to be wrong; `SKIP` is behaviour that could not be observed at all. A `SKIP` does not halt the pass — `implement.js:1006` puts any non-`PASS` verdict in `blockers`, so the work still commits and the item still does not close. Nothing is lost and nothing is hidden.
+**A surface the brief names and that is not listening is `BLOCKED` with `halted_on: 'surface'`, not `SKIP`.** Before reading `verify-project/SKILL.md`, the Verify stage checks every `host:port` and `http(s)://` URL named in the item body, its acceptance criteria, and that file, and any closed one halts the pass immediately rather than letting the stage discover it partway through — a closed port re-diagnosed as a code problem burned 29 minutes twice over on run `a9667f84` (`neutrino-2lc.12.6`), because `SKIP` reads like a soft pass and nothing forced the environment to come up before the next launch. `SKIP` remains only for behaviour that cannot be observed for some other reason — no fixture data, no device — with every named surface already reachable. `FAIL` is still behaviour observed to be wrong.
 
 **A pass that touched tests must prove the tests discriminate.** A test is evidence only if it fails without the change. `implement.js`'s Verify stage captures the production half as a patch, reverses it, runs only the new tests, and records `mutation.discriminates`, which has three states. `true` is evidence — the retained tests failed without the change. `false` is a blocker — a test was added and does not discriminate. `null` means the change was removal-only (deleted production code, or comment/documentation-only edits): there was no behaviour to reverse, so reversing it just restores the deleted code and the retained tests pass exactly as before — that is not a weak test, it is nothing to discriminate, and it is not a blocker. A `PASS` on a test-touching diff with no `mutation` block, or with `discriminates: false`, arrives in `blockers` — the work still commits, because a weak test is no reason to strand a correct implementation, but the item does not close on it.
 
@@ -362,4 +369,4 @@ Computing the snapshot: on beads, `bd count --status open` plus `bd ready --json
 
 - One pass works **one** item. Never bundle two.
 - This skill never invokes itself, and a pass never invokes it.
-- A pass never writes to the tracker. This session closes the item, after landing, and only when verification returned `PASS` and something was actually committed. `SKIP` is not `PASS`.
+- A pass never writes to the tracker. This session closes the item, after landing, and only when verification returned `PASS` and something was actually committed — a weaker verdict does not close it.

@@ -392,6 +392,18 @@ check('tree_clean:false reaches Wrap and reports ok', treeDirty.result.ok, true)
 check('  ...with no blockers', treeDirty.result.blockers, [])
 check('  ...and Wrap is called', treeDirty.calls.includes('Wrap'), true)
 
+// A verdict naming a closed surface (cc-fmpo.2) halts on 'surface', not
+// 'verify' — the caller needs to tell "the environment was never brought up"
+// apart from a real BLOCKED so it can start the surface and relaunch instead
+// of re-diagnosing the change.
+const surfaceDown = await run(BASE, {
+  Verify: { verdict: 'BLOCKED', surface_down: true, failures: ['surface unreachable: 127.0.0.1:2024 (from item body)'] },
+})
+check('a closed surface halts the pass', surfaceDown.result.ok, false)
+check('  ...naming "surface", not "verify"', surfaceDown.result.halted_on, 'surface')
+check('  ...with a detail naming the unreachable surface', /surface unreachable: 127\.0\.0\.1:2024/.test(surfaceDown.result.detail), true)
+check('  ...and never reaches Wrap', surfaceDown.calls.includes('Wrap'), false)
+
 // The Gate's third test (cc-32bc): an item naming a file outside the repo the
 // pass is confined to must halt at Gate, and the halt detail must survive
 // carrying the out-of-repo path and the word "split" back to the caller. This
