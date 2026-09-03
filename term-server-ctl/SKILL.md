@@ -1,6 +1,6 @@
 ---
 name: term-server-ctl
-description: Control the term terminal multiplexer from inside one of its panes — read other panes, split, open tabs, run commands and collect their exit codes, and report your own working/awaiting/done/error state so it shows on the user's sidebar. Use when running inside a term pane (the $TERM_CONTROL_SOCKET environment variable is set).
+description: Use when the $TERM_CONTROL_SOCKET environment variable is set — that's how you know you're running inside a pane of term, a terminal multiplexer. Control it from inside one of its panes — read other panes, split, open tabs, run commands and collect their exit codes, and report your own working/awaiting/done/error state so it shows on the user's sidebar.
 ---
 
 <!-- installed by admin: agent_skill.install_agent_skill() -->

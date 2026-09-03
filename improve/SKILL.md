@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `backlog spec`; never implements. Opportunities where nothing is broken; defects are `review`. Choices are typed keywords, never AskUserQuestion."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `backlog spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
 ---
 
 # Improve

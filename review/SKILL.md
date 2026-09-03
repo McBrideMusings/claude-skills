@@ -7,7 +7,7 @@ description: "Perform a code review. Routes by what you're standing in: uncommit
 
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs.
 
-**This skill performs a review.** Getting a branch *ready* to be reviewed — resolving conflicts, fixing red checks, answering feedback nobody has answered — is [unblock](../unblock/SKILL.md)'s job. Review calls it and continues.
+**This skill evaluates a diff for defects** — bugs, vulnerabilities, quality issues, spec and architecture fit. When the branch isn't mergeable yet — conflicts, red checks, feedback nobody has answered — it calls [unblock](../unblock/SKILL.md) to get there first, then continues.
 
 | file | what it owns |
 | --- | --- |
@@ -125,19 +125,19 @@ nothing pushed and no new feedback since the last pass. `again` · `axes <names>
 
 ## Phase 00.5 — Explain the PR before reviewing it
 
-**Whenever the review target is a PR — mine or a teammate's, every time, no exceptions — explain what it does before you review it.** Run the [summary](../summary/SKILL.md) skill against the PR's branch, then present the result **in chat**, *before* the findings, so the user reads what the change is and then reads the review of it.
+**Whenever the review target is a PR — mine or a teammate's, every time, no exceptions — explain what it does before you review it.** Run the [handoff](../handoff/SKILL.md) skill **with the `write` token** — `handoff write` — against the PR's branch, then present the result **in chat**, *before* the findings, so the user reads what the change is and then reads the review of it.
 
 **Assume the reader has never seen this code.** Plain language, no insider terms, no repo shorthand — name the actual thing that changed and the actual behavior that was wrong. "The payout code paid the winner twice when two players went all-in on the same hand; this makes it pay once" beats "fixes double-settlement in the all-in path".
 
 Two things go in the chat explanation:
-1. **What the PR changed** — the summary skill's header and change list, in that language.
+1. **What the PR changed** — the handoff skill's header and change list, in that language.
 2. **The issue it was fixing** — what was broken before, and what breaks for a person using it. Pull the issue via `gh pr view <n> --json body` and any `Resolves #N` / `Fixes #N` reference (`gh issue view <n> --json title,body`). If the PR links no issue, say what the commits and diff show it was fixing.
 
 **Skip the issue half for a new feature.** A PR that adds something that didn't exist has no bug behind it — say what it adds and move on. Don't invent a fixed issue to fill the slot.
 
 **This is chat-only — it never enters the PR.** It's the user's orientation, not review output: it does not go in the review report, the verdict body, or any posted comment.
 
-**Skipping the summary document.** The summary skill writes a file to `/private/tmp/claude/<repo-slug>/summaries/…`. On a teammate's PR that file is usually noise. Default: run the skill for its analysis, present it in chat, and **skip the file write** — say "summary not written to disk" in one clause. Write the file when the user asks, or when the PR is mine and I'll want the text for the PR description; then print its absolute path as the last token on its line. `skip summary` from the user drops this phase entirely.
+**Skipping the summary document.** `handoff write` writes a file to `/private/tmp/claude/<repo-slug>/summaries/…`. On a teammate's PR that file is usually noise. Default: run the skill for its analysis, present it in chat, and **skip the file write** — say "summary not written to disk" in one clause. Write the file when the user asks, or when the PR is mine and I'll want the text for the PR description; then print its absolute path as the last token on its line. `skip summary` from the user drops this phase entirely.
 
 ## The review itself
 

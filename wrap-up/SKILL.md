@@ -236,7 +236,7 @@ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or
 
 **Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat with **Files changed / Unchanged / Follow-up needed** and **Run:** / **Look for:** steps.
 
-Invoke the `summary` skill **with the `write` token** — `summary write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong mode here.)
+Invoke the `handoff` skill **with the `write` token** — `handoff write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `handoff` writes the terse fresh-agent doc, not this. `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong skill here.)
 
 ### Step C — Land the branch (merge or fast-forward push on owned, PR on collaborative)
 
