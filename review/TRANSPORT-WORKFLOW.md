@@ -2,7 +2,9 @@
 
 An override for **Phases 04 → 04b → 05 → 05b → 06 → 06b → 06c only** — the lens fan-out, the best-practice verification, the scoring, the reproduction gate, the filter, and fix authoring. Everything before and after stays exactly where it is.
 
-Selected by the `workflow` token in the arguments: `review workflow`, `review repo workflow`, `review dual workflow`. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise. No token means the session transport, which is [REVIEW-CORE.md](REVIEW-CORE.md) unchanged.
+Selected by the `workflow` token in the arguments: `review workflow`, `review dual workflow`. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise. No token means the session transport, which is [REVIEW-CORE.md](REVIEW-CORE.md) unchanged.
+
+**Repo mode inverts the default.** `review repo` alone selects this transport — repo mode is the context-heaviest route there is, and the fan-out benefits most from findings never entering this context until the report. `workflow` is still valid there, as a redundant explicit confirmation (`review repo workflow`). The `session` token forces the session transport back: `review repo session`.
 
 ## What stays in the session, and why
 
