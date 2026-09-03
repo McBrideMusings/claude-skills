@@ -5,6 +5,11 @@
 - **A bead is private because you never name it in a push.** `bd create` makes one.
 - **Publish one:** `bd github push <id>` prompts, then files it. Every unscoped form is denied
   by `beads-stealth-guard.sh`.
+- **Flatten before you publish.** `bd github push` on an `epic`-typed bead files a GitHub
+  milestone plus one issue per child — not the single tracked issue "publish one" implies.
+  If you want one issue, the bead must not be typed `epic` when you push it: fold the
+  children's substance into the parent's description (a checklist is enough) and `bd delete`
+  them first, or push a `feature`/`task` bead that was never split into children at all.
 - **Refresh theirs:** `GITHUB_TOKEN=$(gh auth token) bd github sync --pull-only`, then
   `bd rename <import-id> <prefix>-<n>`. A pull rewrites mirrored beads; private ones it
   cannot see.
