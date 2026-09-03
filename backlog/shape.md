@@ -1,13 +1,8 @@
----
-name: iron-out
-description: "Iron out a backlog's structure and its ambiguity: type and label every issue, group them into epics, infer the dependency edges nobody wired, print a validated roadmap of ready-fronts, then drive the remaining ambiguity to zero. Also charts a foggy effort from scratch. Triggers: 'what should I work on next', 'map the dependencies', 'build a roadmap', 'these issues aren't organized'. Selectors: issue numbers, #range, label:X, milestone:X, epic:X, followups, papercuts; bare iron-out takes the whole backlog."
----
-
-# Iron Out
+# Shape
 
 The goal state is **AFK**: every issue in scope passes `implement`'s Phase 0.5 gate — a concrete plan is statable, and "done" is verifiable without a judgment call the user owns. This skill finds the issues that fail and drives them to zero.
 
-**Worth doing on its own.** An issue that cannot state its own plan or its own definition of done is a bad issue whether or not an agent ever touches it — you re-derive the missing decision every time you read it. Run `iron-out` because the backlog is vague, not because something is about to consume it.
+**Worth doing on its own.** An issue that cannot state its own plan or its own definition of done is a bad issue whether or not an agent ever touches it — you re-derive the missing decision every time you read it. Run `backlog shape` because the backlog is vague, not because something is about to consume it.
 
 It happens to also be what the autonomous harnesses require, and they say so themselves — a swarmed `/implement` stops its whole run on a gate failure and hands the scope here. That dependency mostly points one way — they know about this skill, this skill does not need to know about them to run — but the exit does reach back: a cleared item is handed to `implement` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md), from Phase 3 onward.
 
@@ -16,7 +11,7 @@ It happens to also be what the autonomous harnesses require, and they say so the
 Every item is an ordinary issue in the ordinary backlog. There is no parallel planning surface.
 
 - **Work item** — describes something to build. Resolving it **rewrites its body** so the gate passes; the issue stays open and gets implemented later.
-- **Question** — its whole content is a decision nobody has made. Resolving it **posts the answer and closes it**, and often files new issues. Carries beads' native `human` label (`bd human list` / `respond` / `dismiss` / `stats`) and `issue_type: decision`, so `triage` and `implement` skip it — nothing is built *from* a question.
+- **Question** — its whole content is a decision nobody has made. Resolving it **posts the answer and closes it**, and often files new issues. Carries beads' native `human` label (`bd human list` / `respond` / `dismiss` / `stats`) and `issue_type: decision`, so `backlog next` and `implement` skip it — nothing is built *from* a question.
 
 **A question is a roadmap node, not a step before the roadmap.** `bd types` ships `decision` as a first-class type, so a decision sits in the dependency graph next to the work it gates. On a fresh backlog, wave 1 of the roadmap is frequently all decisions — the next three things are calls the user owes, not code. That is why ordering and ironing out live in one skill: they are the same graph read twice.
 
@@ -36,20 +31,20 @@ Every issue has a title. In everything the user reads — the queue, an intervie
 
 ## Scope
 
-Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `iron-out` = every open issue in the current repo. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
+Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `backlog shape` = every open issue in the current repo. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
 
 **Dependencies are real edges, never prose.** On beads: `bd dep add <id> <blocker-id> -t blocks`, read back with `bd dep tree`, `bd blocked` and `bd ready`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is a **finding** — an edge someone never wired — and Phase 0 offers to convert it. An item is unblocked when every blocker is closed.
 
 **`bd ready` trusts a denormalized `is_blocked` flag that can go stale** after a pull whose scoped recompute was skipped, or a merge conflict resolved by hand. Run `bd recompute-blocked` before any read that orders work, or the roadmap silently hides ready issues.
 
-**Free text that isn't a selector is a loose idea, not a scope** — `iron-out a 3D storefront browser for my Plex library`. There is no backlog to scan yet, so go to [Charting a foggy effort](#charting-a-foggy-effort) first; the loop runs afterwards over the milestone it creates.
+**Free text that isn't a selector is a loose idea, not a scope** — `backlog shape a 3D storefront browser for my Plex library`. There is no backlog to scan yet, so go to [Charting a foggy effort](#charting-a-foggy-effort) first; the loop runs afterwards over the milestone it creates.
 
 ## Charting a foggy effort
 
-When the user arrives with an idea rather than a backlog — a greenfield build, a huge feature, a migration — there is nothing to scan yet. Chart it first. Only reach for this when the effort is too big to hold in one session; a smaller idea goes straight to `/grill-me` → `/to-tickets`.
+When the user arrives with an idea rather than a backlog — a greenfield build, a huge feature, a migration — there is nothing to scan yet. Chart it first. Only reach for this when the effort is too big to hold in one session; a smaller idea goes straight to `/grill-me` → `/backlog spec`.
 
 1. **Name the destination.** Run `grill-me` to pin down what this effort finds its way to — a spec, a decision, a change made in place. The destination fixes the scope, so it is settled first.
-2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space rather than deep on one thread, surfacing the open decisions and the first steps takeable now. **If no fog surfaces**, the way is already clear: say so and send the user to `/to-tickets`. No milestone needed.
+2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space rather than deep on one thread, surfacing the open decisions and the first steps takeable now. **If no fog surfaces**, the way is already clear: say so and send the user to `/backlog spec`. No milestone needed.
 3. **Create the epic.** `bd create "<effort>" -t epic -d "<brief>"` on beads (`bd types` also ships a distinct `milestone` type — that one marks completion of a set and holds no work, so it is not this); a GitHub milestone where there is no beads store. Its title is the effort; its description is the brief:
 
 ```markdown
@@ -305,13 +300,13 @@ Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Re
 ```
 Scope is clear. Reply with a number, or tell me something else.
 
-1. Cut the tickets — invoke to-tickets on the decisions made. (Answered questions, nothing implementable yet.)
+1. Cut the tickets — invoke backlog spec on the decisions made. (Answered questions, nothing implementable yet.)
 2. Dispatch the front as a swarm — cc-105, cc-140, cc-162 (no edges between them).
 3. Queue the rest behind it — cc-171 (blocked by cc-140), in dependency order.
 4. Stop here.
 ```
 
-Already dispatched from Phase 3 (cc-111) is not offered again — name it in a line above the rows instead. Rows 2 and 3 appear only when the graph has a front or a queue left to offer; a scope with nothing left to dispatch drops straight to rows 1 and 4. Row 1 loops back: `to-tickets` synthesizes a spec from the decisions, gets it approved, files work issues onto the same milestone → `iron-out` again. Name the next step and stop — never auto-chain into it.
+Already dispatched from Phase 3 (cc-111) is not offered again — name it in a line above the rows instead. Rows 2 and 3 appear only when the graph has a front or a queue left to offer; a scope with nothing left to dispatch drops straight to rows 1 and 4. Row 1 loops back: `backlog spec` synthesizes a spec from the decisions, gets it approved, files work issues onto the same milestone → `backlog shape` again. Name the next step and stop — never auto-chain into it.
 
 ## Rules
 

@@ -88,7 +88,7 @@ tests, and a **project-local** `verify` skill (which built-in `verify` bootstrap
 `ref-<label>/testing.md` for stack-specific drive/harness knowledge.
 
 The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique
-lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `iron-out`, and
+lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `backlog shape`, and
 `ref-game-dev`'s design phase read it optionally when the label is in scope. Design cells name structure
 and tradeoffs — they never deliver a fun/good verdict.
 

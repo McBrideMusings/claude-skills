@@ -21,7 +21,7 @@ Present every substantive hit as one numbered slate, closed with the escape hatc
 
 1. **Legacy planning docs** (`docs/roadmap.md`, `docs/roadmap/`, `ROADMAP.md`, `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/`, non-standard top-level files) → open issues on the repo's tracker for genuinely uncovered work, then delete source. Cross-reference existing issues before bulk-creating.
 
-   A roadmap file is this category, not a universal file. It cannot express a blocking edge, so it drifts from the tracker and neither copy can be shown wrong. Its items become issues with real dependency edges; `iron-out` then prints the roadmap from the graph. Never leave both standing.
+   A roadmap file is this category, not a universal file. It cannot express a blocking edge, so it drifts from the tracker and neither copy can be shown wrong. Its items become issues with real dependency edges; `backlog shape` then prints the roadmap from the graph. Never leave both standing.
 2. **New opt-in suggestions** if heuristics now match (e.g., project gained HTTP server → suggest `api.md`).
 3. **Update-when table** in `CLAUDE.md` if the section exists but is missing the table.
 

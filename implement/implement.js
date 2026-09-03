@@ -448,7 +448,7 @@ if (round >= 2 && (!a.resolved || !a.worktree)) {
 
 let item
 if (a.resolved) {
-  // The caller (or iron-out) already resolved and gated this one; don't re-fetch.
+  // The caller (or backlog shape) already resolved and gated this one; don't re-fetch.
   // Default `found: true` for a caller that doesn't set it — an explicit
   // `found: false` from the caller still wins, since it's spread after.
   item = { found: true, ...a.resolved }
@@ -496,14 +496,14 @@ This is read-only. Run no \`bd\` write of any kind.`,
 
 Resolve exactly **one** tracked work item and return it. Resolving it is the whole job — do not plan it, judge it, or touch a line of code.
 
-Target: ${a.issue ? `issue ${a.issue}` : a.item ? `the local item ${JSON.stringify(a.item)}` : 'no explicit target — resolve it from the branch name, then from non-interactive triage'}.
+Target: ${a.issue ? `issue ${a.issue}` : a.item ? `the local item ${JSON.stringify(a.item)}` : 'no explicit target — resolve it from the branch name, then from non-interactive backlog next'}.
 
 Resolve the tracker backend via \`${DETECT}\`, then work down this ladder and stop at the first rung that answers.${DB ? ` Every \`bd\` read in this stage carries \`${DB}\`; a bare \`bd\` resolves from the worktree's own working directory and can answer from a different database than the one this item actually lives in.` : ''}
 
 1. **An issue number or id in the target above** (\`1118\`, or a beads id like \`myproj-zb8\`) — that issue IS the item. Confirm it exists and is open: \`bd${DB} show <id> --json\` on beads, \`gh issue view <n> --json number,title,state\` on GitHub. **If it is closed or missing, do not substitute another item** — report it unfound per the shape below. On beads, it must also be a **slice**: \`bd${DB} children <id> --json\` empty (a parent with a breakdown is never a pass — its slices are), and a title not beginning \`Verify:\` or \`Land:\` (those two are the caller's, never a pass). Either failing is unfound, with \`body\` naming which.
 2. **Item text in the target above** — a papercut or local note with no issue number. That text IS the item; carry the id the caller gave it. Do not go looking for a matching issue.
 3. **The current branch name**, for an embedded issue id — \`fix/1118-login\`, \`1118-foo\`, \`issue-1118\`, \`myproj-zb8-login\`. It counts only if it matches an item that is open on the backend (\`bd${DB} show <id> --json\`).
-4. **Triage.** Invoke the \`triage\` skill via the Skill tool **non-interactively** — skip its wait-for-confirmation step and take the top recommendation. Skip triage's offer-wrap-up step; this pass does not wrap up. **The pick must be an item that already exists on the tracker.** A fresh idea, a "while we're here" cleanup or an invented refactor is not one — report it unfound per the shape below. Same if triage finds nothing actionable.
+4. **Next.** Invoke the \`backlog next\` skill via the Skill tool **non-interactively** — skip its wait-for-confirmation step and take the top recommendation. Skip its offer-wrap-up step; this pass does not wrap up. **The pick must be an item that already exists on the tracker.** A fresh idea, a "while we're here" cleanup or an invented refactor is not one — report it unfound per the shape below. Same if it finds nothing actionable.
 
 Return the item itself, with \`found: true\`. Put every question the tracker thread left unanswered into \`unresolved\` — that field is what the next stage gates on, and an empty \`unresolved\` you did not actually check for is the failure mode here.
 

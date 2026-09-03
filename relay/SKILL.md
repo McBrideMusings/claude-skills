@@ -96,7 +96,7 @@ pane stays. Nothing is cleared.
 
 **fix now** — do it in this session, commit, push. Do this *before* writing the
 marker, since the relay is going to erase your ability to.
-**file** — `followups` skill, filed to the tracker.
+**file** — `backlog file` skill, filed to the tracker.
 **skip** — silent. Do not mention it again.
 
 ## Step 4 — write the marker

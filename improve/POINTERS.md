@@ -66,7 +66,8 @@ Two things follow, and both are load-bearing:
   pointer sitting in always-loaded steering. Put must-reach material behind a skill that
   fires, not behind a `CLAUDE.md` line.
 - **The 0–68% spread is wording and structure, not mechanism.** Read rate falls as the
-  pointing document's own body grows: a 3-sibling skill 68%, `to-tickets` (2) 51%,
-  `review` (15) 27%, `herdr` (40) 0%. A document big enough to act on without opening
-  anything gets acted on without opening anything. **Thinness is the forcing function** — it
-  is why a knowledge skill's body is a file map and nothing else.
+  pointing document's own body grows: a 3-sibling skill 68%, a 2-sibling skill 51%
+  (measured on a skill since folded into `backlog`, whose own sibling count has changed and
+  is not re-measured here), `review` (15) 27%, `herdr` (40) 0%. A document big enough to act
+  on without opening anything gets acted on without opening anything. **Thinness is the
+  forcing function** — it is why a knowledge skill's body is a file map and nothing else.

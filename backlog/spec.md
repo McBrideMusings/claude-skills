@@ -1,15 +1,10 @@
----
-name: to-tickets
-description: "The path from conversation to filed work: synthesize a spec, get it approved, slice it into vertical-slice tracer-bullet tickets, publish to the repo's issue backend (beads or GitHub). The single owner of spec synthesis. Classifies slices as HITL or AFK."
----
-
-# To Tickets
+# Spec
 
 Break a plan into independently-grabbable tickets using **vertical slices** (tracer bullets). Tickets become inputs to `implement`.
 
 **The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that.
 
-**This skill is the single owner of spec synthesis.** `docs`, `grill-me`, `gui` and `iron-out` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; the spec is not a committed file — its durable home is the run epic's body (Phase 06), or the single ticket's `## Spec` section when there's no epic — and it is not a prerequisite for this run.
+**This skill is the single owner of spec synthesis.** `docs`, `grill-me`, `gui` and `backlog shape` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; the spec is not a committed file — its durable home is the run epic's body (Phase 06), or the single ticket's `## Spec` section when there's no epic — and it is not a prerequisite for this run.
 
 **Issue backend:** resolve once by invoking `issues` and running its detection step, then hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
 
@@ -20,13 +15,13 @@ This skill writes two files, both disposable, both under `/private/tmp/claude/<r
 | File | Written by | Holds |
 | --- | --- | --- |
 | `spec.md` | Phase 03 | the synthesized spec — problem, solution, user stories, testing decisions. Durable copy: the run epic's body (Phase 06), or the single ticket's `## Spec` section when there's no epic |
-| `to-tickets.md` | Phase 05 | the slice breakdown awaiting approval |
+| `backlog-spec.md` | Phase 05 | the slice breakdown awaiting approval |
 
 **Both scratch files are transitory.** They exist to produce the tickets and die with the tmp
 sweep; the tickets — and, for the spec, the epic body or `## Spec` section it's published into
 — carry the durable content forward. Never write either into the repo on your own initiative.
 
-Draft slices to `/private/tmp/claude/<repo-slug>/to-tickets.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
+Draft slices to `/private/tmp/claude/<repo-slug>/backlog-spec.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
 
 ```bash
 # Step 1
@@ -181,7 +176,7 @@ Iterate until approved.
 ### Phase 06 — Run epic (spec's durable home)
 
 **Runs whenever the slate has two or more slices.** This is where the approved spec gets its
-durable home: one run epic per `to-tickets` run, titled from the spec's `# {Project} Spec`
+durable home: one run epic per `backlog spec` run, titled from the spec's `# {Project} Spec`
 title, carrying the full spec text as its body. A single-slice slate skips this phase entirely
 — see the fallback at the end.
 
@@ -251,7 +246,7 @@ Per slice:
     one, otherwise the run epic ID from Phase 06 directly. A one-slice slate has no epic at all
     (see Phase 06's fallback) and omits `--parent`.
   - **A UI slice's Visual acceptance block goes in `--design-file <path>`, not the body.** `bd show` renders design separately, so the agent gets the reference frame, the state list, and the copy strings as their own section instead of buried in prose. Write the block to a scratch file and pass the path. Non-UI slices omit the flag.
-  - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `triage` and `implement` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
+  - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `backlog next` and `implement` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
   - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
 - **`github`:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
@@ -294,6 +289,6 @@ Issues from this skill go into AFK pipelines. The issue body is the contract.
 >
 > **Bad:** *"Open src/types/skill.ts and add a schedule field on line 42"*
 
-> **Good:** *"When a user runs `/triage` with no arguments, they should see a summary of issues needing attention"*
+> **Good:** *"When a user runs `/backlog next` with no arguments, they should see a summary of issues needing attention"*
 >
 > **Bad:** *"Add a switch statement in the main handler function"*

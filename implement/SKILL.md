@@ -237,7 +237,7 @@ Before freezing the queue, apply HANDOFF § 2's mount-file test to any items tha
 
 ## Swarm arity
 
-Every pass gets its own worktree and they run at once. The human is involved at exactly two moments: the gate before anything is dispatched, and the report after. In between there is no channel from a pass back to a person, and no way for one to exist. An item that turns out to be ambiguous costs its whole dispatch and waits for an `iron-out` pass.
+Every pass gets its own worktree and they run at once. The human is involved at exactly two moments: the gate before anything is dispatched, and the report after. In between there is no channel from a pass back to a person, and no way for one to exist. An item that turns out to be ambiguous costs its whole dispatch and waits for a `backlog shape` pass.
 
 **The scope gate, before anything is dispatched.** Read every in-scope issue and confirm each one is actually ready — a concrete plan, named files, an objective acceptance check. Exclude automatically and without asking: anything unlabelled or untriaged, anything whose body is a question, anything touching migrations, auth, payments, or deletion paths, and anything naming paths in two repos (see Cross-repo items above) — split it into one item per repo before it is dispatched. Size and merge the round per HANDOFF § 1 and § 2 here too: an under-floor item is merged into its in-scope neighbour before the round is dispatched, never dispatched alone. State what you excluded and merged, and why.
 
@@ -335,7 +335,7 @@ Worked example, with an override. The verdict at `/private/tmp/claude/.claude-sk
 - Pre-flight failed (dirty tree)
 - A named issue is closed or missing
 - Triage found nothing actionable, or its top pick is not already tracked
-- The pass's AFK-ability gate failed — the item hides a decision the user owns. File `needs human input: <item> — <what's ambiguous>` via `followups` and stop; never guess-and-commit
+- The pass's AFK-ability gate failed — the item hides a decision the user owns. File `needs human input: <item> — <what's ambiguous>` via `backlog file` and stop; never guess-and-commit
 - The gate's reachability test failed — the item names a path, or an acceptance criterion, outside the repo the pass is confined to (see Cross-repo items above). Split it into one item per repo and wire a dependency edge; never lift the confinement to reach the other repo from this pass
 - Implementation produced no diff
 - The build will not go green
@@ -363,7 +363,7 @@ In sequential or swarm arity also name: every item and its outcome, the `slug �
 
 Computing the snapshot: on beads, `bd count --status open` plus `bd ready --json | jq length` for the unblocked figure; on GitHub, `gh issue list --state open --json number --limit 1000` and count. If the backend errors, omit the line rather than halting.
 
-**The tracker is the only source for this line.** There is no roadmap file to consult — the dependency graph is the roadmap, and `iron-out` is what reads it. Never probe for `ROADMAP.md` or report its absence; a repo that keeps everything in beads is the normal case, not a gap worth a line of output.
+**The tracker is the only source for this line.** There is no roadmap file to consult — the dependency graph is the roadmap, and `backlog shape` is what reads it. Never probe for `ROADMAP.md` or report its absence; a repo that keeps everything in beads is the normal case, not a gap worth a line of output.
 
 ---
 

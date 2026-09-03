@@ -15,7 +15,7 @@ Source: [`../../grill-me/DRIVER-SEAT.md`](../../grill-me/DRIVER-SEAT.md) — rea
 
 ### Step 1: Confirm the target
 
-A valid target is a plan, spec, or design document whose structure is already settled — phases named, components identified, the shape decided. Good phrasings: "run driver-seat over this plan before we lock it", "check whether this spec is drivable". If the structure is still open — nobody has decided the phases, components, or slices yet — refuse and say so: this technique rewrites a settled shape for legibility, it does not invent the shape. Point back at whatever produced the plan (`grill-me`, `to-tickets` Phase 03, the design doc itself) to finish settling it first.
+A valid target is a plan, spec, or design document whose structure is already settled — phases named, components identified, the shape decided. Good phrasings: "run driver-seat over this plan before we lock it", "check whether this spec is drivable". If the structure is still open — nobody has decided the phases, components, or slices yet — refuse and say so: this technique rewrites a settled shape for legibility, it does not invent the shape. Point back at whatever produced the plan (`grill-me`, `backlog spec` Phase 03, the design doc itself) to finish settling it first.
 
 ### Step 2: Read the canonical text
 

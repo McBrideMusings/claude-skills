@@ -1,6 +1,6 @@
 # Conceptual model layer (layer 5)
 
-Read by the `gui` orchestrator (and by `grill-me`/`to-tickets` when the objects are the live
+Read by the `gui` orchestrator (and by `grill-me`/`backlog spec` when the objects are the live
 question). A library of techniques, not a script — see the "How to apply a layer cell" section in
 `gui`. Adapted from jamiemill/layers-skills (MIT).
 

@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; never implements. Opportunities where nothing is broken; defects are `review`. Choices are typed keywords, never AskUserQuestion."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `backlog spec`; never implements. Opportunities where nothing is broken; defects are `review`. Choices are typed keywords, never AskUserQuestion."
 ---
 
 # Improve
@@ -9,7 +9,7 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 
 This file is the **router**. The survey engine — phases, briefs, scoring, merge — lives in [IMPROVE-CORE.md](IMPROVE-CORE.md); load it only once routing has picked survey mode.
 
-**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `to-tickets`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
+**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `backlog spec`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
 
 ## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a survey
 

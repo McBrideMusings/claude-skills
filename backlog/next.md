@@ -1,9 +1,4 @@
----
-name: triage
-description: "Pick the next work item from the repo's issue backend (beads or GitHub) and recommend one concrete starting point. Triggers: 'triage', 'what should I work on', 'what's next', start-of-session planning."
----
-
-# Triage
+# Next
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
@@ -29,7 +24,7 @@ User may pass a GitHub URL:
 
 **No URL** → default to the current repo, whichever backend owns its issues (resolve by invoking `issues`; on `github`, name it with `gh repo view --json nameWithOwner -q .nameWithOwner`). If detection resolves no backend, stop and offer `bd init` per `issues`'s detection step 6. If detection fails for another reason, fall back to whatever docs-only signal exists (`README.md`, `docs/CONTEXT.md`). If neither repo nor docs exist, stop.
 
-**The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`triage label:auth`, `triage p0`), resolved against the `bd` flags in Phase 02.
+**The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`backlog next label:auth`, `backlog next p0`), resolved against the `bd` flags in Phase 02.
 
 ## Phases
 
@@ -67,7 +62,7 @@ GitHub cannot compute a ready queue — Phase 06's blocker handling stays as wri
 
 On auth/repo-not-found errors (or `bd` missing with a `.beads/` present): report and stop.
 
-**Exclude questions.** Drop any issue carrying the `human` label (`bd human list` enumerates them) from the candidate set — a question is a decision to be made, owned by `iron-out`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
+**Exclude questions.** Drop any issue carrying the `human` label (`bd human list` enumerates them) from the candidate set — a question is a decision to be made, owned by `backlog shape`, and nothing gets built *from* one; it closes when answered. `implement` discovers through this skill, so this filter covers it too.
 
 **Docs** (if in local repo): read `README.md` and `docs/CONTEXT.md` — what the project is. There is no roadmap file to read: the tracker's dependency graph is the roadmap, and the issue list above already carries it.
 
@@ -181,7 +176,7 @@ Do this only for the items about to be presented, not the full issue list — it
 ### Phase 08 — Present
 
 ```
-## Triage: owner/repo (N open issues)
+## Next: owner/repo (N open issues)
 
 Phase: <early | mature | unclear>
 Signal: <one-line evidence>
@@ -235,10 +230,10 @@ For groups, mention all related issue numbers in commit messages (`Relates to #1
 
 ### Phase 10 — Offer Wrap-Up
 
-After Phase 09 produces a working change, don't leave the user dangling — triage is complete, but the session isn't until the work is committed / pushed / tracked. Ask in plain chat — never via the `AskUserQuestion` tool — by appending this numbered prompt and waiting for the reply:
+After Phase 09 produces a working change, don't leave the user dangling — `backlog next` is complete, but the session isn't until the work is committed / pushed / tracked. Ask in plain chat — never via the `AskUserQuestion` tool — by appending this numbered prompt and waiting for the reply:
 
 ```
-Triage's work is done. Wrap up? Reply with a number, or tell me something else.
+Backlog next's work is done. Wrap up? Reply with a number, or tell me something else.
 
 1. Wrap up now (recommended) — invoke the wrap-up skill to commit, push, file follow-ups, and update tracking.
 2. Keep working — stay on the current branch to test, iterate, or extend. No commit, no wrap-up.

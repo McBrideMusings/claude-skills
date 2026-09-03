@@ -42,7 +42,7 @@ neutrino-25                    parent — from GitHub #25 in a stealth repo, or 
 │                              is the only field worth editing locally.
 ├── neutrino-25.1  task        slice 1 — vertical, cuts every layer, ends at a commit
 │                              (sized to at least three files or a complete user-visible path —
-│                              see the Phase 04 "Slice rules" in ../to-tickets/SKILL.md)
+│                              see the Phase 04 "Slice rules" in ../backlog/spec.md)
 ├── neutrino-25.2  task        slice 2      dep: 25.1
 ├── neutrino-25.3  task        VERIFY       dep: every slice
 │                              --acceptance holds what "done" means

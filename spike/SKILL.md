@@ -198,7 +198,7 @@ losing direction's frames come out once the question is settled.
 
 ## Tickets from a prototype
 
-When `to-tickets` (or any other pass) turns a prototype into issues, two steps always
+When `backlog spec` (or any other pass) turns a prototype into issues, two steps always
 happen:
 
 1. It gets committed to `docs/spikes/<slug>/` — a directory, not a bare file — so every

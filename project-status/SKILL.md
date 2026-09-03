@@ -50,7 +50,7 @@ Integration gaps are the ones progress metrics hide: 72% of tasks done can coexi
 
 Resolve the tracker by invoking `issues`, then answer: **if every open and in-progress item were completed, would the vision be fully delivered?** Map each gap to the open items that would close it (`bd list --status open --json` on beads; `gh issue list --state open` on GitHub). Hunt specifically for goals with zero tracked coverage — those are invisible to any burndown. Also flag the inverse: a plan doc or checklist that contradicts the tracker (stale measuring stick).
 
-A repo with no tracker gets the answer "no tracker — coverage unmeasurable" and the slate offers `bd init` via `to-tickets`, not a halt.
+A repo with no tracker gets the answer "no tracker — coverage unmeasurable" and the slate offers `bd init` via `backlog spec`, not a halt.
 
 ### Phase 05 — Report
 
@@ -70,9 +70,9 @@ Before presenting, run 2–3 escalation rounds over the draft steering recommend
 
 ### Phase 07 — Steering Slate
 
-Close with one numbered slate of recommended moves, highest-leverage first, each carrying its disposition pick (`tickets` — hand to `to-tickets` to spec and file; `note` — record in the report only; `skip`). Anything requiring only the user (hardware, ears, consent, credentials) is labeled as such, never assigned a disposition.
+Close with one numbered slate of recommended moves, highest-leverage first, each carrying its disposition pick (`tickets` — hand to `backlog spec` to spec and file; `note` — record in the report only; `skip`). Anything requiring only the user (hardware, ears, consent, credentials) is labeled as such, never assigned a disposition.
 
-End with the standard escape hatch: *"Type `go` to apply my picks as described, or answer per item (`1 tickets, 3 skip`)."* On `go`, invoke `to-tickets` for the `tickets` items and stop there — implementation is a separate invocation.
+End with the standard escape hatch: *"Type `go` to apply my picks as described, or answer per item (`1 tickets, 3 skip`)."* On `go`, invoke `backlog spec` for the `tickets` items and stop there — implementation is a separate invocation.
 
 ## Rules
 
