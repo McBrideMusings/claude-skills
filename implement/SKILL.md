@@ -117,15 +117,17 @@ loop
 
 ## Verification itself
 
-`verify` owns what verification means; do not re-derive its method. Two things sit on top of it.
+**The project's own `verify-project` skill owns what verification means; do not re-derive its method.** Driving a surface is never generic — a TUI needs a headless frame dump, an iOS app a simulator, a Worker a request against a dev server — so the recipe lives per repo, in `<repo>/.claude/skills/verify-project/SKILL.md`, and both halves of this skill read it: this session for the Verify bead, and `implement.js`'s Verify stage for each pass.
 
-**Where `verify` lives, so you don't conclude it is missing.** It is bundled into the Claude Code binary — no file under `~/.claude/skills/`, absent from the skill listing. `find` comes up empty and the listing looks like it was never built; neither is evidence. `Skill(verify)` loads it anyway. Do not hand-roll the check, do not substitute a test run, and do not log a papercut about a missing skill.
+**Where the recipe comes from, and why the stage reads a file rather than calling a skill.** The bundled `verify` skill is `disable-model-invocation`, so no agent can load it: `Skill(verify)` returns `Skill verify cannot be used with Skill tool ... Ask the user to run /verify themselves`, and only a person typing `/verify` gets it. A Verify stage told to invoke it therefore had no legal method at all and returned `BLOCKED` on every pass — observed on run `wf_7109ee86-5bb`, item `cc-9qo.1`. So the stage reads `verify-project/SKILL.md` as a file and follows it, and writes one when the repo has none. Do not hand-roll the check, do not substitute a test run, and do not log a papercut about the bundled skill being unreachable — that is the tool working as designed.
 
-**The project's own `verify` is the real one; the bundled skill is its bootstrap.** Driving a surface is never generic — a TUI needs a headless frame dump, an iOS app a simulator, a Worker a request against a dev server. The bundled skill works that out once per repo and writes `.claude/skills/verify-project/`, which shadows it afterwards.
-
-- If `<repo>/.claude/skills/verify-project/` exists, that is the skill running. Trust it.
-- If not, let the bundled skill write one, and check that what it writes names *this* repo's real surface and commands rather than a recipe that would read the same anywhere.
+- **Resolve the path in the primary checkout, never the worktree.** `verify-project` is git-excluded, so a fresh worktree carries it only if the link hook ran (see below). Its absence from a worktree says nothing about the repo.
+- If `<repo>/.claude/skills/verify-project/SKILL.md` exists, that is the recipe running. Trust it over anything generic.
+- If not, the stage writes it — from this repo's `README.md`, `CLAUDE.md` and `admin.toml`, naming *this* repo's real surface and commands. Check what it wrote: a recipe that would read the same in any repo is the weak-verdict failure mode, not a bootstrap. A repo with no `verify-project` is never a gate failure; it is a repo that has not been bootstrapped yet.
+- **Never name it `verify`.** That collides with the bundled skill, which is why the project skill has its own name.
 - **Keep it out of git.** Add `.claude/skills/verify-project` to `<repo>/.git/info/exclude` — never `.gitignore`, which is committed. If you find it tracked, untrack it.
+
+**An unreachable surface is `SKIP`, not `FAIL` and not `BLOCKED`.** `FAIL` is behaviour observed to be wrong; `SKIP` is behaviour that could not be observed at all. A `SKIP` does not halt the pass — `implement.js:1006` puts any non-`PASS` verdict in `blockers`, so the work still commits and the item still does not close. Nothing is lost and nothing is hidden.
 
 **A pass that touched tests must prove the tests discriminate.** A test is evidence only if it fails without the change. `implement.js`'s Verify stage captures the production half as a patch, reverses it, runs only the new tests, and records `mutation.discriminates`, which has three states. `true` is evidence — the retained tests failed without the change. `false` is a blocker — a test was added and does not discriminate. `null` means the change was removal-only (deleted production code, or comment/documentation-only edits): there was no behaviour to reverse, so reversing it just restores the deleted code and the retained tests pass exactly as before — that is not a weak test, it is nothing to discriminate, and it is not a blocker. A `PASS` on a test-touching diff with no `mutation` block, or with `discriminates: false`, arrives in `blockers` — the work still commits, because a weak test is no reason to strand a correct implementation, but the item does not close on it.
 
@@ -326,7 +328,7 @@ Worked example, with an override. The verdict at `/private/tmp/claude/.claude-sk
 - The verify loop exhausted five rounds
 - Review surfaced a blocking finding that was not resolved
 
-`verify` admits no partial pass and resolves doubt as `FAIL`. Do not soften a `FAIL` into a follow-up and proceed.
+The Verify stage admits no partial pass and resolves doubt as `FAIL`. Do not soften a `FAIL` into a follow-up and proceed.
 
 A `major` Review finding is not on this list — it does not halt the pass, the work still commits — but it does gate landing: it lands in `blockers`, exactly like a weak-test verdict, and the item does not close on it.
 
