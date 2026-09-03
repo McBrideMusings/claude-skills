@@ -27,6 +27,7 @@ written `#42` in prose).
 | **close** | `gh issue close <n> --comment "<reason>"` |
 | reopen | `gh issue reopen <n>` |
 | **comment** | `gh issue comment <n> --body "<text>"` (`--body-file <path>`) |
+| **attach media** | add `--attach <path>[#alt text]` (repeatable) to create/edit/comment on issues or PRs — see below |
 | **label add / remove** | `gh issue edit <n> --add-label <l>` / `--remove-label <l>` |
 | **assign** | `gh issue edit <n> --add-assignee <who>` |
 | **count open** | `gh issue list --state open --limit 300 --json number --jq 'length'` |
@@ -61,6 +62,24 @@ maximum parallelism. Beads does all of that (`bd swarm validate`, `bd ready`, `b
 `bd doctor --check=conventions`). That gap is the whole reason beads is the default backend and
 why `iron-out` offers `bd init` on a GitHub-only repo rather than reproducing the graph work
 here.
+
+## Attaching media
+
+`gh` v2.99.0+ has a repeatable `--attach <path>[#alt text]` flag that uploads a local image or
+video and references it inline. Works on `gh issue create`, `gh issue edit`, `gh issue
+comment`, `gh pr create`, `gh pr edit`, `gh pr comment`. PNG, JPEG, GIF, WebP, SVG, MP4, MOV,
+WebM. A local path already referenced in the body markdown (e.g. `![alt](./login.png)`) is
+rewritten in place with the uploaded asset URL, keeping its alt text; anything attached but not
+referenced is appended at the end. Needs write access to the repo. Size limits: 10 MB images/GIFs,
+10 MB video on Free plans, 100 MB video on paid plans.
+
+```bash
+gh issue comment <n> --body "See the crash:" --attach ./screenshot.png
+gh issue create --title "<t>" --body "<b>" --attach './repro.mp4#Crash repro'
+```
+
+Use this over describing a UI bug or rendered result in prose — attach the screenshot or
+recording instead.
 
 ## Multi-line bodies
 
