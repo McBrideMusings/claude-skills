@@ -15,9 +15,12 @@ command for machine output.
 `bd rename <old-id> <new-id>` changes an ID and rewrites every reference to it — dependencies,
 labels, comments, events, and mentions in other issues' bodies. It does **not** touch
 `external_ref` or `source_system`, so renaming a GitHub-linked bead leaves its sync intact.
-Beads pulled from GitHub arrive with the import-path ID `<prefix>-<epoch_ms>-<counter>-<hash8>`
-rather than a hash; a [stealth](_detect.md#stealth-beads-in-a-repo-that-must-not-carry-it) repo
-renames those to `<prefix>-<github issue number>` on arrival.
+Beads pulled from GitHub with no prior local counterpart arrive with the import-path ID
+`<prefix>-<epoch_ms>-<counter>-<hash8>` rather than a short slug — a
+`hooks/beads-pull-id-rename.sh` PostToolUse hook sweeps for that shape after every `bd github
+pull` / `bd github sync` (pull-only or bidirectional) and `bd rename`s each one onto a fresh
+`bd`-generated slug, on every repo (not just stealth ones). See "GitHub sync" below for the
+create-then-push convention this backstops.
 
 `bd list --json` and `bd ready --json` return a bare array; each element carries
 `id, title, status, priority, issue_type, owner, created_at, updated_at, dependency_count,
@@ -93,7 +96,7 @@ don't route around the allow by asking in chat first.
 
 | GitHub | beads |
 | --- | --- |
-| issue number `#42` | `external_ref` + `source_system` — **not** the ID. In a [stealth](_detect.md#stealth-beads-in-a-repo-that-must-not-carry-it) repo the ID is renamed to match anyway: `myproj-42` |
+| issue number `#42` | `external_ref` + `source_system` — **not** the ID. A pulled bead's ID is a short `bd`-generated slug, never the issue number; see the rename note above |
 | labels | labels (same) |
 | milestone | epic (`-t epic` + `--parent`) |
 | assignee | assignee |
@@ -195,6 +198,28 @@ Operational rules for a mirrored repo — beads is the source of truth, reads ne
 are in [`_detect.md`](_detect.md) under Mirror mode.
 
 `bd` also ships `jira`, `linear`, `gitlab` and `ado` command families on the same shape.
+
+**Create locally, then push — never `bd github pull` to originate a new synced bead.**
+`bd create` (no `--id`) gives you the short, clean slug immediately; a bead that starts life on
+`bd github pull` gets bd's ugly synthesized import ID instead
+(`<prefix>-<epoch_ms>-<counter>-<hash8>`) and needs a rename to clean up. A
+`hooks/beads-pull-id-rename.sh` PostToolUse hook does that rename automatically as a backstop —
+for an issue that genuinely originated on GitHub (someone else's issue, or your own filed with
+`gh issue create` directly rather than `bd github push`) — but create-first avoids ever needing
+the backstop at all.
+
+**bd invents GitHub labels on push — never let it create a repo-level label definition you
+didn't ask for.** `bd github push`/`bd github sync` (push component) derives `type::<issue_type>`,
+`priority::<derived from local priority>`, and (when applicable) `status::<in_progress|blocked|
+deferred>` from the bead's own local fields and sends them with the issue — never something you
+set on the bead yourself (`bd show <id> --json` never carries a `labels` field for these). GitHub's
+API silently creates any label name in that set the repo doesn't already define. A
+`hooks/beads-github-label-guard.sh` PreToolUse hook blocks a push that would create an undefined
+label; the underlying policy, worth restating because it isn't optional: **only push a label that
+already exists as a defined label on the target repo.** Create it there first
+(`gh label create <name> --repo <owner>/<repo>`) if you actually want it, rather than letting a
+label sneak in as a side effect of an issue update. This only applies to beads that actually reach
+GitHub — a bead never pushed carries whatever labels it wants.
 
 ## Initialising a repo — always `--skip-agents`
 
