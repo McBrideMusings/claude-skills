@@ -93,11 +93,12 @@ The build loop's criteria, applied retrospectively. Use when asked to audit or i
 1. **Inventory** — locate the test files and the runner entry point (an `./admin` task or a package script). No entry point + no tests is itself the lead finding.
 2. **Run the suite** through that existing entry point only — **never install or configure tooling** to make it runnable. Record pass/fail, count, wall time. Red, flaky, or absent outranks every static finding.
 3. **Static pass** with the same criteria the loop uses: behavior vs implementation ([EXAMPLES.md](EXAMPLES.md) red flags — would the test survive an internal refactor?), public-interface-only, mocking at system boundaries only ([MOCKING.md](MOCKING.md) — internal collaborators mocked = finding), and **seam coverage**: which public seams have no tests at all. Read the matched label's `testing.md` (as in Phase 01) for the stack's idioms before judging harness choices.
-4. **Findings**, each grounded in a named test file or a named uncovered seam — no generic "add more tests".
+4. **Low-value pass** — a suite audit is not only about what's missing. Flag tests worth *deleting*, not rewriting: existence tests, type-check-only tests, external-provider-shape tests, contract tests standing in for feature tests, and UI/UX or command-registration tests ([EXAMPLES.md](EXAMPLES.md)'s "Low-value tests to prune"). The proposed fix is deletion, or a redesigned seam-crossing test only where real behavior exists underneath.
+5. **Findings**, each grounded in a named test file or a named uncovered seam — no generic "add more tests".
 
 ### Findings-only invocation
 
-When another skill (e.g. `improve`'s survey) invokes the audit: no file writes, no commits, no questions — run steps 1–4 and return the findings structured (finding, evidence `file:line`, strength `Strong`/`Worth exploring`/`Speculative`, proposed fix).
+When another skill (e.g. `improve`'s survey) invokes the audit: no file writes, no commits, no questions — run steps 1–5 and return the findings structured (finding, evidence `file:line`, strength `Strong`/`Worth exploring`/`Speculative`, proposed fix).
 
 ## Per-Cycle Checklist
 

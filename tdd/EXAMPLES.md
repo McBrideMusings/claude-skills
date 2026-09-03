@@ -60,3 +60,94 @@ A tautological test derives its expected value the same way the implementation c
 - Test breaks when you refactor without behavior change
 - Verifying through external means (raw SQL) instead of the public interface
 - Expected value computed the same way the code computes it (tautological)
+
+## Low-value tests to prune
+
+These pass, cost maintenance time, and catch nothing — not because they're coupled to
+implementation (that's the red-flag list above), but because there's no real behavior
+underneath the assertion. Read this when auditing a suite for tests to delete, not just
+tests to rewrite.
+
+### a. Existence tests
+
+Confirms a symbol, route, or component is *present*, not that it *does* anything.
+
+```ts
+// BAD
+test("PaymentService exists", () => {
+  expect(PaymentService).toBeDefined();
+});
+
+test("checkout page renders", () => {
+  render(<Checkout />);
+  expect(screen.getByText("Checkout")).toBeInTheDocument(); // proves nothing about behavior
+});
+```
+
+If the thing didn't exist, the build would already fail. Delete it, or replace it with a
+test of what it does.
+
+### b. Type-check tests
+
+A test whose only failure mode is a type error the compiler already catches.
+
+```ts
+// BAD
+test("createUser accepts a name string", () => {
+  const input: CreateUserInput = { name: "Alice" };
+  expect(input.name).toBe("Alice"); // TypeScript already guarantees this compiles
+});
+```
+
+If the assertion would fail to compile before it fails to run, the type system is already
+the test. Delete it.
+
+### c. External-provider-shape tests
+
+Hardcodes a third-party API's current response shape and asserts the adapter parses
+*that exact shape*.
+
+```ts
+// BAD — encodes Discord's shape as of today as ground truth
+test("parses a Discord interaction payload", () => {
+  const payload = { type: 2, data: { name: "roll", options: [{ name: "sides", value: 20 }] } };
+  expect(parseInteraction(payload)).toEqual({ command: "roll", args: { sides: 20 } });
+});
+```
+
+This fails the moment the provider changes its shape — unrelated to whether the adapter's
+real-world parsing works — and passes even when the adapter is broken against the *actual*
+current API. An adapter still needs tests, but at the seam it owns: given the values the
+adapter's own parser extracts, does the handler get called correctly? Don't encode the
+provider's serialization as a fixture; that's the provider's contract, not this codebase's.
+Push exact-shape validation to a sandbox/integration check that talks to the real API, not
+the unit suite.
+
+### d. Contract tests standing in for feature tests
+
+Tests a function's signature or a schema's shape instead of what calling it accomplishes.
+
+```ts
+// BAD
+test("rollDice has the right signature", () => {
+  expect(typeof rollDice).toBe("function");
+  expect(rollDice.length).toBe(2);
+});
+```
+
+Same failure as (a) and (b) under a different name: the type system already enforces the
+signature. If there's real behavior underneath (`rollDice(20, 3)` returns three values
+between 1 and 20), test that instead; if there isn't, delete it.
+
+### e. UI/UX and registration tests
+
+Tests that a `/command` registers, a button renders, a menu exists. Cull these heavily —
+they verify wiring, not behavior, and a broken registration surfaces immediately at
+startup/runtime rather than needing a test to catch it. Keep one only where the
+registration logic has real branching (e.g., conditional registration behind a feature
+flag) — then test the branching, not the registration.
+
+**Prune, don't just flag.** A finding in this category proposes deletion outright, or a
+redesigned test that crosses a real seam if actual behavior exists underneath — never
+"this test could be better," which just relocates the low-value test instead of removing
+it.
