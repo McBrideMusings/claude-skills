@@ -238,11 +238,15 @@ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or
 
 Invoke the `summary` skill **with the `write` token** — `summary write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong mode here.)
 
-### Step C — Land the branch (merge on owned, PR on collaborative)
+### Step C — Land the branch (merge or fast-forward push on owned, PR on collaborative)
 
 Reuse the Phase 2 ownership verdict.
 
-**Repo I own (solo) — merge it, then leave the workspace clean.** Invoking wrap-up (or implement) authorizes the merge, exactly as it authorizes commit and push — the merge runs in **both** interactive and continuous passes (a solo merge needs no human input). If the current branch already *is* the default branch, skip (nothing to merge). Otherwise, with a remote:
+**Repo I own (solo) — land it, then leave the workspace clean.** Invoking wrap-up (or implement) authorizes the landing, exactly as it authorizes commit and push — it runs in **both** interactive and continuous passes (a solo landing needs no human input). If the current branch already *is* the default branch, skip (nothing to land).
+
+**Route first — where are you standing?** Answer this before reading either recipe. The parent of `git rev-parse --path-format=absolute --git-common-dir` is the primary checkout; `git rev-parse --show-toplevel` is where you are. **Equal → you are in the primary → Route 1. Different → you are in a linked worktree → Route 2.** A denied `git -C <primary> …` — the harness's worktree-isolation guard — is the same answer arriving the hard way, so take Route 2 rather than retrying it. The two routes are peers, not a rule and its exception: Route 2 is not a degraded Route 1, it is the only landing a worktree-isolated session can perform.
+
+**Route 1 — you are in the primary checkout: merge.** With a remote:
 1. Pre-check: `git status` clean and Phase 4 clean-or-fixed. **Never merge known-failing work** — an unresolved 75+ issue is the blocker; stop instead.
 2. Capture the feature branch and the default branch (usually `main`).
 3. Bring default current: `git -C <repo> checkout main`, `git -C <repo> pull --ff-only origin main`.
@@ -254,7 +258,18 @@ Reuse the Phase 2 ownership verdict.
 
 No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push.
 
-**`~/.claude` is the one owned repo where this recipe never runs.** The primary `~/.claude` checkout's index is shared by every concurrent session, and a merge commit built there is the exact shape that reverted 54 files (cc-lfzq) — so never `git -C ~/.claude checkout main` or `merge` in steps 3–4 above. Instead, from inside the worktree: `git merge origin/main` (or rebase) so `origin/main` is an ancestor of the worktree's HEAD, re-run the step 1 pre-check (clean `git status`, Phase 4 clean-or-fixed), then run `~/.claude/tools/claude-land <worktree>` — it fast-forward-pushes the worktree's HEAD to `origin main` and pulls the primary. Delete the branch (step 7) and remove the worktree from the primary (Step C's usual cleanup) exactly as above; only steps 3–6 are replaced.
+**Route 2 — you are in a linked worktree: fast-forward push.** Every step runs inside the worktree; nothing reaches into the primary checkout.
+1. Pre-check: `git status` clean and Phase 4 clean-or-fixed. **Never land known-failing work** — same blocker, same stop.
+2. Bring the branch current in place: `git fetch origin main`, then `git merge FETCH_HEAD`. This is what makes the push below a fast-forward.
+3. **On conflict:** `git merge --abort` and STOP — surface it. Same rule as Route 1's step 5; never force, never hand-resolve silently.
+4. Re-run step 1's pre-check: the merge brought in other sessions' commits, so clean-and-green has to hold against the merged tree, not the one you tested.
+5. Land: `~/.claude/tools/land <worktree>`. It refuses — non-zero, reason on stderr — if the directory is not a repo, is dirty, or is behind the branch it is pushing to, and it never passes a force flag. A refusal is a stop, not a prompt to retry harder.
+6. Delete the remote feature branch if Phase 5 pushed one: `git push origin --delete <feature>`.
+7. **Never remove your own worktree.** The launching session removes it from the main checkout, and the local branch goes with it. End state: origin's default branch carries the work, `git status` clean. Report the landing in the summary.
+
+**`~/.claude` always takes Route 2, and its step 5 is `~/.claude/tools/claude-land <worktree>` instead** — the same push, plus the beads-export commit and the primary-checkout fast-forward that only this repo needs. Two independent reasons put it here, and neither is the general one: the primary checkout denies `git commit` and any non-fast-forward `git merge` outright (docs/adr/0005), and its index is shared by every concurrent session, which is the shape that reverted 54 files (cc-lfzq). So `git -C ~/.claude checkout main` or `merge` is wrong here even from a session that could reach it.
+
+**No legal route? Stop and surface it.** A worktree with no remote cannot fast-forward-push and cannot reach the primary — say so and hand the branch over. **Never open a PR on a repo you own**: `~/.claude/CLAUDE.md` §Git & GitHub forbids it, and a blocked landing is not an authorization to publish one. Landing is the only thing Step C does on an owned repo; when it cannot, the pass ends with the work committed and pushed on its branch.
 
 **Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never close an issue here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (On a beads repo in mirror mode, `#<n>` is the mirrored GitHub number — it's the `external_ref` field on the bead, `gh-<n>`. A bead with no external ref has no GitHub issue to close; list it in the summary instead.) (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
 
