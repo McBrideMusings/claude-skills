@@ -292,6 +292,11 @@ you own; `bd config` has no key that pins direction, so `hooks/beads-stealth-gua
 any `bd github sync` without `--pull-only`, and any `bd dolt push` whose `sync.remote` is not a
 `file://` path you own. Scope is the `beads:stealth` label in `~/.claude/domains-map`.
 
+**Cadence for a `/loop` or `/schedule` watching a stealth repo's tracker: match the interval to
+how often their backlog actually changes, not a tight poll.** An hourly `bd github sync
+--pull-only` is plenty for a human-paced client backlog; polling every few minutes just spends
+tokens re-reading a tracker that hasn't moved.
+
 ## Grouping: epic or label
 
 Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has no

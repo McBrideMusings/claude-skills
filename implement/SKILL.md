@@ -206,6 +206,8 @@ The dirty-tree halt is judged in the checkout the pass will branch from. When th
 
 **Never Opus for a pass, and never Fable at all.** A pass follows a brief that already survived the readiness gate, in an isolated worktree, with its result re-checked before it lands. That is Sonnet's job. Opus is for deciding what to execute — which is what this session is doing. Fable is only ever chosen by the user, explicitly.
 
+**A swarm round drawn from a well-defined, low-risk selector defaults to Haiku for the whole round**, not just per-item mechanical edits — `label:papercut`, `label:mechanical`, or any selector whose items already passed the scope gate on uniformly small, low-risk changes. Reach for Sonnet per-item only where an individual item's brief is heavier than the selector implies.
+
 In swarm arity, say the split in the report: `slug → sonnet|haiku`, or a count per tier when it is large.
 
 ---
@@ -237,6 +239,8 @@ Every pass gets its own worktree and they run at once. The human is involved at 
 **Never edit files that every change appends a row to** — a changelog, a file map, a component registry. Every sibling branch collides on them by construction. Passes return the rows in `followups` instead and you write them after landing.
 
 **Keep rounds small enough that a bad brief does not burn the frontier.** A round of N items is N passes at once; watch the running total in `/workflows`.
+
+**A selector matching more than 8 items pilots first.** Dispatch a batch of at most 5, land those, and check the cost and failure rate in `/workflows` before dispatching the rest. Sequential arity already caps a whole run at 20 items; swarm arity has no run-level cap, so an oversized selector dispatches its entire count at once unless this step catches it first.
 
 ---
 
@@ -344,7 +348,7 @@ Implement complete: <one-sentence summary>. Halt: <reason | none>.
 Backlog: X open issues (closed Y), Z ready.
 ```
 
-In sequential or swarm arity also name: every item and its outcome, the `slug → model` split, every worktree still standing and why, and the verdict files now in the primary checkout. A run that lands six items should leave six verdicts behind; anything less means evidence went out with a worktree.
+In sequential or swarm arity also name: every item and its outcome, the `slug → model` split, every worktree still standing and why, the verdict files now in the primary checkout, and the run's token total read from `/workflows`. A run that lands six items should leave six verdicts behind; anything less means evidence went out with a worktree.
 
 Computing the snapshot: on beads, `bd count --status open` plus `bd ready --json | jq length` for the unblocked figure; on GitHub, `gh issue list --state open --json number --limit 1000` and count. If the backend errors, omit the line rather than halting.
 
