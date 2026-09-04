@@ -1,131 +1,100 @@
 # ADR Format
 
-ADRs live in `docs/adr/` with sequential numbering: `0001-slug.md`, `0002-slug.md`, etc.
+`docs/adr/NNNN-slug.md`, numbered sequentially — scan the directory for the highest number
+and increment. Create `docs/adr/` when the first ADR is needed.
 
-Create `docs/adr/` lazily — only when the first ADR is needed.
+## What an ADR is
 
-## Template
+A title and the decision, stated as what is true. Present tense, no preamble.
 
 ```md
-# {Short title of the decision}
+# ADR-0007: Sessions live in Redis
 
-{1-3 sentences: what's the context, what did we decide, and why.}
+Session state is written to Redis with a 30-minute TTL. The app servers hold no session
+data and any of them can serve any request.
 ```
 
-That's it. An ADR is a paragraph. The value is recording **that** a decision was made and
-**why** — not filling out sections.
+**Three sentences is the target and fifteen lines is the ceiling**, including any code or
+table the decision cannot be stated without.
 
-## The head of git is the only version
+## Write what, never why
 
-**Never amend an ADR.** No "Amendment" block, no date-stamped revision, no "withdrawn", no
-old wording left standing beside the new. Git is the history: `git log -p docs/adr/` answers
-what an ADR used to say, and the file answers only what is true now.
+An ADR records the decision. It does not argue for it, weigh it, or defend it.
 
-A decision that reverses an earlier one is written as if it had always been the decision.
-Rewrite the existing ADR in place. Write a *new* ADR only when the subject is new — never
-because the answer changed.
+No **Rejected** or **Considered Options** section — naming an idea keeps it alive, and the
+next reader inherits every bad option the last one thought of. No **Consequences**, no
+**Why**, no **Context** preamble, no **Status** field, no date, no ticket id, no author.
+
+Each fact appears exactly once. A "Decision" heading above a decision, or a summary
+restating the paragraph under it, is a second copy — cut the heading and keep the sentence.
+An ADR under fifteen lines needs no headings at all.
+
+Cross-reference another ADR only where the decision is unreadable without it, by number and
+in the sentence. Never a section listing relationships.
+
+## Git is the history
+
+The file states what is true now. `git log -p docs/adr/` states what it used to say.
+
+A decision that reverses an earlier one is rewritten in place, reading as though it had
+always said that. A new ADR is for a new subject, never for a changed answer.
 
 ## Rewrite on sight
 
-Any ADR you open — whether or not it is what you came for — gets rewritten when it shows
-any of:
+Any ADR you open — whatever you opened it for — gets rewritten when it carries an amendment
+or date-stamped block, a ticket id, a sha, a retold incident, a rejected-alternatives list,
+a justification, a body over fifteen lines, or two passages that disagree.
 
-- an "Amendment", "Update", "Revised", "Superseded" or date-stamped block
-- a ticket id, a sha, or a retold incident
-- a body over 15 lines, or over three paragraphs
-- two passages that disagree with each other
+Rewrite it the turn you notice: state the decision in its own voice, delete the rest.
 
-Rewriting means: state the current decision in its own voice and delete the rest. This
-happens the turn you notice, not in a later audit.
+## Show it before writing it
 
-## Every ADR write is shown before it lands
+Creating or changing an ADR is a slate row carrying the real text, in chat, before any file
+is touched:
 
-Creating or changing an ADR is a slate row carrying the real text, in chat:
+- **`**Currently:**`** — the existing body in full, when there is one
+- **`**Proposed:**`** — the new body in full
 
-- **new** — the full proposed body
-- **changed** — the current body and the proposed body, both in full
+**Both go in markdown blockquotes — every line prefixed with `> `.** An ADR contains fenced
+blocks, and a fence inside a fence closes the outer one early, leaving the reader unable to
+see where the document starts or stops. A `> ` prefix is per-line and the content cannot
+close it.
 
-Never write a file under `docs/adr/` before that row is accepted. The files are short by
-construction, so showing one whole costs nothing and "it's a small edit" is not an exemption.
-
-**Both versions go in markdown blockquotes — every line prefixed with `> ` — under a
-`**Currently:**` and a `**Proposed:**` heading, in that order.** Never a fenced code block:
-an ADR contains fenced blocks of its own, and nesting a fence inside a fence terminates the
-outer one early, so the reader cannot tell where the quoted document starts or stops. A `> `
-prefix is per-line and cannot be closed by the content it carries.
-
-Show the current version in full even when it is long. Length is the argument for the
-rewrite, and summarising it hides the thing being judged.
-
-## Optional sections
-
-Only when they add genuine value, and never at the cost of the 15-line ceiling.
-
-- **Considered Options** — one line per rejected alternative, when the rejection is what a
-  reader would otherwise re-litigate
-- **Consequences** — when a downstream effect is non-obvious
-
-No **Status** field. A deprecated decision is deleted; a superseded one is rewritten.
-
-## Numbering
-
-Scan `docs/adr/` for the highest existing number; increment by one.
+Show the current version whole, however long. Its length is the case for the rewrite.
 
 ## Linking an ADR to code (`applies-to`)
 
-Optional. When an ADR governs specific parts of the tree, declare the paths in frontmatter as glob(s):
+Optional. When an ADR governs specific paths, declare them in frontmatter:
 
 ```md
 ---
-applies-to: ["src/checkout/**", "src/index/**"]
----
-# Local-first index
-
-We index locally so the wiki works offline and reviews in Git.
-```
-
-Block-list form also works:
-
-```md
----
-applies-to:
-  - src/checkout/**
-  - "**/*.sql"
+applies-to: ["src/checkout/**", "**/*.sql"]
 ---
 ```
 
-This builds a reverse map — "which decisions constrain this file?" — that ripgrep can't answer. Query it with the shared script (no index, scans `docs/adr/*.md` live):
+This builds the reverse map — which decisions constrain this file — that ripgrep cannot
+answer. Query it with `python3 ~/.claude/tools/docs-refs.py <path>`; bare prints the full
+map, `--validate` exits non-zero on globs matching no tracked file. The same tool reads
+`_applies-to_` markers on `docs/CONTEXT.md` terms (`CONTEXT-FORMAT.md`). Projects wired by
+`bootstrap` expose these as `admin docs-refs <path>` and `admin docs-validate`.
 
-```
-python3 ~/.claude/tools/docs-refs.py src/checkout/timeout.py   # ADRs + terms governing a path
-python3 ~/.claude/tools/docs-refs.py                           # full map
-python3 ~/.claude/tools/docs-refs.py --validate               # flag globs matching no tracked files
-```
-
-The same tool also reads `_applies-to_` markers on `docs/CONTEXT.md` terms (format: `CONTEXT-FORMAT.md`). `--validate` exits non-zero when any `applies-to` glob points at deleted/moved paths. Projects wired by `bootstrap` expose these as `admin docs-refs <path>` and `admin docs-validate`.
-
-Add `applies-to` only when the ADR is genuinely path-scoped. A repo-wide decision ("we use a monorepo") stays unscoped — leave the frontmatter off.
+A repo-wide decision stays unscoped — leave the frontmatter off.
 
 ## When to offer an ADR
 
-This test applies in **any** session, not only a `grill-me` interview — architecture work,
-implementation, a code review, a stray decision made in passing. A passing decision becomes a
-slate row the turn it is made, not a batch swept up later.
+This test runs in any session — architecture work, implementation, a code review, a decision
+made in passing. A qualifying decision becomes a slate row the turn it is made.
 
-All three must be true:
+All three must hold:
 
-1. **Hard to reverse** — the cost of changing your mind later is meaningful
-2. **Surprising without context** — a future reader will look at the code and wonder "why on earth did they do it this way?"
-3. **The result of a real trade-off** — there were genuine alternatives; you picked one for specific reasons
+1. **Hard to reverse** — changing your mind later carries real cost
+2. **Surprising without context** — a future reader will wonder why it was done this way
+3. **A real trade-off** — genuine alternatives existed
 
-If a decision is easy to reverse, skip it — you'll just reverse it. If it's not surprising, nobody will wonder why. If there was no real alternative, there's nothing to record beyond "we did the obvious thing."
+Easy to reverse, and you will just reverse it. Unsurprising, and nobody wonders. No
+alternative, and there is nothing to record.
 
-### What qualifies
-
-- **Architectural shape.** "We're using a monorepo." "The write model is event-sourced, the read model is projected into Postgres."
-- **Integration patterns between contexts.** "Ordering and Billing communicate via domain events, not synchronous HTTP."
-- **Technology choices that carry lock-in.** Database, message bus, auth provider, deployment target. Not every library — only ones that would take a quarter to swap.
-- **Boundary and scope decisions.** "Customer data is owned by the Customer context; other contexts reference by ID only." The explicit no's are as valuable as the yes's.
-- **Deliberate deviations from the obvious path.** "Manual SQL instead of an ORM because X." Anything where a reasonable reader would assume the opposite — stops the next engineer from "fixing" something deliberate.
-- **Constraints not visible in the code.** "Can't use AWS because compliance." "Response times must be under 200ms because of the partner API contract."
-- **Rejected alternatives when the rejection is non-obvious.** Considered GraphQL and picked REST for subtle reasons? Record it — otherwise someone suggests GraphQL again in six months.
+What qualifies: architectural shape (monorepo, event-sourced writes), integration patterns
+between contexts, technology choices carrying lock-in, ownership and scope boundaries,
+deliberate deviations from the obvious path, and constraints invisible in the code
+(compliance, a partner API's latency ceiling).
