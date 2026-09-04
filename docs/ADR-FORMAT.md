@@ -12,15 +12,51 @@ Create `docs/adr/` lazily — only when the first ADR is needed.
 {1-3 sentences: what's the context, what did we decide, and why.}
 ```
 
-That's it. An ADR can be a single paragraph. The value is in recording **that** a decision was made and **why** — not in filling out sections.
+That's it. An ADR is a paragraph. The value is recording **that** a decision was made and
+**why** — not filling out sections.
+
+## The head of git is the only version
+
+**Never amend an ADR.** No "Amendment" block, no date-stamped revision, no "withdrawn", no
+old wording left standing beside the new. Git is the history: `git log -p docs/adr/` answers
+what an ADR used to say, and the file answers only what is true now.
+
+A decision that reverses an earlier one is written as if it had always been the decision.
+Rewrite the existing ADR in place. Write a *new* ADR only when the subject is new — never
+because the answer changed.
+
+## Rewrite on sight
+
+Any ADR you open — whether or not it is what you came for — gets rewritten when it shows
+any of:
+
+- an "Amendment", "Update", "Revised", "Superseded" or date-stamped block
+- a ticket id, a sha, or a retold incident
+- a body over 15 lines, or over three paragraphs
+- two passages that disagree with each other
+
+Rewriting means: state the current decision in its own voice and delete the rest. This
+happens the turn you notice, not in a later audit.
+
+## Every ADR write is shown before it lands
+
+Creating or changing an ADR is a slate row carrying the real text, in chat:
+
+- **new** — the full proposed body
+- **changed** — the current body and the proposed body, both in full, labelled `From:` and `To:`
+
+Never write a file under `docs/adr/` before that row is accepted. The files are short by
+construction, so showing one whole costs nothing and "it's a small edit" is not an exemption.
 
 ## Optional sections
 
-Only when they add genuine value. Most ADRs won't need them.
+Only when they add genuine value, and never at the cost of the 15-line ceiling.
 
-- **Status** frontmatter (`proposed | accepted | deprecated | superseded by ADR-NNNN`) — useful when decisions are revisited
-- **Considered Options** — only when rejected alternatives are worth remembering
-- **Consequences** — only when non-obvious downstream effects need to be called out
+- **Considered Options** — one line per rejected alternative, when the rejection is what a
+  reader would otherwise re-litigate
+- **Consequences** — when a downstream effect is non-obvious
+
+No **Status** field. A deprecated decision is deleted; a superseded one is rewritten.
 
 ## Numbering
 
