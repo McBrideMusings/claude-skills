@@ -43,10 +43,19 @@ happens the turn you notice, not in a later audit.
 Creating or changing an ADR is a slate row carrying the real text, in chat:
 
 - **new** — the full proposed body
-- **changed** — the current body and the proposed body, both in full, labelled `From:` and `To:`
+- **changed** — the current body and the proposed body, both in full
 
 Never write a file under `docs/adr/` before that row is accepted. The files are short by
 construction, so showing one whole costs nothing and "it's a small edit" is not an exemption.
+
+**Both versions go in markdown blockquotes — every line prefixed with `> ` — under a
+`**Currently:**` and a `**Proposed:**` heading, in that order.** Never a fenced code block:
+an ADR contains fenced blocks of its own, and nesting a fence inside a fence terminates the
+outer one early, so the reader cannot tell where the quoted document starts or stops. A `> `
+prefix is per-line and cannot be closed by the content it carries.
+
+Show the current version in full even when it is long. Length is the argument for the
+rewrite, and summarising it hides the thing being judged.
 
 ## Optional sections
 
