@@ -62,6 +62,12 @@ close it.
 
 Show the current version whole, however long. Its length is the case for the rewrite.
 
+**Waived only by the user, for a named batch.** When they have said to rewrite a set without
+being asked, the slate is skipped for exactly that set and the pass reports what it changed
+afterwards instead. A dispatched pass carries the waiver in its own brief — an agent never
+infers one, and a brief that both cites this file and omits the waiver means the slate
+stands.
+
 ## Linking an ADR to code (`applies-to`)
 
 Optional. When an ADR governs specific paths, declare them in frontmatter:
