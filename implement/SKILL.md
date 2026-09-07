@@ -141,7 +141,13 @@ A `major` Review finding gates landing the same way: the work still commits, but
 
 ## Where a pass runs
 
-**Every pass runs in a worktree. No exceptions, however small the change.** The user is usually standing in the primary checkout, and an agent committing underneath them is a collision they did not agree to.
+**Every pass runs in a worktree — never directly in the repo's primary checkout. No exceptions, however small the change.** The rule exists to stop an agent committing underneath a user standing in the primary checkout, doing something else, who did not agree to that collision.
+
+**Check where the orchestrator itself is standing before deciding whether to cut a new one.** `git rev-parse --git-dir` — if the answer is `.git`, this session is in the primary checkout; anything else means it is already inside a linked worktree.
+
+- **Orchestrator already in a linked worktree, single-item or sequential arity:** the pass works directly in that same worktree, on its current branch. Do not cut a nested throwaway worktree and do not cut a new branch. The isolation the rule above exists to provide was already bought once by whatever put the session there — a second worktree on top of it adds no safety, only a redundant branch, an extra teardown, and code sitting one `git worktree` hop away from wherever the person testing it is standing. Pass `worktree` and `repo` as this same directory.
+- **Swarm arity is the one exception, even from inside a worktree:** N passes running at once cannot share one directory regardless of who owns it, so swarm still cuts one throwaway worktree per pass off the current branch — exactly as described below for the collaborative case, just off whatever branch the orchestrator is already on instead of off a freshly-made herdr worktree.
+- **Orchestrator in the primary checkout:** the rest of this section applies as written — solo and collaborative repos both get a fresh worktree cut for the work.
 
 Which worktree depends on whether the repo is collaborative — check the `origin` owner, not the directory:
 
@@ -151,7 +157,17 @@ Which worktree depends on whether the repo is collaborative — check the `origi
 git rev-parse --show-toplevel                       # → <repo>
 git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
 CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
+printf '%s' "$CLAUDE_SESSION_ID" > "$(git -C ~/.worktrees/<repo-name>/<slug> rev-parse --absolute-git-dir)/ORCHESTRATOR-SESSION"
 ```
+
+**That third line is not optional, and skipping it costs the whole run.**
+`hooks/cross-worktree-write-guard.sh` prompts on every write into a worktree other
+than the session's own, and it exempts two cases: an orchestrator in the primary
+checkout, and a session writing into a worktree carrying its own session id in
+`ORCHESTRATOR-SESSION`. An orchestrator that is itself sitting in a linked worktree
+— common, since a feature branch's session dispatches its own passes — matches only
+the second. Without the marker, every file the pass touches stops and asks, for the
+length of the run.
 
 `<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the workflow returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/claude-land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
 
