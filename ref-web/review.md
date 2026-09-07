@@ -78,6 +78,47 @@ constant motion → `linear`. Built-in CSS easings are weak; expect strong custo
 - `:hover` motion not gated behind `@media (hover: hover) and (pointer: fine)` (touch fires false
   hovers on tap).
 
+## Tooling (in repo mode, run before reading source)
+
+Phase 01r's "gating is off" rule forwards each tool's raw output into this brief as evidence in repo
+mode; this lens reads that output rather than inferring a finding from source alone. In diff mode,
+prefer each tool's incremental/changed-files mode where one exists so a finding always cites something
+the diff actually touches. **An `npm audit` advisory is exempt from that diff-scope filter** — its
+evidence is the resolved dependency tree, not a changed line, so a reported CVE is still surfaced in
+diff mode even when the diff never touches the affected package.
+
+| Tool | Command | Reads |
+| --- | --- | --- |
+| Vulnerability scan | `npm audit --omit=dev` (or the lockfile-matched equivalent — `pnpm audit`, `yarn audit`) | Known CVEs in the resolved dependency tree |
+| Dead exports | `npx knip` | Unused files, exports, and dependencies nothing in the tree imports |
+| Import cycles | `npx madge --circular <entry>` | Circular imports — `madge` prints the exact cycle (`a.ts → b.ts → a.ts`), which a lens reading files can only infer and Phase 05b's reproduction gate can't confirm (a cycle has no input to feed it) |
+| Unused packages | `npx depcheck` | Declared `package.json` dependencies nothing in the tree imports, and imports with no matching dependency declared |
+| Type check | `tsc --noEmit` | Type errors across the whole program, including ones outside the diff that a changed type surfaces |
+
+**Reading each tool's output:**
+
+- **`npm audit`** — every reported advisory is a scored `web` finding: cite the advisory ID, the
+  package/version, and the patched version if one exists. A `low`/`moderate` advisory with no available
+  fix is still a `web` finding — note the tracked-risk severity in the finding body rather than
+  dropping it.
+- **`knip`** and **`depcheck`** — both report unused code/dependencies; treat them as corroborating,
+  not independent, since they overlap heavily. A dead export or unused dependency either reports
+  becomes a `web` finding — cross-check the other tool before reporting where both cover the same
+  file, and drop anything either tool itself marks low-confidence (a dynamic `import()` path it can't
+  resolve statically).
+- **`madge --circular`** — every printed cycle is a `web` finding (or `architecture` when the cycle
+  crosses a package/module boundary rather than sitting inside one feature folder) — quote the exact
+  cycle chain `madge` prints as the **Bites** evidence; there's no dropped case here, a real cycle is
+  always worth reporting once, deduped against ones already known.
+- **`tsc --noEmit`** — every reported error becomes a `web` finding (or `bug` when the type error
+  reveals a real runtime defect — an `any`-typed value that's actually `null`, say) at the file:line
+  `tsc` names. Drop a "possibly undefined" error the surrounding code already narrows in a way `tsc`'s
+  control-flow analysis can't follow (rare, but check the guard clause before scoring).
+
+**Missing tool** — not on `PATH` / not resolvable via the project's package manager is **noted in the
+report and skipped** — never a blocker, and never installed without asking first. State which tool was
+missing in the coverage line this lens returns, e.g. `web: knip not installed, skipped`.
+
 ## Gestures & drag (when the diff has pointer handling)
 
 - Momentum dismissal: compute velocity (`Math.abs(distance)/elapsedMs`), dismiss if `> ~0.11`, don't

@@ -13,7 +13,7 @@ Review code changes for bugs, **security vulnerabilities**, quality issues, CLAU
 | --- | --- |
 | [RULES.md](RULES.md) | RULE 0 (no selector), RULE 1 (effort never decides), RULE 2 (a gate does its job). **Load first.** |
 | [REVIEW-CORE.md](REVIEW-CORE.md) | the ten-axis dispatch, scoring, verification, report format |
-| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `history`, `negative-space`, `security`, `slop`, `spec`, `standards`. REVIEW-CORE dispatches to them; a lens agent gets exactly one. |
+| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt` (repo mode only), `docs-drift` (repo mode only), `history`, `negative-space`, `security`, `slop`, `spec`, `standards`, `test-debt` (repo mode only). REVIEW-CORE dispatches to them; a lens agent gets exactly one. |
 | [POSTING.md](POSTING.md) | end-of-pass dispositions, the comment budget, the verdict |
 | [FALSE-POSITIVES.md](FALSE-POSITIVES.md) | what not to flag |
 | [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the `workflow` transport's mechanics |

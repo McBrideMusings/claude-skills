@@ -8,3 +8,4 @@ description: Python — venv and uv rather than a global interpreter, packaging,
 | Open | When |
 | --- | --- |
 | [`context.md`](context.md) | The whole cell — open before writing or running Python in a project. |
+| [`review.md`](review.md) | Reviewing a Python change — `pip-audit`, `ruff check`, `vulture`, `mypy --strict`. |
