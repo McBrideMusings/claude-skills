@@ -39,7 +39,17 @@ Which worktree depends on whether the repo is collaborative — check the `origi
 git rev-parse --show-toplevel                       # → <repo>
 git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
 CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
+printf '%s' "$CLAUDE_SESSION_ID" > "$(git -C ~/.worktrees/<repo-name>/<slug> rev-parse --absolute-git-dir)/ORCHESTRATOR-SESSION"
 ```
+
+**That third line is not optional, and skipping it costs the whole run.**
+`hooks/cross-worktree-write-guard.sh` prompts on every write into a worktree other
+than the session's own, and it exempts two cases: an orchestrator in the primary
+checkout, and a session writing into a worktree that carries its own session id in
+`ORCHESTRATOR-SESSION`. An orchestrator sitting in a linked worktree — common, since
+a feature branch's session dispatches its own passes — matches only the second.
+Without the marker, every file the pass touches stops and asks, for the length of
+the run.
 
 `<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the workflow returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/claude-land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
 
