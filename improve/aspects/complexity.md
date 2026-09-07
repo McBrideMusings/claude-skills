@@ -2,7 +2,7 @@
 
 Axis tag: `complexity`. Applicability: a complexity tool exists for the repo's language. Check this before anything else — name the check from the tool table in `../../review/axes/standards.md`; if none applies and no manual fallback is practical at repo scale, return `not measurable — no complexity tool for <language>` and stop.
 
-**Read:** [../../review/axes/standards.md](../../review/axes/standards.md) — "Complexity is measured, not asserted" for the tool per language, the threshold rule, and the manual-count fallback. Do not restate any of it here.
+**Read:** [../../review/axes/standards.md](../../review/axes/standards.md) — "Complexity is measured, not asserted" for the cognitive/cyclomatic tool table per language, the threshold rule, and the manual-count fallback. Do not restate any of it here.
 
 ## Aspect-specific rules
 

@@ -36,7 +36,18 @@ Mysterious Name above catches the name a reader can't decode. These catch the na
 
 - **Derivability — don't pass or store what's already computable.** If a value can be derived from values already in scope, it should not also be a parameter, a field, or stored state. A function taking both `content` and an `isDirty` flag that is always `content !== baseline` should take one. Removing derivable state usually simplifies the signature, the type, and the control flow in one move. Platform-neutral: it applies to a React component's state, a Swift initializer taking `items` and `count`, and a Go struct caching `total` beside the slice it sums.
 - **Inverted pyramid within a file.** Exported and significant functions go at the top; private helpers below them. Don't make a reader scroll past six helpers to reach the function the file is named after.
-- **Complexity is measured, not asserted.** A cyclomatic-complexity or similar count is evidence attached to a finding raised on other grounds — Repeated Switches, Mysterious Name, a bug — never a finding by itself: "`parseOrder` (`parser.py:88`, CC 14) switches on order type in three places." Tool per language: Python `radon cc -s -a <path>`; JS/TS the eslint `complexity` rule; Go `gocyclo`; polyglot `lizard <path>`. The repo under review sets its own threshold (eslintrc, radon, sonar config) — carry no threshold of our own. No tool available: count decision points by hand and show the count — `if`, `else if`, `case`, loops, `catch`, ternary, `&&`, `||`, plus 1.
+- **Complexity is measured, not asserted.** A cyclomatic-complexity or similar count is evidence attached to a finding raised on other grounds — Repeated Switches, Mysterious Name, a bug — never a finding by itself: "`parseOrder` (`parser.py:88`, CC 14) switches on order type in three places." Cyclomatic complexity counts paths through the code — it answers how many tests a function needs. Cognitive complexity (Campbell / SonarSource) counts how hard the code is to hold in your head — it weights nesting, charges a `switch` once instead of once per case, and charges nothing for shorthand. Report both numbers where a tool exists for the language:
+
+  | Language | Cognitive | Cyclomatic |
+  | --- | --- | --- |
+  | Python | `complexipy <path>` | `radon cc -s -a <path>` |
+  | JS/TS | biome `noExcessiveCognitiveComplexity`, or `eslint-plugin-sonarjs` | eslint `complexity` |
+  | Go | `gocognit <path>` (also golangci-lint's `gocognit` linter) | `gocyclo <path>` |
+  | Rust | none usable — clippy's `cognitive_complexity` is restriction-tier and its own docs say it is not good enough to measure with | `cargo clippy` |
+  | Swift | none — SwiftLint has no rule (realm/SwiftLint#3335 still open) | SwiftLint `cyclomatic_complexity` |
+  | polyglot fallback | none | `lizard <path>` |
+
+  Read the pair together: high cyclomatic + low cognitive is a well-structured dispatch — the signal is test coverage, not readability. Low cyclomatic + high cognitive is a small, badly-nested function — the signal is readability, and it's the case a cyclomatic-only count misses. The repo under review sets its own threshold (eslintrc, radon, sonar config) — carry no threshold of our own. No tool available: count decision points by hand and show the count — `if`, `else if`, `case`, loops, `catch`, ternary, `&&`, `||`, plus 1.
 
 ## The reuse rule — search before accepting anything new
 
