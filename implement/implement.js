@@ -605,7 +605,7 @@ Files it names: ${touchedFiles.join(', ')}
 
 Judge only the diff. Correctness first — a bug the change introduces or fails to fix; then reuse and simplification against what the repo already has; then efficiency. Skip style the repo's own formatter owns.
 
-Severity means: \`blocking\` — the change is wrong, incomplete against the item, or breaks something that worked; this halts the pass. \`major\` — a real defect in this diff that must be fixed before the branch lands — the pass fixes it in another round if one is left, and it still commits and stays a blocker if none is. \`minor\` — a note, worth a follow-up, not a defect that gates landing.
+Severity means: \`blocking\` — the change is wrong, incomplete against the item, or breaks something that worked. \`major\` — a real defect in this diff that must be fixed before the branch lands. Both re-run Implement inside this pass if a round is left, and both halt the pass if three rounds still report one. \`minor\` — a note, worth a follow-up, never a reason to re-run Implement or to halt.
 
 **Do not edit anything, and do not stage or commit anything — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits. An edit you make here ships unverified, and a commit you make here reaches Verify already on HEAD, making its \`verified_parent\` field false the moment it is written.
 
@@ -892,8 +892,6 @@ if (touchedTests.length) {
   else log(`mutation check: tests fail without the change — ${(m.output || '').slice(0, 120)}`)
 }
 blockers.push(...mutationBlockers)
-if (blockingFindings.length) blockers.push(`code review returned ${blockingFindings.length} blocking finding(s): ${blockingFindings.map((f) => `${f.file} — ${f.summary}`).join('; ')}`)
-if (majorFindings.length) blockers.push(`code review returned ${majorFindings.length} major finding(s) in this diff: ${majorFindings.map((f) => `${f.file} — ${f.summary}`).join('; ')}`)
 
 if (blockers.length) log(`not ready to land: ${blockers.join('; ')}`)
 

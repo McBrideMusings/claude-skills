@@ -43,7 +43,7 @@ A pass runs five stages — **Plan, Implement, Review, Verify, Wrap** — and it
   recheck: [{cmd, expect}], blockers: [], review, files, followups, summary }
 ```
 
-A halt returns `{ok: false, halted_on, detail, worktree}`. **Branch on `ok` first** — a halt carries no `blockers`. `rounds` is how many times the pass's own fix loop actually ran (1 when the first round was clean). `followups` is work outside scope, never a diff defect — a defect is a Review finding, `major`+ also a blocker.
+A halt returns `{ok: false, halted_on, detail, worktree}`. **Branch on `ok` first** — a halt carries no `blockers`. `rounds` is how many times the pass's own fix loop actually ran (1 when the first round was clean). `followups` is work outside scope, never a diff defect — a defect is a Review finding. A `blocking` or `major` finding never reaches `blockers`: it re-runs the in-pass loop instead, and if three rounds still report one, the pass halts before Wrap rather than returning with the finding unresolved.
 
 ---
 
