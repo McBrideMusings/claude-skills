@@ -820,7 +820,7 @@ Verification: ${verdict.verdict}${verdict.evidence ? ` — ${verdict.evidence}` 
 ${impl.notes && impl.notes.length ? `Notes from implementation:\n${impl.notes.map((n) => `- ${n}`).join('\n')}` : ''}
 ${
   minorFollowups.length
-    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here) found ${minorFollowups.length} minor finding(s):\n${minorFollowups.map((f) => `- [${f}]`).join('\n')}\nThe orchestrator files these itself; \`followups\` in your response is for your own observations only, so there is no reason to copy these rows into it. \`blocking\` and \`major\` findings are gated by the orchestrator, not by you — you were not shown them, and do NOT file anything under those labels as followups.`
+    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here) found ${minorFollowups.length} minor finding(s):\n${minorFollowups.map((f) => `- [${f}]`).join('\n')}\nThe orchestrator files these itself; \`followups\` in your response is for your own observations only, so there is no reason to copy these rows into it. Every blocking and major finding from that review was already resolved in this pass's fix loop before this stage ran, so none remain to report — do NOT file anything under those labels as followups.`
     : 'Code review of this diff: already done. Do NOT run another review.'
 }`
 
@@ -895,15 +895,15 @@ blockers.push(...mutationBlockers)
 
 if (blockers.length) log(`not ready to land: ${blockers.join('; ')}`)
 
-// followups for review findings are built here, not by Wrap: Wrap was never
-// shown the blocking/major rows (see the WORK template above), but it still
-// might invent or echo one from context, so a stray row bearing that label is
-// stripped rather than trusted.
-const nonMinorSummaries = [...blockingFindings, ...majorFindings].map((f) => f.summary)
+// followups for review findings are built here, not by Wrap: every
+// blocking/major finding was already resolved by the fix loop before Wrap
+// ran (see the WORK template above), but Wrap might still invent or echo one
+// under those labels, so a stray row bearing that label is stripped rather
+// than trusted. Minor findings are filed by the orchestrator itself, so a row
+// that just echoes one of those is stripped too.
 const wrapFollowups = (landed.followups || []).filter((row) => {
   if (/^\s*[-[]*\s*(blocking|major)\b/i.test(row)) return false
   if (minorFollowups.includes(row)) return false
-  if (nonMinorSummaries.some((summary) => summary && row.includes(summary))) return false
   return true
 })
 
