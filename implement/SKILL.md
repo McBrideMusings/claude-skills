@@ -24,28 +24,32 @@ A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent 
 Every pass shares one `scriptPath`; `meta` stays a pure literal. Generate a per-pass copy first, pass *that* path:
 
 ```
-generated=$(bash /Users/pierce/.claude/skills/implement/name-pass.sh "$issue" "$title")
-Workflow({ scriptPath: generated, args: { issue, worktree, repo, branch, model } })
+generated=$(bash /Users/pierce/.claude/skills/implement/name-pass.sh "$id" "$title")
+Workflow({ scriptPath: generated, args: { resolved, worktree, repo, branch, model } })
 ```
 
+`args.resolved` is the item itself — `{id, title, body, acceptance?, branch?, files?}` — already cleared and gated in chat before this call ([`HANDOFF.md`](HANDOFF.md) §1); the pass never fetches or judges an item on its own, and a launch with no `resolved` (or an empty id) halts before anything else runs. `args.round` names which launch of this item this is — `1` runs every stage, `2`+ is a relaunch from this session's own verify loop, below.
+
 `implement.js` is the only file edited by hand. Never `Workflow({name: 'implement'})`; only this session calls `Workflow`. [`WORKTREES.md`](WORKTREES.md) has more.
+
+A pass runs five stages — **Plan, Implement, Review, Verify, Wrap** — and it owns its own fix loop: Implement, Review and Verify run together, up to three rounds, before Wrap ever runs. A round fails on a `blocking`/`major` Review finding or a Verify `FAIL`, and a failed round below the cap reruns Implement with the failures named, then Review and Verify again, on the same uncommitted tree. Only the final round's findings and verdict reach the object below; Wrap runs once, after the loop ends, whichever round that is.
 
 ---
 
 ## What a pass returns
 
 ```js
-{ ok, item, title, verdict, verdict_path, commit, branch, worktree,
+{ ok, item, title, round, rounds, verdict, verdict_path, commit, branch, worktree,
   recheck: [{cmd, expect}], blockers: [], review, files, followups, summary }
 ```
 
-A halt returns `{ok: false, halted_on, detail, worktree}`. **Branch on `ok` first** — a halt carries no `blockers`. `followups` is work outside scope, never a diff defect — a defect is a Review finding, `major`+ also a blocker.
+A halt returns `{ok: false, halted_on, detail, worktree}`. **Branch on `ok` first** — a halt carries no `blockers`. `rounds` is how many times the pass's own fix loop actually ran (1 when the first round was clean). `followups` is work outside scope, never a diff defect — a defect is a Review finding, `major`+ also a blocker.
 
 ---
 
 ## The verify loop
 
-**You re-run `recheck` yourself, in the worktree — your result decides if the branch lands.**
+**You re-run `recheck` yourself, in the worktree — your result decides if the branch lands.** This is a *different* loop from the one the pass runs on itself: it exists for what your own recheck finds that the pass's own Verify stage could not see.
 
 ```text
 check reachability of every named host:port/URL -> start whatever is down
@@ -56,8 +60,8 @@ loop
   run r.recheck[].cmd, compare against .expect; append a rechecks entry at r.verdict_path
   review r's diff against the pass's starting sha
   if clear and r.blockers empty  -> land
-  if round == 5  -> halt: leave the worktree standing, report the path
-  r = Workflow(pass, args: {...args, worktree: r.worktree, round, resolved}); round++
+  if round == 2  -> halt: leave the worktree standing, report the path
+  r = Workflow(pass, args: {...args, worktree: r.worktree, round, resolved: {...resolved, body: <the failures>, files: r.files}}); round++
 ```
 
 **Check reachability yourself, before the first launch. On exhaustion, halt** — leave the worktree standing. Context fills mid-run → `relay`, don't push on.
@@ -74,12 +78,12 @@ On failure, print the reason and stop. **Refuse a dirty tree:** `git status --sh
 
 ## Halt conditions
 
-- Pre-flight failed; issue closed/missing; nothing actionable in triage
-- AFK-ability gate failed — a decision the user owns; file `needs human input: <item> — <ambiguity>`
-- Reachability gate failed — a path outside the confined repo ([`WORKTREES.md`](WORKTREES.md))
-- No diff; build won't go green; verification `FAIL`/`BLOCKED`; five rounds exhausted; a blocking Review finding
+- Pre-flight failed
+- No diff; build won't go green; the in-pass loop exhausted three rounds without a clean round
+- verification `BLOCKED`, or a closed surface (`halted_on: 'surface'`)
+- This session's own verify loop exhausted two rounds
 
-Verify resolves doubt as `FAIL`.
+Verify treats doubt as `FAIL`. What "cleared" means before a pass is ever dispatched — including the plan, objectivity and reachability tests — is [`HANDOFF.md`](HANDOFF.md) §1's, run in chat, before a worktree exists.
 
 ---
 

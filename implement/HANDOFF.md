@@ -10,9 +10,19 @@ An item is dispatchable when four cheap queries all say so — this is a check, 
 - **Open.** `bd show <id> --json` reads its status.
 - **Not carrying the `human` label.** `human` is beads' one legal bare label, and there is deliberately no positive "AFK" label — removing `human` from an item is what makes it AFK. Check for its absence; do not invent a label to check for its presence.
 - **Listed by `bd ready --json`.** Nothing blocks it. Run `bd recompute-blocked` first — `bd ready` reads a denormalized flag that goes stale after a hand-resolved merge and will silently hide ready work.
-- **Sized.** Count the distinct files the item's body names — paths, backticked or bare, under the repo root. Fewer than three, and the body does not state that the item is a fan-out root or an expand–contract stage, means the item is under `backlog spec`'s slice-size floor. This is checked here, against the whole queue, rather than in the pass's own Gate, because Gate sees one item at a time and can only halt it — merging needs the neighbour, which only the orchestrator can see. An under-floor item is not excluded here; it is flagged for the merge offer in § 2.
+- **Sized.** Count the distinct files the item's body names — paths, backticked or bare, under the repo root. Fewer than three, and the body does not state that the item is a fan-out root or an expand–contract stage, means the item is under `backlog spec`'s slice-size floor. This is checked here, against the whole queue, rather than per item, because merging needs the neighbour, which only the orchestrator can see. An under-floor item is not excluded here; it is flagged for the merge offer in § 2.
 
-Passing all five makes an item eligible to offer, not verified. The `implement` pass runs its own Gate stage regardless, on every item, every time — this five-query check is a filter that keeps unready items off the offer, never a substitute for the pass's own gate.
+Passing all five makes an item eligible to offer, not yet ready to dispatch. The readiness gate below is what decides that, run once per item, here in chat.
+
+**The readiness gate.** A pass has no gate stage of its own — it trusts whatever it is handed — so this session applies three tests to the item text before ever offering it, reading code through an `Explore` subagent wherever the text alone does not settle a test. All three must pass:
+
+1. **Plan test.** Can you state a concrete plan *right now* — the files to touch, the changes to make, and an objective acceptance check that would prove it done? If you cannot name the files, or cannot name a check whose result would settle whether it is finished, the item is not understood well enough to work unwatched.
+2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity that would have to be *invented* to proceed? If so it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
+3. **Reachability test.** Does every file the item names, and every acceptance criterion, live inside the one repo it would be confined to? A nested submodule (for example `claude-skills` inside `~/.claude`) is a *different* repo even though it sits inside the parent's directory tree. An item naming a path in both fails this test and is split into one item per repo before either half is offered — see [`WORKTREES.md`](WORKTREES.md) Cross-repo items.
+
+An item failing any test is not offered. Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work — a clear "not ready, here's why" is a good outcome, not a failure.
+
+Bare `implement` resolves its item the same way `backlog next` would, in chat, before this gate runs; `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way. The pass itself never resolves or gates anything — by the time `Workflow` is called, `args.resolved` already carries an item that cleared every test above.
 
 ## 2. The shape comes from the graph
 
