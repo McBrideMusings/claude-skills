@@ -562,5 +562,25 @@ try {
   rmSync(scratchDir, { recursive: true, force: true })
 }
 
+// 29. cc-tn2a: ~/.claude documents a plain-sentence, no-prefix commit
+//    exception to Conventional Commits. The Wrap prompt must name that
+//    exception explicitly when the repo being worked is ~/.claude itself,
+//    and must still name Conventional Commits for any other repo.
+const homeClaudeRun = await run({ ...BASE, repo: '/Users/pierce/.claude' }, {})
+const homeClaudeWrapPrompt = homeClaudeRun.prompts.find((p) => p.phase === 'Wrap').prompt
+check(
+  'the Wrap prompt names the ~/.claude plain-sentence exception when repo is ~/.claude',
+  homeClaudeWrapPrompt.includes('plain one-sentence commit message'),
+  true,
+)
+
+const otherRepoRun = await run(BASE, {})
+const otherRepoWrapPrompt = otherRepoRun.prompts.find((p) => p.phase === 'Wrap').prompt
+check(
+  'the Wrap prompt still names Conventional Commits for any other repo',
+  otherRepoWrapPrompt.includes('Conventional Commits'),
+  true,
+)
+
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)
