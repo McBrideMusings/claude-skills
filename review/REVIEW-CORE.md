@@ -196,7 +196,7 @@ Run it after Phase 05 scoring and before the Phase 06 filter. It never touches t
 
 **Qualifies** — `bug`, `spec/wrong-impl`, `security`, and correctness `standards` findings whose **Bites** line names a constructible input and whose claim is behavioral: a wrong value, a crash, a missed branch, a leaked value.
 
-**Cannot be executed, and this is not a defect of the finding:** `architecture`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `spec/missing-partial`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, and a deprecated-API citation are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
+**Cannot be executed, and this is not a defect of the finding:** `architecture`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `spec/missing-partial`, `test-debt`, `dependency-debt`, `docs-drift`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, a deprecated-API citation, a missing test, an unused package, and a stale doc are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
 
 #### The scratch worktree — never the user's tree
 
