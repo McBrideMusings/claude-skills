@@ -43,7 +43,7 @@ Mysterious Name above catches the name a reader can't decode. These catch the na
   | Python | `complexipy <path>` | `radon cc -s -a <path>` |
   | JS/TS | biome `noExcessiveCognitiveComplexity`, or `eslint-plugin-sonarjs` | eslint `complexity` |
   | Go | `gocognit <path>` (also golangci-lint's `gocognit` linter) | `gocyclo <path>` |
-  | Rust | none usable — clippy's `cognitive_complexity` is restriction-tier and its own docs say it is not good enough to measure with | `cargo clippy` |
+  | Rust | `rust-code-analysis-cli -m -p <path>` — clippy's own `cognitive_complexity` is restriction-tier and its docs say it is not good enough to measure with | `rust-code-analysis-cli -m -p <path>`, or `lizard <path>` — clippy has no cyclomatic lint; the old `cyclomatic_complexity` was renamed to `cognitive_complexity` |
   | Swift | none — SwiftLint has no rule (realm/SwiftLint#3335 still open) | SwiftLint `cyclomatic_complexity` |
   | polyglot fallback | none | `lizard <path>` |
 
