@@ -128,7 +128,7 @@ Once this skill is loaded, every later message reads as an answer to the current
 If a written record is useful at the end, offer it — don't assume:
 
 - Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
-- Durable product spec → invoke `/to-tickets`, which synthesizes the spec as its Phase 03. (`/to-tickets` owns spec generation; don't write the spec by hand here.)
+- Durable product spec → invoke `/backlog spec`, which synthesizes the spec as its Phase 03. (`/backlog spec` owns spec generation; don't write the spec by hand here.)
 
 Glossary entries and ADRs are captured *as slate rows* during the session, per the `docs` skill's standing rules — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
 
@@ -139,7 +139,7 @@ Never chain into another interview. It does not mean build things yourself. The 
 | The user asks for | Invoke |
 | --- | --- |
 | a prototype, mockup, variants, "show me a few options" | `spike` |
-| a spec or PRD, tickets, or issues from what was decided | `to-tickets` |
+| a spec or PRD, tickets, or issues from what was decided | `backlog spec` |
 | a diagram or a visual explanation | `explain` |
 | an ASCII layout sketch for one arrangement | `gui` |
 

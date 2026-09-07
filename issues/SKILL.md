@@ -1,6 +1,6 @@
 ---
 name: issues
-description: Issue tracking. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Load before creating, reading, closing or labelling a tracked item.
+description: Issue tracking reference, loaded by path — not a user-facing verb. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Read before creating, reading, closing or labelling a tracked item.
 ---
 
 # Issue tracking

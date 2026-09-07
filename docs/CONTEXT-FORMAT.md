@@ -60,6 +60,18 @@ A module is **deep** when a lot of behaviour sits behind a small interface (high
 - "account" was used to mean both **Customer** and **User** — resolved: these are distinct concepts.
 ```
 
+## Every new term is shown before it lands
+
+A term reaching `docs/CONTEXT.md` is a slate row first, in chat, carrying the real text:
+the term, the one-line definition as it will be written, the aliases it displaces, and where
+it is already used in the tree. A changed definition shows `From:` and `To:` in full, the
+same way an ADR does (`ADR-FORMAT.md`).
+
+Never write a term inline mid-conversation. Vocabulary is the thing a reader is most likely
+to inherit without noticing, so it never enters the file unseen.
+
+Audit what is already in there with `/docs glossary` (`PHASE-07-GLOSSARY-AUDIT.md`).
+
 ## Rules
 
 - **Be opinionated.** When multiple words exist for the same concept, pick the best one and list the others as aliases to avoid.

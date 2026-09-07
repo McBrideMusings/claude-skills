@@ -88,7 +88,7 @@ skills that *do* fire — not a change to the skill itself.
 
 Precedent: the plan-format rule was obeyed 0 times not because the doc was bad but because
 the doc was never opened — 14 tool opens across 9,243 transcripts. The fix was making it a
-skill and having `grill-me`, `iron-out` and `spike` load it at the point they write a
+skill and having `grill-me`, `backlog shape` and `spike` load it at the point they write a
 plan.
 
 ## What this is not

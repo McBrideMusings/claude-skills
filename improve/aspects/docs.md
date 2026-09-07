@@ -31,7 +31,7 @@ Each finding quotes the file.
 
 - **Files the standard forbids.** A `PRD.md`, `docs/PRD.md`, `ROADMAP.md`, `docs/roadmap.md`,
   or similar planning/prediction doc anywhere in `docs/` or the repo root. These are forbidden
-  outright — forward-looking work belongs on the issue tracker (`iron-out` prints a roadmap
+  outright — forward-looking work belongs on the issue tracker (`backlog shape` prints a roadmap
   from the dependency graph on demand).
 - **Misnamed files.** A file that should be `docs/CONTEXT.md` or `docs/adr/NNNN-slug.md` under
   a different name or path (`GLOSSARY.md`, `docs/decisions/`, `001-foo.md` missing the

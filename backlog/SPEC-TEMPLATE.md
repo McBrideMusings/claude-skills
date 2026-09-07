@@ -1,6 +1,6 @@
 # Spec template
 
-The shape of the spec `to-tickets` Phase 03 synthesizes before slicing. It is written to
+The shape of the spec `backlog spec` Phase 03 synthesizes before slicing. It is written to
 scratch and thrown away; its text becomes the run epic's body (beads) or the run milestone's
 description (GitHub), published in Phase 06 — or, when the slate is a single slice with no
 epic, the `## Spec` section prepended to that ticket's body in Phase 07.

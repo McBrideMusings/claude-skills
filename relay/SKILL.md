@@ -1,6 +1,6 @@
 ---
 name: relay
-description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`. Requires HERDR_ENV=1. Handing work SIDEWAYS is `dispatch`, not this."
+description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`. Requires HERDR_ENV=1."
 ---
 
 # Relay
@@ -96,7 +96,7 @@ pane stays. Nothing is cleared.
 
 **fix now** — do it in this session, commit, push. Do this *before* writing the
 marker, since the relay is going to erase your ability to.
-**file** — `followups` skill, filed to the tracker.
+**file** — `backlog file` skill, filed to the tracker.
 **skip** — silent. Do not mention it again.
 
 ## Step 4 — write the marker

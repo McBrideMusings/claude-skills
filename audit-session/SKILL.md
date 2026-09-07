@@ -92,7 +92,7 @@ These bind every lens, not just `negative-space`. When more than one offers an a
 4. **Run the lenses.** One sub-agent per lens for a multi-session corpus; inline for a single session. Each returns findings only — no edits.
 5. **Score.** A finding survives only if it names a **specific transcript moment** (timestamp or quoted line) *and* a **specific rule or cheaper alternative**. Kill anything that is a general observation about how sessions could go better.
 6. **Report** in chat, in the shape [REPORT-FORMAT.md](REPORT-FORMAT.md) specifies. Ranked, most-recurrent first. Every finding carries a count — "3 of 12 sessions" beats "sometimes".
-7. **Offer dispositions** in one batched plain-text reply: fix now / file / skip per item. Never `AskUserQuestion`. Filing goes to `followups` for skill-quality items, to `papercut` for frictions, to `to-tickets` only if a finding is really project work.
+7. **Offer dispositions** in one batched plain-text reply: fix now / file / skip per item. Never `AskUserQuestion`. Filing goes to `backlog file` for skill-quality items, to `papercut` for frictions, to `backlog spec` only if a finding is really project work.
 
 ## RULE — a disposition list ALWAYS states that `go` accepts it
 

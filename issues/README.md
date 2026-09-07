@@ -40,12 +40,12 @@ invents a bare one.
 
 | Skill | Uses | Notes |
 | --- | --- | --- |
-| `to-tickets` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
-| `triage` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
+| `backlog spec` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
+| `backlog next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
 | `implement` | list, ready, claim, close | selector resolution lives in `implement/SELECTORS.md` |
-| `iron-out` | list, create, dep, label | files open questions, wires blockers |
-| `followups` | create, list | halts when neither backend resolves |
+| `backlog shape` | list, create, dep, label | files open questions, wires blockers |
+| `backlog file` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |
 | `wrap-up` | close, comment, list | plus PR work, which is always `gh` |
 | `review` | comment, create | PR review flow is always `gh` (see below) |

@@ -60,7 +60,7 @@ blockedBy,blocking` directly.
 not compute ready fronts, detect cycles, find orphans, flag wrong-direction edges, or report
 maximum parallelism. Beads does all of that (`bd swarm validate`, `bd ready`, `bd orphans`,
 `bd doctor --check=conventions`). That gap is the whole reason beads is the default backend and
-why `iron-out` offers `bd init` on a GitHub-only repo rather than reproducing the graph work
+why `backlog shape` offers `bd init` on a GitHub-only repo rather than reproducing the graph work
 here.
 
 ## Attaching media

@@ -36,7 +36,7 @@ Write the system as a tower of linked abstractions, top to bottom, one line per 
 
 The output shape depends on who wrote the target text — the host names which shape it uses.
 
-**Shape A — agent-written text** (for example, a spec the agent itself just drafted, like `to-tickets` Phase 03): edit the text in place, then report a **"Driver-seat changes"** list above the rewritten text — one line per change, naming what moved and why. Both land in the same approval message.
+**Shape A — agent-written text** (for example, a spec the agent itself just drafted, like `backlog spec` Phase 03): edit the text in place, then report a **"Driver-seat changes"** list above the rewritten text — one line per change, naming what moved and why. Both land in the same approval message.
 
 **Shape B — user-written text** (for example, the plan `grill-me` Grill mode is interviewing): make no edit. Emit the changes as a numbered slate in chat — one row per change, stating what moves, where (section), and why, in the plan's own vocabulary — closing with: *"Type `go` to apply every row, or answer per row (`1 apply, 3 skip`)."* Apply only the accepted rows, and only once the reply arrives.
 

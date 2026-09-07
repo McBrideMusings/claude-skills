@@ -32,7 +32,7 @@
 | `guide/` | User-facing surface (web app, CLI tool — not a library) |
 | `development/` | Git repo with >1 contributor, OR CI configured, OR open source (LICENSE + non-private remote) |
 
-**No roadmap file, and none is created here.** Forward-looking work lives in the repo's issue tracker, where a dependency graph orders it; `iron-out` reads that graph and prints the roadmap on demand. A markdown checklist cannot express a blocking edge, so it drifts from the tracker the day after it is written and there is no way to tell which one is wrong. If a repo has no tracker, the fix is `bd init` — never a roadmap file as a consolation prize. Same reasoning as [`bootstrap`'s PHASE-06](../bootstrap/PHASE-06-DOCS-ARTIFACTS.md).
+**No roadmap file, and none is created here.** Forward-looking work lives in the repo's issue tracker, where a dependency graph orders it; `backlog shape` reads that graph and prints the roadmap on demand. A markdown checklist cannot express a blocking edge, so it drifts from the tracker the day after it is written and there is no way to tell which one is wrong. If a repo has no tracker, the fix is `bd init` — never a roadmap file as a consolation prize. Same reasoning as [`bootstrap`'s PHASE-06](../bootstrap/PHASE-06-DOCS-ARTIFACTS.md).
 
 ## `CLAUDE.md` Documentation section template
 

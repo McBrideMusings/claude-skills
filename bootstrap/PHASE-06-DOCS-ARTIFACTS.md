@@ -18,7 +18,7 @@ a PRD nor a roadmap is created here, and adding one back needs an argument that 
 
 Their owners already handle the missing-file case:
 
-- **A spec is `to-tickets`' output**, and that skill declares itself the single owner of spec
+- **A spec is `backlog spec`'s output**, and that skill declares itself the single owner of spec
   synthesis. A synthesized spec lives in the tracker's epic issue body (its Phase 06), never
   in a file — no PRD is ever written.
 - **A roadmap is the issue tracker's job.** Phase 05 runs before this one precisely so that

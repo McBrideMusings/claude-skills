@@ -52,7 +52,7 @@ Reference is SKILL.md-structured, no app code → skills mode. Whole-catalog sca
 
 **Merge into mine:**
 
-> Their `to-prd` overlaps the user's `to-tickets` Phase 03, but their "one open question per section, flagged inline" step is sharper than the user's batch-at-end questions. Port that step into `to-tickets`; do not add a second skill.
+> Their `to-prd` overlaps the user's `backlog spec` Phase 03, but their "one open question per section, flagged inline" step is sharper than the user's batch-at-end questions. Port that step into `backlog spec`; do not add a second skill.
 
 **Fold as axis:**
 

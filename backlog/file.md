@@ -1,9 +1,6 @@
----
-name: followups
-description: "Capture follow-up items — quick captures and session-end generation (also invoked by /wrap-up) — filed as issues on the repo's tracker (beads or GitHub). Browsing, picking, or working an existing follow-up is `triage`; this skill only creates."
----
+# File
 
-Use when the user asks to add a follow-up ("remember to …", "file as a followup") or to generate/surface new follow-ups from the session (also invoked by `/wrap-up`). To **browse, pick, or start** an existing item, that's `triage` — a follow-up is just another tracked item triage reads. This skill only **creates** items.
+Use when the user asks to add a follow-up ("remember to …", "file as a followup") or to generate/surface new follow-ups from the session (also invoked by `/wrap-up`). To **browse, pick, or start** an existing item, that's `backlog next` — a follow-up is just another tracked item `backlog next` reads. This skill only **creates** items.
 
 > ### HARD RULE — ask every filing question as plain chat
 >
@@ -23,7 +20,7 @@ A repo with neither backend **halts** — see `issues`'s detection step 6. Say t
 
 ## Modes
 
-This skill **captures** follow-ups — it creates tracked items. *Browsing, picking, and starting* a follow-up is `triage`'s job (a follow-up is just another tracked item on the repo's tracker). So this skill has three modes, all about creating or tidying items:
+This skill **captures** follow-ups — it creates tracked items. *Browsing, picking, and starting* a follow-up is `backlog next`'s job (a follow-up is just another tracked item on the repo's tracker). So this skill has three modes, all about creating or tidying items:
 
 | Invocation | Mode |
 |---|---|
@@ -31,9 +28,9 @@ This skill **captures** follow-ups — it creates tracked items. *Browsing, pick
 | Invoked by `/wrap-up`, or "generate followups from this session" | Generate |
 | "clean up resolved", "move resolved followups" | Cleanup |
 
-**"show / list my followups", "what followups do I have", "let's work on a followup", "pick a followup"** → that is **`triage`**, not this skill. Hand off to it; don't list or start items here.
+**"show / list my followups", "what followups do I have", "let's work on a followup", "pick a followup"** → that is **`backlog next`**, not this skill. Hand off to it; don't list or start items here.
 
-If ambiguous, assume **Add** (capture) — unless the user clearly wants to see or choose something, in which case route to `triage`.
+If ambiguous, assume **Add** (capture) — unless the user clearly wants to see or choose something, in which case route to `backlog next`.
 
 ### Add
 
@@ -128,7 +125,7 @@ Same applies to stale items in this followups file — flag them inline, don't w
 
 ### Step 5: File
 
-**Default — interactive** (a standalone `/implement`, a manual `/wrap-up`, or a direct `/followups`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, `go`, "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
+**Default — interactive** (a standalone `/implement`, a manual `/wrap-up`, or a direct `/backlog file`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, `go`, "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
 - **beads repo:** "Which of these should I file as beads issues? (numbers, ranges, `go` for all, or 'none')"
 - **GitHub repo:** "Which of these should I file as GitHub issues? (numbers, ranges, `go` for all, or 'none')"
 - **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, `go` for all, or 'none')"
@@ -148,6 +145,6 @@ If the user says "none", write nothing. Do not split items across destinations. 
 
 **Dispatch offer (interactive filing only, beads only — skip in autonomous mode, and on GitHub, which has no labels or `bd ready`).** Most follow-ups are notes, not briefs — a follow-up is usually raised, not scoped and cleared for AFK work — so expect this to come up empty most of the time. After filing, check each item just filed against the three conditions in [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, no `human` label, listed by `bd ready --json` after `bd recompute-blocked`). Append one slate row, in HANDOFF.md §3's shape, for the items that pass — no new accept word, `go` on the filing report takes it. **If nothing passes, add no row at all** — an empty offer is noise on every wrap-up, and silence is the correct output here.
 
-### Scope: this skill stops at filing
+## Scope: this skill stops at filing
 
 Do not write a handoff. Handoffs are a separate, user-invoked concern: if a user wants one, they invoke `/handoff` directly. No skill writes handoffs on the user's behalf.

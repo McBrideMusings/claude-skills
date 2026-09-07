@@ -89,7 +89,7 @@ When another skill (e.g. `improve`'s survey) invokes `critique` non-interactivel
 ## Relationship to the rest of the account
 
 - **`grill-me`** — pulls `layers/user-needs.md` (job-story discipline) and `layers/domain.md` (terminology-conflict discipline) into its elicitation interviews. Overlapping techniques live in the cells; `grill-me` reads them rather than duplicating.
-- **`to-tickets`** — consumes the decisions this skill surfaces (needs, strategy, model) and turns them into a spec and tickets. This skill does the *deciding*; that one does the *writing-down and slicing*.
+- **`backlog spec`** — consumes the decisions this skill surfaces (needs, strategy, model) and turns them into a spec and tickets. This skill does the *deciding*; that one does the *writing-down and slicing*.
 - **`spike`** — when the question is *which direction*, not *which arrangement*.
 
 ## When NOT to use
@@ -98,5 +98,5 @@ When another skill (e.g. `improve`'s survey) invokes `critique` non-interactivel
 - A bug fix that doesn't change layout or motion.
 - Reviewing or testing UI *code* — that's the `review` / `tdd` / `verify` engines (they read the UI cells themselves). This skill is the design-time decision, not the code pass.
 - **The question is *which direction*, not *which arrangement*** — several genuinely different takes on one piece, differing on density, motion, personality, or interaction model. Sketch mode can't show those, so it filters on the wrong information: that's `spike` (working variants in one standalone HTML file behind a picker). Sketch stays the cheaper first reach when there's one design and the open question is where things sit.
-- Writing the PRD or cutting tickets — that's `to-tickets` (this skill feeds it).
+- Writing the PRD or cutting tickets — that's `backlog spec` (this skill feeds it).
 - Choosing a web library rather than designing the thing — `ref-gui/libraries.md` answers it directly.

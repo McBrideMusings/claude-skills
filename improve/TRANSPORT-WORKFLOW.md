@@ -2,7 +2,7 @@
 
 An override for **Phases 04 → 05 → 06 → 06b only** — the aspect fan-out, the scoring, the filter and merge, and the ranking. Everything before and after stays exactly where it is.
 
-Selected by the `workflow` token in the arguments: `improve workflow`, `improve architecture tests workflow`. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise. No token means the session transport, which is [IMPROVE-CORE.md](IMPROVE-CORE.md) unchanged.
+**Default once 3 or more aspects survive Phase 02:** this transport runs with no token needed. The `workflow` token is then a redundant, valid confirmation (`improve workflow`, `improve architecture tests workflow`); below three aspects it's still **the human's request for the `Workflow` tool** — do not reach for it otherwise — and it auto-downgrades per "doesn't pay" below. The `session` token forces the session transport back on a 3+-aspect run: `improve architecture tests security session`. No token, fewer than 3 aspects → the session transport, which is [IMPROVE-CORE.md](IMPROVE-CORE.md) unchanged.
 
 ## What stays in the session, and why
 

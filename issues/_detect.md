@@ -7,7 +7,7 @@ resolve the two things that genuinely vary — mirror mode and stealth — not t
 Resolve in this order and stop at the first that answers. This is cheap — two shell calls at
 most — run it once per invocation and reuse the answer for the rest of the run.
 
-1. **Explicit argument.** If the invocation named a backend (`triage beads`, `to-tickets github`),
+1. **Explicit argument.** If the invocation named a backend (`backlog next beads`, `backlog spec github`),
    use it. An explicit name overrides everything below — if the user said `beads` and `.beads/` is
    absent, offer `bd init` rather than silently using GitHub.
 

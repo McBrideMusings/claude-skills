@@ -190,7 +190,7 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 ### Step A — Resolve follow-ups (must fully settle before summarizing)
 
-Invoke the `followups` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix now**, **file**, or **skip**.
+Invoke the `backlog file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix now**, **file**, or **skip**.
 
 **Posture (from the Pass-mode gate above — prove `continuous` or you are interactive):**
 
@@ -236,7 +236,7 @@ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or
 
 **Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat with **Files changed / Unchanged / Follow-up needed** and **Run:** / **Look for:** steps.
 
-Invoke the `summary` skill **with the `write` token** — `summary write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong mode here.)
+Invoke the `handoff` skill **with the `write` token** — `handoff write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `handoff` writes the terse fresh-agent doc, not this. `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong skill here.)
 
 ### Step C — Land the branch (merge or fast-forward push on owned, PR on collaborative)
 

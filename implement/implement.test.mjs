@@ -392,6 +392,19 @@ check('tree_clean:false reaches Wrap and reports ok', treeDirty.result.ok, true)
 check('  ...with no blockers', treeDirty.result.blockers, [])
 check('  ...and Wrap is called', treeDirty.calls.includes('Wrap'), true)
 
+// A verdict naming a closed surface (cc-fmpo.2) halts on 'surface', not
+// 'verify' — the caller needs to tell "the environment was never brought up"
+// apart from a real BLOCKED so it can start the surface and relaunch instead
+// of re-diagnosing the change.
+const surfaceDown = await run({ ...BASE, worktree: '/tmp/wt' }, {
+  Verify: { verdict: 'BLOCKED', surface_down: true, failures: ['surface unreachable: 127.0.0.1:2024 (from item body)'] },
+})
+check('a closed surface halts the pass', surfaceDown.result.ok, false)
+check('  ...naming "surface", not "verify"', surfaceDown.result.halted_on, 'surface')
+check('  ...with a detail naming the unreachable surface', /surface unreachable: 127\.0\.0\.1:2024/.test(surfaceDown.result.detail), true)
+check('  ...and never reaches Wrap', surfaceDown.calls.includes('Wrap'), false)
+check('  ...and carries the worktree arg passed in', surfaceDown.result.worktree, '/tmp/wt')
+
 // The Gate's third test (cc-32bc): an item naming a file outside the repo the
 // pass is confined to must halt at Gate, and the halt detail must survive
 // carrying the out-of-repo path and the word "split" back to the caller. This
@@ -615,6 +628,40 @@ check(
   /returned nothing/.test(locateNoFiles.result.detail),
   false,
 )
+
+// 26. A fix round (`round >= 2`) skips Gate, Locate and Review entirely —
+//     round 1 already settled the approach and the files, and the diff
+//     Review would read is now the whole branch — but still runs Edit,
+//     Green, Verify and Wrap, and carries `round` plus a skip-annotated
+//     `review` object in the result.
+const round2 = await run(
+  { ...BASE, worktree: '/tmp/wt', round: 2, resolved: { ...HAPPY.Resolve, files: ['a.ts'] } },
+  { Verify: WT_VERIFY },
+)
+check('round 2 never calls Gate', round2.calls.includes('Gate'), false)
+check('  ...never calls Locate', round2.calls.includes('Locate'), false)
+check('  ...never calls Review', round2.calls.includes('Review'), false)
+check('  ...still calls Edit', round2.calls.includes('Edit'), true)
+check('  ...still calls Green', round2.calls.includes('Green'), true)
+check('  ...still calls Verify', round2.calls.includes('Verify'), true)
+check('  ...still calls Wrap', round2.calls.includes('Wrap'), true)
+check('  ...reports ok', round2.result.ok, true)
+check('  ...and carries round in the result', round2.result.round, 2)
+check('  ...with a skip-annotated review object', round2.result.review, {
+  findings: 0,
+  blocking: 0,
+  major: 0,
+  skipped: 'fix round',
+})
+
+// 27. A fix round with no `resolved` (or no `worktree`) has nothing to run
+//     Edit against — Gate and Locate, which would normally supply that, are
+//     both skipped — so it halts at resolve rather than falling through to
+//     an agent-resolved item that round 1 never produced.
+const round2NoResolved = await run({ repo: '/tmp/repo', round: 2, worktree: '/tmp/wt' })
+check('round 2 with no resolved halts', round2NoResolved.result.ok, false)
+check('  ...naming the resolve stage', round2NoResolved.result.halted_on, 'resolve')
+check('  ...never reaching Edit', round2NoResolved.calls.includes('Edit'), false)
 
 console.log(failures ? `\n${failures} FAILED` : `\nall passed`)
 process.exit(failures ? 1 : 0)

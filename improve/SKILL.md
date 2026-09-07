@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `to-tickets`; never implements. Opportunities where nothing is broken; defects are `review`. Choices are typed keywords, never AskUserQuestion."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `backlog spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
 ---
 
 # Improve
@@ -9,7 +9,7 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 
 This file is the **router**. The survey engine — phases, briefs, scoring, merge — lives in [IMPROVE-CORE.md](IMPROVE-CORE.md); load it only once routing has picked survey mode.
 
-**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `to-tickets`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
+**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `backlog spec`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
 
 ## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a survey
 
@@ -87,9 +87,9 @@ All three end at **Phase 08 — Ticket the survivors** in [IMPROVE-CORE.md](IMPR
 
 ## Transport — where the aspects run
 
-Orthogonal to the routing above, and only meaningful in survey mode. The `workflow` token moves **Phases 04–06b only** — the fan-out, the scoring, the filter and merge, the ranking — into a workflow script, so only surviving findings enter this context instead of every aspect report. Applicability, the confirm, the report, the ticketing, and every question stay in the session. `improve workflow`, `improve architecture tests workflow`.
+Orthogonal to the routing above, and only meaningful in survey mode. Phases 04–06b — the fan-out, the scoring, the filter and merge, the ranking — are what the workflow transport moves into a workflow script, so only surviving findings enter this context instead of every aspect report. Applicability, the confirm, the report, the ticketing, and every question stay in the session either way.
 
-No token → the session transport: [IMPROVE-CORE.md](IMPROVE-CORE.md) exactly as written, Agent-tool sub-agents launched in parallel from this loop. That is the default.
+**Survey with 3 or more aspects surviving Phase 02 → the workflow transport by default**, no token needed. `workflow` is then a redundant, valid confirmation (`improve workflow`, `improve architecture tests workflow`); `session` forces the session transport back (`improve architecture tests security session`). **Fewer than 3 aspects — including the single-named-aspect interactive route — default to the session transport**, [IMPROVE-CORE.md](IMPROVE-CORE.md) exactly as written with Agent-tool sub-agents launched in parallel from this loop; `workflow` there is still the explicit request for the `Workflow` tool, and it auto-downgrades back to the session transport when the count doesn't pay (see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md)).
 
 Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). **RULE 0 holds under both** — the workflow contains no question, because every question in a survey falls outside Phases 04–06b.
 

@@ -5,7 +5,7 @@ description: "Log and work small frictions — retried tool calls, flaky command
 
 Papercuts are small frictions logged **in the moment** — a tool call that missed and needed a retry, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha. One or two sentences: *what you were doing → what got in the way* (a guess at the cause/fix is a bonus). None are blocking; logged together they show where a repo needs sanding down.
 
-**Not** the same as: real bugs / tracked work (issues on the repo's tracker — use `followups` or `triage`), the session summary (`summary`), or anything about what got *accomplished*.
+**Not** the same as: real bugs / tracked work (issues on the repo's tracker — use `backlog file` or `backlog next`), the session summary (`summary`), or anything about what got *accomplished*.
 
 ## The writer — always route through the CLI
 
@@ -68,7 +68,7 @@ Work the log, don't just print it:
 2. **Sweep out anything already fixed first.** For each entry, check whether the friction still bites — the fix may have landed in any session since. Delete every entry that no longer does, and say which went and why. Do this before clustering: a dead entry distorts a cluster into looking like a repeat offender when the repo has already moved on. If checking an entry is genuinely more work than the triage itself, keep it and say you couldn't verify it — never guess it away.
 3. Cluster the surviving entries by theme (shell/quoting, test cwd, CI/YAML, missing helper, stale cache, etc.). Surface the repeat offenders — the frictions that show up more than once are where sanding pays off.
 4. For each cluster, state the concrete objective difference / cause and, where there is one, the fix (a helper task, an allowlist entry, a doc line, a lint step). Do not rank by ROI and do not judge severity subjectively — lay out what each is and what fixing it costs, and let the user decide.
-5. Offer — do not auto-do — to promote any cluster into real tracked work: a tracked issue / follow-up (via `followups`) for genuine bugs, or an `admin` task / doc note for setup friction. Ask in plain chat; never use `AskUserQuestion`.
+5. Offer — do not auto-do — to promote any cluster into real tracked work: a tracked issue / follow-up (via `backlog file`) for genuine bugs, or an `admin` task / doc note for setup friction. Ask in plain chat; never use `AskUserQuestion`.
 6. When the user takes that offer, **delete every entry you filed, in the same turn you file it** — see the deletion rule above. The issue is the entry's new home; leaving it in both places creates a duplicate that drifts. Report each deletion next to the issue URL that replaced it.
 
 ## Proactive logging (agents, in the moment)

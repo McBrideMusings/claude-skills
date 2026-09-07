@@ -9,7 +9,7 @@
 
 Every skill that hands work to another agent picks from the **same three targets**, in the
 same order. This file is the single owner of that order. `review dual`, `implement delegate`,
-and `iron-out` link here rather than each inventing a menu.
+and `backlog shape` link here rather than each inventing a menu.
 
 | | **Claude agent** | **herdr tab** | **Terminal.app window** |
 |---|---|---|---|
