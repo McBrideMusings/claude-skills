@@ -836,6 +836,9 @@ ${
 // object store and refs, so the caller already has every commit this pass
 // makes. "Never push to the default branch" is unstateable for an agent that
 // runs no `git push` at all.
+const homeClaudeException = REPO_ROOT === '/Users/pierce/.claude'
+  ? ' This repo is `~/.claude`, whose own `CLAUDE.md` documents the exception: write a plain one-sentence commit message with no `type(scope):` prefix, not Conventional Commits.'
+  : ''
 const wrapPrompt = `${WHERE}
 
 You are the last stage of one implement pass, in a git worktree at \`${a.worktree || dir}\` on branch \`${a.branch || item.branch || 'the checked-out branch'}\`. **Your whole job is to turn the finished edits into one commit on that branch.** Do not read any other skill for this stage; the steps below are the entire stage.
@@ -845,7 +848,7 @@ ${WORK}
 1. \`~/.claude/tools/repo-snapshot ${dir || '.'}\` once — not several separate git calls.
 2. Run the project's formatter **on the files listed above and no others**. Never a repo-wide format or \`lint --fix\`: it rewrites files no sibling worker touched, so every other branch in the round conflicts on whitespace alone, and the conflict surfaces at landing long after you are gone. If the only formatter available is repo-wide, skip formatting and say so in \`summary\`.
 3. \`git -C ${a.worktree || dir} add\` **the listed paths, explicitly**. Never \`git add -A\` and never \`git add .\`. \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\` and everything under \`.claude/skills/\` are gitignored local files linked into this worktree so the pass could build at all — they are not yours to track, and the bulk adds are how they reach a diff.
-4. Commit. Conventional Commits subject unless this repo's own \`CLAUDE.md\` says otherwise, referencing \`${item.id}\`. No mention of Claude, an AI, or an assistant anywhere in the message. **You are the one stage that commits: \`git -C ${a.worktree || dir} commit -m "..."\`.**
+4. Commit. Conventional Commits subject unless this repo's own \`CLAUDE.md\` says otherwise, referencing \`${item.id}\`.${homeClaudeException} No mention of Claude, an AI, or an assistant anywhere in the message. **You are the one stage that commits: \`git -C ${a.worktree || dir} commit -m "..."\`.**
 5. Read back what you actually produced: \`git -C ${a.worktree || dir} rev-parse HEAD\` and \`git -C ${a.worktree || dir} status --short\`. Return the sha in \`commit\`, the branch in \`branch\`, \`committed: true\`, and a clean \`status\` is what \`committed\` asserts — if the tree is still dirty, say which paths in \`summary\`.
 6. Stop. Return \`pushed: false\` and \`landed: false\`; both are correct and neither is a failure.
 
