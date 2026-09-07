@@ -8,6 +8,8 @@ The breakdown in `issues/breakdown.md` puts slices, a Verify bead and a Land bea
 
 Never edit a generated `implement-<id>.js` directly, and never point `scriptPath` at `implement.js` itself. The generated per-pass copy is disposable — it lands under `$(~/.claude/tools/repo-slug --path <repo>)`, which macOS reaps after three days idle.
 
+`args` is `{resolved, worktree, repo, branch, model, round?}`. `resolved` is the item itself — `{id, title, body, acceptance?, branch?, files?}` — already cleared and gated in chat before this call; the pass never fetches or judges an item on its own. Everything else is unchanged from a normal launch.
+
 **Never `Workflow({name: 'implement'})` and never `workflow('implement', …)`.** Name resolution reads the *project's* `.claude/workflows/`, not `~/.claude/`, so it fails in exactly the place every pass runs — a worktree — with `Workflow "implement" not found. Available: deep-research, code-review`. The absolute path has no registry between it and the file.
 
 **Only this session may call `Workflow` at all.** It is not available inside subagents: a subagent that tries gets `No such tool available`. So the orchestrator is always the chat session, never something it spawned.
@@ -77,7 +79,7 @@ Targeting `--workspace` is what nests it under the repo in the sidebar instead o
 
 An item touching both is split into one item per repo, wired with a dependency edge, and each half's brief says which repo it owns and names the other half's item id.
 
-The Gate stage's third test (reachability) catches this automatically: an item naming a file, or carrying an acceptance criterion, outside the repo the pass is confined to fails the gate with a `missing` entry naming the out-of-repo path. That costs one cheap stage instead of a whole pass discovering the same thing at Verify, its last stage.
+The reachability test catches this before dispatch, in chat: an item naming a file, or carrying an acceptance criterion, outside the repo the pass would be confined to is not offered as-is — it is split into one item per repo first ([`HANDOFF.md`](HANDOFF.md) §1). That costs one cheap check instead of a whole pass discovering the same thing at Verify, its last stage.
 
 ## Retiring a worktree
 

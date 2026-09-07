@@ -1,6 +1,6 @@
 # Rules for one stage of an implement pass
 
-An `/implement` pass runs staged — `~/.claude/skills/implement/implement.js` spawns one agent per stage, and you are one of them. **This file and the prompt you were handed are the whole of your instructions.** Do not go looking for `SKILL.md`: it describes a pass end to end, addressed to a reader who owns all of it, and you own one stage of it.
+An `/implement` pass runs staged — `~/.claude/skills/implement/implement.js` runs Plan, Implement, Review, Verify and Wrap in order, spawning one agent per stage (Implement, Review and Verify loop together, up to three rounds, before Wrap ever runs), and you are one of those agents. **This file and the prompt you were handed are the whole of your instructions.** Do not go looking for `SKILL.md`: it describes a pass end to end, addressed to a reader who owns all of it, and you own one stage of it.
 
 Your prompt names the work and the schema names the answer. Returning that object ends your stage; the script decides what happens next.
 

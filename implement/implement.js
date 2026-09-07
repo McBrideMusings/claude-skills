@@ -3,11 +3,8 @@ export const meta = {
   description: 'One tracked item, worked end to end to a commit',
   whenToUse: 'Called by /implement for every pass it runs — once, N times in series, or N at once. Not invoked directly by a human, and never by name: the caller runs name-pass.sh to generate a per-pass copy of this file and passes that copy\'s absolute path as scriptPath.',
   phases: [
-    { title: 'Resolve', detail: 'fetch the tracked item' },
-    { title: 'Gate', detail: 'AFK-ability self-assessment' },
-    { title: 'Locate', detail: 'find the files and settle the approach' },
-    { title: 'Edit', detail: 'make the change' },
-    { title: 'Green', detail: 'build and fix until it compiles and tests pass' },
+    { title: 'Plan', detail: 'find the files and settle the approach' },
+    { title: 'Implement', detail: 'make the change, then build and fix until it compiles and tests pass' },
     { title: 'Review', detail: "read this pass's whole diff for defects" },
     { title: 'Verify', detail: 'check the behaviour at the surface' },
     { title: 'Wrap', detail: 'format the touched files and commit' },
@@ -17,103 +14,70 @@ export const meta = {
 // ---------------------------------------------------------------------------
 // Why this is a workflow and not one long agent.
 //
-// Measured over 24h of session logs: 40 implement passes ran as a single
-// `general-purpose` agent each. They averaged ~300 turns and peaked between
-// 243k and 406k context, and together they were 37% of all token spend. The
-// cost is not the code — it is one monotonically growing context re-read on
-// every turn.
+// A pass that ran as a single agent averaged ~300 turns and grew one context
+// that never shrank — every grep miss, every raw build log, every dead end
+// stayed in it for the rest of the run. Each stage below starts fresh instead
+// and hands the next one a small validated object: Plan's search history dies
+// at the end of Plan; Implement's build output is bounded to its last ~40
+// lines before any of it lands in context.
 //
-// Each stage below starts fresh and hands the next one a small validated
-// object. Exploration output dies at the end of Locate; build logs are
-// bounded to their last ~40 lines before they enter any context (see the
-// Green stage).
+// A stage agent has no `Agent` tool and `ToolSearch` cannot reach one either,
+// so no stage can spawn a subagent. That is why the Implement prompt below
+// tells the stage to run its own build behind `| tail -40` instead of naming
+// `build-runner`, why Verify forbids reading a screenshot instead of naming
+// `screenshot-checker`, and why STAGE-RULES.md says the same. Do not restore
+// either.
 //
-// Tested 2026-09-02: a stage agent has no `Agent` tool and `ToolSearch`
-// cannot reach one, so no stage can spawn a subagent. That is why the Green
-// prompt below tells the stage to run the build itself behind `| tail -40`
-// instead of naming `build-runner`, why Verify forbids reading a screenshot
-// instead of naming `screenshot-checker`, and why STAGE-RULES.md says the
-// same. Do not restore any of the three.
-//
-// Each stage prompt below is the whole of that stage's brief.
-//
-// Stages used to be handed `skills/implement/SKILL.md` and told which phase of
-// it to execute. That document is written for a reader who owns the whole pass:
-// of its sixteen sections, twelve address a whole-pass reader and four address
-// one stage. So every agent read at least twelve sections of instructions for
-// work that was not its own — and one of them, the transition inside Phase 1,
-// says "the moment implementation lands green with no halt fired, invoke verify
-// then wrap-up". The Green stage stands at exactly that moment holding exactly
-// that sentence, and a Green stage that reached wrap-up would push, land and
-// close the item halfway through the pass. The script guarded it with "execute
-// ONLY the phase named below — do not run ahead", which is a guard against a
-// document the script itself supplied.
-//
-// So the per-stage rules live here, in the prompt of the stage they govern, and
-// `STAGE-RULES.md` carries only what is true for every stage. No stage prompt
-// mentions a later stage, so there is no running ahead to forbid. SKILL.md is
-// now the document a human reads, and the router that decides to run this.
+// Each stage prompt below is the whole of that stage's brief, and no stage
+// prompt mentions a later stage — there is nothing to run ahead into.
+// STAGE-RULES.md carries only what is true for every stage; SKILL.md is the
+// document a human reads end to end.
 // ---------------------------------------------------------------------------
 
 const SKILLS = '/Users/pierce/.claude/skills'
 const RULES = `${SKILLS}/implement/STAGE-RULES.md`
-const DETECT = `${SKILLS}/_tracker/_detect.md`
 
-// Wrap is the only stage that commits. Edit and Green carry `committed` in
-// their result schemas, and the script halts the pass the instant either
-// reports a true self-report — the weaker backstop, which catches the partial
-// case where a stage commits some files and leaves others dirty. What
-// actually makes the invariant hold is Verify's `tree_clean` check: it reads
-// `git status --short` at the same moment it reads HEAD, using a DIFFERENT
-// agent than the one that would have committed, and returns BLOCKED instead
-// of writing a false `verified_parent` when the tree is already clean. There
-// is no PreToolUse hook for this: `git commit` is not a session-boundary act
-// like push, merge, worktree lifecycle, or tracker writes, and
-// `hooks/landing-guard.sh` can see that its caller is a subagent but
-// not which stage is calling — so no unfakeable rule can be written there.
+// Wrap is the only stage that commits. Implement carries `committed` in its
+// result schema, and the script halts the pass the instant it reports a true
+// self-report — the weaker backstop, which catches the partial case where a
+// stage commits some files and leaves others dirty. What actually makes the
+// invariant hold is Verify's `tree_clean` check: it reads `git status
+// --short` at the same moment it reads HEAD, using a DIFFERENT agent than
+// the one that would have committed, and returns BLOCKED instead of writing
+// a false `verified_parent` when the tree is already clean. There is no
+// PreToolUse hook for this: `git commit` is not a session-boundary act like
+// push, merge, worktree lifecycle, or tracker writes, and
+// `hooks/landing-guard.sh` can see that its caller is a subagent but not
+// which stage is calling — so no unfakeable rule can be written there.
 
 const a = args || {}
 const dir = a.worktree || a.repo || a.cwd
 // Root of the REPO the item is scoped to — not the worktree stages edit in
-// (that's `dir`, below). Resolves `a.repo` first and must NOT become `dir`:
-// item briefs name paths in primary-checkout terms
-// (`/Users/pierce/.claude/skills/implement/SKILL.md`, or repo-relative
-// `implement/SKILL.md`), so rooting the Gate's reachability test at the
-// worktree (`/Users/pierce/.worktrees/<repo>/<id>`) would judge every
-// absolute path in a perfectly reachable brief as out-of-repo and fail
-// almost every item. (Round 2 on cc-32bc: a reviewer read this line as
-// inconsistent with `where()` below and proposed swapping in `dir` — it
-// isn't inconsistent, it's a different question. See `where()`'s comment
-// for the other half.)
+// (that's `dir`, below). Reads `a.repo` first and must NOT become `dir`:
+// item briefs and the Verify stage's `verify-project` lookup name paths in
+// primary-checkout terms, so rooting either at the worktree
+// (`/Users/pierce/.worktrees/<repo>/<id>`) would resolve against a directory
+// that does not hold the repo's own `.claude/skills/verify-project`.
 const REPO_ROOT = a.repo || a.cwd || dir
 const model = a.model || 'sonnet'
 // Which launch of this item this is. `1` (the default) runs every stage. `2`
-// and up is a fix round relaunched by the verify loop after a FAIL: round 1
-// already settled the approach and the files, and the diff Review would read
-// is now the whole branch rather than just this round's fix — so Gate,
-// Locate and Review are skipped and Edit is handed round 1's files directly.
-// See SKILL.md's "The verify loop" for the caller side of this contract.
+// and up is a fix round relaunched by the caller's own verify loop after a
+// FAIL it saw in its own recheck: round 1 already settled the approach and
+// the files, and the diff Review would read is now the whole branch rather
+// than just this round's fix — so Plan and Review are skipped and Implement
+// is handed round 1's files directly. See SKILL.md's "The verify loop" for
+// the caller side of this contract. This is a different counter from the
+// in-pass fix loop below, which runs inside every launch regardless of round.
 const round = a.round || 1
 
 // This pass NEVER lands and NEVER writes the tracker. It ends at a commit on
-// its own branch, and the caller — the chat session that launched it — reviews
-// the result, verifies it, lands it, and closes the item.
-//
-// There used to be a `land: 'self' | 'caller'` argument and a `mode:
-// 'standalone' | 'continuous'` argument, because three skills called this
-// script with three different ideas of who owned the outcome. Both are gone.
-// One pass does one thing, and the only caller is a chat session that is
-// already awake and already holds the judgment the tracker write depends on.
+// its own branch, and the caller — the chat session that launched it —
+// reviews the result, verifies it, lands it, and closes the item.
 //
 // A linked worktree shares the primary checkout's object store, so the caller
 // already has every commit this pass makes. There is nothing to push.
 
 // Every agent starts outside the working directory, so say so once, here.
-// `where(d)` governs where commands RUN — the worktree checkout a stage's
-// Bash calls must stay inside — not which repo the item belongs to (that
-// question is `REPO_ROOT`, above). `where(d)` is a function of the directory
-// rather than a bound constant because one stage — Tracker — runs in a
-// different directory than every other stage (see TRACKER_ROOT below).
 const where = (d) =>
   d
     ? `Work exclusively inside \`${d}\` — every command either runs with \`git -C ${d}\` or inside a \`( cd ${d} && … )\` subshell. You did not start there. Never leave the Bash working directory somewhere it did not start.`
@@ -132,30 +96,6 @@ ${RULES_AND_ASK}`
 const COMMON = commonFor(dir)
 
 // --- schemas ---------------------------------------------------------------
-
-const ITEM = {
-  type: 'object',
-  required: ['found', 'id', 'title', 'body'],
-  properties: {
-    found: { type: 'boolean' },
-    id: { type: 'string' },
-    title: { type: 'string' },
-    body: { type: 'string' },
-    acceptance: { type: 'array', items: { type: 'string' } },
-    unresolved: { type: 'array', items: { type: 'string' } },
-    branch: { type: 'string' },
-  },
-}
-
-const GATE = {
-  type: 'object',
-  required: ['pass', 'reason'],
-  properties: {
-    pass: { type: 'boolean' },
-    reason: { type: 'string' },
-    missing: { type: 'array', items: { type: 'string' } },
-  },
-}
 
 const PLAN = {
   type: 'object',
@@ -184,33 +124,26 @@ const PLAN = {
   },
 }
 
-const EDIT = {
+// The union of what used to be two stages' schemas: write the code, then
+// build and fix it until it is green, all in one agent. `touched`/`summary`
+// answer what changed; `green`/`attempts` answer whether it builds.
+const IMPLEMENT = {
   type: 'object',
-  required: ['touched', 'summary'],
+  required: ['touched', 'summary', 'green', 'attempts'],
   properties: {
     touched: { type: 'array', items: { type: 'string' } },
     summary: { type: 'string' },
+    green: { type: 'boolean' },
+    attempts: { type: 'number' },
     diffstat: { type: 'string' },
     notes: { type: 'array', items: { type: 'string' } },
     unresolved: { type: 'array', items: { type: 'string' } },
+    remaining: { type: 'array', items: { type: 'string' } },
+    extra_files_touched: { type: 'array', items: { type: 'string' } },
     // True only if this stage committed or merged anyway, despite the
     // instruction not to. It exists so the script can halt on the report
     // rather than let a commit this stage made reach Verify unnoticed — see
     // the halt right after this schema is used.
-    committed: { type: 'boolean' },
-  },
-}
-
-const GREEN = {
-  type: 'object',
-  required: ['green', 'attempts'],
-  properties: {
-    green: { type: 'boolean' },
-    attempts: { type: 'number' },
-    remaining: { type: 'array', items: { type: 'string' } },
-    extra_files_touched: { type: 'array', items: { type: 'string' } },
-    // Same purpose as EDIT.committed: a truthful self-report the script halts
-    // on, because this stage has no business running `git commit` either.
     committed: { type: 'boolean' },
   },
 }
@@ -367,36 +300,7 @@ const LANDED = {
   },
 }
 
-// The tracker database this pass's Resolve stage must read from, resolved
-// against the ORCHESTRATOR's checkout — never the worktree `bd` would
-// auto-discover from by walking up from its own cwd.
-//
-// A submodule's tracker is not on any ancestor path of its worktree: the code
-// repo is nested inside the tracker repo, so a worktree at
-// `~/.worktrees/claude-skills/<id>` has no `.beads` above it at all, and `bd`
-// silently falls back to whatever *is* above the worktree — an empty or
-// unrelated database — and answers "not found" with exit 0. A pass launched
-// on the `skills` submodule halted at the Gate reading exactly that: "issue
-// cc-xne does not exist in this tracker", against an issue that was open.
-//
-// The walk has to be an agent, not inline JS: a Workflow script has no
-// filesystem or Node API access, so `implement.js` itself cannot stat a
-// directory. And it has to target the nearest `.beads` DIRECTORY, not a
-// `.beads/*.db` file — this install's tracker is `~/.claude/.beads/`, which
-// holds `embeddeddolt` and `issues.jsonl`, no `.db` file at all. A literal
-// `*.db` glob would find nothing and halt every pass on this machine.
-const TRACKER = {
-  type: 'object',
-  required: ['backend'],
-  properties: {
-    backend: { type: 'string' },
-    // Absolute path to the tracker's `.beads` directory. beads only.
-    db: { type: 'string' },
-    searched: { type: 'string' },
-  },
-}
-
-const halt =(stage, detail) => ({ ok: false, halted_on: stage, detail, item: a.item || a.issue, worktree: a.worktree })
+const halt = (stage, detail) => ({ ok: false, halted_on: stage, detail, item: a.item || a.issue, worktree: a.worktree })
 
 // A halt before Wrap must not also destroy the work that provoked it.
 //
@@ -414,7 +318,7 @@ const halt =(stage, detail) => ({ ok: false, halted_on: stage, detail, item: a.i
 const salvage = async (stage, outcome) => {
   if (!a.worktree) return
   await agent(
-    `You are salvaging work in the git worktree at \`${a.worktree}\` on branch \`${a.branch || item.branch || 'the checked-out branch'}\`.
+    `You are salvaging work in the git worktree at \`${a.worktree}\` on branch \`${a.branch || (a.resolved && a.resolved.branch) || 'the checked-out branch'}\`.
 
 The ${stage} stage just returned ${outcome} for this item and the pass is halting. The implementation is still there and it is NOT yours to fix, judge, or improve — your only job is to make sure it survives, because this worktree is deleted after the round and an uncommitted change dies with it.
 
@@ -425,159 +329,47 @@ Commit every source change in the tree. Then stop.
 - Do not commit gitignored local files linked into the worktree — \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\`, anything under \`.claude/skills/\`.
 - Write a commit message that says plainly this work halted at ${stage} and names the outcome above, so nobody reading the log mistakes it for finished work. Conventional Commits, and no mention of Claude, AI, or any assistant.
 - If the tree is already clean and the work is committed, do nothing and say so.
-- **You run no \`git push\` at all**, to any branch, and no \`gh pr create\`. The commit is already visible to the orchestrator — a linked worktree shares the primary checkout's object store — so there is nothing a push would accomplish. "Never push to the default branch" was the old wording here, and on 2026-08-16 workers pushed to \`origin/main\` anyway; a stage that runs no push has nothing to route around.
+- **You run no \`git push\` at all**, to any branch, and no \`gh pr create\`. The commit is already visible to the orchestrator — a linked worktree shares the primary checkout's object store — so there is nothing a push would accomplish.
 
 Return one sentence: the sha you committed, or that there was nothing to commit.`,
     { phase: stage, label: 'salvage', model, effort: 'low' },
   )
 }
 
-// --- Resolve ---------------------------------------------------------------
-
-phase('Resolve')
-
-// A fix round has no Gate or Locate stage to fall back on — it relies
-// entirely on what round 1 already produced. `a.resolved` carries the item
-// (with `body` replaced by the failure list) and `a.resolved.files` carries
-// round 1's files; `a.worktree` is where Edit will make the fix. Either
-// missing means the caller did not pass what the verify loop's relaunch line
-// is supposed to pass, and there is nothing here to recover from that.
-if (round >= 2 && (!a.resolved || !a.worktree)) {
-  return halt('resolve', `round ${round} requires both resolved and worktree from the previous round — got resolved=${!!a.resolved} worktree=${!!a.worktree}`)
-}
-
-let item
-if (a.resolved) {
-  // The caller (or backlog shape) already resolved and gated this one; don't re-fetch.
-  // Default `found: true` for a caller that doesn't set it — an explicit
-  // `found: false` from the caller still wins, since it's spread after.
-  item = { found: true, ...a.resolved }
-  log(`item pre-resolved by caller: ${item.id} ${item.title}`)
-} else {
-  // Resolve the tracker database BEFORE the Resolve agent runs, against the
-  // ORCHESTRATOR's checkout (`args.repo`/`args.cwd`) — never `dir`, which
-  // prefers the worktree and is exactly the path that produced the bug.
-  //
-  // Skipped entirely when neither is known: a caller that supplies only
-  // `worktree` (or nothing at all) gives this walk no root to start from, and
-  // there is nothing above the worktree itself to search from here — the
-  // Resolve agent below falls back to whatever `bd` auto-discovers, same as
-  // before this change.
-  const TRACKER_ROOT = a.repo || a.cwd || null
-  let db = null
-  if (TRACKER_ROOT) {
-    // This stage is scoped to TRACKER_ROOT, not `dir` (the worktree): it is
-    // read-only, never touches the worktree, and the `.beads` directory it
-    // must walk up to find lives outside the worktree by construction — the
-    // whole reason this stage exists is to reach a path the worktree
-    // confinement would otherwise forbid.
-    const tracker = await agent(
-      `${commonFor(TRACKER_ROOT)}
-
-Detect the tracker backend via \`${DETECT}\`. If it is beads, walk UP from \`${TRACKER_ROOT}\` for the nearest ancestor directory (including \`${TRACKER_ROOT}\` itself) that contains a \`.beads\` directory — the tracker commonly lives one repo up from a submodule checkout — and return that \`.beads\` directory's absolute path in \`db\`. If none is found, return \`backend: "beads"\` with no \`db\`. If the backend is GitHub, return \`backend: "github"\` and no \`db\` — \`gh\` resolves its own repo from the git remote and needs no path from you.
-
-This is read-only. Run no \`bd\` write of any kind.`,
-      { phase: 'Tracker', label: 'tracker-db', model, effort: 'low', schema: TRACKER },
-    )
-    if (!tracker) return halt('resolve', `could not determine the tracker database above ${TRACKER_ROOT}`)
-    if (tracker.backend === 'beads' && !tracker.db) {
-      return halt('resolve', `no beads database found above ${TRACKER_ROOT}`)
-    }
-    db = tracker.db || null
-  }
-  // Interpolated into every `bd` read in the Resolve prompt below. A bare `bd`
-  // discovers its database by walking up from the CURRENT WORKING DIRECTORY,
-  // which for this stage is the worktree — not the tracker's repo — so it
-  // silently answers from a different, usually empty, database.
-  const DB = db ? ` --db ${db}` : ''
-
-  item = await agent(
-    `${COMMON}
-
-Resolve exactly **one** tracked work item and return it. Resolving it is the whole job — do not plan it, judge it, or touch a line of code.
-
-Target: ${a.issue ? `issue ${a.issue}` : a.item ? `the local item ${JSON.stringify(a.item)}` : 'no explicit target — resolve it from the branch name, then from non-interactive backlog next'}.
-
-Resolve the tracker backend via \`${DETECT}\`, then work down this ladder and stop at the first rung that answers.${DB ? ` Every \`bd\` read in this stage carries \`${DB}\`; a bare \`bd\` resolves from the worktree's own working directory and can answer from a different database than the one this item actually lives in.` : ''}
-
-1. **An issue number or id in the target above** (\`1118\`, or a beads id like \`myproj-zb8\`) — that issue IS the item. Confirm it exists and is open: \`bd${DB} show <id> --json\` on beads, \`gh issue view <n> --json number,title,state\` on GitHub. **If it is closed or missing, do not substitute another item** — report it unfound per the shape below. On beads, it must also be a **slice**: \`bd${DB} children <id> --json\` empty (a parent with a breakdown is never a pass — its slices are), and a title not beginning \`Verify:\` or \`Land:\` (those two are the caller's, never a pass). Either failing is unfound, with \`body\` naming which.
-2. **Item text in the target above** — a papercut or local note with no issue number. That text IS the item; carry the id the caller gave it. Do not go looking for a matching issue.
-3. **The current branch name**, for an embedded issue id — \`fix/1118-login\`, \`1118-foo\`, \`issue-1118\`, \`myproj-zb8-login\`. It counts only if it matches an item that is open on the backend (\`bd${DB} show <id> --json\`).
-4. **Next.** Invoke the \`backlog next\` skill via the Skill tool **non-interactively** — skip its wait-for-confirmation step and take the top recommendation. Skip its offer-wrap-up step; this pass does not wrap up. **The pick must be an item that already exists on the tracker.** A fresh idea, a "while we're here" cleanup or an invented refactor is not one — report it unfound per the shape below. Same if it finds nothing actionable.
-
-Return the item itself, with \`found: true\`. Put every question the tracker thread left unanswered into \`unresolved\` — that field is what the next stage gates on, and an empty \`unresolved\` you did not actually check for is the failure mode here.
-
-If no rung above answers, do not fabricate a record — the schema has no way to express "nothing", so a fabricated record is exactly the failure this instruction exists to prevent. Instead return \`{"found": false, "id": "<the target exactly as given>", "title": "", "body": "<what you checked and what each rung returned>"}\`.`,
-    { agentType: 'issue-reader', phase: 'Resolve', model, schema: ITEM },
-  )
-  if (!item) return halt('resolve', 'item resolution returned nothing')
-}
-
-// A missing or closed item must halt HERE, at resolve, naming what was
-// actually checked — not fall through as a fabricated record that Gate then
-// judges as if it were real. Checked before the id guard below so a
-// found:false record (whose id may be empty) halts with its own explanation
-// rather than the id complaint.
-if (!item.found) return halt('resolve', item.body)
-
-// The id is the key for everything downstream, and one path can arrive without
-// it: `a.resolved` comes from the caller and is never schema-checked, while the
-// agent branch above is (ITEM requires `id`). A record whose id is spelled
-// anything else renders `undefined` into the verdict's filename, so every pass
-// in a batch writes to one colliding path and each overwrites the last. Halting
-// here costs one stage; the alternative is a round of invisible verdicts.
+// --- resolve the item (no agent involved) -----------------------------------
 //
-// No default and no fallback name: a synthesised id would produce a verdict
-// that files correctly and points at nothing. Fail here, before any work exists
-// to lose.
-if (item.id === undefined || item.id === null || `${item.id}`.trim() === '') {
-  return halt('resolve', `resolved item has no id — ${JSON.stringify(item).slice(0, 200)}`)
-}
-item = { ...item, id: `${item.id}`.trim() }
-
-// --- Gate ------------------------------------------------------------------
-
-phase('Gate')
-
-// Round 1 only. A fix round already passed the gate once — round 1 could
-// state a plan and it was reachable and objective enough to work unwatched —
-// and the item body it re-judges here is now just the failure list, which is
-// not the shape Gate's three tests are written to read.
-if (round === 1) {
-  const gate = await agent(
-    `${COMMON}
-
-Judge whether this item is walk-away work — objective enough for an unwatched agent to finish it without a human judgment call. Judging is the whole job: do not fix anything, and do not start on it if it passes.
-
-${JSON.stringify(item, null, 2)}
-
-Read whatever the repo can tell you about it before answering. Then apply three tests, and **all three** must pass:
-
-1. **Plan test.** Can you state a concrete plan *right now* — the files to touch, the changes to make, and an objective acceptance check that would prove it done? If you cannot name the files, or cannot name a check whose result would settle whether it is finished, the item is not understood well enough to work unwatched.
-2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity you would have to *invent* an answer to in order to proceed? If so it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
-3. **Reachability test.** This item is scoped against one repo, rooted at \`${REPO_ROOT}\` — a separate question from which worktree the pass's stages edit inside, since that worktree is itself just a checkout of this same repo. Does every file the item names, and every acceptance criterion, live under \`${REPO_ROOT}\`? A nested submodule (for example \`claude-skills\` inside \`~/.claude\`) is a *different* repo even though it sits inside the parent's directory tree — a path under the submodule is out of reach from an item scoped to the parent, and vice versa. If any named path or acceptance criterion falls outside \`${REPO_ROOT}\`, this test fails: the item spans two repos and must be split into one item per repo before it can be worked. Give the out-of-repo path its own \`missing\` entry, worded exactly \`"<path> is outside ${REPO_ROOT} — this item spans two repos and must be split"\`.
-
-Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work. \`pass: false\` with a precise \`reason\` — naming which test failed and why — is a good outcome, not a failure. Put each specific thing you would have had to invent or ask about, and every out-of-repo path, in \`missing\`.`,
-    { phase: 'Gate', model, schema: GATE },
-  )
-
-  if (!gate || !gate.pass) {
-    const gateDetail = gate
-      ? [gate.reason, ...(gate.missing || [])].join(' — ')
-      : 'gate agent returned nothing'
-    log(`gate failed: ${gateDetail}`)
-    return halt('gate', gateDetail)
-  }
-} else {
-  log(`round ${round}: skipping Gate — round 1 already passed it`)
+// The chat session resolves and gates the item before ever calling this
+// script — the four cleared-item queries and the plan/objectivity/reachability
+// tests all run in chat, on the item text, before a worktree exists to strand.
+// So this stage is not an agent call at all: `args.resolved` IS the item, and
+// a launch that omits it, or gives it an empty id, has nothing to work from.
+if (
+  !a.resolved ||
+  a.resolved.id === undefined ||
+  a.resolved.id === null ||
+  `${a.resolved.id}`.trim() === ''
+) {
+  return halt('resolve', `args.resolved is required and must carry a non-empty id — got ${JSON.stringify(a.resolved)}`)
 }
 
-// --- Locate ----------------------------------------------------------------
+// A fix round has no Plan stage to fall back on — it relies entirely on what
+// round 1 already produced. `a.resolved` carries the item (with `body`
+// replaced by the failure list) and `a.resolved.files` carries round 1's
+// files; `a.worktree` is where Implement will make the fix. A missing
+// worktree means the caller did not pass what its own verify loop's relaunch
+// line is supposed to pass, and there is nothing here to recover from that.
+if (round >= 2 && !a.worktree) {
+  return halt('resolve', `round ${round} requires both resolved and worktree from the previous round — got resolved=true worktree=false`)
+}
+
+const item = { ...a.resolved, id: `${a.resolved.id}`.trim() }
+
+// --- Plan --------------------------------------------------------------
 // Read-only, and deliberately a separate context: the search history — every
 // grep miss, every file opened and discarded — dies here instead of riding
-// along for the next 300 turns.
+// along for the rest of the pass.
 
-phase('Locate')
+phase('Plan')
 
 let plan
 if (round === 1) {
@@ -596,43 +388,99 @@ Also report the project's real build and test commands. Prefer an \`admin\` task
 **Report \`base_sha\`: the output of \`git -C ${dir || '.'} rev-parse HEAD\`, run now, before anything has been edited.** A later stage uses it as the earliest point the review's diff may start from, and it is only truthful if you read it before the first edit. Return the full 40-character sha and nothing else in that field.
 
 \`files\` must be complete and it must be minimal. If it is wrong the next stage re-explores and this stage's whole purpose is lost.`,
-    { agentType: 'Explore', phase: 'Locate', model, schema: PLAN },
+    { agentType: 'Explore', phase: 'Plan', model, schema: PLAN },
   )
 
   if (!plan) {
-    return halt('locate', 'Locate agent returned nothing — likely a failed or overloaded request, not a bad brief')
+    return halt('plan', 'Plan agent returned nothing — likely a failed or overloaded request, not a bad brief')
   }
   if (!plan.files || !plan.files.length) {
-    return halt('locate', 'no files identified for the change')
+    return halt('plan', 'no files identified for the change')
   }
   if (!/^[0-9a-f]{7,40}$/.test(plan.base_sha || '')) {
-    return halt('locate', `no usable base_sha — got ${JSON.stringify(plan.base_sha)}; the Review stage has nothing to diff against`)
+    return halt('plan', `no usable base_sha — got ${JSON.stringify(plan.base_sha)}; the Review stage has nothing to diff against`)
   }
   log(`plan: ${plan.files.length} files — ${plan.files.map((f) => f.path).join(', ')}`)
 } else {
   // Round 1 already found the files and settled the approach; re-deriving
-  // both from a Locate agent that only sees the failure list would rediscover
+  // both from a Plan agent that only sees the failure list would rediscover
   // what round 1 already knew, at the cost of another full exploration pass.
   // `a.resolved.files` is `r.files` from the round-1 result — see SKILL.md's
-  // "The verify loop" — which is `[...edit.touched, ...(green.extra_files_touched
-  // || [])]`: an array of plain path strings, not `{path, why}` objects. Edit's
-  // prompt template reads `f.path` and `f.why`, so those strings are wrapped
-  // here rather than left for Edit to guess at.
+  // "The verify loop" — an array of plain path strings, not `{path, why}`
+  // objects. The Implement prompt template reads `f.path` and `f.why`, so
+  // those strings are wrapped here rather than left for it to guess at.
   const files = (a.resolved.files || []).map((p) =>
     typeof p === 'string' ? { path: p, why: 'touched by the previous round; fix the failures listed in the item body' } : p,
   )
   plan = { files, approach: 'fix the failures listed in the item body; touch nothing else' }
-  log(`round ${round}: skipping Locate — reusing ${plan.files.length} files from the previous round — ${plan.files.map((f) => f.path).join(', ')}`)
+  log(`round ${round}: skipping Plan — reusing ${plan.files.length} files from the previous round — ${plan.files.map((f) => f.path).join(', ')}`)
 }
 
-// --- Edit ------------------------------------------------------------------
+// --- the in-pass fix loop ----------------------------------------------
+//
+// Implement, Review and Verify run together, up to 3 times, before this pass
+// ever calls Wrap. A round fails when Review returns a `blocking` or `major`
+// finding, or Verify returns `FAIL` — and a failed round below the cap reruns
+// Implement with the failures added to its prompt, then reruns Review (unless
+// this is a round-2+ launch, which never reviews at all — see above) and
+// Verify on the fixed tree. Nothing commits until Wrap runs, once, after the
+// loop ends — so every retry edits the same uncommitted tree rather than
+// making a new one.
+//
+// `BLOCKED` never loops — it means the pass could not tell PASS from FAIL, not
+// that it saw a fixable defect, and a closed surface (`surface_down`) is the
+// caller's problem to bring up, not this pass's to retry into. `SKIP` also
+// never loops: it means the behaviour could not be observed at all, and
+// running Implement again against nothing to observe would not change that.
+// Both still reach the return statement — `SKIP` as a blocker on landing,
+// `BLOCKED` and `surface_down` as an immediate halt, exactly as a hard failure
+// from Implement or Review does.
+//
+// Only `minor` findings never gate a round; they accumulate across rounds,
+// deduplicated, and ship as `followups` on whatever round the loop actually
+// ends on.
 
-phase('Edit')
+const MAX_ROUNDS = 3
 
-const edit = await agent(
-  `${COMMON}
+const findingRow = (f) => `${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}${f.fix ? ` — ${f.fix}` : ''}`
 
-Write the code for this item. The research is done; do not redo it.
+const failuresBlock = (n, blocking, major, verdict) => {
+  const rows = [
+    ...blocking.map(findingRow),
+    ...major.map(findingRow),
+    ...(verdict && verdict.verdict === 'FAIL'
+      ? (verdict.failures || []).map((x) => `${x}${verdict.evidence ? ` — evidence: ${verdict.evidence}` : ''}`)
+      : []),
+  ]
+  return `\nFailures from round ${n}\n${rows.map((r) => `- ${r}`).join('\n')}\n`
+}
+
+// Used by both Review's diff and Verify's mutation check.
+const G = dir ? `git -C ${dir}` : 'git'
+
+let impl, review, verdict
+let blockingFindings = [], majorFindings = []
+const minorFollowups = []
+let touchedFiles = [], touchedTests = []
+let fixRound = 1
+
+while (true) {
+  const priorFailures = fixRound > 1 ? failuresBlock(fixRound - 1, blockingFindings, majorFindings, verdict) : ''
+
+  // --- Implement -------------------------------------------------------
+  // The one stage that genuinely needs continuity across attempts, so it
+  // stays a single agent that writes the code and then builds it itself. Its
+  // growth was never the code — it was raw build output accumulating,
+  // thousands of lines per attempt, none of it ever leaving. A stage cannot
+  // spawn a subagent, so it runs the build itself, with the output always
+  // truncated before it lands in context.
+
+  phase('Implement')
+
+  impl = await agent(
+    `${COMMON}
+
+Write the code for this item, then get it compiling and its tests passing yourself — this stage owns both. The research is done; do not redo it.
 
 Item:
 ${JSON.stringify(item, null, 2)}
@@ -643,140 +491,100 @@ ${plan.approach}
 Files to change:
 ${plan.files.map((f) => `- \`${f.path}\` — ${f.why}${f.anchors && f.anchors.length ? ` (anchors: ${f.anchors.join(', ')})` : ''}`).join('\n')}
 
-${plan.risks && plan.risks.length ? `Known risks:\n${plan.risks.map((r) => `- ${r}`).join('\n')}\n` : ''}
+${plan.risks && plan.risks.length ? `Known risks:\n${plan.risks.map((r) => `- ${r}`).join('\n')}\n` : ''}${priorFailures}
 Open ONLY those files. If the change genuinely requires a file that is not listed, make it and record it in \`notes\` — but treat that as a signal the plan was wrong, not as licence to explore freely.
 
-Write the code. Do not run the build; another stage owns that.
-
-**You edit the tree and return. You stage nothing and commit nothing — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits; a commit made here reaches Verify already on HEAD, and the \`verified_parent\` field Verify writes is false the moment that happens. If you commit anyway despite this instruction, report it truthfully as \`committed: true\` — the pass halts on that report rather than continuing with a lie.
-
-**If you cannot produce a diff after one or two attempts** — a false start, a blocker, something that needs a design call — return \`touched: []\` and say plainly in \`unresolved\` what stopped you. That ends the pass cleanly. Do not commit to a guess to have written something, and do not commit anything at all.`,
-  { phase: 'Edit', model, schema: EDIT },
-)
-
-// "No diff after 1–2 attempts is a halt" used to be prose in SKILL.md that
-// nothing enforced: the Edit prompt asks for the empty result, so the script
-// reads it. An empty `touched` reaching Green means Green builds an unchanged
-// tree, goes green, and the pass ships a commit of nothing.
-if (!edit) return halt('edit', 'implementation stage returned nothing')
-// Wrap is the only stage that commits. If Edit committed anyway, everything
-// downstream — Review's diff base, Verify's `verified_parent` — is built on a
-// tree that is no longer what the contract expects, so this halts before
-// Review or Verify ever runs rather than let a false `verified_parent` through.
-if (edit.committed) {
-  await salvage('Edit', 'a commit made outside of Wrap')
-  return halt('edit', 'implementation stage committed — Wrap is the only stage that commits, so downstream verification would be built on a tree it did not expect')
-}
-if (!edit.touched || !edit.touched.length) {
-  return halt('edit', `implementation produced no diff${(edit.unresolved || []).length ? `: ${edit.unresolved.join('; ')}` : ''}`)
-}
-
-// --- Green -----------------------------------------------------------------
-// The one stage that genuinely needs continuity across attempts, so it stays a
-// single agent. Its growth was never the code — it was raw build output
-// accumulating, thousands of lines per attempt, none of it ever leaving. A
-// stage cannot spawn a subagent, so it runs the build itself, with the output
-// always truncated before it lands in context.
-
-phase('Green')
-
-const green = await agent(
-  `${COMMON}
-
-Get the change compiling and its tests passing.
-
-Files changed by the previous stage: ${edit.touched.join(', ')}
 ${plan.build_command ? `Build command: \`${plan.build_command}\`` : 'Work out the build command from the repo.'}
 ${plan.test_command ? `Test command: \`${plan.test_command}\`` : ''}
 
-⛔ **Run the build and test suite yourself, in the foreground, and always bound the output.** Raw build output is the single largest source of context growth in this stage, so pipe every run — \`<cmd> 2>&1 | tail -40\` (add \`| grep -E 'error|FAIL' | head -40\` first when the runner is chatty) — never let the full log land here. Pass \`timeout\` explicitly (up to 600000) and never background the run.
+⛔ **Once the code is written, run the build and test suite yourself, in the foreground, and always bound the output.** Raw build output is the single largest source of context growth in this stage, so pipe every run — \`<cmd> 2>&1 | tail -40\` (add \`| grep -E 'error|FAIL' | head -40\` first when the runner is chatty) — never let the full log land here. Pass \`timeout\` explicitly (up to 600000) and never background the run. You have no way to hand this off to another agent — run it yourself.
 
-Loop: run the command → read the tail → fix what it names → run it again. Stop when it passes clean, or after 6 attempts with no reduction in the error count — in that case set \`green: false\` and list what is still failing rather than continuing to churn.
+Loop: run the command → read the tail → fix what it names → run it again. Stop when it passes clean, or after 6 attempts with no reduction in the error count — in that case set \`green: false\` and list what is still failing in \`remaining\` rather than continuing to churn.
 
-Record any file you had to touch beyond the previous stage's list in \`extra_files_touched\`.
+Record any file you had to touch beyond the list above in \`extra_files_touched\`.
 
-**You edit the tree and return. Leave the git index untouched — no \`git add\`, no \`git merge\`, and do not advance the branch yourself.** A later stage is the only one that does that; advancing it here would put Verify's \`verified_parent\` field to work on a tree it did not expect. If you advance it anyway despite this instruction, report that truthfully through the boolean field this schema provides for it — the pass halts on that report rather than continuing on a false premise.`,
-  { phase: 'Green', model, schema: GREEN },
-)
+**You edit the tree and return. You stage nothing and commit nothing — no \`git add\`, no \`git commit\`, no \`git merge\`, and do not advance the branch yourself.** Wrap is the only stage that commits; a commit made here reaches Verify already on HEAD, and the \`verified_parent\` field Verify writes is false the moment that happens. If you commit anyway despite this instruction, report it truthfully as \`committed: true\` — the pass halts on that report rather than continuing with a lie.
 
-if (green && green.committed) {
-  await salvage('Green', 'a commit made outside of Wrap')
-  return halt('green', 'build stage committed — Wrap is the only stage that commits, so downstream verification would be built on a tree it did not expect')
-}
-if (!green || !green.green) {
-  return halt('green', green ? `still failing after ${green.attempts} attempts: ${(green.remaining || []).join('; ')}` : 'build stage returned nothing')
-}
+**If you cannot produce a diff after one or two attempts** — a false start, a blocker, something that needs a design call — return \`touched: []\` and say plainly in \`unresolved\` what stopped you. That ends the pass cleanly. Do not commit to a guess to have written something, and do not commit anything at all.`,
+    { phase: 'Implement', model, schema: IMPLEMENT },
+  )
 
-// --- Review ----------------------------------------------------------------
-// A stage, not a `/code-review` invocation inside wrap-up.
-//
-// `/code-review` resolves its own working directory. Nested two agent levels
-// deep inside a swarm worker it resolved to the session's PRIMARY checkout
-// instead of the worker's worktree, and reviewed a clean `main`. Observed
-// verbatim across three round-1/round-2 workers on 2026-08-16: "There are no
-// changes to review. The working tree is clean"; "I don't see any uncommitted
-// changes or commits ahead on the current branch"; "Standing by for direction."
-// The worker read "no findings" as a clean diff, so the quality gate passed
-// vacuously — and one of them asked a human a question mid-swarm, where no
-// channel back to a person exists.
-//
-// So this stage is never asked WHERE the change is: every command it is given
-// is pinned with `-C`. There is no repository for it to discover.
-//
-// It is not asked WHEN the change is either, and that is the second fix. It
-// used to read `status --short` + `git diff`, which see uncommitted work only,
-// on the premise that nothing commits before Wrap. That premise does not hold:
-// a hook or a sibling process can commit, and a halted pass's tree is committed
-// by `salvage` before anything reads it. When the tree was already committed
-// both commands came back genuinely empty and the stage skipped — three times in
-// one run, each against a worktree holding a committed diff, and every one had
-// to be reviewed by hand before it could land.
-//
-// So the diff is `git diff <base>`, a two-argument diff against a commit rather
-// than a bare one. That spans committed and uncommitted work in one command, and
-// no stage's commit can blind it.
-//
-// Which commit is `<base>` is the third fix. It used to be `base_sha` — HEAD as
-// the Locate stage read it, several stages earlier. The commit does not move,
-// but the tip does: on a `land: 'self'` pass on the default branch, this repo's
-// own PreToolUse hook runs `git pull --rebase` before every Bash call, so
-// commits that arrived from origin mid-pass sit between `base_sha` and HEAD and
-// `git diff base_sha` reports them as work this pass introduced. Three-dot does
-// not help — after a rebase `base_sha` is still an ancestor of HEAD, so
-// `merge-base(base_sha, HEAD)` is `base_sha` itself, and three-dot drops the
-// uncommitted work that cc-797 exists to keep.
-//
-// The commits that arrived from origin are exactly the ones reachable from the
-// upstream ref; this pass's own commits are not pushed yet. So the base is
-// `merge-base HEAD @{upstream}`, read now rather than before the first edit, and
-// re-read after however many pulls have landed. Two fallbacks, both to
-// `base_sha`: a swarm worker's branch has no upstream at Review time, and an
-// upstream that is behind a *previous* session's unpushed commits would drag the
-// base back before this pass started.
-//
-// The script, not the agent, decides what a finding costs: a `blocking` finding
-// blocks the close below. A review that read no diff at all is not a skip — it
-// halts the pass, because in the run's output a skip is indistinguishable from
-// a clean review, which is why three of them shipped unnoticed.
+  // "No diff after 1–2 attempts is a halt" used to be prose nothing enforced:
+  // the prompt asks for the empty result, so the script reads it. An empty
+  // `touched` reaching Verify means Verify inspects an unchanged tree and the
+  // pass ships a commit of nothing.
+  if (!impl) return halt('implement', 'implementation stage returned nothing')
+  // Wrap is the only stage that commits. If Implement committed anyway,
+  // everything downstream — Review's diff base, Verify's `verified_parent` —
+  // is built on a tree that is no longer what the contract expects, so this
+  // halts before Review or Verify ever runs rather than let a false
+  // `verified_parent` through.
+  if (impl.committed) {
+    await salvage('Implement', 'a commit made outside of Wrap')
+    return halt('implement', 'implementation stage committed — Wrap is the only stage that commits, so downstream verification would be built on a tree it did not expect')
+  }
+  if (!impl.touched || !impl.touched.length) {
+    return halt('implement', `implementation produced no diff${(impl.unresolved || []).length ? `: ${impl.unresolved.join('; ')}` : ''}`)
+  }
+  if (!impl.green) {
+    await salvage('Implement', `still failing after ${impl.attempts} attempts`)
+    return halt('implement', `still failing after ${impl.attempts} attempts: ${(impl.remaining || []).join('; ')}`)
+  }
 
-phase('Review')
+  touchedFiles = [...impl.touched, ...(impl.extra_files_touched || [])]
+  touchedTests = touchedFiles.filter((f) => TEST_PATH.test(f))
 
-let review, blockingFindings, majorFindings, minorFindings
+  // --- Review ------------------------------------------------------------
+  // A stage, not a `/code-review` invocation inside wrap-up.
+  //
+  // `/code-review` resolves its own working directory. Nested two agent levels
+  // deep inside a swarm worker it resolved to the session's PRIMARY checkout
+  // instead of the worker's worktree, and reviewed a clean `main`. Observed
+  // verbatim across three round-1/round-2 workers on 2026-08-16: "There are no
+  // changes to review. The working tree is clean"; "I don't see any uncommitted
+  // changes or commits ahead on the current branch"; "Standing by for direction."
+  // The worker read "no findings" as a clean diff, so the quality gate passed
+  // vacuously — and one of them asked a human a question mid-swarm, where no
+  // channel back to a person exists.
+  //
+  // So this stage is never asked WHERE the change is: every command it is given
+  // is pinned with `-C`. There is no repository for it to discover.
+  //
+  // It is not asked WHEN the change is either. The diff is `git diff <base>`, a
+  // two-argument diff against a commit rather than a bare one — that spans
+  // committed and uncommitted work in one command, so no stage's commit can
+  // blind it, and it survives a halted pass's tree having already been
+  // committed by `salvage`.
+  //
+  // Which commit is `<base>` matters too: it is not `base_sha`, read at Plan,
+  // several stages earlier, because on a `land: 'self'` pass on the default
+  // branch this repo's own PreToolUse hook runs `git pull --rebase` before
+  // every Bash call, so commits that arrived from origin mid-pass would sit
+  // between `base_sha` and HEAD and `git diff base_sha` would report them as
+  // work this pass introduced. Three-dot does not help — after a rebase
+  // `base_sha` is still an ancestor of HEAD, so `merge-base(base_sha, HEAD)` is
+  // `base_sha` itself. The commits that arrived from origin are exactly the
+  // ones reachable from the upstream ref; this pass's own commits are not
+  // pushed yet. So the base is `merge-base HEAD @{upstream}`, read now rather
+  // than at Plan, with two fallbacks to `base_sha`: a swarm worker's branch has
+  // no upstream at Review time, and an upstream behind a *previous* session's
+  // unpushed commits would drag the base back before this pass started.
+  //
+  // The script, not the agent, decides what a finding costs: a `blocking`
+  // finding halts the pass immediately; a `major` finding fails the round and
+  // reruns Implement with it named. A review that read no diff at all is not a
+  // skip — it halts the pass, because in the run's output a skip is
+  // indistinguishable from a clean review, which is why three of them shipped
+  // unnoticed before this check existed.
 
-// Used again later, in Verify's mutation check — module-scoped rather than
-// declared inside the `round === 1` block below.
-const G = dir ? `git -C ${dir}` : 'git'
+  if (round === 1) {
+    phase('Review')
 
-// Round 1 only. By round 2 the diff Review would read is the whole branch —
-// round 1's already-accepted work plus this round's fix — not just the fix,
-// so re-running it would re-flag what already passed instead of judging what
-// changed. A fix round's Green stage is the check that the fix itself works.
-if (round === 1) {
-const BASE = `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${plan.base_sha}); ${G} merge-base --is-ancestor "$BASE" ${plan.base_sha} && BASE=${plan.base_sha}`
-const DIFF = `${G} diff "$BASE"`
+    const BASE = `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${plan.base_sha}); ${G} merge-base --is-ancestor "$BASE" ${plan.base_sha} && BASE=${plan.base_sha}`
+    const DIFF = `${G} diff "$BASE"`
 
-review = await agent(
-  `${WHERE}
+    review = await agent(
+      `${WHERE}
 
 Review the change this pass just made. **You are not looking for something to review — the change is everything in \`${dir || 'this repository'}\` that this pass added on top of what everyone else already has.** Read it with exactly these two commands, the first one exactly as written including the \`BASE=\` part:
 
@@ -792,70 +600,61 @@ That first line computes \`$BASE\` — the commit where this pass's work diverge
 For any path \`status --short\` marks \`??\`, the file is new and untracked and the diff will not show it: read it with the Read tool at its ABSOLUTE path under \`${dir || 'the repository'}\`. Never open a bare relative path — you did not start in that directory, and a relative path here resolves against a different checkout of the same repo.
 
 Item: ${item.id} — ${item.title}
-What the implementation stage says it did: ${edit.summary}
-Files it names: ${[...edit.touched, ...(green.extra_files_touched || [])].join(', ')}
+What the implementation stage says it did: ${impl.summary}
+Files it names: ${touchedFiles.join(', ')}
 
 Judge only the diff. Correctness first — a bug the change introduces or fails to fix; then reuse and simplification against what the repo already has; then efficiency. Skip style the repo's own formatter owns.
 
-Severity means: \`blocking\` — the change is wrong, incomplete against the item, or breaks something that worked; this halts the pass. \`major\` — a real defect in this diff that must be fixed before the branch lands — the work still commits, but the branch does not land until another round fixes it. \`minor\` — a note, worth a follow-up, not a defect that gates landing.
+Severity means: \`blocking\` — the change is wrong, incomplete against the item, or breaks something that worked. \`major\` — a real defect in this diff that must be fixed before the branch lands. Both re-run Implement inside this pass if a round is left, and both halt the pass if three rounds still report one. \`minor\` — a note, worth a follow-up, never a reason to re-run Implement or to halt.
 
 **Do not edit anything, and do not stage or commit anything — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits. An edit you make here ships unverified, and a commit you make here reaches Verify already on HEAD, making its \`verified_parent\` field false the moment it is written.
 
 **Nobody can answer you.** If \`${DIFF}\` and \`status --short\` both come back empty, that is a fact to report, not a question to ask: return \`reviewed: false\` with \`findings: []\` and say in \`note\` exactly what the two commands printed. It halts the pass — it is not a way to pass the stage, so do not reach for it to get unstuck. Never ask what to review, and never return \`reviewed: true\` for a diff you did not actually read — an empty \`findings\` is a claim that you read the change and it was clean.`,
-  { phase: 'Review', model, schema: REVIEW },
-)
+      { phase: 'Review', model, schema: REVIEW },
+    )
 
-// A review that read no diff is a halt, not a skip. It used to log a line and
-// carry on, blocking only the tracker close — and in the run's output "no
-// findings" and "no review" then looked the same, so three unreviewed passes
-// reached a human's hands before anyone noticed. There is no diff this stage
-// can legitimately fail to find: the base is never later than this pass's start, Edit
-// halts when it returns nothing, and Green halts when the build is not green.
-if (!review || !review.reviewed) {
-  await salvage('Review', 'a diff it could not read')
-  return halt('review', review ? review.note || 'review read no diff and gave no note' : 'review stage returned nothing')
-}
+    // A review that read no diff is a halt, not a skip. It used to log a line
+    // and carry on, blocking only the tracker close — and in the run's output
+    // "no findings" and "no review" then looked the same, so three unreviewed
+    // passes reached a human's hands before anyone noticed. There is no diff
+    // this stage can legitimately fail to find: the base is never later than
+    // this pass's start, and Implement halts when it returns nothing or is
+    // not green.
+    if (!review || !review.reviewed) {
+      await salvage('Review', 'a diff it could not read')
+      return halt('review', review ? review.note || 'review read no diff and gave no note' : 'review stage returned nothing')
+    }
 
-blockingFindings = (review.findings || []).filter((f) => f.severity === 'blocking')
-majorFindings = (review.findings || []).filter((f) => f.severity === 'major')
-minorFindings = (review.findings || []).filter((f) => f.severity === 'minor')
-log(`review: ${review.findings.length} findings (${blockingFindings.length} blocking, ${majorFindings.length} major) over ${(review.files_reviewed || []).length} files`)
-} else {
-  review = { reviewed: true, findings: [] }
-  blockingFindings = []
-  majorFindings = []
-  minorFindings = []
-  log(`round ${round}: skipping Review — the diff is now the whole branch, not just this round's fix`)
-}
+    blockingFindings = (review.findings || []).filter((f) => f.severity === 'blocking')
+    majorFindings = (review.findings || []).filter((f) => f.severity === 'major')
+    for (const f of review.findings || []) {
+      if (f.severity !== 'minor') continue
+      const row = `minor — ${findingRow(f)}`
+      if (!minorFollowups.includes(row)) minorFollowups.push(row)
+    }
+    log(`round ${fixRound} review: ${review.findings.length} findings (${blockingFindings.length} blocking, ${majorFindings.length} major) over ${(review.files_reviewed || []).length} files`)
+  } else {
+    review = { reviewed: true, findings: [] }
+    blockingFindings = []
+    majorFindings = []
+    log(`round ${round}: skipping Review — the diff is now the whole branch, not just this round's fix`)
+  }
 
-// --- Verify ----------------------------------------------------------------
+  // --- Verify ------------------------------------------------------------
 
-const touchedFiles = [...edit.touched, ...(green.extra_files_touched || [])]
-const touchedTests = touchedFiles.filter((f) => TEST_PATH.test(f))
+  phase('Verify')
 
-phase('Verify')
+  // Where the verdict goes. `~/.claude/tools/repo-slug --path <worktree>` is the one
+  // definition of the per-repo disposable directory, and it creates it — so the agent
+  // runs the tool rather than assembling a path from prose. This script cannot run it
+  // (a Workflow script has no filesystem and no shell), so it checks the SHAPE of what
+  // comes back instead: under the disposable root, and keyed by this item's id.
+  const VERDICT_DIR_CMD = `~/.claude/tools/repo-slug --path ${a.worktree || dir || '.'}`
+  const verdictLeaf = `/verify/${item.id}.json`
+  const verdictShapeOk = (p) => p.startsWith('/private/tmp/claude/') && p.endsWith(verdictLeaf)
 
-// Where the verdict goes. `~/.claude/tools/repo-slug --path <worktree>` is the one
-// definition of the per-repo disposable directory, and it creates it — so the agent
-// runs the tool rather than assembling a path from prose. This script cannot run it
-// (a Workflow script has no filesystem and no shell), so it checks the SHAPE of what
-// comes back instead: under the disposable root, and keyed by this item's id.
-//
-// There is exactly one spelling of this path, and `repo-slug --path` is it. When
-// the writer, the reader and the brief each named their own, a pass that obeyed
-// any one of them was invisible to the other two — so the command is run, never
-// assembled from a sentence.
-// `--path <checkout>` because the slug is per-checkout: a worktree and its
-// primary checkout get different directories, so two passes never collide.
-// Falls back to the pass's working directory when no worktree was given —
-// without it the command interpolates the string "undefined" and every write
-// lands in one shared directory.
-const VERDICT_DIR_CMD = `~/.claude/tools/repo-slug --path ${a.worktree || dir || '.'}`
-const verdictLeaf = `/verify/${item.id}.json`
-const verdictShapeOk = (p) => p.startsWith('/private/tmp/claude/') && p.endsWith(verdictLeaf)
-
-const verdict = await agent(
-  `${COMMON}
+  verdict = await agent(
+    `${COMMON}
 
 Prove this item's behaviour works at the surface a person would actually use, and report a verdict. Passing tests are not that proof — they prove CI runs, and the previous stage already established the code compiles.
 
@@ -865,33 +664,33 @@ Prove this item's behaviour works at the surface a person would actually use, an
 
 **Do not invoke \`Skill(verify)\`, and do not conclude anything is broken when you notice you cannot.** The bundled \`verify\` skill is model-invocation-disabled: from inside this stage the Skill tool returns \`Skill verify cannot be used with Skill tool ... Ask the user to run /verify themselves\` and nothing loads. That is the tool working as designed, not a missing skill and not a papercut. Reading the project skill as a file above is this stage's method, not a fallback from it.
 
-**That path is in the primary checkout, not the worktree you are editing.** \`verify-project\` is git-excluded, so a fresh worktree carries it only if a link hook put it there — its absence from the worktree is no evidence about the repo. Resolve it at the absolute path above and nowhere else.
+**That path is in the primary checkout, not the worktree you are editing.** \`verify-project\` is git-excluded, so a fresh worktree carries it only if a link hook put it there — its absence from the worktree is no evidence about the repo. Read it at the absolute path above and nowhere else.
 
 **If that file does not exist, write it first, then follow it.** Do not fall back to a generic recipe, and do not fail this stage for its absence — a repo without one is a repo that has not been bootstrapped yet, which is a thing you can fix in place. Work out how this repo's surface is actually driven: read its \`README.md\`, its \`CLAUDE.md\`, its \`admin.toml\` if it has one, and how its own entry points are invoked. Then write \`${REPO_ROOT}/.claude/skills/verify-project/SKILL.md\` naming *this* repo's real surface and real commands — what to launch, how to reach the behaviour, what a pass looks like in the output. A recipe that would read the same in any repo is not one, and it is exactly the weak verdict this step exists to prevent. Keep it out of git: append \`.claude/skills/verify-project\` to \`${REPO_ROOT}/.git/info/exclude\`, never \`.gitignore\`, which is committed. **Never name it \`verify\`** — that collides with the bundled skill and the collision is why the project skill has its own name. Say in \`evidence\` that you wrote it and what surface it names.
 
-**Resolve doubt as \`FAIL\`.** There is no partial pass, and a \`FAIL\` is a real answer this stage exists to produce — not something to soften into a note so the pass can continue.
+**Treat doubt as \`FAIL\`.** There is no partial pass, and a \`FAIL\` is a real answer this stage exists to produce — not something to soften into a note so the pass can continue.
 
 **A surface this item names that is not listening is \`BLOCKED\` with \`surface_down: true\` (handled above, before you get here) — never \`SKIP\`.** \`SKIP\` remains only for behaviour that cannot be observed for a reason other than a closed port: no fixture data, no device, no way to drive the behaviour from this environment even though every named surface answered. \`FAIL\` is for behaviour you observed to be wrong; \`SKIP\` is for behaviour you could not observe for some other reason. The caller treats \`SKIP\` as a blocker on closing the item, so the work is not lost and the gap is not hidden.
 
 Item: ${item.id} — ${item.title}
 ${item.acceptance && item.acceptance.length ? `Acceptance criteria:\n${item.acceptance.map((x) => `- ${x}`).join('\n')}` : 'No acceptance criteria were written down; verify the behaviour the item describes.'}
-Files changed: ${[...edit.touched, ...(green.extra_files_touched || [])].join(', ')}
+Files changed: ${touchedFiles.join(', ')}
 
 **Do not read a screenshot into this context — a stage cannot delegate that to another agent.** Prove the result from text the surface already produces: logs, exit codes, a DOM or text dump. If an image genuinely must be captured, save it to a path and assert on it via text or exit code, naming the path in \`evidence\` rather than reading the image here.${
-  a.constraints
-    ? `
+      a.constraints
+        ? `
 
 **The caller has constrained how you may verify. These override the paragraph above wherever they conflict, and they are not negotiable — a surface you are told not to touch is shared with sibling workers, and driving it corrupts their runs as well as yours.**
 
 ${a.constraints}
 
 If these constraints make the item's behaviour genuinely unverifiable from here, return \`SKIP\` with \`evidence\` naming what you could not reach and why. Do not route around them.`
-    : ''
-}
+        : ''
+    }
 
 ${
-  touchedTests.length
-    ? `
+      touchedTests.length
+        ? `
 **This pass touched test files: ${touchedTests.join(', ')}. Prove they discriminate before you return a verdict.** A test that passes whether or not the change is present is not evidence of anything, and adding one is the most common way a pass looks green while fixing nothing.
 
 **Classify the production half of the diff before picking a method.** Read it. If every hunk outside the test files only deletes production code, or only touches comments or documentation, there is no behaviour left to reverse — reversing a pure deletion restores exactly the deleted code, and the retained tests pass exactly as they did before, by construction. Running the patch/reverse/re-run procedure below on a diff like that produces \`discriminates: false\` every time, on every legitimate removal, whether or not anything is actually wrong — which is worse than useless: it teaches whoever reads this report to expect \`false\` and discount it, which is exactly the moment a real gap hides best. New behaviour with nothing to revert is NOT removal-only — that stays \`false\` per the paragraph below, not \`null\`.
@@ -921,13 +720,13 @@ Return that as \`mutation\`: \`method\` (what you removed and how), \`command\` 
 
 **If they pass without the change, say so — \`discriminates: false\` with the real output.** That is a true report and it is what this check is for; a report that they failed when they did not is the one unrecoverable answer. If the behaviour is new and there is nothing to remove, set \`discriminates: false\` and put \`"no prior implementation to revert"\` in \`method\`.
 `
-    : ''
-}
+        : ''
+    }
 \`evidence\` must cite what you actually observed: real values, real output. A verdict with no evidence is not a verdict.
 
 **Return \`recheck\`: the commands the caller runs to confirm this work itself.** Your verdict is a first-pass filter, not the last word — the session that launched this pass re-runs these in the worktree and its result is what decides whether the branch lands. Give the narrowest commands that would actually catch this change breaking, each with what a pass looks like in \`expect\`. Real invocations you ran in this stage, not \`npm test\` / \`passes\` written from memory. If nothing here is machine-checkable, return an empty array and say why in \`evidence\` rather than inventing a command.${
-  a.worktree
-    ? `
+      a.worktree
+        ? `
 
 **Write the verdict to \`<dir>/verify/${item.id}.json\` before you finish — for every verdict, \`SKIP\` and \`FAIL\` included** — where \`<dir>\` is what \`${VERDICT_DIR_CMD}\` prints. Run that command; do not assemble the path from this sentence. It is the single definition of this worktree's disposable directory and it creates the directory, so \`mkdir -p <dir>/verify\` is the only other thing you need. **The verdict does not go inside the worktree** — \`tmp/\` there is the repo, the file would ride the branch or die with the worktree at teardown, and nothing that reads verdicts looks in it. This pass runs staged and its transcript is not recoverable; that file is the only evidence a later reader gets, and a verdict returned without one is treated as no verdict at all. Include at least \`{"item", "verdict", "evidence", "verified_parent", "branch"${touchedTests.length ? ', "mutation"' : ''}}\` — \`verified_parent\` from \`git -C ${a.worktree} rev-parse HEAD\` and \`branch\` from \`git -C ${a.worktree} branch --show-current\`. Fill \`branch\` in; leaving it null strands the verdict with no way back to the work.
 
@@ -940,68 +739,71 @@ Return that as \`mutation\`: \`method\` (what you removed and how), \`command\` 
 **\`item\` is the tracker id — write \`"item": "${item.id}"\` exactly, never the title.** The id is what a reader matches on: the filename is keyed by it and the title is already on the issue. A verdict whose \`item\` holds the title has no id in either place, so nothing can match the file back to the work it describes.
 
 **The field is \`verified_parent\`, not \`commit\`, and the name is the point.** Nothing has been committed yet at this stage, so the sha you just read is the PARENT of the commit this work becomes. Recording it under \`commit\` would claim you verified a commit that does not exist, and something downstream would then have to rewrite the file to make the claim true — which is a stage editing an evidence record to say what it did not say. Name it truthfully once and nothing has to correct it. A reader checks this verdict by confirming \`verified_parent\` is the parent of the branch head; if the branch moved after you finished, it will not be, and that is exactly the staleness the check exists to catch.`
-    : ''
-}`,
-  { phase: 'Verify', model, schema: VERDICT },
-)
+        : ''
+    }`,
+    { phase: 'Verify', model, schema: VERDICT },
+  )
 
-// A clean tree at this point means the work was already committed before
-// Verify ran, so the sha it read is HEAD-of-the-work rather than the parent
-// `verified_parent` claims to be — the exact inversion this pass exists to
-// stop, so it halts here rather than trust the prose above to have caught it.
-if (verdict && verdict.tree_clean === true) {
-  await salvage('Verify', 'a tree that was already committed when Verify ran')
-  return halt('verify', 'the worktree was already clean when Verify checked — an earlier stage committed despite being told not to, so verified_parent would name HEAD-of-the-work rather than its parent')
-}
-
-if (!verdict || verdict.verdict === 'FAIL' || verdict.verdict === 'BLOCKED') {
-  await salvage('Verify', verdict ? verdict.verdict : 'nothing')
-  if (verdict && verdict.surface_down === true) {
-    return halt('surface', `surface unreachable: ${(verdict.failures || []).join('; ')}`)
+  // A clean tree at this point means the work was already committed before
+  // Verify ran, so the sha it read is HEAD-of-the-work rather than the parent
+  // `verified_parent` claims to be — the exact inversion this pass exists to
+  // stop, so it halts here rather than trust the prose above to have caught it.
+  if (verdict && verdict.tree_clean === true) {
+    await salvage('Verify', 'a tree that was already committed when Verify ran')
+    return halt('verify', 'the worktree was already clean when Verify checked — an earlier stage committed despite being told not to, so verified_parent would name HEAD-of-the-work rather than its parent')
   }
-  return halt('verify', verdict ? `${verdict.verdict}: ${(verdict.failures || []).join('; ')}` : 'verify stage returned nothing')
-}
 
-// A PASS whose verdict file was never written is not a pass. The evidence is inline
-// and reads as complete either way, so this is the only place the difference exists.
-// It halts rather than setting a flag for a caller to notice: `unreviewed: true` was
-// the flag shape at the Review stage and nobody read it.
-if (a.worktree) {
-  const reported = typeof verdict.verdict_path === 'string' ? verdict.verdict_path.trim() : ''
-  if (!verdictShapeOk(reported)) {
-    await salvage('Verify', `${verdict.verdict} with no verdict file`)
-    return halt(
-      'verify',
-      reported
-        ? `${verdict.verdict} but the verdict was written to ${reported}, which is not \`${VERDICT_DIR_CMD}\`${verdictLeaf} — nothing downstream reads that path`
-        : `${verdict.verdict} with no verdict_path — nothing was reported written, so there is no evidence this pass verified anything`,
-    )
-  }
-  log(`verdict written to ${reported}`)
-}
-
-// A tautological test is not a reason to throw away a correct implementation, so
-// this blocks the CLOSE rather than halting the pass. Halting here would strand
-// an uncommitted worktree — the one state a swarm cannot recover from — over a
-// weak test rather than broken code.
-const mutationBlockers = []
-if (touchedTests.length) {
-  const m = verdict.mutation
-  if (!m) mutationBlockers.push(`tests were added or changed (${touchedTests.join(', ')}) and no mutation check was reported — nothing shows they fail without the change`)
-  else if (m.discriminates === null) {
-    // Removal-only: there was no behaviour to reverse, so `false` was never
-    // going to be evidence of anything — this is not a blocker on its own.
-    // But `null` is the shape that concealed a real gap once (cc-fyt round
-    // 1), so a `null` paired with a named, unexercised "load-bearing"
-    // mechanism still blocks landing — just on the actual gap, not on the
-    // absence of a mutation to run.
-    log(`mutation check: removal only, nothing to discriminate — ${m.method}`)
-    if ((verdict.failures || []).length) {
-      mutationBlockers.push(`the removal-only change reported an unexercised mechanism it now relies on: ${verdict.failures.join('; ')}`)
+  if (!verdict || verdict.verdict === 'BLOCKED') {
+    await salvage('Verify', verdict ? verdict.verdict : 'nothing')
+    if (verdict && verdict.surface_down === true) {
+      return halt('surface', `surface unreachable: ${(verdict.failures || []).join('; ')}`)
     }
-  } else if (m.discriminates !== true) mutationBlockers.push(`the added tests do not discriminate: with the change removed, \`${m.command}\` still reported ${JSON.stringify((m.output || '').slice(0, 200))}`)
-  else log(`mutation check: tests fail without the change — ${(m.output || '').slice(0, 120)}`)
+    return halt('verify', verdict ? `${verdict.verdict}: ${(verdict.failures || []).join('; ')}` : 'verify stage returned nothing')
+  }
+
+  // A PASS (or FAIL, or SKIP) whose verdict file was never written is not a
+  // verdict at all — the evidence is inline and reads as complete either way,
+  // so this is the only place the difference exists. It halts rather than
+  // setting a flag for a caller to notice.
+  if (a.worktree) {
+    const reported = typeof verdict.verdict_path === 'string' ? verdict.verdict_path.trim() : ''
+    if (!verdictShapeOk(reported)) {
+      await salvage('Verify', `${verdict.verdict} with no verdict file`)
+      return halt(
+        'verify',
+        reported
+          ? `${verdict.verdict} but the verdict was written to ${reported}, which is not \`${VERDICT_DIR_CMD}\`${verdictLeaf} — nothing downstream reads that path`
+          : `${verdict.verdict} with no verdict_path — nothing was reported written, so there is no evidence this pass verified anything`,
+      )
+    }
+    log(`verdict written to ${reported}`)
+  }
+
+  // A round fails when Review found a `blocking` or `major` finding, or
+  // Verify came back `FAIL`. `SKIP` does not fail the round — there is
+  // nothing more Implement could do to make an unobservable behaviour
+  // observable — it proceeds to Wrap and stays a blocker on landing, exactly
+  // like a weak-test PASS does.
+  const findingCount = blockingFindings.length + majorFindings.length
+  const roundFailed = verdict.verdict === 'FAIL' || findingCount > 0
+
+  if (!roundFailed) break
+
+  if (fixRound >= MAX_ROUNDS) {
+    await salvage(verdict.verdict === 'FAIL' ? 'Verify' : 'Review', `round ${fixRound} still failing after ${MAX_ROUNDS} rounds`)
+    const stage = verdict.verdict === 'FAIL' ? 'verify' : 'review'
+    const reason =
+      verdict.verdict === 'FAIL'
+        ? `FAIL: ${(verdict.failures || []).join('; ')}`
+        : `${findingCount} blocking/major finding(s): ${[...blockingFindings, ...majorFindings].map((f) => `${f.file} — ${f.summary}`).join('; ')}`
+    return halt(stage, `round ${fixRound} of ${MAX_ROUNDS}: ${reason}`)
+  }
+
+  log(`round ${fixRound} failed — ${verdict.verdict === 'FAIL' ? 'verify FAIL' : `${findingCount} blocking/major finding(s)`}; retrying`)
+  fixRound++
 }
+
+const rounds = fixRound
 
 // --- Wrap ------------------------------------------------------------------
 // Not `workflow('wrap-up')`, and not because of nesting: this stage is an agent,
@@ -1012,13 +814,13 @@ if (touchedTests.length) {
 phase('Wrap')
 
 const WORK = `Item: ${item.id} — ${item.title}
-What changed: ${edit.summary}
-Files: ${[...edit.touched, ...(green.extra_files_touched || [])].join(', ')}
+What changed: ${impl.summary}
+Files: ${touchedFiles.join(', ')}
 Verification: ${verdict.verdict}${verdict.evidence ? ` — ${verdict.evidence}` : ''}
-${edit.notes && edit.notes.length ? `Notes from implementation:\n${edit.notes.map((n) => `- ${n}`).join('\n')}` : ''}
+${impl.notes && impl.notes.length ? `Notes from implementation:\n${impl.notes.map((n) => `- ${n}`).join('\n')}` : ''}
 ${
-  minorFindings.length
-    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here) found ${minorFindings.length} minor finding(s):\n${minorFindings.map((f) => `- [minor] ${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}`).join('\n')}\nThe orchestrator files these itself; \`followups\` in your response is for your own observations only, so there is no reason to copy these rows into it. \`blocking\` and \`major\` findings are gated by the orchestrator, not by you — you were not shown them, and do NOT file anything under those labels as followups.`
+  minorFollowups.length
+    ? `Code review of this diff (already done — do NOT run another review, and do not fix these here) found ${minorFollowups.length} minor finding(s):\n${minorFollowups.map((f) => `- [${f}]`).join('\n')}\nThe orchestrator files these itself; \`followups\` in your response is for your own observations only, so there is no reason to copy these rows into it. Every blocking and major finding from that review was already resolved in this pass's fix loop before this stage ran, so none remain to report — do NOT file anything under those labels as followups.`
     : 'Code review of this diff: already done. Do NOT run another review.'
 }`
 
@@ -1057,40 +859,51 @@ ${WORK}
 
 Anything you noticed and did not fix goes in \`followups\` as text. Do not file it anywhere.`
 
-const landed = await agent(wrapPrompt, { phase: 'Wrap', model, schema: LANDED })
+const landed = await agent(wrapPrompt, { phase: 'Wrap', model: 'haiku', effort: 'low', schema: LANDED })
 
 if (!landed) return halt('wrap', 'wrap-up stage returned nothing')
 
-// --- Handoff ---------------------------------------------------------------
+// --- Handoff -----------------------------------------------------------
 // The pass does not close the item and does not land the branch. It reports
 // what it did and what still stands in the way, and the caller decides.
-//
-// There used to be a Track stage here that closed the item itself. It was the
-// last thing in this script that wrote to something outside the worktree, and
-// it forced every caller to declare in advance whether this pass owned the
-// outcome — the `land: 'self' | 'caller'` argument, which was inferred wrong
-// often enough to ship work against a tracker that still read open. A pass with
-// no authority to close cannot close the wrong thing.
 
 const blockers = []
 if (verdict.verdict !== 'PASS') blockers.push(`verification returned ${verdict.verdict}, not PASS`)
 if (!landed.committed) blockers.push('nothing was committed')
+
+// A tautological test is not a reason to throw away a correct implementation,
+// so this blocks the CLOSE rather than halting the pass.
+const mutationBlockers = []
+if (touchedTests.length) {
+  const m = verdict.mutation
+  if (!m) mutationBlockers.push(`tests were added or changed (${touchedTests.join(', ')}) and no mutation check was reported — nothing shows they fail without the change`)
+  else if (m.discriminates === null) {
+    // Removal-only: there was no behaviour to reverse, so `false` was never
+    // going to be evidence of anything — this is not a blocker on its own.
+    // But `null` is the shape that concealed a real gap once (cc-fyt round
+    // 1), so a `null` paired with a named, unexercised "load-bearing"
+    // mechanism still blocks landing — just on the actual gap, not on the
+    // absence of a mutation to run.
+    log(`mutation check: removal only, nothing to discriminate — ${m.method}`)
+    if ((verdict.failures || []).length) {
+      mutationBlockers.push(`the removal-only change reported an unexercised mechanism it now relies on: ${verdict.failures.join('; ')}`)
+    }
+  } else if (m.discriminates !== true) mutationBlockers.push(`the added tests do not discriminate: with the change removed, \`${m.command}\` still reported ${JSON.stringify((m.output || '').slice(0, 200))}`)
+  else log(`mutation check: tests fail without the change — ${(m.output || '').slice(0, 120)}`)
+}
 blockers.push(...mutationBlockers)
-if (blockingFindings.length) blockers.push(`code review returned ${blockingFindings.length} blocking finding(s): ${blockingFindings.map((f) => `${f.file} — ${f.summary}`).join('; ')}`)
-if (majorFindings.length) blockers.push(`code review returned ${majorFindings.length} major finding(s) in this diff: ${majorFindings.map((f) => `${f.file} — ${f.summary}`).join('; ')}`)
 
 if (blockers.length) log(`not ready to land: ${blockers.join('; ')}`)
 
-// followups for review findings are built here, not by Wrap: Wrap was never
-// shown the blocking/major rows (see the WORK template above), but it still
-// might invent or echo one from context, so a stray row bearing that label is
-// stripped rather than trusted.
-const reviewFollowups = minorFindings.map((f) => `minor — ${f.file}${f.line ? `:${f.line}` : ''} — ${f.summary}`)
-const nonMinorSummaries = [...blockingFindings, ...majorFindings].map((f) => f.summary)
+// followups for review findings are built here, not by Wrap: every
+// blocking/major finding was already resolved by the fix loop before Wrap
+// ran (see the WORK template above), but Wrap might still invent or echo one
+// under those labels, so a stray row bearing that label is stripped rather
+// than trusted. Minor findings are filed by the orchestrator itself, so a row
+// that just echoes one of those is stripped too.
 const wrapFollowups = (landed.followups || []).filter((row) => {
   if (/^\s*[-[]*\s*(blocking|major)\b/i.test(row)) return false
-  if (reviewFollowups.includes(row)) return false
-  if (nonMinorSummaries.some((summary) => summary && row.includes(summary))) return false
+  if (minorFollowups.includes(row)) return false
   return true
 })
 
@@ -1099,14 +912,15 @@ return {
   item: item.id,
   title: item.title,
   round,
+  rounds,
   verdict: verdict.verdict,
   tests_touched: touchedTests,
   mutation: touchedTests.length ? verdict.mutation || null : undefined,
   review: round >= 2
     ? { findings: 0, blocking: 0, major: 0, skipped: 'fix round' }
     : { findings: review.findings.length, blocking: blockingFindings.length, major: majorFindings.length },
-  files: [...edit.touched, ...(green.extra_files_touched || [])],
-  attempts: green.attempts,
+  files: touchedFiles,
+  attempts: impl.attempts,
   commit: landed.commit,
   branch: landed.branch || item.branch,
   worktree: a.worktree || null,
@@ -1118,6 +932,6 @@ return {
   // Empty means nothing this pass can see stands in the way of landing. It is
   // never absent: a caller must be able to tell "clear" from "nobody looked".
   blockers,
-  followups: [...reviewFollowups, ...wrapFollowups],
-  summary: landed.summary || edit.summary,
+  followups: [...minorFollowups, ...wrapFollowups],
+  summary: landed.summary || impl.summary,
 }
