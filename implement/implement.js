@@ -587,18 +587,29 @@ const BASE = hasRealBaseSha
   : `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null)`
 const DIFF = hasRealBaseSha
   ? `${G} diff "$BASE"`
-  : `[ -n "$BASE" ] && ${G} diff "$BASE" || (${G} status --short; ${G} diff)`
+  : ''
+// RECIPE is what actually goes in the fenced code block a stage is told to
+// run. With a real base_sha it stays the single combined line above. Without
+// one, the stage cannot know in advance whether an upstream exists, so it
+// gets exactly one plain git command — `merge-base` on its own — and
+// DIFF_HOWTO below routes what happens next by what that command printed,
+// rather than the script trying to encode the branch as a shell `[ ] && ||`
+// compound, which is a permission-prompt risk STAGE-RULES forbids.
+const RECIPE = hasRealBaseSha
+  ? `${BASE}; ${DIFF}`
+  : `${G} merge-base HEAD '@{upstream}'`
 const DIFF_HOWTO = hasRealBaseSha
   ? `That first line computes \`$BASE\` — the commit where this pass's work diverges from the upstream branch — and diffs it against the tree as it stands. Run both commands as one line; \`$BASE\` does not survive into a second command.
 
 The diff is the whole change: it covers work an earlier stage may already have committed as well as work still sitting in the working tree, so do not care which it is. Do not substitute a bare \`${G} diff\` — that sees uncommitted work only and is empty once this pass's work is committed. Do not substitute \`${G} diff ${plan.base_sha}\` either — that is where this pass started, and commits pulled from origin since then would wrongly show up as work this pass did.
 
 **Never invent your own diff command — always run the one given above.** In particular, never use \`${G} diff main..HEAD\` (two dots): once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted. \`${G} diff main...HEAD\` (three dots) — or the merge-base recipe above — compares against the actual merge base, which is what "what did this branch change" means.`
-  : `That first line tries to compute \`$BASE\` from this branch's upstream. The second line uses it if found; if not — the normal case for a pass worktree, which has no upstream — \`$BASE\` comes back empty and there is no honest base to diff the whole branch against, so it falls back to \`${G} status --short\` and a bare \`${G} diff\` instead, which show only uncommitted working-tree changes. Run both lines as one command; \`$BASE\` does not survive into a second one.
+  : `That command tries to find this branch's upstream. It is the only thing to run first — do not chain a shell test onto it, do not wrap it in a subshell. Read what it printed and pick the next command yourself:
 
-**If the fallback ran (no real \`$BASE\`), inspect only what \`status --short\` and the bare diff printed.** Do not claim anything about what the branch as a whole changed, and do not say a file was reverted or deleted against history you have no committed base to compare — the working tree is all you can honestly see.
+1. **It printed a commit sha.** Run \`${G} diff <that sha>\`, substituting the sha it just printed for you. That diff is the whole change this pass made — it covers work an earlier stage may already have committed as well as work still sitting in the working tree.
+2. **It printed nothing, or the command failed** — the normal case for a pass worktree, which has no upstream. There is no honest base to diff the whole branch against, so run \`${G} status --short\` and \`${G} diff\` as two separate commands instead. They show only uncommitted working-tree changes. **Do not claim anything about what the branch as a whole changed**, and do not say a file was reverted or deleted against history you have no committed base to compare — the working tree is all you can honestly see.
 
-**Never invent your own diff command — always run the one given above.** In particular, never use \`${G} diff main..HEAD\` or \`${G} diff main\`: once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted.`
+**Never invent your own diff command — always follow the routing above.** In particular, never use \`${G} diff main..HEAD\` or \`${G} diff main\`: once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted.`
 
 let impl, review, verdict
 let blockingFindings = [], majorFindings = []
@@ -636,15 +647,15 @@ ${plan.files.map((f) => `- \`${f.path}\` — ${f.why}${f.anchors && f.anchors.le
 ${plan.risks && plan.risks.length ? `Known risks:\n${plan.risks.map((r) => `- ${r}`).join('\n')}\n` : ''}${priorFailures}
 Open ONLY those files. If the change genuinely requires a file that is not listed, make it and record it in \`notes\` — but treat that as a signal the plan was wrong, not as licence to explore freely.
 
-If you need to see the change so far — for example to check whether you have touched anything outside the plan's file list — read it with exactly this recipe, run as one line:
+If you need to see the change so far — for example to check whether you have touched anything outside the plan's file list — read it with this recipe, never inventing your own:
 
 \`\`\`
-${BASE}; ${DIFF}
+${RECIPE}
 \`\`\`
 
 ${DIFF_HOWTO}
 
-**Before reporting that this pass touched files outside the list above, or that the branch appears to revert or delete landed work, confirm it with \`${G} show --stat\` over this branch's OWN commits — not the merge-base diff above.** A file that shows up in \`${DIFF}\` but appears in none of the branch's own commits is a merge-base artifact from main having moved since the branch was cut, not contamination, and is not grounds to halt or to reset anything.
+**Before reporting that this pass touched files outside the list above, or that the branch appears to revert or delete landed work, confirm it with \`${G} show --stat\` over this branch's OWN commits — not the merge-base diff above.** A file that shows up in the diff above but appears in none of the branch's own commits is a merge-base artifact from main having moved since the branch was cut, not contamination, and is not grounds to halt or to reset anything.
 
 ${plan.build_command ? `Build command: \`${plan.build_command}\`` : 'Work out the build command from the repo.'}
 ${plan.test_command ? `Test command: \`${plan.test_command}\`` : ''}
@@ -837,10 +848,10 @@ Return that as \`mutation\`: \`method\` (what you removed and how), \`command\` 
 
     const reviewPrompt = `${WHERE}
 
-Review the change this pass just made. **You are not looking for something to review — the change is everything in \`${dir || 'this repository'}\` that this pass added on top of what everyone else already has.** Read it with exactly these two commands, the first one exactly as written including the \`BASE=\` part:
+Review the change this pass just made. **You are not looking for something to review — the change is everything in \`${dir || 'this repository'}\` that this pass added on top of what everyone else already has.** Read it with ${hasRealBaseSha ? 'exactly these two commands, the first one exactly as written including the `BASE=` part' : 'this recipe, plus a status check — never inventing your own'}:
 
 \`\`\`
-${BASE}; ${DIFF}
+${RECIPE}
 ${G} status --short
 \`\`\`
 
@@ -858,7 +869,7 @@ Severity means: \`blocking\` — the change is wrong, incomplete against the ite
 
 **Do not edit anything, and do not stage or commit anything — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits. An edit you make here ships unverified, and a commit you make here reaches Verify already on HEAD, making its \`verified_parent\` field false the moment it is written.
 
-**Nobody can answer you.** If \`${DIFF}\` and \`status --short\` both come back empty, that is a fact to report, not a question to ask: return \`reviewed: false\` with \`findings: []\` and say in \`note\` exactly what the two commands printed. It halts the pass — it is not a way to pass the stage, so do not reach for it to get unstuck. Never ask what to review, and never return \`reviewed: true\` for a diff you did not actually read — an empty \`findings\` is a claim that you read the change and it was clean.`
+**Nobody can answer you.** If the diff you ran above and \`status --short\` both come back empty, that is a fact to report, not a question to ask: return \`reviewed: false\` with \`findings: []\` and say in \`note\` exactly what the two commands printed. It halts the pass — it is not a way to pass the stage, so do not reach for it to get unstuck. Never ask what to review, and never return \`reviewed: true\` for a diff you did not actually read — an empty \`findings\` is a claim that you read the change and it was clean.`
 
     // Review and Verify see the identical post-Implement tree and neither
     // consumes the other's output, so ordinarily they run at once. The one
@@ -1028,7 +1039,7 @@ ${WORK}
 If you need to confirm what this pass actually changed before committing, read it with the same recipe Review used — never invent your own diff command:
 
 \`\`\`
-${BASE}; ${DIFF}
+${RECIPE}
 \`\`\`
 
 ${DIFF_HOWTO}
