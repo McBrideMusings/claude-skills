@@ -2,7 +2,7 @@
 
 ## Reporting arity
 
-In sequential or swarm arity, name in the Output: every item and its outcome, the `slug → model` split, every worktree still standing and why, the verdict files now in the primary checkout, and the run's token total read from `/workflows`. A run that lands six items should leave six verdicts behind; anything less means evidence went out with a worktree.
+In sequential or swarm arity, name in the Output: every item and its outcome, the `slug → model` split, every worktree still standing and why, the verdict files now in the primary checkout, and the run's token total read from `/tasks`. A run that lands six items should leave six verdicts behind; anything less means evidence went out with a worktree.
 
 Computing the backlog snapshot: on beads, `bd count --status open` plus `bd ready --json | jq length` for the unblocked figure; on GitHub, `gh issue list --state open --json number --limit 1000` and count. If the backend errors, omit the line rather than halting.
 
@@ -40,9 +40,9 @@ Every pass gets its own worktree and they run at once. The human is involved at 
 
 **The scope gate, before anything is dispatched.** Read every in-scope issue and confirm each one is actually ready — a concrete plan, named files, an objective acceptance check. Exclude automatically and without asking: anything unlabelled or untriaged, anything whose body is a question, anything touching migrations, auth, payments, or deletion paths, and anything naming paths in two repos (see [`WORKTREES.md`](WORKTREES.md) Cross-repo items) — split it into one item per repo before it is dispatched. Size and merge the round per HANDOFF § 1 and § 2 here too: an under-floor item is merged into its in-scope neighbour before the round is dispatched, never dispatched alone. State what you excluded and merged, and why.
 
-**No pass ever lands its own work.** `implement.js` ends at a commit and has no push in it at all — a stage that runs no `git push` has nothing to route around. `hooks/landing-guard.sh` makes that structural rather than remembered: one of its two predicates is that the caller is a subagent (the other is a worktree marked SELF-LAND), and on that one it denies `git push`, `git merge` into the default branch, `gh pr`/`gh issue` writes and `bd` writes from any implementation subagent. Prose instructions not to push have not held on their own; agents merged into `main` and closed their own issues against explicit clauses repeated four times.
+**No pass ever lands its own work.** A pass ends at a commit and runs no `git push` at all, so there is nothing to route around. `hooks/landing-guard.sh` makes that structural rather than remembered: one of its two predicates is that the caller is a subagent (the other is a worktree marked SELF-LAND), and on that one it denies `git push`, `git merge` into the default branch, `gh pr`/`gh issue` writes and `bd` writes from any implementation subagent. Prose instructions not to push have not held on their own; agents merged into `main` and closed their own issues against explicit clauses repeated four times.
 
-The Land bead exists for the same reason: it is a slate row, taken with `go`, never inside a pass or a brief. The one run that carried "push and open the PR" into the worker did exactly that, with four unanswered product questions pasted into the PR body, and the only reason the questions existed was that nobody had been asked. `implement.js` cannot open a PR because it runs no `git push`; the orchestrator does not either until the row is accepted.
+The Land bead exists for the same reason: it is a slate row, taken with `go`, never inside a pass or a brief. The one run that carried "push and open the PR" into the worker did exactly that, with four unanswered product questions pasted into the PR body, and the only reason the questions existed was that nobody had been asked. A pass cannot open a PR because it runs no `git push`; the orchestrator does not either until the row is accepted.
 
 **You land each pass as it returns**, from the primary checkout, after re-verifying against a base that may have moved. A linked worktree shares the object store, so every commit is already visible there — no fetch needed.
 
@@ -50,9 +50,9 @@ The Land bead exists for the same reason: it is a slate row, taken with `go`, ne
 
 **Never edit files that every change appends a row to** — a changelog, a file map, a component registry. Every sibling branch collides on them by construction. Passes return the rows in `followups` instead and you write them after landing. A mount file is the same shape — a root component, router table, barrel `index.*`, or plugin list that briefs only ever append a line or a block to — and HANDOFF § 2 says how the brief gets rewritten so the pass returns the mount lines in `followups` instead of editing the file directly.
 
-**Keep rounds small enough that a bad brief does not burn the frontier.** A round of N items is N passes at once; watch the running total in `/workflows`.
+**Keep rounds small enough that a bad brief does not burn the frontier.** A round of N items is N passes at once; watch the running total in `/tasks`.
 
-**A selector matching more than 8 items pilots first.** Dispatch a batch of at most 5, land those, and check the cost and failure rate in `/workflows` before dispatching the rest. Sequential arity already caps a whole run at 20 items; swarm arity has no run-level cap, so an oversized selector dispatches its entire count at once unless this step catches it first.
+**A selector matching more than 8 items pilots first.** Dispatch a batch of at most 5, land those, and check the cost and failure rate in `/tasks` before dispatching the rest. Sequential arity already caps a whole run at 20 items; swarm arity has no run-level cap, so an oversized selector dispatches its entire count at once unless this step catches it first.
 
 ---
 

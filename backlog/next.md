@@ -2,7 +2,7 @@
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
-**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait, skip the Phase 08 dispatch-row offer, skip the Phase 09 plan-draft question, AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself, and a pass dispatching another pass recurses (`Workflow` is unavailable inside a subagent). Proceed immediately with option 1 at Phase 08 (the top recommendation) and implement directly at Phase 09. Interactive callers wait for the user's selection at Phase 08, see the dispatch-row offer at Phase 08, see the plan-draft question at Phase 09, and see the wrap-up offer at Phase 10.
+**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait, skip the Phase 08 dispatch-row offer, skip the Phase 09 plan-draft question, AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself, and a pass dispatching another pass recurses (an `implementer` never dispatches one). Proceed immediately with option 1 at Phase 08 (the top recommendation) and implement directly at Phase 09. Interactive callers wait for the user's selection at Phase 08, see the dispatch-row offer at Phase 08, see the plan-draft question at Phase 09, and see the wrap-up offer at Phase 10.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 

@@ -156,22 +156,22 @@ is either running or returned-but-unlanded:
 - item: <id>
   branch: <branch>
   worktree: <absolute path>
-  workflow: running | returned
-  base: <sha the pass started from>   # when workflow: running
-  run_id: <id>                 # breadcrumb for a human reading /workflows — a fresh
-                                # session cannot query it; when workflow: running
-  ok: true | false              # when workflow: returned
-  halted_on: <reason or ->      # when workflow: returned
+  pass: running | returned
+  base: <sha the pass started from>   # when pass: running
+  run_id: <id>                 # breadcrumb for a human reading /tasks — a fresh
+                                # session cannot query it; when pass: running
+  ok: true | false              # when pass: returned
+  halted_on: <reason or ->      # when pass: returned
   verdict: <absolute path or -> # when a verdict file was written
   recheck: <command>            # repeat per not-yet-run recheck command
   recheck: <command>
 ```
 
-**The refusal.** A pass whose `Workflow` call has not returned has no outcome this
+**The refusal.** A pass whose agent has not returned has no outcome this
 session can write — relay does not guess it and does not sit and wait for it either.
-`resumeFromRunId` is same-session only, so a fresh session has no way to query a run
-id; a run id in the manifest is a breadcrumb for a human reading `/workflows`, never
-an instruction to the fresh session. Record the pass as `workflow: running` with its
+A subagent belongs to the session that spawned it, so a fresh session cannot query
+one; an agent id in the manifest is a breadcrumb for a human, never an instruction to
+the fresh session. Record the pass as `pass: running` with its
 worktree and the base sha it started from, and put these four on-disk checks in the
 prompt's **First action** field (Step 4, item 4) so they are the first thing the
 fresh session does:
@@ -201,19 +201,19 @@ or unlanded pass still gets an entry.
 - item: cc-7qz
   branch: cc-7qz
   worktree: /Users/pierce/.worktrees/claude-skills/cc-7qz
-  workflow: running
+  pass: running
   base: 3f1a76d2c9e8b4a015f6d7c2e1b0a9f8d7c6b5a4
   run_id: run_01HXYZ9K2M   # breadcrumb only — a fresh session cannot query this
-  recheck: bash /Users/pierce/.claude/tools/tests/implement-workflow.test.sh
+  recheck: bash /Users/pierce/.claude/tools/run-tests.sh
 
 - item: cc-8rf
   branch: cc-8rf
   worktree: /Users/pierce/.worktrees/claude-skills/cc-8rf
-  workflow: returned
+  pass: returned
   ok: true
   halted_on: -
   verdict: /private/tmp/claude/claude-skills/verify/cc-8rf.json
-  recheck: bash /Users/pierce/.claude/tools/tests/implement-workflow.test.sh
+  recheck: bash /Users/pierce/.claude/tools/run-tests.sh
 ```
 
 ## Step 5 — hand off and stop

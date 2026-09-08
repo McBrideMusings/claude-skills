@@ -4,21 +4,15 @@
 
 The breakdown in `issues/breakdown.md` puts slices, a Verify bead and a Land bead under every issue at the moment it is picked up, and a pass is the thing that works exactly one slice to a commit. So `implement <parent>` means: break it down now if `bd children <parent>` is empty (in chat, where the slices are visible), then walk the slice children in dependency order, one pass each, landing each before the next.
 
-## Calling `Workflow`
+## Dispatching a pass
 
-Never edit a generated `implement-<id>.js` directly, and never point `scriptPath` at `implement.js` itself. The generated per-pass copy is disposable — it lands under `$(~/.claude/tools/repo-slug --path <repo>)`, which macOS reaps after three days idle.
+One `Agent({subagent_type: 'implementer'})` call, one item, one worktree, one commit. The brief goes in the prompt: the item as `{id, title, body, acceptance?, branch?, files?}`, already cleared and gated in chat ([`HANDOFF.md`](HANDOFF.md) §1), plus the absolute worktree path, the branch, and the absolute path of the primary checkout's `verify-project/SKILL.md`.
 
-`args` is `{resolved, worktree, repo, branch, model, round?}`. `resolved` is the item itself — `{id, title, body, acceptance?, branch?, files?}` — already cleared and gated in chat before this call; the pass never fetches or judges an item on its own. Everything else is unchanged from a normal launch.
+**Only the chat session dispatches.** An implementer never dispatches another implementer, and never invokes this skill. One item, one context, start to finish.
 
-**Never `Workflow({name: 'implement'})` and never `workflow('implement', …)`.** Name resolution reads the *project's* `.claude/workflows/`, not `~/.claude/`, so it fails in exactly the place every pass runs — a worktree — with `Workflow "implement" not found. Available: deep-research, code-review`. The absolute path has no registry between it and the file.
+**The single context is the design, and it has a known failure mode.** One agent that plans, edits, builds and verifies pays for reading the repository once; a chain of fresh agents pays for it at every handoff, measured at 716k tokens for one round across five stage contexts. What one long context costs instead is growth: a pass that lets a raw build log or a screenshot land keeps re-reading it every turn afterwards. That is why [`PASS-RULES.md`](PASS-RULES.md)'s two output rules are not style preferences — bound every build run with `2>&1 | tail -40`, and never read an image into the pass. They are what keeps the warm context affordable.
 
-**Only this session may call `Workflow` at all.** It is not available inside subagents: a subagent that tries gets `No such tool available`. So the orchestrator is always the chat session, never something it spawned.
-
-**Why staged and not one long agent.** Passes that ran as a single agent averaged ~300 turns, peaked between 243k and 406k context, and were **37% of all token spend** in a measured day. The cost was never the code — it was one context that grew all pass and was re-read every turn. `implement.js` runs one `agent()` per stage, each starting fresh and handing the next a small validated object.
-
-**Editing this file does not change what a pass does.** Stage prompts live in `implement.js`; rules binding every stage live in [`STAGE-RULES.md`](STAGE-RULES.md) — including the Bash command rules, and the two that protect the saving above: a stage runs its own build or test but must bound the output (`2>&1 | tail -40`), and no stage reads a screenshot. Raw build output was the largest single source of growth inside a pass; images were 84% of all tool-result bytes. Neither goes through a `build-runner` or `screenshot-checker` subagent — a stage cannot spawn one at all (tested 2026-09-01, see [`VERDICTS.md`](VERDICTS.md)).
-
-`tools/tests/implement-workflow.test.sh` and `skills/implement/implement.test.mjs` are what hold the script to its contract. Run both after editing it.
+**Editing this file does not change what a pass does.** The agent's own instructions are `~/.claude/agents/implementer.md`; the rules binding every command it runs are [`PASS-RULES.md`](PASS-RULES.md).
 
 ## Pre-flight's exempt paths
 
@@ -53,7 +47,7 @@ a feature branch's session dispatches its own passes — matches only the second
 Without the marker, every file the pass touches stops and asks, for the length of
 the run.
 
-`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the workflow returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/claude-land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
+`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the pass returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/claude-land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
 
 **Collaborative (remote owned by anyone else).** The long-lived thing is the feature, not the pass. Make one herdr worktree for the body of work and keep it:
 
@@ -63,7 +57,7 @@ herdr worktree create --workspace <repo-workspace-id> --branch <feature>
 
 Targeting `--workspace` is what nests it under the repo in the sidebar instead of detaching it to top level; never `herdr workspace create --cwd`, and never a custom `--label`. Checkouts land under `~/.worktrees/<repo>/<branch>`. Passes cut their throwaway worktrees off *that* branch and merge back into it, and only the feature branch ever becomes a PR.
 
-**The link hook is run by hand and skipping it fails quietly.** Its normal trigger is a Claude session entering the directory, and none ever does — the workflow's stage agents inherit *this* session's `CLAUDE_PROJECT_DIR`. Without it the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project`. The first two fail loudly on the first build; the last one produces a weak Verify verdict that reads exactly like a real one.
+**The link hook is run by hand and skipping it fails quietly.** Its normal trigger is a Claude session entering the directory, and none ever does — the implementer inherits *this* session's `CLAUDE_PROJECT_DIR`. Without it the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project`. The first two fail loudly on the first build; the last one produces a weak Verify verdict that reads exactly like a real one.
 
 **Never `git worktree remove` or `rm -rf` from inside the checkout being removed.** `hooks/no-self-delete-guard.py` blocks it, and the reason is real: delete the directory a session runs in and every later hook fails to spawn with `ENOENT` before reaching its first line, so every PreToolUse, PostToolUse and Stop guard is silently skipped for the rest of that session.
 
@@ -79,7 +73,7 @@ Targeting `--workspace` is what nests it under the repo in the sidebar instead o
 
 An item touching both is split into one item per repo, wired with a dependency edge, and each half's brief says which repo it owns and names the other half's item id.
 
-The reachability test catches this before dispatch, in chat: an item naming a file, or carrying an acceptance criterion, outside the repo the pass would be confined to is not offered as-is — it is split into one item per repo first ([`HANDOFF.md`](HANDOFF.md) §1). That costs one cheap check instead of a whole pass discovering the same thing at Verify, its last stage.
+The reachability test catches this before dispatch, in chat: an item naming a file, or carrying an acceptance criterion, outside the repo the pass would be confined to is not offered as-is — it is split into one item per repo first ([`HANDOFF.md`](HANDOFF.md) §1). That costs one cheap check instead of a whole pass discovering the same thing when it goes to verify.
 
 ## Retiring a worktree
 

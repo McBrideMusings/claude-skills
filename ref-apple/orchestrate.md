@@ -32,9 +32,8 @@ fails the create with a message that reads like a permissions problem.
 
 The worker's brief carries its own UDID and this rule, or the worker reaches for a name.
 
-**Pass it as `constraints`, not by editing the worktree.** On the workflow transport that is a per-item
-`constraints` string on the `workflow('implement', …)` call; `implement.js` injects it into the Verify
-stage above its own instructions, prefixed with *"a surface you are told not to touch is shared with
+**Pass it in the brief, not by editing the worktree.** A per-item constraints paragraph goes in the
+`implementer`'s prompt, above how it should verify, prefixed with *"a surface you are told not to touch is shared with
 sibling workers, and driving it corrupts their runs as well as yours"* — which is exactly the failure
 this section describes. A worker told to `SKIP` rather than route around a constraint is the behaviour
 you want when a device is genuinely unreachable.

@@ -1,6 +1,6 @@
 # Handoff — from a cleared item to a running pass
 
-**This document asks for `Workflow`.** A session carries a standing instruction not to call `Workflow` unless the user, a `CLAUDE.md` file, or a skill asks for it — this file is the skill asking. A session that reaches this document through any calling skill has that condition satisfied and may call `Workflow` per [`SKILL.md`](SKILL.md) directly; it does not need to ask again. This only ever runs from the chat session — `SKILL.md`'s pre-flight notes that `Workflow` is unavailable inside a subagent, so a session driving this from inside an `Agent` call cannot dispatch and should say so rather than try.
+**This document asks for the `Agent` tool.** A session carries a standing instruction not to spawn a subagent unless the user, a `CLAUDE.md` file, or a skill asks for it — this file is the skill asking. A session reaching this document through any calling skill has that condition satisfied and may dispatch an `implementer` per [`SKILL.md`](SKILL.md) directly; it does not need to ask again. This only ever runs from the chat session: an implementer never dispatches another one, so a session driving this from inside an `Agent` call should say so rather than try.
 
 ## 1. What "cleared" means
 
@@ -14,7 +14,7 @@ An item is dispatchable when four cheap queries all say so — this is a check, 
 
 Passing all five makes an item eligible to offer, not yet ready to dispatch. The readiness gate below is what decides that, run once per item, here in chat.
 
-**The readiness gate.** A pass has no gate stage of its own — it trusts whatever it is handed — so this session applies three tests to the item text before ever offering it, reading code through an `Explore` subagent wherever the text alone does not settle a test. All three must pass:
+**The readiness gate.** A pass has no gate of its own — it trusts whatever it is handed — so this session applies three tests to the item text before ever offering it, reading code through an `Explore` subagent wherever the text alone does not settle a test. All three must pass:
 
 1. **Plan test.** Can you state a concrete plan *right now* — the files to touch, the changes to make, and an objective acceptance check that would prove it done? If you cannot name the files, or cannot name a check whose result would settle whether it is finished, the item is not understood well enough to work unwatched.
 2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity that would have to be *invented* to proceed? If so it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
@@ -22,7 +22,7 @@ Passing all five makes an item eligible to offer, not yet ready to dispatch. The
 
 An item failing any test is not offered. Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work — a clear "not ready, here's why" is a good outcome, not a failure.
 
-Bare `implement` resolves its item the same way `backlog next` would, in chat, before this gate runs; `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way. The pass itself never resolves or gates anything — by the time `Workflow` is called, `args.resolved` already carries an item that cleared every test above.
+Bare `implement` resolves its item the same way `backlog next` would, in chat, before this gate runs; `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way. The pass itself never resolves or gates anything — by the time the `implementer` is dispatched, its brief already carries an item that cleared every test above.
 
 ## 2. The shape comes from the graph
 
@@ -56,7 +56,7 @@ When an item clears, it does not invent vocabulary — it becomes one more row o
 
 `go` takes it with the rest of the slate. `3 skip` declines just that row. `park` applies every disposition, including this one, and stops rather than continuing into the dispatch. This is the machinery the user's own global instructions already define — a slate row accepted IS the ask, `go` is the only accept word, and `park` is the second word a slate that proposes next work names — so no third accept word is added here, and none should be added later. Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 
-Known cost: a dispatch row looks like every other row, so `go` can launch several workflows by momentum. Mitigate by naming the count in the row whenever it is more than one item: `Dispatch 4 items as a swarm — cc-111, cc-105, cc-140, cc-162`.
+Known cost: a dispatch row looks like every other row, so `go` can launch several passes by momentum. Mitigate by naming the count in the row whenever it is more than one item: `Dispatch 4 items as a swarm — cc-111, cc-105, cc-140, cc-162`.
 
 ## 4. Who lands what comes back
 

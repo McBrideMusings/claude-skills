@@ -89,8 +89,8 @@ move it. Put this in the prompt verbatim, whatever the work is:
 > last message is your report, in chat: files changed, unchanged, follow-up needed, and the
 > manual testing steps with the exact commands you ran. Then stop and stay open.
 
-This is the contract `implement.js`'s Wrap stage holds, written for a worker that is a whole
-session instead of a stage. It exists because the prompt is exactly the wrong place to
+This is the same contract an `implementer` pass holds when it commits, written here for a
+worker that is a whole session instead of a background agent. It exists because the prompt is exactly the wrong place to
 decide landing: a brief written before the work knows nothing about what the work found. A
 worker that carried `push the branch, open the PR` and `retire yourself` did both, with four
 unanswered product questions pasted into the PR body, and the person who owed those answers
@@ -149,4 +149,4 @@ tabbing over to watch a delegate that was only ever an in-session agent.
 - The resolver, the vendors, and the auth gate → [SKILL.md](SKILL.md)
 - The herdr live-agent transport → `herdr-agent` in this directory
 - The Terminal.app transport → [TRANSPORT-TERMINAL.md](TRANSPORT-TERMINAL.md)
-- Implementation passes, which do not use this ladder at all — they are `Workflow` calls made by the main session, one worktree each → [../implement/SKILL.md](../implement/SKILL.md)
+- Implementation passes, which do not use this ladder at all — they are `implementer` agents dispatched by the main session, one worktree each → [../implement/SKILL.md](../implement/SKILL.md)
