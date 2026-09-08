@@ -68,6 +68,12 @@ afterwards instead. A dispatched pass carries the waiver in its own brief — an
 infers one, and a brief that both cites this file and omits the waiver means the slate
 stands.
 
+**The report the waiver buys is the new body of each file, one sentence each** — never a
+line count, a before/after size table, or any other diff statistic. A waiver trades the
+chance to approve the text for the chance to read it afterwards; a measurement of how much
+shrank answers a question nobody asked and leaves the user still not knowing what any ADR
+now says.
+
 ## Linking an ADR to code (`applies-to`)
 
 Optional. When an ADR governs specific paths, declare them in frontmatter:

@@ -37,10 +37,16 @@ from collections import Counter, defaultdict
 
 ROOT = os.path.expanduser("~/.claude/projects")
 
-# $/Mtok: (input, cache-write, cache-read, output)
-PRICE = {"opus": (15.0, 18.75, 1.50, 75.0),
-         "sonnet": (3.0, 3.75, 0.30, 15.0),
-         "haiku": (1.0, 1.25, 0.10, 5.0)}
+
+def fmt_tok(n):
+    """Human-readable token count: 2.4M, 627k, plain otherwise."""
+    n = float(n)
+    if abs(n) >= 1_000_000:
+        return f"{n/1_000_000:.1f}M"
+    if abs(n) >= 1_000:
+        return f"{n/1_000:.0f}k"
+    return f"{n:.0f}"
+
 
 def tier(model):
     m = (model or "").lower()
@@ -75,8 +81,8 @@ def corpus_files(path):
 
 class Facts:
     def __init__(self):
-        self.cost = Counter(); self.tok = Counter(); self.turns = Counter()
-        self.tools = Counter(); self.tool_cost = Counter(); self.tool_errors = Counter()
+        self.wtok = Counter(); self.tok = Counter(); self.turns = Counter()
+        self.tools = Counter(); self.tool_wtok = Counter(); self.tool_errors = Counter()
         self.skills = Counter(); self.skill_args = defaultdict(list)
         self.agents = Counter()
         self.bash = Counter(); self.bash_blocked = Counter()
@@ -223,13 +229,13 @@ def scan(path, F, side, since=None):
             F.dupe_turns += 1; continue
         if uid: F.seen.add(uid)
 
-        tr = tier(m.get("model")); p = PRICE[tr]
+        tr = tier(m.get("model"))
         i = u.get("input_tokens") or 0
         cw = u.get("cache_creation_input_tokens") or 0
         cr = u.get("cache_read_input_tokens") or 0
         o = u.get("output_tokens") or 0
-        cost = (i*p[0] + cw*p[1] + cr*p[2] + o*p[3]) / 1e6
-        F.cost[side] += cost; F.cost[tr] += cost; F.turns[side] += 1
+        wt = i + 1.25*cw + 0.1*cr + 5*o
+        F.wtok[side] += wt; F.wtok[tr] += wt; F.turns[side] += 1
         for k, v in (("in", i), ("cw", cw), ("cr", cr), ("out", o)):
             F.tok[(side, k)] += v
         ctx = i + cw + cr
@@ -242,7 +248,7 @@ def scan(path, F, side, since=None):
             if not (isinstance(b, dict) and b.get("type") == "tool_use"): continue
             n = b.get("name", "?"); inp = b.get("input") or {}
             tools_this_turn.append(n)
-            F.tools[n] += 1; F.tool_cost[n] += cost
+            F.tools[n] += 1; F.tool_wtok[n] += wt
             if b.get("id") in err_ids: F.tool_errors[n] += 1
             if n == "Skill":
                 s = inp.get("skill", "?")
@@ -311,7 +317,7 @@ def steering_report(F, dump):
 
 
 def report(F, args):
-    tot = F.cost["main"] + F.cost["sub"]
+    tot = F.wtok["main"] + F.wtok["sub"]
     cr = sum(v for k, v in F.tok.items() if k[1] == "cr")
     out = sum(v for k, v in F.tok.items() if k[1] == "out")
     tt = F.turns["main"] + F.turns["sub"]
@@ -322,9 +328,9 @@ def report(F, args):
       f"(main {F.turns['main']:,} / sub {F.turns['sub']:,})")
     P(f"  deduped forked turns skipped: {F.dupe_turns:,}")
     P("")
-    P("SPEND (Anthropic list-price equivalent, not a bill)")
-    P(f"  total ${tot:,.2f}   main ${F.cost['main']:,.2f}   sub ${F.cost['sub']:,.2f}"
-      f"  ({100*F.cost['sub']/tot:.0f}% sub)" if tot else "  no spend")
+    P("SPEND (cost-weighted tokens: input + 1.25x cache-write + 0.1x cache-read + 5x output)")
+    P(f"  total {fmt_tok(tot)}   main {fmt_tok(F.wtok['main'])}   sub {fmt_tok(F.wtok['sub'])}"
+      f"  ({100*F.wtok['sub']/tot:.0f}% sub)" if tot else "  no spend")
     if tt:
         P(f"  cache-read {cr:,} tok vs output {out:,} tok  "
           f"= {cr/max(out,1):.0f} re-read per token produced")
@@ -353,9 +359,9 @@ def report(F, args):
     P("AGENTS SPAWNED")
     for a, n in F.agents.most_common(12): P(f"  {n:5d}  {a}")
     P("")
-    P("TOOLS  (cost = spend on turns that issued the tool)")
+    P("TOOLS  (weighted tokens = spend on turns that issued the tool)")
     for t_, n in F.tools.most_common(15):
-        P(f"  {n:6d}  ${F.tool_cost[t_]:9,.2f}  err {F.tool_errors[t_]:4d}  {t_}")
+        P(f"  {n:6d}  {fmt_tok(F.tool_wtok[t_]):>8}  err {F.tool_errors[t_]:4d}  {t_}")
     P("")
     P("FRICTION")
     P(f"  repeated identical Bash commands: {sum(F.dup_bash.values()):,}")
@@ -405,7 +411,7 @@ def main():
     if args.json:
         print(json.dumps({
             "sessions": F.sessions,
-            "turns": dict(F.turns), "cost": {k: round(v, 2) for k, v in F.cost.items()},
+            "turns": dict(F.turns), "weighted_tokens": {k: round(v) for k, v in F.wtok.items()},
             "skills": dict(F.skills), "agents": dict(F.agents),
             "tools": dict(F.tools.most_common(20)),
             "tool_errors": dict(F.tool_errors),

@@ -10,8 +10,10 @@ Three places the money actually is, in order:
 
 1. **The fixed preamble** — system prompt, `CLAUDE.md`, skill catalog, plugin surface, hooks.
    Paid on every single turn of every session, forever. `analyze.py` reports the median
-   first-turn context. At N turns/month, 1,000 preamble tokens costs `N × 1500 / 1e6` per
-   month; compute N from the corpus.
+   first-turn context. At N turns/month, 1,000 preamble tokens costs `N × 100` weighted
+   tokens per month (the preamble is written to cache once and re-read on every turn after
+   the first — paid as cache-read, weight 0.1x, not as fresh input at weight 1x); compute N
+   from the corpus.
 
    **Break it down by source before proposing a cut.** The median is one number for a
    dozen contributors, and the biggest one is rarely the one anybody would guess:
@@ -27,11 +29,11 @@ Three places the money actually is, in order:
    nothing. Route a source that is large and *contradicts* another to
    [steering-conflict](steering-conflict.md) instead — that is a correctness finding
    wearing a cost finding's clothes, and it ranks higher.
-2. **Turns at very high context.** A turn at 500k pays ~$0.75 in cache-read before the model
-   writes a word. `analyze.py`'s context-band table shows the distribution. 15–25% of spend
-   sitting above 500k is common and is nearly always avoidable.
+2. **Turns at very high context.** A turn at 500k pays ~50k weighted tokens in cache-read
+   (500k × 0.1) before the model writes a word. `analyze.py`'s context-band table shows the
+   distribution. 15–25% of spend sitting above 500k is common and is nearly always avoidable.
 3. **Turn count on a fat context.** Every tool call re-pays the whole window. A session
-   averaging 280k pays ~$0.42 per `git status`.
+   averaging 280k pays ~28k weighted tokens per `git status`.
 
 ## What to look for
 
@@ -63,15 +65,16 @@ always *the same work at lower context*, never *less work*.
 
 - Raw cost with no counterfactual. If you cannot name a cheaper path that gets the same
   outcome, there is no finding.
-- List-price dollars presented as a bill. They are a ranking unit; say so every time.
+- Weighted-token totals presented as a bill. They are a ranking unit, model-independent and
+  comparable to the usage meter's hourly/weekly budgets — not a dollar figure; say so every time.
 - Wall-clock. That is the `friction` lens, and most of it is the user being away.
 
 ## Finding format
 
-> **`<what>` cost `$<x>` (`<pct>`% of the corpus).**
+> **`<what>` cost `<x>` weighted tokens (`<pct>`% of the corpus).**
 > Mechanism: `<e.g. 68k preamble × 55,363 turns>`.
 > Cheaper path that gets the same outcome: `<specific>`.
-> Recovers ≈ `$<y>`/month at `<N>` turns/month.
+> Recovers ≈ `<y>` weighted tokens/month at `<N>` turns/month.
 
 Axis tag: `spend`.
 
