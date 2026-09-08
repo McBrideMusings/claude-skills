@@ -43,6 +43,32 @@ Every `[actions.*]` with `kind = "python"` is inline code. **Last resort, not de
 
 ---
 
+## `no_complete` — for actions that stream rather than finish
+
+Every action kind prints `<name> complete` when its child exits. That is right for
+`build`/`deploy`/`test` and wrong for anything that tails a log: you Ctrl-C a
+`--follow`, or dump a `--tail`, and the tool announces a completion that never
+happened. Set `no_complete = true` on the action to suppress **only** that success
+line:
+
+```toml
+[actions.logs]
+kind = "shell-passthrough"
+run  = "node scripts/logs.mjs"
+no_complete = true
+```
+
+It is a per-action boolean, defaulting false, honoured by `shell`,
+`shell-passthrough` and `interactive-shell`. The tool cannot infer which commands
+stream, so the manifest has to say — a `--follow` flag is not a reliable signal, and
+`--tail` is equally not a "completion".
+
+**It suppresses the success line and nothing else.** The failure path is untouched:
+`<name> failed` still prints and the non-zero exit still propagates, because a log
+command that cannot start is a real error the user needs to see.
+
+---
+
 ## Read on demand
 
 | Open | When |
