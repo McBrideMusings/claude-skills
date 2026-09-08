@@ -390,7 +390,7 @@ const isStringArray = (x) => Array.isArray(x) && x.every((e) => typeof e === 'st
 if (typeof a.resolved.id !== 'string') {
   return halt('resolve', `args.resolved.id must be a string — got ${typeof a.resolved.id}: ${JSON.stringify(a.resolved.id)}`)
 }
-for (const field of ['title', 'body', 'branch']) {
+for (const field of ['title', 'body', 'branch', 'base_sha']) {
   const v = a.resolved[field]
   if (v !== undefined && typeof v !== 'string') {
     return halt('resolve', `args.resolved.${field} must be a string — got ${typeof v}: ${JSON.stringify(v)}`)
@@ -484,7 +484,7 @@ Also report the project's real build and test commands. Prefer an \`admin\` task
   const files = (a.resolved.files || []).map((p) =>
     typeof p === 'string' ? { path: p, why: 'touched by the previous round; fix the failures listed in the item body' } : p,
   )
-  plan = { files, approach: 'fix the failures listed in the item body; touch nothing else' }
+  plan = { files, approach: 'fix the failures listed in the item body; touch nothing else', base_sha: item.base_sha }
   log(`round ${round}: skipping Plan — reusing ${plan.files.length} files from the previous round — ${plan.files.map((f) => f.path).join(', ')}`)
 }
 
@@ -548,6 +548,69 @@ const failuresBlock = (n, blocking, major, verdict) => {
 // Used by both Review's diff and Verify's mutation check.
 const G = dir ? `git -C ${dir}` : 'git'
 
+// The one true recipe for "what did this pass change" — computed once here
+// and threaded into every stage prompt that inspects the change, rather than
+// letting each stage invent its own. `BASE` needs `plan.base_sha`, so this
+// must sit after the Plan stage assigns `plan` (above) and before the fix
+// loop below that runs Implement.
+//
+// A fix round's manually-built `plan` (above) only carries `base_sha` when
+// the caller passed it forward as `resolved.base_sha` — round 1's own
+// `base_sha` is not required reading for a caller that only cares about
+// `files`. The recipe has two shapes depending on whether a real starting
+// commit is known:
+//
+// - With a real `base_sha`: the merge base is computed and then, if it sits
+//   BEHIND where this pass started (i.e. `base_sha` is reachable from it —
+//   which cannot happen since a merge base is always an ancestor of HEAD,
+//   this guards the case where `merge-base` itself falls back to `base_sha`
+//   because there is no upstream), snapped forward to `base_sha`.
+// - Without one: there is nothing to snap forward to, so the
+//   `--is-ancestor` clause is omitted entirely — substituting a sentinel
+//   like the literal string "HEAD" into it would make `is-ancestor "$BASE"
+//   HEAD` trivially true (a merge base is always an ancestor of HEAD) and
+//   silently collapse `$BASE` to HEAD, making `diff "$BASE"` empty even
+//   when the branch has real committed work.
+//
+// Without a real `base_sha`, whether an upstream exists is a fact only the
+// shell running inside the stage can see — this script cannot know it in
+// advance. A pass worktree cut with `git worktree add -b` has no upstream,
+// and that is the ordinary case for a relaunched fix round, not an edge
+// case, so the recipe has to degrade safely on its own rather than
+// substitute a synthetic base (an empty-tree sha, say) that would expand
+// `diff "$BASE"` into a whole-repository diff. When `$BASE` comes back
+// empty the fallback below runs `status --short` and a bare `diff` instead
+// — working-tree changes only, with no claim about the branch as a whole.
+const hasRealBaseSha = /^[0-9a-f]{7,40}$/.test(plan.base_sha || '')
+const BASE = hasRealBaseSha
+  ? `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${plan.base_sha}); ${G} merge-base --is-ancestor "$BASE" ${plan.base_sha} && BASE=${plan.base_sha}`
+  : `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null)`
+const DIFF = hasRealBaseSha
+  ? `${G} diff "$BASE"`
+  : ''
+// RECIPE is what actually goes in the fenced code block a stage is told to
+// run. With a real base_sha it stays the single combined line above. Without
+// one, the stage cannot know in advance whether an upstream exists, so it
+// gets exactly one plain git command — `merge-base` on its own — and
+// DIFF_HOWTO below routes what happens next by what that command printed,
+// rather than the script trying to encode the branch as a shell `[ ] && ||`
+// compound, which is a permission-prompt risk STAGE-RULES forbids.
+const RECIPE = hasRealBaseSha
+  ? `${BASE}; ${DIFF}`
+  : `${G} merge-base HEAD '@{upstream}'`
+const DIFF_HOWTO = hasRealBaseSha
+  ? `That first line computes \`$BASE\` — the commit where this pass's work diverges from the upstream branch — and diffs it against the tree as it stands. Run both commands as one line; \`$BASE\` does not survive into a second command.
+
+The diff is the whole change: it covers work an earlier stage may already have committed as well as work still sitting in the working tree, so do not care which it is. Do not substitute a bare \`${G} diff\` — that sees uncommitted work only and is empty once this pass's work is committed. Do not substitute \`${G} diff ${plan.base_sha}\` either — that is where this pass started, and commits pulled from origin since then would wrongly show up as work this pass did.
+
+**Never invent your own diff command — always run the one given above.** In particular, never use \`${G} diff main..HEAD\` (two dots): once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted. \`${G} diff main...HEAD\` (three dots) — or the merge-base recipe above — compares against the actual merge base, which is what "what did this branch change" means.`
+  : `That command tries to find this branch's upstream. It is the only thing to run first — do not chain a shell test onto it, do not wrap it in a subshell. Read what it printed and pick the next command yourself:
+
+1. **It printed a commit sha.** Run \`${G} diff <that sha>\`, substituting the sha it just printed for you. That diff is the whole change this pass made — it covers work an earlier stage may already have committed as well as work still sitting in the working tree.
+2. **It printed nothing, or the command failed** — the normal case for a pass worktree, which has no upstream. There is no honest base to diff the whole branch against, so run \`${G} status --short\` and \`${G} diff\` as two separate commands instead. They show only uncommitted working-tree changes. **Do not claim anything about what the branch as a whole changed**, and do not say a file was reverted or deleted against history you have no committed base to compare — the working tree is all you can honestly see.
+
+**Never invent your own diff command — always follow the routing above.** In particular, never use \`${G} diff main..HEAD\` or \`${G} diff main\`: once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted.`
+
 let impl, review, verdict
 let blockingFindings = [], majorFindings = []
 const minorFollowups = []
@@ -583,6 +646,16 @@ ${plan.files.map((f) => `- \`${f.path}\` — ${f.why}${f.anchors && f.anchors.le
 
 ${plan.risks && plan.risks.length ? `Known risks:\n${plan.risks.map((r) => `- ${r}`).join('\n')}\n` : ''}${priorFailures}
 Open ONLY those files. If the change genuinely requires a file that is not listed, make it and record it in \`notes\` — but treat that as a signal the plan was wrong, not as licence to explore freely.
+
+If you need to see the change so far — for example to check whether you have touched anything outside the plan's file list — read it with this recipe, never inventing your own:
+
+\`\`\`
+${RECIPE}
+\`\`\`
+
+${DIFF_HOWTO}
+
+**Before reporting that this pass touched files outside the list above, or that the branch appears to revert or delete landed work, confirm it with \`${G} show --stat\` over this branch's OWN commits — not the merge-base diff above.** A file that shows up in the diff above but appears in none of the branch's own commits is a merge-base artifact from main having moved since the branch was cut, not contamination, and is not grounds to halt or to reset anything.
 
 ${plan.build_command ? `Build command: \`${plan.build_command}\`` : 'Work out the build command from the repo.'}
 ${plan.test_command ? `Test command: \`${plan.test_command}\`` : ''}
@@ -773,21 +846,16 @@ Return that as \`mutation\`: \`method\` (what you removed and how), \`command\` 
   if (round === 1) {
     phase('Review')
 
-    const BASE = `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${plan.base_sha}); ${G} merge-base --is-ancestor "$BASE" ${plan.base_sha} && BASE=${plan.base_sha}`
-    const DIFF = `${G} diff "$BASE"`
-
     const reviewPrompt = `${WHERE}
 
-Review the change this pass just made. **You are not looking for something to review — the change is everything in \`${dir || 'this repository'}\` that this pass added on top of what everyone else already has.** Read it with exactly these two commands, the first one exactly as written including the \`BASE=\` part:
+Review the change this pass just made. **You are not looking for something to review — the change is everything in \`${dir || 'this repository'}\` that this pass added on top of what everyone else already has.** Read it with ${hasRealBaseSha ? 'exactly these two commands, the first one exactly as written including the `BASE=` part' : 'this recipe, plus a status check — never inventing your own'}:
 
 \`\`\`
-${BASE}; ${DIFF}
+${RECIPE}
 ${G} status --short
 \`\`\`
 
-That first line computes \`$BASE\` — the commit where this pass's work diverges from the upstream branch — and diffs it against the tree as it stands. Run it as one line; \`$BASE\` does not survive into a second command.
-
-\`${DIFF}\` is the whole change. It covers work that an earlier stage may already have committed as well as work still sitting in the working tree, so do not care which it is. Do not substitute a bare \`${G} diff\` — that one sees uncommitted work only and is empty on a pass whose work is already committed. Do not substitute \`${G} diff ${plan.base_sha}\` either — that is where this pass started, and commits pulled from origin since then would show up as work this pass did.
+${DIFF_HOWTO}
 
 For any path \`status --short\` marks \`??\`, the file is new and untracked and the diff will not show it: read it with the Read tool at its ABSOLUTE path under \`${dir || 'the repository'}\`. Never open a bare relative path — you did not start in that directory, and a relative path here resolves against a different checkout of the same repo.
 
@@ -801,7 +869,7 @@ Severity means: \`blocking\` — the change is wrong, incomplete against the ite
 
 **Do not edit anything, and do not stage or commit anything — no \`git add\`, no \`git commit\`, no \`git merge\`.** Wrap is the only stage that commits. An edit you make here ships unverified, and a commit you make here reaches Verify already on HEAD, making its \`verified_parent\` field false the moment it is written.
 
-**Nobody can answer you.** If \`${DIFF}\` and \`status --short\` both come back empty, that is a fact to report, not a question to ask: return \`reviewed: false\` with \`findings: []\` and say in \`note\` exactly what the two commands printed. It halts the pass — it is not a way to pass the stage, so do not reach for it to get unstuck. Never ask what to review, and never return \`reviewed: true\` for a diff you did not actually read — an empty \`findings\` is a claim that you read the change and it was clean.`
+**Nobody can answer you.** If the diff you ran above and \`status --short\` both come back empty, that is a fact to report, not a question to ask: return \`reviewed: false\` with \`findings: []\` and say in \`note\` exactly what the two commands printed. It halts the pass — it is not a way to pass the stage, so do not reach for it to get unstuck. Never ask what to review, and never return \`reviewed: true\` for a diff you did not actually read — an empty \`findings\` is a claim that you read the change and it was clean.`
 
     // Review and Verify see the identical post-Implement tree and neither
     // consumes the other's output, so ordinarily they run at once. The one
@@ -968,6 +1036,14 @@ You are the last stage of one implement pass, in a git worktree at \`${a.worktre
 
 ${WORK}
 
+If you need to confirm what this pass actually changed before committing, read it with the same recipe Review used — never invent your own diff command:
+
+\`\`\`
+${RECIPE}
+\`\`\`
+
+${DIFF_HOWTO}
+
 1. \`~/.claude/tools/repo-snapshot ${dir || '.'}\` once — not several separate git calls.
 2. Run the project's formatter **on the files listed above and no others**. Never a repo-wide format or \`lint --fix\`: it rewrites files no sibling worker touched, so every other branch in the round conflicts on whitespace alone, and the conflict surfaces at landing long after you are gone. If the only formatter available is repo-wide, skip formatting and say so in \`summary\`.
 3. \`git -C ${a.worktree || dir} add\` **the listed paths, explicitly**. Never \`git add -A\` and never \`git add .\`. \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\` and everything under \`.claude/skills/\` are gitignored local files linked into this worktree so the pass could build at all — they are not yours to track, and the bulk adds are how they reach a diff.
@@ -1039,6 +1115,7 @@ return {
   title: item.title,
   round,
   rounds,
+  base_sha: hasRealBaseSha ? plan.base_sha : undefined,
   verdict: verdict.verdict,
   tests_touched: touchedTests,
   mutation: touchedTests.length ? verdict.mutation || null : undefined,

@@ -61,7 +61,7 @@ loop
   review r's diff against the pass's starting sha
   if clear and r.blockers empty  -> land
   if round == 2  -> halt: leave the worktree standing, report the path
-  r = Workflow(pass, args: {...args, worktree: r.worktree, round, resolved: {...resolved, body: <the failures>, files: r.files}}); round++
+  r = Workflow(pass, args: {...args, worktree: r.worktree, round, resolved: {...resolved, body: <the failures>, files: r.files, base_sha: r.base_sha}}); round++
 ```
 
 **Check reachability yourself, before the first launch. On exhaustion, halt** — leave the worktree standing. Context fills mid-run → `relay`, don't push on.
