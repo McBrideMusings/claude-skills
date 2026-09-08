@@ -10,8 +10,10 @@ Three places the money actually is, in order:
 
 1. **The fixed preamble** — system prompt, `CLAUDE.md`, skill catalog, plugin surface, hooks.
    Paid on every single turn of every session, forever. `analyze.py` reports the median
-   first-turn context. At N turns/month, 1,000 preamble tokens costs `N × 1,000` weighted
-   tokens per month (preamble tokens are input tokens, weight 1x); compute N from the corpus.
+   first-turn context. At N turns/month, 1,000 preamble tokens costs `N × 100` weighted
+   tokens per month (the preamble is written to cache once and re-read on every turn after
+   the first — paid as cache-read, weight 0.1x, not as fresh input at weight 1x); compute N
+   from the corpus.
 
    **Break it down by source before proposing a cut.** The median is one number for a
    dozen contributors, and the biggest one is rarely the one anybody would guess:
