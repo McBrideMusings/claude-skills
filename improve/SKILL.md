@@ -19,9 +19,18 @@ It covers every decision point, not just the ones spelled out: the Phase 02 conf
 
 **Enforced, not just written down**: `hooks/improve-askuserquestion-guard.sh` denies `AskUserQuestion` at the tool layer for the lifetime of the marker IMPROVE-CORE.md's first phase writes and Phase 08 removes — so a lapse here is blocked mechanically, not caught on review.
 
-**Do this instead.** Print the options as plain chat text — numbered or keyworded — and say what to type. *"Running: architecture, tests, ui, layout. Type `go`, name a subset, or `skip <aspect>`."*
+**Do this instead.** Print the options as plain chat text, one numbered row per aspect, each carrying its default in brackets — `[run]` or `[skip]`:
 
-**`go` is the standing accept-all keyword, and every list that ends in recommendations must say so out loud.** That covers the aspect-list confirm above and, equally, the Phase 08 ticket slate: give your pick per item, then *"Type `go` to file these as described, or name the ones to drop."* Never leave a recommended set with no stated way to accept it whole — the user should not have to enumerate back a list they already agree with.
+```
+1. architecture [run]
+2. tests [run]
+3. ui [run]
+4. layout [skip]
+
+Type `go` to apply my picks as described, or answer per row (`1 run, 4 skip`).
+```
+
+**`go` is the standing accept-all keyword, and every list that ends in recommendations must say so out loud.** That covers the aspect-list confirm above and, equally, the Phase 08 ticket slate — same row shape, same hatch. Never leave a recommended set with no stated way to accept it whole — the user should not have to enumerate back a list they already agree with. Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 
 ## RULE 1 — effort NEVER decides what gets improved
 

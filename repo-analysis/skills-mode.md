@@ -28,7 +28,7 @@ Apply the portability filter as in code mode: "if I took this, would it fight wh
 
 Three rules bind this session, and they override Phase 08's "grill only the contested routings" — in skills mode **every** item is contested:
 
-1. **Nothing is taken by default. Every single skill gets its own explicit yes.** No item is ever skipped as "obvious": not a clean gap, not a tiny skill, not one the user already sounded warm on. Silence, "sounds good", and a yes to a different item are all *no*. Take the whole catalog as a slate of independent decisions and expect most of them to come back no — harvesting five skills and incorporating one is a normal, good outcome.
+1. **Nothing is taken by default. Every single skill gets its own individual confirmation.** No item is ever skipped as "obvious": not a clean gap, not a tiny skill, not one the user already sounded warm on. Silence, "sounds good", and a confirmation of a different item are all *no*. Take the whole catalog as a slate of independent decisions and expect most of them to come back no — harvesting five skills and incorporating one is a normal, good outcome.
 2. **Explain, then ask.** Each question opens by restating what that skill does in plain language — the same description the report carries, not a shorter one — before offering options. If the user has to ask "what does that one actually do?", the question was malformed. Rewrite and re-ask.
 3. **Ask about the skill before asking about the mechanics.** The first question on any item is whether the user wants this capability at all. Only after a yes does it become worth asking how it should be shaped (health-gate vs install, which file a merge lands in, what gets adapted). Never open with a mechanics question — that quietly presupposes the yes.
 

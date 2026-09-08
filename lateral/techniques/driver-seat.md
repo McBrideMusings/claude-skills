@@ -43,7 +43,7 @@ For every level that failed one of the three questions, name the smallest change
 
 **Shape A (agent-written target):** edit the actual plan/spec/docs file in place — do not produce a separate report file — then print the **"Driver-seat changes"** list above the rewritten text: one line per change, what moved and why, in the same approval message.
 
-**Shape B (user-written target):** make no edit. Print the changes as a numbered slate instead — one row per change, what moves, where, why, in the plan's own vocabulary — closing with the escape hatch: "Type `go` to apply every row, or answer per row (`1 apply, 3 skip`)." Apply only the accepted rows, only after the reply.
+**Shape B (user-written target):** make no edit. Print the changes as a numbered slate instead — one row per change, what moves, where, why, in the plan's own vocabulary — closing with the escape hatch: "Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)." Apply only the accepted rows, only after the reply.
 
 Either way: never a verdict on the plan as a whole, never the tower or the per-level questions as visible output — those are working material.
 

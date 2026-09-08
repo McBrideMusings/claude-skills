@@ -94,7 +94,7 @@ done
 pgrep -fl caffeinate
 ```
 
-Before killing any live process, list what you'll kill and get an explicit yes (it's a `kill`). Prune dead pidfiles freely — that's just file cleanup.
+Before killing any live process, list what you'll kill and wait for the user to confirm it (it's a `kill`). Prune dead pidfiles freely — that's just file cleanup.
 
 ## `doctor`
 

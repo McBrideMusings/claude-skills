@@ -43,6 +43,6 @@ Bootstrap audit — <project name>
 | Issue tracker          | gh ok                                          |
 ```
 
-When the table contains proposed migrations, close it with the escape hatch: *"Type `go` to run every proposed action, or answer per row (`3 skip, 7 accept`)."* Then proceed to [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md); the user can still redirect any migration as the walk proceeds.
+When the table contains proposed migrations, close it with the escape hatch: *"Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)."* Then proceed to [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md); the user can still redirect any migration as the walk proceeds.
 
 **A PRD or a roadmap is not probed for and not a row in this table.** Bootstrap neither creates nor migrates either one — see [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md) for why, and for where a handed-over source document goes instead.

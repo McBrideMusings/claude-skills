@@ -72,7 +72,7 @@ Before presenting, run 2–3 escalation rounds over the draft steering recommend
 
 Close with one numbered slate of recommended moves, highest-leverage first, each carrying its disposition pick (`tickets` — hand to `backlog spec` to spec and file; `note` — record in the report only; `skip`). Anything requiring only the user (hardware, ears, consent, credentials) is labeled as such, never assigned a disposition.
 
-End with the standard escape hatch: *"Type `go` to apply my picks as described, or answer per item (`1 tickets, 3 skip`)."* On `go`, invoke `backlog spec` for the `tickets` items and stop there — implementation is a separate invocation.
+End with the standard escape hatch: *"Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)."* On `go`, invoke `backlog spec` for the `tickets` items and stop there — implementation is a separate invocation.
 
 ## Rules
 

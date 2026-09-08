@@ -17,7 +17,7 @@ Both `docs/` and `.vitepress/` exist. Verify alignment, apply mechanical fixes s
 
 ## Substantive (propose with diff, ask first)
 
-Present every substantive hit as one numbered slate, closed with the escape hatch: *"Type `go` to apply every proposal, or answer per item (`1 skip, 2 apply`)."* Default when nobody can answer (findings-only, or an unattended run): propose only, apply nothing.
+Present every substantive hit as one numbered slate, closed with the escape hatch: *"Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)."* Default when nobody can answer (findings-only, or an unattended run): propose only, apply nothing.
 
 1. **Legacy planning docs** (`docs/roadmap.md`, `docs/roadmap/`, `ROADMAP.md`, `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/`, non-standard top-level files) → open issues on the repo's tracker for genuinely uncovered work, then delete source. Cross-reference existing issues before bulk-creating.
 

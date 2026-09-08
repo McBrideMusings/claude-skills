@@ -163,13 +163,13 @@ Per slice show:
 
 For a UI slice, also show its **reference frame** — the `docs/spikes/<slug>/<state>.png` it's built against — and the state names it claims to cover.
 
-Ask:
+Ask, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set — one numbered question per row below, each with lettered picks (accept as shown / adjust) and your own recommendation marked:
 
-- Does the granularity feel right? (too coarse / too fine)
-- Are dependencies correct?
-- Should any slices be merged or split further?
-- Are HITL / AFK classifications right?
-- For UI slices: are the states complete, and is each one screenshotted?
+1. Does the granularity feel right?
+2. Are dependencies correct?
+3. Should any slices be merged or split further?
+4. Are HITL / AFK classifications right?
+5. For UI slices: are the states complete, and is each one screenshotted?
 
 Iterate until approved.
 

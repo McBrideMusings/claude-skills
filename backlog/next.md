@@ -203,7 +203,7 @@ Append this prompt:
 1C. <option>
 ```
 
-Build 2–4 options, lettered under question 1 per `CLAUDE.md` §Deciding & designing, in this order:
+Build 2–4 options, lettered under question 1 per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set, in this order:
 
 - **1A.** Top scored recommendation — **named** like `SFTP pool hygiene (#297, #295)` or `HLS mutex stall (#286)`. Never bare issue numbers. Then scope + why.
 - **1B.** Next-best group / "also worth attention" — same naming.
@@ -235,7 +235,7 @@ After Phase 09 produces a working change, don't leave the user dangling — `bac
 ```
 Backlog next's work is done. Wrap up? Reply with a number, or tell me something else.
 
-1. Wrap up now (recommended) — invoke the wrap-up skill to commit, push, file follow-ups, and update tracking.
+1. Wrap up now [recommended] — invoke the wrap-up skill to commit, push, file follow-ups, and update tracking.
 2. Keep working — stay on the current branch to test, iterate, or extend. No commit, no wrap-up.
 3. Just commit — create a commit on the current branch without running the rest of wrap-up, for when the change should be captured but isn't ready for the full close-out.
 ```

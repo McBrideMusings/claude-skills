@@ -49,7 +49,19 @@ It is a **map, not a conclusion.** It tells an aspect where to look; it never te
 
 Print the applicable aspect list, one line each, with what that aspect will actually run. Then wait. The user can trim it, pick a subset, or abort. **Never fan out without this yes** — a survey is a dozen sub-agents.
 
-RULE 0 binds here: plain chat text, typed answer. *"Running: architecture, tests, ui, layout, claude-md. Type `go`, or name the ones you want (`architecture tests`), or `skip <aspect>`."*
+RULE 0 binds here: plain chat text, typed answer, one numbered row per aspect carrying its default in brackets:
+
+```
+1. architecture [run]
+2. tests [run]
+3. ui [run]
+4. layout [run]
+5. claude-md [run]
+
+Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
+```
+
+Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 
 ## Phase 03 — Assemble the briefs
 
@@ -160,7 +172,7 @@ The ranking input is leverage and dependency order — what a change unblocks, w
    **Never compress the shape into a name on the way in.** "Make the intake module deep" is not a ticket; the three-function collapse with its three call sites is. A ticket whose body cannot be handed to `implement` without another survey has lost everything the pass paid for.
 3. **Classify each AFK or HITL**, per `backlog spec` — AFK where the shape is settled and a worker can land it unattended, HITL where a decision the survey marked `Assumed` or `Unknown` has to be made by a human first. A finding whose fix depends on an assumption is HITL, and the assumption goes in the body as the question to answer.
 4. **Carry the Phase 06b order in** as the dependency chain — `blocked-by` on beads, the stated prerequisite in the body on GitHub.
-5. **Hand off to `backlog spec`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. `backlog spec` writes the proposal to `/private/tmp/claude/<repo-slug>/backlog-spec.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine.
+5. **Hand off to `backlog spec`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. `backlog spec` writes the proposal to `/private/tmp/claude/<repo-slug>/backlog-spec.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine. The confirm itself is a slate row per ticket, closed per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 6. **Report back**: the ticket ids and titles in Phase 06b order, then one line naming what to run next — `implement <first-id>` for one, `implement swarm <selector>` for the slate.
 7. **Remove the survey-active marker**: `rm -f "$(~/.claude/tools/repo-slug --path)/.improve-active"`. This re-enables `AskUserQuestion` (RULE 0's enforcement, `hooks/improve-askuserquestion-guard.sh`). Run it even when the pass aborted before filing tickets — this step is what ends the ban, not the ticket count.
 

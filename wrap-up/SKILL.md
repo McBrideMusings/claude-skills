@@ -190,7 +190,7 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 ### Step A — Resolve follow-ups (must fully settle before summarizing)
 
-Invoke the `backlog file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix now**, **file**, or **skip**.
+Invoke the `backlog file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
 
 **Posture (from the Pass-mode gate above — prove `continuous` or you are interactive):**
 
@@ -205,28 +205,27 @@ Invoke the `backlog file` skill in Generate mode to surface candidates from this
 
 *Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work and whether to relay into it. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the whole question fits in this one message. When relay is unavailable, drop the Next-work section and ask only the dispositions.
+Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the whole question fits in this one message. When relay is unavailable, drop question 2 and ask only the dispositions.
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
 > ⛔ **Do not restate the sections as a question.** A trailing block that repeats *"Follow-ups — … / Next work — … / Relay — …"* under headings the reader just read is the same content twice, and in a terminal the block-quote glyph makes it read as a pulled quote of the message it is part of. The lists already say what the choices are; the ask only has to say how to answer.
 
-Shape — three plain sections, then one sentence:
+Shape — the follow-up slate, then (when relay is available) a second question for next work, then one closing sentence:
 
-- **Follow-ups** — the numbered candidate list. Each item's own line ends with its default in brackets: `[fix now]`, `[file]`, `[skip]`.
-- **Next work** — `A` / `B` / `C`, one line each, the recommended one marked `(default)`. Omit when relay is unavailable.
-- **Relay** — one line only when the default is *not* yes (unavailable, or you are recommending against it). A yes-by-default relay needs no line; the closing sentence already names it.
+- **Follow-ups** — the numbered candidate list, one row per item, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row. Each row ends with its default in brackets: `[fix]`, `[file]`, `[skip]`.
+- **What's next?** — omit entirely when relay is unavailable. Otherwise **question 2** per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set, with options `2A` / `2B` / `2C`, one line each, the recommended one marked ` — my pick`. No relay candidate ranked worth doing → this question still prints with a `No relay — stop after landing` option carrying the pick instead.
 
-Then exactly one sentence, no block-quote, no heading:
+Then exactly one sentence, no block-quote, no heading, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch:
 
-`Reply` **`go`** `for the defaults — A, relay on — or` **`park`** `for the same dispositions with no next work, or override: e.g.` **`fix 1, B, no relay`**`.`
+> Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`).
 
-`go` accepts all defaults. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. `no relay` keeps the pane and ends the turn normally after Step C. Drop `park` from the sentence when relay is unavailable: with no Next-work section there is nothing for it to decline.
+`go` accepts every default, including the picked next-work option, and relays into it. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition. Drop `park` from the sentence when relay is unavailable: with no question 2 there is nothing for it to decline.
 
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
 *Act pass* — only after every disposition is recorded, execute by group:
-1. **Fix now** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change.
+1. **Fix** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change.
 2. **File** — batch-file issues on the resolved backend (`bd create` or `gh issue create`); capture the new IDs/URLs for Step B. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
 3. **Skip** — drop.
 
@@ -234,7 +233,7 @@ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or
 
 ### Step B — Summarize
 
-**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat with **Files changed / Unchanged / Follow-up needed** and **Run:** / **Look for:** steps.
+**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections.
 
 Invoke the `handoff` skill **with the `write` token** — `handoff write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `handoff` writes the terse fresh-agent doc, not this. `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong skill here.)
 
@@ -274,7 +273,7 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 **Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never close an issue here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (On a beads repo in mirror mode, `#<n>` is the mirrored GitHub number — it's the `external_ref` field on the bead, `gh-<n>`. A bead with no external ref has no GitHub issue to close; list it in the summary instead.) (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
 
 **PR body format.** Short. A 2-4 sentence summary, then a flat `## Changes` bullet list, one line per bullet — never a paragraph packed into a bullet, never a sub-clause explaining a bullet's own rationale at length. No `## Test plan` checklist: which commands passed is for us, not the reviewer, and CI already shows it. A genuine manual reviewer step (open this screen, confirm X) gets its own short `## How to verify` line — a step for *them* to do, not a log of what you already did. Deep investigation detail (a forensic timeline, "why this took 3 days to find") belongs in a linked doc, not the body — link it, don't inline it. Every paragraph and every bullet is one continuous line: GitHub renders a mid-paragraph newline as a real line break, not a soft wrap, so terminal-style wrapping shows up as choppy broken lines. Reference shape: `Forevr-Games/social-poker#1912`'s body after its rewrite.
-- **Interactive pass** → **offer** the PR (only on an explicit yes in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines). If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
+- **Interactive pass** → **offer** the PR (only on a confirmation in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines). If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
 - **Continuous pass authorized by a queued or swarmed `/implement`** → **create the PR autonomously.** Starting `/implement <selector>` or `/implement swarm <selector>` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the run's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
 
   > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy the multi-item run's "PR on collaborative repos" contract. A single `/implement <issue>` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the run authorized publishing, treat the pass as interactive and offer rather than create.

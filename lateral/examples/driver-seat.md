@@ -60,6 +60,6 @@ The backlog is your document, so nothing above got edited yet — here's the sla
 3. **Replace vague acceptance thresholds ("fast enough") with `admin bench dashboard` and a number (400ms) across the epic**, in each ticket's acceptance criteria, because an unmeasurable criterion can't be run and read back by an agent.
 4. **Add an `admin.toml` `verify <slice>` task and point all 40 tickets' verification steps at it**, in `admin.toml` plus every ticket body, because 40 copy-pasted blocks have no shared, accretive surface for the next epic's tickets to call.
 
-Type `go` to apply every row, or answer per row (`1 apply, 3 skip`).
+Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 
 Once the accepted rows land: run driver-seat again after the next epic is sliced, or start `implement` on ticket 1 now that the tower has handles at every level.

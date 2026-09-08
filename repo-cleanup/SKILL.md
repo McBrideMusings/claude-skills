@@ -123,7 +123,7 @@ Orphan worktrees (`orphan_worktrees` in the JSON: detached or prunable) get one 
 
 Close with, and never with any other accept word:
 
-> Type `go` to apply my picks, or answer per row (`3 extract, 7 keep, rest go`).
+> Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 
 ## Step 5 — execute
 

@@ -37,11 +37,12 @@ On more than one finding, list each with its own line so the user can answer per
 **Every such list carries your own recommendation per item, and ends with the accept-all line —
 always:**
 
-> Type **`go`** to apply my picks exactly as described, or answer per finding (`1 fix, 2 post, 3 skip`).
+> Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 
 A findings list with no recommendation is a non-answer (`CLAUDE.md`, Deciding & designing); one
 with recommendations but no way to accept them wholesale makes the user re-type a decision they
 already agree with. `go` means *the picks as stated*, skips included — never "fix everything".
+Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 
 **ONE slate per message, and `go` takes all of it.** Everything still waiting on the user at the
 end of a pass goes in a single numbered list — findings, a push, a re-request, arming auto-merge,
@@ -57,7 +58,7 @@ hides the reasoning behind a click; `go` is typed chat text meaning "apply the d
 already printed and reasoned about on every line above." **It is also the only accept word this
 skill ever asks for** — a single-action offer closes with `go` too, never `yes` / `post` /
 `approve` / `confirm` (`CLAUDE.md`, Deciding & designing). It is available whenever **every** line in the list carries a
-`(recommended)` keyword — if any line has no clear recommendation (two keywords with neither
+bracketed default keyword — if any line has no clear recommendation (two keywords with neither
 marked, or a genuine "your call" case), that item is excluded from what `go` covers and must
 still be typed individually; say so in the same message as the list (`go covers 1–2; 3 has no
 clear recommendation — type its disposition separately`).

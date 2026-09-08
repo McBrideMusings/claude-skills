@@ -244,7 +244,7 @@ prompt. Close the slate with `CLAUDE.md`'s escape hatch:
 >    3-point response block above and re-request @alexthemighty, who reviewed `4c1f9ab` before
 >    any of them existed. My pick: all three.
 >
-> Type `go`, or `1 skip` to leave the branch as it is.
+> Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 
 **One slate, one keyword, however many rows.** Two prompts at the bottom of one message —
 `push` / `hold` on one line and `re-request` / `skip` on the next — is the failure this phase

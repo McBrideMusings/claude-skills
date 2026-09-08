@@ -28,7 +28,7 @@ Findings are produced without a fix (Phase 04), scored by reading (Phase 05), **
 - If invoked with any other argument (e.g. `review HEAD~3`, `review v1.2.3`, `review feature-branch`), use it as the fixed point. Diff is `git diff <fixed-point>...HEAD` (three-dot — comparison against merge-base). Commit list: `git log <fixed-point>..HEAD --oneline`.
 - Else if there are uncommitted changes (unstaged or staged): review those via `git status` + `git diff`.
 - Else if working tree is clean: find the base branch (`main` / `master`), compute `git merge-base HEAD origin/main`, then diff and log against that.
-- If no changes anywhere (clean tree, up to date with base — nothing to diff): **offer Repo mode instead of stopping.** Ask in plain chat — *"Nothing to review as a diff — run a full-repo review? It's heavy: every axis across the whole tree."* On an explicit yes, go to **Phase 01r**; otherwise say there's nothing to review and stop. **Never auto-run the full scan** — it always waits on a yes.
+- If no changes anywhere (clean tree, up to date with base — nothing to diff): **offer Repo mode instead of stopping.** Ask in plain chat — *"Nothing to review as a diff — run a full-repo review? It's heavy: every axis across the whole tree."* On a yes, go to **Phase 01r**; otherwise say there's nothing to review and stop. **Never auto-run the full scan** — it always waits on a yes.
 
 **Preflight (fixed-point mode only).** Before continuing to Phase 02, confirm the fixed point actually resolves (`git rev-parse <fixed-point>`) and the resulting diff is non-empty. A typo'd branch/SHA/tag, or a ref that resolves but produces no diff against HEAD, should fail here with a clear message — not silently produce an empty review after Phase 04 has already launched ten parallel sub-agents.
 
@@ -313,6 +313,9 @@ Runs only for findings that came back `reproduced` in Phase 05b and got a mechan
 
 ## Report format
 
+Each issue entry follows [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Finding (additive — the
+File/Spec/Bites/Verified/Fix fields below extend it, not replace it).
+
 The report **opens with a single high-level summary sentence** — no `# Review` H1, no `Reviewed/PR/Spec/Date` metadata block, no separate "what this changes" section. That one sentence *is* the top line: how many issues were found, which ones block (call out the broken-behavior ones by their number) and which are non-blocking quality notes. Then the **coverage line**, then the issue list grouped by axis. There is no filename to carry the date/scope — say the branch or PR once, in the summary sentence, if it isn't already obvious from the chat above it.
 
 ### Clean verdict → collapse to one or two sentences, full stop
@@ -327,13 +330,12 @@ summarized. State the verdict, not the evidence for it:
 
 > Reviewed, looks good, checks passed. No issues found.
 
-**Overrides the global closing convention for this case only.** The global "Files changed /
-Unchanged / Follow-up needed" three-section closer and its manual-testing-steps block describe a
-coding task; a clean review-only pass changed no files, so all three sections would read "none" /
-"everything" / "none" — which is what the one-liner above already says, just as three headers
-instead of four words. Skip that closer here. It comes back the moment a finding gets fixed on the
-branch, because now files actually changed and the global format is answering a real question
-again.
+**Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections for this case only.** Its
+three-section closer and its manual-testing-steps block describe a coding task; a clean
+review-only pass changed no files, so all three sections would read "none" / "everything" /
+"none" — which is what the one-liner above already says, just as three headers instead of four
+words. Skip that closer here. It comes back the moment a finding gets fixed on the branch,
+because now files actually changed and §Closing sections is answering a real question again.
 
 If CI needed an action, name the action in a clause, not a paragraph — `re-ran a flaky check
 (check-cloudflare-test), now green`, not an account of reproducing it locally, isolating it, and

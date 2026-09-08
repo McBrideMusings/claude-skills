@@ -26,7 +26,8 @@ Three parts, in this order, and never interleaved:
    reads the whole set before being asked anything about it.
 2. **The disposition list** — one line per finding, keywords, the recommended one marked.
 3. **Beneath the recommended disposition, a blockquote of the text that disposition would
-   actually put on GitHub.** Not the text some other branch of the offer would put there.
+   actually put on GitHub** — a [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Proposed body. Not the
+   text some other branch of the offer would put there.
 
 ### The quoted body must be the body of the path you recommend
 
@@ -48,18 +49,19 @@ one already printed above (or that you'll draft it if they pick that branch).
 
 ## The disposition list
 
-One line per finding, its keyword options, and the recommended one leading with its rationale as
-a clause — not a paragraph. Never an option menu.
+One line per finding, its keyword options, and the recommended one carried as a trailing `[verb]`
+bracket at the end of the line — not a paragraph, never an option menu. Shape:
+[`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row.
 
 ```
-1. [bug · T1 · high] <one-line finding> — verified `reproduced` — `post` (recommended — blocking, reproduces) · `fix` · `skip`
-2. [best-practice · T2 · low] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip`
-3. [slop · T2 · low] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`)
+1. [bug · T1 · high] <one-line finding> — verified `reproduced` — `post` · `fix` · `skip` [post]
+2. [best-practice · T2 · low] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip` [fix]
+3. [slop · T2 · low] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`) [skip]
 
-Type a disposition per finding, e.g. `1 post, 2 fix, 3 skip` — or `go` to accept every listed `(recommended)` keyword at once.
+Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 ```
 
-`go`'s exact scope is RULES.md's; it covers only lines carrying a `(recommended)` keyword, and a
+`go`'s exact scope is RULES.md's; it covers only lines carrying a bracketed default, and a
 line without one must be typed individually.
 
 **Which offers run depends on the route** (see [SKILL.md](SKILL.md) Phase 00):

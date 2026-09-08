@@ -96,18 +96,14 @@ These bind every lens, not just `negative-space`. When more than one offers an a
 
 ## RULE — a disposition list ALWAYS states that `go` accepts it
 
-**Every disposition block ends with the escape hatch, without exception.** Give your own pick for each item, then one line saying the whole set can be accepted as-is:
-
-> Type **`go`** to apply my dispositions exactly as described, or answer per item (`1 fix, 5 file, rest skip`).
-
-Two failure modes this closes, both real:
+**Every disposition block ends with the escape hatch, without exception.** Two failure modes this closes, both real:
 
 - **A list with picks but no accept-all** makes the user re-type a decision you already made. They read eight findings, agree with all eight, and then have to enumerate them back.
 - **A list with no picks at all** is the `CLAUDE.md` violation one level up — *"a list with no pick is a non-answer"*. Dispositions are recommendations, so every item carries yours.
 
-The word is **`go`**, matching `improve`'s existing *"Type `go`, name a subset"*. Do not invent a synonym (`apply`, `yes`, `all`) — one keyword across every skill is the point. `go` means *your stated picks*, including the ones you marked skip; it never means "fix everything".
-
 There is exactly one sanctioned second word, and it is not a synonym: **`park`** applies the identical dispositions and then stops. It appears only on a slate that also proposes next work — `go` continues into that work, `park` ends the turn. An audit slate that proposes none names `go` alone.
+
+Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 
 ## RULE — effort never kills a finding
 

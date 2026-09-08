@@ -61,40 +61,27 @@ Otherwise, build 2–3 candidates. Rank them on all four of these, not just the 
 
 ## Step 2 — the proposal
 
-One message. **Every default rides on the item it belongs to, and the ask is one
-sentence.** Numbered so a reply can be terse.
-
-The closing line is one plain sentence asking how to answer — the lists above already say what the choices are.
+One message, same shape as [`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step A's
+follow-up-plus-next-work ask, which this skill's own proposal follows: the follow-up
+candidates as slate rows per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row, then, when
+proposing a next body of work, **question 2** per §Option set, with options `2A` / `2B` /
+`2C`, pick marked ` — my pick`, no `(default)` marker, then the canonical park hatch from §Hatch
+naming the picked next work. `no relay` is this skill's own per-row redirect word on top of that
+hatch — it declines the relay half of a `go` without changing any follow-up disposition.
 
 Plain markdown, no fenced block — a code fence renders as literal text and reads like
-output rather than a question:
+output rather than a question.
 
-**Follow-ups**
-1. **&lt;title&gt;** — one line. *[fix now]*
-2. **&lt;title&gt;** — one line. *[file]*
-3. **&lt;title&gt;** — one line. *[skip]*
-
-**Next work**
-- **A** *(default)* — &lt;title&gt;. &lt;one line: why this one&gt;
-- **B** — &lt;title&gt;. &lt;one line&gt;
-- **C** — &lt;title&gt;. &lt;one line&gt;
-
-Then one sentence: *Reply* `go` *for the defaults — A, relay on — or override: e.g.*
-`fix 1, B, no relay`. `no relay` is this skill's `park`.
-
-Add a **Relay** line only when the default is not yes — relay unavailable, or you are
-recommending against it. A yes-by-default relay is already named in that sentence.
-
-`go` accepts everything. Anything else is a free-text override; apply it and, when
-the override changes what the next prompt should say, restate the resulting plan in
-one line before proceeding.
+`go` accepts everything, including the picked next-work option, and relays into it. Anything
+else is a free-text override; apply it and, when the override changes what the next prompt
+should say, restate the resulting plan in one line before proceeding.
 
 `no relay` means: apply the follow-up dispositions, then end the turn normally. The
 pane stays. Nothing is cleared.
 
 ## Step 3 — apply follow-up dispositions
 
-**fix now** — do it in this session, commit, push. Do this *before* writing the
+**fix** — do it in this session, commit, push. Do this *before* writing the
 marker, since the relay is going to erase your ability to.
 **file** — `backlog file` skill, filed to the tracker.
 **skip** — silent. Do not mention it again.
@@ -246,7 +233,7 @@ the work, and logs why to `/private/tmp/claude/<repo-slug>/relay/relay.log`.
 
 ## `relay auto`
 
-Skips Step 2 entirely: no proposal, no halt. Files every follow-up (never fix-now,
+Skips Step 2 entirely: no proposal, no halt. Files every follow-up (never fix,
 never skip), writes the marker, ends the turn.
 
 Two callers, and they differ in who writes the prompt:

@@ -45,8 +45,7 @@ proposed fix as the text that would be written.
 Dispositions per row: `fix` (rewrite the definition), `add` (write the missing term),
 `drop` (delete the entry), `skip`.
 
-Close with: *"Type `go` to apply my picks as described, or answer per item
-(`1 fix, 5 drop, rest skip`)."*
+Close with: *"Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)."*
 
 Nothing is written before that answer — the same gate every other vocabulary write goes
 through (`CONTEXT-FORMAT.md`). An `add` or `fix` row already carries its full proposed text,

@@ -54,7 +54,7 @@ When an item clears, it does not invent vocabulary — it becomes one more row o
 3. Dispatch cc-111 as an implement pass — AFK, nothing blocks it. My pick: dispatch.
 ```
 
-`go` takes it with the rest of the slate. `3 skip` declines just that row. `park` applies every disposition, including this one, and stops rather than continuing into the dispatch. This is the machinery the user's own global instructions already define — a slate row accepted IS the ask, `go` is the only accept word, and `park` is the second word a slate that proposes next work names — so no third accept word is added here, and none should be added later.
+`go` takes it with the rest of the slate. `3 skip` declines just that row. `park` applies every disposition, including this one, and stops rather than continuing into the dispatch. This is the machinery the user's own global instructions already define — a slate row accepted IS the ask, `go` is the only accept word, and `park` is the second word a slate that proposes next work names — so no third accept word is added here, and none should be added later. Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 
 Known cost: a dispatch row looks like every other row, so `go` can launch several workflows by momentum. Mitigate by naming the count in the row whenever it is more than one item: `Dispatch 4 items as a swarm — cc-111, cc-105, cc-140, cc-162`.
 

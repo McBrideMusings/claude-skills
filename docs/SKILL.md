@@ -24,16 +24,17 @@ These three apply everywhere, in any skill, not only while this skill's phases a
 load the linked format file when you need the detail, but the rule itself must be reachable in
 one hop the turn it's needed.
 
-- **Vocabulary.** A term is a slate row (term, the one-line definition as it will be written,
-  displaced aliases, where it's already used) before it reaches `docs/CONTEXT.md` — the write
-  happens on `go`, never inline mid-conversation. A changed definition shows `From:` and `To:`
-  in full. Audit with `/docs glossary`. Format: [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
+- **Vocabulary.** A term is a slate row before it reaches `docs/CONTEXT.md` — the write happens
+  on `go`, never inline mid-conversation. A changed definition is a proposed body, `From:`/`To:`
+  in full. Shape: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Proposed body. Audit
+  with `/docs glossary`. Format: [CONTEXT-FORMAT.md](CONTEXT-FORMAT.md).
 - **ADR.** The three-conditions test (hard to reverse, surprising without context, a real
-  trade-off) applies in any session, not only an interview. A passing decision is a slate row
-  the turn it's made, **carrying the full proposed body — and for a change, the current body
-  beside it**. **ADRs are never amended:** git holds the history, the file holds only what is
-  true now, and any ADR carrying an amendment, a date-stamped revision, a ticket id or more
-  than 15 lines gets rewritten the turn you open it. Format: [ADR-FORMAT.md](ADR-FORMAT.md).
+  trade-off) applies in any session, not only an interview. A passing decision is a proposed
+  body the turn it's made, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Proposed body — and for
+  a change, the current body beside it. **ADRs are never amended:** git holds the history, the
+  file holds only what is true now, and any ADR carrying an amendment, a date-stamped revision, a
+  ticket id or more than 15 lines gets rewritten the turn you open it. Format:
+  [ADR-FORMAT.md](ADR-FORMAT.md).
 - **Subsystem.** A subsystem that crosses a process/host/service boundary (or is the project's
   main job), can't be reconstructed from one file, and carries an invariant or ordering a
   reader would get wrong, is a slate row proposing `docs/<name>.md` — offered the turn it's
