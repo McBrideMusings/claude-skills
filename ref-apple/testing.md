@@ -36,6 +36,32 @@ Use `ios-simulator-skill` for build + simulator-boot + XCUITest runs. For a plai
 the project's admin runner (`./admin test`) or `xcodebuild test` / `swift test` is enough and
 doesn't need a booted simulator — prefer it for speed in the `tdd` red→green loop.
 
+**Build with warnings as errors.** A Swift warning in a log the agent never reads is a bug that
+ships. Pass both to every `xcodebuild build` and `xcodebuild test`:
+
+```bash
+xcodebuild … GCC_TREAT_WARNINGS_AS_ERRORS=YES SWIFT_TREAT_WARNINGS_AS_ERRORS=YES
+```
+
+`SWIFT_STRICT_CONCURRENCY=complete` belongs beside them **on a project that already compiles under
+it**. Turning it on for the first time on an existing codebase produces hundreds of errors at once;
+that is a planned migration, not a build-settings change, so propose it as its own issue rather than
+adding the flag mid-task.
+
+**Piping `xcodebuild` through a formatter throws away its exit status.** `xcodebuild … | tee
+build.log | xcbeautify` exits with the *formatter's* status, so a failed build reports success to
+whatever called it. Read `PIPESTATUS[0]` instead:
+
+```bash
+set +e
+xcodebuild … 2>&1 | tee "$LOG" | xcbeautify
+status=${PIPESTATUS[0]}
+set -e
+```
+
+`build-runner` is the better answer when the goal is keeping build output out of context — it reads
+the whole log in its own context and reports only failures. This is for the one-off pipeline.
+
 **Never locate a built app by globbing DerivedData.** `find DerivedData -name '*.app' | head -1`
 returns whichever product directory the filesystem hands back first — an older build, another
 target, or another checkout's output. An orchestrator did exactly this and reported a shipped

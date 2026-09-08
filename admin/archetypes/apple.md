@@ -228,6 +228,23 @@ mac_asset_dir = "App/Assets.xcassets/AppIcon.appiconset"
 - The dev build auto-gets: DEV banner (overlaid → flattened to RGB → restored
   after build) and the renamed `.app`.
 
+### Warnings as errors belongs in the project spec, not in `admin.toml`
+
+Every Apple project should build with `GCC_TREAT_WARNINGS_AS_ERRORS=YES` and
+`SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` (rationale in `ref-apple/testing.md`). Put
+them in the XcodeGen/Tuist spec's `settings:` block, not on an `admin` action —
+the archetype has no key for extra `xcodebuild` settings, and a spec-level
+setting reaches `admin build`, `admin dev`, a plain `xcodebuild`, CI and Xcode
+itself, which a per-action flag would not.
+
+```yaml
+# project.yml
+settings:
+  base:
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+```
+
 ## Signature check as a scheme build post-action
 
 Every apple-archetype project can wire the same shared script as a scheme
