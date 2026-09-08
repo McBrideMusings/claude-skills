@@ -7,6 +7,9 @@ user_invocable: true
 
 # Repo cleanup
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 A mechanical cleanup tool (herdr's ⇧X panel, `git-delete-merged-branches`, a shell alias) can
 only clear the branches whose worktrees are clean. Every branch with an uncommitted file sits at
 `held` forever, because the tool cannot know whether that file is a fix worth keeping or a stray

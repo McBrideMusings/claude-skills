@@ -28,7 +28,7 @@ This skill **captures** follow-ups — it creates tracked items. *Browsing, pick
 | Invoked by `/wrap-up`, or "generate followups from this session" | Generate |
 | "clean up resolved", "move resolved followups" | Cleanup |
 
-**"show / list my followups", "what followups do I have", "let's work on a followup", "pick a followup"** → that is **`backlog next`**, not this skill. Hand off to it; don't list or start items here.
+**"show / list my followups", "what followups do I have", "let's work on a followup", "pick a followup"** → that is **`backlog next`**, not this skill. Invoke it; don't list or start items here.
 
 If ambiguous, assume **Add** (capture) — unless the user clearly wants to see or choose something, in which case route to `backlog next`.
 
@@ -147,4 +147,4 @@ If the user says "none", write nothing. Do not split items across destinations. 
 
 ## Scope: this skill stops at filing
 
-Do not write a handoff. Handoffs are a separate, user-invoked concern: if a user wants one, they invoke `/handoff` directly. No skill writes handoffs on the user's behalf.
+Do not write a session summary or a briefing document. Neither is this skill's job — it creates tracked items and nothing else.

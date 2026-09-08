@@ -5,13 +5,18 @@ description: "Autonomous work on tracked items, one background agent per item. `
 
 # /implement — run passes, verify them, land them
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 One **pass** is one tracked item, worked end to end by a single `implementer` agent in its own worktree, ending at a commit. This session is the orchestrator: dispatches it, re-checks it, lands it, closes it. **Arity is the only difference between these three** — a pass doesn't know which is happening.
 
 | | What this session does |
 |---|---|
 | `implement <issue>` | one pass, land it, stop |
-| `implement <selector>` | a pass, land, next — one at a time |
+| `implement <selector> queue` | a pass, land, next — one at a time |
 | `implement swarm <selector>` | N passes at once, landed as each returns |
+
+**`implement <issue> inline`** is the one escape hatch, and it is not a pass at all — it never dispatches an agent. The session works the four steps itself, directly, in whatever checkout it already sits in: this session, this checkout, no worktree. Every other arity above dispatches an `implementer` agent as a pass, and a pass always runs in a worktree, no exceptions ([`WORKTREES.md`](WORKTREES.md)) — `inline` sidesteps that rule by not being a pass, not by carving an exception into it. Reach for it only when the user says otherwise.
 
 ## The unit is a slice
 

@@ -1,4 +1,4 @@
-# Handoff — from a cleared item to a running pass
+# Brief — from a cleared item to a running pass
 
 **This document asks for the `Agent` tool.** A session carries a standing instruction not to spawn a subagent unless the user, a `CLAUDE.md` file, or a skill asks for it — this file is the skill asking. A session reaching this document through any calling skill has that condition satisfied and may dispatch an `implementer` per [`SKILL.md`](SKILL.md) directly; it does not need to ask again. This only ever runs from the chat session: an implementer never dispatches another one, so a session driving this from inside an `Agent` call should say so rather than try.
 
@@ -51,7 +51,7 @@ A refinement to that rule: when the only file two briefs share is a **mount file
 When an item clears, it does not invent vocabulary — it becomes one more row on the slate already in front of the user, in plain chat, never a tool-driven picker:
 
 ```
-3. Dispatch cc-111 as an implement pass — AFK, nothing blocks it. My pick: dispatch.
+3. Run cc-111 as an implement pass — AFK, nothing blocks it. My pick: run.
 ```
 
 `go` takes it with the rest of the slate. `3 skip` declines just that row. `park` applies every disposition, including this one, and stops rather than continuing into the dispatch. This is the machinery the user's own global instructions already define — a slate row accepted IS the ask, `go` is the only accept word, and `park` is the second word a slate that proposes next work names — so no third accept word is added here, and none should be added later. Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.

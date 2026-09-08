@@ -20,11 +20,11 @@ In swarm arity, say the split in the report: `slug → sonnet|haiku`, or a count
 
 ---
 
-## Sequential arity
+## Sequential arity (`<selector> queue`)
 
 Resolve the selector into a frozen queue first — issue numbers, `#range`, `label:X`, `milestone:X`, `epic:X`, `followups`, `papercuts`. Then work it one at a time: pass, verify loop, land, next. Re-resolving the selector between items gets a different queue, because the backlog moved while you were landing branches.
 
-Before freezing the queue, apply HANDOFF § 2's mount-file test to any items that would otherwise be sequenced only because they share a file: when that shared file is a mount file, the items leave the sequential queue and go out as a swarm instead. Also size and merge the queue per HANDOFF § 1 and § 2 before freezing it, and name every merge made in the report.
+Before freezing the queue, apply HANDOFF.md § 2's mount-file test to any items that would otherwise be sequenced only because they share a file: when that shared file is a mount file, the items leave the sequential queue and go out as a swarm instead. Also size and merge the queue per HANDOFF.md § 1 and § 2 before freezing it, and name every merge made in the report.
 
 - **Start from the default branch.** A continuous run branches from the head of the canonical line, never from a half-finished feature branch.
 - **Land each before starting the next.** Each pass branches from the *current* head, so two in flight would race into the default branch. This is why sequential is sequential and not a `pipeline()`.
@@ -38,7 +38,7 @@ Before freezing the queue, apply HANDOFF § 2's mount-file test to any items tha
 
 Every pass gets its own worktree and they run at once. The human is involved at exactly two moments: the gate before anything is dispatched, and the report after. In between there is no channel from a pass back to a person, and no way for one to exist. An item that turns out to be ambiguous costs its whole dispatch and waits for a `backlog shape` pass.
 
-**The scope gate, before anything is dispatched.** Read every in-scope issue and confirm each one is actually ready — a concrete plan, named files, an objective acceptance check. Exclude automatically and without asking: anything unlabelled or untriaged, anything whose body is a question, anything touching migrations, auth, payments, or deletion paths, and anything naming paths in two repos (see [`WORKTREES.md`](WORKTREES.md) Cross-repo items) — split it into one item per repo before it is dispatched. Size and merge the round per HANDOFF § 1 and § 2 here too: an under-floor item is merged into its in-scope neighbour before the round is dispatched, never dispatched alone. State what you excluded and merged, and why.
+**The scope gate, before anything is dispatched.** Read every in-scope issue and confirm each one is actually ready — a concrete plan, named files, an objective acceptance check. Exclude automatically and without asking: anything unlabelled or untriaged, anything whose body is a question, anything touching migrations, auth, payments, or deletion paths, and anything naming paths in two repos (see [`WORKTREES.md`](WORKTREES.md) Cross-repo items) — split it into one item per repo before it is dispatched. Size and merge the round per HANDOFF.md § 1 and § 2 here too: an under-floor item is merged into its in-scope neighbour before the round is dispatched, never dispatched alone. State what you excluded and merged, and why.
 
 **No pass ever lands its own work.** A pass ends at a commit and runs no `git push` at all, so there is nothing to route around. `hooks/landing-guard.sh` makes that structural rather than remembered: one of its two predicates is that the caller is a subagent (the other is a worktree marked SELF-LAND), and on that one it denies `git push`, `git merge` into the default branch, `gh pr`/`gh issue` writes and `bd` writes from any implementation subagent. Prose instructions not to push have not held on their own; agents merged into `main` and closed their own issues against explicit clauses repeated four times.
 
@@ -48,7 +48,7 @@ The Land bead exists for the same reason: it is a slate row, taken with `go`, ne
 
 **Copy each verdict into the repo's own directory before removing a worktree.** `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json` is keyed to a directory that is about to stop existing. The repo's copy is the one a later reader can find; without it, the outside view is indistinguishable from a swarm that skipped verification. Take the copy *after* the last `rechecks` append — a copy taken before a later round leaves the repo's copy reading stale for a branch that was actually re-verified. If you append a `rechecks` entry after already copying, re-copy before `worktree remove --force`.
 
-**Never edit files that every change appends a row to** — a changelog, a file map, a component registry. Every sibling branch collides on them by construction. Passes return the rows in `followups` instead and you write them after landing. A mount file is the same shape — a root component, router table, barrel `index.*`, or plugin list that briefs only ever append a line or a block to — and HANDOFF § 2 says how the brief gets rewritten so the pass returns the mount lines in `followups` instead of editing the file directly.
+**Never edit files that every change appends a row to** — a changelog, a file map, a component registry. Every sibling branch collides on them by construction. Passes return the rows in `followups` instead and you write them after landing. A mount file is the same shape — a root component, router table, barrel `index.*`, or plugin list that briefs only ever append a line or a block to — and HANDOFF.md § 2 says how the brief gets rewritten so the pass returns the mount lines in `followups` instead of editing the file directly.
 
 **Keep rounds small enough that a bad brief does not burn the frontier.** A round of N items is N passes at once; watch the running total in `/tasks`.
 

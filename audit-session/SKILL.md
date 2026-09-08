@@ -103,7 +103,7 @@ These bind every lens, not just `negative-space`. When more than one offers an a
 
 There is exactly one sanctioned second word, and it is not a synonym: **`park`** applies the identical dispositions and then stops. It appears only on a slate that also proposes next work — `go` continues into that work, `park` ends the turn. An audit slate that proposes none names `go` alone.
 
-Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
+Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch. Definitions of `go`, `park`, and the other control words: [`../CONTEXT.md`](../CONTEXT.md).
 
 ## RULE — effort never kills a finding
 

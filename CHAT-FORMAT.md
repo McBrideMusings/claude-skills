@@ -27,6 +27,8 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The shape.** One numbered row per item: a **bolded action naming what physically happens and where** — which file, which tracker, which branch — optionally followed by one to three lines of specifics, with the default `[verb]` bracket at the end of the row's first line. The bracket is the default, not a separate sentence. A row with no default is malformed: `go` would have nothing to mean.
 
+Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
+
 **Worked example:**
 
 > 1. **File slices 1–6 as beads issues** under a new epic, dependencies wired 1→2→3 and 4→5 `[file]`
@@ -115,6 +117,8 @@ All three relays this session logged `agent never went idle; prompting without c
 
 **When it applies.** The end of every option set, slate, or findings list — anything waiting on the user closes with an escape hatch. `go` is the only accept word, whatever the shape of the ask; never `yes`, `post`, `approve`, `ok`, `confirm`, `send`, or a keyword lifted from the action itself.
 
+Definitions of `go`, `park`, and the row verbs: [`CONTEXT.md`](CONTEXT.md). This file owns their shape on the page; that one owns what each word means.
+
 **The three canonical sentences, byte-for-byte up to and including the opening parenthesis of the trailing example, and ending at `).` with nothing after it on the line.** Only the parenthetical's contents vary from site to site — it names two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren.
 
 Slates and findings, no next work pending:
@@ -133,8 +137,9 @@ Option sets (reply grammar is number-first — `1A 2C`, not `A1 C2`):
 
 > 1. Rewrite the retry backoff to exponential `[fix]`
 > 2. Add a dead-letter queue for jobs that exhaust retries `[file]`
+> 3. Migrate the queue schema — blocked on the retention-policy decision `[hold]`
 >
-> Type `go` to apply my picks and continue into the dead-letter-queue design, or `park` to apply them and stop, or answer per row (`1 fix, 2 skip`).
+> Type `go` to apply my picks and continue into the dead-letter-queue design, or `park` to apply them and stop, or answer per row (`1 fix, 2 skip, 3 hold`).
 
 ## Closing sections
 

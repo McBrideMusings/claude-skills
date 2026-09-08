@@ -239,19 +239,19 @@ Cheap and conversational, so **many per session**. No per-session cap.
 
 ```
 <issue name> needs a prototype before you can react to it.
-Say "go" and I'll write the handoff, spawn a subagent to build it, and
-tell you when it's back. Or say "mine" and I'll hand you the handoff to run yourself.
+Say "go" and I'll write the brief, dispatch a subagent to build it, and
+tell you when it's back. Or say "mine" and I'll give you the brief to run yourself.
 ```
 
-On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**, write the handoff and give the user its absolute path plus the exact invocation, then park the issue. Either way **do not block** — park it and continue the queue with the next `decision`.
+On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**, write the brief and give the user its absolute path plus the exact invocation, then hold the issue. Either way **do not block** — hold it and continue the queue with the next `decision`.
 
-**`manual` — hand over a checklist and park.** Precise, ordered steps; what proves it worked; what not to do. The issue stays open and blocked until the user reports back. Only file this once the impossibility is demonstrated — quote the error or name the missing capability, never assume.
+**`manual` — hand over a checklist and hold.** Precise, ordered steps; what proves it worked; what not to do. The issue stays open and blocked until the user reports back. Only file this once the impossibility is demonstrated — quote the error or name the missing capability, never assume.
 
 ### 3b. Record the resolution
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, any legacy `Type: HITL` marker deleted from the body. Show the new body, then write it: `bd update <id> --body-file <path> --acceptance "<check>"` plus `bd label remove <id> human` on beads, `gh issue edit <n> --body --remove-label human` on GitHub. Removing `human` is what makes it AFK — there is no positive AFK label to add. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
 
-  The item is now dispatchable — don't wait for Phase 4 to say so. Check it against [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, `human` gone, listed by `bd ready --json` after `bd recompute-blocked`), and if it clears, add a row to this item's slate in HANDOFF §3's shape (`N. Dispatch <id> as an implement pass — AFK, nothing blocks it. My pick: dispatch.`). `go`, `N skip`, and `park` are the only words — never a new one, never `AskUserQuestion`. The row is offered, not automatic: declining leaves the item open, AFK, and waiting, exactly as today. Running inside an `Agent` call rather than the chat session, skip the row — HANDOFF.md's pre-flight notes `Workflow` is unavailable there, so the offer can't be taken.
+  The item is now runnable as an implement pass — don't wait for Phase 4 to say so. Check it against [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, `human` gone, listed by `bd ready --json` after `bd recompute-blocked`), and if it clears, add a row to this item's slate in HANDOFF.md §3's shape (`N. Run <id> as an implement pass — AFK, nothing blocks it. My pick: run.`). `go`, `N skip`, and `N hold` are the only words — never a new one, never `AskUserQuestion`. The row is offered, not automatic: declining leaves the item open, AFK, and waiting, exactly as today. Running inside an `Agent` call rather than the chat session, skip the row — HANDOFF.md's pre-flight notes `Workflow` is unavailable there, so the offer can't be taken.
 - **Question** → `bd human respond <id> "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue's own label set carries `human`.** Phase 0 tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here. The one exception is Phase 0's hygiene close, in Rules; it does not apply anywhere in Phase 3.
 
 Assets are linked, never pasted.
@@ -269,29 +269,27 @@ Re-run the two tests on the resolved item. Fail → the interview missed somethi
 
 Re-order what remains by leverage and continue at 3a.
 
-**Completion criterion:** the flagged queue is empty, no parked item is still outstanding, and **Not yet specified** is empty — every scoped issue passes the gate.
+**Completion criterion:** the flagged queue is empty, no held item is still outstanding, and **Not yet specified** is empty — every scoped issue passes the gate.
 
 ## Dispatching a subagent
 
-The pattern for `fact` and `artifact` items. The subagent does the expensive building; the user does the reacting, here, in this session.
+The pattern for `fact` and `artifact` items. The subagent does the expensive building; the user does the reacting, here, in this session. This is `dispatch agent` — the default target everywhere ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) owns the ladder). Nothing here meets that ladder's bar for escalating to `split`, `workspace`, `window`, or a vendor: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
 
-The **Agent tool** is the target for this, and it is also the default everywhere (invoke `dispatch` for the ladder). Nothing here meets that ladder's bar for escalating to a separate process: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
-
-1. **Write the handoff.** Invoke the `handoff` skill with the issue as the argument. It captures what the subagent can't infer from the issue body alone — decisions already made this pass, alternatives ruled out and why, the destination from the milestone brief. Note its absolute path.
-2. **Spawn it.** Use the **Agent tool**, `run_in_background: true`, `model: "sonnet"` unless the work is genuinely heavy. The prompt: read the handoff at `<absolute-path>`, read issue `<url>`, run the `research` skill (for `fact`) or the `spike` skill (for `artifact`), write the output under `/private/tmp/claude/<repo-slug>/`, and return its absolute path plus what it found. Tell it to **stop and report rather than guess** if it hits a decision the user owns.
-3. **Note the claim.** Comment on the issue that a subagent is working it, with the handoff path — so a concurrent session skips it.
+1. **Write the brief.** A short file under `/private/tmp/claude/<repo-slug>/` capturing what the subagent can't infer from the issue body alone — decisions already made this pass, alternatives ruled out and why, the destination from the milestone brief. Note its absolute path.
+2. **Dispatch it.** Use the **Agent tool**, `run_in_background: true`, `model: "sonnet"` unless the work is genuinely heavy. The prompt: read the brief at `<absolute-path>`, read issue `<url>`, run the `research` skill (for `fact`) or the `spike` skill (for `artifact`), write the output under `/private/tmp/claude/<repo-slug>/`, and return its absolute path plus what it found. Tell it to **stop and report rather than guess** if it hits a decision the user owns.
+3. **Note the claim.** Comment on the issue that a subagent is working it, with the brief's path — so a concurrent session skips it.
 4. **Keep going.** Continue the queue with the next `decision` item. Never idle waiting on a subagent.
 5. **Report on return.** When the notification lands, read the result and surface it to the user classified as exactly one of:
    - **question** — it hit a call the user owns. Bring the question into the interview loop as a normal `decision`.
    - **ready to react** — the artifact exists. Give its absolute path (own line, no trailing punctuation), say what to look at, and interview the user's reaction.
-   - **needs more info** — it lacked something the handoff should have carried. Supply it via `SendMessage` to the same agent rather than respawning. **If the send fails with "No transcript found"** (completed background agents are often not resumable), fall back to the durable path: append the new information to the handoff file as a new round section and spawn a fresh agent pointed at it — the handoff, not the agent's memory, is the source of truth.
+   - **needs more info** — it lacked something the brief should have carried. Supply it via `SendMessage` to the same agent rather than respawning. **If the send fails with "No transcript found"** (completed background agents are often not resumable), fall back to the durable path: append the new information to the brief file as a new round section and dispatch a fresh agent pointed at it — the brief file, not the agent's memory, is the source of truth.
    - **findings** — it answered the question. Post the answer, close the issue, cascade.
 
 **Never stand in for the user's side of an `artifact` item.** A subagent that builds a prototype *and* decides whether it feels right has broken the whole point — the same guard `grill-me` carries.
 
-## Phase 4 — Report and hand off
+## Phase 4 — Report and invoke implement
 
-Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, fog graduated, items still parked, ADRs written.
+Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, fog graduated, items still held, ADRs written.
 
 **End with the recomputed roadmap beside Phase 0's.** `bd recompute-blocked`, then `bd swarm validate` per epic and `bd ready --json`. Show the two side by side — waves before, waves after — so the session's effect on what is workable is visible rather than asserted. Also report the structure Phase 0 wrote: epics created, members parented, edges wired, tier-1 counts.
 

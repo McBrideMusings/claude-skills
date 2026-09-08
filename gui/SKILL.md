@@ -5,6 +5,9 @@ description: "Front door for design and UI/UX work at every layer — visual des
 
 # gui — design at every layer
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 The front door for design work, **pre-code and post-code**, across all seven layers — from what users actually do up to the pixels they see. It orchestrates two knowledge stores:
 
 - **`layers/`** — the six layers beneath the screen (problem space and solution space).
@@ -80,7 +83,7 @@ The job is to help the human make better decisions — **never to make them for 
 
 ### The seam
 
-When interaction structure is settled and the question becomes visual layout, `layers/interaction-flow.md` hands its breadboard straight to **sketch mode**. Breadboard (structure) → ASCII sketch (layout) → craft lenses. This is one hop inside this skill, not a handoff to another one.
+When interaction structure is settled and the question becomes visual layout, `layers/interaction-flow.md` hands its breadboard straight to **sketch mode**. Breadboard (structure) → ASCII sketch (layout) → craft lenses. This is one hop inside this skill, not a dispatch to another one.
 
 ## Findings-only invocation
 

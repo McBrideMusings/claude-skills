@@ -121,7 +121,7 @@ The agent returns two things:
 
 Carry both into Phase 04. The intent table also survives into Phase 06b, where the fix author checks a proposed fix against the postcondition it is supposed to restore.
 
-**Under `review dual`, the delegate extracts its own intent table** rather than receiving this one. A shared table is a shared blind spot, and independence is the only thing the second vendor is there to buy.
+**Under `review dual`, the dispatched target extracts its own intent table** rather than receiving this one. A shared table is a shared blind spot, and independence is the only thing the second vendor is there to buy.
 
 ### Phase 04 — Launch Parallel Lens Sub-Agents
 
@@ -599,7 +599,7 @@ Every issue is tagged `[<axis>(/<subtype>) · T<n> · <severity>]` — axis (wit
 
 Severity: `low` / `medium` / `high`, derived from the confidence score (75–84 → `low`/`medium`, 85–94 → `medium`/`high`, 95+ → `high`), weighted by impact. **A `not-executable` gate-qualifying finding caps at 85, so it never reads `high`** — an unrun bug claim does not get to look like a confirmed one. No leading emphasis, emoji, or badge — the tag carries it.
 
-**Source tags (dual flavor only).** When more than one tool reviewed the diff, each finding carries a second tag after the axis tag naming **who found it** — `[claude]`, the resolved delegate's real name (`[codex]`, `[reasonix]`), or `[both]`. It is always a **model, harness, or vendor name**, never a skill/lens/axis/process name: `[review]`, `[lens]`, `[self]`, `[dual]`, and `[delegate]` are all wrong, and `[review]` in particular has shipped to a real PR. A solo review carries no source tag at all — with one reviewer there is nothing to attribute. Full rule in [SKILL.md](SKILL.md) **Dual flavor** step 3.
+**Source tags (dual flavor only).** When more than one tool reviewed the diff, each finding carries a second tag after the axis tag naming **who found it** — `[claude]`, the resolved target's real name (`[codex]`, `[reasonix]`), or `[both]`. It is always a **model, harness, or vendor name**, never a skill/lens/axis/process name: `[review]`, `[lens]`, `[self]`, `[dual]`, and `[dispatch]` are all wrong, and `[review]` in particular has shipped to a real PR. A solo review carries no source tag at all — with one reviewer there is nothing to attribute. Full rule in [SKILL.md](SKILL.md) **Dual flavor** step 3.
 
 **Severity is not blocking.** The `low`/`medium`/`high` tag measures confidence-weighted impact; whether a finding *blocks* is a separate, binary question answered only by the verdict rule in [SKILL.md](SKILL.md) — does the diff ship new or newly-broken behavior. A `low`-severity regression blocks; a `high`-severity "this would be cleaner" does not. Carry the severity tag for the reader, but decide the verdict on the broken-behavior test, never on the severity word.
 

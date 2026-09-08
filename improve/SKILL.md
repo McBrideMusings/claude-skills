@@ -5,6 +5,9 @@ description: "Front door for making any aspect of a project better — routes to
 
 # Improve
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 The hub for opportunity-finding: "nothing is technically broken, but this could be better." Improve holds no aspect knowledge itself except its four native lenses — every other aspect is owned by another skill, and improve **loads the owner, never reimplements its lenses**. Defect-finding is `review`'s front door, not this one.
 
 This file is the **router**. The survey engine — phases, briefs, scoring, merge — lives in [IMPROVE-CORE.md](IMPROVE-CORE.md); load it only once routing has picked survey mode.

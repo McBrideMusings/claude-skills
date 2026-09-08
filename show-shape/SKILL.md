@@ -5,6 +5,9 @@ description: "How to WRITE DOWN any answer that describes a shape — a plan, de
 
 # Show the shape — structured pseudocode instead of prose
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 How to *write down* anything whose subject is a **shape**: an implementation plan, a design proposal, a PRD's Implementation Decisions section, an `improve` proposed fix, an `explain` architecture-change note — or a plain chat answer that is about to describe logic, a call chain, a component tree, or a refactor in paragraphs. Write it so it reads as the shape of the code, not a description of it.
 
 **Plain markdown only.** No HTML, no Monodraw, no rendered SVG. Every technique below is a fenced text block anyone can read in a terminal or a chat pane. Mermaid (technique 6) is the one exception, and only for a chat answer — never inside a plan or a written document, which have to survive in a terminal.

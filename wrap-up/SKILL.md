@@ -3,6 +3,9 @@ name: wrap-up
 description: "Close out the current session: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Also how /implement lands each item it runs."
 ---
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
 
 ---
@@ -44,7 +47,7 @@ This gate governs Phase 6 Step A (follow-ups) below. Resolve the posture once, h
 
 - Mid-feature with broken tests or known regressions — finish or revert first
 - The user is mid-debug and the dirty tree is intentional scratch
-- The branch isn't ready and the user is just pausing — use `handoff` instead
+- The branch isn't ready and the user is just pausing — stop here instead; `relay` only carries forward work that has already landed, so there is nothing for it to carry yet
 - Work spans multiple unrelated topics that should commit separately — split first, then wrap up each
 
 Invoking this skill grants explicit authority to auto-commit and auto-push. The global "never commit without asking" rule is satisfied by the act of invocation.
@@ -235,7 +238,20 @@ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or
 
 **Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections.
 
-Invoke the `handoff` skill **with the `write` token** — `handoff write` — to generate the unified summary of the branch's changes and session work and write the branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and the new issues spawned this session. (Bare `handoff` writes the terse fresh-agent doc, not this. `summary` is catch-up mode: it reads a branch in and produces no artifact. Wrong skill here.)
+Write the unified summary of the branch's changes and session work, and write it to the
+branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and
+the new issues filed this session. (`summary` is catch-up mode: it reads a branch in and
+produces no artifact — wrong skill here; this is the write side.)
+
+**Path.** On a non-base branch: `/private/tmp/claude/<repo-slug>/summaries/<repo-basename>/<branch-sanitized>.md` (`/` in the branch name becomes `-`). If a file already exists there, read it first — carry forward any still-applicable rationale or rejected-approaches note, but regenerate the change list from the diff every time; never preserve a diff-derived bullet just because it was there before. On the base branch or a non-git directory: a fresh timestamped file under `/private/tmp/claude/<repo-slug>/summaries/claude-summary-<timestamp>.md`.
+
+**Content**, in this order:
+
+1. **Header** — one or two sentences, plain English, the user-visible outcome. Open with `Resolves #N` (or `Resolves <bead-id>` on beads) on its own line when the branch closes a tracked issue.
+2. **Problem**, when there was one — one short paragraph naming what was broken and the root cause with real values, not the symptom. Skip for a new feature, a dependency bump, or a docs pass rather than inventing one.
+3. **Change list** — bulleted, `**Label** — one sentence.` per bullet, one bullet per logical area of work (not per file or commit), 3–7 bullets. Two-space-indented sub-bullets only for a named child component or a rejected-approach note a reviewer needs; two or fewer sub-items inline into the parent sentence instead.
+
+Print the full summary to chat, then write the file (creating the parent directory first), then report its absolute path as the last token on its own line, no trailing punctuation.
 
 ### Step C — Land the branch (merge or fast-forward push on owned, PR on collaborative)
 

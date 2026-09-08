@@ -5,6 +5,9 @@ description: "Perform a code review. Routes by what you're standing in: uncommit
 
 # Review
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs.
 
 **This skill evaluates a diff for defects** — bugs, vulnerabilities, quality issues, spec and architecture fit. When the branch isn't mergeable yet — conflicts, red checks, feedback nobody has answered — it calls [unblock](../unblock/SKILL.md) to get there first, then continues.
@@ -24,14 +27,14 @@ Load a file only once you've routed to it — that keeps context small.
 ## Flavors, transport, gates
 
 - **`review`** (default) — Claude reviews on its own.
-- **`review dual`** — Claude reviews, *and* an independent cross-vendor delegate reviews the same diff; the two are reconciled into one source-tagged report. See **Dual flavor** below.
+- **`review dual`** — Claude reviews, *and* an independent cross-vendor target (`dispatch codex` or the resolved vendor) reviews the same diff; the two are reconciled into one source-tagged report. See **Dual flavor** below.
 - **`workflow`** — moves Phases 04–06c only (lens fan-out, best-practice verification, scoring, the reproduction gate, the ≥75 filter, fix authoring) into a workflow script, so only surviving findings enter this context. Routing, the report, and every question stay in the session. Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). RULE 0 holds under both transports. Outside repo mode it's an explicit opt-in — every narrower route (diff, branch, fixed-point, sweep) keeps the session transport unless this token is given.
 - **`noverify`** — turns off Phase 05b, which feeds each behavior-claiming finding's stated input to the running code in a throwaway git worktree and keeps only what reproduces. The gate is **on by default**, costs ≤8 minutes, and never touches the working tree. Use `noverify` when the toolchain is unavailable, and expect a noisier report. There is no permanent off switch, because "the model read it and was confident" is the thing it exists to distrust.
 - **`repo`** — reviews the **whole codebase on the current branch** instead of a diff. Every axis runs, gating off; context-heavy; always confirms before starting. Combinable with dual. **Defaults to the `workflow` transport** — repo mode is the context-heaviest route there is, so `review repo` alone runs Phases 04–06c as a workflow script. `workflow` is still valid there as an explicit no-op confirmation (`review repo workflow`); `session` forces the session transport back (`review repo session`). Mechanics: [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r, [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
 
 ## Phase 00 — Route by context
 
-**Run this pass from inside the checkout being reviewed.** A subagent this skill spawns is permission-scoped to the session's working directory, so reviewing repo B from a session sitting in repo A gives every reader agent a directory it cannot read — and the failure looks like an empty diff or a thin review, not like a permission error. There is no argument that lifts the scope: `review <path>` pointed across repos hits the same wall. Change directory first, or run the pass in a session already there.
+**Run this pass from inside the checkout being reviewed.** A subagent this skill dispatches (`dispatch agent`) is permission-scoped to the session's working directory, so reviewing repo B from a session sitting in repo A gives every reader agent a directory it cannot read — and the failure looks like an empty diff or a thin review, not like a permission error. There is no argument that lifts the scope: `review <path>` pointed across repos hits the same wall. Change directory first, or run the pass in a session already there.
 
 **An explicit argument wins over everything below.** `review <branch>`, `review <PR#>`, `review <path>`, `review repo` — take it and skip the rest of this phase.
 
@@ -125,19 +128,17 @@ nothing pushed and no new feedback since the last pass. `again` · `axes <names>
 
 ## Phase 00.5 — Explain the PR before reviewing it
 
-**Whenever the review target is a PR — mine or a teammate's, every time, no exceptions — explain what it does before you review it.** Run the [handoff](../handoff/SKILL.md) skill **with the `write` token** — `handoff write` — against the PR's branch, then present the result **in chat**, *before* the findings, so the user reads what the change is and then reads the review of it.
+**Whenever the review target is a PR — mine or a teammate's, every time, no exceptions — explain what it does before you review it.** Read the PR's diff and commits (`gh pr diff`, `gh pr view --json body`, `git log`) and write a short chat explanation — a one-or-two-sentence header plus a `**Label** — sentence.` change list, same shape as [`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Step B's summary — then present it **in chat**, *before* the findings, so the user reads what the change is and then reads the review of it.
 
 **Assume the reader has never seen this code.** Plain language, no insider terms, no repo shorthand — name the actual thing that changed and the actual behavior that was wrong. "The payout code paid the winner twice when two players went all-in on the same hand; this makes it pay once" beats "fixes double-settlement in the all-in path".
 
 Two things go in the chat explanation:
-1. **What the PR changed** — the handoff skill's header and change list, in that language.
+1. **What the PR changed** — the header and change list described above, in that language.
 2. **The issue it was fixing** — what was broken before, and what breaks for a person using it. Pull the issue via `gh pr view <n> --json body` and any `Resolves #N` / `Fixes #N` reference (`gh issue view <n> --json title,body`). If the PR links no issue, say what the commits and diff show it was fixing.
 
 **Skip the issue half for a new feature.** A PR that adds something that didn't exist has no bug behind it — say what it adds and move on. Don't invent a fixed issue to fill the slot.
 
-**This is chat-only — it never enters the PR.** It's the user's orientation, not review output: it does not go in the review report, the verdict body, or any posted comment.
-
-**Skipping the summary document.** `handoff write` writes a file to `/private/tmp/claude/<repo-slug>/summaries/…`. On a teammate's PR that file is usually noise. Default: run the skill for its analysis, present it in chat, and **skip the file write** — say "summary not written to disk" in one clause. Write the file when the user asks, or when the PR is mine and I'll want the text for the PR description; then print its absolute path as the last token on its line. `skip summary` from the user drops this phase entirely.
+**This is chat-only — it never enters the PR, and no file is written.** It's the user's orientation, not review output: it does not go in the review report, the verdict body, or any posted comment, and it never lands on disk — a teammate's PR has no branch-scoped summary file to write here. `skip summary` from the user drops this phase entirely.
 
 ## The review itself
 
@@ -145,30 +146,30 @@ Continue into [REVIEW-CORE.md](REVIEW-CORE.md) against the routed target. Then [
 
 ## Dual flavor (`review dual`)
 
-When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor delegate on the **same** diff, then reconcile.
+When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor `dispatch codex`/`dispatch reasonix` target on the **same** diff, then reconcile.
 
-**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check`; if it fails (no delegate configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
+**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check`; if it fails (no target configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
 **Dual is the one flavor whose escalation is automatic.** `dispatch` — invoke it for the ladder — defaults all delegation to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
 
-**Where the delegate runs is resolved, not chosen** — a live herdr tab inside herdr, else a Terminal.app window. `dispatch exec` prints it; put that line in the status message so the user knows whether there is a tab to switch to.
+**Where the target runs is resolved, not chosen** — `split`/`workspace` inside herdr, else `window`. `dispatch exec` prints it; put that line in the status message so the user knows whether there is a tab to switch to.
 
 ```bash
 D="$HOME/.claude/skills/dispatch/dispatch"
-"$D" check || { echo "Delegate unavailable — running solo review only"; }
+"$D" check || { echo "Dispatch target unavailable — running solo review only"; }
 "$D" transport      # name the surface in the status line before you start it
 ```
 
-1. Write the review prompt to a temp file — review instructions + the **literal** diff command the core used (`gh pr diff`, the merge-safe diff, or `git diff HEAD`). Let the delegate run that command itself; don't paste a huge diff into the prompt.
-2. Run `"$D" exec "$prompt" "/tmp/<slug>-delegate.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
-3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the **name of the model, harness, or vendor that found it** — `[claude]` for Claude's own findings, the **resolved delegate name** for the delegate's, or `[both]` when both flagged it.
+1. Write the review prompt to a temp file — review instructions + the **literal** diff command the core used (`gh pr diff`, the merge-safe diff, or `git diff HEAD`). Let the target run that command itself; don't paste a huge diff into the prompt.
+2. Run `"$D" exec "$prompt" "/tmp/<slug>-dispatch.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
+3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the **name of the model, harness, or vendor that found it** — `[claude]` for Claude's own findings, the **resolved target's name** for the target's, or `[both]` when both flagged it.
 
-   **A source tag NEVER carries the name of a skill, a lens, an axis, or a process.** The tag answers "which reviewer said this," and the only valid answers are things a person could point at and name: a model (`[claude]`, `[codex]`, `[gpt-5]`), a harness or vendor (`[reasonix]`), or `[both]`. **`[review]` is wrong and is the specific mistake this rule exists to stop** — `review` is this skill's own name, it identifies no reviewer, and it has shipped to a real PR that way. Same ban on `[lens]`, `[bug-lens]`, `[self]`, `[internal]`, `[dual]`, and `[delegate]`.
+   **A source tag NEVER carries the name of a skill, a lens, an axis, or a process.** The tag answers "which reviewer said this," and the only valid answers are things a person could point at and name: a model (`[claude]`, `[codex]`, `[gpt-5]`), a harness or vendor (`[reasonix]`), or `[both]`. **`[review]` is wrong and is the specific mistake this rule exists to stop** — `review` is this skill's own name, it identifies no reviewer, and it has shipped to a real PR that way. Same ban on `[lens]`, `[bug-lens]`, `[self]`, `[internal]`, `[dual]`, and `[dispatch]`.
 
-   Get the delegate name at runtime — `dispatch agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[delegate]`). "Both flagged it" is a strong signal; "only the delegate flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
+   Get the target's name at runtime — `dispatch agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[dispatch]`). "Both flagged it" is a strong signal; "only the target flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
 
    **Before posting or writing any source-tagged report, scan the body for a tag that isn't a model/harness/vendor name or `both`.** One found means the tagging is wrong throughout, not in one spot — fix every tag, not the one you noticed.
-4. Fold the delegate's findings into the matching axis sections of the report and carry the source tag through to the file format. Dual is still **read-only** — it reviews, never edits.
+4. Fold the target's findings into the matching axis sections of the report and carry the source tag through to the file format. Dual is still **read-only** — it reviews, never edits.
 
 ```bash
 prompt="$(mktemp -t review-dual.XXXXXX)"
@@ -181,7 +182,7 @@ Report two dimensions separately:
     always design calls, never style nits.
 Output prioritized findings (Critical / Important / Minor), terse, no praise.
 PROMPT
-"$D" exec "$prompt" "/tmp/<slug>-delegate.md"      # run this call in the background
+"$D" exec "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
 ```
 
 ## Sweep mode — `review` on the default branch

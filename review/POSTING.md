@@ -87,7 +87,7 @@ replacement — run it first when it applies.
 Present both flows and let the user pick:
 
 - **`implement`** — Claude fixes the findings itself.
-- **`implement delegate`** — Claude orchestrates; a cheaper model implements; Claude validates.
+- **`implement dispatch codex`** (or the resolved vendor) — Claude orchestrates; a cheaper model implements; Claude verifies.
 
 Hand the report path to the chosen flow. Don't start it without a `go`.
 

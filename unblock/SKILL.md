@@ -5,6 +5,9 @@ description: "Get a blocked branch to mergeable, doing the work rather than offe
 
 # Unblock
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 **Something is standing between this branch and a merge. Remove it.**
 
 Four things block a branch: the local checkout isn't at the branch head (checked every run), the branch **conflicts** with its base, its **checks are red**, or it carries **reviewer feedback nobody has answered**. Each fires only if actually true.

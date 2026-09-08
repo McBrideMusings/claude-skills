@@ -5,6 +5,9 @@ description: Compare a subsystem against reference repos to find smarter approac
 
 # Repo Analysis
 
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
+
 Compare a focused subsystem in the user's repo against one or more reference repos. Surface implementation differences that are worth acting on. Filter out differences that are about scope, UX, or project intent.
 
 **Three modes, one spine.** The default is **code mode** — the workflow below, comparing a code subsystem to a reference and porting implementation techniques. When the reference is a **skills repo** (a repo of `SKILL.md` files following Anthropic's skill structure, little or no code) the unit of harvest is a whole skill, not a technique — run **skills mode** ([skills-mode.md](skills-mode.md)). When the capability doesn't exist in the user's repo at all — nothing on our side to compare — run **harvest mode** ([harvest-mode.md](harvest-mode.md)): understand the reference, translate it onto the user's architecture, leave a committed analysis doc + issue slate.
@@ -74,11 +77,11 @@ If a reference repo has no analog, say so. "They don't implement this at all" is
 
 **Cross-language comparisons are fine.** Implementation patterns transfer across languages. A retry strategy in Go can be ported to Python; a state machine in Rust can be ported to TypeScript. Don't dismiss a reference because the language differs.
 
-### Phase 04 — Read user's implementation, then spawn parallel sub-agents per reference
+### Phase 04 — Read user's implementation, then dispatch agent per reference
 
 **04a — Parent reads the user's implementation.** This stays in parent context because it's load-bearing for the final report and you'll be answering follow-up questions about it. Take notes with file:line citations.
 
-**04b — Spawn one Sonnet sub-agent per reference repo, in parallel** (single message, multiple `Agent` tool calls). Each sub-agent:
+**04b — Dispatch agent, one Sonnet sub-agent per reference repo, in parallel** (single message, multiple `Agent` tool calls). Each sub-agent:
 
 - Receives: a digest of the user's implementation (paths, key behaviour observations, edge cases handled), the path to its one reference repo, and the locked scope from Phase 01.
 - Reads only its assigned reference (not the others, not the user's repo — parent already has that).

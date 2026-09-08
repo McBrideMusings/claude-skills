@@ -5,10 +5,13 @@ description: "Hand the next body of work forward into a clean context in the SAM
 
 # Relay
 
-A relay is a **forward** handoff: same pane, same repo, same seat, next body of work,
-nothing running concurrently. This context dies so the next one starts clean.
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+[`../CONTEXT.md`](../CONTEXT.md).
 
-That is a different axis from `dispatch`, which is a **sideways** handoff — another
+A relay hands the next body of work **forward**: same pane, same repo, same seat, next body
+of work, nothing running concurrently. This context dies so the next one starts clean.
+
+That is a different axis from `dispatch <target>`, which hands work **sideways** — another
 agent or process, picked off the target ladder, running while you keep your seat.
 The two share no mechanism. Relay never touches the target ladder; dispatch never
 touches `/clear` or the Stop hook.
@@ -20,7 +23,7 @@ instead of reimplementing it, then relay this pane to the orchestration/watch ro
 ## Preconditions — check these before proposing anything
 
 1. `test "${HERDR_ENV:-}" = 1`. Outside herdr there is no pane to clear. Say so and
-   stop — today there is no forward-handoff mechanism outside herdr, so the session
+   stop — today there is no mechanism for carrying work forward outside herdr, so the session
    keeps its context and either pushes on or ends normally. Do not invent a substitute.
 2. This pane's own checkout is **finished and landed** — `wrap-up` has committed,
    pushed and landed. A relay clears the context; anything uncommitted in *this*
@@ -88,8 +91,8 @@ marker, since the relay is going to erase your ability to.
 
 ## Step 4 — write the marker
 
-The prompt is the artifact. **Do not write a handoff document** — that is the
-`handoff` skill, and only when the user asks for one by name.
+The prompt is the artifact. **Do not write a separate summary document** — the brief below
+is the whole of what the next session needs, and nothing else writes one on the user's behalf.
 
 The marker is transport, not a record: written, consumed by the Stop hook, deleted.
 
@@ -216,7 +219,7 @@ or unlanded pass still gets an entry.
   recheck: bash /Users/pierce/.claude/tools/run-tests.sh
 ```
 
-## Step 5 — hand off and stop
+## Step 5 — carry the brief forward and stop
 
 Write the marker, then **end the turn**. Say one line: what the next session will
 work on. Nothing else — no recap, no summary, no "let me know if".
