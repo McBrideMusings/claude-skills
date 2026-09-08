@@ -570,21 +570,35 @@ const G = dir ? `git -C ${dir}` : 'git'
 //   like the literal string "HEAD" into it would make `is-ancestor "$BASE"
 //   HEAD` trivially true (a merge base is always an ancestor of HEAD) and
 //   silently collapse `$BASE` to HEAD, making `diff "$BASE"` empty even
-//   when the branch has real committed work. The `||` fallback, for when
-//   there is also no upstream, is the empty-tree sha — it always resolves
-//   to a valid diffable base, at the cost of the diff showing the whole
-//   tree as added rather than nothing.
+//   when the branch has real committed work.
+//
+// Without a real `base_sha`, whether an upstream exists is a fact only the
+// shell running inside the stage can see — this script cannot know it in
+// advance. A pass worktree cut with `git worktree add -b` has no upstream,
+// and that is the ordinary case for a relaunched fix round, not an edge
+// case, so the recipe has to degrade safely on its own rather than
+// substitute a synthetic base (an empty-tree sha, say) that would expand
+// `diff "$BASE"` into a whole-repository diff. When `$BASE` comes back
+// empty the fallback below runs `status --short` and a bare `diff` instead
+// — working-tree changes only, with no claim about the branch as a whole.
 const hasRealBaseSha = /^[0-9a-f]{7,40}$/.test(plan.base_sha || '')
-const EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
 const BASE = hasRealBaseSha
   ? `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${plan.base_sha}); ${G} merge-base --is-ancestor "$BASE" ${plan.base_sha} && BASE=${plan.base_sha}`
-  : `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${EMPTY_TREE_SHA})`
-const DIFF = `${G} diff "$BASE"`
-const DIFF_HOWTO = `That first line computes \`$BASE\` — the commit where this pass's work diverges from the upstream branch — and diffs it against the tree as it stands. Run both commands as one line; \`$BASE\` does not survive into a second command.
+  : `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null)`
+const DIFF = hasRealBaseSha
+  ? `${G} diff "$BASE"`
+  : `[ -n "$BASE" ] && ${G} diff "$BASE" || (${G} status --short; ${G} diff)`
+const DIFF_HOWTO = hasRealBaseSha
+  ? `That first line computes \`$BASE\` — the commit where this pass's work diverges from the upstream branch — and diffs it against the tree as it stands. Run both commands as one line; \`$BASE\` does not survive into a second command.
 
-The diff is the whole change: it covers work an earlier stage may already have committed as well as work still sitting in the working tree, so do not care which it is. Do not substitute a bare \`${G} diff\` — that sees uncommitted work only and is empty once this pass's work is committed.${hasRealBaseSha ? ` Do not substitute \`${G} diff ${plan.base_sha}\` either — that is where this pass started, and commits pulled from origin since then would wrongly show up as work this pass did.` : ''}
+The diff is the whole change: it covers work an earlier stage may already have committed as well as work still sitting in the working tree, so do not care which it is. Do not substitute a bare \`${G} diff\` — that sees uncommitted work only and is empty once this pass's work is committed. Do not substitute \`${G} diff ${plan.base_sha}\` either — that is where this pass started, and commits pulled from origin since then would wrongly show up as work this pass did.
 
 **Never invent your own diff command — always run the one given above.** In particular, never use \`${G} diff main..HEAD\` (two dots): once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted. \`${G} diff main...HEAD\` (three dots) — or the merge-base recipe above — compares against the actual merge base, which is what "what did this branch change" means.`
+  : `That first line tries to compute \`$BASE\` from this branch's upstream. The second line uses it if found; if not — the normal case for a pass worktree, which has no upstream — \`$BASE\` comes back empty and there is no honest base to diff the whole branch against, so it falls back to \`${G} status --short\` and a bare \`${G} diff\` instead, which show only uncommitted working-tree changes. Run both lines as one command; \`$BASE\` does not survive into a second one.
+
+**If the fallback ran (no real \`$BASE\`), inspect only what \`status --short\` and the bare diff printed.** Do not claim anything about what the branch as a whole changed, and do not say a file was reverted or deleted against history you have no committed base to compare — the working tree is all you can honestly see.
+
+**Never invent your own diff command — always run the one given above.** In particular, never use \`${G} diff main..HEAD\` or \`${G} diff main\`: once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted.`
 
 let impl, review, verdict
 let blockingFindings = [], majorFindings = []
