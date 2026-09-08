@@ -544,6 +544,67 @@ const round2NoWorktree = await run({ repo: '/tmp/repo', round: 2, resolved: { ..
 check('round 2 with no worktree halts at resolve too', round2NoWorktree.result.ok, false)
 check('  ...naming the resolve stage', round2NoWorktree.result.halted_on, 'resolve')
 
+// 26b. cc-2z5f: the diff recipe a stage is told to run is picked by whether
+// `plan.base_sha` looks like a real sha (`hasRealBaseSha` in implement.js) —
+// true on a normal round-1 launch, false on a fix round, whose hand-built
+// plan (round2, above) carries no base_sha at all. Four separate defects
+// lived in the false arm across four review rounds and nothing here caught
+// any of them, because every fixture in this file used a valid base_sha —
+// the false arm was never generated. These cases pin the literal recipe
+// text for both arms, extracted from each phase's fenced code block so the
+// surrounding prose (which legitimately says "HEAD" and "diff main..HEAD"
+// in DIFF_HOWTO) can't hide a regression inside the fence.
+const RECIPE_G = 'git -C /tmp/wt' // promptRun and round2 both set worktree: '/tmp/wt'
+const RECIPE_SHA = HAPPY.Plan.base_sha
+const RECIPE_TRUE = `BASE=$(${RECIPE_G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${RECIPE_SHA}); ${RECIPE_G} merge-base --is-ancestor "$BASE" ${RECIPE_SHA} && BASE=${RECIPE_SHA}; ${RECIPE_G} diff "$BASE"`
+const RECIPE_FALSE = `${RECIPE_G} merge-base HEAD '@{upstream}'`
+
+// Pulls the recipe out of a phase's first fenced code block. Review's own
+// fence appends a `git status --short` line after the recipe (regardless of
+// which arm is active) — strip it so what's left is the recipe text proper,
+// the same text every other phase gets.
+function recipeIn(prompt) {
+  const fence = prompt.match(/```\n([\s\S]*?)```/)
+  if (!fence) throw new Error('no fenced code block found in prompt')
+  const body = fence[1].replace(/\n$/, '')
+  const statusSuffix = `\n${RECIPE_G} status --short`
+  return body.endsWith(statusSuffix) ? body.slice(0, -statusSuffix.length) : body
+}
+
+// Real base_sha (promptRun, case 12): Implement, Review and Wrap all get the
+// snap-forward recipe, byte-identical, and it carries the --is-ancestor
+// clause.
+for (const stagePhase of ['Implement', 'Review', 'Wrap']) {
+  const p = promptRun.prompts.find((x) => x.phase === stagePhase).prompt
+  check(`real base_sha: the ${stagePhase} recipe is the snap-forward recipe`, recipeIn(p), RECIPE_TRUE)
+}
+check('real base_sha: the recipe carries the --is-ancestor snap-forward clause', RECIPE_TRUE.includes('--is-ancestor'), true)
+
+// No base_sha (round2, case 25): Review never runs on a fix round — round
+// >= 2 skips it entirely, so there is no Review prompt to compare here —
+// but Implement and Wrap both get the plain merge-base recipe, with none of
+// the four defects that hid in this arm: no interpolated `undefined`, no
+// `--is-ancestor`, no second `HEAD` used as a base sentinel, no empty-tree
+// sha, no `[` shell test, no subshell, and no `&&`/`||` chaining.
+for (const stagePhase of ['Implement', 'Wrap']) {
+  const p = round2.prompts.find((x) => x.phase === stagePhase).prompt
+  const recipe = recipeIn(p)
+  check(`no base_sha: the ${stagePhase} recipe is a single plain merge-base command`, recipe, RECIPE_FALSE)
+  check('  ...with no interpolated "undefined"', recipe.includes('undefined'), false)
+  check('  ...with no --is-ancestor', recipe.includes('--is-ancestor'), false)
+  check('  ...with no second HEAD used as a base sentinel', (recipe.match(/HEAD/g) || []).length, 1)
+  check('  ...with no empty-tree sha', recipe.includes('4b825dc642cb6eb9a060e54bf8d69288fbee4904'), false)
+  check('  ...with no [ shell test', recipe.includes('['), false)
+  check('  ...with no subshell', recipe.includes('('), false)
+  check('  ...with no && chaining', recipe.includes('&&'), false)
+  check('  ...with no || chaining', recipe.includes('||'), false)
+}
+check(
+  'no base_sha: the Implement and Wrap recipes are byte-identical',
+  recipeIn(round2.prompts.find((x) => x.phase === 'Implement').prompt),
+  recipeIn(round2.prompts.find((x) => x.phase === 'Wrap').prompt),
+)
+
 // 27. `meta.phases` names exactly the five stages, in order — the shape
 // name-pass.sh's line-window guard and the whole rewrite depend on.
 check('meta.phases names the five stages in order', metaOf(SRC).phases.map((p) => p.title), [
