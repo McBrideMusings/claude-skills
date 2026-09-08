@@ -50,7 +50,6 @@ const RULES = `${SKILLS}/implement/STAGE-RULES.md`
 // `hooks/landing-guard.sh` can see that its caller is a subagent but not
 // which stage is calling — so no unfakeable rule can be written there.
 
-async function runItem(args) {
 const a = args || {}
 const dir = a.worktree || a.repo || a.cwd
 // Root of the REPO the item is scoped to — not the worktree stages edit in
@@ -122,6 +121,27 @@ const PLAN = {
     risks: { type: 'array', items: { type: 'string' } },
     build_command: { type: 'string' },
     test_command: { type: 'string' },
+    // ~/.claude/skills sat detached 33 commits behind origin/main for over an
+    // hour on 2026-09-07 while a five-stage rewrite of this very file landed
+    // on origin/main from a worktree — the checkout every session loads was
+    // never fast-forwarded, so 36 of that day's 39 passes launched the stale
+    // eight-stage script from disk at roughly double the cost of the
+    // five-stage one. The SessionStart hook prints a "behind origin/main"
+    // line at session start, hundreds of turns before a pass is ever
+    // dispatched, so nothing acts on it. Plan checks it instead, since Plan
+    // already runs git commands on round 1 and the pass halts on the result
+    // right after Plan returns — before Implement ever starts spending the
+    // budget a stale checkout would otherwise waste.
+    skills_behind: { type: 'number' },
+    skills_update_command: { type: 'string' },
+    // Per-item cumulative totals, summed from prior passes' workflow records.
+    // The stub harnesses used by both test suites return `{}` for a phase
+    // they do not recognize, so these come back `undefined` there — every
+    // reader below coerces to 0 rather than trusting the field, so neither
+    // suite's stub can trip the halt or corrupt the logged total.
+    prior_passes: { type: 'number' },
+    prior_minutes: { type: 'number' },
+    prior_tokens: { type: 'number' },
   },
 }
 
@@ -363,99 +383,21 @@ if (round >= 2 && !a.worktree) {
   return halt('resolve', `round ${round} requires both resolved and worktree from the previous round — got resolved=true worktree=false`)
 }
 
-// --- staleness halt ------------------------------------------------------
-// ~/.claude/skills sat detached 33 commits behind origin/main for over an
-// hour on 2026-09-07 while a five-stage rewrite of this very file landed on
-// origin/main from a worktree — the checkout every session loads was never
-// fast-forwarded, so 36 of that day's 39 passes launched the stale
-// eight-stage script from disk at roughly double the cost of the five-stage
-// one. The SessionStart hook prints a "behind origin/main" line at session
-// start, hundreds of turns before a pass is ever dispatched, so nothing acts
-// on it. This check runs here instead, before Plan ever starts spending the
-// budget a stale checkout would otherwise waste.
-//
-// A Workflow script has no filesystem or shell of its own, so the check is
-// one small agent() call rather than a `git` call this script could make
-// itself. The stub harnesses used by both test suites return `{}` for a
-// phase they do not recognize, so `behind` comes back `undefined` there —
-// the guard below only halts on an actual number greater than zero, never
-// on the absence of one, so neither suite's stub can trip it.
-// Both checks below run only on round 1 — a fix round (round >= 2) is a
-// relaunch of the very same pass moments after round 1 ran them, and round
-// >= 2 already skips Plan for the same reason (see the comment on `round`
-// above): there is nothing new to learn by re-checking the checkout or
-// re-summing history for a launch that is still mid-pass.
-const staleness =
-  round === 1
-    ? await agent(
-        `Run \`git -C ${SKILLS} fetch --quiet\`, then \`git -C ${SKILLS} rev-list --count HEAD..origin/main\`. Return the count as \`behind\`. If it is non-zero, also return the command that brings the checkout up to date as \`updateCommand\` — \`git -C ${SKILLS} merge --ff-only origin/main\` unless you find the repo actually wants something else (a detached HEAD that needs re-pointing at a branch first, for instance).`,
-        {
-          phase: 'Resolve',
-          label: 'staleness',
-          model,
-          effort: 'low',
-          schema: {
-            type: 'object',
-            properties: {
-              behind: { type: 'number' },
-              updateCommand: { type: 'string' },
-            },
-          },
-        },
-      )
-    : null
-
-if (staleness && typeof staleness.behind === 'number' && staleness.behind > 0) {
-  return halt(
-    'skills-stale',
-    `~/.claude/skills is ${staleness.behind} commit(s) behind origin/main — run \`${staleness.updateCommand || `git -C ${SKILLS} merge --ff-only origin/main`}\` before launching another pass`,
-  )
-}
-
 const item = { ...a.resolved, id: `${a.resolved.id}`.trim() }
 
-// --- per-item cumulative totals --------------------------------------------
 // A tracked item routinely needs several passes, and nothing used to report
 // the running total — a 25-minute pass announcement read as the whole cost
 // of the work even on an item's fifth 25-minute pass. The history lives in
-// `~/.claude/projects/*/*/workflows/wf_*.json`, keyed by `workflowName`, so
-// this reads it back rather than tracking a separate counter. Same guard as
-// the staleness check above: an unstubbed test double returns `{}`, and
-// every field below is coerced to 0 rather than trusted, so neither existing
-// suite sees a thrown error or a corrupted total.
-const history =
-  round === 1
-    ? await agent(
-        `Scan \`~/.claude/projects/*/*/workflows/wf_*.json\` for records whose \`workflowName\` names this item's id, \`${item.id}\`. Sum \`durationMs\` (converted to minutes) and \`totalTokens\` across every matching record, and count how many records matched. Return \`{passes, minutes, tokens}\` — all zero if nothing matches.`,
-        {
-          phase: 'Resolve',
-          label: 'history',
-          model,
-          effort: 'low',
-          schema: {
-            type: 'object',
-            properties: {
-              passes: { type: 'number' },
-              minutes: { type: 'number' },
-              tokens: { type: 'number' },
-            },
-          },
-        },
-      )
-    : null
-
-const priorPasses = history && typeof history.passes === 'number' ? history.passes : 0
-const priorMinutes = history && typeof history.minutes === 'number' ? history.minutes : 0
-const priorTokens = history && typeof history.tokens === 'number' ? history.tokens : 0
-
+// `~/.claude/projects/*/*/workflows/wf_*.json`, keyed by `workflowName`; Plan
+// scans it and reports the totals as fields (see below) rather than this
+// script running a second agent to do it, since Plan already runs on round 1
+// and already runs git commands of its own.
 const formatTokens = (n) => {
   if (!n) return '0'
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}k`
   return `${n}`
 }
-
-log(`pass ${priorPasses + 1} of item ${item.id} · ${priorMinutes.toFixed(1)} min · ${formatTokens(priorTokens)} tokens so far`)
 
 // --- Plan --------------------------------------------------------------
 // Read-only, and deliberately a separate context: the search history — every
@@ -477,6 +419,10 @@ ${JSON.stringify(item, null, 2)}
 Find every file that must change and settle the approach. For each file give an \`anchors\` list — the function, type or symbol names the edit will target — so the next stage can open the file and go straight to the right place instead of re-reading it whole.
 
 Also report the project's real build and test commands. Prefer an \`admin\` task when the repo has an \`admin.toml\`; otherwise the raw command.
+
+**Also check whether \`~/.claude/skills\` is behind.** Run \`git -C ${SKILLS} fetch --quiet\`, then \`git -C ${SKILLS} rev-list --count HEAD..origin/main\`. Report the count as \`skills_behind\`. If it is non-zero, also report the command that brings the checkout up to date as \`skills_update_command\` — \`git -C ${SKILLS} merge --ff-only origin/main\` unless you find the repo actually wants something else (a detached HEAD that needs re-pointing at a branch first, for instance).
+
+**Also sum this item's prior passes.** Scan \`~/.claude/projects/*/*/workflows/wf_*.json\` for records whose \`workflowName\` names this item's id, \`${item.id}\`. Sum \`durationMs\` (converted to minutes) and \`totalTokens\` across every matching record, and count how many records matched. Report these as \`prior_passes\`, \`prior_minutes\`, \`prior_tokens\` — all zero if nothing matches.
 
 **Report \`base_sha\`: the output of \`git -C ${dir || '.'} rev-parse HEAD\`, run now, before anything has been edited.** A later stage uses it as the earliest point the review's diff may start from, and it is only truthful if you read it before the first edit. Return the full 40-character sha and nothing else in that field.
 
@@ -508,6 +454,24 @@ Also report the project's real build and test commands. Prefer an \`admin\` task
   plan = { files, approach: 'fix the failures listed in the item body; touch nothing else' }
   log(`round ${round}: skipping Plan — reusing ${plan.files.length} files from the previous round — ${plan.files.map((f) => f.path).join(', ')}`)
 }
+
+// A round-1 Plan only ever halts here — never before it runs — since the
+// checkout-behind and per-item-history checks above are Plan's own fields,
+// not a separate agent call. A fix round's manually-built `plan` (above)
+// carries neither field, so both default harmlessly to 0.
+const skillsBehind = typeof plan.skills_behind === 'number' ? plan.skills_behind : 0
+if (skillsBehind > 0) {
+  return halt(
+    'skills-stale',
+    `~/.claude/skills is ${skillsBehind} commit(s) behind origin/main — run \`${plan.skills_update_command || `git -C ${SKILLS} merge --ff-only origin/main`}\` before launching another pass`,
+  )
+}
+
+const priorPasses = typeof plan.prior_passes === 'number' ? plan.prior_passes : 0
+const priorMinutes = typeof plan.prior_minutes === 'number' ? plan.prior_minutes : 0
+const priorTokens = typeof plan.prior_tokens === 'number' ? plan.prior_tokens : 0
+
+log(`pass ${priorPasses + 1} of item ${item.id} · ${priorMinutes.toFixed(1)} min · ${formatTokens(priorTokens)} tokens so far`)
 
 // --- the in-pass fix loop ----------------------------------------------
 //
@@ -1063,82 +1027,19 @@ return {
   blockers,
   followups: [...minorFollowups, ...wrapFollowups],
   summary: landed.summary || impl.summary,
-}
-}
-
-// --- queue mode --------------------------------------------------------
-//
-// implement.js otherwise processes exactly one item per launch, and both
-// test suites only ever pass a single `resolved` item — the queue walk
-// itself (resolve a selector, work items one at a time) is chat-session
-// prose in SKILL.md, executed by the orchestrating session issuing repeated
-// `Workflow(pass)` calls. This is the one mode where the script itself walks
-// several items in one launch: `args.queue` is an array of per-item launch
-// args, each shaped exactly like the single-item `args` this script always
-// accepted, run one at a time (never `pipeline()` — landing each item before
-// starting the next is the point, not something to run concurrently).
-//
-// Between items this checks whether the session's context is worth clearing.
-// `relay` (`~/.claude/skills/relay/SKILL.md`) only clears the SAME, calling
-// session — a Workflow subagent has no way to reach into its parent and run
-// a skill on its behalf — so this cannot perform the clear itself. What it
-// can do is measure the proxy and say so: cross 50% of the window with
-// HERDR_ENV set, and the queue stops and hands back a relay boundary (plus
-// the branches completed so far) for the orchestrating session to relay
-// past; cross it with HERDR_ENV unset — relay requires it — and this logs a
-// recommendation and keeps the queue going in the one session it has.
-const topArgs = args || {}
-
-if (Array.isArray(topArgs.queue) && topArgs.queue.length) {
-  const completed = []
-  const branches = []
-
-  for (let i = 0; i < topArgs.queue.length; i++) {
-    const queueItemArgs = topArgs.queue[i]
-    const result = await runItem(queueItemArgs)
-    completed.push(result)
-    if (result && result.branch) {
-      branches.push({ item: result.item, branch: result.branch, worktree: result.worktree })
-    }
-
-    const isLast = i === topArgs.queue.length - 1
-    if (isLast) continue
-
-    const relayCheck = await agent(
-      'Report the best available proxy for how full this session\'s context window currently is, as a percentage from 0 to 100, in `contextPercent`. Also report whether the HERDR_ENV environment variable is set in this process, as `herdrEnv`.',
-      {
-        phase: 'Plan',
-        label: 'relay-check',
-        model: topArgs.model || 'sonnet',
-        effort: 'low',
-        schema: {
-          type: 'object',
-          properties: {
-            contextPercent: { type: 'number' },
-            herdrEnv: { type: 'boolean' },
-          },
-        },
-      },
-    )
-
-    const pct = relayCheck && typeof relayCheck.contextPercent === 'number' ? relayCheck.contextPercent : 0
-    if (pct <= 50) continue
-
-    if (relayCheck && relayCheck.herdrEnv) {
-      log(`relay boundary hit after item ${i + 1} of ${topArgs.queue.length} — context at ${pct}% of the window — relay before the next item`)
-      return {
-        ok: true,
-        relay_boundary: true,
-        completed,
-        branches,
-        remaining: topArgs.queue.slice(i + 1),
+  // Relay is a recommendation, not something this script can act on: `relay`
+  // (`~/.claude/skills/relay/SKILL.md`) only clears the SAME, calling
+  // session, and a Workflow stage agent has no way to reach into its parent
+  // and run a skill on its behalf — it cannot even observe the orchestrator's
+  // context, since it runs in its own fresh one. So the orchestrator is the
+  // only party that knows how full its own window is, and it is taken as
+  // input: `args.contextPercent`, a plain number the caller supplies. Above
+  // 50, the pass names it as a recommendation; the caller decides whether and
+  // when to relay.
+  ...(typeof a.contextPercent === 'number' && a.contextPercent > 50
+    ? {
+        relay_recommended: true,
+        relay_reason: `context at ${a.contextPercent}% of the window — relay before the next item, in the calling session`,
       }
-    }
-
-    log(`context at ${pct}% of the window — relay is recommended before the next queue item, but HERDR_ENV is unset so this session keeps going`)
-  }
-
-  return { ok: true, completed, branches }
+    : {}),
 }
-
-return await runItem(topArgs)
