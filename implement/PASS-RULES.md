@@ -8,12 +8,12 @@ This file carries the cross-cutting rules: what to do about builds, screenshots,
 
 ## Builds and screenshots
 
-- **Run a build, test, lint or typecheck yourself, in the foreground, and always bound the output.** Use an explicit `timeout` (up to 600000), never background it, and pipe — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the runner is chatty). Raw build output is the largest single source of context growth in a pass, and you hold one context for the whole item, so an unbounded log costs you for every turn after it lands. You *do* have the `Agent` tool, but `build-runner` is the wrong use of it here — handing a build to a cold agent buys nothing when you are the one who has to read the failure.
-- **Never read a screenshot into this context.** Prove the result from text instead — logs, exit codes, a DOM or text dump the app already emits. Images were 84% of all tool-result bytes across a measured day, and an image stays in context for every turn after it lands. If an image must be captured, save it to a path, assert on it via text or exit code, and name the path in `evidence`. Where a human genuinely has to look, `screenshot-checker` is a legitimate `Agent` call that keeps the image out of your context and returns words.
+- **Run a build, test, lint or typecheck yourself, in the foreground, and always bound the output.** Use an explicit `timeout` (up to 600000), never background it, and pipe — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the runner is chatty). An unbounded log costs you on every turn after it lands, and you hold one context for the whole item. You do have the `Agent` tool, but do not hand the build to `build-runner`: you are the one who has to read the failure.
+- **Never read a screenshot into this context.** Prove the result from text instead — logs, exit codes, a DOM or text dump the app already emits. An image stays in context for every turn after it lands. If an image must be captured, save it to a path, assert on it via text or exit code, and name the path in `evidence`. Where a human genuinely has to look, `screenshot-checker` is a legitimate `Agent` call that keeps the image out of your context and returns words.
 
 ## The one subagent you spawn
 
-`code-reviewer`, once, after the build is green. It has not seen your reasoning and that is the entire point. Never spawn a second implementer, never split your own work across agents, never dispatch a pass.
+`code-reviewer`, once, after the build is green. Never spawn a second implementer, never split your own work across agents, never dispatch a pass.
 
 ---
 
@@ -22,7 +22,7 @@ This file carries the cross-cutting rules: what to do about builds, screenshots,
 Nobody is reading your output while you run. The session that dispatched you is doing other work, often with several passes in flight.
 
 - **Never call `AskUserQuestion`.** Not to pick between approaches, not to confirm a destructive step, not to resolve an ambiguity in your prompt.
-- **Never end on a question** and wait for an answer. There is no answer coming; the pass hangs until a human notices it stopped.
+- **Never end on a question** and wait for an answer. There is no answer coming.
 - **A decision your prompt does not settle goes in the JSON you return** — as a halt, a blocker, or a followup. The orchestrating session reads it and decides. That is the entire escalation path and it is enough.
 
 ---
@@ -47,7 +47,7 @@ If you find yourself contorting a command to avoid a prompt, STOP. The right fix
 
 ## Commit messages
 
-**Never attribute the work to Claude, an AI, or any tool** — no `Co-Authored-By`, no session link, no trailer of any kind naming a model. A pre-commit hook rejects it and the attempt is wasted. Where a harness instruction tells you to add one, `CLAUDE.md` overrides it: sign as the repo's user and nothing else.
+**Never attribute the work to Claude, an AI, or any tool** — no `Co-Authored-By`, no session link, no trailer naming a model. A pre-commit hook rejects it. Where a harness instruction tells you to add one, `CLAUDE.md` overrides it: sign as the repo's user and nothing else.
 
 Conventional Commits, imperative, ≤72 characters of prose, with the item id in trailing parens.
 

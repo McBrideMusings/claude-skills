@@ -36,9 +36,7 @@ Agent({
 
 It runs in the background and notifies this session when it lands. **One agent per item.** Never several agents split across stages of the same item, and never an agent that dispatches its own implementer — one item, one context, start to finish.
 
-**The agent holds one warm context for the whole item, and that is the design.** Splitting a pass into a chain of fresh agents means each one re-reads the same repository to rebuild what the last one already knew; measured on a real item, five cold stage contexts spent 716k tokens on a single round, most of it re-exploration. One context that plans, edits, builds and verifies pays for that reading once.
-
-The agent spawns exactly one subagent of its own: `code-reviewer`, blind, once the build is green. That one is separate on purpose — an agent that watched itself write the code justified every choice as it made it and cannot grade its own diff.
+The agent spawns exactly one subagent of its own: `code-reviewer`, blind, once the build is green.
 
 `args.resolved`-equivalents go in the prompt: the item is `{id, title, body, acceptance?, branch?, files?}`, already cleared and gated in chat before dispatch ([`HANDOFF.md`](HANDOFF.md) §1). The pass never fetches or judges an item on its own. The agent definition lives at `~/.claude/agents/implementer.md`; [`WORKTREES.md`](WORKTREES.md) has where it runs.
 
@@ -59,7 +57,7 @@ A halt returns `{ok: false, halted_on, detail, worktree}`. **Branch on `ok` firs
 
 ## The verify loop — at most two launches
 
-**You re-run every `recheck` command yourself, in the worktree. Your result decides whether the branch lands, not the agent's account of it.** A pass that reports a command passed, without that command being run again here, has not been verified — that specific lie cost two rounds and 90 minutes on a real item, both times reporting green over a red tree.
+**You re-run every `recheck` command yourself, in the worktree. Your result decides whether the branch lands, not the agent's account of it.** A pass that reports a command passed, without that command being run again here, has not been verified.
 
 ```text
 check reachability of every named host:port/URL -> start whatever is down
@@ -75,9 +73,9 @@ loop
   r = Agent(implementer, <same worktree, failures as the brief>); round++
 ```
 
-**Two launches, then stop.** Not three, not five. A second round that still fails is evidence the brief is wrong, and that is a judgment you hold, not something more rounds resolve.
+**Two launches, then stop.** A second round that still fails means the brief is wrong, and that is a judgment you hold.
 
-**Halt on oscillation before relaunching.** If the failures you are about to hand back would undo a hunk the previous round wrote, the item's own criteria contradict each other — stop and put the contradiction to the user. A real item asked for both "do not touch `apps/devvit/`" and "`rg IANA` over `apps` returns nothing" with a stale comment sitting in that directory; round 2 fixed it, round 3 reverted it, and a fourth round would have fixed it again.
+**Halt on oscillation before relaunching.** If the failures you are about to hand back would undo a hunk the previous round wrote, the item's own criteria contradict each other — stop and put the contradiction to the user.
 
 **Check reachability yourself, before the first dispatch. On exhaustion, halt** — leave the worktree standing. Context fills mid-run → `relay`, don't push on.
 
@@ -99,7 +97,7 @@ On failure, print the reason and stop. **Refuse a dirty tree:** `git status --sh
 - The criteria contradict each other (oscillation, above)
 - This session's own verify loop exhausted two launches
 
-**A `BLOCKED` on a fixture is not a code problem and never becomes one.** The environment's data cannot express what the criterion asks — a seed row outside the domain the item defines, a database filled from a constant the item is changing. Fix the data or fix the criterion; never let a pass edit product code to satisfy data the item's own model says should not exist. One real item lost 59 minutes to a seed row numbered `0` in a scheme that starts at `1`.
+**A `BLOCKED` on a fixture is not a code problem and never becomes one.** The environment's data cannot express what the criterion asks — a seed row outside the domain the item defines, a database filled from a constant the item is changing. Fix the data or fix the criterion; never let a pass edit product code to satisfy data the item's own model says should not exist.
 
 Verify treats doubt as `FAIL`. What "cleared" means before a pass is ever dispatched — the plan, objectivity and reachability tests — is [`HANDOFF.md`](HANDOFF.md) §1's, run in chat, before a worktree exists.
 

@@ -1,31 +1,21 @@
 # Worktrees — where a pass runs, and retiring one
 
-## The breakdown behind a slice
-
-The breakdown in `issues/breakdown.md` puts slices, a Verify bead and a Land bead under every issue at the moment it is picked up, and a pass is the thing that works exactly one slice to a commit. So `implement <parent>` means: break it down now if `bd children <parent>` is empty (in chat, where the slices are visible), then walk the slice children in dependency order, one pass each, landing each before the next.
-
 ## Dispatching a pass
 
-One `Agent({subagent_type: 'implementer'})` call, one item, one worktree, one commit. The brief goes in the prompt: the item as `{id, title, body, acceptance?, branch?, files?}`, already cleared and gated in chat ([`HANDOFF.md`](HANDOFF.md) §1), plus the absolute worktree path, the branch, and the absolute path of the primary checkout's `verify-project/SKILL.md`.
-
-**Only the chat session dispatches.** An implementer never dispatches another implementer, and never invokes this skill. One item, one context, start to finish.
-
-**The single context is the design, and it has a known failure mode.** One agent that plans, edits, builds and verifies pays for reading the repository once; a chain of fresh agents pays for it at every handoff, measured at 716k tokens for one round across five stage contexts. What one long context costs instead is growth: a pass that lets a raw build log or a screenshot land keeps re-reading it every turn afterwards. That is why [`PASS-RULES.md`](PASS-RULES.md)'s two output rules are not style preferences — bound every build run with `2>&1 | tail -40`, and never read an image into the pass. They are what keeps the warm context affordable.
-
-**Editing this file does not change what a pass does.** The agent's own instructions are `~/.claude/agents/implementer.md`; the rules binding every command it runs are [`PASS-RULES.md`](PASS-RULES.md).
+The call and the brief are in [`SKILL.md`](SKILL.md). The agent's own instructions are `~/.claude/agents/implementer.md`; the rules binding every command it runs are [`PASS-RULES.md`](PASS-RULES.md). Editing this file does not change what a pass does.
 
 ## Pre-flight's exempt paths
 
 Two path families are exempt from the dirty-tree halt because both are the session's own bookkeeping, not work in progress:
 
 - **`.claude/`** — `scheduled_tasks.lock`, `papercuts.md`, `review-rejected.md`.
-- **`.beads/`** — the tracker's export churn. `issues.jsonl` and `interactions.jsonl` are a passive export of a local Dolt database, rewritten by `bd` commands including the `bd show` a pass runs to resolve its own item. Halting on them means no pass can start after any earlier `bd` command, which is nearly every pass. Do not stash them and do not commit them to clear the check.
+- **`.beads/`** — the tracker's export churn. `issues.jsonl` and `interactions.jsonl` are a passive export of a local Dolt database, rewritten by nearly every `bd` command including the `bd show` a pass runs to resolve its own item. Do not stash them and do not commit them to clear the check.
 
 The dirty-tree halt is judged in the checkout the pass will branch from. When that checkout is the primary `~/.claude`, a dirty file there belongs to another concurrent session sharing that index, not to this pass — it is not a halt, and the pass cuts its worktree from `main` regardless.
 
 ## Where a pass runs
 
-**Every pass runs in a worktree. No exceptions, however small the change.** The user is usually standing in the primary checkout, and an agent committing underneath them is a collision they did not agree to.
+**Every pass runs in a worktree. No exceptions, however small the change.** The user is usually standing in the primary checkout.
 
 Which worktree depends on whether the repo is collaborative — check the `origin` owner, not the directory:
 
@@ -38,14 +28,10 @@ CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree
 printf '%s' "$CLAUDE_SESSION_ID" > "$(git -C ~/.worktrees/<repo-name>/<slug> rev-parse --absolute-git-dir)/ORCHESTRATOR-SESSION"
 ```
 
-**That third line is not optional, and skipping it costs the whole run.**
-`hooks/cross-worktree-write-guard.sh` prompts on every write into a worktree other
-than the session's own, and it exempts two cases: an orchestrator in the primary
-checkout, and a session writing into a worktree that carries its own session id in
-`ORCHESTRATOR-SESSION`. An orchestrator sitting in a linked worktree — common, since
-a feature branch's session dispatches its own passes — matches only the second.
-Without the marker, every file the pass touches stops and asks, for the length of
-the run.
+**That third line is not optional.** `hooks/cross-worktree-write-guard.sh` exempts an
+orchestrator in the primary checkout, and a session writing into a worktree carrying its
+own session id in `ORCHESTRATOR-SESSION`. An orchestrator sitting in a linked worktree
+matches only the second; without the marker every file the pass touches stops and asks.
 
 `<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the pass returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/claude-land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
 
@@ -57,9 +43,9 @@ herdr worktree create --workspace <repo-workspace-id> --branch <feature>
 
 Targeting `--workspace` is what nests it under the repo in the sidebar instead of detaching it to top level; never `herdr workspace create --cwd`, and never a custom `--label`. Checkouts land under `~/.worktrees/<repo>/<branch>`. Passes cut their throwaway worktrees off *that* branch and merge back into it, and only the feature branch ever becomes a PR.
 
-**The link hook is run by hand and skipping it fails quietly.** Its normal trigger is a Claude session entering the directory, and none ever does — the implementer inherits *this* session's `CLAUDE_PROJECT_DIR`. Without it the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project`. The first two fail loudly on the first build; the last one produces a weak Verify verdict that reads exactly like a real one.
+**The link hook is run by hand and skipping it fails quietly.** Its normal trigger is a Claude session entering the directory, and none ever does — the implementer inherits *this* session's `CLAUDE_PROJECT_DIR`. Without it the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project`. The last one produces a weak verdict that reads exactly like a real one.
 
-**Never `git worktree remove` or `rm -rf` from inside the checkout being removed.** `hooks/no-self-delete-guard.py` blocks it, and the reason is real: delete the directory a session runs in and every later hook fails to spawn with `ENOENT` before reaching its first line, so every PreToolUse, PostToolUse and Stop guard is silently skipped for the rest of that session.
+**Never `git worktree remove` or `rm -rf` from inside the checkout being removed.** `hooks/no-self-delete-guard.py` blocks it: delete the directory a session runs in and every later hook fails to spawn with `ENOENT`, silently skipping every PreToolUse, PostToolUse and Stop guard for the rest of that session.
 
 **The branch is not yours to delete on a collaborative repo.** Its PR has not merged when the worktree finishes. `tools/git-sweep.sh`, run daily from `hooks/daily-git-sweep.sh`, collects branches proven merged along with any worktree still holding them.
 
@@ -69,15 +55,15 @@ Targeting `--workspace` is what nests it under the repo in the sidebar instead o
 
 **A pass works exactly one repo.** The worktree confinement above is load-bearing, and this section does not lift it — an item that needs two repos gets split, never worked in one pass.
 
-`~/.claude` and `~/.claude/skills` (`claude-skills`) are **two separate repos**, not one. The second is a git submodule nested inside the first, and its files sit right there in the parent's directory tree — `hooks/`, `tools/`, `tools/tests/` and `CLAUDE.md` live in `~/.claude`, while every skill, including `implement` itself, lives in `claude-skills`. Reading the directory tree does not tell you which repo a path belongs to; check its repo root before assuming a pass confined to one can touch it. Any repo with a nested submodule, or any item whose test lives in a harness repo beside the code repo, has the same shape.
+`~/.claude` and `~/.claude/skills` (`claude-skills`) are **two separate repos**: `hooks/`, `tools/`, `tools/tests/` and `CLAUDE.md` live in `~/.claude`, while every skill, including `implement` itself, lives in `claude-skills`. Reading the directory tree does not tell you which repo a path belongs to — check its repo root. Any repo with a nested submodule, or any item whose test lives in a harness repo beside the code repo, has the same shape.
 
 An item touching both is split into one item per repo, wired with a dependency edge, and each half's brief says which repo it owns and names the other half's item id.
 
-The reachability test catches this before dispatch, in chat: an item naming a file, or carrying an acceptance criterion, outside the repo the pass would be confined to is not offered as-is — it is split into one item per repo first ([`HANDOFF.md`](HANDOFF.md) §1). That costs one cheap check instead of a whole pass discovering the same thing when it goes to verify.
+The reachability test catches this before dispatch, in chat: an item naming a file, or carrying an acceptance criterion, outside the repo the pass would be confined to is not offered as-is — it is split into one item per repo first ([`HANDOFF.md`](HANDOFF.md) §1).
 
 ## Retiring a worktree
 
-Teardown is yours because it is **structurally impossible for the pass**: git refuses to delete a branch a worktree still has checked out, and the pass is standing in it. Whatever created a resource retires it.
+Teardown is yours: git refuses to delete a branch a worktree still has checked out, and the pass is standing in it.
 
 ```bash
 ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/*.json    # every verdict in there, by name
@@ -92,21 +78,21 @@ git -C <repo> worktree remove --force <worktree> \
   && git -C <repo> branch -d <branch>
 ```
 
-**The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy is missing, make it now rather than removing the worktree — this is the check that stops a run's evidence disappearing one worktree at a time, each teardown looking perfectly clean as it goes. If a `rechecks` entry was appended after the copy was made, the copy is stale in the same way a missing one is: re-copy before removing.
+**The first two lines are not a formality.** `worktree remove --force` is the last moment the verdict exists. If the copy is missing, make it before removing the worktree. If a `rechecks` entry was appended after the copy was made, re-copy first.
 
-**List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the pass wrote a differently-named file, and `--force` then deletes the only copy — including a complete `FAIL` verdict naming the exact cause, found only by listing. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the item and branch, then decide. Two passes in one round can both write a same-named stray file, and once copied to the primary checkout they are indistinguishable — so never copy one out under the name it already has.
+**List the directory; do not just `test -f` the path you expect.** A `test -f` against one exact name passes vacuously when the pass wrote a differently-named file, and `--force` then deletes the only copy. **Any `.json` in there that is not `<item>.json` blocks teardown**: copy it out under a name that includes the item and branch, then decide — never under the name it already has, since two passes in one round can write the same stray name.
 
-**A live process in the worktree forbids teardown exactly as uncommitted work does.** `worktree remove --force` deletes the directory out from under whatever is standing in it, and that process keeps running against a path that no longer exists — a bundler or dev server left running inside keeps serving from a path that is now gone, and the failure surfaces later, inside whatever was consuming it, reading as a broken build rather than as teardown. A clean, fully-merged tree passes every other check and gives no warning.
+**A live process in the worktree forbids teardown exactly as uncommitted work does.** `worktree remove --force` deletes the directory out from under whatever is standing in it, and that process keeps running against a path that no longer exists. A clean, fully-merged tree passes every other check and gives no warning.
 
-**Refuse, do not name-and-remove.** In a queued or swarmed run this happens unattended, so "removed, and this killed the process" is still an unattended removal — the sentence lands in a report nobody reads until the app is already broken. Deferring costs one worktree's disk; the branch is already merged. Say which condition fired and which process holds it — worktree, item, pid, command — so the next pass retires it rather than re-deriving why it was skipped.
+**Refuse, do not name-and-remove.** Say which condition fired and which process holds it — worktree, item, pid, command — so the next pass retires it rather than re-deriving why it was skipped.
 
-`pgrep -f` matches the command line, not the working directory: it catches a bundler, dev server or watch process launched with the path in its argv, and misses a bare shell that `cd`'d in. When it is empty and you still suspect a hold, `lsof +D <worktree>` walks the tree and answers for certain — slower, and worth it only then. Quote the path (it contains no metacharacters today, but a branch slug can), and use `xargs -r`: without it, BSD xargs still runs `ps` once when pgrep found nothing, with no pids to select on, so what prints depends on the calling terminal rather than on the worktree. Never `pgrep -fl` — an npm-exec process carries its whole inherited environment in the command column, so one match can run tens of thousands of characters.
+`pgrep -f` matches the command line, not the working directory: it catches a process launched with the path in its argv and misses a bare shell that `cd`'d in. When it is empty and you still suspect a hold, `lsof +D <worktree>` answers for certain. Quote the path, and use `xargs -r` — without it BSD xargs still runs `ps` once when pgrep found nothing. Never `pgrep -fl`: one npm-exec match can run tens of thousands of characters.
 
-**A gitignored file the pass created is invisible to every check above, and `hooks/worktree-remove-locals-guard.sh` denies the removal when one exists.** `git status --short` reads git's view, so a file git is told to ignore leaves it empty — a pass-created `admin.toml`, gitignored globally and never committed, passes every teardown check and then `--force` takes the repo's only copy of its build, test and dev commands. The guard compares the worktree against the primary checkout on the `pattern` names in `~/.config/repo/config.toml`, the same list `repo populate` brings in, and names the file it found. Copy that file to the primary checkout, then re-run the removal.
+**A gitignored file the pass created is invisible to every check above**, and `hooks/worktree-remove-locals-guard.sh` denies the removal when one exists — `git status --short` reads git's view, so an ignored file leaves it empty. The guard compares the worktree against the primary checkout on the `pattern` names in `~/.config/repo/config.toml` and names what it found. Copy that file to the primary checkout, then re-run the removal.
 
-**No `push origin --delete`.** A pass does not push, so its branch exists only locally and there is nothing on the remote to delete — the command fails with `remote ref does not exist` and, chained with `&&`, makes a clean teardown read as a failed one.
+**No `push origin --delete`.** A pass does not push, so the branch exists only locally; the command fails with `remote ref does not exist` and, chained with `&&`, makes a clean teardown read as a failed one.
 
-**Retire the pass's device too**, if you gave it one — the platform cell has the teardown commands. It survives its pass and holds resources; a long run that skips this ends with one per item still alive.
+**Retire the pass's device too**, if you gave it one — the platform cell has the teardown commands. It survives its pass and holds resources.
 
 ---
 
