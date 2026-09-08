@@ -36,6 +36,8 @@ code is open are guesses, and they poison `bd ready` and `bd human list`, whose 
 that everything in them is real. Wiring `bd dep add` edges between issues that already exist is
 not this and is always fine.
 
+`bd create … --deps blocks:<id>` records that the **new** item blocks `<id>` — afterwards `<id>` drops out of `bd ready` and the new item stays in it. A new item that must wait on an existing one gets `bd dep add <new> <existing>` after creation instead.
+
 ## Which tracker — decide before you file, not after
 
 **The tracker is chosen by the code that has to change, never by the directory you are standing
