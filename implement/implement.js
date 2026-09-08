@@ -373,13 +373,19 @@ if (
   return halt('resolve', `args.resolved is required and must carry a non-empty id — got ${JSON.stringify(a.resolved)}`)
 }
 
-// Two wrong briefs each cost a full pass before anything here checked them:
-// a string-valued `acceptance` passed the `.length` guard building Verify's
-// prompt (a string has one) and died four stages later on `.map`; a path
-// scoped to a different repo was only discovered when Implement tried, and
-// could not, edit it. Both are the same missing thing — nothing validated
-// `args.resolved` at launch — so both checks run here, before `item` is
-// built and before any agent() call.
+// A wrong brief cost a full pass before anything here checked one: a
+// string-valued `acceptance` passed the `.length` guard building Verify's
+// prompt (a string has one) and died four stages later on `.map`. Nothing
+// validated `args.resolved` at launch, so the shape check runs here, before
+// `item` is built and before any agent() call.
+//
+// It checks types and nothing else, because types are all a workflow script
+// can check. There is no filesystem and no shell here — no `child_process`,
+// no dynamic `import()`, which the runtime rejects outright — so a question
+// like "is this path tracked in the repo this pass is confined to" cannot be
+// answered from inside this file at all. That one is HANDOFF.md §1's
+// reachability test, run in chat before a worktree exists, where a real
+// shell can run `git ls-files`.
 const isStringArray = (x) => Array.isArray(x) && x.every((e) => typeof e === 'string')
 if (typeof a.resolved.id !== 'string') {
   return halt('resolve', `args.resolved.id must be a string — got ${typeof a.resolved.id}: ${JSON.stringify(a.resolved.id)}`)
@@ -397,75 +403,6 @@ for (const field of ['acceptance', 'files']) {
       'resolve',
       `args.resolved.${field} must be an array of strings — got ${typeof v}: ${JSON.stringify(v)}. No coercion: a single string is not turned into a one-element array.`,
     )
-  }
-}
-
-// A path scoped to the wrong repo wastes a whole pass discovering that four
-// stages in, when Implement tries and fails to edit it. Cheap to check now:
-// every `files` entry, and every path-shaped token quoted in `acceptance`,
-// must be tracked in the repo this pass is confined to. Only runs once types
-// are confirmed above, and only when there is something to check and a repo
-// to check it against — a resolved with neither field never shells out.
-//
-// A fix round (round >= 2) checks against `a.worktree`, not `a.repo`: round
-// 1's files were committed onto the worktree's own feature branch, never
-// onto `a.repo`'s index (typically checked out on main), so checking `a.repo`
-// here would falsely halt on every file round 1 itself just created.
-const ownershipCheckRoot = round >= 2 ? a.worktree : a.repo
-const filesToCheck = Array.isArray(a.resolved.files) ? [...a.resolved.files] : []
-const acceptanceList = Array.isArray(a.resolved.acceptance) ? a.resolved.acceptance : []
-const pathToken = /`([\w][\w./-]*\.[A-Za-z0-9]+)`/g
-for (const sentence of acceptanceList) {
-  let m
-  while ((m = pathToken.exec(sentence))) filesToCheck.push(m[1])
-}
-if (ownershipCheckRoot && filesToCheck.length) {
-  const { execFileSync } = await import('node:child_process')
-  const tracked = (repo, p) => {
-    try {
-      execFileSync('git', ['-C', repo, 'ls-files', '--error-unmatch', p], { stdio: 'pipe' })
-      return true
-    } catch {
-      return false
-    }
-  }
-  const isGitRepo = (repo) => {
-    try {
-      execFileSync('git', ['-C', repo, 'rev-parse', '--git-dir'], { stdio: 'pipe' })
-      return true
-    } catch {
-      return false
-    }
-  }
-  // Nothing to weigh an ownership claim against when `ownershipCheckRoot` is
-  // not itself a working checkout — every real launch's `a.repo`/`a.worktree`
-  // is one per WORKTREES.md, so this only skips a caller that has not set
-  // one up yet.
-  if (isGitRepo(ownershipCheckRoot)) {
-    const candidates = new Set(['/Users/pierce/.claude'])
-    if (ownershipCheckRoot.includes('/.claude/skills')) {
-      candidates.add(ownershipCheckRoot.slice(0, ownershipCheckRoot.indexOf('/.claude/skills') + '/.claude'.length))
-    }
-    if (ownershipCheckRoot.endsWith('/.claude')) candidates.add(ownershipCheckRoot)
-    candidates.delete(ownershipCheckRoot)
-    for (const p of filesToCheck) {
-      if (tracked(ownershipCheckRoot, p)) continue
-      // Not tracked in this pass's repo yet is also true of every file this
-      // pass is about to create — only a path some OTHER real repo actually
-      // owns is evidence of a mis-scoped brief, so only that halts.
-      let owner = null
-      for (const cand of candidates) {
-        if (tracked(cand, p)) {
-          owner = cand
-          break
-        }
-      }
-      if (!owner) continue
-      return halt(
-        'resolve',
-        `\`${p}\` is not tracked in this pass's repo (${ownershipCheckRoot}) — it is tracked in ${owner} instead. Reading or running a file from another repo is fine; editing one is not, and this pass is confined to ${ownershipCheckRoot}.`,
-      )
-    }
   }
 }
 
