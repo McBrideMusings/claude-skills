@@ -15,10 +15,11 @@ import { execFileSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const SRC = readFileSync(new URL('./implement.js', import.meta.url), 'utf8').replace(
-  /^export const meta/m,
-  'const meta',
-)
+// The file exactly as the Workflow runtime receives it. Case 5c reads this
+// rather than `SRC`, which has already been rewritten to be loadable here.
+const RAW_SRC = readFileSync(new URL('./implement.js', import.meta.url), 'utf8')
+
+const SRC = RAW_SRC.replace(/^export const meta/m, 'const meta')
 
 // Evaluates a script's `meta` literal in isolation, with no globals injected
 // — this is what proves it is still a pure literal (no `args`, no
@@ -179,41 +180,34 @@ check('a string-valued acceptance halts at resolve', stringAcceptance.result.hal
 check('  ...naming the acceptance field', /acceptance/.test(stringAcceptance.result.detail), true)
 check('  ...before any agent() call', stringAcceptance.calls.length, 0)
 
-// 5c. cc-epmq: a `files` entry outside `args.repo` is only discovered four
-// stages in, when Implement tries and fails to edit it. It must halt at
-// resolve instead, naming the offending path — but only when some other real
-// repo actually tracks that path. `CLAUDE.md` is genuinely tracked in
-// `/Users/pierce/.claude`, the documented trap this check is meant to catch,
-// so pointing an unrelated temp repo's brief at it proves the cross-repo
-// case without guessing at ownership.
-const outsideRepoDir = mkdtempSync(join(tmpdir(), 'implement-outside-repo-'))
-try {
-  execFileSync('git', ['-C', outsideRepoDir, 'init', '-q'])
-  execFileSync('git', ['-C', outsideRepoDir, 'config', 'user.email', 'test@example.com'])
-  execFileSync('git', ['-C', outsideRepoDir, 'config', 'user.name', 'Test'])
-  const trackedFile = join(outsideRepoDir, 'tracked.ts')
-  execFileSync('bash', ['-c', `printf 'x' > '${trackedFile}'`])
-  execFileSync('git', ['-C', outsideRepoDir, 'add', 'tracked.ts'])
-  execFileSync('git', ['-C', outsideRepoDir, 'commit', '-q', '-m', 'init'])
+// 5c. cc-sr4a: the Workflow runtime refuses a script that reaches for a Node
+// API or for wall-clock time, and it refuses it at validation — before a
+// single line runs, so no stage starts and nothing is written. Every other
+// check in this file loads `implement.js` as a module, where all of these are
+// perfectly legal, so none of them can see it: `node --check` passes, this
+// suite passes, and the pass is still unlaunchable. That is exactly how
+// `await import('node:child_process')` shipped through a PASS verdict and an
+// orchestrator recheck. So this reads the source as TEXT and asserts the
+// constructs are absent.
+//
+// `Date.now`, `Math.random` and an argless `new Date()` are on the list for a
+// different reason than the imports: they are banned so a run can resume from
+// cached agent results, which a non-deterministic script would invalidate.
+// Full-line comments come out first. `implement.js` explains at the point of
+// the deletion why a dynamic `import()` cannot live there, and a guard that
+// fires on the sentence describing the ban is a guard nobody can write the
+// explanation for. Only whole-line comments are stripped: nothing can hide
+// executable code behind one, so this cannot mask a real occurrence.
+const CODE_ONLY = RAW_SRC.replace(/^[ \t]*\/\/.*$/gm, '')
 
-  const outsideFile = await run({
-    repo: outsideRepoDir,
-    resolved: { ...RESOLVED, files: ['CLAUDE.md'] },
-  })
-  check('a files entry outside args.repo halts at resolve', outsideFile.result.halted_on, 'resolve')
-  check('  ...naming the offending path', outsideFile.result.detail.includes('CLAUDE.md'), true)
-  check('  ...before any agent() call', outsideFile.calls.length, 0)
-
-  // A path tracked nowhere at all is the ORDINARY case of a file this pass
-  // hasn't created yet, not evidence of a mis-scoped brief — it must not
-  // halt.
-  const newFile = await run({
-    repo: outsideRepoDir,
-    resolved: { ...RESOLVED, files: ['brand-new-file.ts'] },
-  })
-  check('a files entry tracked nowhere does not halt', newFile.result.halted_on, undefined)
-} finally {
-  rmSync(outsideRepoDir, { recursive: true, force: true })
+for (const [label, pattern] of [
+  ['dynamic import()', /\bimport\s*\(/],
+  ['require()', /\brequire\s*\(/],
+  ['Date.now()', /\bDate\.now\s*\(/],
+  ['Math.random()', /\bMath\.random\s*\(/],
+  ['argless new Date()', /\bnew\s+Date\s*\(\s*\)/],
+]) {
+  check(`implement.js contains no ${label}`, pattern.test(CODE_ONLY), false)
 }
 
 // 6. SKIP means verification could not reach the surface, and it does not
