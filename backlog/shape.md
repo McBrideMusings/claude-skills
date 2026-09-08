@@ -170,9 +170,9 @@ Two passes for a reason: children need their epic's real ID before they can refe
 - **Warnings** — cycles, orphans, disconnected subgraphs, wrong-direction edges.
 - **Max parallelism** and estimated worker-sessions.
 
-This is the deliverable for a user who wanted the lay of the land and nothing else. Close on it:
+This is the deliverable for a user who wanted the lay of the land and nothing else. Close on it, per `../CHAT-FORMAT.md` §Hatch (next work here is the AFK gate):
 
-> Type `go` to apply my picks and continue into the AFK gate, or `park` to apply them and stop.
+> Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`).
 
 **Two orderings exist here and they are not the same list.** The roadmap is *every* issue by dependency wave — what to build next. Phase 2's queue is *only* gate-failing issues by unblock leverage — what to iron out next.
 
