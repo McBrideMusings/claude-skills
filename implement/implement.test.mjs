@@ -577,8 +577,8 @@ function recipeIn(prompt) {
 for (const stagePhase of ['Implement', 'Review', 'Wrap']) {
   const p = promptRun.prompts.find((x) => x.phase === stagePhase).prompt
   check(`real base_sha: the ${stagePhase} recipe is the snap-forward recipe`, recipeIn(p), RECIPE_TRUE)
+  check(`real base_sha: the ${stagePhase} recipe carries the --is-ancestor snap-forward clause`, recipeIn(p).includes('--is-ancestor'), true)
 }
-check('real base_sha: the recipe carries the --is-ancestor snap-forward clause', RECIPE_TRUE.includes('--is-ancestor'), true)
 
 // No base_sha (round2, case 25): Review never runs on a fix round — round
 // >= 2 skips it entirely, so there is no Review prompt to compare here —
