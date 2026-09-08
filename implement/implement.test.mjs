@@ -166,6 +166,56 @@ check('  ...before any agent() call', noResolved.calls.length, 0)
 const emptyId = await run({ repo: '/tmp/repo', resolved: { id: '  ', title: 'x', body: 'y' } })
 check('an all-whitespace id halts at resolve too', emptyId.result.halted_on, 'resolve')
 
+// 5b. cc-epmq: a string-valued `acceptance` passes a naive `.length` guard (a
+// string has one) and used to die four stages later inside Verify's prompt
+// on `.map is not a function`. It must halt here instead, before Plan ever
+// runs, naming the field — and it must not be silently coerced into a
+// one-element array.
+const stringAcceptance = await run({
+  repo: '/tmp/repo',
+  resolved: { ...RESOLVED, acceptance: 'a sentence' },
+})
+check('a string-valued acceptance halts at resolve', stringAcceptance.result.halted_on, 'resolve')
+check('  ...naming the acceptance field', /acceptance/.test(stringAcceptance.result.detail), true)
+check('  ...before any agent() call', stringAcceptance.calls.length, 0)
+
+// 5c. cc-epmq: a `files` entry outside `args.repo` is only discovered four
+// stages in, when Implement tries and fails to edit it. It must halt at
+// resolve instead, naming the offending path — but only when some other real
+// repo actually tracks that path. `CLAUDE.md` is genuinely tracked in
+// `/Users/pierce/.claude`, the documented trap this check is meant to catch,
+// so pointing an unrelated temp repo's brief at it proves the cross-repo
+// case without guessing at ownership.
+const outsideRepoDir = mkdtempSync(join(tmpdir(), 'implement-outside-repo-'))
+try {
+  execFileSync('git', ['-C', outsideRepoDir, 'init', '-q'])
+  execFileSync('git', ['-C', outsideRepoDir, 'config', 'user.email', 'test@example.com'])
+  execFileSync('git', ['-C', outsideRepoDir, 'config', 'user.name', 'Test'])
+  const trackedFile = join(outsideRepoDir, 'tracked.ts')
+  execFileSync('bash', ['-c', `printf 'x' > '${trackedFile}'`])
+  execFileSync('git', ['-C', outsideRepoDir, 'add', 'tracked.ts'])
+  execFileSync('git', ['-C', outsideRepoDir, 'commit', '-q', '-m', 'init'])
+
+  const outsideFile = await run({
+    repo: outsideRepoDir,
+    resolved: { ...RESOLVED, files: ['CLAUDE.md'] },
+  })
+  check('a files entry outside args.repo halts at resolve', outsideFile.result.halted_on, 'resolve')
+  check('  ...naming the offending path', outsideFile.result.detail.includes('CLAUDE.md'), true)
+  check('  ...before any agent() call', outsideFile.calls.length, 0)
+
+  // A path tracked nowhere at all is the ORDINARY case of a file this pass
+  // hasn't created yet, not evidence of a mis-scoped brief — it must not
+  // halt.
+  const newFile = await run({
+    repo: outsideRepoDir,
+    resolved: { ...RESOLVED, files: ['brand-new-file.ts'] },
+  })
+  check('a files entry tracked nowhere does not halt', newFile.result.halted_on, undefined)
+} finally {
+  rmSync(outsideRepoDir, { recursive: true, force: true })
+}
+
 // 6. SKIP means verification could not reach the surface, and it does not
 //    retry — nothing about running Implement again would make the behaviour
 //    observable. One round, and the caller is told not to land it.
