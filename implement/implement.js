@@ -557,16 +557,32 @@ const G = dir ? `git -C ${dir}` : 'git'
 // A fix round's manually-built `plan` (above) only carries `base_sha` when
 // the caller passed it forward as `resolved.base_sha` — round 1's own
 // `base_sha` is not required reading for a caller that only cares about
-// `files`. Falling back to the literal string "HEAD" here (never to a raw
-// `plan.base_sha` interpolation) keeps the recipe a no-op — `is-ancestor
-// HEAD HEAD` is trivially true, `diff HEAD` is empty — rather than handing
-// the agent a broken one-liner built from the literal text "undefined".
-const planBaseSha = /^[0-9a-f]{7,40}$/.test(plan.base_sha || '') ? plan.base_sha : 'HEAD'
-const BASE = `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${planBaseSha}); ${G} merge-base --is-ancestor "$BASE" ${planBaseSha} && BASE=${planBaseSha}`
+// `files`. The recipe has two shapes depending on whether a real starting
+// commit is known:
+//
+// - With a real `base_sha`: the merge base is computed and then, if it sits
+//   BEHIND where this pass started (i.e. `base_sha` is reachable from it —
+//   which cannot happen since a merge base is always an ancestor of HEAD,
+//   this guards the case where `merge-base` itself falls back to `base_sha`
+//   because there is no upstream), snapped forward to `base_sha`.
+// - Without one: there is nothing to snap forward to, so the
+//   `--is-ancestor` clause is omitted entirely — substituting a sentinel
+//   like the literal string "HEAD" into it would make `is-ancestor "$BASE"
+//   HEAD` trivially true (a merge base is always an ancestor of HEAD) and
+//   silently collapse `$BASE` to HEAD, making `diff "$BASE"` empty even
+//   when the branch has real committed work. The `||` fallback, for when
+//   there is also no upstream, is the empty-tree sha — it always resolves
+//   to a valid diffable base, at the cost of the diff showing the whole
+//   tree as added rather than nothing.
+const hasRealBaseSha = /^[0-9a-f]{7,40}$/.test(plan.base_sha || '')
+const EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
+const BASE = hasRealBaseSha
+  ? `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${plan.base_sha}); ${G} merge-base --is-ancestor "$BASE" ${plan.base_sha} && BASE=${plan.base_sha}`
+  : `BASE=$(${G} merge-base HEAD '@{upstream}' 2>/dev/null || echo ${EMPTY_TREE_SHA})`
 const DIFF = `${G} diff "$BASE"`
 const DIFF_HOWTO = `That first line computes \`$BASE\` — the commit where this pass's work diverges from the upstream branch — and diffs it against the tree as it stands. Run both commands as one line; \`$BASE\` does not survive into a second command.
 
-The diff is the whole change: it covers work an earlier stage may already have committed as well as work still sitting in the working tree, so do not care which it is. Do not substitute a bare \`${G} diff\` — that sees uncommitted work only and is empty once this pass's work is committed. Do not substitute \`${G} diff ${planBaseSha}\` either — that is where this pass started, and commits pulled from origin since then would wrongly show up as work this pass did.
+The diff is the whole change: it covers work an earlier stage may already have committed as well as work still sitting in the working tree, so do not care which it is. Do not substitute a bare \`${G} diff\` — that sees uncommitted work only and is empty once this pass's work is committed.${hasRealBaseSha ? ` Do not substitute \`${G} diff ${plan.base_sha}\` either — that is where this pass started, and commits pulled from origin since then would wrongly show up as work this pass did.` : ''}
 
 **Never invent your own diff command — always run the one given above.** In particular, never use \`${G} diff main..HEAD\` (two dots): once main has moved past this branch's base, that compares branch TIPS and shows main's own newer commits as things this branch deleted. \`${G} diff main...HEAD\` (three dots) — or the merge-base recipe above — compares against the actual merge base, which is what "what did this branch change" means.`
 
@@ -1074,7 +1090,7 @@ return {
   title: item.title,
   round,
   rounds,
-  base_sha: planBaseSha,
+  base_sha: hasRealBaseSha ? plan.base_sha : undefined,
   verdict: verdict.verdict,
   tests_touched: touchedTests,
   mutation: touchedTests.length ? verdict.mutation || null : undefined,
