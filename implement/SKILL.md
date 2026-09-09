@@ -20,7 +20,9 @@ One **pass** is one tracked item, worked end to end by a single `implementer` ag
 
 ## The unit is a slice
 
-A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no breakdown, or a Verify/Land child, is never dispatched. **Verify is this session's**, via `verify-project`; `human` stops it until a person looks. **Land is a slate row**, `go`-taken — never inside a pass ([`ARITY.md`](ARITY.md) has why). Item → pass: [`HANDOFF.md`](HANDOFF.md).
+A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no breakdown, or a Verify/Land child, is never dispatched. **Verify is this session's**, via `verify-project`; `human` stops it until a person looks. Item → pass: [`HANDOFF.md`](HANDOFF.md).
+
+**"Land" names two different moves, and only one of them is gated.** Merging a pass's throwaway branch into the branch it was cut from is **automatic and ungated** — you do it yourself as each pass returns, with no row and no `go`. It moves nothing outward: the pass branch came off that branch, and merging back is how a worktree-based pass finishes. Publishing that branch outward — `git push`, a PR, a merge into the default branch — is the **Land bead**, and that one is a slate row taken with `go` ([`ARITY.md`](ARITY.md) has why). A standing instruction not to push, merge or open a PR is about the outward move; read it as blocking the intra-feature merge and a finished, verified run sits unlanded waiting for permission nobody was ever asked for. When in doubt: does this make work visible to anyone outside this checkout? No → merge it now.
 
 ---
 
@@ -67,11 +69,14 @@ loop
   if !r.ok  -> halt: report r.halted_on, r.detail
   run r.recheck[].cmd, compare against .expect; append a rechecks entry at r.verdict_path
   review r's diff against the pass's starting sha
-  if clear and r.blockers empty  -> land
+  if clear and r.blockers empty  -> merge into the branch the pass was cut from
+  TaskStop r's agent id; stop every surface this round started
   if round == 2  -> halt: leave the worktree standing, report the path
   if the fix would revert a hunk round 1 wrote  -> halt: the criteria contradict each other
   r = Agent(implementer, <same worktree, failures as the brief>); round++
 ```
+
+**Every start in this loop has a matching stop, and the stop is yours.** The two `start` lines above and `VERDICTS.md`'s surface restart all leave a process running that nothing else reaps — a `langgraph dev`, a static server, a simulator. Stop each one as soon as the recheck that needed it has passed, not at teardown: teardown is gated behind landing, so a run that stalls for any reason leaks every surface it opened. The same applies to the pass itself. **A returned pass is not a terminated agent** — it stays registered and resumable after its final JSON arrives, shows in the user's agent view, and holds its context until something stops it. `TaskStop` on the agent id is what ends it; the completion notification is not.
 
 **Two launches, then stop.** A second round that still fails means the brief is wrong, and that is a judgment you hold.
 
