@@ -376,17 +376,52 @@ Non-negotiables:
 
 ## Sync
 
-Issue data moves over the git remote via Dolt, not via git commits.
+### Where the truth lives — read this before answering any question about it
+
+Beads is shaped exactly like git, and the same two-scope answer applies:
+
+| | git | beads |
+|---|---|---|
+| Local store | `.git/` | `.beads/embeddeddolt/` (gitignored) |
+| Shared store | `refs/heads/main` on origin | `refs/dolt/data` on the **same** origin |
+| Command that moves it | `git push` / `git pull` | `bd dolt push` / `bd dolt pull` |
+
+**The shared source of truth is the git remote.** Issue data is IN the repo — under
+`refs/dolt/data`, a different ref namespace from `refs/heads/main`, which is why `git log` never
+shows it. The local Dolt database is a **working copy**: authoritative for what `bd` reads and
+writes on this machine, and durable nowhere else until `bd dolt push`.
+
+The upstream docs say "the local Dolt database is the source of truth." That sentence is scoped to
+*which store a `bd` command consults*, not to *which copy is canonical*. Never repeat it as an
+answer to "where do my issues live" or "how do my machines sync" — it reads as "the issues are not
+in the repo", which is false and has already cost a full session.
 
 ```bash
 bd dolt pull     # before reading, if the repo is shared
 bd dolt push     # at the end of a session that wrote
 ```
 
-**Git hooks do not sync issue data.** The pre-commit hook refreshes `.beads/issues.jsonl` when
-`export.auto` is on; post-merge and post-checkout skip JSONL import when `sync.remote` is set.
-None of them push Dolt history. `bd dolt push` is the only thing that does, and `bd hooks install`
-is never the answer to "the issues didn't reach the remote" (`wrap-up` runs the push).
+### ⛔ `bd dolt push` and `git push` are two independent syncs to the same remote
+
+Doing one is not doing the other. A green `git push` moves code and moves no issues. This is the
+single most common beads failure and it is invisible: the session closes, `git status` is clean,
+`main` is pushed, and the backlog sits a session behind on one laptop. `wrap-up` runs the push —
+but a session that never reaches `wrap-up` has to run it by hand.
+
+### ⛔ Never conclude "no Dolt remote" from local refs
+
+`git for-each-ref refs/dolt` returns **nothing** even when the remote holds the data — it lists
+local refs, and Dolt history is not fetched into them. The only check that answers the question:
+
+```bash
+git ls-remote origin | grep dolt      # refs/dolt/data + refs/heads/__dolt_remote_info__
+bd dolt remote list                   # origin  git+ssh://…  or  git+https://…
+```
+
+**Git hooks do not sync issue data.** The pre-commit hook refreshes the JSONL export; post-merge
+and post-checkout skip JSONL import when `sync.remote` is set. None of them push Dolt history.
+`bd dolt push` is the only thing that does, and `bd hooks install` is never the answer to "the
+issues didn't reach the remote".
 
 ### Never infer sync state from `git`
 
@@ -395,8 +430,8 @@ normal and mean nothing is wrong:
 
 - `.beads/embeddeddolt/` (or `.beads/dolt/`) gitignored — **by design**, per the architecture
   diagram in the beads docs. It is not a missing backup and not a rollback gap.
-- `.beads/issues.jsonl` absent and untracked — the export is opt-in (`export.auto`), and it is
-  not the sync channel either way.
+- `.beads/issues.jsonl` and `.beads/interactions.jsonl` absent, untracked, or gitignored — that
+  is the standing convention here, not a broken setup. Neither is the sync channel.
 - `bd hooks list` showing every hook uninstalled — see above; hooks are not the transport.
 - **`refs/dolt/data` keeping the same hash across a `bd dolt push`.** It is a Dolt manifest ref,
   not a git content ref, so it does not advance the way a branch does. An unchanged hash is not
@@ -432,59 +467,64 @@ appears in the Issues tab. Verify with `bd config get github.repository`; `(not 
 compliant state. These are two unrelated mechanisms, and reading a line about one as a rule about
 the other has already cost real time.
 
-## JSONL export — on by default in this setup
+## JSONL export — OFF, and tracked nowhere
 
-Separate from sync, and **not** a substitute for it. The Dolt refs remain the source of truth and
-the only real backup; `bd export --help` says outright that JSONL "does not capture Dolt branches,
-commit history, working-set state, or non-issue tables." What the export buys is a plain-text
-copy of the backlog committed alongside the code: readable on github.com, diffable in PRs,
-greppable without `bd` installed.
+**Standing convention: no beads repo here commits a JSONL export.** `bd config`'s own comment
+says the export is "Disabled by default; enable only when an integration needs fresh
+`.beads/issues.jsonl`." There is no such integration here.
 
-**Standing convention: every beads repo here has it on.** `bootstrap` turns it on at init; if you
-find a beads repo without it, turn it on.
+What `.beads/*.jsonl` files are, so the question never has to be re-derived:
+
+| File | What it holds | Track it? |
+|---|---|---|
+| `issues.jsonl` | a flat snapshot of every current issue | **no** |
+| `interactions.jsonl` | an audit log of bead field changes (`{"kind":"field_change",…}`) | **no** |
+
+Both are exports of state Dolt already holds and already ships over `refs/dolt/data`. Committing
+either buys nothing and costs the thing that actually hurts: a file that goes dirty on its own
+after any `bd` write, so `git status` looks like there is uncommitted work when there isn't.
+
+`bd export | bd import` does round-trip issues **and** memories, so the JSONL is a real recovery
+and migration path — keep it on disk, gitignored. It is not a sync path: `bd import` is
+upsert-only, so a bead deleted on one machine never disappears on another, and `bd export --help`
+notes it "does not capture Dolt branches, commit history, working-set state, or non-issue tables."
+
+### Turning it off in a repo that has it on
 
 ```bash
-bd config set export.auto true
-bd config set export.git-add true
-bd export --output .beads/issues.jsonl   # one-time seed — see below
-git add .beads/issues.jsonl
+bd hooks uninstall                     # FIRST — see the trap below
+git config --unset core.hooksPath
+git rm --cached .beads/issues.jsonl .beads/interactions.jsonl
+git rm -r --cached .beads/hooks
+printf 'issues.jsonl\ninteractions.jsonl\n' >> .beads/.gitignore
 ```
 
-### ⛔ `export.auto: true` does nothing until the file is already tracked
+Set `auto: false` and `git-add: false` under `export:` in `.beads/config.yaml` too.
 
-Verified on `bd 1.1.2`. Setting the config and committing produces **no file at all**. Run the
-hook with `--verbose` and it says why:
+### ⛔ Two traps that make the removal silently fail
 
+**`export.auto: false` does not stop the export.** The beads pre-commit hook re-exports and
+re-stages regardless. `bd hooks uninstall` is what stops it — the config flag alone leaves the
+file coming back on every commit.
+
+**`git commit -- <path>` silently drops a `git rm --cached`.** Once the path is out of the index
+the pathspec matches nothing, so the commit succeeds, reports success, and contains none of the
+removals. Commit with a verified index instead, and prove it landed against `HEAD`, never against
+`git status`:
+
+```bash
+git ls-tree HEAD .beads/ | grep -c jsonl     # must be 0
 ```
-pre-commit: skipping JSONL export — no staged .beads paths
-auto-export: skipping — running as git hook
-```
-
-The pre-commit hook only refreshes `issues.jsonl` when the commit already stages something under
-`.beads/`, and the interval-based auto-export deliberately stands down inside a git hook. So the
-file that does not exist is never staged, is therefore never written, and the setting looks broken
-while reporting `true` from `bd config get`.
-
-**Break the loop once with an explicit `bd export` + `git add`.** After that first commit it is
-self-maintaining: every later commit picks up a fresh `issues.jsonl` automatically, staged by the
-hook, even when the commit is otherwise unrelated to issues. Confirmed — a commit touching only
-`README.md` came out as `.beads/issues.jsonl | 1 +` and `README.md | 1 +`.
-
-`bd config set export.auto true` writes a flat `export.auto:` key beside any existing `export:`
-map in `config.yaml`. It looks wrong and reads back correctly; leave it alone.
 
 ### Pull before reading, push after writing
-
-Issue state travels between machines through Dolt, and nothing in git brings it along. So a
-session that touches issues brackets its work:
 
 ```bash
 bd dolt pull     # before the first read — another machine may have moved the backlog
 bd dolt push     # after the last write
 ```
 
-`wrap-up` does both. The `issues.jsonl` in the commit is a by-product of that, never the carrier —
-a clone that only has the JSONL and never pulls has a stale, read-only picture.
+`wrap-up` does both. Nothing in a git commit carries issue state, so a session that never reaches
+`wrap-up` must run the push by hand or the backlog stays on one machine.
 
 ## Mirror mode
 

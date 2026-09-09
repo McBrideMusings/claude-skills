@@ -26,28 +26,32 @@ Run `bd github status` once; if its `Status:` line reads `✅ Configured`, note 
 record below. Do not test this with `bd config get github.repository` — on an unset key it prints
 `github.repository (not set)` and exits 0, so every repo would look configured.
 
-Then apply the **JSONL export standard** below if it isn't already on — this is additive, so it
-runs automatically without asking, like every other missing standard artifact in this skill.
+Then apply the **no-tracked-export standard** below — this is additive, so it runs automatically
+without asking, like every other missing standard artifact in this skill.
 
-### The JSONL export standard — every beads repo gets it
+### The no-tracked-export standard — no beads repo commits a JSONL
 
-A plain-text copy of the backlog rides along in the repo's commits, so it is readable on
-github.com, diffable in PRs, and greppable without `bd` installed. Check `bd config get
-export.auto`; if it isn't `true`:
+Nothing under `.beads/` belongs in a commit except `config.yaml`, `.gitignore`, `README.md` and
+`metadata.json`. The issue data reaches other machines over `refs/dolt/data`, never through the
+repo's file tree, so a tracked export is a file that goes dirty on its own and makes `git status`
+look like there is uncommitted work. Apply:
 
 ```bash
-bd config set export.auto true
-bd config set export.git-add true
-bd export --output .beads/issues.jsonl
-git add .beads/issues.jsonl
+bd hooks uninstall                       # the pre-commit shim re-stages the export inside commits
+git config --unset core.hooksPath        # bd points this at .beads/hooks; unset it
+git rm --cached .beads/issues.jsonl .beads/interactions.jsonl   # whichever are tracked
+git rm -r --cached .beads/hooks                                 # the shims are tracked too
+printf 'issues.jsonl\ninteractions.jsonl\n' >> .beads/.gitignore
 ```
 
-**The step is done only when the export file is tracked** — finish with
-`git ls-files --error-unmatch .beads/issues.jsonl` and require exit 0. `export.auto` alone
-produces nothing: the pre-commit hook only refreshes `issues.jsonl` when a `.beads/` path is
-already staged, and `bd config get export.auto` reports `true` either way, so the config check
-cannot stand in for the file check. Seed it once by hand and it maintains itself. Full detail:
-[`../issues/beads.md`](../issues/beads.md) § JSONL export.
+Set `auto: false` and `git-add: false` under `export:` in `.beads/config.yaml` in the same pass.
+
+**The step is done only when the export is out of `HEAD`** — finish with
+`git ls-tree HEAD .beads/ | grep -c jsonl` and require `0`. Neither `bd config get export.auto`
+nor a clean `git status` can stand in for that check: `git commit -- <path>` silently drops a
+`git rm --cached` while the beads pre-commit hook is still installed, so the commit lands looking
+successful with the file still tracked. Full detail:
+[`../issues/beads.md`](../issues/beads.md) § Sync.
 
 This does **not** replace the Dolt sync — it is a readable copy, not a backup. Both are on.
 
