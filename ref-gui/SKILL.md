@@ -12,6 +12,7 @@ Reference only. The interactive design workflow — orient, sketch, critique, di
 | [`context.md`](context.md) | The whole cell — open before designing, building or reviewing any visual interface. |
 | [`states.md`](states.md) | Enumerating empty, loading, error, partial, too-much and one-item cases. |
 | [`design.md`](design.md) | Composing a new screen or component. |
+| [`grouping.md`](grouping.md) | Deciding what the eye will bind to what — grouping, enclosure, alignment, misbinding. |
 | [`direction.md`](direction.md) | Choosing the visual world for something new. |
 | [`fidelity.md`](fidelity.md) | Deciding how finished a mockup needs to be. |
 | [`vocabulary.md`](vocabulary.md) | Naming what you are looking at before critiquing it. |

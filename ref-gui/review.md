@@ -62,6 +62,25 @@ Substantive bar from Emil Kowalski (animations.dev) and Apple's *Designing Fluid
   projecting its resting point forward from the release *velocity* — ignores the motion the user's
   gesture already had.
 
+## Grouping and misbinding (defects only)
+
+Misbinding is a defect, not a craft call: the user acts on the wrong object, not merely on an
+uglier one. Flag each of these with its measurable cost; the principle behind each lives in
+`grouping.md`.
+
+- A form label equidistant between two fields, or closer to the wrong one — users bind it to the
+  wrong field and submit wrong data.
+- A group whose inter-group gap is not visibly larger than its intra-group gap.
+- Grouping carried by colour alone with no second shared trait — invisible to 1 in 12 men (red-green
+  colour vision deficiency).
+- A border drawn around something that is not a real boundary, or nested cards — common region is the
+  strongest grouping cue on the screen, so misusing it overrides correct proximity and similarity.
+- A connector line implying a relationship the data does not have.
+- A hover, selection, loading, expansion, drag or disabled state that breaks the grouping the resting
+  state establishes.
+- Visual grouping that contradicts DOM order, accessible names or keyboard sequence (this overlaps
+  a11y and is a hard defect).
+
 ## The remedial order (prefer earlier moves)
 
 1. Move it to GPU-friendly properties (platform cell has the specifics).
@@ -88,8 +107,10 @@ severe on sight — never averaged down because the surface is minor:
 - Truncated content with no way to reach the full value; hidden content with no visible cue.
 - An error that names no way to recover; a semantic colour used against its meaning.
 - A state change carried by motion alone — no colour, icon, or label when the animation doesn't run.
+- A misbinding — a label, price, status or warning that the layout binds to the wrong object.
 
-These set severity, not new rules — the owning cell (`a11y.md`, `design.md`, `states.md`) decides
+These set severity, not new rules — the owning cell (`a11y.md`, `design.md`, `grouping.md`,
+`states.md`) decides
 whether the symptom is present; this list decides what it costs.
 
 **Prefer the cheaper fix.** When more than one fix would work, propose the earliest that does:
