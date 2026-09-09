@@ -22,6 +22,7 @@ same order. This file is the single owner of that order. `review dual`,
 | You can type at it | no | **yes** — switch to the tab and take it over | **yes** — switch to the workspace and take it over | no | yes on herdr, no on Terminal.app |
 | Survives this session dying | no | **yes** | **yes** | the window survives; the run does not | yes on herdr, no on Terminal.app |
 | Cross-vendor | no — Claude only | no — Claude only | no — Claude only | yes, any vendor `dispatch` resolves | yes, that vendor |
+| Stopped by | `TaskStop` on its task id — a `completed` status is not a reason to skip it; the row then reads `killed` rather than leaving `ListAgents` | `herdr tab close` | `herdr workspace close` | close the window | `herdr tab close` on herdr; close the window on Terminal.app |
 | Reached by | the `Agent` tool | `dispatch exec` → `herdr-agent` (`herdr tab create`) | `dispatch exec` → `herdr-agent` targeting a fresh `herdr worktree create --workspace` | `dispatch exec` → `terminal run` | `dispatch exec` → `herdr-agent` or `terminal run` |
 
 `split` and `workspace` are the two shapes a herdr-hosted target can take, and both stop short
