@@ -2,7 +2,9 @@
 
 ## What a pass returns, in detail
 
-`verdict_path` is the absolute path of the verdict JSON the pass wrote. `recheck` is how the orchestrator re-checks the work — empty means nothing machine-checkable. `blockers` empty means nothing the pass can see stops it landing. `review` is `{findings, blocking, major}`.
+`verdict_path` is the absolute path of the verdict JSON the pass wrote. `recheck` is how the orchestrator re-checks the work — empty means nothing machine-checkable. `blockers` empty means nothing the pass can see stops it landing. `review` is `{findings, blocking, major}`, or `null` when this launch spawned no code-reviewer over the current diff — a resumed pass that made further edits without re-reviewing them reports `null`, never a previous launch's numbers.
+
+**A non-null `review` is a claim, not a fact — check it before landing on it.** `bash ~/.claude/tools/validate-review-claim <the pass's agent id>` looks for a `code-reviewer` meta record whose `parentAgentId` is that agent — exit 0 means the claim is backed, exit 1 means it isn't (treat as if `review` had come back `null`), exit 2 means the id itself doesn't resolve (can't validate). This is read-only and runs before merging, alongside the recheck commands.
 
 ## The verify loop's round mechanics
 

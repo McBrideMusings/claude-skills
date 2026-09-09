@@ -268,21 +268,23 @@ Reuse the Phase 2 ownership verdict.
 4. Merge: `git -C <repo> merge --no-ff <feature> -m "Merge <feature>"` (`--no-ff` keeps the feature as one revertable unit; plain message, no AI attribution).
 5. **On conflict:** `git -C <repo> merge --abort`, `git -C <repo> checkout <feature>`, and STOP — surface it. A merge conflict is a genuine blocker; never force or silently hand-resolve.
 6. Push: `git -C <repo> push origin main`.
-7. Delete the merged branch: local `git -C <repo> branch -d <feature>` (`-d`, not `-D` — refuses if not fully merged) and remote `git -C <repo> push origin --delete <feature>`.
-8. End state: on `main`, `git status` clean, feature branch gone. Report the merge in the summary.
+7. Sweep: `bash ~/.claude/tools/git-sweep.sh --repo <repo> --quiet`. **Do this even though step 7 already deletes the one branch you know about** — the push in step 6 is what makes ANY other already-merged, never-pushed branch (an implement pass merged locally in an earlier session, say) collectible, and nothing else will collect it if this step is skipped. The sweep carries its own vetoes (dirty tree, SELF-LAND, caller's own worktree, a branch at the tip of main); it never removes more than step 8 below would ask for by hand.
+8. Delete the merged branch: local `git -C <repo> branch -d <feature>` (`-d`, not `-D` — refuses if not fully merged) and remote `git -C <repo> push origin --delete <feature>`. (Step 7's sweep may have already done this — `branch -d` on an already-gone branch is a no-op error, not a problem.)
+9. End state: on `main`, `git status` clean, feature branch gone. Report the merge in the summary.
 
-No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push.
+No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push/sweep — there is nothing to push and nothing on a remote for the sweep to check.
 
 **Route 2 — you are in a linked worktree: fast-forward push.** Every step runs inside the worktree; nothing reaches into the primary checkout.
 1. Pre-check: `git status` clean and Phase 4 clean-or-fixed. **Never land known-failing work** — same blocker, same stop.
 2. Bring the branch current in place: `git fetch origin main`, then `git merge FETCH_HEAD`. This is what makes the push below a fast-forward.
 3. **On conflict:** `git merge --abort` and STOP — surface it. Same rule as Route 1's step 5; never force, never hand-resolve silently.
 4. Re-run step 1's pre-check: the merge brought in other sessions' commits, so clean-and-green has to hold against the merged tree, not the one you tested.
-5. Land: `~/.claude/tools/land <worktree>`. It refuses — non-zero, reason on stderr — if the directory is not a repo, is dirty, or is behind the branch it is pushing to, and it never passes a force flag. A refusal is a stop, not a prompt to retry harder.
-6. Delete the remote feature branch if Phase 5 pushed one: `git push origin --delete <feature>`.
-7. **Never remove your own worktree.** The launching session removes it from the main checkout, and the local branch goes with it. End state: origin's default branch carries the work, `git status` clean. Report the landing in the summary.
+5. Land: `~/.claude/tools/land <worktree>`. It refuses — non-zero, reason on stderr — if the directory is not a repo, is dirty, or is behind the branch it is pushing to, and it never passes a force flag. A refusal is a stop, not a prompt to retry harder. (A successful push already sweeps the repo — `land`'s own push runs `git-sweep.sh --repo <worktree> --quiet` for you.)
+6. Sync the primary: `~/.claude/tools/sync-primary <worktree>`. `land` never touches anything outside the worktree, on purpose, which otherwise leaves the primary checkout's local branch stale — `git -C <repo> log main` would show nothing of what step 5 just pushed. This is that fetch-and-fast-forward, refusing rather than clobbering a dirty or diverged primary.
+7. Delete the remote feature branch if Phase 5 pushed one: `git push origin --delete <feature>`.
+8. **Never remove your own worktree.** The launching session removes it from the main checkout, and the local branch goes with it. End state: origin's default branch carries the work, the primary's local branch matches it, `git status` clean. Report the landing in the summary.
 
-**`~/.claude` always takes Route 2, and its step 5 is `~/.claude/tools/claude-land <worktree>` instead** — the same push, plus the beads-export commit and the primary-checkout fast-forward that only this repo needs. Two independent reasons put it here, and neither is the general one: the primary checkout denies `git commit` and any non-fast-forward `git merge` outright (docs/adr/0005), and its index is shared by every concurrent session, which is the shape that reverted 54 files (cc-lfzq). So `git -C ~/.claude checkout main` or `merge` is wrong here even from a session that could reach it.
+**`~/.claude` always takes Route 2, and its step 5 is `~/.claude/tools/claude-land <worktree>` instead, with no separate step 6** — `claude-land` already fast-forwards the primary `~/.claude` itself as part of the same call, which is the beads-export commit and the primary-checkout fast-forward that only this repo needs. Two independent reasons put it here, and neither is the general one: the primary checkout denies `git commit` and any non-fast-forward `git merge` outright (docs/adr/0005), and its index is shared by every concurrent session, which is the shape that reverted 54 files (cc-lfzq). So `git -C ~/.claude checkout main` or `merge` is wrong here even from a session that could reach it.
 
 **No legal route? Stop and surface it.** A worktree with no remote cannot fast-forward-push and cannot reach the primary — say so and hand the branch over. **Never open a PR on a repo you own**: `~/.claude/CLAUDE.md` §Git & GitHub forbids it, and a blocked landing is not an authorization to publish one. Landing is the only thing Step C does on an owned repo; when it cannot, the pass ends with the work committed and pushed on its branch.
 
