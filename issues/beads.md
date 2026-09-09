@@ -55,7 +55,8 @@ don't route around the allow by asking in chat first.
 | create, body from file | `bd create "<title>" --body-file <path>` (`-` for stdin) |
 | create, ID only | add `--silent` — prints the ID and nothing else |
 | create as child | add `--parent <parent-id>` |
-| create with blockers | add `--deps blocks:<id>,discovered-from:<id>` |
+| create as a blocker of `<id>` | add `--deps blocks:<id>` — the new item blocks `<id>`, not the reverse |
+| create waiting on `<id>` | create, then `bd dep add <new> <id>` (`--deps discovered-from:<id>` still works at create time) |
 | create many | `bd create --file <markdown>` or `--graph <plan.json>` |
 | **list open** | `bd list --status open --json` |
 | list by label | `bd list -l <label> --json` (AND) / `--label-any <a,b>` (OR) |
