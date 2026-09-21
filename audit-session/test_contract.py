@@ -80,5 +80,28 @@ class TestDocsMatchScripts(unittest.TestCase):
             )
 
 
+class TestDumpPathsRedact(unittest.TestCase):
+    """Both dump paths print transcript text, which carries `.env` reads."""
+
+    def test_known_secret_shapes_are_masked(self):
+        import analyze
+
+        for sample in [
+            "ANTHROPIC_API_KEY=sk-ant-api03-abcdef123456",
+            "export GH_TOKEN=ghp_abcdefghijklmnopqrst",
+            "curl -H 'Authorization: Bearer abcdefghijklmnop' https://x",
+            "TAILSCALE_SECRET: hunter2hunter2",
+        ]:
+            out = analyze.redact(sample)
+            self.assertIn("<REDACTED>", out, f"not masked: {sample}")
+            self.assertNotIn("hunter2hunter2", out)
+
+    def test_ordinary_text_survives(self):
+        import analyze
+
+        plain = "read audit-session/HOOKS.md and ran python3 analyze.py --steering"
+        self.assertEqual(plain, analyze.redact(plain))
+
+
 if __name__ == "__main__":
     unittest.main()

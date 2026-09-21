@@ -4,6 +4,10 @@ An audit is read top to bottom, in a terminal, by someone deciding what to fix. 
 
 Each finding follows [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Finding — the shape, the hard rules, and the worked example all live there. The closing dispositions block follows §Slate row and §Hatch.
 
+## Redact
+
+Every finding quotes the transcript, and transcripts carry `.env` reads, auth headers and provider tokens. **Write `<REDACTED>` in place of any secret you quote** — a key, a token, a password, a signed URL — and quote only the lines carrying the evidence. `analyze.py` masks the shapes it recognises on both dump paths, so a secret reaching the report is one its patterns missed; you are the second pass, not the first. A report travels further than the session does: into chat, and through `backlog file` into the tracker.
+
 ## Length
 
 Aim for **60–120 words** in the paragraph. Under 60 usually means the evidence is missing. Over 120 means it is two findings.

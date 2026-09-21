@@ -21,7 +21,7 @@ shape of the failure picks the rung — this is not a preference order.
 | Rung | Watches | Fires on | Reach for it when |
 | --- | --- | --- | --- |
 | **Harness hook** | tool events — commands, paths, arguments, turn boundaries | the agent's *action* | The failure is a shape the agent keeps typing, or a step it keeps skipping. `~/.claude/hooks/`, wired in `settings.json`. |
-| **Project check** | the code — types, lints, tests, schema | the agent's *output* | The failure is a mistake in what was written. `tsc`, the linter, a test, `admin check`. A hook cannot see this; only running the code can. |
+| **Project check** | the code — types, lints, tests, schema | the agent's *output* | The failure is a mistake in what was written. `tsc`, the linter, a test, `admin check`. A hook cannot see this; only running the code can. **Read the repo's own checks before proposing a new one** — the check task in `admin.toml`, `.github/workflows/`, `.pre-commit-config.yaml`, `package.json` scripts. A check that already covers the mistake but sits unwired, or passes while the problem is real, is the finding; proposing a second copy of it is not. Where nothing runs any of them — no wired check task, no pre-commit hook, no CI job — say so in the finding and point at `bootstrap`, which sets them up. |
 | **Filesystem validator** | the repo's shape — files present, absent, or malformed | the *result* on disk | The failure is structural: a doc that should exist and doesn't, a file in the wrong place, a manifest out of step with the tree. Cheapest of the three to write, and the most often forgotten. |
 
 **Every rung takes the same precision gate below.** A project check that fails on code that

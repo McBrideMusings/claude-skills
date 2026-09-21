@@ -13,11 +13,28 @@ that touch no code at all. The same rule in `review/axes/` is charged once, to t
 room for it.
 
 This is the only fix shape that **removes** always-on tokens rather than adding enforcement.
-Reach for it before `HOOKS.md`.
+Reach for it before `HOOKS.md` **once test 0 below has sent the mechanical rules away** — a
+rule a program could check belongs in the program, not in a lens that reads it.
+
+## Test 0 — could a program decide this?
+
+Before the three tests, classify the violation.
+
+**Mechanical** — a fixed syntactic pattern, a banned API, an import shape, a file in the
+wrong place, a missing required file. A program decides it the same way every time, so it
+leaves this shape for [HOOKS.md](HOOKS.md): a rule in the repo's own linter, a pre-commit
+hook, a CI job, or a filesystem validator, whichever the repo's language and existing
+guardrail make cheapest. **Default to building the check.** A mechanical rule relocated to
+`review/axes/` is checked in about 1.5% of sessions; the same rule as a lint rule is checked
+on every run of the check command.
+
+**Judgement call** — cross-file consistency, "matches the surrounding style", anything
+needing intent or the history of the change. No check substitutes for it, so it goes on to
+the three tests below.
 
 ## The test
 
-A rule belongs at review time when all three hold:
+A judgement-call rule belongs at review time when all three hold:
 
 1. **It is checkable against a diff.** No session history needed, no knowledge of intent —
    just the changed lines. "Delete obsolete paths rather than adding fallbacks" qualifies;
@@ -57,5 +74,6 @@ judged fairly.
 
 Every lens's `Fix:` line gains one clause:
 
-> **Whose window?** `<review/axes/<axis>.md — passes all three tests, review rate 1.5%>` |
-> `<stays always-on — fails test <n>: <why>>`
+> **Whose window?** `<review/axes/<axis>.md — judgement call, passes all three tests, review
+> rate 1.5%>` | `<mechanical — leaves for HOOKS.md: <the check>>` | `<stays always-on — fails
+> test <n>: <why>>`
