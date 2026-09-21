@@ -38,6 +38,8 @@ When reworking an existing change, the reference point is the shape the code *sh
 4. **Move shared rules to one owner.** Feature flags, permissions, route gating, URL state, command naming — these duplicate across pages and hide inside view components. One place each.
 5. **Verify the intended flow**, including the assumptions the deletions invalidated — navigation, permissions, persisted state.
 
+**Write the rework first, then run the tests.** The tests check finished work; they do not steer it. A refactor built by fixing failing tests one at a time bends each edit back toward what the old code did, and a behaviour change slips through as a quiet edit to test setup, so the suite ends green while certifying the bug. When a test fails after the rework, decide from the end state which side is wrong — the code or the test's expectation — before touching either.
+
 Bounds: don't invent a generic framework for one feature, keep the rework scoped to what makes the final shape coherent, and prefer names describing product intent over implementation history.
 
 ## Designing for testability

@@ -15,6 +15,7 @@ Walk the ones that apply to what the project actually is:
 - **Input-validation strategy** — centralized validation at the edge (schema, parser) vs per-handler ad-hoc checks. The finding is the missing *strategy*, not one missing check (one reachable missing check is review's).
 - **Transport & headers** *(web surface only)* — TLS assumptions, CSP, CORS policy, cookie flags, security headers. Absence is the gap.
 - **Dependency policy** — pinning discipline, update cadence, whether any audit tooling runs (`npm audit`, dependabot, etc.). Unmaintained load-bearing dependencies.
+- **Process and code-execution boundaries** — are subprocesses spawned with an argument array, or is a shell string built from data? Is HTML rendered through escaping-by-default templates, are queries parameterized? Does any format meant to be data (a save file, a config, a project document) have a path to execute code — an `eval`, a dynamic import, a plugin hook? That boundary is what makes opening an untrusted file safe; one execution path removes it.
 - **Least privilege** — DB users, API token scopes, container users (root?), file permissions on anything sensitive.
 - **Data protection** — what user data exists, is anything sensitive encrypted at rest, is there a backup/recovery story, deletion semantics.
 - **Logging & audit** — do logs leak secrets or PII; is there any audit trail for sensitive actions.

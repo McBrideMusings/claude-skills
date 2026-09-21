@@ -97,6 +97,7 @@ On failure, print the reason and stop. **Refuse a dirty tree:** `git status --sh
 ## Halt conditions
 
 - Pre-flight failed
+- The brief arrived damaged — truncated, duplicated, or naming something that does not exist (`halted_on: 'brief'`)
 - No diff; build won't go green
 - verification `BLOCKED` — a closed surface (`halted_on: 'surface'`), or a fixture that contradicts the item's own model (`halted_on: 'fixture'`)
 - The criteria contradict each other (oscillation, above)

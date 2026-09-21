@@ -86,6 +86,12 @@ Mock at **system boundaries only** (external APIs, time, randomness, sometimes f
 
 See [MOCKING.md](MOCKING.md) for design-for-mockability patterns: dependency injection, SDK-style interfaces, and concrete examples.
 
+## Tests that pass for broken code
+
+**A golden or comparison test proves nothing until a bug would change its output.** An all-zero result, a value clamped at its maximum, or a round trip through a lossy step all match the saved output whether the code is right or wrong. After writing one, break the code under test on purpose (flip a sign, drop a term), run the test, and watch it fail, then restore the code. It is the same check `implement` runs as `mutation.discriminates` ([`../implement/VERDICTS.md`](../implement/VERDICTS.md)), done by hand.
+
+**A "never" or "always" claim gets one property test.** When a comment, commit message or issue states an invariant, test it with generated inputs across the whole range, including the edges and the points where the input crosses from one regime to another. Hand-picked examples show the claim holds somewhere; a property test is what checks the claim itself. For numeric code, "no NaN or infinity" is part of every such claim. This is one test per stated invariant, not a coverage target.
+
 ## Audit mode — judging an existing suite
 
 The build loop's criteria, applied retrospectively. Use when asked to audit or improve existing tests (including `improve`'s `tests` aspect).
@@ -106,6 +112,7 @@ When another skill (e.g. `improve`'s survey) invokes the audit: no file writes, 
 [ ] Test describes behavior, not implementation
 [ ] Test uses public interface only
 [ ] Test would survive an internal refactor
+[ ] Test fails when the code under test is broken on purpose
 [ ] Code is minimal for this test
 [ ] No speculative features added
 ```
