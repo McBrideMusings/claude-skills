@@ -88,12 +88,13 @@ changes when it moves. So `pane split --cwd <worktree-path>` is not a way to kee
 in the current workspace; it is a slower way to arrive at the same place. Read the new ID
 from `herdr agent list` rather than the one `pane split` returned.
 
-**Carry `CLAUDE.local.md` into the new worktree if the main checkout has one.** It's
-untracked, so `git worktree add` never brings it along on its own — copy the file, and any
-directory it points at (a local doc cache under `.claude/reference/`), from the main checkout
-into the new worktree right after creating it. Skipped once already: a neutrino worktree
-carried an `Explain until removed` section that six sibling worktrees of the same repo never
-saw, because nothing copied it forward.
+**Check that `CLAUDE.local.md` reached the new worktree before starting the agent.** It's
+untracked, so git never carries it. In a repo with `admin.toml`, the admin tool's populate step
+usually already has: the base archetype (`~/.admin/archetypes/base/archetype.toml`) symlinks
+`CLAUDE.local.md` and `.claude/CLAUDE.local.md` back to the main checkout. Run `ls -la` on the
+worktree's copy; a symlink to the main checkout means there is nothing to do, and a `cp` onto it
+writes the file through the link onto itself. Only when the file is missing, copy it, and any
+directory it points at (a local doc cache under `.claude/reference/`), from the main checkout.
 
 **The dispatch decides where the work happens, and where it stops.** What the work *is* —
 a feature, a bug, a log read — belongs to the prompt. Where it ends does not: every worker
