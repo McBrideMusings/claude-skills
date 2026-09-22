@@ -15,7 +15,7 @@ The dirty-tree halt is judged in the checkout the pass will branch from. When th
 
 ## Where a pass runs
 
-**Every pass runs in a worktree. No exceptions, however small the change.** The user is usually standing in the primary checkout.
+**Every pass runs in a worktree. No exceptions, however small the change.** The user is usually standing in the primary checkout. A session standing in the item's own worktree dispatches no pass at all — [`SKILL.md`](SKILL.md) has the inline rule.
 
 Which worktree depends on whether the repo is collaborative — check the `origin` owner, not the directory:
 
