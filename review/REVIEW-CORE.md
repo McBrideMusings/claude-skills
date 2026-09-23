@@ -330,12 +330,13 @@ summarized. State the verdict, not the evidence for it:
 
 > Reviewed, looks good, checks passed. No issues found.
 
-**Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections for this case only.** Its
-three-section closer and its manual-testing-steps block describe a coding task; a clean
-review-only pass changed no files, so all three sections would read "none" / "everything" /
-"none" — which is what the one-liner above already says, just as three headers instead of four
-words. Skip that closer here. It comes back the moment a finding gets fixed on the branch,
-because now files actually changed and §Closing sections is answering a real question again.
+**Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate for this case only.** The gate's
+landed-or-not line, its Files-changed/Unchanged sections, and its Run/Look-for block describe a
+coding task that touched files; a clean review-only pass changed none, so the gate would read
+"nothing to land" / "everything" / no commands to run — which is what the one-liner above already
+says, just as a landed-or-not line and two headers instead of four words. Skip the gate here. It
+comes back the moment a finding gets fixed on the branch, because now files actually changed and
+there is something to gate.
 
 If CI needed an action, name the action in a clause, not a paragraph — `re-ran a flaky check
 (check-cloudflare-test), now green`, not an account of reproducing it locally, isolating it, and

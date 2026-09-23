@@ -32,7 +32,7 @@ Targets: `SKILL.md` files and their reference docs, `~/.claude/CLAUDE.md`, a pro
    skill only ever fires by hand, `disable-model-invocation: true` strips the description
    entirely for zero context cost; see `../improve/WRITING-SKILLS.md`.
 
-6. **Close** per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections.
+6. **Close** per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate.
 
 7. **Commit** per CONTRIBUTING.md: commit and push inside `skills/` first, then bump the
    submodule pointer in the parent repo. Plain one-sentence messages, no `type:` prefix, no

@@ -95,10 +95,13 @@ The Claude Code runtime, never a test rig; a project's test rig is its `verify-p
 
 **go**:
 Apply every stated pick and continue into proposed next work. The only accept word; `yes`,
-`approve`, `ok`, `confirm`, `send` are never accepts.
+`approve`, `ok`, `confirm`, `send` are never accepts. At the gate, `go` means run wrap-up now —
+land the standing branch (or, for already-committed work, run wrap-up from that commit).
 
 **park**:
-Apply every stated pick and end the turn. Slate-level only, never on a row.
+Apply every stated pick and end the turn. Slate-level only, never on a row. At the gate, `park`
+leaves the worktree and branch unmerged, records a note on the tracked item (worktree, branch,
+verified sha), and ends the turn — a later session finds the note and resumes at the gate.
 
 **fix** / **post** / **skip** / **file** / **hold**:
 Row-level disposition verbs. `hold` leaves an issue open and blocked.

@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Also how /implement lands each item it runs."
+description: "Close out a body of work: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Runs in the current checkout, or in `wrap-up <worktree>` — how `implement` lands a pass, at the gate's `go` or, under `continuous`, once per item in a queue or swarm."
 ---
 
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
@@ -16,12 +16,18 @@ The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 a
 
 - **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (a 75+ review issue you cannot auto-fix, a failed push, a merge conflict) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
-- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run through Step D (relay proposed, then fired or declined), and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
+- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run through Step D (relay proposed then fired or declined — or, under `wrap-up continuous`, deliberately skipped per item, per Step D), and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
 - In the primary `~/.claude` checkout specifically, the Stop hook skips the dirty-`git status` check: a dirty file there belongs to whichever other concurrent session is using the shared index, not to this pass.
 
 When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
 
 ---
+
+## Target — this checkout, or an explicit worktree
+
+Bare `/wrap-up` targets the checkout the session is already standing in. `wrap-up <worktree>` — the form `implement` uses to land a pass — names a different one: every git operation in Phases 1–5 runs as `git -C <worktree> …` against that path instead, regardless of where this session itself is standing. Phase 0's marker, Phase 5's commit and push, and Phase 6 Step C's teardown all follow the same target.
+
+`wrap-up continuous <worktree>` combines that target with the `continuous` posture below in one call — this is what a queue or swarm runs per item, with no gate in between. A bare `implement <issue>`'s single gate, on `go`, runs plain `wrap-up <worktree>` — interactive posture, since a human is the one who typed `go`.
 
 ## Pass mode — default to interactive; go autonomous only on a proven `continuous` token
 
@@ -29,8 +35,8 @@ Wrap-up runs in one of two postures, and getting this wrong either stalls an una
 
 > **Assume INTERACTIVE (standalone) unless you can point to an explicit `continuous` token in this invocation's arguments.** Autonomy is opt-in and must be *proven*, never inferred — if the token isn't unambiguously present, you are in an interactive pass, and every step that could act on the user's behalf **halts for their disposition**. Ambiguity resolves to "ask the human," always.
 
-- **Interactive pass** (default; a manual `/wrap-up`, or a **standalone** `/implement`): the Phase 6 follow-up step **halts** so the user reviews what the session uncovered and chooses fix-now / file / skip per item.
-- **Continuous pass** (only when the `continuous` token is present, injected by `/implement` when it is landing one item out of a queue or a swarm): the follow-up step files **autonomously** with no prompt, so the run never stalls.
+- **Interactive pass** (default; a manual `/wrap-up`, or `go` at a single `implement <issue>`'s gate): the Phase 6 follow-up step **halts** so the user reviews what the session uncovered and chooses fix-now / file / skip per item.
+- **Continuous pass** (only on an explicit `wrap-up continuous <worktree>` call, made by `/implement` landing one item out of a queue or a swarm): the follow-up step files **autonomously** with no prompt, so the run never stalls.
 
 This gate governs Phase 6 Step A (follow-ups) below. Resolve the posture once, here.
 
@@ -62,7 +68,7 @@ Phases 1–4 are near-pure fan-out with compact returns, so they run staged — 
 
 **Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see.
 
-**An `implement` pass never reaches this file.** Its own Wrap stage is a plain commit — it does not land the branch and does not write to the tracker, so there is no wrap-up in it to call. `/implement` invokes this skill afterwards, from the session that owns landing, once per item it is about to land.
+**An `implement` pass never reaches this file.** Its own Wrap stage is a plain commit — it does not land the branch and does not write to the tracker, so there is no wrap-up in it to call. `/implement` invokes this skill afterwards, from the orchestrating session, once at the gate's `go` for a single pass, or once per item as `wrap-up continuous <worktree>` under a queue or swarm.
 
 Two rules that apply to every phase, on either path:
 
@@ -167,6 +173,7 @@ Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md]
 4. Fix any issues scored 75+ from the review core before committing. This step is a judgment gate, not an auto-apply: the sub-agent reviewed the diff without the session's reasoning, so expect a minority of findings that this context can answer outright. Dismiss those explicitly, naming what the session already settled — never silently.
 5. **Architecture findings are surfaced, never auto-fixed** — they're design calls, and wrap-up often runs unattended. Collect them (the review core's `architecture` and `negative-space` axes) and carry each into Phase 6 as a follow-up titled `Architecture: <finding>`. The only exception: a finding that is *also* a 75+ correctness bug is fixed under step 4.
 6. If all found nothing actionable, proceed to Phase 5.
+7. **Landing through a gate means verification already happened — do not repeat it by default.** When `wrap-up <worktree>` targets a pass that already showed a gate, the pass and the orchestrator's verify loop already verified at the surface. If steps 3–4 above changed no code (nothing beyond docs, tracking, or nothing at all), that verification still holds — proceed to Phase 5 without re-running `verify-project`. If they *did* change code, diff the worktree against the sha the gate reported and re-run `verify-project` on that diff before Phase 5 commits — a review or simplify fix is new, unverified surface, and the gate's verification does not cover it.
 
 A clean review is a green light to Phase 5, NOT a place to end your turn. Architecture findings being open is not a blocker — they become follow-ups in Phase 6.
 
@@ -236,7 +243,7 @@ Do not proceed to Step B until every candidate is fixed-and-committed, filed, or
 
 ### Step B — Summarize
 
-**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections.
+**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact. It does not repeat the gate ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate) — that already closed the turn that led here, before wrap-up ran. Once Step C lands the branch below, this summary plus the landing report is what closes this turn instead.
 
 Write the unified summary of the branch's changes and session work, and write it to the
 branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and
@@ -259,7 +266,7 @@ Reuse the Phase 2 ownership verdict.
 
 **Repo I own (solo) — land it, then leave the workspace clean.** Invoking wrap-up (or implement) authorizes the landing, exactly as it authorizes commit and push — it runs in **both** interactive and continuous passes (a solo landing needs no human input). If the current branch already *is* the default branch, skip (nothing to land).
 
-**Route first — where are you standing?** Answer this before reading either recipe. The parent of `git rev-parse --path-format=absolute --git-common-dir` is the primary checkout; `git rev-parse --show-toplevel` is where you are. **Equal → you are in the primary → Route 1. Different → you are in a linked worktree → Route 2.** A denied `git -C <primary> …` — the harness's worktree-isolation guard — is the same answer arriving the hard way, so take Route 2 rather than retrying it. The two routes are peers, not a rule and its exception: Route 2 is not a degraded Route 1, it is the only landing a worktree-isolated session can perform.
+**Route first — where are you standing?** An explicit `wrap-up <worktree>` argument (the form `implement` calls) settles this outright, without checking where the session itself is standing: it is always Route 2, every command in it run as `git -C <worktree> …` — the orchestrator calling it is typically standing in the primary checkout, not the pass's worktree, and that is fine. Otherwise, answer this before reading either recipe: the parent of `git rev-parse --path-format=absolute --git-common-dir` is the primary checkout; `git rev-parse --show-toplevel` is where you are. **Equal → you are in the primary → Route 1. Different → you are in a linked worktree → Route 2.** A denied `git -C <primary> …` — the harness's worktree-isolation guard — is the same answer arriving the hard way, so take Route 2 rather than retrying it. The two routes are peers, not a rule and its exception: Route 2 is not a degraded Route 1, it is the only landing a worktree-isolated session can perform.
 
 **Route 1 — you are in the primary checkout: merge.** With a remote:
 1. Pre-check: `git status` clean and Phase 4 clean-or-fixed. **Never merge known-failing work** — an unresolved 75+ issue is the blocker; stop instead.
@@ -282,9 +289,27 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 5. Land: `~/.claude/tools/land <worktree>`. It refuses — non-zero, reason on stderr — if the directory is not a repo, is dirty, or is behind the branch it is pushing to, and it never passes a force flag. A refusal is a stop, not a prompt to retry harder. (A successful push already sweeps the repo — `land`'s own push runs `git-sweep.sh --repo <worktree> --quiet` for you.)
 6. Sync the primary: `~/.claude/tools/sync-primary <worktree>`. `land` never touches anything outside the worktree, on purpose, which otherwise leaves the primary checkout's local branch stale — `git -C <repo> log main` would show nothing of what step 5 just pushed. This is that fetch-and-fast-forward, refusing rather than clobbering a dirty or diverged primary.
 7. Delete the remote feature branch if Phase 5 pushed one: `git push origin --delete <feature>`.
-8. **Never remove your own worktree.** The launching session removes it from the main checkout, and the local branch goes with it. End state: origin's default branch carries the work, the primary's local branch matches it, `git status` clean. Report the landing in the summary.
+8. **Never remove your own worktree — the session physically sitting in it never removes it.** For an ordinary `/wrap-up` running where it stands, this is where Step C ends: the launching session removes the worktree later, from the primary checkout. Landing an `implement` pass is the exception, below — there this session is never physically inside the worktree it is retiring, so it retires it here, in the same call. End state: origin's default branch carries the work, the primary's local branch matches it, `git status` clean. Report the landing in the summary.
 
 **`~/.claude` always takes Route 2, and its step 5 is `~/.claude/tools/claude-land <worktree>` instead, with no separate step 6** — `claude-land` already fast-forwards the primary `~/.claude` itself as part of the same call, which is the beads-export commit and the primary-checkout fast-forward that only this repo needs. Two independent reasons put it here, and neither is the general one: the primary checkout denies `git commit` and any non-fast-forward `git merge` outright (docs/adr/0005), and its index is shared by every concurrent session, which is the shape that reverted 54 files (cc-lfzq). So `git -C ~/.claude checkout main` or `merge` is wrong here even from a session that could reach it.
+
+**Landing an `implement` pass — Step C's teardown, when `wrap-up` was given an explicit `<worktree>` argument.** This is the only caller that hands wrap-up a worktree it is not standing in, and it is the one case where Step C removes it: the pass's worktree is throwaway, cut for this one item, and wrap-up is the single place left that retires it (see `../implement/WORKTREES.md` § Retiring a worktree). Run this after the merge or PR above has landed:
+
+9. **Copy the verdict into the repo's own directory before removing anything.** `$(~/.claude/tools/repo-slug --path <worktree>)/verify/<item>.json` is keyed to a directory about to stop existing; copy it to `$(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json` in the primary checkout. Take the copy *after* the last `rechecks` entry this run appended — a copy taken earlier leaves the repo's copy reading stale for a branch that was actually re-verified.
+10. **Verify teardown is safe, then retire the worktree:**
+    ```bash
+    ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/*.json          # every verdict in there, by name
+    test -f $(~/.claude/tools/repo-slug --path <repo>)/verify/<item>.json    # the copy you just made
+    git -C <worktree> status --short                                        # must be empty
+    git log <default>..<branch>                                             # must be empty — fully merged
+    pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=                       # must be empty — nothing is standing in it
+    ```
+    List the verify directory; do not just `test -f` the one name you expect — a `test -f` against one exact name passes vacuously when the pass wrote a differently-named file, and `--force` below then deletes the only copy. Any `.json` in there that is not `<item>.json` blocks teardown: copy it out under a name that includes the item and branch, then decide — never under the name it already has, since two passes in one round can write the same stray name. A live process in the worktree forbids teardown exactly as uncommitted work does — `pgrep -f` matches the command line, not the working directory, so when it is empty and you still suspect a hold, `lsof +D <worktree>` answers for certain. Quote the path, use `xargs -r`, never `pgrep -fl` (one npm-exec match can run tens of thousands of characters). A gitignored file the pass created is invisible to every check above, and `hooks/worktree-remove-locals-guard.sh` denies the removal when one exists — copy it to the primary checkout, then re-run. **Refuse, do not name-and-remove:** say which condition fired and which process holds it.
+    ```bash
+    git -C <repo> worktree remove --force <worktree> && git -C <repo> branch -d <branch>
+    ```
+    No `push origin --delete` — a pass never pushes, so its branch exists only locally; chained with `&&`, `remote ref does not exist` makes a clean teardown read as a failed one. Retire the pass's device too, if one was assigned.
+11. **Close the tracked item.** `bd close <id> -r "<reason>"` (or `gh issue close <n> --comment "<reason>"` on a repo you own), `<id>` read off the worktree's branch (`<type>/<slug>-<short-title>`, `<slug>` the tracker id lowercased). Report the closed id in the summary.
 
 **No legal route? Stop and surface it.** A worktree with no remote cannot fast-forward-push and cannot reach the primary — say so and hand the branch over. **Never open a PR on a repo you own**: `~/.claude/CLAUDE.md` §Git & GitHub forbids it, and a blocked landing is not an authorization to publish one. Landing is the only thing Step C does on an owned repo; when it cannot, the pass ends with the work committed and pushed on its branch.
 
@@ -296,6 +321,8 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 
   > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy the multi-item run's "PR on collaborative repos" contract. A single `/implement <issue>` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the run authorized publishing, treat the pass as interactive and offer rather than create.
 
+Landing an `implement` pass here still runs steps 9–11 above after the merge into the feature branch (or the PR, on the feature branch itself): copy the verdict, retire the pass's throwaway worktree, close the tracked item.
+
 ### Step D — Relay into the next body of work
 
 Runs **last**, after the branch has landed and `git status` is clean. A relay clears
@@ -305,8 +332,11 @@ precondition, not a nicety.
 - **Interactive pass** — the user already answered this in Step A's single ask. `yes`
   (or `go`) → invoke `relay` and hand it the chosen next work; it writes the marker and
   you end the turn. `no relay`, or relay was unavailable → stop here as normal.
-- **Continuous pass** — invoke `relay auto`. A queued `/implement` relays between items
-  rather than looping inside one context, so this is how the next item gets a clean window.
+- **Continuous pass landing one item out of a queue or swarm** — skip this step entirely,
+  every time. `wrap-up continuous <worktree>` returns to `implement`'s own loop, which moves
+  straight to the next item's verify loop with no relay in between. Relay for the whole run
+  is `implement`'s call, not wrap-up's — offered once, after the run's own closing report,
+  the same way an interactive Step A would offer it (`../implement/SKILL.md` § Output).
 - **Outside herdr** (`HERDR_ENV` unset) — skip silently. There is no pane to clear.
 
 Do not clear the pane, send keys, or call `herdr` yourself. `relay` writes a marker;

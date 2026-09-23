@@ -3,28 +3,30 @@ name: implement
 description: "Autonomous work on tracked items, one background agent per item. `implement <issue>` works that issue; bare `implement` discovers one; `implement <selector>` walks a queue; `implement swarm <selector>` runs several at once."
 ---
 
-# /implement — run passes, verify them, land them
+# /implement — run passes, verify them, gate or land them
 
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
-One **pass** is one tracked item, worked end to end by a single `implementer` agent in its own worktree, ending at a commit. This session is the orchestrator: dispatches it, re-checks it, lands it, closes it. **Arity is the only difference between these three** — a pass doesn't know which is happening.
+One **pass** is one tracked item, worked end to end by a single `implementer` agent in its own worktree, ending at a commit. This session is the orchestrator: dispatches it, re-checks it, shows the gate or lands it, closes it. **Arity is the only difference between these three** — a pass doesn't know which is happening.
 
 | | What this session does |
 |---|---|
-| `implement <issue>` | one pass, land it, stop |
-| `implement <selector> queue` | a pass, land, next — one at a time |
-| `implement swarm <selector>` | N passes at once, landed as each returns |
+| `implement <issue>` | one pass, verify, stop at the gate |
+| `implement <selector> queue` | a pass, verify, `wrap-up continuous` it, next — one at a time |
+| `implement swarm <selector>` | N passes at once, each `wrap-up continuous`d as it returns |
+
+A single `implement <issue>` never lands anything itself — `wrap-up` is the one landing path, run either by `go` at the gate or, under `queue`/`swarm`, as `wrap-up continuous <worktree>` per item with no gate in between. A single pass ends at its own gate; a queue or swarm ends at one report listing what landed, plus a gate for each item it halted on (§The gate below).
 
 **`implement <issue> inline`** is the one escape hatch, and it is not a pass at all — it never dispatches an agent. The session works the four steps itself, directly, in whatever checkout it already sits in: this session, this checkout, no worktree. Every other arity above dispatches an `implementer` agent as a pass, and a pass always runs in a worktree, no exceptions ([`WORKTREES.md`](WORKTREES.md)) — `inline` sidesteps that rule by not being a pass, not by carving an exception into it. Reach for it only when the user says otherwise, or when this session is already the item's worker.
 
-**A session already standing in the item's own worktree runs `implement <issue>` inline, unasked.** The test: this checkout is a linked worktree (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`) and its branch name contains the item id, lowercased — `bead/admin-vnnw` for `admin-vnnw`. This session works the item itself through every step of `~/.claude/agents/implementer.md`'s order of work — surface check, build green, verify at the surface, blind `code-reviewer`, verdict file, one commit — and ends at a commit on this branch. The session that dispatched this one verifies and lands it, per [`../dispatch/TARGETS.md`](../dispatch/TARGETS.md)'s worker contract. A queue, a swarm, or a feature worktree whose branch names no single item still dispatches passes.
+**A session already standing in the item's own worktree runs `implement <issue>` inline, unasked.** The test: this checkout is a linked worktree (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`) and its branch name contains the item id, lowercased — `bead/admin-vnnw` for `admin-vnnw`. This session works the item itself through every step of `~/.claude/agents/implementer.md`'s order of work — surface check, build green, verify at the surface, blind `code-reviewer`, verdict file, one commit — and ends at a commit on this branch. The session that dispatched this one verifies it and runs `wrap-up` on it, per [`../dispatch/TARGETS.md`](../dispatch/TARGETS.md)'s worker contract. A queue, a swarm, or a feature worktree whose branch names no single item still dispatches passes.
 
 ## The unit is a slice
 
 A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no breakdown, or a Verify/Land child, is never dispatched. **Verify is this session's**, via `verify-project`; `human` stops it until a person looks. Item → pass: [`HANDOFF.md`](HANDOFF.md).
 
-**"Land" names two different moves, and only one of them is gated.** Merging a pass's throwaway branch into the branch it was cut from is **automatic and ungated** — you do it yourself as each pass returns, with no row and no `go`. It moves nothing outward: the pass branch came off that branch, and merging back is how a worktree-based pass finishes. Publishing that branch outward — `git push`, a PR, a merge into the default branch — is the **Land bead**, and that one is a slate row taken with `go` ([`ARITY.md`](ARITY.md) has why). A standing instruction not to push, merge or open a PR is about the outward move; read it as blocking the intra-feature merge and a finished, verified run sits unlanded waiting for permission nobody was ever asked for. When in doubt: does this make work visible to anyone outside this checkout? No → merge it now.
+**Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at a commit on its own branch; nothing in the verify loop merges it, not into the branch it was cut from and not into the default branch. `implement <issue>` stops at the gate with that branch standing, unmerged, worktree still up. Typing `go` at the gate runs `wrap-up <worktree>`, which lands it — Phases 1–5, then Step C: merge or PR, verdict copy, worktree and branch removal, tracker close (`../wrap-up/SKILL.md`). `implement <selector> queue` and `implement swarm <selector>` run `wrap-up continuous <worktree>` per item instead, as each pass's verify loop clears, with no gate in between — that invocation is itself the standing authorization, the same way starting a queue or swarm already authorizes a PR on a collaborative repo. A standing instruction not to push, merge or open a PR blocks `go` at a single pass's gate, and blocks starting a queue or swarm at all — it is never a reason to merge or push from inside the verify loop.
 
 ---
 
@@ -71,8 +73,10 @@ loop
   if !r.ok  -> halt: report r.halted_on, r.detail
   run r.recheck[].cmd, compare against .expect; append a rechecks entry at r.verdict_path
   review r's diff against the pass's starting sha
-  if clear and r.blockers empty  -> merge into the branch the pass was cut from
-  TaskStop r's agent id; stop every surface this round started
+  if clear and r.blockers empty:
+    TaskStop r's agent id; stop every surface this round started
+    if arity is queue/swarm  -> wrap-up continuous <worktree>; done with this item
+    else                     -> show the gate; done
   if round == 2  -> halt: leave the worktree standing, report the path
   if the fix would revert a hunk round 1 wrote  -> halt: the criteria contradict each other
   r = Agent(implementer, <same worktree, failures as the brief>); round++
@@ -87,6 +91,16 @@ loop
 **Check reachability yourself, before the first dispatch. On exhaustion, halt** — leave the worktree standing. Context fills mid-run → `relay`, don't push on.
 
 Round mechanics and the verdict-append discipline: [`VERDICTS.md`](VERDICTS.md).
+
+---
+
+## The gate
+
+**A single `implement <issue>` shows the gate once its verify loop clears.** Shape and the canonical hatch sentence: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate. The commands in **Run:**/**Look for:** are the recheck commands this session already ran in the verify loop above — never re-derived, never re-run just to fill the gate. `go` means run `wrap-up <worktree>` now. `park` leaves the worktree and branch standing, records `bd update <id> --notes "parked at gate: <worktree>, <branch>, verified at <sha>"`, and ends the turn — a later session finds the note and resumes at that gate.
+
+**A queue or swarm never shows a per-item gate.** Every item whose verify loop clears lands immediately via `wrap-up continuous <worktree>` ([`ARITY.md`](ARITY.md)) — nothing is ever left standing behind a `go`. The run instead closes with one report: a plain list of what landed (nothing to do — no worktree, no branch, no gate), and, for anything that halted, that item's own gate, unchanged from the single-pass shape above — the halted item's worktree is still standing exactly as a single pass's would be, so it is shown and answered the same way, one `go`/`park` per halted worktree named in it, never one `go` for the whole run. A run where nothing halted closes with the landed list and no gate at all.
+
+**Owner feedback at a gate starts a new round outside the two-launch cap.** If the reply names a located cause with a small edit, fix it yourself in the worktree that gate names; otherwise relaunch the `implementer` on that same worktree with the reply as the brief. Either way: re-verify (re-run the recheck commands you now have, plus anything the fix touched), re-show that gate. These rounds do not count against the verify loop's two-launch cap above — that cap governs only this session's own loop, before a pass's first gate.
 
 ---
 
@@ -113,7 +127,7 @@ Verify treats doubt as `FAIL`. What "cleared" means before a pass is ever dispat
 
 ## Output
 
-Additive to `CLAUDE.md` §Finishing work, once for the run:
+Additive to the gate ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate), once for the run:
 
 ```
 Implement complete: <one-sentence summary>. Halt: <reason | none>.
@@ -122,13 +136,15 @@ Backlog: X open issues (closed Y), Z ready.
 
 Sequential/swarm additions and the backlog snapshot: [`ARITY.md`](ARITY.md).
 
+**Relay, after a queue or swarm's closing report, is this session's offer, not `wrap-up`'s** — `wrap-up continuous` skips Step D on every item it lands ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Step D), so nothing inside the run ever asks. If relay is available once the report above is shown, offer it the same way an interactive `wrap-up`'s Step A would, and hand it off on `go`.
+
 ---
 
 ## Notes
 
 - One pass works **one** item; never bundle two; never invokes itself.
-- A pass never writes to the tracker — this session closes it after landing, only on `PASS` plus a commit.
-- A pass never removes its own worktree; this session does, from the main checkout.
+- A pass never writes to the tracker — `wrap-up` closes it after landing, only on `PASS` plus a commit.
+- A pass never removes its own worktree; `wrap-up` does, from the primary checkout, as part of landing.
 
 ---
 

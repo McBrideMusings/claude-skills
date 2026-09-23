@@ -103,17 +103,17 @@ RULES = {
         },
     },
     "finishing-sections": {
-        "clause": "End every coding task with three sections — Files changed / Unchanged / "
-                  "Follow-up needed",
+        "clause": "End every coding task at the gate — a landed-or-not line, Files changed, "
+                  "Unchanged, then Run:/Look for:",
         "source": "CLAUDE.md §Finishing work",
-        "since": "2026-08-04",          # 53db7ac
+        "since": "2026-09-23",          # the gate replaced the three-section closer
         "trigger": CODING_TASK,
-        "comply": re.compile(r"(?is)(?=.*files\s+changed)"
-                             r"(?=.*(?:^|\W)unchanged\b)"
-                             r"(?=.*follow[- ]?ups?\s+(?:needed|required))"),
+        "comply": re.compile(r"(?is)(?=.*\b(?:not landed|landed at)\b)"
+                             r"(?=.*files\s+changed)"
+                             r"(?=.*(?:^|\W)unchanged\b)"),
         "near": {
-            "Files changed only":   re.compile(r"(?i)files\s+changed"),
-            "some follow-up head":  re.compile(r"(?im)^\s*[-*#>\s]*\**follow[- ]?ups?\b"),
+            "Files changed only":     re.compile(r"(?i)files\s+changed"),
+            "old follow-up heading":  re.compile(r"(?im)^\s*[-*#>\s]*\**follow[- ]?ups?\b"),
         },
     },
     "manual-testing-steps": {
@@ -129,10 +129,10 @@ RULES = {
         },
     },
     # The rule that binds every list ending in recommendations, including the
-    # "Follow-up needed" section §Finishing work mandates on EVERY coding task.
-    # So this trigger and `finishing-sections` fire on nearly the same turns —
-    # which is the point: a task-ending turn owes both shapes, and rendering the
-    # report shape alone is the failure mode this measures.
+    # gate §Finishing work mandates on EVERY coding task. So this trigger and
+    # `finishing-sections` fire on nearly the same turns — which is the point:
+    # a task-ending turn owes both shapes, and rendering the report shape alone
+    # is the failure mode this measures.
     "escape-hatch": {
         "clause": "Whenever a list ends in your own recommendations, close with the "
                   "one-line escape hatch — state that typing `go` applies your picks "
@@ -140,11 +140,10 @@ RULES = {
         "source": "CLAUDE.md §Deciding & designing",
         "since": "2026-08-15",          # landed with the options-format rewrite
         # NOTE `run()` matches the trigger against the USER message (t[3]), never
-        # the reply. So this cannot trigger on "the reply contains a Follow-up
-        # section" — it triggers on the same CODING_TASK opportunity
-        # `finishing-sections` uses, which is sound because §Finishing work
-        # mandates a Follow-up list on every one of them, and every such list
-        # ends in recommendations that owe the hatch.
+        # the reply. So this cannot trigger on "the reply contains a gate". It
+        # triggers on the same CODING_TASK opportunity `finishing-sections` uses,
+        # which is sound because §Finishing work mandates a gate on every one of
+        # them, and the gate's own hatch sentence is what owes `go`.
         "trigger": CODING_TASK,
         "comply": re.compile(r"(?i)`go`"),
         "near": {

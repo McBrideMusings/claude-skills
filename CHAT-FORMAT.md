@@ -119,7 +119,7 @@ All three relays this session logged `agent never went idle; prompting without c
 
 Definitions of `go`, `park`, and the row verbs: [`CONTEXT.md`](CONTEXT.md). This file owns their shape on the page; that one owns what each word means.
 
-**The three canonical sentences, byte-for-byte up to and including the opening parenthesis of the trailing example, and ending at `).` with nothing after it on the line.** Only the parenthetical's contents vary from site to site — it names two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren.
+**The four canonical sentences, byte-for-byte.** Three of the four end in a trailing parenthetical example, byte-for-byte up to and including its opening parenthesis and ending at `).` with nothing after it on the line — only the parenthetical's contents vary from site to site, naming two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren. The gate's sentence, below, carries no parenthetical at all — it is byte-for-byte in full, every time.
 
 Slates and findings, no next work pending:
 
@@ -133,6 +133,10 @@ Option sets (reply grammar is number-first — `1A 2C`, not `A1 C2`):
 
 > Answer `1A 2C`, or type `go` to take every pick.
 
+The gate (below):
+
+> Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
+
 **Worked example:**
 
 > 1. Rewrite the retry backoff to exponential `[fix]`
@@ -141,28 +145,33 @@ Option sets (reply grammar is number-first — `1A 2C`, not `A1 C2`):
 >
 > Type `go` to apply my picks and continue into the dead-letter-queue design, or `park` to apply them and stop, or answer per row (`1 fix, 2 skip, 3 hold`).
 
-## Closing sections
+## Gate
 
-**When it applies.** The end of every coding task, whatever skill produced it.
+**When it applies.** The end of every coding task, whatever skill produced it — `implement`, inline work, `unblock`, a small fix. Whether the change is committed or not, it has not *landed* until `wrap-up` runs, and the gate is where that gap is stated out loud.
 
-**The shape.** Three sections:
+**The shape.** One line stating landed-or-not, then two sections, then testing steps, then the hatch:
 
+- **First line** — `Not landed: <branch> in <worktree> — wrap-up has not run.` For work already committed outside a pass worktree (`~/.claude` edits, an inline fix committed in place), the same line names the sha instead: `Landed at <sha> — wrap-up has not run.`
 - **Files changed** — every file touched, one line each.
-- **Unchanged** — only files a reader would have expected touched and weren't, each with the reason. "Nothing" is a real answer.
-- **Follow-up needed** — what's left, if anything.
+- **Unchanged** — only files a reader would have expected touched and weren't, with the reason. "Nothing" is a real answer.
+- **Run:** the exact commands, the ones the agent ran, one per line.
+- **Look for:** what a pass looks like — the output the agent saw.
 
-Then manual testing steps, always, unasked: **Run:** the exact commands, one per line. **Look for:** what a pass looks like.
+Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the worked example's closing line. `go` always means "run wrap-up now" — landing the branch, whatever that takes on this repo (merge, PR, `claude-land`). `park` leaves the worktree and branch standing and ends the turn.
+
+**A run of several items closes with one report naming what already landed, plus one full gate per item still unlanded** — never one gate speaking for a whole run, since `go`/`park` name a single branch and worktree each. An item that landed while the run was running needs no gate at all; only what a run halted on still owes one.
 
 **Worked example:**
 
+> Not landed: `fix/retry-connreset` in `~/.worktrees/queue/fix-retry` — wrap-up has not run.
+>
 > **Files changed**
 > - `worker.py:142` — widened the retry catch to include `ConnectionResetError`
 >
 > **Unchanged**
 > - `queue.db` schema — the fix doesn't need a new column
 >
-> **Follow-up needed**
-> - Nothing
->
 > **Run:** `pytest tests/test_worker.py -k retry`
 > **Look for:** all 4 retry tests passing, including the new `test_connection_reset_retries` case
+>
+> Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
