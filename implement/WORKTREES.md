@@ -63,7 +63,7 @@ The reachability test catches this before dispatch, in chat: an item naming a fi
 
 ## Retiring a worktree
 
-Teardown happens inside `wrap-up` Step C now, as part of landing — see [`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Step C. It is not a step this file's caller performs on its own between a pass returning and the next one dispatching.
+Teardown happens inside `wrap-up` Step C, as part of landing — see [`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Step C. It is not a step this file's caller performs on its own between a pass returning and the next one dispatching.
 
 ---
 
