@@ -27,8 +27,9 @@
 # claude extras (both optional): $CLAUDE_DELEGATE_MODEL picks the delegate's
 # model (e.g. sonnet, haiku, opus); unset uses the CLI's default.
 # $CLAUDE_DELEGATE_PERMISSION_MODE sets the delegate's permission mode
-# (default acceptEdits — edits auto-approved, other tools follow the user's
-# own permission rules; a denied tool call fails that call, it never prompts).
+# (default auto — the auto-mode classifier approves or refuses each call, so a
+# session nobody is watching does not stop on a prompt; hooks and deny rules
+# still apply).
 set -eu
 
 KNOWN="codex reasonix claude"
@@ -153,7 +154,7 @@ cmd_exec() {
     # -p/exec flags here; `herdr-agent` tells it to write <outfile> itself.
     local -a iargs=()
     case "$a" in
-      claude) iargs=(--permission-mode "${CLAUDE_DELEGATE_PERMISSION_MODE:-acceptEdits}")
+      claude) iargs=(--permission-mode "${CLAUDE_DELEGATE_PERMISSION_MODE:-auto}")
               [ -n "${CLAUDE_DELEGATE_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DELEGATE_MODEL") ;;
       codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac
@@ -168,7 +169,7 @@ cmd_exec() {
   case "$a" in
     codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
     reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
-    claude)   runner="claude -p --permission-mode ${CLAUDE_DELEGATE_PERMISSION_MODE:-acceptEdits}${CLAUDE_DELEGATE_MODEL:+ --model $CLAUDE_DELEGATE_MODEL}" ;; # print mode; prompt on stdin; edits auto-approved, other tools per the user's own allowlist rules
+    claude)   runner="claude -p --permission-mode ${CLAUDE_DELEGATE_PERMISSION_MODE:-auto}${CLAUDE_DELEGATE_MODEL:+ --model $CLAUDE_DELEGATE_MODEL}" ;; # print mode; prompt on stdin; edits auto-approved, other tools per the user's own allowlist rules
   esac
 
   local terminal="$HOME/.claude/skills/dispatch/terminal"

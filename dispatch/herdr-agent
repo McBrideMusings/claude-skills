@@ -41,6 +41,81 @@ wait_pane_ready() {
   return 1
 }
 
+# Pick where the agent's pane goes, and set pane/tab/ws/where for the caller.
+# A linked worktree gets its own workspace nested under its repo's workspace, the
+# same place `herdr worktree create --workspace` puts one; a tab in the caller's
+# workspace would hide it behind the caller's own tab. Anything else gets a tab
+# in the caller's workspace.
+place_pane() {
+  local gitdir common top repo_ws opened already created
+  gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null || true)"
+  common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  if [ -n "$gitdir" ] && [ "$gitdir" != "$common" ]; then
+    top="$(git -C "$PWD" rev-parse --show-toplevel)"
+    repo_ws="$(herdr workspace list | jq -r --arg key "$common" '
+      [.result.workspaces[] | select(.worktree.repo_key == $key and .worktree.is_linked_worktree == false)
+       | .workspace_id][0] // empty')"
+    [ -n "$repo_ws" ] || echo "herdr-agent: no open workspace for repo $common — the worktree's workspace opens at top level" >&2
+    opened="$(herdr worktree open ${repo_ws:+--workspace "$repo_ws"} --path "$top" --no-focus)" || {
+      echo "herdr-agent: could not open a workspace for $top" >&2; return 1; }
+    ws="$(printf '%s' "$opened" | jq -r '.result.workspace.workspace_id // empty')"
+    already="$(printf '%s' "$opened" | jq -r '.result.already_open')"
+    if [ "$already" = "true" ]; then
+      created="$(herdr tab create --workspace "$ws" --cwd "$PWD" --label "$slug" --no-focus)" || {
+        echo "herdr-agent: could not create a tab in workspace $ws" >&2; return 1; }
+      pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
+      tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+    else
+      pane="$(printf '%s' "$opened" | jq -r '.result.root_pane.pane_id // empty')"
+      tab="$(printf '%s' "$opened" | jq -r '.result.tab.tab_id // empty')"
+    fi
+    where="workspace $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)"
+  else
+    # A tab, never a split. Splitting the caller's pane squeezes the surface the user is
+    # actually reading; --no-focus keeps the tab unseen so a later `done` stays `done`.
+    created="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$slug" --no-focus)" || {
+      echo "herdr-agent: could not create a tab" >&2; return 1; }
+    pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
+    tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+    ws="$HERDR_WORKSPACE_ID"
+    where="a new tab of the calling workspace ($ws)"
+  fi
+  [ -n "$pane" ] || { echo "herdr-agent: no pane id came back for $where" >&2; return 1; }
+}
+
+# True once <text> appears in the agent's pane, polling for up to 15s.
+pane_shows() {
+  local i=0
+  while [ "$i" -lt 10 ]; do
+    herdr pane read "$pane" --lines 120 2>/dev/null | grep -qF "$1" && return 0
+    sleep 1.5; i=$((i + 1))
+  done
+  return 1
+}
+
+# Given the state the prompt's own --wait matched, wait until the agent is idle or done.
+# Each time it stops on a prompt, say so at once — nobody may be looking at its pane —
+# then wait for someone to answer it and carry on. `agent wait` matches the current
+# state immediately, so it is only called once the agent is known to be past idle.
+wait_finished() {
+  local status="$1"
+  while :; do
+    case "$status" in
+      idle|done) return 0 ;;
+      blocked)
+        echo "herdr-agent: $slug is blocked on a prompt in pane $pane, $where — answer it there" >&2
+        # A declined prompt can go straight to idle or done without passing through working.
+        status="$(herdr agent wait "$slug" --until working --until idle --until 'done' --timeout "$TIMEOUT_MS" 2>/dev/null \
+          | jq -r '.result.agent.agent_status // empty')" || return 1
+        continue ;;
+      working) ;;
+      *) return 1 ;;
+    esac
+    status="$(herdr agent wait "$slug" --until idle --until 'done' --until blocked --timeout "$TIMEOUT_MS" 2>/dev/null \
+      | jq -r '.result.agent.agent_status // empty')" || return 1
+  done
+}
+
 cmd_run() {
   local kind="${1:-}" promptfile="${2:-}" outfile="${3:-}"
   if [ -z "$kind" ] || [ -z "$promptfile" ] || [ -z "$outfile" ]; then
@@ -59,14 +134,8 @@ cmd_run() {
 
   : > "$outfile"
 
-  # A tab, never a split. Splitting the caller's pane squeezes the surface the user is
-  # actually reading; --no-focus keeps the tab unseen so a later `done` stays `done`.
-  local created pane tab
-  created="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$slug" --no-focus)" || {
-    echo "herdr-agent: could not create a tab" >&2; return 1; }
-  pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
-  tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
-  [ -n "$pane" ] || { echo "herdr-agent: tab create returned no pane id" >&2; return 1; }
+  local pane tab ws where
+  place_pane || return 1
 
   # `agent start` requires the pane to be sitting at its interactive shell prompt. A tab
   # created a moment ago is still spawning its shell, and starting into that returns
@@ -77,6 +146,7 @@ cmd_run() {
     echo "herdr-agent: '$kind' did not come up in pane $pane — leaving tab $tab open to inspect" >&2
     return 1
   fi
+  echo "herdr-agent: $slug started in $where, pane $pane" >&2
 
   # An interactive agent prints to a TUI, so there is nothing to tee. Tell it where to
   # put the answer; the caller reads that file exactly as it reads `terminal run`'s.
@@ -91,12 +161,27 @@ Do not summarise it there; that file IS your answer and is the only part that is
   '"$outfile"'
 ────────────────────────────────────────────────────────────'
 
-  # --wait blocks on the agent's own lifecycle state. If submission stalls (older herdr
-  # pastes without submitting), press Enter and wait again rather than hanging forever.
-  if ! herdr agent prompt "$slug" "$text" --wait --until idle --until done --timeout "$TIMEOUT_MS" >/dev/null 2>&1; then
-    herdr agent send-keys "$slug" enter >/dev/null 2>&1 || true
-    herdr agent prompt "$slug" "" --wait --until idle --until done --timeout "$TIMEOUT_MS" >/dev/null 2>&1 || true
+  # --wait blocks on the agent's own lifecycle state, matching only states seen after the
+  # submission. Right after start, the TUI can report ready while still dropping input:
+  # the prompt then shows up in the input box seconds later, unsent, or not at all.
+  local first reply
+  reply="$(herdr agent prompt "$slug" "$text" --wait --until idle --until 'done' --until blocked --timeout "$TIMEOUT_MS" 2>&1)" || true
+  first="$(printf '%s' "$reply" | jq -r '.result.agent.agent_status // empty' 2>/dev/null)" || first=""
+  if [ -z "$first" ]; then
+    echo "herdr-agent: prompt to $slug did not register: $(printf '%s' "$reply" | head -c 200)" >&2
+    local line attempt
+    line="$(head -n 1 "$promptfile")"
+    for attempt in 1 2; do
+      pane_shows "$line" && break
+      [ "$attempt" = 1 ] && herdr agent prompt "$slug" "$text" >/dev/null 2>&1 || true
+    done
+    if pane_shows "$line"; then
+      herdr agent send-keys "$slug" enter >/dev/null 2>&1 || true
+      first="$(herdr agent wait "$slug" --until working --until blocked --timeout 15000 2>/dev/null \
+        | jq -r '.result.agent.agent_status // empty')" || first=""
+    fi
   fi
+  wait_finished "$first" || echo "herdr-agent: stopped waiting on $slug — its pane is $pane" >&2
 
   # The agent may have finished without writing the file (ignored the instruction, hit a
   # permission wall, crashed). Its pane still holds the answer, so scrape rather than

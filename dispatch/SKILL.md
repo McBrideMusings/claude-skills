@@ -106,7 +106,7 @@ Run `dispatch exec` with the Bash tool's **background** mode: the agent can take
 Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. Two optional env knobs, set alongside `CLAUDE_DELEGATE_AGENT`:
 
 - **`CLAUDE_DELEGATE_MODEL`** — the target's model (`sonnet`, `haiku`, `opus`, or a full model id). Unset → the CLI's default. This is the point of the vendor: a cheap plan-follower or a heavyweight, chosen per profile or per repo.
-- **`CLAUDE_DELEGATE_PERMISSION_MODE`** — defaults to `acceptEdits`: file edits auto-approved, every other tool follows the user's own permission rules, and in print mode a denied tool call fails that call rather than prompting. If a dispatched task needs more (e.g. free rein on git/test commands), the user sets a broader mode here themselves — the script never hardcodes one.
+- **`CLAUDE_DELEGATE_PERMISSION_MODE`** — defaults to `auto`: the auto-mode classifier approves or refuses each tool call, so a dispatched session nobody is watching does not stop on a permission prompt. Hooks and deny rules still apply. Set a narrower mode here (`acceptEdits`, `manual`) for a task that should ask before running commands.
 
 The dispatched agent is a full Claude Code session: it reads the repo's CLAUDE.md, skills, and settings from whatever profile `CLAUDE_CONFIG_DIR` routing gives the spawned shell (the Terminal window inherits the cwd, so profile routing behaves exactly as if the user opened a terminal there).
 

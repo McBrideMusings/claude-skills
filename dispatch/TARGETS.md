@@ -28,12 +28,18 @@ same order. This file is the single owner of that order. `review dual`,
 `split` and `workspace` are the two shapes a herdr-hosted target can take, and both stop short
 of touching the caller's own pane — neither ever runs `herdr pane split`, which would squeeze the
 pane the user is reading. `split` opens a new **tab** in the workspace you're already in
-(`herdr tab create --workspace <current-id>`, what `herdr-agent` does today); `workspace` opens
-an entirely new herdr **workspace**, nested under the repo in the sidebar
-(`herdr worktree create --workspace <repo-workspace-id>`, the pattern in "Where the work happens"
-below). Use `split` for something you expect to check on without leaving your seat; use
-`workspace` for something long-lived enough to want its own place in the sidebar — typically
-because it also needs its own worktree.
+(`herdr tab create --workspace <current-id>`); `workspace` opens an entirely new herdr
+**workspace**, nested under the repo in the sidebar (`herdr worktree create --workspace
+<repo-workspace-id>`, the pattern in "Where the work happens" below). Use `split` for something
+you expect to check on without leaving your seat; use `workspace` for something long-lived
+enough to want its own place in the sidebar — typically because it also needs its own worktree.
+
+`herdr-agent` picks between the two from the directory `dispatch exec` runs in. Run it from a
+linked worktree and it opens that worktree's workspace under the repo's
+(`herdr worktree open --workspace <repo-workspace-id> --path <worktree>`), or adds a tab there
+if the workspace is already open. Run it from anywhere else and it adds a tab to your own
+workspace. Its stderr names the workspace and pane it started in, and prints again each time
+the agent stops on a permission prompt.
 
 ## The order
 
@@ -82,11 +88,9 @@ worktree grouped under the repo in the sidebar instead of detaching to top level
 under `~/.worktrees/<repo>/<branch>` — `[worktrees] directory` in
 `~/.config/herdr/config.toml` — so no `--path` is needed.
 
-Herdr reaches the same topology on its own: a pane whose cwd is a linked worktree of a repo
-gets **promoted** into a worktree-backed child workspace under that repo, and its pane ID
-changes when it moves. So `pane split --cwd <worktree-path>` is not a way to keep a worker
-in the current workspace; it is a slower way to arrive at the same place. Read the new ID
-from `herdr agent list` rather than the one `pane split` returned.
+A worktree that already exists gets the same placement from `herdr worktree open
+--workspace <repo-workspace-id> --path <worktree>`. A tab or pane created with `--cwd
+<worktree-path>` stays in the workspace that created it, so it never shows under the repo.
 
 **A worker's brief lives in its worktree's git dir, never only under `/private/tmp`.** Author
 the brief and any shared preamble under `/private/tmp/claude/<repo-slug>/dispatch/`, then copy
