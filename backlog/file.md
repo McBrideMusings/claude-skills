@@ -10,6 +10,12 @@ Use when the user asks to add a follow-up ("remember to …", "file as a followu
 >
 > **Guardrail: never call the `AskUserQuestion` tool or render a selector / chip-picker for this skill's filing questions.** A selector turns "which should I file?" into a list of pre-checked actions, which reads as *intent to act* — exactly the misfire that files issues the user never asked for.
 
+## How an issue reads
+
+**An issue is a proposal for the change, written for a reader who has no PR and no session context** — including when the work already exists. Describe what should change and why, as if nothing had been built: the current behavior, the desired behavior, the acceptance criteria. Never write it as a retrospective ("outstanding follow-up before merge", "after this PR lands", "as discussed above"); the reader has not seen the PR, the diff, or this conversation. Write the retrospective form only when the user asks for it.
+
+**Never pass `--id` to `bd create`.** Beads generates the ID (a short slug like `fnp`); a hook denies the flag.
+
 ## Where followups live
 
 **On the repo's issue tracker, always.** A follow-up is an issue: `bd create` on beads, `gh issue create` on GitHub. There is no file.
