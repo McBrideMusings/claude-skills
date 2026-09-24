@@ -1,6 +1,6 @@
 ---
 name: diagnose
-description: "Disciplined diagnosis loop for hard bugs and performance regressions. Use when something is broken, failing, throwing, or has regressed."
+description: "Disciplined diagnosis loop for hard bugs and performance regressions. Use when something is broken, failing, throwing, or has regressed — or when a running system's output looks wrong (offset, missing, mis-rendered, out of sync), including a 'why is X doing Y' question about it."
 ---
 
 # Diagnose
@@ -42,6 +42,8 @@ If you can't state the prediction, it's a vibe. Discard or sharpen.
 ## Phase 04 — Instrument
 
 Each probe maps to a Phase 03 prediction. **Change one variable at a time.**
+
+**Choosing the probe is this skill's job, never an option set for the user.** Pick the probe that best separates the ranked hypotheses and run it. When a probe needs permission — work run on a production host, a write anywhere outside this machine — ask one yes/no naming that exact action, then carry on with every probe that needs none.
 
 Tool preference:
 
