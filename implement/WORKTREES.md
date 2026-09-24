@@ -25,10 +25,10 @@ Which worktree depends on whether the repo is collaborative — check the `origi
 git rev-parse --show-toplevel                       # → <repo>
 git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
 CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
-printf '%s' "$CLAUDE_SESSION_ID" > "$(git -C ~/.worktrees/<repo-name>/<slug> rev-parse --absolute-git-dir)/ORCHESTRATOR-SESSION"
+~/.claude/tools/orchestrator-mark ~/.worktrees/<repo-name>/<slug>
 ```
 
-**That third line is not optional.** `hooks/cross-worktree-write-guard.sh` exempts an
+**That last line is not optional.** `hooks/cross-worktree-write-guard.sh` exempts an
 orchestrator in the primary checkout, and a session writing into a worktree carrying its
 own session id in `ORCHESTRATOR-SESSION`. An orchestrator sitting in a linked worktree
 matches only the second; without the marker every file the pass touches stops and asks.
