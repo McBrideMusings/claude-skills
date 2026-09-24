@@ -5,7 +5,7 @@ An override for **Phases 04 → 04b → 05 → 05b → 06 → 06b → 06c only**
 **This is the default transport on every route.** Invoking `review` is the request for the `Workflow` tool. The session transport — [REVIEW-CORE.md](REVIEW-CORE.md) Phases 04–06c run in this context — runs in exactly two cases:
 
 1. **The `session` token was given:** `review session`, `review dual session`, `review repo session`.
-2. **The `Workflow` tool cannot be called from here.** Workflows nest one level deep, so a review running inside a workflow agent (wrap-up's quality stage) or inside a subagent (an `implementer`) has no `Workflow` tool. Run the session transport and say so in one line: *"`Workflow` isn't callable from inside this agent, so the lenses run here."*
+2. **`Workflow` is not in your tool list.** Check your own available tools, not where you think you are running. A review started from inside a workflow agent (wrap-up's quality stage) or a subagent (an `implementer`) is the usual case. Run the session transport and say so in one line: *"`Workflow` isn't in this agent's tools, so the lenses run here."*
 
 ## What stays in the session, and why
 
