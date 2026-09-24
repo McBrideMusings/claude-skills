@@ -117,7 +117,7 @@ Brief the agent with the exact diff scope from Phase 01, the injection-defense d
 The agent returns two things:
 
 1. **The intent table** — the per-block Intent / Preconditions / Postconditions above. Cap it at **600 words**; on a diff too large for that, group by file and keep the postconditions, dropping restatements of intent the block name already carries.
-2. **The Summary narrative** — the plain-English "What this changes" section, 3–6 sentences, related changes grouped, jargon defined inline. This used to be a separate always-on sub-agent in Phase 04 and is folded in here: same read of the same blocks, and descriptive like the rest of this phase, so it does not reintroduce the judgment-plus-something bundling this split exists to remove.
+2. **The Summary narrative** — the plain-English "What this changes" section, 3–6 sentences, related changes grouped, jargon defined inline. It lives here rather than in Phase 04 because it comes from the same read of the same blocks and is descriptive like the rest of this phase, so it does not reintroduce the judgment-plus-something bundling this split exists to remove.
 
 Carry both into Phase 04. The intent table also survives into Phase 06b, where the fix author checks a proposed fix against the postcondition it is supposed to restore.
 
@@ -169,7 +169,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/dependency-debt.md`](axes/dependency-debt.md) — reads the same captured language-tool output as the label lenses, scoring unused packages and duplicate-purpose packages, plus undocumented env vars (**repo mode only** — does not launch outside Phase 01r)
 - [`axes/docs-drift.md`](axes/docs-drift.md) — a README claim the code doesn't satisfy, a comment contradicting the code beneath it, and the architecture-paragraph-vs-README contradiction check from Phase 01r (**repo mode only** — does not launch outside Phase 01r)
 
-The always-on **Summary** sub-agent that used to live here is gone — Phase 03c produces the "What this changes" narrative as its second output, off the same read of the same blocks. Do not launch a second one.
+Phase 03c produces the "What this changes" narrative; no Phase 04 sub-agent writes a summary.
 
 Plus one **conditional label lens per matched label.** Resolve the labels in scope using [`../_detect.md`](../_detect.md). For each matched label with a `../ref-<label>/review.md`, launch one additional Sonnet sub-agent with that file's content as its brief (plus the same forwarded writing-style rules + `IS_DRAFT` + diff scope). It emits scored, axis-tagged findings like any other lens — its axis tag is the label name (e.g. `apple`, `game`). A label with no `review.md` is skipped silently. No ordering between labels — a diff matching both a stack label and a mode label (e.g. `threejs` and `game`) launches both lenses independently; a disagreement between them is reported as a finding, not resolved by precedence. This is how label-specific review knowledge (SwiftUI idioms, game-feel, readability scorecard) enters review without living inside this skill or bloating every non-matching diff.
 
