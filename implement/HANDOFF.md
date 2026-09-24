@@ -6,7 +6,7 @@
 
 An item is dispatchable when four cheap queries all say so — this is a check, not a judgement call:
 
-- **A slice.** `bd show <id> --json` carries a parent, `bd children <id>` is empty, and the title does not begin `Verify:` or `Land:`. A parent is broken down first (`issues/breakdown.md`) and its slices are what get offered; the Verify and Land children are this session's and never dispatch.
+- **A slice.** `bd show <id> --json` carries a parent, `bd children <id>` is empty, and the title does not begin `Verify:` or `Land:`. A parent is broken down first (`issues/breakdown.md`) and its slices are what get offered; the Verify and Land children are this session's and never dispatch. Under the `workspace` target ([`SKILL.md`](SKILL.md) §The target) this bullet is skipped: the parent itself is the item, and the watched session works its slices.
 - **Open.** `bd show <id> --json` reads its status.
 - **Not carrying the `human` label.** `human` is beads' one legal bare label, and there is deliberately no positive "AFK" label — removing `human` from an item is what makes it AFK. Check for its absence; do not invent a label to check for its presence.
 - **Listed by `bd ready --json`.** Nothing blocks it. Run `bd recompute-blocked` first — `bd ready` reads a denormalized flag that goes stale after a hand-resolved merge and will silently hide ready work.

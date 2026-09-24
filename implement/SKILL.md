@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on tracked items, one background agent per item. `implement <issue>` works that issue; bare `implement` discovers one; `implement <selector>` walks a queue; `implement swarm <selector>` runs several at once."
+description: "Autonomous work on tracked items, one worker per item. `implement <issue>` works that issue; bare `implement` discovers one; `implement <selector>` walks a queue; `implement swarm <selector>` runs several at once. A repo labelled `dispatch:workspace`, `implement <issue> workspace`, or \"dispatch to implement\" there runs the item as a watched herdr workspace session instead of an in-session agent."
 ---
 
 # /implement — run passes, verify them, gate or land them
@@ -20,11 +20,11 @@ A single `implement <issue>` never lands anything itself — `wrap-up` is the on
 
 **`implement <issue> inline`** is the one escape hatch, and it is not a pass at all — it never dispatches an agent. The session works the four steps itself, directly, in whatever checkout it already sits in: this session, this checkout, no worktree. Every other arity above dispatches an `implementer` agent as a pass, and a pass always runs in a worktree, no exceptions ([`WORKTREES.md`](WORKTREES.md)) — `inline` sidesteps that rule by not being a pass, not by carving an exception into it. Reach for it only when the user says otherwise, or when this session is already the item's worker.
 
-**A session already standing in the item's own worktree runs `implement <issue>` inline, unasked.** The test: this checkout is a linked worktree (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`) and its branch name contains the item id, lowercased — `bead/admin-vnnw` for `admin-vnnw`. This session works the item itself through every step of `~/.claude/agents/implementer.md`'s order of work — surface check, build green, verify at the surface, blind `code-reviewer`, verdict file, one commit — and ends at a commit on this branch. The session that dispatched this one verifies it and runs `wrap-up` on it, per [`../dispatch/TARGETS.md`](../dispatch/TARGETS.md)'s worker contract. A queue, a swarm, or a feature worktree whose branch names no single item still dispatches passes.
+**A session already standing in the item's own worktree runs `implement <issue>` inline, unasked.** The test: this checkout is a linked worktree (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`) and either its branch name contains the item id, lowercased — `bead/admin-vnnw` for `admin-vnnw` — or, in a `beads:stealth` repo whose branches never carry the id ([`WORKTREES.md`](WORKTREES.md)), its git dir holds a `DISPATCH-BRIEF.md` naming the item. This session works the item itself through every step of `~/.claude/agents/implementer.md`'s order of work — surface check, build green, verify at the surface, blind `code-reviewer`, verdict file, one commit — and ends at a commit on this branch. The session that dispatched this one verifies it and runs `wrap-up` on it, per [`../dispatch/TARGETS.md`](../dispatch/TARGETS.md)'s worker contract. A queue, a swarm, or a feature worktree whose branch names no single item still dispatches passes.
 
 ## The unit is a slice
 
-A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no breakdown, or a Verify/Land child, is never dispatched. **Verify is this session's**, via `verify-project`; `human` stops it until a person looks. Item → pass: [`HANDOFF.md`](HANDOFF.md).
+A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no breakdown, or a Verify/Land child, is never dispatched. The `workspace` target (below) is the exception: its session takes the parent and works every slice itself, so no breakdown is created for it. **Verify is this session's**, via `verify-project`; `human` stops it until a person looks. Item → pass: [`HANDOFF.md`](HANDOFF.md).
 
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at a commit on its own branch; nothing in the verify loop merges it, not into the branch it was cut from and not into the default branch. `implement <issue>` stops at the gate with that branch standing, unmerged, worktree still up. Typing `go` at the gate runs `wrap-up <worktree>`, which lands it — Phases 1–5, then Step C: merge or PR, verdict copy, worktree and branch removal, tracker close (`../wrap-up/SKILL.md`). `implement <selector> queue` and `implement swarm <selector>` run `wrap-up continuous <worktree>` per item instead, as each pass's verify loop clears, with no gate in between — that invocation is itself the standing authorization, the same way starting a queue or swarm already authorizes a PR on a collaborative repo. A standing instruction not to push, merge or open a PR blocks `go` at a single pass's gate, and blocks starting a queue or swarm at all — it is never a reason to merge or push from inside the verify loop.
 
@@ -45,6 +45,28 @@ It runs in the background and notifies this session when it lands. **One agent p
 The agent spawns exactly one subagent of its own: `code-reviewer`, blind, once the build is green.
 
 `args.resolved`-equivalents go in the prompt: the item is `{id, title, body, acceptance?, branch?, files?}`, already cleared and gated in chat before dispatch ([`HANDOFF.md`](HANDOFF.md) §1). The pass never fetches or judges an item on its own. The agent definition lives at `~/.claude/agents/implementer.md`; [`WORKTREES.md`](WORKTREES.md) has where it runs.
+
+## The target: `agent` or `workspace`
+
+The block above is the `agent` target, the default. **The `workspace` target replaces it whenever any of these holds**, decided before any worktree or bead is made:
+
+- the repo carries the `dispatch:workspace` label (the session-start domain context lists it);
+- the user typed `implement <issue> workspace`;
+- the user said "dispatch" with `implement` in a repo carrying that label ("dispatch to implement"). A bare `dispatch` anywhere else is bounced with the target list, per [`../CONTEXT.md`](../CONTEXT.md).
+
+Under `workspace` the worker is a live `claude` session the user can watch and take over, not an `Agent` call:
+
+```text
+item = the parent as filed — no slice breakdown, no Verify/Land children created
+worktree = the feature worktree, made per WORKTREES.md (plain git + link hook + mark; never herdr worktree create)
+brief = HANDOFF.md §2's item record + the plan's location + TARGETS.md's verbatim stop contract
+copy brief -> "$(git -C <worktree> rev-parse --absolute-git-dir)/DISPATCH-BRIEF.md"
+( cd <worktree> && CLAUDE_DELEGATE_AGENT=claude CLAUDE_DELEGATE_MODEL=sonnet \
+    ~/.claude/skills/dispatch/dispatch exec <git-dir>/DISPATCH-BRIEF.md <outfile> )
+report the workspace in one line and stop — no polling
+```
+
+The verify loop and gate below still belong to this session, and start when the user brings the worker's report back (or the `<outfile>` arrives): re-run its testing steps in the feature worktree, then show the gate. Landing is `wrap-up <feature-worktree>`, which on a collaborative repo opens the PR.
 
 ---
 

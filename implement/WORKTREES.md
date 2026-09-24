@@ -33,15 +33,17 @@ orchestrator in the primary checkout, and a session writing into a worktree carr
 own session id in `ORCHESTRATOR-SESSION`. An orchestrator sitting in a linked worktree
 matches only the second; without the marker every file the pass touches stops and asks.
 
-`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Landing and teardown both happen through `wrap-up <worktree>` — via `go` at the gate for a single pass, or `wrap-up continuous <worktree>` under queue/swarm — never inside the verify loop itself. `~/.claude` lands with `~/.claude/tools/claude-land <worktree>` instead of a merge; [`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Step C has both routes.
+`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. **In a `beads:stealth` repo the id stays out of both:** `<slug>` and `<branch>` are built from the short title alone (`feat/journeys-telemetry-server`), because a merge commit names the branch it merged and carries the id into history the upstream can see. Landing and teardown both happen through `wrap-up <worktree>` — via `go` at the gate for a single pass, or `wrap-up continuous <worktree>` under queue/swarm — never inside the verify loop itself. `~/.claude` lands with `~/.claude/tools/claude-land <worktree>` instead of a merge; [`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Step C has both routes.
 
-**Collaborative (remote owned by anyone else).** The long-lived thing is the feature, not the pass. Make one herdr worktree for the body of work and keep it:
+**Collaborative (remote owned by anyone else).** The long-lived thing is the feature, not the pass. Make one worktree for the body of work and keep it, with the same three commands as the solo case, cut from the default branch:
 
 ```
-herdr worktree create --workspace <repo-workspace-id> --branch <feature>
+git -C <repo> worktree add -b <feature> ~/.worktrees/<repo-name>/<feature-slug> <default-branch>
+CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<feature-slug> bash ~/.claude/hooks/worktree-link-locals.sh
+~/.claude/tools/orchestrator-mark ~/.worktrees/<repo-name>/<feature-slug>
 ```
 
-Targeting `--workspace` is what nests it under the repo in the sidebar instead of detaching it to top level; never `herdr workspace create --cwd`, and never a custom `--label`. Checkouts land under `~/.worktrees/<repo>/<branch>`. Passes cut their throwaway worktrees off *that* branch; `wrap-up` merges each one back into it via Step C, and only the feature branch ever becomes a PR.
+Never `herdr worktree create` here: it skips the link hook, and it opens the feature's herdr workspace before any `dispatch exec` runs, which [`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) §Where the work happens forbids. Under the `workspace` target ([`SKILL.md`](SKILL.md)) the pass runs in this feature worktree itself, and `dispatch exec` opens its workspace. Under the `agent` target, passes cut their throwaway worktrees off *that* branch; `wrap-up` merges each one back into it via Step C. Either way only the feature branch ever becomes a PR.
 
 **The link hook is run by hand and skipping it fails quietly.** Its normal trigger is a Claude session entering the directory, and none ever does — the implementer inherits *this* session's `CLAUDE_PROJECT_DIR`. Without it the worktree has no `admin.toml`, no `.env*`, no `CLAUDE.local.md` and no `.claude/skills/verify-project`. The last one produces a weak verdict that reads exactly like a real one.
 
