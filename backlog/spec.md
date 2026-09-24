@@ -71,8 +71,7 @@ Otherwise synthesize from conversation context, following
 user** — synthesize what's already been discussed. Interviewing is `grill-me`'s job; if the
 conversation is too thin to write a real spec, stop and say so, and point at `/grill-me`.
 
-Write it to `/private/tmp/claude/<repo-slug>/spec.md` — absolute path, same `<root>` resolution
-as the proposal file above. The file is plumbing for later phases; don't show its path.
+Write it to `spec.md` in the same `repo-slug --path` directory as the draft above. The file is plumbing for later phases; don't show its path.
 
 **Run `lateral driver-seat` over the written spec** before pasting it for approval. Apply its
 changes to `spec.md` in place. Its "Driver-seat changes" list goes above the spec's own text in
