@@ -4,7 +4,7 @@ Load when `admin.toml` has `archetypes = [… "docker" …]`. Builds a Docker im
 and deploys it to an Unraid server (over SSH, or locally when on the host).
 
 A manifest saying `archetypes = ["docker-unraid"]` fails with `unknown
-archetype` — change it to `"docker"`.
+archetype` once the tool is reinstalled — change it to `"docker"`.
 
 ## Two things deploy, and they are separate sub-targets
 
