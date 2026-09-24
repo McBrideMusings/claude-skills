@@ -16,8 +16,7 @@ build/test/ship on Apple), `mobile` (what a phone app is regardless of vendor), 
 games are built regardless of device) simultaneously.
 
 Which labels apply to which repo is resolved from a map held outside this store, path-scoped per
-repo; see `_detect.md`. Nothing is written into a project repo, and the per-repo `.claude/domain`
-marker this store used to rely on was removed on 2026-08-23.
+repo; see `_detect.md`. Nothing is written into a project repo.
 
 The **issue backend** is not a label. Beads is the standing assumption for every repo, carried in
 the `issues` skill description, which is in context every session without a map lookup. Only a
@@ -64,8 +63,7 @@ The **body** is everything below it, capped at 120 words measured with the headl
 read on demand, by whichever engine has resolved this label into its scope.
 
 Why two tiers rather than one 120-word cell: a per-cell cap bounds nothing about the total, and the
-total is what a session actually pays. One repo reached 1,174 injected words with only 19 of 32
-labels covered. Tiering makes the cost scale with how many labels a repo carries rather than with
+total is what a session actually pays. Tiering makes the cost scale with how many labels a repo carries rather than with
 how much each cell has to say, which is the only version that stays bounded as coverage fills in.
 
 A cell with a body but no headline is a broken cell: session start prints a placeholder naming it
@@ -101,7 +99,7 @@ finding, because ranking the cells would guard a duplication that should be remo
 
 ## Current state
 
-Every label in the vocabulary now carries a `context.md`, except `node`. It is deliberately
+Every label in the vocabulary carries a `context.md`, except `node`. It is deliberately
 empty for the same reason `tracker:github` is: it sits on half of all repos, so a cell would
 fire constantly to say what was already assumed. Docs are a standing assumption owned by the
 `docs` skill, not a label.
@@ -117,7 +115,7 @@ numbers questions, the throwaway surface per engine, isolate-one-mechanic discip
 majidmanzarpour/threejs-game-skills. Its SKILL.md also carries the build arc that conducts
 end-to-end game builds over this store and adds the `game` label on scaffold.
 
-`ref-gui/` (formerly `ui/` — hard rename, no alias) — `design.md` (planning-time critique lenses) +
+`ref-gui/` — `design.md` (planning-time critique lenses) +
 `review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
 accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
 sweep, and the required rejected-candidates section, read by `gui` critique mode, which is what
@@ -138,8 +136,8 @@ The `review` / `improve` line inside `ref-gui/`: **`review.md` is what's broken,
 is what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
 improvement pass.
 
-`gui/layers/` — the six problem-space and solution-space design layers that used to live
-here as `product/`, now outside this store entirely (it was never a label a repo carries):
+`gui/layers/` — the six problem-space and solution-space design layers, kept outside this store
+because no repo carries them as a label:
 `observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
 `interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `gui` orchestrator
 conducts the layer work over that directory; `interaction-flow.md` hands its breadboard to that same
