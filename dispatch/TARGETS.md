@@ -143,6 +143,13 @@ checkout: `~/.claude/tools/land <worktree>` on any owned repo, and `~/.claude/to
 <worktree>` for `~/.claude` itself. Both fast-forward-push and refuse rather than force; the
 full route is `wrap-up` Step C's Route 2.
 
+**A SELF-LAND worker's report ends with a closing line, after the manual testing steps**, so
+the person reading from the bottom of the pane knows nothing is left. When the landing
+succeeded and the report has no follow-up: `Done — landed on main (<sha>). Nothing left to
+do; you can close this session.` When the landing did not happen, or follow-up is needed,
+the last line says that instead, and names the one thing the dispatching session must do.
+Say it from the landing command's own output, not from intent.
+
 **The exception is work that only reads.** A build, a test run, a log tail, a probe, a
 review that reports findings — those belong in a pane on the main checkout, because
 isolating them buys nothing and a fresh worktree costs a checkout.
