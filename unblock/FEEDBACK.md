@@ -12,12 +12,9 @@ resolution stays the user's.
 
 **The push, the reply and the re-request are one action, and no `go` takes a subset.** Fixing a
 branch, saying what was fixed, and putting the reviewer back in the queue are three parts of one
-claim. Splitting them has now failed in both directions. On PR #1395 the reply went out while the
-commits were unpushed, so the reviewer would have read "fixed" against zero new commits — the rule
-that came out of it is `memory/feedback_push_before_pr_reply.md`, *"posting is the authorization to
-make the whole claim true"*. On PR #1938 the mirror image: the push and the re-request went out on
-`go`, and the reply was handed back as "post it yourself", so the reviewer got new commits and a
-re-request with nothing saying what changed.
+claim. A reply without the push tells the reviewer "fixed" against zero new commits; a push and
+re-request without the reply hand them new commits with nothing saying what changed. Posting is
+the authorization to make the whole claim true.
 
 **Never re-introduce a rule that prints the reply for the user to paste.** A numbered row whose
 pick is "you do it manually" is unactionable by construction — `go` means *apply my picks*, and
