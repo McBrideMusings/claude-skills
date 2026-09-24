@@ -16,8 +16,8 @@ Each of 1–3 runs only if it is actually true. Gate 0 runs unconditionally, fir
 **[RULES.md](../review/RULES.md) binds this whole skill and every file it loads — load it now,
 before routing.** RULE 0 (no selector, ever), RULE 1 (effort never decides), and RULE 2 (a gate
 does the job it names) are all live here. RULE 2 is the reason this skill exists as its own
-thing: `review` used to print *"the branch conflicts with origin/main — `resolve` · `review
-anyway` · `stop`"* and wait, which made the user approve the skill doing what the skill is for.
+thing: a conflicted branch gets resolved, not reported with a menu asking the user to approve
+the resolution.
 
 The pieces load on demand, only when their gate fires:
 
