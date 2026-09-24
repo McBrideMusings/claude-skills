@@ -23,21 +23,22 @@ same order. This file is the single owner of that order. `review dual`,
 | Survives this session dying | no | **yes** | **yes** | the window survives; the run does not | yes on herdr, no on Terminal.app |
 | Cross-vendor | no — Claude only | no — Claude only | no — Claude only | yes, any vendor `dispatch` resolves | yes, that vendor |
 | Stopped by | `TaskStop` on its task id — a `completed` status is not a reason to skip it; the row then reads `killed` rather than leaving `ListAgents` | `herdr tab close` | `herdr workspace close` | close the window | `herdr tab close` on herdr; close the window on Terminal.app |
-| Reached by | the `Agent` tool | `dispatch exec` → `herdr-agent` (`herdr tab create`) | `dispatch exec` → `herdr-agent` targeting a fresh `herdr worktree create --workspace` | `dispatch exec` → `terminal run` | `dispatch exec` → `herdr-agent` or `terminal run` |
+| Reached by | the `Agent` tool | `dispatch exec` → `herdr-agent` (`herdr tab create`) | `dispatch exec`, run from a linked worktree → `herdr-agent` (`herdr worktree open --workspace`) | `dispatch exec` → `terminal run` | `dispatch exec` → `herdr-agent` or `terminal run` |
 
 `split` and `workspace` are the two shapes a herdr-hosted target can take, and both stop short
 of touching the caller's own pane — neither ever runs `herdr pane split`, which would squeeze the
 pane the user is reading. `split` opens a new **tab** in the workspace you're already in
 (`herdr tab create --workspace <current-id>`); `workspace` opens an entirely new herdr
-**workspace**, nested under the repo in the sidebar (`herdr worktree create --workspace
-<repo-workspace-id>`, the pattern in "Where the work happens" below). Use `split` for something
+**workspace**, nested under the repo in the sidebar, which `herdr-agent` opens itself when
+`dispatch exec` runs from a linked worktree (see "Where the work happens" below). Use `split` for something
 you expect to check on without leaving your seat; use `workspace` for something long-lived
 enough to want its own place in the sidebar — typically because it also needs its own worktree.
 
 `herdr-agent` picks between the two from the directory `dispatch exec` runs in. Run it from a
 linked worktree and it opens that worktree's workspace under the repo's
-(`herdr worktree open --workspace <repo-workspace-id> --path <worktree>`), or adds a tab there
-if the workspace is already open. Run it from anywhere else and it adds a tab to your own
+(`herdr worktree open --workspace <repo-workspace-id> --path <worktree>`) and starts the agent
+in its first tab. If the workspace is already open, it adds a `delegate-<pid>` tab there
+instead, so never open the workspace before `dispatch exec`. Run it from anywhere else and it adds a tab to your own
 workspace. Its stderr names the workspace and pane it started in, and prints again each time
 the agent stops on a permission prompt.
 
@@ -81,16 +82,26 @@ one-file edit dispatched onto `main` is the same hazard as a twenty-file one: th
 usually still working in that checkout, and an agent committing underneath them is a
 collision they did not agree to.
 
-Inside herdr that is `herdr worktree create --workspace <repo-workspace-id> --branch <name>`,
-then start the agent in the pane that comes back. Targeting `--workspace` is what keeps the
-worktree grouped under the repo in the sidebar instead of detaching to top level; never
-`herdr workspace create --cwd <worktree-path>`, and never a custom `--label`. Checkouts land
-under `~/.worktrees/<repo>/<branch>` — `[worktrees] directory` in
-`~/.config/herdr/config.toml` — so no `--path` is needed.
+For `workspace`, make the worktree with plain git, link its local files, and run
+`dispatch exec` from inside it:
 
-A worktree that already exists gets the same placement from `herdr worktree open
---workspace <repo-workspace-id> --path <worktree>`. A tab or pane created with `--cwd
-<worktree-path>` stays in the workspace that created it, so it never shows under the repo.
+```
+git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
+CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
+( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec <brief> <outfile> )
+```
+
+`herdr-agent` then opens the worktree's workspace under the repo's
+(`herdr worktree open --workspace <repo-workspace-id>`), and it starts the agent in that
+workspace's first tab. **Never open the workspace yourself before `dispatch exec`**, whether with
+`herdr worktree create` or `herdr worktree open`. `herdr-agent` finds the workspace already open,
+adds a `delegate-<pid>` tab for the agent, and leaves the first tab as an empty shell. For the
+same reason, never `herdr workspace create --cwd <worktree-path>` and never a custom `--label`.
+Worktrees go under `~/.worktrees/<repo>/<branch>`, the `[worktrees] directory` in
+`~/.config/herdr/config.toml`.
+
+`herdr worktree create --workspace <repo-workspace-id> --branch <name>` is only for a
+workspace that no `dispatch exec` will run in, such as one the user works in by hand.
 
 **A worker's brief lives in its worktree's git dir, never only under `/private/tmp`.** Author
 the brief and any shared preamble under `/private/tmp/claude/<repo-slug>/dispatch/`, then copy

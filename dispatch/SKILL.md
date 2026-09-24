@@ -141,7 +141,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 ### herdr — a live agent as `split` or `workspace` (`herdr-agent` in this directory)
 
-`herdr tab create` (never `herdr pane split` — that would squeeze the caller's own pane, the one the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`. This is the `split` target — a new tab in the workspace the caller is already in. The `workspace` target runs the same steps against a pane from a freshly created `herdr worktree create --workspace` instead.
+`herdr tab create` (never `herdr pane split` — that would squeeze the caller's own pane, the one the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`. This is the `split` target — a new tab in the workspace the caller is already in. The `workspace` target is `dispatch exec` run from inside a linked worktree made with `git worktree add`. `herdr-agent` opens that worktree's workspace with `herdr worktree open --workspace` and starts the agent in its first tab. Never open the workspace yourself first: `herdr-agent` would find it already open and put the agent in an extra `delegate-<pid>` tab.
 
 **Never write `/<skill>` into a dispatched prompt** — slash expansion is an interactive-input feature; text delivered by herdr agent prompt, `--exec`, or a relay arrives as plain user text and is never expanded. Write "call `Skill(<name>)` first, then …" instead.
 
