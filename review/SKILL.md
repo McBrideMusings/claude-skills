@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Perform a code review. Routes by what you're standing in: uncommitted changes review the working tree, a feature branch reviews against its base, an explicit branch/PR/path argument overrides, the default branch sweeps every PR awaiting your review. Blocked branches go to `unblock` first, without asking. Modes: `review dual`, `review repo`, `review workflow`, `noverify`. Choices are typed keywords in chat, never AskUserQuestion."
+description: "Perform a code review. Routes by what you're standing in: uncommitted changes review the working tree, a feature branch reviews against its base, an explicit branch/PR/path argument overrides, the default branch sweeps every PR awaiting your review. Blocked branches go to `unblock` first, without asking. Modes: `review dual`, `review repo`, `session`, `noverify`. Choices are typed keywords in chat, never AskUserQuestion."
 ---
 
 # Review
@@ -19,7 +19,7 @@ Review code changes for bugs, **security vulnerabilities**, quality issues, CLAU
 | [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt` (repo mode only), `docs-drift` (repo mode only), `history`, `negative-space`, `security`, `slop`, `spec`, `standards`, `test-debt` (repo mode only). REVIEW-CORE dispatches to them; a lens agent gets exactly one. |
 | [POSTING.md](POSTING.md) | end-of-pass dispositions, the comment budget, the verdict |
 | [FALSE-POSITIVES.md](FALSE-POSITIVES.md) | what not to flag |
-| [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the `workflow` transport's mechanics |
+| [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the workflow transport's mechanics, and when the session transport runs instead |
 | [../unblock/SWEEP.md](../unblock/SWEEP.md) | fan-out when invoked on the default branch |
 
 Load a file only once you've routed to it — that keeps context small.
@@ -28,9 +28,9 @@ Load a file only once you've routed to it — that keeps context small.
 
 - **`review`** (default) — Claude reviews on its own.
 - **`review dual`** — Claude reviews, *and* an independent cross-vendor target (`dispatch codex` or the resolved vendor) reviews the same diff; the two are reconciled into one source-tagged report. See **Dual flavor** below.
-- **`workflow`** — moves Phases 04–06c only (lens fan-out, best-practice verification, scoring, the reproduction gate, the ≥75 filter, fix authoring) into a workflow script, so only surviving findings enter this context. Routing, the report, and every question stay in the session. Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). RULE 0 holds under both transports. Outside repo mode it's an explicit opt-in — every narrower route (diff, branch, fixed-point, sweep) keeps the session transport unless this token is given.
+- **Transport** — every route runs Phases 04–06c (lens fan-out, best-practice verification, scoring, the reproduction gate, the ≥75 filter, fix authoring) as a workflow script, so only surviving findings enter this context. Routing, the report, and every question stay in the session. **`session`** forces those phases back into the session (`review session`, `review repo session`). A pass running where the `Workflow` tool cannot be called — inside a workflow agent such as wrap-up's quality stage, or inside a subagent — runs the session transport and says so in one line. Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). RULE 0 holds under both transports.
 - **`noverify`** — turns off Phase 05b, which feeds each behavior-claiming finding's stated input to the running code in a throwaway git worktree and keeps only what reproduces. The gate is **on by default**, costs ≤8 minutes, and never touches the working tree. Use `noverify` when the toolchain is unavailable, and expect a noisier report. There is no permanent off switch, because "the model read it and was confident" is the thing it exists to distrust.
-- **`repo`** — reviews the **whole codebase on the current branch** instead of a diff. Every axis runs, gating off; context-heavy; always confirms before starting. Combinable with dual. **Defaults to the `workflow` transport** — repo mode is the context-heaviest route there is, so `review repo` alone runs Phases 04–06c as a workflow script. `workflow` is still valid there as an explicit no-op confirmation (`review repo workflow`); `session` forces the session transport back (`review repo session`). Mechanics: [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r, [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
+- **`repo`** — reviews the **whole codebase on the current branch** instead of a diff. Every axis runs, gating off; context-heavy; always confirms before starting. Combinable with dual. Under the workflow transport its slices run as a `pipeline()`. Mechanics: [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r, [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
 
 ## Phase 00 — Route by context
 

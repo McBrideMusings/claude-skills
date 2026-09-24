@@ -2,9 +2,10 @@
 
 An override for **Phases 04 → 04b → 05 → 05b → 06 → 06b → 06c only** — the lens fan-out, the best-practice verification, the scoring, the reproduction gate, the filter, and fix authoring. Everything before and after stays exactly where it is.
 
-Selected by the `workflow` token in the arguments: `review workflow`, `review dual workflow`. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise. No token means the session transport, which is [REVIEW-CORE.md](REVIEW-CORE.md) unchanged.
+**This is the default transport on every route.** Invoking `review` is the request for the `Workflow` tool. The session transport — [REVIEW-CORE.md](REVIEW-CORE.md) Phases 04–06c run in this context — runs in exactly two cases:
 
-**Repo mode inverts the default.** `review repo` alone selects this transport — repo mode is the context-heaviest route there is, and the fan-out benefits most from findings never entering this context until the report. `workflow` is still valid there, as a redundant explicit confirmation (`review repo workflow`). The `session` token forces the session transport back: `review repo session`.
+1. **The `session` token was given:** `review session`, `review dual session`, `review repo session`.
+2. **The `Workflow` tool cannot be called from here.** Workflows nest one level deep, so a review running inside a workflow agent (wrap-up's quality stage) or inside a subagent (an `implementer`) has no `Workflow` tool. Run the session transport and say so in one line: *"`Workflow` isn't callable from inside this agent, so the lenses run here."*
 
 ## What stays in the session, and why
 
