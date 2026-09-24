@@ -213,24 +213,24 @@ Invoke the `backlog file` skill in Generate mode to surface candidates from this
 
 *Present pass* — one message, every candidate as a single numbered markdown list in a stable order. For each: title, one-line finding, and the exact slice of diff/code/PR it refers to as a `> file:line` block-quote so the user sees precisely what it is.
 
-*Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work and whether to relay into it. Halting twice in one wrap-up is the failure this merge exists to prevent.
+*Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work, which the closing sentence names. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the whole question fits in this one message. When relay is unavailable, drop question 2 and ask only the dispositions.
+Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the closing sentence can name the pick. When relay is unavailable, or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
 > ⛔ **Do not restate the sections as a question.** A trailing block that repeats *"Follow-ups — … / Next work — … / Relay — …"* under headings the reader just read is the same content twice, and in a terminal the block-quote glyph makes it read as a pulled quote of the message it is part of. The lists already say what the choices are; the ask only has to say how to answer.
 
-Shape — the follow-up slate, then (when relay is available) a second question for next work, then one closing sentence:
+Shape — the follow-up slate, then one closing sentence. There is no second question and no lettered options: `go` and `park` are the two answers, and the row numbers already use every number in the message.
 
 - **Follow-ups** — the numbered candidate list, one row per item, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row. Each row ends with its default in brackets: `[fix]`, `[file]`, `[skip]`.
-- **What's next?** — omit entirely when relay is unavailable. Otherwise **question 2** per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set, with options `2A` / `2B` / `2C`, one line each, the recommended one marked ` — my pick`. No relay candidate ranked worth doing → this question still prints with a `No relay — stop after landing` option carrying the pick instead.
+- **Next work** — only when relay is available: at most one plain line under the slate saying what the pick is and why (its cost included). No number, no letters.
 
 Then exactly one sentence, no block-quote, no heading, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch:
 
 > Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`).
 
-`go` accepts every default, including the picked next-work option, and relays into it. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition. Drop `park` from the sentence when relay is unavailable: with no question 2 there is nothing for it to decline.
+`go` accepts every default and relays into the named next work. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition. Drop `park` from the sentence when relay is unavailable: with no next work named there is nothing for it to decline.
 
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
