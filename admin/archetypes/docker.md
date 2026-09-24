@@ -1,11 +1,10 @@
-# Archetype: `docker-unraid` (Docker images deployed to an Unraid host)
+# Archetype: `docker` (Docker images deployed to an Unraid host)
 
 Load when `admin.toml` has `archetypes = [… "docker" …]`. Builds a Docker image
 and deploys it to an Unraid server (over SSH, or locally when on the host).
 
-The archetype was called `docker-unraid` before it was renamed to `docker`. A
-manifest still saying `archetypes = ["docker-unraid"]` fails with `unknown
-archetype` after the tool is reinstalled — change it to `"docker"`.
+A manifest saying `archetypes = ["docker-unraid"]` fails with `unknown
+archetype` — change it to `"docker"`.
 
 ## Two things deploy, and they are separate sub-targets
 
