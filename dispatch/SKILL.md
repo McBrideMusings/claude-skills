@@ -19,6 +19,8 @@ difference in the prompt the consuming skill writes.
 >
 > `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
 >
+> **Not for `split`, `workspace` or `window` work handed to the user.** Those are managed by the user; the caller never reads the outfile or watches the run (see [TARGETS.md](TARGETS.md) § A dispatched session is the user's). The check and the read-back below apply only to cross-vendor calls where the caller asked for a result, such as `review dual`.
+>
 > **Caller-side check:** trust a target's result only when the router-owned outfile (`/tmp/<slug>-dispatch.md`) exists at the path the router reported. Its absence means the router was bypassed or the run failed — don't proceed as if it succeeded.
 
 > `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.

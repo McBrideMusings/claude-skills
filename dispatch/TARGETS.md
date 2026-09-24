@@ -42,6 +42,16 @@ instead, so never open the workspace before `dispatch exec`. Run it from anywher
 workspace. Its stderr names the workspace and pane it started in, and prints again each time
 the agent stops on a permission prompt.
 
+## A dispatched session is the user's, not the dispatcher's
+
+**Applies to `split`, `workspace` and `window`.** Once one is launched, the user manages it.
+The dispatching session does not wait on it, poll it, read its pane, read its `<outfile>`,
+summarise or report on its progress or result, verify or review its work, land it, or remove
+its worktree. It says what it launched (target, worktree, branch, why it escalated) in one
+line and moves on. A completion notification from the launch command is not a prompt to look
+at the result; the `<outfile>` and the pane are the user's to read. Only `agent` returns a
+result to the dispatcher, because it runs inside the session.
+
 ## The order
 
 **1. Default to `agent`, always.** It is built into the harness: no window to
@@ -137,9 +147,8 @@ worker that is a whole session instead of a background agent. It exists because 
 decide landing: a brief written before the work knows nothing about what the work found. A
 worker that carried `push the branch, open the PR` and `retire yourself` did both, with four
 unanswered product questions pasted into the PR body, and the person who owed those answers
-first learned of the PR from `gh pr list`. Landing is the dispatching session's slate row,
-answered with `go`; verification against the project's `verify-project` skill happens there
-too, with the worktree still standing to be looked at.
+first learned of the PR from `gh pr list`. Landing and verification belong to the user, who
+is managing the session; the dispatching session never lands, verifies or reviews it.
 
 **Never `git worktree remove <path>` or `rm -rf` on its own checkout.** That is the shape
 `no-self-delete-guard.py` blocks, and the reason is real: delete the directory a session is
@@ -147,10 +156,10 @@ running in and every shell hook afterwards fails to spawn with `ENOENT` on `posi
 before reaching its first line, so the PreToolUse, PostToolUse and Stop guards are silently
 skipped for the rest of that session — non-blocking failures, so nothing stops.
 
-**The worktree and the branch are the dispatching session's to remove, after landing, from
-the main checkout.** Inside herdr that is `herdr worktree remove --workspace <id> --force`
-against the worker's workspace; the herdr server performs the deletion, so nothing loses its
-footing. A worktree that outlives its landing is collected anyway: `tools/git-sweep.sh`, run
+**The worktree and the branch are the user's to remove, never the dispatching session's.**
+Inside herdr that is `herdr worktree remove --workspace <id> --force` against the worker's
+workspace; the herdr server performs the deletion, so nothing loses its footing. A worktree
+that outlives its landing is collected anyway: `tools/git-sweep.sh`, run
 daily from `hooks/daily-git-sweep.sh`, collects branches proven merged (reachable from the
 default branch, or a `gh`-confirmed squash-merge) along with any worktree still holding them.
 A SELF-LAND dispatch lands from inside its own worktree and never merges in the primary
