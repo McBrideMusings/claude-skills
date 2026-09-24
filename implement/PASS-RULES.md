@@ -29,9 +29,7 @@ Nobody is reading your output while you run. The session that dispatched you is 
 
 ## ⛔ Bash command rules — read this before writing any shell command
 
-These exist because implement is a walk-away tool. A single permission prompt kills the entire unattended run. There are no exceptions.
-
-**Hard bans — these will ALWAYS trigger a permission prompt and MUST NEVER appear:**
+Implement is a walk-away tool: one permission prompt stops the whole unattended run. Each shape below triggers one, so none of them appears:
 
 1. **`@{u}`, `@{upstream}`, `@{push}`, or ANY `{…}` git refspec** typed as a bare argument. These trigger brace-expansion prompts unconditionally. Use `origin/$(git branch --show-current)` or `origin/main` instead. The one exception is a refspec inside single quotes in a command your prompt gives you verbatim — run that one exactly as written.
 2. **Compound commands where ANY sub-command is not allowlisted.** `&&`, `||`, `;` chaining is only safe when EVERY piece would individually pass. If uncertain, run the commands separately.
