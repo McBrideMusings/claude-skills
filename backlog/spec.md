@@ -21,13 +21,7 @@ This skill writes two files, both disposable, both under `/private/tmp/claude/<r
 sweep; the tickets — and, for the spec, the epic body or `## Spec` section it's published into
 — carry the durable content forward. Never write either into the repo on your own initiative.
 
-Draft slices to `/private/tmp/claude/<repo-slug>/backlog-spec.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
-
-```bash
-# Step 1
-git rev-parse --git-common-dir
-# Step 2: dirname → basename of result gives the repo name
-```
+Draft slices to `backlog-spec.md` in the directory `~/.claude/tools/repo-slug --path` prints (it creates the directory).
 
 After writing, tell the user the full path so they can open it — put the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean). Then ask the Phase 05 questions inline in the conversation — the user should never have to go find information not provided to them.
 
