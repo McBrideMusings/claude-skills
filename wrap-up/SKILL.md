@@ -235,7 +235,7 @@ Then exactly one sentence, no block-quote, no heading, per [`../CHAT-FORMAT.md`]
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
 *Act pass* — only after every disposition is recorded, execute by group:
-1. **Fix** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change.
+1. **Fix** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change. **A `fix` that cannot be applied — a denied edit, a failing check — halts the pass.** Report the blocker and stop; never land the rest around it.
 2. **File** — batch-file issues on the resolved backend (`bd create` or `gh issue create`); capture the new IDs/URLs for Step B. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
 3. **Skip** — drop.
 
