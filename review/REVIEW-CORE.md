@@ -331,10 +331,10 @@ summarized. State the verdict, not the evidence for it:
 > Reviewed, looks good, checks passed. No issues found.
 
 **Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate for this case only.** The gate's
-landed-or-not line, its Files-changed/Unchanged sections, and its Run/Look-for block describe a
+what-changed line, its Files-changed/Unchanged sections, and its Run/Look-for block describe a
 coding task that touched files; a clean review-only pass changed none, so the gate would read
-"nothing to land" / "everything" / no commands to run — which is what the one-liner above already
-says, just as a landed-or-not line and two headers instead of four words. Skip the gate here. It
+"nothing changed" / "everything" / no commands to run — which is what the one-liner above already
+says, just as an opening line and two headers instead of four words. Skip the gate here. It
 comes back the moment a finding gets fixed on the branch, because now files actually changed and
 there is something to gate.
 

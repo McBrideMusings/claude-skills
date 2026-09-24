@@ -103,12 +103,12 @@ RULES = {
         },
     },
     "finishing-sections": {
-        "clause": "End every coding task at the gate — a landed-or-not line, Files changed, "
+        "clause": "End every coding task at the gate — what changed first, Files changed, "
                   "Unchanged, then Run:/Look for:",
         "source": "CLAUDE.md §Finishing work",
-        "since": "2026-09-23",          # the gate replaced the three-section closer
+        "since": "2026-09-24",          # the gate stopped opening with a landed-or-not line
         "trigger": CODING_TASK,
-        "comply": re.compile(r"(?is)(?=.*\b(?:not landed|landed at)\b)"
+        "comply": re.compile(r"(?is)\A(?![\s>*]*(?:not landed|landed at)\b)"
                              r"(?=.*files\s+changed)"
                              r"(?=.*(?:^|\W)unchanged\b)"),
         "near": {

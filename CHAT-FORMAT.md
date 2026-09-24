@@ -147,12 +147,12 @@ The gate (below):
 
 ## Gate
 
-**When it applies.** The end of every coding task, whatever skill produced it — `implement`, inline work, `unblock`, a small fix. Whether the change is committed or not, it has not *landed* until `wrap-up` runs, and the gate is where that gap is stated out loud.
+**When it applies.** The end of every coding task, whatever skill produced it — `implement`, inline work, `unblock`, a small fix. The hatch at the bottom is what offers `wrap-up`; nothing above it restates that the work has not landed.
 
-**The shape.** One line stating landed-or-not, then two sections, then testing steps, then the hatch:
+**The shape.** What changed, then two sections, then testing steps, then the hatch:
 
-- **First line** — `Not landed: <branch> in <worktree> — wrap-up has not run.` For work already committed outside a pass worktree (`~/.claude` edits, an inline fix committed in place), the same line names the sha instead: `Landed at <sha> — wrap-up has not run.`
-- **Files changed** — every file touched, one line each.
+- **First line** — what the change does now, in one or two plain sentences: the behavior a user sees, not the process that produced it. Never open with landing status, a branch name, or "done".
+- **Files changed** — the header names where the work sits: `**Files changed** in <worktree> (<branch>, <sha>)`, or `(<sha>)` alone for work committed in place. Then every file touched, one line each.
 - **Unchanged** — only files a reader would have expected touched and weren't, with the reason. "Nothing" is a real answer.
 - **Run:** the exact commands, the ones the agent ran, one per line.
 - **Look for:** what a pass looks like — the output the agent saw.
@@ -163,9 +163,9 @@ Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the
 
 **Worked example:**
 
-> Not landed: `fix/retry-connreset` in `~/.worktrees/queue/fix-retry` — wrap-up has not run.
+> A job whose connection drops with `ConnectionResetError` now retries with backoff instead of failing on the first attempt.
 >
-> **Files changed**
+> **Files changed** in `~/.worktrees/queue/fix-retry` (`fix/retry-connreset`, `a1b2c3d`)
 > - `worker.py:142` — widened the retry catch to include `ConnectionResetError`
 >
 > **Unchanged**
