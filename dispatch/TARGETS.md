@@ -88,6 +88,16 @@ changes when it moves. So `pane split --cwd <worktree-path>` is not a way to kee
 in the current workspace; it is a slower way to arrive at the same place. Read the new ID
 from `herdr agent list` rather than the one `pane split` returned.
 
+**A worker's brief lives in its worktree's git dir, never only under `/private/tmp`.** Author
+the brief and any shared preamble under `/private/tmp/claude/<repo-slug>/dispatch/`, then copy
+the brief as soon as the worktree exists to
+`"$(git -C <worktree> rev-parse --absolute-git-dir)/DISPATCH-BRIEF.md"`, beside the
+`SELF-LAND` marker. `/usr/libexec/tmp_cleaner` deletes a `/private/tmp` file once its access,
+modification and change times are all more than three days old, at 00:00 daily, so a dispatch
+that outlives that window loses a brief kept only there. A linked worktree's git dir is
+removed with the worktree, so the copy lasts exactly as long as the dispatch. A launch script
+reads the brief from the git dir after the copy, never from the tmp path.
+
 **Check that `CLAUDE.local.md` reached the new worktree before starting the agent.** It's
 untracked, so git never carries it. In a repo with `admin.toml`, the admin tool's populate step
 usually already has: the base archetype (`~/.admin/archetypes/base/archetype.toml`) symlinks
