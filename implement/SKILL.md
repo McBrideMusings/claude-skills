@@ -100,6 +100,11 @@ never have to work out who is asking, who will answer, or where to reply.
   blockquote or its own block, then close with where the answer goes — "Answer here and I'll
   pass it on." For a gate, the gate's own hatch sentence (`../CHAT-FORMAT.md` §Gate) follows
   the quoted report.
+- **Explain the cycle once, never again.** How a worker lands — `go` at its gate, it runs
+  `wrap-up`, reports `landed`, the root closes its pane and removes its worktree — is pierce's
+  standing knowledge, not news. Don't restate it at launch beyond the table's launch line,
+  don't append it to a relayed gate, and don't repeat it in any later message. A gate closes
+  with its hatch sentence and nothing after it.
 - **Banned, because each one points pierce at the worker instead of the root:** "it will ask
   you", "answer it there", "reply in its pane", "you'll see", "check the workers tab", "go to
   the worker", and a bare "it" with no worker named earlier in the same message.
