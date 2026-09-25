@@ -293,6 +293,16 @@ down — not created in beads and pushed up.** `gh` sends one issue you wrote de
 `bd github sync` sends the whole database. See [`_detect.md`](_detect.md) § Stealth for the
 two-tier split and why no hook can enforce it.
 
+**Flatten before you publish.** `bd github push` on an `epic`-typed bead files a GitHub
+milestone plus one issue per child — not the single tracked issue "publish one" implies. If you
+want one issue, the bead must not be typed `epic` when you push it: fold the children's
+substance into the parent's description (a checklist is enough) and `bd delete` them first, or
+push a `feature`/`task` bead that was never split into children at all.
+
+**Refresh their backlog:** `GITHUB_TOKEN=$(gh auth token) bd github sync --pull-only`, then
+`bd rename <import-id> <prefix>-<n>`. A pull rewrites the beads it mirrors; private ones it
+cannot see.
+
 **In a stealth repo, pull is permitted and push never is.** `bd github sync --pull-only` seeds
 your private graph from their backlog — the reason stealth and GitHub coexist. Bare
 `bd github sync` is bidirectional and would file a real issue in their tracker for every bead
