@@ -30,26 +30,29 @@ session just worked in, which lands it (`../wrap-up/SKILL.md`).
 ## Root and workers
 
 In herdr, the chat pierce talks to is the **root**, and each item runs as a **worker**: a
-full `claude` session in its own herdr workspace, standing in `~/.worktrees/<repo>/<id>` on
-branch `bead/<id>`. The root plans and relays; the worker does the work and lands it.
+full `claude` session in a pane of the root workspace's `workers` tab (created on first use,
+split for each later worker), standing in `~/.worktrees/<repo>/<id>` on branch `bead/<id>`.
+The root plans and relays; the worker does the work and lands it.
 
 ```text
 root:   implement <id>
-          -> ~/.claude/skills/implement/launch <repo> <id>     # worktree + brief + workspace, detached
+          -> ~/.claude/skills/implement/launch <repo> <id>     # worktree + brief + workers-tab pane, detached
           -> one line to pierce: "launched <id>: <worktree>"; back to planning
-worker: runs the brief (WORKER.md): implement <id> here, then
-          -> herdr agent prompt <root-pane> "[worker <id>] gate: …"   (also written to GATE.md)
+worker: runs the brief (WORKER.md): implement <id> here, ending the turn with "gate: …"
+          -> hooks/worker-report.sh sends every stop to the root:  "[worker <id>] <last message>"
+             (a permission prompt too: "[worker <id>] needs input: …"; latest in REPORT.md)
 root:   holds an arriving gate until pierce's current thread is answered, then shows it
           pierce's reply -> herdr agent prompt "$(cat <git-dir>/WORKER-PANE)" "<reply, verbatim>"
-worker: go -> wrap-up here (lands with tools/land) -> "[worker <id>] landed <sha>", stops
-root:   ~/.claude/skills/implement/retire <repo> <id>          # workspace, worktree, branch
+worker: go -> wrap-up here (lands with tools/land), ends with "landed <sha>" -> sent the same way
+root:   ~/.claude/skills/implement/retire <repo> <id>          # pane, worktree, branch
 ```
 
-- **Every worker message starts `[worker <id>]`** — `gate: …`, `landed <sha>`, `parked`, or
-  `halted: <reason>`. A message in that shape is a worker's report, not pierce typing.
+- **Every worker message starts `[worker <id>]`** — `gate: …`, `landed <sha>`, `parked`,
+  `halted: <reason>`, `needs input: …`, or a question. A message in that shape is a worker's
+  report, not pierce typing. A question or `needs input` is shown to pierce like a gate.
 - **Nothing about a worker lives only in the root's context.** Live workers are
-  `herdr workspace list` entries whose worktree sits under `~/.worktrees/<repo>/`; a worker's
-  pane id is `WORKER-PANE`, and its latest gate is `GATE.md`, both in its worktree's git dir
+  worktrees under `~/.worktrees/<repo>/` whose git dir holds `WORKER-ID`; a worker's pane id
+  is `WORKER-PANE`, and its latest report is `REPORT.md`, both in that git dir
   (`git -C <worktree> rev-parse --absolute-git-dir`). Re-read those after a relay or
   compaction instead of asking.
 - **The root reads a worker only through what the worker sends** and those two files — never

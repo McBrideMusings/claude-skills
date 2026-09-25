@@ -46,8 +46,38 @@ wait_pane_ready() {
 # same place `herdr worktree create --workspace` puts one; a tab in the caller's
 # workspace would hide it behind the caller's own tab. Anything else gets a tab
 # in the caller's workspace.
+#
+# HERDR_AGENT_TAB=<label> overrides both: the pane goes into the calling workspace's tab with
+# that label — created (unfocused) on first use, then split for each later agent, alternating
+# right and down so the tab stays a grid rather than a row of slivers. `implement` workers use
+# this to share one `workers` tab beside the root chat.
 place_pane() {
   local gitdir common top repo_ws opened already created
+  if [ -n "${HERDR_AGENT_TAB:-}" ]; then
+    local label="$HERDR_AGENT_TAB" last count dir split
+    tab="$(herdr tab list --workspace "$HERDR_WORKSPACE_ID" | jq -r --arg l "$label" \
+      '[.result.tabs[] | select(.label == $l) | .tab_id][0] // empty')"
+    if [ -z "$tab" ]; then
+      created="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$label" --no-focus)" || {
+        echo "herdr-agent: could not create tab $label" >&2; return 1; }
+      pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
+      tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+    else
+      local panes
+      panes="$(herdr pane list --workspace "$HERDR_WORKSPACE_ID" 2>/dev/null | jq -c --arg t "$tab" '[.result.panes[] | select(.tab_id == $t) | .pane_id]')"
+      last="$(printf '%s' "$panes" | jq -r 'last // empty')"
+      count="$(printf '%s' "$panes" | jq -r 'length')"
+      [ -n "$last" ] || { echo "herdr-agent: tab $label ($tab) has no pane to split" >&2; return 1; }
+      dir=right; [ $((count % 2)) -eq 0 ] && dir=down
+      split="$(herdr pane split "$last" --direction "$dir" --cwd "$PWD")" || {
+        echo "herdr-agent: could not split pane $last in tab $label" >&2; return 1; }
+      pane="$(printf '%s' "$split" | jq -r '.result.pane.pane_id // .result.pane_id // empty')"
+    fi
+    ws="$HERDR_WORKSPACE_ID"
+    where="tab $label ($tab) of the calling workspace ($ws)"
+    [ -n "$pane" ] || { echo "herdr-agent: no pane id came back for $where" >&2; return 1; }
+    return 0
+  fi
   gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null || true)"
   common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
   if [ -n "$gitdir" ] && [ "$gitdir" != "$common" ]; then
@@ -150,7 +180,12 @@ cmd_run() {
 
   # An interactive agent prints to a TUI, so there is nothing to tee. Tell it where to
   # put the answer; the caller reads that file exactly as it reads `terminal run`'s.
+  # HERDR_AGENT_BARE_PROMPT=1 sends the prompt file as-is: an `implement` worker reports through
+  # its Stop hook, not an outfile, so the answer-file instruction would only cost it a write.
   local text
+  if [ "${HERDR_AGENT_BARE_PROMPT:-}" = "1" ]; then
+    text="$(cat "$promptfile")"
+  else
   text="$(cat "$promptfile")
 "'
 ────────────────────────────────────────────────────────────
@@ -160,6 +195,7 @@ Do not summarise it there; that file IS your answer and is the only part that is
 
   '"$outfile"'
 ────────────────────────────────────────────────────────────'
+  fi
 
   # --wait blocks on the agent's own lifecycle state, matching only states seen after the
   # submission. Right after start, the TUI can report ready while still dropping input:

@@ -158,7 +158,7 @@ cmd_exec() {
               [ -n "${CLAUDE_DELEGATE_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DELEGATE_MODEL") ;;
       codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac
-    "$HOME/.claude/skills/dispatch/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
+    "$(cd "$(dirname "$0")" && pwd -P)/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
     return "$rc"
   fi
 
@@ -172,7 +172,7 @@ cmd_exec() {
     claude)   runner="claude -p --permission-mode ${CLAUDE_DELEGATE_PERMISSION_MODE:-auto}${CLAUDE_DELEGATE_MODEL:+ --model $CLAUDE_DELEGATE_MODEL}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
   esac
 
-  local terminal="$HOME/.claude/skills/dispatch/terminal"
+  local terminal; terminal="$(cd "$(dirname "$0")" && pwd -P)/terminal"
   local payload; payload="$(mktemp -t delegate-payload.XXXXXX)"
   printf 'cat %q | %s\n' "$promptfile" "$runner" > "$payload"
 
