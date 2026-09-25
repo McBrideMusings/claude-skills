@@ -78,4 +78,4 @@ PY
     > "$gitdir/WORKER.log" 2>&1 &
 )
 
-echo "launched $id: $wt ($branch), log $gitdir/WORKER.log"
+echo "Launched $id in the workers tab ($wt, $branch). Its questions and its gate come back to this chat; pierce answers here, never in the worker's pane."

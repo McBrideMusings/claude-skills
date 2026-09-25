@@ -37,7 +37,7 @@ The root plans and relays; the worker does the work and lands it.
 ```text
 root:   implement <id>
           -> ~/.claude/skills/implement/launch <repo> <id>     # worktree + brief + workers-tab pane, detached
-          -> one line to pierce: "launched <id>: <worktree>"; back to planning
+          -> relay launch's one line to pierce verbatim; back to planning
 worker: runs the brief (WORKER.md): implement <id> here, ending the turn with "gate: …"
           -> hooks/worker-report.sh sends every stop to the root:  "[worker <id>] <last message>"
              (a permission prompt too: "[worker <id>] needs input: …"; latest in REPORT.md)
@@ -57,6 +57,10 @@ root:   ~/.claude/skills/implement/retire <repo> <id>          # pane, worktree,
   compaction instead of asking.
 - **The root reads a worker only through what the worker sends** and those two files — never
   its pane output. It never edits files in a worker's worktree, and never lands its work.
+- **pierce only ever talks to the root.** Every question, permission request and gate a worker
+  raises arrives here, and pierce answers here. Never tell pierce that a worker "will ask you",
+  to answer "there", or to open, watch or type in a worker's pane — say "it will send its
+  questions and its gate here" instead. pierce may look at a worker's pane; they never have to.
 - **A reply goes to one worker.** When more than one gate is open, pierce names the item
   (`go <id>`); a bare `go` with several open is a question back, not a guess.
 - **`retire` refuses** a dirty worktree or a branch that has not reached the default branch —
