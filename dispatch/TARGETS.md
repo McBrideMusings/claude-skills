@@ -52,6 +52,13 @@ line and moves on. A completion notification from the launch command is not a pr
 at the result; the `<outfile>` and the pane are the user's to read. Only `agent` returns a
 result to the dispatcher, because it runs inside the session.
 
+**The one exception is an `implement` worker** ([`../implement/SKILL.md`](../implement/SKILL.md)
+§Root and workers). A worker is launched to report back: `hooks/worker-report.sh` sends the
+root its last message every time it stops, the root relays pierce's reply to it, and the root
+retires its pane and worktree after `landed`. Even then the root reads only what the worker
+sends and the `WORKER-PANE`/`REPORT.md` files in its git dir — never its pane or its
+`<outfile>` — and never lands or verifies its work.
+
 ## The order
 
 **1. Default to `agent`, always.** It is built into the harness: no window to

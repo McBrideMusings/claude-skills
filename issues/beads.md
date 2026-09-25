@@ -81,7 +81,7 @@ don't route around the allow by asking in chat first.
 | link, other kinds | `-t parent-child \| discovered-from \| related \| supersedes` |
 | unlink | `bd dep remove <id> <blocker-id>` |
 | dependency tree | `bd dep tree <id>` |
-| **epic** (milestone equivalent) | `bd create "<name>" -t epic` then `--parent <epic-id>` on members |
+| **epic** (milestone equivalent) | `bd create "<name>" -t epic` then `--parent <epic-id>` on members. The type marks it an epic, so the title never says "epic" — `bd show` prints `(EPIC)` before an epic's title, and that prefix is display, not title text to copy |
 | epic progress | `bd epic status` (all epics; `--eligible-only` for those whose children are all done) |
 | **defer** | `bd defer <id> --until "+2w"` — hidden from `bd ready` until then |
 | **external ref** | `--external-ref gh-<n>` on create/update — records the GitHub issue it came from |
