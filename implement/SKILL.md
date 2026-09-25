@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time. In herdr, `implement <issue>` launches a worker — its own claude session in its own worktree and herdr workspace — that sends its gate back to this chat and lands its own work on `go`; `auto` lets the worker land without a gate. Outside herdr, or with `inline`, this session works the item itself in the checkout it stands in. Bare `implement` discovers one via `backlog next`."
+description: "Autonomous work on one tracked item at a time. In herdr, `implement <issue>` launches a worker — its own claude session and worktree, in a pane of this workspace's `workers` tab — that reports every stop back to this chat and lands its own work on `go`; `auto` lets the worker land without a gate. Outside herdr, or with `inline`, this session works the item itself in the checkout it stands in. Bare `implement` discovers one via `backlog next`."
 ---
 
 # /implement — plan, edit, verify, gate
