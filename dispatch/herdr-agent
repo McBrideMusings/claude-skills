@@ -160,7 +160,12 @@ cmd_run() {
   need herdr; need jq
 
   # Agent names must match [a-z][a-z0-9_-]{0,31} and be unique among live agents.
+  # HERDR_AGENT_NAME lets a caller name the agent (implement workers are `worker-<item>`);
+  # a name herdr would reject falls back to delegate-<pid> rather than failing the launch.
   local slug="delegate-$$"
+  if [ -n "${HERDR_AGENT_NAME:-}" ] && printf '%s' "$HERDR_AGENT_NAME" | grep -qE '^[a-z][a-z0-9_-]{0,31}$'; then
+    slug="$HERDR_AGENT_NAME"
+  fi
 
   : > "$outfile"
 

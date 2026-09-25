@@ -47,6 +47,10 @@ printf '%s\n' "$HERDR_PANE_ID" > "$gitdir/WORKER-ROOT"
 printf '%s\n' "$id" > "$gitdir/WORKER-ID"
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+# herdr agent names match [a-z][a-z0-9_-]{0,31}: lowercase the id, turn anything else into `-`,
+# and keep the tail, which is the part that tells items in one repo apart.
+agent_name="worker-$(printf '%s' "$id" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_-' '-')"
+[ "${#agent_name}" -le 32 ] || agent_name="worker-${agent_name: -25}"
 brief="$gitdir/DISPATCH-BRIEF.md"
 ITEM_JSON="$item" ID="$id" TITLE="$title" WORKTREE="$wt" BRANCH="$branch" REPO="$repo" \
 ROOT_PANE="$HERDR_PANE_ID" AUTO="$auto" TEMPLATE="$here/WORKER.md" OUT="$brief" \
@@ -72,7 +76,7 @@ PY
 
 (
   cd "$wt"
-  HERDR_AGENT_TAB=workers HERDR_AGENT_BARE_PROMPT=1 \
+  HERDR_AGENT_TAB=workers HERDR_AGENT_BARE_PROMPT=1 HERDR_AGENT_NAME="$agent_name" \
   CLAUDE_DELEGATE_AGENT=claude CLAUDE_DELEGATE_MODEL="${WORKER_MODEL:-sonnet}" \
     nohup "$here/../dispatch/dispatch" exec "$brief" "$gitdir/WORKER-OUT.md" \
     > "$gitdir/WORKER.log" 2>&1 &
