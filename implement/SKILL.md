@@ -88,6 +88,14 @@ never have to work out who is asking, who will answer, or where to reply.
   | pierce replies | "I sent your answer to the worker for `<id>`." |
   | `landed` arrives | "The worker for `<id>` landed `<sha>`. I closed its pane and removed its worktree." |
 
+- **Show a report only once it is whole.** `REPORT.md` in the worker's git dir always holds the
+  worker's complete last message; the prompt that delivered it may not. Read `REPORT.md` instead
+  of the delivered text whenever the delivered text ends in the marker
+  `[report cut at … — the whole report is in …/REPORT.md]`, stops mid-sentence, or is a gate
+  missing any of the §Gate parts — **Files changed**, **Run:**, **Look for:**, the closing line.
+  Only when `REPORT.md` is incomplete too does the root ask the worker to resend, and then it
+  says which part is missing. Never show pierce a partial gate as if it were the whole one,
+  and never build a decision on the part that arrived.
 - **Quote the worker, don't absorb it.** Show a worker's question or gate under that line as a
   blockquote or its own block, then close with where the answer goes — "Answer here and I'll
   pass it on." For a gate, the gate's own hatch sentence (`../CHAT-FORMAT.md` §Gate) follows
