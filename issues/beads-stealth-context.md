@@ -2,7 +2,8 @@
 
 > Beads runs here, nothing is committed, and only beads you name travel.
 
-- **A bead is private because you never name it in a push.** `bd create` makes one.
+- **A bead is private because you never name it** — in a push, or in any PR, commit or
+  comment text. `bd create` makes one.
 - **Publish one:** `bd github push <id>` prompts, then files it. Every unscoped form is denied
   by `beads-stealth-guard.sh`.
 - **Flatten before you publish.** `bd github push` on an `epic`-typed bead files a GitHub

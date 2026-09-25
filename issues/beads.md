@@ -281,6 +281,13 @@ bd setup claude --stealth
 **The one thing stealth does not hide:** `.beads/` still sits in the working directory. It is
 invisible to `git status`, visible to anyone with filesystem access to that checkout.
 
+**No hook catches a bead ID typed into prose.** `beads-stealth-guard.sh` blocks the `bd`
+subcommands that would push the database or file an issue; it has no view into a PR body,
+commit message, code comment, or issue comment being drafted by hand. Never write a bead ID
+(`Resolves acme-4f2`, `fixes neutrino-7.1`, etc.) into anything that reaches the
+client's GitHub — a PR title/body, a commit message, a review comment. Reference the work by
+what it does, not by its tracker ID.
+
 **In a stealth repo, a client-visible issue is created with `gh issue create` and then pulled
 down — not created in beads and pushed up.** `gh` sends one issue you wrote deliberately;
 `bd github sync` sends the whole database. See [`_detect.md`](_detect.md) § Stealth for the
