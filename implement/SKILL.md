@@ -37,7 +37,7 @@ The root plans and relays; the worker does the work and lands it.
 ```text
 root:   implement <id>
           -> ~/.claude/skills/implement/launch <repo> <id>     # worktree + brief + workers-tab pane, detached
-          -> relay launch's one line to pierce verbatim; back to planning
+          -> tell pierce, in the launch wording below; back to planning
 worker: runs the brief (WORKER.md): implement <id> here, ending the turn with "gate: …"
           -> hooks/worker-report.sh sends every stop to the root:  "[worker <id>] <last message>"
              (a permission prompt too: "[worker <id>] needs input: …"; latest in REPORT.md)
@@ -58,9 +58,9 @@ root:   ~/.claude/skills/implement/retire <repo> <id>          # pane, worktree,
 - **The root reads a worker only through what the worker sends** and those two files — never
   its pane output. It never edits files in a worker's worktree, and never lands its work.
 - **pierce only ever talks to the root.** Every question, permission request and gate a worker
-  raises arrives here, and pierce answers here. Never tell pierce that a worker "will ask you",
-  to answer "there", or to open, watch or type in a worker's pane — say "it will send its
-  questions and its gate here" instead. pierce may look at a worker's pane; they never have to.
+  raises arrives here, and pierce answers here. pierce may look at a worker's pane; they never
+  have to.
+
 - **A reply goes to one worker.** When more than one gate is open, pierce names the item
   (`go <id>`); a bare `go` with several open is a question back, not a guess.
 - **`retire` refuses** a dirty worktree or a branch that has not reached the default branch —
@@ -68,6 +68,33 @@ root:   ~/.claude/skills/implement/retire <repo> <id>          # pane, worktree,
 - **`implement <issue> auto`** launches with `launch --auto`: the worker sends itself `go` when
   its own verification passes and nothing needs pierce, and messages the root only on a halt
   or a failing check.
+
+### How the root talks about a worker
+
+The root is the go-between, and every sentence it writes about a worker says so. pierce should
+never have to work out who is asking, who will answer, or where to reply.
+
+- **The root speaks as itself, in the first person; a worker is always "the worker for
+  `<id>`", then "it".** Never "you" for anything a worker does, never a worker's words in the
+  root's own voice.
+- **Name which way each message is going**, with these verbs and nothing vaguer:
+
+  | Moment | The root writes |
+  |---|---|
+  | launch | "I launched a worker for `<id>`. It will send its questions and its gate to me, and I'll show you each one here." |
+  | a question arrives | "The worker for `<id>` is asking: …" |
+  | a permission prompt arrives | "The worker for `<id>` is waiting on a permission prompt: …" |
+  | a gate arrives | "The worker for `<id>` reached its gate. Its report:" |
+  | pierce replies | "I sent your answer to the worker for `<id>`." |
+  | `landed` arrives | "The worker for `<id>` landed `<sha>`. I closed its pane and removed its worktree." |
+
+- **Quote the worker, don't absorb it.** Show a worker's question or gate under that line as a
+  blockquote or its own block, then close with where the answer goes — "Answer here and I'll
+  pass it on." For a gate, the gate's own hatch sentence (`../CHAT-FORMAT.md` §Gate) follows
+  the quoted report.
+- **Banned, because each one points pierce at the worker instead of the root:** "it will ask
+  you", "answer it there", "reply in its pane", "you'll see", "check the workers tab", "go to
+  the worker", and a bare "it" with no worker named earlier in the same message.
 
 ## The unit is a slice
 

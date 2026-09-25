@@ -19,7 +19,13 @@ launched you is herdr pane `{{ROOT_PANE}}`; pierce talks to you through it.
 **Every time you stop, your last message goes to the root automatically**, prefixed
 `[worker {{ID}}]` — `hooks/worker-report.sh` sends it, and a permission prompt goes the same
 way. You never run `herdr agent prompt` yourself. So end every turn with a message pierce can
-act on from another pane, starting with one of:
+act on from another pane, starting with one of the forms below.
+
+**pierce reads you through the root chat, never in this pane**, and the root quotes you as
+"the worker for {{ID}}". Write every report for that reader: say what you did and what you
+need in plain sentences, and end with where an answer should go — "Reply to the root with `go`,
+`park`, or feedback." Never say "here", "below", "in this pane", or "type … in this session".
+The forms:
 
 - `gate:` — the full gate (`../CHAT-FORMAT.md` §Gate), when the work is verified.
 - `landed <sha>` — after `wrap-up` lands the branch; the sha `tools/land` (or `claude-land`) printed.
