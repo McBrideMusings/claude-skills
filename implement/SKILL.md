@@ -1,180 +1,174 @@
 ---
 name: implement
-description: "Autonomous work on tracked items, one worker per item. `implement <issue>` works that issue; bare `implement` discovers one; `implement <selector>` walks a queue; `implement swarm <selector>` runs several at once. A repo labelled `dispatch:workspace`, `implement <issue> workspace`, or \"dispatch to implement\" there runs the item as a watched herdr workspace session instead of an in-session agent."
+description: "Autonomous work on one tracked item at a time, run by this session itself — no dispatched agent, no separate worktree it cuts on its own. `implement <issue>` works that issue in the checkout the session already stands in; bare `implement` discovers one via `backlog next`. `implement <issue> inline` is a reserved word naming the same behavior explicitly."
 ---
 
-# /implement — run passes, verify them, gate or land them
+# /implement — plan, edit, verify, gate
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
-One **pass** is one tracked item, worked end to end by a single `implementer` agent in its own worktree, ending at a commit. This session is the orchestrator: dispatches it, re-checks it, shows the gate or lands it, closes it. **Arity is the only difference between these three** — a pass doesn't know which is happening.
+One **pass** is one tracked item, worked end to end by this session, in the checkout it
+already stands in, ending at a commit. **No subagent runs the pass.** This session plans,
+edits, builds, and verifies directly — the one subagent it spawns is a blind `code-reviewer`
+pass over the diff, once the build is green.
 
-| | What this session does |
+| | What happens |
 |---|---|
-| `implement <issue>` | one pass, verify, stop at the gate |
-| `implement <selector> queue` | a pass, verify, `wrap-up continuous` it, next — one at a time |
-| `implement swarm <selector>` | N passes at once, each `wrap-up continuous`d as it returns |
+| `implement <issue>` | plan → edit → build green → verify → blind review → gate |
+| `implement <issue> inline` | the same steps, named explicitly |
 
-A single `implement <issue>` never lands anything itself — `wrap-up` is the one landing path, run either by `go` at the gate or, under `queue`/`swarm`, as `wrap-up continuous <worktree>` per item with no gate in between. A single pass ends at its own gate; a queue or swarm ends at one report listing what landed, plus a gate for each item it halted on (§The gate below).
+Today the two rows behave identically — `inline` is a reserved word, not yet a different
+path. Launching a worker in herdr, or picking among several with `auto`, are later slices;
+this file does not describe them beyond naming that they are coming.
 
-**`implement <issue> inline`** is the one escape hatch, and it is not a pass at all — it never dispatches an agent. The session works the four steps itself, directly, in whatever checkout it already sits in: this session, this checkout, no worktree. Every other arity above dispatches an `implementer` agent as a pass, and a pass always runs in a worktree, no exceptions ([`WORKTREES.md`](WORKTREES.md)) — `inline` sidesteps that rule by not being a pass, not by carving an exception into it. Reach for it only when the user says otherwise, or when this session is already the item's worker.
-
-**A session already standing in the item's own worktree runs `implement <issue>` inline, unasked.** The test: this checkout is a linked worktree (`git rev-parse --git-dir` differs from `git rev-parse --git-common-dir`) and either its branch name contains the item id, lowercased — `bead/admin-vnnw` for `admin-vnnw` — or, in a `beads:stealth` repo whose branches never carry the id ([`WORKTREES.md`](WORKTREES.md)), its git dir holds a `DISPATCH-BRIEF.md` naming the item. This session works the item itself through every step of `~/.claude/agents/implementer.md`'s order of work — surface check, build green, verify at the surface, blind `code-reviewer`, verdict file, one commit — and ends at a commit on this branch. The session that dispatched this one verifies it and runs `wrap-up` on it, per [`../dispatch/TARGETS.md`](../dispatch/TARGETS.md)'s worker contract. A queue, a swarm, or a feature worktree whose branch names no single item still dispatches passes.
+**Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
+the gate with its branch standing. Typing `go` runs `wrap-up`, in the same checkout this
+session just worked in, which lands it (`../wrap-up/SKILL.md`).
 
 ## The unit is a slice
 
-A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no breakdown, or a Verify/Land child, is never dispatched. The `workspace` target (below) is the exception: its session takes the parent and works every slice itself, so no breakdown is created for it. **Verify is this session's**, via `verify-project`; `human` stops it until a person looks. Item → pass: [`HANDOFF.md`](HANDOFF.md).
+A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no
+breakdown, or a Verify/Land child, is never worked as a pass. **Verify is this session's**,
+via `verify-project`; `human` stops it until a person looks. Item → pass, and the readiness
+gate every item clears before it is ever offered: [`HANDOFF.md`](HANDOFF.md).
 
-**Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at a commit on its own branch; nothing in the verify loop merges it, not into the branch it was cut from and not into the default branch. `implement <issue>` stops at the gate with that branch standing, unmerged, worktree still up. Typing `go` at the gate runs `wrap-up <worktree>`, which lands it — Phases 1–5, then Step C: merge or PR, verdict copy, worktree and branch removal, tracker close (`../wrap-up/SKILL.md`). `implement <selector> queue` and `implement swarm <selector>` run `wrap-up continuous <worktree>` per item instead, as each pass's verify loop clears, with no gate in between — that invocation is itself the standing authorization, the same way starting a queue or swarm already authorizes a PR on a collaborative repo. A standing instruction not to push, merge or open a PR blocks `go` at a single pass's gate, and blocks starting a queue or swarm at all — it is never a reason to merge or push from inside the verify loop.
+## Commit rule by branch
 
----
+**On the default branch, commit nothing until `wrap-up` runs.** `wrap-up`'s own commit step
+makes the first commit, deliberately — it lets its review and quality checks land in the same
+commit as the change, rather than a separate housekeeping commit bolted on after.
 
-## ⛔ The pass is one background agent
-
-```
-Agent({
-  subagent_type: 'implementer',
-  description: '<id> <short title>',
-  prompt: <the brief — see HANDOFF.md §2>,
-})
-```
-
-It runs in the background and notifies this session when it lands. **One agent per item.** Never several agents split across stages of the same item, and never an agent that dispatches its own implementer — one item, one context, start to finish.
-
-The agent spawns exactly one subagent of its own: `code-reviewer`, blind, once the build is green.
-
-`args.resolved`-equivalents go in the prompt: the item is `{id, title, body, acceptance?, branch?, files?}`, already cleared and gated in chat before dispatch ([`HANDOFF.md`](HANDOFF.md) §1). The pass never fetches or judges an item on its own. The agent definition lives at `~/.claude/agents/implementer.md`; [`WORKTREES.md`](WORKTREES.md) has where it runs.
-
-## The target: `agent` or `workspace`
-
-The block above is the `agent` target, the default. **The `workspace` target replaces it whenever any of these holds**, decided before any worktree or bead is made:
-
-- the repo carries the `dispatch:workspace` label (the session-start domain context lists it);
-- the user typed `implement <issue> workspace`;
-- the user said "dispatch" with `implement` in a repo carrying that label ("dispatch to implement"). A bare `dispatch` anywhere else is bounced with the target list, per [`../CONTEXT.md`](../CONTEXT.md).
-
-Under `workspace` the worker is a live `claude` session the user can watch and take over, not an `Agent` call:
-
-```text
-item = the parent as filed — no slice breakdown, no Verify/Land children created
-worktree = the feature worktree, made per WORKTREES.md (plain git + link hook + mark; never herdr worktree create)
-brief = HANDOFF.md §2's item record + the plan's location + TARGETS.md's verbatim stop contract
-copy brief -> "$(git -C <worktree> rev-parse --absolute-git-dir)/DISPATCH-BRIEF.md"
-( cd <worktree> && CLAUDE_DELEGATE_AGENT=claude CLAUDE_DELEGATE_MODEL=sonnet \
-    ~/.claude/skills/dispatch/dispatch exec <git-dir>/DISPATCH-BRIEF.md <outfile> )
-report the workspace in one line and stop — no polling
-```
-
-The verify loop and gate below still belong to this session, and start when the user brings the worker's report back (or the `<outfile>` arrives): re-run its testing steps in the feature worktree, then show the gate. Landing is `wrap-up <feature-worktree>`, which on a collaborative repo opens the PR.
-
----
-
-## What a pass returns
-
-Its final message is one fenced JSON block:
-
-```js
-{ ok, item, verdict, verdict_path, commit, branch, worktree,
-  recheck: [{cmd, expect}], blockers: [], review, files, followups, mutation, summary }
-```
-
-A halt returns `{ok: false, halted_on, detail, worktree}`. **Branch on `ok` first** — a halt carries no `blockers`. `followups` is work outside scope, never a diff defect. Parse the block; if the agent returned prose instead, treat the pass as halted on `report` and read the worktree yourself rather than guessing what it meant.
-
----
-
-## The verify loop — at most two launches
-
-**You re-run every `recheck` command yourself, in the worktree. Your result decides whether the branch lands, not the agent's account of it.** A pass that reports a command passed, without that command being run again here, has not been verified.
-
-```text
-check reachability of every named host:port/URL -> start whatever is down
-r = Agent(implementer); round = 1
-loop
-  if !r.ok && r.halted_on == 'surface'  -> start the surface, relaunch on the SAME worktree
-  if !r.ok  -> halt: report r.halted_on, r.detail
-  run r.recheck[].cmd, compare against .expect; append a rechecks entry at r.verdict_path
-  review r's diff against the pass's starting sha
-  if clear and r.blockers empty:
-    TaskStop r's agent id; stop every surface this round started
-    if arity is queue/swarm  -> wrap-up continuous <worktree>; done with this item
-    else                     -> show the gate; done
-  if round == 2  -> halt: leave the worktree standing, report the path
-  if the fix would revert a hunk round 1 wrote  -> halt: the criteria contradict each other
-  r = Agent(implementer, <same worktree, failures as the brief>); round++
-```
-
-**Every start in this loop has a matching stop, and the stop is yours.** The two `start` lines above and `VERDICTS.md`'s surface restart all leave a process running that nothing else reaps — a `langgraph dev`, a static server, a simulator. Stop each one as soon as the recheck that needed it has passed, not at teardown: teardown is gated behind landing, so a run that stalls for any reason leaks every surface it opened. The same applies to the pass itself. **A returned pass is not a terminated agent** — it stays registered and resumable after its final JSON arrives, shows in the user's agent view, and holds its context until something stops it. `TaskStop` on the agent id is what ends it; the completion notification is not.
-
-**Two launches, then stop.** A second round that still fails means the brief is wrong, and that is a judgment you hold.
-
-**Halt on oscillation before relaunching.** If the failures you are about to hand back would undo a hunk the previous round wrote, the item's own criteria contradict each other — stop and put the contradiction to the user.
-
-**Check reachability yourself, before the first dispatch. On exhaustion, halt** — leave the worktree standing. Context fills mid-run → `relay`, don't push on.
-
-Round mechanics and the verdict-append discipline: [`VERDICTS.md`](VERDICTS.md).
-
----
-
-## The gate
-
-**A single `implement <issue>` shows the gate once its verify loop clears.** Shape and the canonical hatch sentence: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate. The commands in **Run:**/**Look for:** are the recheck commands this session already ran in the verify loop above — never re-derived, never re-run just to fill the gate. When a recheck command is a bare shell command run inside the worktree and the project has `admin.toml`, print it as `admin -w <worktree> <task>` if this session stands outside the worktree, unprefixed if standing inside it — never tell the owner to `cd` first. `go` means run `wrap-up <worktree>` now. `park` leaves the worktree and branch standing, records `bd update <id> --notes "parked at gate: <worktree>, <branch>, verified at <sha>"`, and ends the turn — a later session finds the note and resumes at that gate.
-
-**A queue or swarm never shows a per-item gate.** Every item whose verify loop clears lands immediately via `wrap-up continuous <worktree>` ([`ARITY.md`](ARITY.md)) — nothing is ever left standing behind a `go`. The run instead closes with one report: a plain list of what landed (nothing to do — no worktree, no branch, no gate), and, for anything that halted, that item's own gate, unchanged from the single-pass shape above — the halted item's worktree is still standing exactly as a single pass's would be, so it is shown and answered the same way, one `go`/`park` per halted worktree named in it, never one `go` for the whole run. A run where nothing halted closes with the landed list and no gate at all.
-
-**Owner feedback at a gate starts a new round outside the two-launch cap.** If the reply names a located cause with a small edit, fix it yourself in the worktree that gate names; otherwise relaunch the `implementer` on that same worktree with the reply as the brief. Either way: re-verify (re-run the recheck commands you now have, plus anything the fix touched), re-show that gate. These rounds do not count against the verify loop's two-launch cap above — that cap governs only this session's own loop, before a pass's first gate.
-
----
+**On any other branch, or in a worktree, commit as you go.** Ordinary commits as the plan
+progresses are fine. `wrap-up` may squash the unpushed ones into one, or leave them and add a
+final commit, before it pushes and lands.
 
 ## Pre-flight
 
-On failure, print the reason and stop. **Refuse a dirty tree:** `git status --short -- . ':(exclude).beads' ':(exclude).claude'` — those two exempt, else halt ([`WORKTREES.md`](WORKTREES.md) has why). **No commit-count guard** — one commit per *pass*.
+On failure, print the reason and stop.
 
----
+**Refuse a dirty tree:** `git status --short -- . ':(exclude).beads' ':(exclude).claude'` —
+those two are exempt, both session bookkeeping rather than work in progress:
+
+- **`.claude/`** — `scheduled_tasks.lock`, `papercuts.md`, `review-rejected.md`.
+- **`.beads/`** — `issues.jsonl` and `interactions.jsonl`, rewritten by nearly every `bd`
+  command including the `bd show` that resolves the item itself. Do not stash or commit them
+  to clear the check.
+
+In the primary `~/.claude` checkout, a dirty file there belongs to another concurrent session
+sharing that index, not to this pass — not a halt.
+
+**No commit-count guard.** One commit on the default branch; as many as the work needs
+elsewhere, squashed by `wrap-up`.
+
+## The steps
+
+1. **Plan.** State the files to touch and an objective acceptance check. If you cannot, stop
+   — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
+   gate, and it should not have been offered.
+2. **Edit.** Make the change directly, in the checkout you stand in.
+3. **Build green.** Run the build, test, lint or typecheck yourself, in the foreground,
+   bounded — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the
+   runner is chatty). Explicit `timeout`, up to 600000; never background it.
+4. **Verify at the surface.** The project's own `verify-project` skill owns what verification
+   means here — read `<repo>/.claude/skills/verify-project/SKILL.md` as a file and follow it
+   (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). Write one
+   from the repo's `README.md`, `CLAUDE.md` and `admin.toml` when none exists, naming this
+   repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
+   `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:
+   [`VERDICTS.md`](VERDICTS.md).
+5. **Blind review.** Once the build is green, spawn `code-reviewer` once — the one subagent
+   this process spawns as a matter of course, and this step is what clears a session that
+   otherwise carries a standing instruction not to call the `Agent` tool unasked. It gets the
+   diff and the repo's standards,
+   never this session's own reasoning about why the diff is correct. Fix every
+   `blocking`/`major` finding it returns,
+   then re-verify whatever the fix touched — one cycle, not two. `minor` findings, and anything
+   still open after that cycle, go to `wrap-up`'s follow-up step rather than a second review
+   round.
+6. **Commit**, per the branch rule above.
+
+## Bash command rules
+
+An unattended pass never gets a chance to retry past a permission prompt, so none of these
+shapes appears in a command this process runs:
+
+1. **`@{u}`, `@{upstream}`, `@{push}`, or any `{…}` git refspec** typed as a bare argument —
+   these trigger brace-expansion prompts unconditionally. Use `origin/$(git branch
+   --show-current)` or `origin/main` instead.
+2. **Compound commands where any sub-command is not allowlisted.** `&&`/`||`/`;` chaining is
+   only safe when every piece would individually pass. If uncertain, run the commands
+   separately.
+3. **`$(…)` or backtick subshell expansion** where the inner command is not already
+   allowlisted. Run the inner command first, capture the result, use it in a second call.
+4. **`#` comments or newlines inside a single Bash call.**
+5. **`cd /path && git <cmd>`** — triggers an "untrusted hooks" prompt. Use `git -C
+   /absolute/path <cmd>`.
+6. **`cat <file> || echo "not found"` existence-check compounds** — use the Read tool instead.
+
+**Never read a screenshot into this context.** Prove a visual result from text instead — logs,
+exit codes, a DOM or text dump the app already emits. If an image must be captured, save it to
+a path, assert on it via text or exit code, and name the path in the summary; the one other
+subagent this process may reach for is `screenshot-checker`, for a genuine human-eyes-only
+check, which keeps the image out of context and returns words.
+
+**Commit messages never attribute the work to Claude, an AI, or any tool** — no
+`Co-Authored-By`, no session link, no trailer naming a model; sign as the repo's user and
+nothing else. Conventional Commits, imperative, ≤72 characters of prose, item id in trailing
+parens.
 
 ## Halt conditions
 
-- Pre-flight failed
-- The brief arrived damaged — truncated, duplicated, or naming something that does not exist (`halted_on: 'brief'`)
-- No diff; build won't go green
-- verification `BLOCKED` — a closed surface (`halted_on: 'surface'`), or a fixture that contradicts the item's own model (`halted_on: 'fixture'`)
-- The criteria contradict each other (oscillation, above)
-- This session's own verify loop exhausted two launches
+- Pre-flight failed.
+- The item's text arrived damaged — truncated, duplicated, or naming something that does not
+  exist.
+- No diff; the build won't go green.
+- Verification `BLOCKED` — a closed surface, or a fixture that contradicts the item's own
+  model.
+- A review finding and the item's own stated criteria contradict each other.
 
-**A `BLOCKED` on a fixture is not a code problem and never becomes one.** The environment's data cannot express what the criterion asks — a seed row outside the domain the item defines, a database filled from a constant the item is changing. Fix the data or fix the criterion; never let a pass edit product code to satisfy data the item's own model says should not exist.
+**A `BLOCKED` on a fixture is never a code problem.** The environment's data cannot express
+what the criterion asks — a seed row outside the domain the item defines, a fixture predating
+the schema. Fix the data or fix the criterion; never edit product code to satisfy data the
+item's own model says should not exist. Verify treats doubt as `FAIL`.
 
-Verify treats doubt as `FAIL`. What "cleared" means before a pass is ever dispatched — the plan, objectivity and reachability tests — is [`HANDOFF.md`](HANDOFF.md) §1's, run in chat, before a worktree exists.
+## The gate
 
----
+Once verification and review clear, show the gate: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
+§Gate. The commands in **Run:**/**Look for:** are the ones already run in step 4 above — never
+re-derived, never re-run just to fill the gate. When a recheck command runs inside a worktree
+and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when this session
+stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`
+first.
+
+`go` means run `wrap-up` now, in the checkout this pass worked in — bare `wrap-up` when
+standing in it, `wrap-up <worktree>` when not. `park` leaves the branch standing, records
+`bd update <id> --notes "parked at gate: <worktree-or-branch>, verified at <sha>"`, and ends
+the turn — a later session finds the note and resumes at the gate.
+
+**Owner feedback at a gate starts a new round.** If the reply names a located cause with a
+small edit, fix it directly; otherwise treat the reply as a new brief and repeat the steps
+above against it. Either way: re-verify (re-run what changed, plus anything the fix touched),
+re-show the gate.
 
 ## Output
 
-Additive to the gate ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate), once for the run:
+One line, once the gate above has been shown or the pass halted:
 
 ```
 Implement complete: <one-sentence summary>. Halt: <reason | none>.
-Backlog: X open issues (closed Y), Z ready.
 ```
-
-Sequential/swarm additions and the backlog snapshot: [`ARITY.md`](ARITY.md).
-
-**Relay, after a queue or swarm's closing report, is this session's offer, not `wrap-up`'s** — `wrap-up continuous` skips Step D on every item it lands ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Step D), so nothing inside the run ever asks. If relay is available once the report above is shown, offer it the same way an interactive `wrap-up`'s Step A would, and hand it off on `go`.
-
----
 
 ## Notes
 
-- One pass works **one** item; never bundle two; never invokes itself.
-- A pass never writes to the tracker — `wrap-up` closes it after landing, only on `PASS` plus a commit.
-- A pass never removes its own worktree; `wrap-up` does, from the primary checkout, as part of landing.
-
----
+- One pass works **one** item; never bundle two.
+- A pass never writes to the tracker — `wrap-up` closes it after landing, once the branch is
+  merged or its PR opened.
+- A pass never removes a worktree it did not create.
 
 ## Read on demand
 
 | Open | When |
 | --- | --- |
-| [`WORKTREES.md`](WORKTREES.md) | Where a pass runs, cross-repo items, retiring a worktree. |
-| [`VERDICTS.md`](VERDICTS.md) | Verification, verify-loop round mechanics, reading a verdict. |
-| [`ARITY.md`](ARITY.md) | Model choice, sequential/swarm arity, arity reporting. |
-| [`HANDOFF.md`](HANDOFF.md) | Clearing an item, and what goes in the agent's brief. |
+| [`HANDOFF.md`](HANDOFF.md) | Clearing an item, the readiness gate, offering it as a slate row. |
+| [`VERDICTS.md`](VERDICTS.md) | What verification means, `BLOCKED` conditions, proving a touched test discriminates. |

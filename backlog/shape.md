@@ -4,7 +4,7 @@ The goal state is **AFK**: every issue in scope passes `implement`'s Phase 0.5 g
 
 **Worth doing on its own.** An issue that cannot state its own plan or its own definition of done is a bad issue whether or not an agent ever touches it — you re-derive the missing decision every time you read it. Run `backlog shape` because the backlog is vague, not because something is about to consume it.
 
-It happens to also be what the autonomous harnesses require, and they say so themselves — a swarmed `/implement` stops its whole run on a gate failure and hands the scope here. That dependency mostly points one way — they know about this skill, this skill does not need to know about them to run — but the exit does reach back: a cleared item is handed to `implement` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md), from Phase 3 onward.
+It happens to also be what the autonomous harnesses require, and they say so themselves — `implement` stops on a gate failure and hands the scope here. That dependency mostly points one way — they know about this skill, this skill does not need to know about them to run — but the exit does reach back: a cleared item is handed to `implement` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md), from Phase 3 onward.
 
 ## Two kinds of item, one loop
 
@@ -293,18 +293,18 @@ Report: issues ironed out (with what was decided), questions answered and closed
 
 **End with the recomputed roadmap beside Phase 0's.** `bd recompute-blocked`, then `bd swarm validate` per epic and `bd ready --json`. Show the two side by side — waves before, waves after — so the session's effect on what is workable is visible rather than asserted. Also report the structure Phase 0 wrote: epics created, members parented, edges wired, tier-1 counts.
 
-Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Recompute the graph per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 (`bd recompute-blocked`, `bd ready --json`, edges from `bd blocked` / `bd swarm validate`) and present what it computed as slate rows — never a strategy menu:
+Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Recompute the graph per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 (`bd recompute-blocked`, `bd ready --json`, edges from `bd blocked` / `bd swarm validate`) and present what it computed as slate rows — never a strategy menu, one row per ready item since `implement` runs one item at a time:
 
 ```
 Scope is clear. Reply with a number, or tell me something else.
 
 1. Cut the tickets — invoke backlog spec on the decisions made. (Answered questions, nothing implementable yet.)
-2. Dispatch the front as a swarm — cc-105, cc-140, cc-162 (no edges between them).
-3. Queue the rest behind it — cc-171 (blocked by cc-140), in dependency order.
+2. Run cc-105 as an implement pass — AFK, nothing blocks it.
+3. Run cc-140 as an implement pass — AFK, nothing blocks it.
 4. Stop here.
 ```
 
-Already dispatched from Phase 3 (cc-111) is not offered again — name it in a line above the rows instead. Rows 2 and 3 appear only when the graph has a front or a queue left to offer; a scope with nothing left to dispatch drops straight to rows 1 and 4. Row 1 loops back: `backlog spec` synthesizes a spec from the decisions, gets it approved, files work issues onto the same milestone → `backlog shape` again. Name the next step and stop — never auto-chain into it.
+Already dispatched from Phase 3 (cc-111) is not offered again — name it in a line above the rows instead. The per-item rows appear only when the graph has a front left to offer; a scope with nothing left to run drops straight to row 1 and the stop row. Row 1 loops back: `backlog spec` synthesizes a spec from the decisions, gets it approved, files work issues onto the same milestone → `backlog shape` again. Name the next step and stop — never auto-chain into it.
 
 ## Rules
 

@@ -109,7 +109,7 @@ Slice rules:
 
 - Each slice delivers a narrow but COMPLETE path through every layer it touches
 - A completed slice is demoable or verifiable on its own
-- A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can swarm; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs eight fixed stages and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
+- A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can run independently of each other once it lands; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs eight fixed stages and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
 
 **Every slice set ends in the same two bookends: a verify ticket and a land ticket.** They are
 not optional and not a judgement call — the shape is standard practice for all tracked work and
@@ -264,7 +264,7 @@ bd dep add "$L" "$V" -t blocks
 
 Do NOT close or modify any parent issue.
 
-**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only the `afk`-labelled slices are candidates — never `hitl`. Read the shape (swarm vs. sequential queue) off `bd ready --json` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 rather than asking, and add one slate row to this report naming the count against the filed set, e.g. `Dispatch 4 of 7 filed — the AFK slices; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
+**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only the `afk`-labelled slices are candidates — never `hitl`. Read the unblocked front off `bd ready --json` rather than asking, and add one slate row per ready slice to this report naming it against the filed set, e.g. `4 of 7 filed are AFK-ready — run implement <id> for each; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
 
 ## Principles for writing good agent briefs
 

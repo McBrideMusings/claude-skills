@@ -36,7 +36,6 @@ ref-<label>/
   diagnose.md           <- what to instrument / watch, read at diagnose's instrument phase
   profiling.md          <- profiler catalog / performance gate, read by the `profiling` engine
   testing.md            <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)
-  orchestrate.md        <- what N parallel workers must each get their own of, and how to pin to it
   design.md             <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
   prototype.md          <- OPTIONAL: what a throwaway prototype answers for this label, read by `spike`
 ```
@@ -78,7 +77,6 @@ rather than staying silent, because silence there is indistinguishable from "no 
 | `profiling` | `ref-<label>/profiling.md` | after label detect |
 | `tdd` | `ref-<label>/testing.md` | Phase 01/02 (write the failing test) |
 | project `verify` | `ref-<label>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
-| `implement swarm` | `ref-<label>/orchestrate.md` | fan-out and retirement, per pass |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
 store directly. The testing axis reaches verification two ways instead: `tdd` reads it when writing
@@ -104,11 +102,10 @@ empty for the same reason `tracker:github` is: it sits on half of all repos, so 
 fire constantly to say what was already assumed. Docs are a standing assumption owned by the
 `docs` skill, not a label.
 
-`ref-apple/` has all five engine cells (`review`, `diagnose`, `profiling`, `testing`, `orchestrate`);
+`ref-apple/` has all four engine cells (`review`, `diagnose`, `profiling`, `testing`);
 `ref-web/` has `profiling` + `testing` + `review`; `ref-react/` has `review`; `ref-threejs/` has
 `review` + `diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in
-`ref-game-dev/`). the fan-out cell exists only for `apple` today — that column fills the first time a
-swarm runs on a stack with a shared device, port, or database.
+`ref-game-dev/`).
 
 `ref-game-dev/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs.
 numbers questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from

@@ -13,6 +13,5 @@ description: Apple platforms — signing, provisioning, simulators, XCTest, Inst
 | [`profiling.md`](profiling.md) | Instruments, time profiles, memory graphs, energy. |
 | [`diagnose.md`](diagnose.md) | A crash, a hang, or a build failure to track down. |
 | [`review.md`](review.md) | Reviewing Apple-platform code. |
-| [`orchestrate.md`](orchestrate.md) | Running parallel Apple builds. |
 
 Submitting to the store is [`ref-app-store`](../ref-app-store/SKILL.md). TV focus behaviour is [`ref-tvos`](../ref-tvos/SKILL.md).

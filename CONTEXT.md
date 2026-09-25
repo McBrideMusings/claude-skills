@@ -34,8 +34,9 @@ Dispatch targets naming another vendor's coding agent. The surface (split/worksp
 resolved by the `dispatch transport` resolver, never asked.
 
 **inline**:
-Not a dispatch — an escape hatch: `implement <issue> inline` implements in whatever checkout the
-session sits in, this session, this checkout, no worktree.
+Not a dispatch — a reserved word: `implement <issue> inline` names running the item in this
+session, this checkout, explicitly. See `implement/SKILL.md` for what it will come to
+distinguish.
 
 **run**:
 Not a dispatch — this session executing a `Workflow` script; the script's agents are internal to
@@ -48,17 +49,10 @@ sideways.
 ### Process
 
 **implement**:
-The four-step process plan → fix → verify → land, independent of where it runs. Bare
-`implement <issue>` means `dispatch agent`: one `implementer` agent works the item in its own worktree. A place word follows: `implement 12 inline`,
-`implement 12 dispatch split`, `implement 12 relay`. Work happens in a worktree unless the user
-says otherwise; `inline` is that exception.
-
-**swarm**:
-An arity modifier on any process — several items at once.
-_Avoid_: fan out
-
-**queue**:
-An arity modifier on any process — one item after another.
+The process plan → edit → verify → gate, run by this session directly, in the checkout it
+already stands in — no dispatched agent. Bare `implement <issue>` and `implement <issue>
+inline` behave the same today; `inline` is reserved for when a worker-launch mode exists to
+tell it apart from.
 
 ### Verify
 
