@@ -52,6 +52,8 @@ It parses the `.xcresult` bundle (`xcode/xcresult.py`) rather than scraping stdo
 
 `navigator.py` is the one that replaces most raw `idb ui tap` usage — it resolves an element by label or role and taps it, so a UI change that moves a button by 40 points does not silently start tapping the wrong thing.
 
+A bare `idb ui tap` is a zero-length touch, and an iOS 26 SwiftUI `Toggle` ignores it more often than not, while a `Button` in the same view takes it. Pass `--duration 0.1` to flip a switch, and read its `AXValue` from `idb ui describe-all` afterwards instead of trusting the tap. A tap sent while a popover or confirmation dialog is animating away is also dropped, so wait for the dismissal before the next one.
+
 ### State and inspection
 
 | want | script |
