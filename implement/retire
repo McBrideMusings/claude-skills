@@ -5,7 +5,7 @@
 #   retire <repo> <item-id>
 #
 # Refuses, removing nothing, when the worktree is dirty or its branch carries commits the
-# default branch on origin does not. The pane (WORKER-PANE in the worktree's git dir) is closed
+# default branch does not (origin's, or the local main in a repo with no remote). The pane (WORKER-PANE in the worktree's git dir) is closed
 # first, which ends the worker session standing in the worktree, so the removal after it never
 # pulls a directory out from under a live process.
 # Exit 0 retired, 1 refused (reason on stderr), 2 usage.
@@ -21,8 +21,14 @@ branch="bead/$id"
 [ -d "$wt" ] || die "no worktree at $wt"
 
 [ -z "$(git -C "$wt" status --short -- . ':(exclude).beads' ':(exclude).claude')" ] || die "$wt has uncommitted changes"
-default=$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)
-git -C "$repo" fetch --quiet origin "${default#origin/}" || die "fetch of $default failed"
+if git -C "$repo" remote get-url origin >/dev/null 2>&1; then
+  default=$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)
+  git -C "$repo" fetch --quiet origin "${default#origin/}" || die "fetch of $default failed"
+else
+  # A local-only repo lands by merging into its own default branch, the one launch cut from.
+  default=main
+  git -C "$repo" rev-parse --verify --quiet "$default" >/dev/null || die "no origin remote and no local $default branch"
+fi
 [ -z "$(git -C "$repo" log --oneline "$default..$branch" 2>/dev/null)" ] || die "$branch has commits $default does not — it has not landed"
 
 pane=$(head -1 "$(git -C "$wt" rev-parse --absolute-git-dir)/WORKER-PANE" 2>/dev/null || true)
