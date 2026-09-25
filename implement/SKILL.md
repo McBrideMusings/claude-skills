@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time. In herdr, `implement <issue>` launches a worker — its own claude session and worktree, in a pane of this workspace's `workers` tab — that reports every stop back to this chat and lands its own work on `go`; `auto` lets the worker land without a gate. Outside herdr, or with `inline`, this session works the item itself in the checkout it stands in. Bare `implement` discovers one via `backlog next`."
+description: "Autonomous work on one tracked item at a time. In herdr, `implement <issue>` launches a worker — its own claude session and worktree, in a pane of this workspace's `workers` tab — that reports every stop back to this chat and lands its own work on `go`; `auto` lets the worker land without a gate. Outside herdr, or with `inline`, this session works the item itself in the checkout it stands in. `implement <epic>` reads the epic's children and blocking edges from beads and proposes an ordered plan — waves of workers, then Verify and Land — before launching anything. Bare `implement` discovers one via `backlog next`."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -104,12 +104,39 @@ never have to work out who is asking, who will answer, or where to reply.
   you", "answer it there", "reply in its pane", "you'll see", "check the workers tab", "go to
   the worker", and a bare "it" with no worker named earlier in the same message.
 
-## The unit is a slice
+## The unit is a slice — an epic becomes a plan
 
-A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no
-breakdown, or a Verify/Land child, is never worked as a pass. **Verify is this session's**,
-via `verify-project`; `human` stops it until a person looks. Item → pass, and the readiness
-gate every item clears before it is ever offered: [`HANDOFF.md`](HANDOFF.md).
+A pass takes **one slice child** — `myproj-25.1`. A Verify/Land child is never worked as a
+pass: **Verify is this session's**, via `verify-project`, and `human` stops it until a person
+looks; Land is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
+ever offered: [`HANDOFF.md`](HANDOFF.md).
+
+**`implement <epic>` proposes a plan and launches nothing until pierce answers.** The order
+comes from beads, never from reading the titles:
+
+```text
+~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children, blocks edges, bd ready --parent
+  -> waves of open slices (wave 1 = unblocked now), slices needing a person, Verify, Land, done
+readiness gate (HANDOFF.md §1) on every wave-1 slice      # in chat, before the slate
+slate, one row per step, in plan order:
+  wave-1 slices that clear the gate  -> "Launch workers for <ids>"            [run]
+  a wave-1 slice that fails the gate -> what is missing, and who supplies it  [hold]
+  later waves                        -> "Wave N, after <ids> land: <ids>"     [hold]
+  `human` slices                     -> what pierce has to do or decide       [hold]
+  Verify                             -> "Run <id> here via verify-project" once its blockers
+                                        are closed                             [run | hold]
+  Land                               -> "wrap-up <id> after Verify passes"     [hold]
+go -> launch every [run] row; later waves are offered again as each wave lands
+```
+
+- **An epic with no open slice** still gets a plan: its Verify and Land rows are the plan (run
+  Verify here, then Land). Never answer "only Verify and Land remain" with no next step.
+- **An epic with no children** is not ready for `implement`; offer `backlog spec` to break it
+  down ([`../issues/breakdown.md`](../issues/breakdown.md)).
+- **A later wave is never launched early.** When the last worker of a wave reports `landed`,
+  re-run `epic-plan` and offer the next wave as a fresh slate — the graph may have moved.
+- `epic-plan` expands a child epic in place, and names blockers outside the epic as `external`
+  rather than following them; an external blocker holds its row.
 
 ## Commit rule by branch
 
