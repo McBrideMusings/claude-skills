@@ -88,6 +88,11 @@ never have to work out who is asking, who will answer, or where to reply.
   | pierce replies | "I sent your answer to the worker for `<id>`." |
   | `landed` arrives | "The worker for `<id>` landed `<sha>`. I closed its pane and removed its worktree." |
 
+- **Every report is already on Canvas.** `hooks/worker-report.sh` posts each worker report —
+  everything but `landed`, `parked` and permission notices — as a card under this session,
+  headed `Worker <id>`. The root never posts it again; when it relays a gate or a question it
+  adds one line, "It's on Canvas." A root that has no Canvas card for a report it just received
+  reads `REPORT.md` and posts that itself, then says so.
 - **Show a report only once it is whole.** `REPORT.md` in the worker's git dir always holds the
   worker's complete last message; the prompt that delivered it may not. Read `REPORT.md` instead
   of the delivered text whenever the delivered text ends in the marker
