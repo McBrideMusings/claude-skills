@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# retire — the root's teardown after a worker reports `landed`: close the worker's herdr
+# workspace, remove its worktree, and delete its branch.
+#
+#   retire <repo> <item-id>
+#
+# Refuses, removing nothing, when the worktree is dirty or its branch carries commits the
+# default branch on origin does not. herdr performs the worktree deletion itself
+# (`herdr worktree remove --workspace <id> --force`), so the worker session standing in it is
+# never the process deleting its own directory. With no workspace open for the worktree, it
+# falls back to `git worktree remove`.
+# Exit 0 retired, 1 refused (reason on stderr), 2 usage.
+set -euo pipefail
+
+repo_in="${1:-}"; id="${2:-}"
+[ -n "$repo_in" ] && [ -n "$id" ] || { echo "usage: retire <repo> <item-id>" >&2; exit 2; }
+die() { echo "retire: $*" >&2; exit 1; }
+
+repo=$(git -C "$repo_in" rev-parse --show-toplevel 2>/dev/null) || die "$repo_in is not a git repo"
+wt="$HOME/.worktrees/$(basename "$repo")/$id"
+branch="bead/$id"
+[ -d "$wt" ] || die "no worktree at $wt"
+
+[ -z "$(git -C "$wt" status --short -- . ':(exclude).beads' ':(exclude).claude')" ] || die "$wt has uncommitted changes"
+default=$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)
+git -C "$repo" fetch --quiet origin "${default#origin/}" || die "fetch of $default failed"
+[ -z "$(git -C "$repo" log --oneline "$default..$branch" 2>/dev/null)" ] || die "$branch has commits $default does not — it has not landed"
+
+ws=$(herdr workspace list 2>/dev/null | jq -r --arg p "$wt" '.result.workspaces[] | select(.worktree.checkout_path == $p) | .workspace_id' | head -1)
+if [ -n "$ws" ]; then
+  herdr worktree remove --workspace "$ws" --force >/dev/null
+else
+  git -C "$repo" worktree remove --force "$wt"
+fi
+git -C "$repo" worktree prune
+git -C "$repo" branch -D "$branch" >/dev/null 2>&1 || true
+echo "retired $id: ${ws:+workspace $ws, }$wt, $branch"

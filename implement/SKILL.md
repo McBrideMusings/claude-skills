@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time, run by this session itself — no dispatched agent, no separate worktree it cuts on its own. `implement <issue>` works that issue in the checkout the session already stands in; bare `implement` discovers one via `backlog next`. `implement <issue> inline` is a reserved word naming the same behavior explicitly."
+description: "Autonomous work on one tracked item at a time. In herdr, `implement <issue>` launches a worker — its own claude session in its own worktree and herdr workspace — that sends its gate back to this chat and lands its own work on `go`; `auto` lets the worker land without a gate. Outside herdr, or with `inline`, this session works the item itself in the checkout it stands in. Bare `implement` discovers one via `backlog next`."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -15,16 +15,52 @@ pass over the diff, once the build is green.
 
 | | What happens |
 |---|---|
-| `implement <issue>` | plan → edit → build green → verify → blind review → gate |
-| `implement <issue> inline` | the same steps, named explicitly |
+| `implement <issue>`, in herdr | **launch a worker** (below) and return to pierce at once |
+| `implement <issue>`, outside herdr, or standing in the item's own worker worktree | this session runs the steps below: plan → edit → build green → verify → blind review → gate |
+| `implement <issue> inline` | this session runs the steps below, in its own checkout, even in herdr |
 
-Today the two rows behave identically — `inline` is a reserved word, not yet a different
-path. Launching a worker in herdr, or picking among several with `auto`, are later slices;
-this file does not describe them beyond naming that they are coming.
+**This session is the item's worker** when it stands in a linked worktree whose git dir holds
+a `DISPATCH-BRIEF.md` naming the item — then `implement <issue>` runs the steps here, never
+launches another worker.
 
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
 the gate with its branch standing. Typing `go` runs `wrap-up`, in the same checkout this
 session just worked in, which lands it (`../wrap-up/SKILL.md`).
+
+## Root and workers
+
+In herdr, the chat pierce talks to is the **root**, and each item runs as a **worker**: a
+full `claude` session in its own herdr workspace, standing in `~/.worktrees/<repo>/<id>` on
+branch `bead/<id>`. The root plans and relays; the worker does the work and lands it.
+
+```text
+root:   implement <id>
+          -> ~/.claude/skills/implement/launch <repo> <id>     # worktree + brief + workspace, detached
+          -> one line to pierce: "launched <id>: <worktree>"; back to planning
+worker: runs the brief (WORKER.md): implement <id> here, then
+          -> herdr agent prompt <root-pane> "[worker <id>] gate: …"   (also written to GATE.md)
+root:   holds an arriving gate until pierce's current thread is answered, then shows it
+          pierce's reply -> herdr agent prompt "$(cat <git-dir>/WORKER-PANE)" "<reply, verbatim>"
+worker: go -> wrap-up here (lands with tools/land) -> "[worker <id>] landed <sha>", stops
+root:   ~/.claude/skills/implement/retire <repo> <id>          # workspace, worktree, branch
+```
+
+- **Every worker message starts `[worker <id>]`** — `gate: …`, `landed <sha>`, `parked`, or
+  `halted: <reason>`. A message in that shape is a worker's report, not pierce typing.
+- **Nothing about a worker lives only in the root's context.** Live workers are
+  `herdr workspace list` entries whose worktree sits under `~/.worktrees/<repo>/`; a worker's
+  pane id is `WORKER-PANE`, and its latest gate is `GATE.md`, both in its worktree's git dir
+  (`git -C <worktree> rev-parse --absolute-git-dir`). Re-read those after a relay or
+  compaction instead of asking.
+- **The root reads a worker only through what the worker sends** and those two files — never
+  its pane output. It never edits files in a worker's worktree, and never lands its work.
+- **A reply goes to one worker.** When more than one gate is open, pierce names the item
+  (`go <id>`); a bare `go` with several open is a question back, not a guess.
+- **`retire` refuses** a dirty worktree or a branch that has not reached the default branch —
+  report the refusal; never force past it.
+- **`implement <issue> auto`** launches with `launch --auto`: the worker sends itself `go` when
+  its own verification passes and nothing needs pierce, and messages the root only on a halt
+  or a failing check.
 
 ## The unit is a slice
 
@@ -172,3 +208,4 @@ Implement complete: <one-sentence summary>. Halt: <reason | none>.
 | --- | --- |
 | [`HANDOFF.md`](HANDOFF.md) | Clearing an item, the readiness gate, offering it as a slate row. |
 | [`VERDICTS.md`](VERDICTS.md) | What verification means, `BLOCKED` conditions, proving a touched test discriminates. |
+| [`WORKER.md`](WORKER.md) | The brief `launch` hands a worker, and the messages it sends back. |
