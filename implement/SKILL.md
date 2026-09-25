@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time. In herdr, `implement <issue>` launches a worker — its own claude session and worktree, in a pane of this workspace's `workers` tab — that reports every stop back to this chat and lands its own work on `go`; `auto` lets the worker land without a gate. Outside herdr, or with `inline`, this session works the item itself in the checkout it stands in. `implement <epic>` reads the epic's children and blocking edges from beads and proposes an ordered plan — waves of workers, then Verify and Land — before launching anything. Bare `implement` discovers one via `backlog next`."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then Verify and Land. Bare `implement` discovers one via `backlog next`."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -13,106 +13,12 @@ already stands in, ending at a commit. **No subagent runs the pass.** This sessi
 edits, builds, and verifies directly — the one subagent it spawns is a blind `code-reviewer`
 pass over the diff, once the build is green.
 
-| | What happens |
-|---|---|
-| `implement <issue>`, in herdr | **launch a worker** (below) and return to pierce at once |
-| `implement <issue>`, outside herdr, or standing in the item's own worker worktree | this session runs the steps below: plan → edit → build green → verify → blind review → gate |
-| `implement <issue> inline` | this session runs the steps below, in its own checkout, even in herdr |
-
-**This session is the item's worker** when it stands in a linked worktree whose git dir holds
-a `DISPATCH-BRIEF.md` naming the item — then `implement <issue>` runs the steps here, never
-launches another worker.
+`implement <issue>` works that item here, in this session and this checkout, and nowhere
+else. It never launches another session, pane or agent to do the work.
 
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
-the gate with its branch standing. Typing `go` runs `wrap-up`, in the same checkout this
-session just worked in, which lands it (`../wrap-up/SKILL.md`).
-
-## Root and workers
-
-In herdr, the chat pierce talks to is the **root**, and each item runs as a **worker**: a
-full `claude` session in a pane of the root workspace's `workers` tab (created on first use,
-split for each later worker), standing in `~/.worktrees/<repo>/<id>` on branch `bead/<id>`.
-The root plans and relays; the worker does the work and lands it.
-
-```text
-root:   implement <id>
-          -> ~/.claude/skills/implement/launch <repo> <id>     # worktree + brief + workers-tab pane, detached
-          -> tell pierce, in the launch wording below; back to planning
-worker: runs the brief (WORKER.md): implement <id> here, ending the turn with "gate: …"
-          -> hooks/worker-report.sh sends every stop to the root:  "[worker <id>] <last message>"
-             (a permission prompt too: "[worker <id>] needs input: …"; latest in REPORT.md)
-root:   holds an arriving gate until pierce's current thread is answered, then shows it
-          pierce's reply -> herdr agent prompt "$(cat <git-dir>/WORKER-PANE)" "<reply, verbatim>"
-worker: go -> wrap-up here (lands with tools/land), ends with "landed <sha>" -> sent the same way
-root:   ~/.claude/skills/implement/retire <repo> <id>          # pane, worktree, branch
-```
-
-- **Every worker message starts `[worker <id>]`** — `gate: …`, `landed <sha>`, `parked`,
-  `halted: <reason>`, `needs input: …`, or a question. A message in that shape is a worker's
-  report, not pierce typing. A question or `needs input` is shown to pierce like a gate.
-- **Nothing about a worker lives only in the root's context.** Live workers are
-  worktrees under `~/.worktrees/<repo>/` whose git dir holds `WORKER-ID`; a worker's pane id
-  is `WORKER-PANE`, and its latest report is `REPORT.md`, both in that git dir
-  (`git -C <worktree> rev-parse --absolute-git-dir`). Re-read those after a relay or
-  compaction instead of asking.
-- **The root reads a worker only through what the worker sends** and those two files — never
-  its pane output. It never edits files in a worker's worktree, and never lands its work.
-- **pierce only ever talks to the root.** Every question, permission request and gate a worker
-  raises arrives here, and pierce answers here. pierce may look at a worker's pane; they never
-  have to.
-
-- **A reply goes to one worker.** When more than one gate is open, pierce names the item
-  (`go <id>`); a bare `go` with several open is a question back, not a guess.
-- **`retire` refuses** a dirty worktree or a branch that has not reached the default branch —
-  report the refusal; never force past it.
-- **`implement <issue> auto`** launches with `launch --auto`: the worker sends itself `go` when
-  its own verification passes and nothing needs pierce, and messages the root only on a halt
-  or a failing check.
-
-### How the root talks about a worker
-
-The root is the go-between, and every sentence it writes about a worker says so. pierce should
-never have to work out who is asking, who will answer, or where to reply.
-
-- **The root speaks as itself, in the first person; a worker is always "the worker for
-  `<id>`", then "it".** Never "you" for anything a worker does, never a worker's words in the
-  root's own voice.
-- **Name which way each message is going**, with these verbs and nothing vaguer:
-
-  | Moment | The root writes |
-  |---|---|
-  | launch | "I launched a worker for `<id>`. It will send its questions and its gate to me, and I'll show you each one here." |
-  | a question arrives | "The worker for `<id>` is asking: …" |
-  | a permission prompt arrives | "The worker for `<id>` is waiting on a permission prompt: …" |
-  | a gate arrives | "The worker for `<id>` reached its gate. Its report:" |
-  | pierce replies | "I sent your answer to the worker for `<id>`." |
-  | `landed` arrives | "The worker for `<id>` landed `<sha>`. I closed its pane and removed its worktree." |
-
-- **Every report is already on Canvas.** `hooks/worker-report.sh` posts each worker report —
-  everything but `landed`, `parked` and permission notices — as a card under this session,
-  headed `Worker <id>`. The root never posts it again; when it relays a gate or a question it
-  adds one line, "It's on Canvas." A root that has no Canvas card for a report it just received
-  reads `REPORT.md` and posts that itself, then says so.
-- **Show a report only once it is whole.** `REPORT.md` in the worker's git dir always holds the
-  worker's complete last message; the prompt that delivered it may not. Read `REPORT.md` instead
-  of the delivered text whenever the delivered text ends in the marker
-  `[report cut at … — the whole report is in …/REPORT.md]`, stops mid-sentence, or is a gate
-  missing any of the §Gate parts — **Files changed**, **Run:**, **Look for:**, the closing line.
-  Only when `REPORT.md` is incomplete too does the root ask the worker to resend, and then it
-  says which part is missing. Never show pierce a partial gate as if it were the whole one,
-  and never build a decision on the part that arrived.
-- **Quote the worker, don't absorb it.** Show a worker's question or gate under that line as a
-  blockquote or its own block, then close with where the answer goes — "Answer here and I'll
-  pass it on." For a gate, the gate's own hatch sentence (`../CHAT-FORMAT.md` §Gate) follows
-  the quoted report.
-- **Explain the cycle once, never again.** How a worker lands — `go` at its gate, it runs
-  `wrap-up`, reports `landed`, the root closes its pane and removes its worktree — is pierce's
-  standing knowledge, not news. Don't restate it at launch beyond the table's launch line,
-  don't append it to a relayed gate, and don't repeat it in any later message. A gate closes
-  with its hatch sentence and nothing after it.
-- **Banned, because each one points pierce at the worker instead of the root:** "it will ask
-  you", "answer it there", "reply in its pane", "you'll see", "check the workers tab", "go to
-  the worker", and a bare "it" with no worker named earlier in the same message.
+the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
+(`../wrap-up/SKILL.md`).
 
 ## The unit is a slice — an epic becomes a plan
 
@@ -121,30 +27,31 @@ pass: **Verify is this session's**, via `verify-project`, and `human` stops it u
 looks; Land is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
-**`implement <epic>` proposes a plan and launches nothing until pierce answers.** The order
+**`implement <epic>` proposes a plan and starts nothing until pierce answers.** The order
 comes from beads, never from reading the titles:
 
 ```text
 ~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children, blocks edges, bd ready --parent
-  -> waves of open slices (wave 1 = unblocked now), slices needing a person, Verify, Land, done
-readiness gate (HANDOFF.md §1) on every wave-1 slice      # in chat, before the slate
+  -> open slices in dependency order (wave 1 = unblocked now), slices needing a person,
+     Verify, Land, done
+readiness gate (HANDOFF.md §1) on the first slice          # in chat, before the slate
 slate, one row per step, in plan order:
-  wave-1 slices that clear the gate  -> "Launch workers for <ids>"            [run]
-  a wave-1 slice that fails the gate -> what is missing, and who supplies it  [hold]
-  later waves                        -> "Wave N, after <ids> land: <ids>"     [hold]
-  `human` slices                     -> what pierce has to do or decide       [hold]
-  Verify                             -> "Run <id> here via verify-project" once its blockers
-                                        are closed                             [run | hold]
-  Land                               -> "wrap-up <id> after Verify passes"     [hold]
-go -> launch every [run] row; later waves are offered again as each wave lands
+  the first unblocked slice that clears the gate -> "Work <id> here"                 [run]
+  a slice that fails the gate  -> what is missing, and who supplies it               [hold]
+  every later slice            -> "<id>, after <ids>"                                 [hold]
+  `human` slices               -> what pierce has to do or decide                     [hold]
+  Verify                       -> "Run <id> here via verify-project" once its blockers
+                                  are closed                                          [run | hold]
+  Land                         -> "wrap-up <id> after Verify passes"                  [hold]
+go -> work the [run] row here, to its gate; after it lands, re-run epic-plan and offer the next
 ```
 
+- **One slice at a time, in this session.** Slices in the same wave could run in parallel, but
+  `implement` still works them one after another, here.
 - **An epic with no open slice** still gets a plan: its Verify and Land rows are the plan (run
   Verify here, then Land). Never answer "only Verify and Land remain" with no next step.
 - **An epic with no children** is not ready for `implement`; offer `backlog spec` to break it
   down ([`../issues/breakdown.md`](../issues/breakdown.md)).
-- **A later wave is never launched early.** When the last worker of a wave reports `landed`,
-  re-run `epic-plan` and offer the next wave as a fresh slate — the graph may have moved.
 - `epic-plan` expands a child epic in place, and names blockers outside the epic as `external`
   rather than following them; an external blocker holds its row.
 
@@ -287,4 +194,3 @@ Implement complete: <one-sentence summary>. Halt: <reason | none>.
 | --- | --- |
 | [`HANDOFF.md`](HANDOFF.md) | Clearing an item, the readiness gate, offering it as a slate row. |
 | [`VERDICTS.md`](VERDICTS.md) | What verification means, `BLOCKED` conditions, proving a touched test discriminates. |
-| [`WORKER.md`](WORKER.md) | The brief `launch` hands a worker, and the messages it sends back. |
