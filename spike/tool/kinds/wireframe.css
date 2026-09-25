@@ -10,7 +10,7 @@
 
 /* A greybox is judged on arrangement, so it takes the full frame rather than the
    measure grid _base.css gives the document kinds. */
-main { display: block; max-width: var(--maxw); margin: 0 auto; padding: var(--s-6) var(--s-5) 6rem; }
+body > main { display: block; max-width: var(--maxw); margin: 0 auto; padding: var(--s-6) var(--s-5) 6rem; }
 
 h1 { font-size: var(--f-xl); margin: 0 0 var(--s-2); }
 h2 { font-size: var(--f-lg); margin: var(--s-6) 0 var(--s-3); color: var(--ink-soft); }

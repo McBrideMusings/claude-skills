@@ -115,8 +115,10 @@ hr { border: 0; border-top: 1px solid var(--line); margin: var(--s-6) 0; }
    Prose stays at --maxw; anything marked .wide — and by default every table, figure,
    diagram and code block — spans --maxw-wide. A single column for both squeezes the
    figures to the width of a sentence, which is what a 72ch-everything page looks like.
-   deck, prototype and wireframe want the full viewport and opt out with display:block. */
-main {
+   wireframe wants the full viewport and opts out with display:block; a prototype's stage is
+   a <div>, so the grid never reaches it. Scoped to the document's top-level main, so a
+   <main> nested inside a fragment's own markup keeps the layout its author gave it. */
+body > main {
   display: grid;
   justify-content: center;
   grid-template-columns:
@@ -124,8 +126,8 @@ main {
     [prose-start] minmax(0, var(--maxw)) [prose-end]
     minmax(0, calc((var(--maxw-wide) - var(--maxw)) / 2)) [wide-end];
 }
-main > * { grid-column: prose; min-width: 0; }
-main > :is(.wide, figure, table, .scroll-x, .code, .compare) { grid-column: wide; }
+body > main > * { grid-column: prose; min-width: 0; }
+body > main > :is(.wide, figure, table, .scroll-x, .code, .compare) { grid-column: wide; }
 
 /* A wrapper that passes the measure grid through to its own children, so a table inside
    a section still reaches the wide track. `page`'s two structural wrappers are named
