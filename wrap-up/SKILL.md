@@ -60,11 +60,11 @@ Invoking this skill grants explicit authority to auto-commit and auto-push. The 
 
 ---
 
-## ⛔ Run Phases 1–4 as a workflow — `~/.claude/workflows/wrap-up.js`
+## ⛔ Run Phases 1–4 as a workflow — [`stages.js`](stages.js)
 
 wrap-up fires at the most expensive moment there is: the end of a session, when context is at its peak and every turn re-reads all of it. Measured over 24h: 34 runs, all of them paying that.
 
-Phases 1–4 are near-pure fan-out with compact returns, so they run staged — `Workflow({ name: 'wrap-up', args: { repo, item, mode } })`. Assess runs first; tracking, docs and quality then run in parallel; each returns a small validated object.
+Phases 1–4 are near-pure fan-out with compact returns, so they run staged — `Workflow({ scriptPath: '<this skill's base directory>/stages.js', args: { repo, item, mode } })`, with the base directory written out as the absolute path the skill loaded from — `scriptPath` does not expand `~`. The script lives beside this file rather than in `~/.claude/workflows/`, so it never shows in the slash menu as a second `/wrap-up` that runs only half the close-out. Assess runs first; tracking, docs and quality then run in parallel; each returns a small validated object.
 
 **Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see.
 
