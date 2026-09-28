@@ -94,7 +94,8 @@ Every label may carry a `context.md`, and it has **two tiers**, both enforced by
   one fact whose absence would cause a wrong action.
 - The **body** — everything below it, **120 words**, measured with the headline excluded. A
   routing table, not a knowledge store: injected whole on the session's first edit of a file
-  in the label's domain (`hooks/ref-edit-inject.sh`), otherwise read on demand by whichever
+  in the label's domain (`hooks/ref-edit-inject.sh`) or on the first prompt a model judges
+  to be about the label (`hooks/ref-picker.sh`), otherwise read on demand by whichever
   engine resolved this label into its scope, with links to the sibling files that hold the
   depth.
 

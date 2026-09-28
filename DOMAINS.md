@@ -72,12 +72,15 @@ and it is injected for every label the repo carries, so its cost is paid in ever
 such repo. Twelve words, stating the fact whose absence would cause a wrong action.
 
 The **body** is everything between the headline and `## Files`, capped at 120 words. It reaches
-context two ways. `hooks/ref-edit-inject.sh` injects the whole `context.md` the first time a session
+context three ways. `hooks/ref-edit-inject.sh` injects the whole `context.md` the first time a session
 edits a file in the label's domain, once per label per session, with no model deciding. The file's
 extension, or for a few files its name (`SKILL.md` → `agent-docs`, `Dockerfile` → `container`,
 `wrangler.toml` → `cloudflare`), names a definite label (`.go` → `go`, `.swift` → `apple`) and
 candidate labels that count only where the map carries them for that path (`.ts` → `web` under a
-`web` rule). An extension with no entry injects nothing. Otherwise the body is read on demand, by whichever engine has resolved this
+`web` rule). An extension with no entry injects nothing. `hooks/ref-picker.sh` asks a model, on
+every prompt, to choose one label from `ref/SKILL.md`'s table or none, and injects the chosen
+label's whole `context.md`; both hooks claim the label in one shared place, so a session gets
+each cell once. Otherwise the body is read on demand, by whichever engine has resolved this
 label into its scope.
 
 Why two tiers rather than one 120-word cell: a per-cell cap bounds nothing about the total, and the
