@@ -53,6 +53,14 @@ reason is visible:
 - **It has to outlive this session** — the work continues after this Claude session ends,
   is compacted away, or is killed.
 
+**Hitting a genuine open question is never itself a reason to escalate.** A blocked
+decision only the user can make gets asked with `AskUserQuestion` in the calling session,
+in the pane the user is already reading — never by spawning a `split`/`workspace` tab whose
+only job is to relay the question. That trades one pane the user is watching for two, and
+leaves the answer sitting in a tab they have to go find. Dispatch a delegate only once the
+three reasons above independently call for one; a question that would block an in-session
+`agent` blocks a delegate exactly the same way, so escalating does not remove the block.
+
 **3. Once `split`, `workspace`, `window`, or a vendor target is warranted, the surface is
 resolved, never asked:**
 
