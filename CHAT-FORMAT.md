@@ -27,6 +27,8 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The shape.** One numbered row per item: a **bolded action naming what physically happens and where** — which file, which tracker, which branch — optionally followed by one to three lines of specifics, with the default `[verb]` bracket at the end of the row's first line. The bracket is the default, not a separate sentence. A row with no default is malformed: `go` would have nothing to mean.
 
+A row that confirms one outward action carries no lettered alternatives: the user skips it by answering `skip`, so a "hold it" option is not a choice and never appears. Lettered options belong to a question with several real courses.
+
 Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
 
 **Worked example:**
