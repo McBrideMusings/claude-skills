@@ -4,8 +4,8 @@ Roblox/Luau/Rojo work has a full knowledge store of its own. This cell exists so
 game engines (`ref-game-dev`, `review`, `diagnose`, `profiling`, `spike`, `testing`)
 can find it without the global catalog paying for a description every turn.
 
-**The store moved out of the global catalog on 2026-08-20.** It now lives per-project,
-model-invocable inside each Roblox repo and costing nothing anywhere else:
+**The store lives per-project**, not in the global catalog — model-invocable inside each
+Roblox repo and costing nothing anywhere else:
 
 - `~/Projects/roblox-shooter/.claude/skills/roblox/`
 - `~/Projects/roblox-plants/.claude/skills/roblox/`
@@ -58,4 +58,4 @@ server-side.
 ## Projects on this machine
 
 - `~/Projects/roblox-plants` — a git repo.
-- `~/Projects/roblox-shooter` — **not a git repo** as of 2026-08-20.
+- `~/Projects/roblox-shooter` — **not a git repo**.

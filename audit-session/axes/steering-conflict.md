@@ -87,8 +87,7 @@ mandates `build-runner` and `audit-session` Phase 4 spawns one sub-agent per len
 
 Nothing detected either. A human read the sources, worked out the precedence by
 hand, and wrote `hooks/steering-precedence.sh` — 71 lines that now print at
-SessionStart in every repo, landed in `32a2de0` and corrected twice after
-(`35ec2aa`, `861a6a1`).
+SessionStart in every repo, corrected twice after landing.
 
 **Read that hook as the shape of the fix, and as the warning.** Arbitration is the
 *fallback*: it leaves the conflict in place and pays for it every session forever.

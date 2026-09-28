@@ -32,9 +32,9 @@ never picked up again, and it puts a must-not-delete file inside a disposable tr
 ## Labels are backend-independent
 
 The verb tables say *how* to attach a label. [`labels.md`](labels.md) says *which* — one
-vocabulary across every backend and every repo, on three prefixed axes (`area:`, `mode:`,
-`platform:`). Any skill that labels an issue reads it before picking a label, and never
-invents a bare one.
+vocabulary across every backend and every repo, on two prefixed axes (`area:`, `platform:`;
+`mode:` belongs to beads, written by `bd set-state`, not this schema). Any skill that labels
+an issue reads it before picking a label, and never invents a bare one.
 
 ## Who reads what
 

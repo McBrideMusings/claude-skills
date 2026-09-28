@@ -159,10 +159,9 @@ owns the mount root only, not the subdirectories the sync writes into it, and it
 fires on `deploy image` while this breakage is on `deploy files`, the cheap
 deploy.
 
-> Historical note: `post_sync` was in `DEPLOY_KEYS` but unwired for a while, so a
-> manifest could declare it, pass `admin check`, and silently never run it.
-> Fixed 2026-08-09 (`admin_lib/remote.py`). If you are on an older installed
-> tool, `bash ~/projects/admin-project-tool/install.sh`.
+> Symptom of an outdated install: a manifest declares `post_sync`, passes
+> `admin check`, and it silently never runs (`admin_lib/remote.py` didn't wire
+> it into `DEPLOY_KEYS`). If you hit this, `bash ~/projects/admin-project-tool/install.sh`.
 
 ## `[docker_build]` — build on the target instead of locally
 
@@ -204,7 +203,7 @@ alone still creates it. `${VAR}` in `host` is expanded from the environment (an
 unresolved var skips that dir with a warning, same as the mount itself). Commands
 run on the deploy target — locally or over SSH, matching the rest of the deploy.
 
-### `skipping provision` on a var that the mount clearly resolved — fixed in `8266136`
+### `skipping provision` on a var that the mount clearly resolved
 
 Symptom, if you are on an older installed tool: one deploy printing both of these,
 where the second line is the very mount the first said it was skipping.

@@ -8,13 +8,12 @@
 
 Creating or editing `admin.toml`, wiring standard commands (build/dev/deploy/test/docs), populating `[urls]`, or writing a thin passthrough to an existing runner (Makefile/justfile/npm) is routine — just do it and validate with `admin check`. No "shall I create it?", no "want me to wire X?", no "commit?" prompts. `admin.toml` is globally gitignored, so its edits are never a commit question anyway.
 
-## Reinstalling after a tool change
-
-Full sequence for any tool change: **edit → commit → push → install**. There is no per-project regeneration step — installing updates the one interpreter every project shares. Installing from an unpushed commit embeds a dirty SHA into `~/.admin/VERSION`.
-
 ## Instructions
 
 ### Phase 0: Update the tool (when the change needs a tool/archetype edit)
+
+Full sequence for any tool change: **edit → commit → push → install**. Installing from an
+unpushed commit embeds a dirty SHA into `~/.admin/VERSION`.
 
 ```bash
 git -C ~/projects/admin-project-tool status
@@ -103,7 +102,9 @@ desc = "Run tests"; steps = ["test"]; group = 2; priority = 10
 
 Group 1 = build/run/install. Group 2 = everything else. Defaults (`group=0, priority=0`) → alphabetical, no spacers (fine for ≤3 commands).
 
-Canonical slots — use these numbers so every project's menu lines up:
+Canonical slots — use these numbers so every project's menu lines up. This is the same
+verb→slot mapping `PLAYBOOK.md`'s "Standardized commands" table documents with each verb's
+meaning and what it ends with; keep the two in sync if a slot number ever changes.
 
 | Group | Priority | Command |
 |---|---|---|

@@ -1,7 +1,6 @@
 # Fix mode — `audit-session fix <what>`
 
 The user already knows the problem. No corpus, no lenses, no ticket — fix it this turn.
-Absorbed from the retired `skill-audit` Mode B on 2026-08-20.
 
 Targets: `SKILL.md` files and their reference docs, `~/.claude/CLAUDE.md`, a project
 `CLAUDE.md`, hooks, and harness settings. Anything that steers a session.

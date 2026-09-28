@@ -9,4 +9,4 @@
   so `cmd | other` keeps working. When stdout is not a TTY, drop colour, spinners and
   progress bars — they become escape-sequence garbage in a pipe or a log file.
 - **Gate an action with `&&`.** `test; commit` commits after a failed test.
-Terminal *interfaces* — full-screen, keyboard-driven — are [../tui/](../tui/), not this.
+Terminal *interfaces* — full-screen, keyboard-driven — are [../ref-tui/](../ref-tui/), not this.
