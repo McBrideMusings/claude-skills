@@ -183,7 +183,7 @@ rather than leaving a string of in-progress commits to push.
 
 1. Stage and commit all remaining changes (docs, tracking, quality fixes, straggling code, and — on the default branch — the change itself).
    - **Default branch:** `git add -A` (respecting the project's own ignores) and commit everything now.
-   - **Any other branch:** `git log <upstream-or-fork-point>..HEAD --oneline` names what is already committed and unpushed. More than one commit there → `git reset --soft <upstream-or-fork-point>` and recommit as one, folding in this phase's own changes; exactly one commit already, with nothing new to add → leave it as is.
+   - **Any other branch:** `git log <upstream-or-fork-point>..HEAD --oneline` names what is already committed and unpushed. More than one commit there → `git reset --soft <upstream-or-fork-point>` and recommit as one, folding in this phase's own changes; exactly one commit already, with nothing new to add → leave it as is. On a first push the fork point is `git merge-base HEAD origin/main`, never `origin/main` itself: once `main` has moved, a soft reset onto its tip commits this branch's older tree on top of it and silently reverts every commit `main` gained since the fork.
    - Use the project's commit conventions (check its CLAUDE.md), then the global rule in `~/.claude/CLAUDE.md` §Git & GitHub, which requires **Conventional Commits** — `type(scope): message`, ≤72 chars, imperative, no trailing period.
    - Two exceptions the global rule names: `~/.claude/` itself uses a plain one-sentence message with no prefix, and a repo whose own CLAUDE.md states a different convention wins.
    - Use Conventional Commits per CLAUDE.md §Git & GitHub. Do not revert to a no-prefix convention.
