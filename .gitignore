@@ -20,3 +20,7 @@ __pycache__/
 # The private half of the domain store: hosts, accounts, services. Never tracked —
 # this repo is public. The hooks read these dirs beside the public ref/<label>/ cells.
 /ref/local/
+
+# Private skills that register by name (a procedure, not a ref cell), kept out of this
+# public repo the same way. The pattern names none of them.
+/local-*/
