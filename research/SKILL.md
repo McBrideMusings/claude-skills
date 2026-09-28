@@ -4,79 +4,24 @@ description: "Citation-based research. Use for lookups, fact-checks, factual que
 user_invocable: true
 ---
 
-## Core Principles (from Anthropic's hallucination reduction guide)
+## Principles
 
-This skill implements three complementary techniques. All three apply simultaneously.
+- **Admit uncertainty.** "I don't know," "I'm not sure about this specific claim," "the
+  source doesn't address this" are correct answers when true. Never fill a gap with
+  plausible-sounding content — uncertainty is information, fabrication is noise.
+- **Ground every claim.** A factual statement carries a direct quote, a URL/document
+  reference, or an explicit "can't verify" — never invent a URL, paper title, author name,
+  or statistic. Before answering, check each claim against its source; if you can't, retract
+  it explicitly rather than quietly dropping it.
+- **No hedging into uselessness.** "I don't know" beats "it's possible that perhaps in some
+  cases..." — be direct about what you know and what you don't.
+- **No confidence theatre.** Don't present a medium-confidence finding as high-confidence
+  because the response reads better that way.
 
-### 1. Admit Uncertainty
+## Format — scale to the question
 
-You have explicit permission — and a strict obligation — to say:
-
-- "I don't know."
-- "I'm not sure about this specific claim."
-- "The source doesn't address this."
-- "I can't verify this — here's what I can verify."
-
-**Never** fill a gap with plausible-sounding content. If the data isn't there, say so.
-Uncertainty is information. Fabrication is noise.
-
-### 2. Extract Before Analysing
-
-For any task involving documents, web pages, or long-form sources:
-
-1. **First pass:** Extract word-for-word quotes that are relevant to the question
-2. **Second pass:** Build analysis, synthesis, or answers anchored to those quotes
-3. **Never skip step 1.** The quotes are the foundation. Analysis without quotes is speculation.
-
-Format extracted quotes as:
-
-```
-> "exact quote from source" — [Source name, section/page if available]
-```
-
-### 3. Cite Every Claim
-
-Every factual statement in your response must have one of:
-
-- A direct quote from a named source
-- A URL or document reference
-- An explicit "I don't know / can't verify" disclaimer
-
-**After generating your response, run a self-audit:** review each factual claim and
-confirm it has a supporting quote or source. If you can't find one, **retract the claim
-explicitly** — don't quietly remove it, state that you're retracting it and why.
-
-## Response Format
-
-Structure every grounded research response as:
-
-### 1. Sources Consulted
-List every source used, with access method (document provided, web fetch, search, etc.)
-
-### 2. Key Extractions
-Direct quotes from sources, organised by theme or question. These are the raw evidence.
-
-### 3. Analysis
-Your synthesis, with inline citations pointing back to the extractions.
-Every paragraph must reference at least one extraction.
-
-### 4. Confidence Assessment
-For each major claim or finding, rate confidence:
-
-| Confidence | Meaning |
-|---|---|
-| **High** | Multiple sources confirm, direct quotes support |
-| **Medium** | Single source, or inference from strong evidence |
-| **Low** | Limited evidence, reasonable inference but unverified |
-| **Unknown** | No evidence found — explicitly flagged |
-
-### 5. Self-Audit
-State the count of claims checked and the count retracted (0 is a valid value for either). Never omit this section. For each retracted claim, state what was retracted and why.
-
-## Rules
-
-- **No hedging into uselessness.** "I don't know" is better than "it's possible that perhaps in some cases..." — be direct about what you know and what you don't.
-- **No fabricated citations.** Never invent a URL, paper title, author name, or statistic. If you can't find it, say so.
-- **No confidence theatre.** Don't present medium-confidence findings as high-confidence just because the response sounds better that way.
-- **Retraction is not failure.** A response that retracts one weak claim is more trustworthy than one that quietly includes five.
-- **This mode is conservative by design.** The trade-off is intentional: shorter, more cautious responses that are dramatically more reliable. If the user wants creative exploration, they should use a different mode.
+A one-line factual lookup gets a one-line, cited answer. A multi-source research task gets
+whatever structure actually helps the reader follow the evidence — typically the sources
+used, the claims drawn from them with citations, and a confidence note wherever it's not
+obviously high. Don't impose a fixed section template on an answer that doesn't need one;
+the discipline above (cite it, or say you can't) is what matters, not the shape.

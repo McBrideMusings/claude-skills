@@ -2,9 +2,10 @@
 
 An override for **Phases 04 → 04b → 05 → 05b → 06 → 06b → 06c only** — the lens fan-out, the best-practice verification, the scoring, the reproduction gate, the filter, and fix authoring. Everything before and after stays exactly where it is.
 
-Selected by the `workflow` token in the arguments: `review workflow`, `review dual workflow`. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise. No token means the session transport, which is [REVIEW-CORE.md](REVIEW-CORE.md) unchanged.
+**This is the default transport on every route.** Invoking `review` is the request for the `Workflow` tool. The session transport — [REVIEW-CORE.md](REVIEW-CORE.md) Phases 04–06c run in this context — runs in exactly two cases:
 
-**Repo mode inverts the default.** `review repo` alone selects this transport — repo mode is the context-heaviest route there is, and the fan-out benefits most from findings never entering this context until the report. `workflow` is still valid there, as a redundant explicit confirmation (`review repo workflow`). The `session` token forces the session transport back: `review repo session`.
+1. **The `session` token was given:** `review session`, `review dual session`, `review repo session`.
+2. **`Workflow` is not in your tool list.** Check your own available tools, not where you think you are running. A review started from inside a workflow agent (wrap-up's quality stage) or `implement`'s own blind review step is the usual case. Run the session transport and say so in one line: *"`Workflow` isn't in this agent's tools, so the lenses run here."*
 
 ## What stays in the session, and why
 
@@ -22,7 +23,7 @@ Selected by the `workflow` token in the arguments: `review workflow`, `review du
 ## What it buys
 
 1. **The barrier between Phase 04 and Phase 05 disappears.** Today every lens must return before scoring starts, so the slowest lens holds up the scoring of the fastest one's findings. `pipeline()` starts scoring a lens's findings the moment *that* lens returns.
-2. **The findings never enter this context until the report.** Today nine-plus lens reports at up to 400 words each, plus a scoring result per issue, all land in the parent window before anything is filtered. Under this transport only the surviving findings come back. This is the bigger win, and it is why `review repo` — the context-heaviest mode there is — benefits most.
+2. **The findings never enter this context until the report.** Today nine-plus lens reports, plus a scoring result per issue, all land in the parent window before anything is filtered. Under this transport only the surviving findings come back. This is the bigger win, and it is why `review repo` — the context-heaviest mode there is — benefits most.
 
 ## The script
 

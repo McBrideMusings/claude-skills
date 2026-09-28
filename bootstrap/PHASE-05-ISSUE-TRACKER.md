@@ -131,11 +131,4 @@ even on a repo where nothing else in this phase needed changing.
 Step 2 of `issues`'s detection reads this section and trusts it over auto-detection, so it is how
 a repo pins a choice that detection would otherwise get wrong.
 
-## Step 4 — Concurrency note
-
-If the repo is one the user runs `/implement swarm` against, say once: beads' default embedded engine
-serves **one writer at a time**, and every worktree shares the main repository's `.beads`. Either
-keep tracker writes on the orchestrator or re-init with `bd init --server`. Don't change it for
-them — just name it.
-
 Then proceed to [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md).

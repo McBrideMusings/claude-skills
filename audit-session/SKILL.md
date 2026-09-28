@@ -1,7 +1,7 @@
 ---
 name: audit-session
 disable-model-invocation: true
-description: Audit conversation transcripts — this session, this project's history, or all of it — through lenses that ask what was spent, what was steered and ignored, which skills should have fired and didn't, whether the co-loaded steering sources contradict each other, and where the conversation itself wasted the user's time. Replaces the old `skill-audit` and absorbs its direct-fix mode.
+description: Audit conversation transcripts — this session, this project's history, or all of it — through lenses that ask what was spent, what was steered and ignored, which skills should have fired and didn't, whether the co-loaded steering sources contradict each other, and where the conversation itself wasted the user's time.
 ---
 
 # audit-session
@@ -33,7 +33,7 @@ Corollary, learned the hard way: **validate the instrument before trusting the n
 The last rule wins over the first two. A session with real conversation in it is almost always the thing the user means. Say which corpus you picked in one line before starting, so a wrong guess costs one correction rather than a full pass.
 
 **`audit-session <path>`** — audit an explicit `.jsonl` or project dir.
-**`audit-session fix <what>`** — skip the audit, fix one named problem in the owning skill or `CLAUDE.md` now. Absorbed from the old `skill-audit` Mode B; procedure in [FIX-MODE.md](FIX-MODE.md).
+**`audit-session fix <what>`** — skip the audit, fix one named problem in the owning skill or `CLAUDE.md` now. Procedure in [FIX-MODE.md](FIX-MODE.md).
 
 Scope modifiers: `--since YYYY-MM-DD`, or name lenses (`audit-session negative-space spend`).
 
@@ -76,7 +76,7 @@ A lens finds what went wrong. The **fix shapes** are the structural answers wort
 
 **[CONTEXT-PRESSURE.md](CONTEXT-PRESSURE.md) — whose window pays for this rule?** The implementing stage re-decides every always-loaded rule on every turn; the reviewing stage receives a diff and has room. A code-quality standard in `CLAUDE.md` is charged to every session; in `review/axes/` it is charged once. The only shape that *removes* always-on tokens instead of adding enforcement — reach for it before `HOOKS.md`.
 
-> Three tests, all required: checkable against a diff, acceptable to catch after the fact, and not steering the work itself. **`review` fires in ~1.5% of sessions** — state that rate in the proposal, or the rule has been downgraded rather than rehoused.
+> Three tests, all required: checkable against a diff, acceptable to catch after the fact, and not steering the work itself. State the current review rate ([CONTEXT-PRESSURE.md](CONTEXT-PRESSURE.md) has the number) in the proposal, or the rule has been downgraded rather than rehoused.
 
 **[INFORMATION-ACCESS.md](INFORMATION-ACCESS.md) — could it have known?** The only shape that adds capability rather than constraining behaviour, which is why it gets skipped: when a session failed because a fact was unreachable, the answer is a surface, not a better instruction.
 

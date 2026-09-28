@@ -15,7 +15,7 @@ Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The
   --out /private/tmp/claude/<repo-slug>/reports/<slug>.html
 ```
 
-(Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, any `<link>`, `@import url()`, CDN reference, webfont, or remote image — the hermetic rule is enforced, not remembered. Every path absolute; a relative `--out` or `--fragment` is refused. Resolve the repo root with `git rev-parse --show-toplevel` in its own Bash call.
+(Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, any `<link>`, `@import url()`, CDN reference, webfont, or remote image — the hermetic rule is enforced, not remembered. Every path absolute; a relative `--out` or `--fragment` is refused. `/private/tmp/claude/<repo-slug>` is the directory `~/.claude/tools/repo-slug --path` prints.
 
 **Screenshot it and look at it.** Check specifically for overlapping SVG text in the before/after diagrams. Then hand it over with a bare `open <absolute-path>` on its own line.
 

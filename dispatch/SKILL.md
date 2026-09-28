@@ -19,9 +19,11 @@ difference in the prompt the consuming skill writes.
 >
 > `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
 >
+> **Not for `split`, `workspace` or `window` work handed to the user.** Those are managed by the user; the caller never reads the outfile or watches the run (see [TARGETS.md](TARGETS.md) § A dispatched session is the user's). The check and the read-back below apply only to cross-vendor calls where the caller asked for a result, such as `review dual`.
+>
 > **Caller-side check:** trust a target's result only when the router-owned outfile (`/tmp/<slug>-dispatch.md`) exists at the path the router reported. Its absence means the router was bypassed or the run failed — don't proceed as if it succeeded.
 
-> The smoke test showed `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.
+> `reasonix run` (and likewise `codex exec`) wraps its answer in its own chrome — a `thinking` line, a trailing token/cost footer. The consuming skill reads `<outfile>` and extracts the substantive findings; the resolver doesn't try to strip vendor chrome.
 
 > ## Which target, before any of this
 >
@@ -106,7 +108,7 @@ Run `dispatch exec` with the Bash tool's **background** mode: the agent can take
 Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. Two optional env knobs, set alongside `CLAUDE_DELEGATE_AGENT`:
 
 - **`CLAUDE_DELEGATE_MODEL`** — the target's model (`sonnet`, `haiku`, `opus`, or a full model id). Unset → the CLI's default. This is the point of the vendor: a cheap plan-follower or a heavyweight, chosen per profile or per repo.
-- **`CLAUDE_DELEGATE_PERMISSION_MODE`** — defaults to `acceptEdits`: file edits auto-approved, every other tool follows the user's own permission rules, and in print mode a denied tool call fails that call rather than prompting. If a dispatched task needs more (e.g. free rein on git/test commands), the user sets a broader mode here themselves — the script never hardcodes one.
+- **`CLAUDE_DELEGATE_PERMISSION_MODE`** — defaults to `auto`: the auto-mode classifier approves or refuses each tool call, so a dispatched session nobody is watching does not stop on a permission prompt. Hooks and deny rules still apply. Set a narrower mode here (`acceptEdits`, `manual`) for a task that should ask before running commands.
 
 The dispatched agent is a full Claude Code session: it reads the repo's CLAUDE.md, skills, and settings from whatever profile `CLAUDE_CONFIG_DIR` routing gives the spawned shell (the Terminal window inherits the cwd, so profile routing behaves exactly as if the user opened a terminal there).
 
@@ -141,7 +143,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 ### herdr — a live agent as `split` or `workspace` (`herdr-agent` in this directory)
 
-`herdr tab create` (never `herdr pane split` — that would squeeze the caller's own pane, the one the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`. This is the `split` target — a new tab in the workspace the caller is already in. The `workspace` target runs the same steps against a pane from a freshly created `herdr worktree create --workspace` instead.
+`herdr tab create` (never `herdr pane split` — that would squeeze the caller's own pane, the one the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`. This is the `split` target — a new tab in the workspace the caller is already in. The `workspace` target is `dispatch exec` run from inside a linked worktree made with `git worktree add`. `herdr-agent` opens that worktree's workspace with `herdr worktree open --workspace` and starts the agent in its first tab. Never open the workspace yourself first: `herdr-agent` would find it already open and put the agent in an extra `delegate-<pid>` tab.
 
 **Never write `/<skill>` into a dispatched prompt** — slash expansion is an interactive-input feature; text delivered by herdr agent prompt, `--exec`, or a relay arrives as plain user text and is never expanded. Write "call `Skill(<name>)` first, then …" instead.
 

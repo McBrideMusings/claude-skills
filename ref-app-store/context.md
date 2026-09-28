@@ -2,7 +2,7 @@
 
 > Review is a queue, not an API. Budget days, not minutes.
 
-Stacks with [../apple/](../apple/), which owns signing and provisioning. This is the
+Stacks with [../ref-apple/](../ref-apple/), which owns signing and provisioning. This is the
 distribution half. The control surface is `asc` — uploads, TestFlight, metadata,
 submission and review status all run from the terminal: [asc.md](asc.md).
 

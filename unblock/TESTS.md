@@ -146,7 +146,7 @@ to confirm nothing next door broke.
 
 ## Phase T5 — Hand back
 
-Report to [SKILL.md](SKILL.md) Phase U3, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections for the files-changed line, plus:
+Report to [SKILL.md](SKILL.md) Phase U3, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate for the files-changed line, plus:
 
 - Anything left red, and why.
 - Pre-existing failures found, if any — offer to file them, don't file unasked.

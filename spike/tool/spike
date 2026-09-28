@@ -485,13 +485,15 @@ def cmd_build(args):
         # A build replaces the file. There is no merge with what was there before: one
         # prototype is one design, and the earlier attempts belong in git, not stacked
         # inside the artifact where they double its size and go stale.
-        body = "%s\n%s\n<main id=\"at-stage\"></main>\n%s" % (
+        # The stage is a <div>, never a <main>: the design being prototyped owns the one
+        # <main> a page may have, and a second one lets each side's `main` rules hit the other.
+        body = "%s\n%s\n<div id=\"at-stage\"></div>\n%s" % (
             build_panel(variants, args.title, args.subtitle),
             remainder.strip(),
             "\n".join(v["raw"] for v in variants),
         )
     elif picker_mode == "list":
-        body = "%s\n<main>\n%s\n</main>" % (remainder.strip(), build_list_body(variants))
+        body = "%s\n<div class=\"at-list\">\n%s\n</div>" % (remainder.strip(), build_list_body(variants))
     else:
         body = fragment.strip()
         if "<main" not in body.lower():

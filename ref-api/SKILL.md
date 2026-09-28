@@ -11,4 +11,4 @@ description: API contracts — versioning, idempotency, pagination, error shapes
 | [`design.md`](design.md) | Designing a new endpoint or reshaping an existing contract. |
 | [`review.md`](review.md) | Reviewing an API change for compatibility and contract breakage. |
 
-The server side of the same work is [`ref-backend`](../ref-backend/SKILL.md).
+The server side of the same work is [`ref-backend`](../ref-backend/SKILL.md). Non-HTTP formats — files, binary protocols, strict parsing, crash-safe writes — are its [`formats.md`](../ref-backend/formats.md).

@@ -1,11 +1,11 @@
-# Selectors — resolving a work group
+# Selectors — resolving a scope
 
-If a selector is present, resolve it to an **ordered list of concrete items** *before* the loop, then freeze it. Print the resolved queue for the user so they see exactly what will be worked and in what order. Each item is one of two kinds:
+Shared table: any skill that needs to resolve a named scope of issues into a concrete list —
+`backlog shape`'s Scope section, a batch of followups, a range of numbers — uses this table
+rather than inventing its own syntax, because a selector means the same thing everywhere.
 
-Resolve the issue backend once — invoke `issues` and run its detection step — before resolving any selector — the commands below are given per backend.
-
-- **Issue item** — carries an issue ID (a GitHub number, or a beads ID like `myproj-zb8`). Fed to a pass as `/implement <id>`.
-- **Local item** — a followup or papercut with no issue ID. Fed to a pass as `/implement item:"<one-line description>" source:"<where it came from>"`.
+Resolve the issue backend once — invoke `issues` and run its detection step — before resolving
+any selector — the commands below are given per backend.
 
 Selector forms (all match against **open** work only; dedupe by issue ID / by text):
 
@@ -20,10 +20,13 @@ Selector forms (all match against **open** work only; dedupe by issue ID / by te
 | `followups` | Issues labelled `followup` on the resolved backend. There is no local followups file. | Same. |
 | `papercuts` | Read the path `"$HOME/.claude/tools/papercut" --path` prints; each entry is one **local item**. | Same. |
 
-Multiple selectors may be combined (e.g. `implement 133 label:RN`); union them, dedupe, preserve first-seen order.
+Multiple selectors may be combined (e.g. `label:RN followups`); union them, dedupe, preserve
+first-seen order.
 
-**Freeze the queue.** The list is fixed at resolution time. Newly-added matching issues that appear mid-run are **not** picked up — a scoped run is deterministic and finite by design. If the user wants a moving target, that is a second run.
+**Freeze the scope.** The list is fixed at resolution time. Newly-added matching issues that
+appear mid-pass are **not** picked up — a scoped run is deterministic and finite by design. If
+the user wants a moving target, that is a second run.
 
-**On beads, order the frozen queue by dependency.** A blocker must come before what it blocks or the later pass will start against unfinished ground. After resolving the queue, check each item's blockers (`bd show <id> --json` → `dependency_count`, or `bd dep tree <id>`) and topologically sort. If an item's blocker is *outside* the frozen queue and still open, drop that item and say which blocker held it back — don't silently work something that isn't ready.
-
-**Verify before freezing.** For issue items, confirm each is open (`bd show <id> --json` / `gh issue view <n> --json number,state`); drop and note any that are closed/missing. If the resolved queue is empty, halt: *"No open items matched <selector> — nothing to run."*
+**Verify before freezing.** Confirm each issue item is open (`bd show <id> --json` /
+`gh issue view <n> --json number,state`); drop and note any that are closed/missing. If the
+resolved scope is empty, halt: *"No open items matched <selector> — nothing to do."*

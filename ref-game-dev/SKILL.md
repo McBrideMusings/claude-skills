@@ -51,5 +51,5 @@ decides. Hard rule, not a style preference.
 (screenshot, profile number, review verdict) at `/private/tmp/claude/<repo-slug>/game-ledger.md`.
 Phase 6 gates Phase 7 — don't call prototype-quality work shipped.
 
-(Arc adapted from majidmanzarpour/threejs-game-skills, re-shaped as a thin conductor over the merged
+(Arc adapted from majidmanzarpour/threejs-game-skills, re-shaped as a thin conductor over the
 merged label store.)

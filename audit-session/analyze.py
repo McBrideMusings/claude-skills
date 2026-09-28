@@ -32,7 +32,7 @@ the CLAUDE.md / CLAUDE.local.md / MEMORY.md reminder is injected at request
 build time and never written to the JSONL. Read those from disk — which is
 what SKILL.md Phase 3 already tells the lenses to do.
 """
-import os, sys, json, glob, datetime, argparse
+import os, re, sys, json, glob, datetime, argparse
 from collections import Counter, defaultdict
 
 ROOT = os.path.expanduser("~/.claude/projects")
@@ -274,6 +274,40 @@ def scan(path, F, side, since=None):
         prev_t, prev_tools = t, tools_this_turn
 
 
+SECRET_PATTERNS = [
+    # provider tokens, recognisable by their own prefix
+    re.compile(r"\b(?:sk-ant-|sk-|ghp_|gho_|ghs_|github_pat_|xox[baprs]-|AKIA|glpat-)[A-Za-z0-9_\-]{8,}"),
+    # signed tokens: three base64url segments
+    re.compile(r"\beyJ[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}\.[A-Za-z0-9_\-]{8,}"),
+    # an auth header, whatever the scheme
+    re.compile(r"(?i)\b(authorization|proxy-authorization)\s*[:=]\s*\S+"),
+    re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._\-]{8,}"),
+    # KEY=value / KEY: value where the name says it is a credential
+    re.compile(r"(?i)\b([A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|API_?KEY|CREDENTIAL|PRIVATE_KEY)[A-Z0-9_]*)"
+               r"\s*[:=]\s*[\"']?[^\s\"']{4,}[\"']?"),
+]
+
+
+def redact(text):
+    """Mask secrets in transcript text before it is printed.
+
+    Every dump path runs through this. Transcripts carry `.env` reads, auth
+    headers and provider tokens, and a quoted finding travels further than the
+    session does — into chat, into a filed issue. A pattern that misses an
+    unusual secret shape is why REPORT-FORMAT.md also binds the reader.
+    """
+    if not text:
+        return text
+    for pat in SECRET_PATTERNS:
+        def sub(m):
+            # keep the name half of a NAME=value match, mask only the value
+            if m.lastindex:
+                return f"{m.group(1)}=<REDACTED>"
+            return "<REDACTED>"
+        text = pat.sub(sub, text)
+    return text
+
+
 def steering_report(F, dump):
     """The fact base for `steering-conflict`: what was injected, from where, how much."""
     P = print
@@ -313,7 +347,7 @@ def steering_report(F, dump):
             P("-" * 72)
             P(f"SOURCE: {src}" + (f"  (variant {i})" if len(e["texts"]) > 1 else ""))
             P("-" * 72)
-            P(t)
+            P(redact(t))
 
 
 def report(F, args):
@@ -406,7 +440,7 @@ def main():
         steering_report(F, args.dump)
         return
     if args.dump_user_messages:
-        for t, m in F.user_msgs: print(f"--- {t}\n{m}\n")
+        for t, m in F.user_msgs: print(f"--- {t}\n{redact(m)}\n")
         return
     if args.json:
         print(json.dumps({
