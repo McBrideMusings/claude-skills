@@ -17,6 +17,11 @@ a sibling, and most of this does not apply there.
 
 | Open | When |
 | --- | --- |
+| [`orient.md`](orient.md) | Deciding what to build — which design layer is the bottleneck. |
+| [`working-layers.md`](working-layers.md) | Working one of the seven design layers; the framework and its principles. |
+| [`layers/`](layers/) | One cell per layer beneath the screen: observed behaviour, domain, user needs, strategy, conceptual model, interaction flow. |
+| [`sketch.md`](sketch.md) | Laying out one design as ASCII in chat, before any rendered wireframe. |
+| [`critique.md`](critique.md) | Judging whether an existing interface is well designed — every pass, run against a screenshot. |
 | [`states.md`](states.md) | Enumerating empty, loading, error, partial, too-much and one-item cases. |
 | [`design.md`](design.md) | Composing a new screen or component. |
 | [`grouping.md`](grouping.md) | Deciding what the eye will bind to what — grouping, enclosure, alignment, misbinding. |
@@ -33,7 +38,7 @@ a sibling, and most of this does not apply there.
 | [`native-first.md`](native-first.md) | Tempted to write a component the platform already ships. |
 | [`libraries.md`](libraries.md) | Choosing a component or styling library. |
 | [`prototype.md`](prototype.md) | Building a throwaway to settle a design question. |
-| [`review.md`](review.md) | Reviewing an interface change. |
+| [`review.md`](review.md) | Reviewing an interface change for motion defects and slop. |
 | [`launch-readiness.md`](launch-readiness.md) | Reviewing a whole site or app about to ship — the last-mile checklist `states.md` and `slop.md` don't cover. |
 
-Reference only. The interactive design workflow — orient, sketch, critique, direction — is the [`gui`](../../gui/SKILL.md) skill.
+Sketches and wireframes are built by `spike`; a critique runs as `improve gui`, and code defects as `review`.

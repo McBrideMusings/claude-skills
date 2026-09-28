@@ -1,6 +1,6 @@
 ---
 name: spike
-description: "Build a throwaway prototype to settle a design or technical question — UI variations behind a picker, a greybox wireframe, competing TUI designs, or competing approaches measured against one fixture. 'Artifact' means a prototype built here, never a hosted page. Use to prototype, mock up, wireframe, spike, or 'let me see it working first'."
+description: "Build a throwaway prototype to settle a design or technical question — an ASCII layout sketch, UI variations behind a picker, a greybox wireframe, competing TUI designs, or competing approaches measured against one fixture. 'Artifact' means a prototype built here, never a hosted page. Use to sketch a layout, prototype, mock up, wireframe, spike, or 'let me see it working first'."
 ---
 
 # spike — throwaway builds that settle a question
@@ -24,7 +24,7 @@ Hand-writing one loses the slug scheme, the Tweaks panel, the device frames — 
 Identify the question being answered — from the prompt, the code, or by asking if the user is around:
 
 - **"What should this look like?"** → [UI.md](UI.md). UI versions in one HTML file, picker-flipped (`spike --kind prototype`).
-- **"Where do the regions sit?"** → `--kind wireframe`, a greybox — fidelity *below* a prototype. `gui` sketch mode routes here when ASCII can't carry it ([`../gui/SKETCH.md`](../gui/SKETCH.md)).
+- **"Where do the regions sit?"** → an ASCII sketch in chat first ([`../ref/gui/sketch.md`](../ref/gui/sketch.md)) — no build, the fastest yes/no. When the answer depends on proportion, escalate to `--kind wireframe`, a greybox — fidelity *below* a prototype. This is for one design whose open question is where things sit; genuinely different takes on density, motion, personality or interaction model are the prototype shape above, because a sketch filters on the wrong information.
 - **"What should this terminal screen look like?"** → [TUI.md](TUI.md). Real toolkit (`spike tui`), never `--kind prototype`.
 - **"Does this logic / state model hold up?"** → [LOGIC.md](LOGIC.md). A terminal app through hard cases.
 - **"Which technical approach?"** → [COMPARE.md](COMPARE.md). Real implementations against one fixture.
@@ -47,9 +47,8 @@ The shape is the *mechanism*; the domain is the *mode of software*. Resolve per 
 
 ## Not this skill
 
-- Judging or improving an existing interface → `gui` critique mode.
-- One design, arrangement question → `gui` sketch mode (ASCII). Come here only for *which direction* — density, motion, personality, interaction model.
-- Picking a library → `ref/gui/libraries.md` via `gui`.
+- Judging or improving an existing interface → `improve gui` for design quality ([`ref/gui/critique.md`](../ref/gui/critique.md)), `review` for code defects.
+- Picking a library → [`ref/gui/libraries.md`](../ref/gui/libraries.md).
 
 ---
 

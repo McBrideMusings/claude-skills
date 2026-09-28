@@ -1,8 +1,8 @@
 # Product & service strategy layer (layer 4)
 
-Read by the `gui` orchestrator when scope/direction decisions are live; its output feeds
-`backlog spec`. A library of techniques, not a script — see "How to apply a layer cell" in
-`gui`. Adapted from jamiemill/layers-skills (MIT).
+Read when scope/direction decisions are live; its output feeds `backlog spec`. A library of
+techniques, not a script — see "Applying a cell" in [`../working-layers.md`](../working-layers.md).
+Adapted from jamiemill/layers-skills (MIT).
 
 Strategy is the first layer of the solution space — where problem-space understanding converts into
 deliberate decisions about scope and direction. It is about choices: which user needs to serve, and which

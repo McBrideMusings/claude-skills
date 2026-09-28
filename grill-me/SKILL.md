@@ -98,12 +98,12 @@ tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; t
 
 ## Product-design elicitation discipline
 
-When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and butter of Shape and Backfill — pull the matching `gui` cell for the discipline that keeps the questions honest, then interrogate with it:
+When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and butter of Shape and Backfill — pull the matching `ref/gui/layers/` cell for the discipline that keeps the questions honest, then interrogate with it:
 
-- **User needs / job stories** → [`../gui/layers/user-needs.md`](../gui/layers/user-needs.md): need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark confidence (observed/inferred/assumed).
-- **Domain terminology** → [`../gui/layers/domain.md`](../gui/layers/domain.md): record synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/ instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
+- **User needs / job stories** → [`../ref/gui/layers/user-needs.md`](../ref/gui/layers/user-needs.md): need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark confidence (observed/inferred/assumed).
+- **Domain terminology** → [`../ref/gui/layers/domain.md`](../ref/gui/layers/domain.md): record synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/ instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
 
-These are the same disciplines the `gui` orchestrator uses; grill-me reads the cells rather than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding), route to `gui`.
+grill-me reads the cells rather than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding), work from [`../ref/gui/working-layers.md`](../ref/gui/working-layers.md), starting with [`../ref/gui/orient.md`](../ref/gui/orient.md) to find the bottleneck layer.
 
 ## Terminal state
 
@@ -141,7 +141,7 @@ Never chain into another interview. It does not mean build things yourself. The 
 | a prototype, mockup, variants, "show me a few options" | `spike` |
 | a spec or PRD, tickets, or issues from what was decided | `backlog spec` |
 | a diagram or a visual explanation | `explain` |
-| an ASCII layout sketch for one arrangement | `gui` |
+| an ASCII layout sketch for one arrangement | `spike` |
 
 This is not optional and it is not a judgement call. **If a skill's description covers the artifact, that skill builds it** — even when the request is one sentence, even when you can see exactly what to write, and especially when you can, because that is when skipping it feels most reasonable.
 

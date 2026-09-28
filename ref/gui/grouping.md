@@ -1,6 +1,6 @@
 # Grouping and misbinding — the Gestalt principles
 
-Read by `gui` critique/audit mode and by the engines (`review`, `verify`) when the domain is `gui`.
+Read by a [`critique.md`](critique.md) pass and by the engines (`review`, `verify`) when the domain is `gui`.
 This is the lens that judges *what the eye binds to what*, before any question of whether the
 spacing scale or the palette is right. Source: Jakob Nielsen, UX Tigers —
 https://www.uxtigers.com/post/gestalt-principles.

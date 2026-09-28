@@ -44,7 +44,7 @@ reached by the same hooks; they are never listed here.
 | [`desktop`](desktop/context.md) | Desktop apps — packaging, code signing, per-platform install and update. |
 | [`game`](game/context.md) | Game development — game feel, playable loop, fixed timestep, prototyping, tuning, profiling, and the end-to-end build arc. |
 | [`go`](go/context.md) | Go — go test, vet, gofmt, error handling, never discarding an error, concurrency. |
-| [`gui`](gui/context.md) | Interface craft — states, colour, typography, motion, icons, AI-slop, accessibility. |
+| [`gui`](gui/context.md) | Interface design — what to build, design layers, layout sketches, critique, states, colour, typography, motion, AI-slop, accessibility. |
 | [`mobile`](mobile/context.md) | Mobile apps — small screens, unreliable network, backgrounded processes, real-device testing. |
 | [`python`](python/context.md) | Python — venv and uv rather than a global interpreter, packaging, tooling, idioms. |
 | [`react`](react/context.md) | React — derive during render rather than syncing with effects, stable keys, state ownership, component boundaries. |

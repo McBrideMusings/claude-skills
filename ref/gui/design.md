@@ -1,6 +1,6 @@
 # UI design axis
 
-Read by **planning** skills (`gui`, `grill-me`, `backlog shape`) when the domain is `gui`. Design-time
+Read by **planning** skills (`grill-me`, `backlog shape`, [`critique.md`](critique.md)) when the domain is `gui`. Design-time
 critique lenses for interactive interfaces — not a code engine. Loaded on top of whatever the planning
 skill already does, the same way the engines layer platform + domain.
 
@@ -289,7 +289,7 @@ The reverse glossary of motion terms is `vocabulary.md` in this directory.
 ## The rest of this directory
 
 - `opportunities.md` — where motion is **missing or weak**: the four-question gate, the hunt-seam
-  sweep, the required rejected-candidates section. Run by `gui` critique, which is `improve`'s
+  sweep, the required rejected-candidates section. Run by [`critique.md`](critique.md), which is `improve`'s
   `gui` aspect.
 - `review.md` — where motion is **broken**: jank, interruptibility and stranded state, accessibility.
   Run by the `review` engine. Craft calls never go here.

@@ -1,4 +1,40 @@
-# Working a layer — how to apply a cell
+# Working a layer — the seven design layers and how to apply a cell
+
+Layers 1–6 adapted from **jamiemill/layers-skills** (MIT) — the Layers of Product Design framework,
+itself inspired by Jesse James Garrett's *The Elements of User Experience* (2000).
+
+## The framework — seven layers, three zones
+
+Layers have *logical dependency*: lower layers are foundations for upper ones. Weak lower layers
+create UX debt that propagates upward.
+
+**Reality** — complex, contradictory, evolving. Source of all learning.
+
+**Problem space** — knowledge gathered from reality:
+1. **Observed behaviour** — what users actually do → [`layers/observed-behaviour.md`](layers/observed-behaviour.md)
+2. **The domain** — concepts, terminology, mental models that exist independently of any product → [`layers/domain.md`](layers/domain.md)
+3. **User needs** — what users are trying to achieve, and why → [`layers/user-needs.md`](layers/user-needs.md)
+
+**Solution space** — deliberate decisions about what to build:
+4. **Product & service strategy** — which needs to serve, what outcome to target → [`layers/product-strategy.md`](layers/product-strategy.md)
+5. **Conceptual model** — objects, relationships, states, vocabulary, interface-independent → [`layers/conceptual-model.md`](layers/conceptual-model.md)
+6. **Interaction structure & flow** — places, affordances, connections, flow logic → [`layers/interaction-flow.md`](layers/interaction-flow.md)
+7. **Surface** — words, visuals, feedback, hierarchy — what users encounter → the rest of `ref/gui/`
+
+The layers are not a linear process. Enter anywhere — but always check whether the foundations
+below are sound. [`orient.md`](orient.md) rates all seven and names the bottleneck.
+
+## Design is decision-making — four kinds of progress
+
+1. **Making decisions** — resolving something undecided.
+2. **Uncovering unmade decisions** — discovering what hasn't been decided yet (often more valuable than 1).
+3. **Evaluating decisions** — naming decisions already made that are risky, inconsistent, or wrong.
+4. **Prioritising decisions** — lower layers are more foundational and carry more risk if wrong.
+
+The job is to help the human make better decisions — **never to make them for them**. Every verdict
+names its reason ([`critique.md`](critique.md) § the one rule).
+
+## Applying a cell
 
 Each cell is a library of techniques, **not** a checklist to run to completion. Don't march every step
 and emit a stack of artefacts.

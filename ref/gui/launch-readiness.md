@@ -1,6 +1,6 @@
 # Launch readiness
 
-Read by `gui` critique/audit mode as a required pass when the surface under review is a whole
+Read by a [`critique.md`](critique.md) pass as a required step when the surface under review is a whole
 site or app about to ship, not a single component in isolation. Complements `states.md` (the
 states each component needs) and `slop.md` (the AI-tell catalog) — this cell is the last-mile
 checklist those two don't cover.

@@ -137,30 +137,32 @@ end-to-end game builds over this store and adds the `game` label on scaffold.
 `ref/gui/` — `design.md` (planning-time critique lenses) +
 `review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
 accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
-sweep, and the required rejected-candidates section, read by `gui` critique mode, which is what
-`improve`'s `gui` aspect loads) + `slop.md` (objective AI-slop banned-patterns catalog, read by
-`gui` critique mode and the `review`/`verify` engines; harvested from pbakaus/impeccable +
+sweep, and the required rejected-candidates section, read by `critique.md`) + `critique.md` (the
+design-quality passes run against a screenshot, which is what `improve`'s `gui` aspect loads) +
+`slop.md` (objective AI-slop banned-patterns catalog, read by `critique.md` and the
+`review`/`verify` engines; harvested from pbakaus/impeccable +
 Leonxlnx/taste-skill) + `direction.md` (choosing the visual world: the external-dice mechanism, the
 challenger deal, the comp discipline, and the single path to image generation via `generate`) +
 `amplitude.md` (volume changes on a shipped surface — bolder, quieter, distill, overdrive) +
 `states.md` (empty/error/loading/permission states, i18n, overflow, onboarding, interface copy) +
 `fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
 `prototype.md` (the craft bar and divergence axes for `spike`'s UI shape) + `vocabulary.md` (a
-reference — the reverse motion-term glossary, read by `gui` and `explain`, not an engine cell) +
-`libraries.md` (a reference — curated web/React library picks, read by `gui` and `implement`).
-Seeded from emilkowalski/skills. The `gui` skill is the planning orchestrator over this store;
-the implementation-level values live in `ref/web/review.md` and `ref/apple/review.md`.
+reference — the reverse motion-term glossary, read by `explain`, not an engine cell) +
+`libraries.md` (a reference — curated web/React library picks, read by `implement`) +
+`sketch.md` (ASCII layouts in chat, the lowest rung of `spike`'s fidelity ladder, with the
+`seed.monojson` blank canvas it copies). Seeded from emilkowalski/skills. The implementation-level
+values live in `ref/web/review.md` and `ref/apple/review.md`.
 
 The `review` / `improve` line inside `ref/gui/`: **`review.md` is what's broken, `opportunities.md`
 is what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
 improvement pass.
 
-`gui/layers/` — the six problem-space and solution-space design layers, kept outside this store
-because no repo carries them as a label:
+`ref/gui/layers/` — the six problem-space and solution-space design layers beneath the screen:
 `observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
-`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). The `gui` orchestrator
-conducts the layer work over that directory; `interaction-flow.md` hands its breadboard to that same
-skill's sketch mode, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
+`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). `ref/gui/working-layers.md`
+carries the seven-layer framework and how to apply a cell; `ref/gui/orient.md` names the bottleneck
+layer and is what `improve`'s `product` aspect runs. `interaction-flow.md` hands its breadboard to
+`sketch.md`, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
 
 Add labels as new kinds of software or new stacks appear.
 

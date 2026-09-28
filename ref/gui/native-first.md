@@ -66,7 +66,7 @@ drag-to-dismiss and detents for free."*
 
 ## Mismatches to catch
 
-Objective, not taste — `review` and `gui critique` flag these:
+Objective, not taste — `review` and a [`critique.md`](critique.md) pass flag these:
 
 - A modal, sheet, drawer, or dialog assembled from a generic container plus a hand-drawn
   scrim, grabber, corner radius and slide animation, when the framework exposes the

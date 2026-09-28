@@ -4,7 +4,7 @@ Break a plan into independently-grabbable tickets using **vertical slices** (tra
 
 **The source can be loose conversation.** There is no required upstream skill — Phase 03 synthesizes the spec this skill needs, shows it for approval, and slices from that.
 
-**This skill is the single owner of spec synthesis.** `docs`, `grill-me`, `gui` and `backlog shape` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; the spec is not a committed file — its durable home is the run epic's body (Phase 06), or the single ticket's `## Spec` section when there's no epic — and it is not a prerequisite for this run.
+**This skill is the single owner of spec synthesis.** `docs`, `grill-me` and `backlog shape` all delegate here rather than synthesizing a spec themselves. There is no separate spec skill; the spec is not a committed file — its durable home is the run epic's body (Phase 06), or the single ticket's `## Spec` section when there's no epic — and it is not a prerequisite for this run.
 
 **Issue backend:** resolve once by invoking `issues` and running its detection step, then hold the answer for the whole run — `beads`, `github`, or `local`. Phases 06 and 07 below give the commands for each. If it resolves to `local`, say so and ask how the user wants to track these before publishing anything; a markdown file is a poor home for a dependency-ordered slate, and `/bootstrap` can set up beads in one step.
 
@@ -45,7 +45,7 @@ say which kind it is, ask in one line before publishing.
 
 **If the work is UI and there is no prototype yet, stop and say so.** A UI slice needs a
 reference frame to cite, and inventing the visual target inside a ticket body is how a slate
-ends up unbuildable. Point at `/spike` to build one, or at `/gui sketch` if the question is
+ends up unbuildable. Point at `/spike` to build one — an ASCII sketch (`ref/gui/sketch.md`) if the question is
 only arrangement. Come back after.
 
 ### Phase 02 — Explore the codebase (if needed)

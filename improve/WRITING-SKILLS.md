@@ -100,7 +100,7 @@ You win twice over: fewer tokens, _and_ a sharper hook for the agent to hang its
 
 ## Default-challenge — guard every rank-or-pick step
 
-Wherever a skill has the agent rank candidates and take one — a genre, a layout, a variant set, a direction — the pick is deterministic: the model builds its own #1 every run (the argmax rut). Guard the step with a **default-challenge**, at the tier the pick calls for: gradeable picks get the in-model tier (justify the obvious pick by what the alternatives lose, or take the second-line form); taste picks get the external-roll tier, because the model justifies its argmax fluently and prompting harder only moves it. Full definition and the tier decision rule: [`SKILL-GLOSSARY.md`](SKILL-GLOSSARY.md); the worked tier-2 mechanism is `ref/gui/direction.md`. Deployed at tier 1 in `explain`'s chart-genre pick, `gui`'s sketch mode, and `spike`'s variant set.
+Wherever a skill has the agent rank candidates and take one — a genre, a layout, a variant set, a direction — the pick is deterministic: the model builds its own #1 every run (the argmax rut). Guard the step with a **default-challenge**, at the tier the pick calls for: gradeable picks get the in-model tier (justify the obvious pick by what the alternatives lose, or take the second-line form); taste picks get the external-roll tier, because the model justifies its argmax fluently and prompting harder only moves it. Full definition and the tier decision rule: [`SKILL-GLOSSARY.md`](SKILL-GLOSSARY.md); the worked tier-2 mechanism is `ref/gui/direction.md`. Deployed at tier 1 in `explain`'s chart-genre pick, the ASCII layout sketch (`ref/gui/sketch.md`), and `spike`'s variant set.
 
 ## Failure modes
 

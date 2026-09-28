@@ -1,7 +1,7 @@
 # Observed behaviour layer (layer 1)
 
-Read by the `gui` orchestrator when user-research decisions are live. A library of techniques,
-not a script — see "How to apply a layer cell" in `gui`. Adapted from jamiemill/layers-skills
+Read when user-research decisions are live. A library of techniques, not a script — see
+"Applying a cell" in [`../working-layers.md`](../working-layers.md). Adapted from jamiemill/layers-skills
 (MIT).
 
 The observed behaviour layer is the closest we can get to reality — what users actually do, not what we

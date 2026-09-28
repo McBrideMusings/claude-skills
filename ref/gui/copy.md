@@ -1,6 +1,6 @@
 # Interface copy — voice, tone and wording
 
-Read by `gui` (critique/audit) and by the engines when the domain is `gui`. The words inside the
+Read by a [`critique.md`](critique.md) pass and by the engines when the domain is `gui`. The words inside the
 interface: labels, buttons, errors, toggles, links. Which states exist and what an error must answer
 structurally is `states.md`; this cell owns how the words are written. Adapted from
 `jakubkrehel/skills` `better-writing` (MIT).

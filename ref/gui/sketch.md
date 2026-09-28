@@ -1,14 +1,17 @@
-# `sketch` mode
+# Sketch — an ASCII layout in chat
 
 The default medium for UI design discussions in this account. Use ASCII art in chat to communicate
 layout decisions; emit a sibling empty Monodraw stub on disk so the user can draw an alternative
 visually if the ASCII proposal isn't quite right.
 
+This is the lowest rung of `spike`'s fidelity ladder ([`../../spike/SKILL.md`](../../spike/SKILL.md)):
+ASCII here, then a rendered `wireframe`, then a `prototype`.
+
 ## When to reach for sketch
 
 - The user describes a UI change, layout, modal, panel, dialog, form, or component.
 - A plan file is being written and design decisions came up in conversation.
-- The user says "sketch this", "design this", "lay this out", or invokes `/gui`.
+- The user says "sketch this", "design this", "lay this out".
 - A code change is touching layout-relevant code (CSS grid, flexbox, modal markup, dialog components).
 
 ## What to produce
@@ -32,7 +35,7 @@ Render the *part being decided*, not the whole app. A modal redesign shows the m
 
 ### Stay on layout — don't drift into implementation
 
-Sketch mode is for layout decisions. It is NOT for implementation planning. After the sketch:
+A sketch is for layout decisions. It is NOT for implementation planning. After the sketch:
 
 - Do NOT explain how the change would be wired up (data flow, state machines, which function produces which value, what `Re-detect` should now do, etc.).
 - Do NOT enumerate visual-vocabulary tables, design-token catalogs, or row-priority lists *unless the user asked for that artifact specifically*. A sketch that needs a legend to be understood is a sketch that's trying to decide too much at once.
@@ -73,7 +76,7 @@ Write an empty Monodraw canvas to `/private/tmp/claude/<repo-slug>/sketches/<YYY
 
 ```bash
 mkdir -p /private/tmp/claude/<repo-slug>/sketches
-cp ~/.claude/skills/gui/seed.monojson \
+cp ~/.claude/skills/ref/gui/seed.monojson \
    /private/tmp/claude/<repo-slug>/sketches/$(date +%Y-%m-%d-%H%M)-<slug>.monojson
 ```
 
@@ -99,10 +102,9 @@ width, how far down the page the third region sits, whether a column of numbers 
 can't show any of that honestly, so a yes/no given against ASCII would be answering a different
 question.
 
-When that's where you are, the question has outgrown this mode and belongs to `spike`,
-which owns every fidelity above ASCII — `wireframe` (greybox, colour withheld) and
+When that's where you are, the question has outgrown ASCII. `spike` owns every fidelity above ASCII — `wireframe` (greybox, colour withheld) and
 `prototype` (working variants behind a picker). Escalating is a routing step, not a
-different build: read [`../spike/SKILL.md`](../spike/SKILL.md), then build the greybox:
+different build: read [`spike/SKILL.md`](../../spike/SKILL.md), then build the greybox:
 
 ```bash
 "$HOME/.claude/skills/spike/tool/spike" build \
@@ -117,7 +119,7 @@ layout question turns into a style conversation — that jump is a decision the 
 not one that happens because the tool offered it.
 
 Class vocabulary — `.wf-region`, `.wf-label`, `.wf-ph`, `.wf-text`, `.wf-control`, `.wf-note`,
-`.wf-grid` — is in [`../spike/CONTRACT.md`](../spike/CONTRACT.md).
+`.wf-grid` — is in [`spike/CONTRACT.md`](../../spike/CONTRACT.md).
 
 **It stays a sketch.** The `wireframe` kind withholds colour deliberately: no brand palette, no
 imagery, no type personality. The moment a wireframe looks designed, the feedback you get is about the

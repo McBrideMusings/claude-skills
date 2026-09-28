@@ -1,4 +1,9 @@
-# `orient` mode procedure
+# Orient — which design layer is the bottleneck
+
+A rapid diagnostic across the seven layers in [`working-layers.md`](working-layers.md), for when the
+question is *what to build*: rate each, name the lowest layer with unresolved or risky decisions,
+recommend which layer to work next. A short audit table and one recommendation, not a report.
+`improve`'s `product` aspect runs it findings-only.
 
 Ask three framing questions, then audit each layer:
 
@@ -32,7 +37,8 @@ unverified — the most dangerous). If a deadline changes the calculus, say so; 
 isn't the most foundational one — name that tradeoff.
 
 **Recommendation:** one specific layer cell to work next, and why. If the bottleneck is **Surface**, the
-next step is this skill's `sketch` or `critique` mode over `ref/gui/`, not a `layers/` cell. Close
+next step is an ASCII layout sketch ([`sketch.md`](sketch.md), under `spike`) or a
+[`critique.md`](critique.md) pass, not a `layers/` cell. Close
 with a genuine offer to run it or push back first.
 
 ## Findings-only invocation

@@ -59,8 +59,8 @@ never a pre-picked favourite in the presentation table.
 
 ## Handoffs
 
-- One design, question is arrangement → `gui` sketch mode (ASCII in chat) is cheaper.
-- Interface already exists and the question is "what's weak" → `gui` critique mode with
+- One design, question is arrangement → an ASCII sketch ([`sketch.md`](sketch.md)) is cheaper.
+- Interface already exists and the question is "what's weak" → `improve gui`, a [`critique.md`](critique.md) pass with
   `design.md` + `slop.md` + `fidelity.md`.
 - Where should motion be *added* to an existing surface → `opportunities.md`.
 - Need a library rather than a hand-rolled component → `libraries.md`.

@@ -74,8 +74,8 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `behavior` | [aspects/behavior.md](aspects/behavior.md) | native — [BEHAVIOR.md](BEHAVIOR.md) | product launchable AND drivable (scripting surface, CLI, browser tool, harness) |
 | `complexity` | [aspects/complexity.md](aspects/complexity.md) | native | a complexity tool is available for the repo's language |
 | `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
-| `gui` | [aspects/gui.md](aspects/gui.md) | `gui` critique mode | UI surface exists |
-| `product` | [aspects/product.md](aspects/product.md) | `gui` orient mode | always |
+| `gui` | [aspects/gui.md](aspects/gui.md) | [`ref/gui/critique.md`](../ref/gui/critique.md) | UI surface exists |
+| `product` | [aspects/product.md](aspects/product.md) | [`ref/gui/orient.md`](../ref/gui/orient.md) | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
 | `game` | [aspects/game.md](aspects/game.md) | `ref/game/` cells | `.claude/domain` marker includes `game` |
 | `docs` | [aspects/docs.md](aspects/docs.md) | `docs` audit branch | always |
@@ -87,7 +87,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 
 **It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `audit-session`'s [steering-conflict](../audit-session/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `audit-session` generally, not this skill.
 
-Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, and `gui` (in its `SKILL.md` for critique and its `ORIENT.md` for orient). The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
+Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, and the `ref/gui/` cells `critique.md` and `orient.md`. The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
 
 ## Routing
 

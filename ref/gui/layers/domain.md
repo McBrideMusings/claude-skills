@@ -1,8 +1,8 @@
 # The domain layer (layer 2)
 
-Read by the `gui` orchestrator and by `grill-me` (which pulls the terminology-conflict
-discipline into its Backfill interviews and its `docs/CONTEXT.md` capture). A library of techniques, not
-a script — see "How to apply a layer cell" in `gui`. Adapted from jamiemill/layers-skills
+Read in a design session and by `grill-me` (which pulls the terminology-conflict discipline into
+its Backfill interviews and its `docs/CONTEXT.md` capture). A library of techniques, not a script —
+see "Applying a cell" in [`../working-layers.md`](../working-layers.md). Adapted from jamiemill/layers-skills
 (MIT).
 
 The domain layer maps what exists in the real world independently of any product: the concepts,
