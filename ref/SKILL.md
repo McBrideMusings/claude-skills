@@ -10,8 +10,13 @@ argument-hint: "<label>"
 to for the task at hand. With no label, pick the row below that matches the work; if none
 matches, say so rather than guessing.
 
-A repo's labels inject each cell's headline at session start; the headline says the cell
-exists, and the body is still yours to read when the work enters that domain.
+Two hooks load cells without anyone calling this skill. At session start, a repo's labels
+inject each cell's headline, which says the cell exists. On the first Edit, Write or MultiEdit of a
+file in a label's domain, `hooks/ref-edit-inject.sh` injects that label's whole `context.md`,
+once per label per session. The extension or filename picks the label: `.go` is `go`,
+`SKILL.md` is `agent-docs`, and `.ts` is `web` only where the repo's map carries `web` for
+that path. Any other domain's body is yours to read
+when the work enters it.
 
 Every label's root file is `context.md`: a `> ` headline, a short body, and a **Files** map.
 Everything else in the directory is content, named for what it holds. There is no `SKILL.md`

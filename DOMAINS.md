@@ -33,7 +33,8 @@ ref/SKILL.md            <- the index: one row per public label; the only SKILL.m
 ref/<label>/
   context.md            <- the root file, always this name: a `> ` headline INJECTED at session
                            start in every repo carrying this label, a short body, and the label's
-                           Files map (see below)
+                           Files map (see below). The whole file is INJECTED on the session's
+                           first edit of a file in this label's domain
   review.md             <- lens the `review` engine adds when this label is in scope
   diagnose.md           <- what to instrument / watch, read at diagnose's instrument phase
   profiling.md          <- profiler catalog / performance gate, read by the `profiling` engine
@@ -70,8 +71,14 @@ The **headline** is the first `> ` line under the H1. It is the only part inject
 and it is injected for every label the repo carries, so its cost is paid in every session in every
 such repo. Twelve words, stating the fact whose absence would cause a wrong action.
 
-The **body** is everything between the headline and `## Files`, capped at 120 words. It is read
-on demand, by whichever engine has resolved this label into its scope.
+The **body** is everything between the headline and `## Files`, capped at 120 words. It reaches
+context two ways. `hooks/ref-edit-inject.sh` injects the whole `context.md` the first time a session
+edits a file in the label's domain, once per label per session, with no model deciding. The file's
+extension, or for a few files its name (`SKILL.md` → `agent-docs`, `Dockerfile` → `container`,
+`wrangler.toml` → `cloudflare`), names a definite label (`.go` → `go`, `.swift` → `apple`) and
+candidate labels that count only where the map carries them for that path (`.ts` → `web` under a
+`web` rule). An extension with no entry injects nothing. Otherwise the body is read on demand, by whichever engine has resolved this
+label into its scope.
 
 Why two tiers rather than one 120-word cell: a per-cell cap bounds nothing about the total, and the
 total is what a session actually pays. Tiering makes the cost scale with how many labels a repo carries rather than with
