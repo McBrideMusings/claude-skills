@@ -33,7 +33,7 @@ Wrong shape wastes the prototype. Ambiguous and unreachable → default by subje
 
 ## Layer the domain on top
 
-The shape is the *mechanism*; the domain is the *mode of software*. Resolve per [`_detect.md`](../_detect.md), load the cell **in addition to** the shape file: `ui` → [`ref-gui/prototype.md`](../ref-gui/prototype.md); `game` → [`ref-game-dev/prototype.md`](../ref-game-dev/prototype.md); no marker → shape file only.
+The shape is the *mechanism*; the domain is the *mode of software*. Resolve per [`_detect.md`](../_detect.md), load the cell **in addition to** the shape file: `ui` → [`ref/gui/prototype.md`](../ref/gui/prototype.md); `game` → [`ref/game/prototype.md`](../ref/game/prototype.md); no marker → shape file only.
 
 ## Arguments
 
@@ -49,7 +49,7 @@ The shape is the *mechanism*; the domain is the *mode of software*. Resolve per 
 
 - Judging or improving an existing interface → `gui` critique mode.
 - One design, arrangement question → `gui` sketch mode (ASCII). Come here only for *which direction* — density, motion, personality, interaction model.
-- Picking a library → `ref-gui/libraries.md` via `gui`.
+- Picking a library → `ref/gui/libraries.md` via `gui`.
 
 ---
 

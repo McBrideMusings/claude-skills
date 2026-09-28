@@ -18,5 +18,5 @@ herdr
 __pycache__/
 
 # The private half of the domain store: hosts, accounts, services. Never tracked —
-# this repo is public. The hooks read these dirs beside the public ref-* cells.
-ref-local-*/
+# this repo is public. The hooks read these dirs beside the public ref/<label>/ cells.
+/ref/local/

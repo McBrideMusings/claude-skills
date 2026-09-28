@@ -1,0 +1,22 @@
+# api — injected context
+
+> Never break userspace. Idempotency key on every action. Cursor pagination, not offset.
+
+Good APIs are boring. An API the caller has to think about is one that stole
+attention from the job they were doing.
+
+- **Never break userspace.** Adding a field is fine; removing one, renaming one, or
+  changing its type is not. If you truly must, version instead — both versions served
+  at once, old one retired over months.
+- **Every action-taking request needs an idempotency key.** A 500 or a timeout does not
+  tell the caller whether the action happened. Without a key, the safe retry is impossible.
+- **Cursor pagination, not offset**, for anything that can grow large.
+
+## Files
+
+| Open | When |
+| --- | --- |
+| [`design.md`](design.md) | Designing a new endpoint or reshaping an existing contract. |
+| [`review.md`](review.md) | Reviewing an API change for compatibility and contract breakage. |
+
+The server side of the same work is [`ref/backend`](../backend/context.md). Non-HTTP formats — files, binary protocols, strict parsing, crash-safe writes — are its [`formats.md`](../backend/formats.md).

@@ -2,7 +2,7 @@
 
 Axis tag: `game`. Applicability: the `game` label is in scope per [`../../_detect.md`](../../_detect.md) — an explicit `improve game` argument wins outright, then the committed `.claude/domain` marker, and only then classification. Resolved for you in Phase 01; if you are reading this, the label is in scope.
 
-**Read:** `../../ref-game-dev/design.md` and `../../ref-game-dev/review.md`, both in full. Neither carries a Findings-only invocation section — this file is that contract for them, because they are knowledge cells rather than skills and nothing else owns the discipline they get read under.
+**Read:** `../../ref/game/design.md` and `../../ref/game/review.md`, both in full. Neither carries a Findings-only invocation section — this file is that contract for them, because they are knowledge cells rather than skills and nothing else owns the discipline they get read under.
 
 ## The contract
 

@@ -148,7 +148,7 @@ lines — which paths regenerate rather than merge, which lockfile has a command
 belong in the repo's `CLAUDE.local.md`, already in context. Read what is there before assuming
 the generic path is right. Only write a project skill when the resolution is a real procedure.
 
-Neither file pushes. Phase U5 decides whether the push waits on a `go` or goes ahead.
+Neither file pushes. The push is Phase U5's single confirm.
 
 ## Phase U3 — Gate 2: failing checks
 
@@ -249,8 +249,7 @@ prompt. Close the slate with `CLAUDE.md`'s escape hatch:
 **One slate, one keyword, however many rows.** Two prompts at the bottom of one message —
 `push` / `hold` on one line and `re-request` / `skip` on the next — is the failure this phase
 exists to prevent: the user has to answer twice to accept what you already recommended. A pass
-with exactly one outward action still prints the slate, one row, closed with `go` — unless that
-action is the push alone (see the own-branch bullet below).
+with exactly one outward action still prints the slate, one row, closed with `go`.
 
 - **Ordering is execution order.** Push is always row 1 when it is present, because every other
   outward action assumes the commits are on the branch.
@@ -297,13 +296,9 @@ action is the push alone (see the own-branch bullet below).
 - **A row the user skips is reported as not done**, in one clause. Skipping push leaves every
   commit local — say the branch is still blocked on GitHub's side, since the fixes exist only
   here.
-- **A push to my own PR branch, or to my own repo's branch with no PR, does not get a row when
-  it is the pass's only outward action.** Push without asking. Reading the reviewer list (the
-  `gh pr view` command above) comes back empty and the pass has no reply to post, so nothing
-  reaches a person; the push only re-runs CI on my branch. Print the slate only if some other row
-  survives — and then the push goes back into it as row 1, because it cannot be separated from
-  the reply and re-request that follow it. A teammate's PR, a force-push and any push to the
-  default branch are never covered by this bullet.
+- **On an owned repo with no PR**, push is not outward and does not get a row: commit and push
+  without asking, per `CLAUDE.md`'s "commit and push finished work without asking in my repos".
+  Print the slate only if some other row survives.
 - **Never push while anything is still red**, and never describe the PR as fixed before the push
   lands.
 - **Never `--force`**, never push to the default branch, never open a PR from here.

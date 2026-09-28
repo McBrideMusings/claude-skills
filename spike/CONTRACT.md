@@ -520,7 +520,7 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
     made it work. (Adapted from `jakubkrehel/skills` `variant`, MIT.)
 12. **Before handing any build over, run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md).
 13. **Every `ui` variant clears the severity floor** in
-    [`ref-gui/review.md`](../ref-gui/review.md) — accessible names, keyboard reach, visible
+    [`ref/gui/review.md`](../ref/gui/review.md) — accessible names, keyboard reach, visible
     focus, nothing clipped at 320px, no meaning on colour alone — before it enters the picker. A
     variant that wins on looks and fails the floor is not a candidate; it's a bug with a nice
     surface. The floor is identical across variants — never an axis, never traded against one.

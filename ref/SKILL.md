@@ -1,0 +1,48 @@
+---
+name: ref
+description: Domain reference — one directory per label (go, apple, gui, api, game, …). Load before designing, building, testing, reviewing or shipping in a domain whose conventions you have not already read this session.
+argument-hint: "<label>"
+---
+
+# Domain reference
+
+`/ref <label>` means: read `ref/<label>/context.md`, then open whichever file its map points
+to for the task at hand. With no label, pick the row below that matches the work; if none
+matches, say so rather than guessing.
+
+A repo's labels inject each cell's headline at session start; the headline says the cell
+exists, and the body is still yours to read when the work enters that domain.
+
+Every label's root file is `context.md`: a `> ` headline, a short body, and a **Files** map.
+Everything else in the directory is content, named for what it holds. There is no `SKILL.md`
+below this directory. Private labels live under `ref/local/<label>/`, gitignored, and are
+reached by the same hooks; they are never listed here.
+
+| Label | Covers |
+| --- | --- |
+| [`agent-docs`](agent-docs/context.md) | Writing a skill, a CLAUDE.md, or any document an agent reads — pointer wording, progressive disclosure, pruning, failure modes. |
+| [`api`](api/context.md) | API contracts — versioning, idempotency, pagination, error shapes, breaking changes. |
+| [`app-store`](app-store/context.md) | App Store submission — review queues, metadata, rejections, release timing, and the `asc` CLI. |
+| [`apple`](apple/context.md) | Apple platforms — signing, provisioning, simulators, XCTest, Instruments, xcodebuild. |
+| [`architecture`](architecture/context.md) | Code design — module boundaries, coupling, the conditions a bug needs to exist, interface safety, security. |
+| [`backend`](backend/context.md) | Backend services — secrets and logging discipline, data access, service boundaries. |
+| [`cli`](cli/context.md) | Command-line tools — exit codes, stdout versus stderr, TTY detection, flags, piping. |
+| [`cloudflare`](cloudflare/context.md) | Cloudflare Workers, KV, D1, R2 — wrangler, bindings, secrets, deploys. |
+| [`computer-use`](computer-use/context.md) | Driving a browser or desktop GUI app for testing or automation without stealing focus, optionally with a local decision model. |
+| [`container`](container/context.md) | Containers — Dockerfile, Compose, multi-stage builds, healthchecks, image size. |
+| [`desktop`](desktop/context.md) | Desktop apps — packaging, code signing, per-platform install and update. |
+| [`game`](game/context.md) | Game development — game feel, playable loop, fixed timestep, prototyping, tuning, profiling, and the end-to-end build arc. |
+| [`go`](go/context.md) | Go — go test, vet, gofmt, error handling, never discarding an error, concurrency. |
+| [`gui`](gui/context.md) | Interface craft — states, colour, typography, motion, icons, AI-slop, accessibility. |
+| [`mobile`](mobile/context.md) | Mobile apps — small screens, unreliable network, backgrounded processes, real-device testing. |
+| [`python`](python/context.md) | Python — venv and uv rather than a global interpreter, packaging, tooling, idioms. |
+| [`react`](react/context.md) | React — derive during render rather than syncing with effects, stable keys, state ownership, component boundaries. |
+| [`rust`](rust/context.md) | Rust — cargo test, clippy, fmt, error handling, unwrap discipline, ownership. |
+| [`threejs`](threejs/context.md) | Three.js and WebGL — resource disposal, frame-loop allocation, scene graph, GPU profiling. |
+| [`tui`](tui/context.md) | Terminal interfaces — keyboard-first navigation, no hover, on-screen state, reflow to 80 columns. |
+| [`tvos`](tvos/context.md) | tvOS — the focus engine, no touch or cursor, ten-foot viewing distance. |
+| [`web`](web/context.md) | Web frontend — semantic HTML, accessibility, narrow viewports, cold cache, load performance. |
+
+How labels resolve for a repo, and how engines (`review`, `diagnose`, `profiling`, `tdd`) read
+the per-engine files inside each cell: [`../DOMAINS.md`](../DOMAINS.md) and
+[`../_detect.md`](../_detect.md).

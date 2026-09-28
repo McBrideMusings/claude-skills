@@ -226,7 +226,7 @@ mac_asset_dir = "App/Assets.xcassets/AppIcon.appiconset"
 ### Warnings as errors belongs in the project spec, not in `admin.toml`
 
 Every Apple project should build with `GCC_TREAT_WARNINGS_AS_ERRORS=YES` and
-`SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` (rationale in `ref-apple/testing.md`). Put
+`SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` (rationale in `ref/apple/testing.md`). Put
 them in the XcodeGen/Tuist spec's `settings:` block, not on an `admin` action —
 the archetype has no key for extra `xcodebuild` settings, and a spec-level
 setting reaches `admin build`, `admin dev`, a plain `xcodebuild`, CI and Xcode

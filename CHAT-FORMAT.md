@@ -27,8 +27,6 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The shape.** One numbered row per item: a **bolded action naming what physically happens and where** — which file, which tracker, which branch — optionally followed by one to three lines of specifics, with the default `[verb]` bracket at the end of the row's first line. The bracket is the default, not a separate sentence. A row with no default is malformed: `go` would have nothing to mean.
 
-A row that confirms one outward action carries no lettered alternatives: the user skips it by answering `skip`, so a "hold it" option is not a choice and never appears. Lettered options belong to a question with several real courses.
-
 Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
 
 **Worked example:**
@@ -159,7 +157,7 @@ The gate (below):
 - **Run:** the exact commands, the ones the agent ran, one per line — written for the directory this session stands in: `admin -w <worktree-or-bead-id> <task>` when the project has `admin.toml` and this session sits outside the worktree named above, plain `admin <task>` when it sits inside it.
 - **Look for:** what a pass looks like — the output the agent saw.
 
-Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the worked example's closing line. `go` always means "run wrap-up now" — landing the branch, whatever that takes on this repo (merge, PR, `land`). `park` leaves the worktree and branch standing and ends the turn.
+Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the worked example's closing line. `go` always means "run wrap-up now" — landing the branch, whatever that takes on this repo (merge, PR, `claude-land`). `park` leaves the worktree and branch standing and ends the turn.
 
 **A run of several items closes with one report naming what already landed, plus one full gate per item still unlanded** — never one gate speaking for a whole run, since `go`/`park` name a single branch and worktree each. An item that landed while the run was running needs no gate at all; only what a run halted on still owes one.
 
