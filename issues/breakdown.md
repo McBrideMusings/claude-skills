@@ -64,7 +64,7 @@ bd create "Verify: parser rejects a malformed heading" -t task --parent "$P" --a
 bd create "Land: PR for #25" -t task --parent "$P"
 bd dep add "$P.3" "$P.1" ; bd dep add "$P.3" "$P.2"                 # verify waits on the slices
 bd dep add "$P.4" "$P.3"                                            # land waits on verify
-bd ready --parent "$P"                                              # what is startable now
+bd ready --parent "$P" --limit 0                                    # what is startable now
 bd children "$P"                                                    # the tree
 ```
 
@@ -76,7 +76,7 @@ erased silently by the next `bd github sync --pull-only` — the epic vanishes f
 with no error and no sign on the parent.
 
 Use the commands that do not care about the type. `bd children <id>`, `bd list --parent <id>`
-and `bd ready --parent <id>` answer what is under this, what is left, and what is startable.
+and `bd ready --parent <id> --limit 0` answer what is under this, what is left, and what is startable.
 That is the whole question set; the epic family buys a rollup fraction and costs a field that
 silently resets.
 

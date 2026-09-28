@@ -4,7 +4,7 @@
     epic-plan [--json] <repo> <epic-id>
 
 Reads the epic's children with `bd children`, their blocking edges with `bd show --json`, and
-the unblocked front with `bd ready --parent`, then prints every open child in dependency order:
+the unblocked front with `bd ready --parent --limit 0`, then prints every open child in dependency order:
 
   waves    open slices grouped by depth — wave 1 is the unblocked front, wave N waits on
            something in wave N-1. Items in one wave share no edge and can run at once.

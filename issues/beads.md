@@ -22,7 +22,7 @@ pull` / `bd github sync` (pull-only or bidirectional) and `bd rename`s each one 
 `bd`-generated slug, on every repo (not just stealth ones). See "GitHub sync" below for the
 create-then-push convention this backstops.
 
-`bd list --json` and `bd ready --json` return a bare array; each element carries
+`bd list --json` and `bd ready --limit 0 --json` return a bare array; each element carries
 `id, title, status, priority, issue_type, owner, created_at, updated_at, dependency_count,
 dependent_count, comment_count`. `bd count --json` returns `{"count": N, "schema_version": 1}`;
 without `--json` it prints the bare number. `bd where --json` returns `{database_path, path,
@@ -63,8 +63,8 @@ don't route around the allow by asking in chat first.
 | list by type | `bd list -t bug --json` |
 | list children | `bd list --parent <id> --json` |
 | list all incl. closed | `bd list --all --json` |
-| **ready** (unblocked) | `bd ready --json` — add `--explain` for the blocker reasoning |
-| ready under an epic | `bd ready --parent <epic-id> --json` |
+| **ready** (unblocked) | `bd ready --limit 0 --json` — add `--explain` for the blocker reasoning. Never drop `--limit 0`; see the truncation trap below |
+| ready under an epic | `bd ready --parent <epic-id> --limit 0 --json` |
 | **blocked** | `bd blocked --json` |
 | **show** | `bd show <id> --json` (`--include-comments` for full threads) |
 | **claim** | `bd update <id> --claim` — sets assignee to you + status `in_progress`, idempotent |
@@ -166,6 +166,19 @@ what the merge changed. Skip that recompute — a recompute that failed after it
 or a conflicted pull resolved by hand — and the flag goes stale; a later pull that merges nothing
 never refreshes it. `bd ready` reads the flag, so stale values **silently hide ready work**. Run
 `bd recompute-blocked` before any read that orders work.
+
+### ⛔ `bd ready` stops at 100, and says so only on stderr
+
+`bd ready` defaults to `--limit 100`. Past that it prints the first 100 and writes
+`Showing 100 of N ready issues. Use --limit 0 for all…` to **stderr**. A caller that pipes
+stdout — `bd ready --json | jq …`, `bd ready --json | python3 …` — never sees that line. It
+gets a well-formed array of 100 with exit 0 and no truncation field, and nothing in the data
+says it is a page rather than the whole front. Every count, wave, and "is `<id>` ready" check
+read from it is wrong the moment the backlog has more than 100 ready items.
+
+**Every `bd ready` call that lists work passes `--limit 0`**, `--parent` and `--explain` calls
+included. `bd ready --claim` takes one item and is the only exception. `bd list --json` does not
+have this cap: it returned every row in JSON mode despite its `default 50` help text.
 
 ## `human` — the native HITL surface
 
@@ -329,7 +342,7 @@ Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has
   `bug`) is a duplicate field, not an attribute.
 
 Everything group-aware in `bd` keys off parent-child, not labels: `bd epic status`,
-`bd epic close-eligible`, `bd ready --parent`, `bd list --parent`, `bd children`,
+`bd epic close-eligible`, `bd ready --parent --limit 0`, `bd list --parent`, `bd children`,
 `bd list --pretty` (tree), `bd list --no-parent`, and the whole `bd swarm` family, which is
 defined as "an epic and its children". Labels only get you filtering — `-l` (AND),
 `--label-any` (OR), `--label-pattern`, `--label-regex`.
@@ -344,9 +357,9 @@ readable straight off the ID, and `id.rsplit('.', 1)[0]` recovers the epic.
 ```bash
 EPIC=$(bd create "M9: Native App" -t epic -d "<what done looks like>" --silent)
 bd create "Wire the settings sheet" -t task --parent "$EPIC"
-bd ready --parent "$EPIC" --json     # unblocked work inside this epic only
-bd epic status                       # rollup across every epic
-bd epic close-eligible --dry-run     # then without --dry-run
+bd ready --parent "$EPIC" --limit 0 --json  # unblocked work inside this epic only
+bd epic status                              # rollup across every epic
+bd epic close-eligible --dry-run            # then without --dry-run
 ```
 
 ## Bulk import from GitHub

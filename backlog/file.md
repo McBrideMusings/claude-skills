@@ -147,7 +147,7 @@ If the user says "none", write nothing. Do not split items across destinations. 
 
 **Multiple repos:** Present a separate list per repo and ask independently for each.
 
-**Dispatch offer (interactive filing only, beads only — skip in autonomous mode, and on GitHub, which has no labels or `bd ready`).** Most follow-ups are notes, not briefs — a follow-up is usually raised, not scoped and cleared for AFK work — so expect this to come up empty most of the time. After filing, check each item just filed against the three conditions in [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, no `human` label, listed by `bd ready --json` after `bd recompute-blocked`). Append one slate row, in HANDOFF.md §3's shape, for the items that pass — no new accept word, `go` on the filing report takes it. **If nothing passes, add no row at all** — an empty offer is noise on every wrap-up, and silence is the correct output here.
+**Dispatch offer (interactive filing only, beads only — skip in autonomous mode, and on GitHub, which has no labels or `bd ready`).** Most follow-ups are notes, not briefs — a follow-up is usually raised, not scoped and cleared for AFK work — so expect this to come up empty most of the time. After filing, check each item just filed against the three conditions in [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, no `human` label, listed by `bd ready --limit 0 --json` after `bd recompute-blocked`). Append one slate row, in HANDOFF.md §3's shape, for the items that pass — no new accept word, `go` on the filing report takes it. **If nothing passes, add no row at all** — an empty offer is noise on every wrap-up, and silence is the correct output here.
 
 ## Scope: this skill stops at filing
 

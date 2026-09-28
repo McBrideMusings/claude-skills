@@ -164,7 +164,7 @@ Two passes for a reason: children need their epic's real ID before they can refe
 
 ### 0e. Print the roadmap
 
-`bd swarm validate <epic>` per epic plus `bd ready --json` across the scope. Print:
+`bd swarm validate <epic>` per epic plus `bd ready --limit 0 --json` across the scope. Print:
 
 - **Waves** — ready fronts, in order. Wave 1 is what is workable now.
 - **Warnings** — cycles, orphans, disconnected subgraphs, wrong-direction edges.
@@ -251,7 +251,7 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, any legacy `Type: HITL` marker deleted from the body. Show the new body, then write it: `bd update <id> --body-file <path> --acceptance "<check>"` plus `bd label remove <id> human` on beads, `gh issue edit <n> --body --remove-label human` on GitHub. Removing `human` is what makes it AFK — there is no positive AFK label to add. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
 
-  The item is now runnable as an implement pass — don't wait for Phase 4 to say so. Check it against [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, `human` gone, listed by `bd ready --json` after `bd recompute-blocked`), and if it clears, add a row to this item's slate in HANDOFF.md §3's shape (`N. Run <id> as an implement pass — AFK, nothing blocks it. My pick: run.`). `go`, `N skip`, and `N hold` are the only words — never a new one, never `AskUserQuestion`. The row is offered, not automatic: declining leaves the item open, AFK, and waiting, exactly as today. Running inside an `Agent` call rather than the chat session, skip the row — HANDOFF.md's pre-flight notes `Workflow` is unavailable there, so the offer can't be taken.
+  The item is now runnable as an implement pass — don't wait for Phase 4 to say so. Check it against [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, `human` gone, listed by `bd ready --limit 0 --json` after `bd recompute-blocked`), and if it clears, add a row to this item's slate in HANDOFF.md §3's shape (`N. Run <id> as an implement pass — AFK, nothing blocks it. My pick: run.`). `go`, `N skip`, and `N hold` are the only words — never a new one, never `AskUserQuestion`. The row is offered, not automatic: declining leaves the item open, AFK, and waiting, exactly as today. Running inside an `Agent` call rather than the chat session, skip the row — HANDOFF.md's pre-flight notes `Workflow` is unavailable there, so the offer can't be taken.
 - **Question** → `bd human respond <id> "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue's own label set carries `human`.** Phase 0 tagged it there; if the label is missing, refuse the close with a one-line error instead — it is a work item, and work items never close here. The one exception is Phase 0's hygiene close, in Rules; it does not apply anywhere in Phase 3.
 
 Assets are linked, never pasted.
@@ -291,9 +291,9 @@ The pattern for `fact` and `artifact` items. The subagent does the expensive bui
 
 Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, fog graduated, items still held, ADRs written.
 
-**End with the recomputed roadmap beside Phase 0's.** `bd recompute-blocked`, then `bd swarm validate` per epic and `bd ready --json`. Show the two side by side — waves before, waves after — so the session's effect on what is workable is visible rather than asserted. Also report the structure Phase 0 wrote: epics created, members parented, edges wired, tier-1 counts.
+**End with the recomputed roadmap beside Phase 0's.** `bd recompute-blocked`, then `bd swarm validate` per epic and `bd ready --limit 0 --json`. Show the two side by side — waves before, waves after — so the session's effect on what is workable is visible rather than asserted. Also report the structure Phase 0 wrote: epics created, members parented, edges wired, tier-1 counts.
 
-Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Recompute the graph per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 (`bd recompute-blocked`, `bd ready --json`, edges from `bd blocked` / `bd swarm validate`) and present what it computed as slate rows — never a strategy menu, one row per ready item since `implement` runs one item at a time:
+Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Recompute the graph per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 (`bd recompute-blocked`, `bd ready --limit 0 --json`, edges from `bd blocked` / `bd swarm validate`) and present what it computed as slate rows — never a strategy menu, one row per ready item since `implement` runs one item at a time:
 
 ```
 Scope is clear. Reply with a number, or tell me something else.

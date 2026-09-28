@@ -31,7 +31,7 @@ ever offered: [`HANDOFF.md`](HANDOFF.md).
 comes from beads, never from reading the titles:
 
 ```text
-~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children, blocks edges, bd ready --parent
+~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children, blocks edges, bd ready --parent --limit 0
   -> open slices in dependency order (wave 1 = unblocked now), slices needing a person,
      Verify, Land, done
 readiness gate (HANDOFF.md §1) on the first slice          # in chat, before the slate

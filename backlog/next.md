@@ -39,11 +39,11 @@ If URL passed: strip `https://`, parse `owner/repo`, detect type from path + que
 **`beads`:**
 
 ```bash
-bd ready --json          # unblocked work only — the candidate set
+bd ready --limit 0 --json      # unblocked work only — the candidate set
 bd list --status open --json   # everything open, for the "nothing is ready" report
 ```
 
-`bd ready` already does what Phase 06 approximates on GitHub: it excludes anything with an open blocker. Score only what `ready` returns. If `ready` is empty but `list` is not, say so plainly — the backlog is entirely blocked, and the right next move is unblocking, not picking. `bd ready --explain --json` names each blocker.
+`bd ready` already does what Phase 06 approximates on GitHub: it excludes anything with an open blocker. Score only what `ready` returns. If `ready` is empty but `list` is not, say so plainly — the backlog is entirely blocked, and the right next move is unblocking, not picking. `bd ready --explain --limit 0 --json` names each blocker. Without `--limit 0`, `bd ready` stops at 100 and says so only on stderr ([`../issues/beads.md`](../issues/beads.md)).
 
 Filters map onto the same flags: `--label <name>` (repeatable, AND), `--label-any a,b` (OR), `-t bug`, `-p 1`, `--parent <epic-id>` for the milestone equivalent.
 
@@ -211,7 +211,7 @@ Build 2–4 options, lettered under question 1 per [`../CHAT-FORMAT.md`](../CHAT
 
 Every option gets a named label in plain language; issue numbers in parens after.
 
-**Dispatch row for the top pick (1A).** 1A is a group of 1–3 issues, not a single item — Phase 05 groups issues and Phase 06 ranks groups — so run HANDOFF.md §1's three conditions (open, no `human` label, listed by `bd ready --json`) per member issue, not once for 1A as a whole; run `bd recompute-blocked` once before checking any member, not per member. All members clear: append one row per cleared member to the same numbered prompt offering to run it as an implement pass, in dependency order where an edge exists between members — per HANDOFF.md §3's slate-row shape: no new accept word, `go` takes every row with the rest of the reply, a per-row `skip` declines just it. Some members clear and some don't: offer a row for only the cleared members, named, and add one line saying which members were held back and which of the three conditions each failed. No member clears: add no row, same one-line non-silent explanation naming which condition failed for each. A single-issue 1A is just the one-member case of this same rule — no separate branch for it. Skip this whole check on a GitHub backend — HANDOFF.md's queries are all `bd`.
+**Dispatch row for the top pick (1A).** 1A is a group of 1–3 issues, not a single item — Phase 05 groups issues and Phase 06 ranks groups — so run HANDOFF.md §1's three conditions (open, no `human` label, listed by `bd ready --limit 0 --json`) per member issue, not once for 1A as a whole; run `bd recompute-blocked` once before checking any member, not per member. All members clear: append one row per cleared member to the same numbered prompt offering to run it as an implement pass, in dependency order where an edge exists between members — per HANDOFF.md §3's slate-row shape: no new accept word, `go` takes every row with the rest of the reply, a per-row `skip` declines just it. Some members clear and some don't: offer a row for only the cleared members, named, and add one line saying which members were held back and which of the three conditions each failed. No member clears: add no row, same one-line non-silent explanation naming which condition failed for each. A single-issue 1A is just the one-member case of this same rule — no separate branch for it. Skip this whole check on a GitHub backend — HANDOFF.md's queries are all `bd`.
 
 Wait for the reply (a number or a free-form override) before implementing.
 
