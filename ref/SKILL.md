@@ -14,8 +14,8 @@ Three hooks load cells without anyone calling this skill. At session start, a re
 inject each cell's headline, which says the cell exists. On the first Edit, Write or MultiEdit of a
 file in a label's domain, `hooks/ref-edit-inject.sh` injects that label's whole `context.md`.
 The extension or filename picks the label: `.go` is `go`, `SKILL.md` is `agent-docs`, and
-`.ts` is `web` only where the repo's map carries `web` for that path. On every prompt,
-`hooks/ref-picker.sh` asks a model to choose one label from the table below, or none, and
+`.ts` is `web` only where the repo's map carries `web` for that path. On every prompt except
+one made only of control words (`go`, `park` …), `hooks/ref-picker.sh` asks a model to choose one label from the table below, or none, and
 injects the chosen label's whole `context.md`; `REF_PICKER` selects the model (`jev`, the
 default, `local`, or `off`). The two body-injecting hooks share one claim per label, so a
 session gets each cell at most once, whichever hook fires first. Any other domain's body is
@@ -37,7 +37,7 @@ reached by the same hooks; they are never listed here.
 | [`apple`](apple/context.md) | Apple platforms — signing, provisioning, simulators, XCTest, Instruments, xcodebuild. |
 | [`architecture`](architecture/context.md) | Code design — module boundaries, coupling, the conditions a bug needs to exist, interface safety, security. |
 | [`backend`](backend/context.md) | Backend services — secrets and logging discipline, data access, service boundaries. |
-| [`cli`](cli/context.md) | Command-line tools — exit codes, stdout versus stderr, TTY detection, flags, piping. |
+| [`cli`](cli/context.md) | Building a command-line tool — its exit codes, stdout versus stderr, TTY detection, flags, piping. |
 | [`cloudflare`](cloudflare/context.md) | Cloudflare Workers, KV, D1, R2 — wrangler, bindings, secrets, deploys. |
 | [`computer-use`](computer-use/context.md) | Driving a browser or desktop GUI app for testing or automation without stealing focus, optionally with a local decision model. |
 | [`container`](container/context.md) | Containers — Dockerfile, Compose, multi-stage builds, healthchecks, image size. |
