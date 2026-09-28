@@ -33,7 +33,7 @@ orchestrator in the primary checkout, and a session writing into a worktree carr
 own session id in `ORCHESTRATOR-SESSION`. An orchestrator sitting in a linked worktree
 matches only the second; without the marker every file the pass touches stops and asks.
 
-`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the pass returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/claude-land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
+`<slug>` is the tracker id lowercased; `<branch>` is `<type>/<slug>-<short-title>`. Land by merging into the default branch, then remove the worktree — **from the primary checkout, after the pass returns**, because a session cannot outlive its own working directory. Exception: for `~/.claude`, land with `~/.claude/tools/land <worktree>` run from inside the worktree — never a merge in the primary — then remove the worktree from the primary as usual.
 
 **Collaborative (remote owned by anyone else).** The long-lived thing is the feature, not the pass. Make one herdr worktree for the body of work and keep it:
 

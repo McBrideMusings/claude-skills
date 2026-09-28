@@ -128,9 +128,9 @@ footing. A worktree that outlives its landing is collected anyway: `tools/git-sw
 daily from `hooks/daily-git-sweep.sh`, collects branches proven merged (reachable from the
 default branch, or a `gh`-confirmed squash-merge) along with any worktree still holding them.
 A SELF-LAND dispatch lands from inside its own worktree and never merges in the primary
-checkout: `~/.claude/tools/land <worktree>` on any owned repo, and `~/.claude/tools/claude-land
-<worktree>` for `~/.claude` itself. Both fast-forward-push and refuse rather than force; the
-full route is `wrap-up` Step C's Route 2.
+checkout: `~/.claude/tools/land <worktree>`, for any owned repo including `~/.claude` itself.
+It fast-forward-pushes and refuses rather than forces; the full route is `wrap-up` Step C's
+Route 2.
 
 **The exception is work that only reads.** A build, a test run, a log tail, a probe, a
 review that reports findings — those belong in a pane on the main checkout, because
