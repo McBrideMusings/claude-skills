@@ -10,6 +10,12 @@ Use when the user asks to add a follow-up ("remember to …", "file as a followu
 >
 > **Guardrail: never call the `AskUserQuestion` tool or render a selector / chip-picker for this skill's filing questions.** A selector turns "which should I file?" into a list of pre-checked actions, which reads as *intent to act* — exactly the misfire that files issues the user never asked for.
 
+## How an issue reads
+
+**An issue is a proposal for the change, written for a reader who has no PR and no session context** — including when the work already exists. Describe what should change and why, as if nothing had been built: the current behavior, the desired behavior, the acceptance criteria. Never write it as a retrospective ("outstanding follow-up before merge", "after this PR lands", "as discussed above"); the reader has not seen the PR, the diff, or this conversation. Write the retrospective form only when the user asks for it.
+
+**Never pass `--id` to `bd create`.** Beads generates the ID (a short slug like `fnp`); a hook denies the flag.
+
 ## Where followups live
 
 **On the repo's issue tracker, always.** A follow-up is an issue: `bd create` on beads, `gh issue create` on GitHub. There is no file.
@@ -125,12 +131,10 @@ Same applies to stale items in this followups file — flag them inline, don't w
 
 ### Step 5: File
 
-**Default — interactive** (a standalone `/implement`, a manual `/wrap-up`, or a direct `/backlog file`): if suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, `go`, "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
+If suggestions exist, ask once — as a plain chat question (see the **HARD RULE** at the top: no `AskUserQuestion`, no chip-picker, ever). The user replies with free-form text (numbers, ranges, `go`, "none"), which the chip-picker schema can't express, and the numbered list already lives in the message above:
 - **beads repo:** "Which of these should I file as beads issues? (numbers, ranges, `go` for all, or 'none')"
 - **GitHub repo:** "Which of these should I file as GitHub issues? (numbers, ranges, `go` for all, or 'none')"
 - **Followups file:** "Which of these should I add to the followups file? (numbers, ranges, `go` for all, or 'none')"
-
-**Autonomous — only when the caller explicitly signals continuous / no-ask mode** (a queued or swarmed `/implement` run): do not ask. File every item that clears the bar (Step 3) to the destination, skipping items whose core idea already appears there. Then report what was filed. The user triages in the tracker / the followups file afterward — never pause a continuous loop to ask which to file. If no items clear the bar, report "Nothing worth flagging this session" and stop.
 
 If no suggestions exist, just report "Nothing worth flagging this session" and stop.
 

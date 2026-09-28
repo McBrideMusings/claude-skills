@@ -19,7 +19,7 @@ and the **conversation** leaves unmet.
    proactively, without being told*.
 
    An obligation is only auditable if it leaves a trace. "Think carefully" is not
-   auditable. "End every coding task with three sections" is.
+   auditable. "End every coding task at the gate" is.
 
 2. **For each obligation, find its expected trigger.** How many times in this corpus did a
    situation arise where the rule *should* have applied? That denominator is the whole

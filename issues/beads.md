@@ -81,7 +81,7 @@ don't route around the allow by asking in chat first.
 | link, other kinds | `-t parent-child \| discovered-from \| related \| supersedes` |
 | unlink | `bd dep remove <id> <blocker-id>` |
 | dependency tree | `bd dep tree <id>` |
-| **epic** (milestone equivalent) | `bd create "<name>" -t epic` then `--parent <epic-id>` on members |
+| **epic** (milestone equivalent) | `bd create "<name>" -t epic` then `--parent <epic-id>` on members. The type marks it an epic, so the title never says "epic" — `bd show` prints `(EPIC)` before an epic's title, and that prefix is display, not title text to copy |
 | epic progress | `bd epic status` (all epics; `--eligible-only` for those whose children are all done) |
 | **defer** | `bd defer <id> --until "+2w"` — hidden from `bd ready` until then |
 | **external ref** | `--external-ref gh-<n>` on create/update — records the GitHub issue it came from |
@@ -281,10 +281,27 @@ bd setup claude --stealth
 **The one thing stealth does not hide:** `.beads/` still sits in the working directory. It is
 invisible to `git status`, visible to anyone with filesystem access to that checkout.
 
+**No hook catches a bead ID typed into prose.** `beads-stealth-guard.sh` blocks the `bd`
+subcommands that would push the database or file an issue; it has no view into a PR body,
+commit message, code comment, or issue comment being drafted by hand. Never write a bead ID
+(`Resolves acme-4f2`, `fixes neutrino-7.1`, etc.) into anything that reaches the
+client's GitHub — a PR title/body, a commit message, a review comment. Reference the work by
+what it does, not by its tracker ID.
+
 **In a stealth repo, a client-visible issue is created with `gh issue create` and then pulled
 down — not created in beads and pushed up.** `gh` sends one issue you wrote deliberately;
 `bd github sync` sends the whole database. See [`_detect.md`](_detect.md) § Stealth for the
 two-tier split and why no hook can enforce it.
+
+**Flatten before you publish.** `bd github push` on an `epic`-typed bead files a GitHub
+milestone plus one issue per child — not the single tracked issue "publish one" implies. If you
+want one issue, the bead must not be typed `epic` when you push it: fold the children's
+substance into the parent's description (a checklist is enough) and `bd delete` them first, or
+push a `feature`/`task` bead that was never split into children at all.
+
+**Refresh their backlog:** `GITHUB_TOKEN=$(gh auth token) bd github sync --pull-only`, then
+`bd rename <import-id> <prefix>-<n>`. A pull rewrites the beads it mirrors; private ones it
+cannot see.
 
 **In a stealth repo, pull is permitted and push never is.** `bd github sync --pull-only` seeds
 your private graph from their backlog — the reason stealth and GitHub coexist. Bare

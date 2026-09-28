@@ -1,6 +1,6 @@
 # Apple orchestrate axis
 
-Read by `implement swarm` when it fans out and retires passes, if the platform is `apple`.
+Read by a root chat launching several herdr workers at once, if the platform is `apple`.
 Supplies the commands behind that skill's platform-neutral rule: *a worktree isolates source and
 nothing else — whatever verification touches beyond it, give each worker its own and pin every
 command to it by id*.
@@ -33,7 +33,7 @@ fails the create with a message that reads like a permissions problem.
 The worker's brief carries its own UDID and this rule, or the worker reaches for a name.
 
 **Pass it in the brief, not by editing the worktree.** A per-item constraints paragraph goes in the
-`implementer`'s prompt, above how it should verify, prefixed with *"a surface you are told not to touch is shared with
+worker's brief, above how it should verify, prefixed with *"a surface you are told not to touch is shared with
 sibling workers, and driving it corrupts their runs as well as yours"* — which is exactly the failure
 this section describes. A worker told to `SKIP` rather than route around a constraint is the behaviour
 you want when a device is genuinely unreachable.

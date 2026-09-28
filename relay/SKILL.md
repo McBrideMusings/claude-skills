@@ -27,17 +27,13 @@ instead of reimplementing it, then relay this pane to the orchestration/watch ro
    keeps its context and either pushes on or ends normally. Do not invent a substitute.
 2. This pane's own checkout is **finished and landed** — `wrap-up` has committed,
    pushed and landed. A relay clears the context; anything uncommitted in *this*
-   checkout is gone. Never relay over a dirty working tree.
-
-   This does not forbid relaying while passes dispatched from this session are still
-   running, or while a branch they returned sits unlanded in its own worktree — that
-   is live state in a different checkout, not dirty work in this one, and it is
-   carried forward by the in-flight manifest (below), not left behind.
+   checkout is gone. Never relay over a dirty working tree — see §Relaying mid-pass
+   below for the one case that is clean enough to allow.
 
 ## Never fire blind
 
-Relay always proposes and waits, with one exception: the `auto` token (passed by
-a queued `implement`), which takes every default without asking.
+Relay always proposes and waits, with one exception: the `auto` token, which takes
+every default without asking.
 
 The proposal is **one message, plain markdown, one free-text reply**. Never
 `AskUserQuestion`, never a chip-picker — the answer is free-form (numbers, ranges,
@@ -139,85 +135,22 @@ Start by: <exact first action>
 When it's done and landed, run /wrap-up.
 ```
 
-## Relaying mid-run — the in-flight manifest
+## Relaying mid-pass
 
-A session that dispatches passes also lands them — that is the architecture, and it
-makes this session the bottleneck. Relay is its only valve. But a relay that carries
-only "the next body of work" drops the state that is genuinely in flight: passes
-still running, and branches already returned but not yet landed. Neither is next
-work — both are live state, in worktrees this session alone knows about. Lose them
-and the worktrees still sit on disk, but nothing in the fresh context knows they
-exist, and `tools/git-sweep.sh` only collects branches it can prove merged — an
-unlanded branch is stranded, and its commit is the only copy of that work.
+`implement` runs a pass itself, synchronously, in one session — there is no separate
+agent it dispatched that could still be running elsewhere, so there is nothing to poll
+and no return value that could go missing. What can still be genuinely in flight is
+this session's own unfinished pass: a branch with some commits already on it (per
+`implement`'s commit-by-branch rule) but not yet through the gate.
 
-So a mid-run relay appends a manifest section to the marker, one entry per pass that
-is either running or returned-but-unlanded:
-
-```markdown
-## In-flight passes
-
-- item: <id>
-  branch: <branch>
-  worktree: <absolute path>
-  pass: running | returned
-  base: <sha the pass started from>   # when pass: running
-  run_id: <id>                 # breadcrumb for a human reading /tasks — a fresh
-                                # session cannot query it; when pass: running
-  ok: true | false              # when pass: returned
-  halted_on: <reason or ->      # when pass: returned
-  verdict: <absolute path or -> # when a verdict file was written
-  recheck: <command>            # repeat per not-yet-run recheck command
-  recheck: <command>
-```
-
-**The refusal.** A pass whose agent has not returned has no outcome this
-session can write — relay does not guess it and does not sit and wait for it either.
-A subagent belongs to the session that spawned it, so a fresh session cannot query
-one; an agent id in the manifest is a breadcrumb for a human, never an instruction to
-the fresh session. Record the pass as `pass: running` with its
-worktree and the base sha it started from, and put these four on-disk checks in the
-prompt's **First action** field (Step 4, item 4) so they are the first thing the
-fresh session does:
-
-- `git -C <worktree> log --oneline <base>..HEAD` — did a commit appear after the relay?
-- `git -C <worktree> status --short` — a dirty tree means it stopped mid-edit
-- `ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/` — was a verdict written?
-- `pgrep -f <worktree>` — is anything still working in it?
-
-Those four answer whether the pass finished and whether its work is safe, but they
-cannot recover its return value — a relay loses `recheck`, `blockers`, `followups`,
-and `review` for any pass still running at relay time. A pass with a commit and a
-verdict on disk is verifiable from those artifacts; one with neither is work to redo.
-If a pass is in flight and this session cannot even name its worktree — visibility
-genuinely lost, not just still running — refuse the relay: say which pass it cannot
-account for and stop rather than clearing over it.
-
-This applies to `relay auto` too. A queued/mid-run `implement` skips Step 2's
-proposal, but the manifest is not one of the defaults it gets to skip — every running
-or unlanded pass still gets an entry.
-
-**Worked example** — one pass still running, one returned and unlanded:
-
-```markdown
-## In-flight passes
-
-- item: cc-7qz
-  branch: cc-7qz
-  worktree: /Users/pierce/.worktrees/claude-skills/cc-7qz
-  pass: running
-  base: 3f1a76d2c9e8b4a015f6d7c2e1b0a9f8d7c6b5a4
-  run_id: run_01HXYZ9K2M   # breadcrumb only — a fresh session cannot query this
-  recheck: bash /Users/pierce/.claude/tools/run-tests.sh
-
-- item: cc-8rf
-  branch: cc-8rf
-  worktree: /Users/pierce/.worktrees/claude-skills/cc-8rf
-  pass: returned
-  ok: true
-  halted_on: -
-  verdict: /private/tmp/claude/claude-skills/verify/cc-8rf.json
-  recheck: bash /Users/pierce/.claude/tools/run-tests.sh
-```
+Precondition #2 above already governs this: relay refuses over a dirty working tree.
+So a mid-pass relay is only possible when the branch is currently clean — between two
+of the pass's own commits, on a non-default branch or in a worktree, never mid-edit on
+the default branch (nothing there is committed until `wrap-up` runs). When it is
+possible, the marker's **First action** (Step 4, item 4) names the branch and worktree
+and says to resume `implement` on that item from where its own git history shows it
+left off — the fresh session re-verifies rather than trusting anything about the state
+it inherits.
 
 ## Step 5 — carry the brief forward and stop
 
@@ -239,14 +172,7 @@ the work, and logs why to `/private/tmp/claude/<repo-slug>/relay/relay.log`.
 Skips Step 2 entirely: no proposal, no halt. Files every follow-up (never fix,
 never skip), writes the marker, ends the turn.
 
-Two callers, and they differ in who writes the prompt:
+Run Step 1, take the top-ranked candidate, write it up per Step 4.
 
-- **A multi-item `implement` run hands you the brief.** It knows what the rest of the run
-  is — the remaining queue, the item count, the frontier — and none of it is
-  rediscoverable from the tracker. Write its brief through to the marker; do **not**
-  run Step 1's ranking and do not substitute your own pick.
-- **Everyone else** — run Step 1, take the top-ranked candidate, write it up per Step 4.
-
-The Step 1 stop conditions still apply either way, and they are how an `auto` chain
-terminates. An empty tracker or an all-HITL remainder ends the chain — it does not
-invent work. A caller-supplied brief that says the run is over ends it too.
+The Step 1 stop conditions are how an `auto` chain terminates. An empty tracker or an
+all-HITL remainder ends the chain — it does not invent work.

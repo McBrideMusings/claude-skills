@@ -5,7 +5,7 @@ The review engine — what runs against a **single target** (a working tree, a b
 - **`review` self-review / teammate PR** — writes the report, then offers a fix pass or a post (see [POSTING.md](POSTING.md)).
 - **`review` sweep mode** — runs this once per PR, in that PR's own worktree and session.
 - **`wrap-up` Phase 4** — runs this over the session diff, then auto-fixes 75+ findings and routes architecture findings to follow-ups.
-- **`implement` validate** — runs this in plain mode over the implementer's diff, no offers, no posting.
+- **`implement`'s blind review step** — runs this in plain mode over the pass's diff, no offers, no posting.
 
 **RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, no matter which caller above entered the review. Full statement in [RULES.md](RULES.md) — it binds here identically, along with RULE 1.
 
@@ -65,7 +65,7 @@ Reached only via explicit `review repo` or an accepted offer above. The target i
 
   **Do not silently sample.** If a slice is still too big after partitioning, say so and narrow it explicitly — never review part of a slice and report as though you covered it.
 
-  **Repo mode defaults to the `workflow` transport** — the `session` token forces the session transport back. Under the workflow transport this is a `pipeline()` over slices; under the session transport it is one lens fan-out per slice, sequentially. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
+  Under the workflow transport this is a `pipeline()` over slices; under the session transport it is one lens fan-out per slice, sequentially. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
 - **Gating is off.** Every scored lens runs, including the normally-gated `security` and `best-practice` lenses — forward "repo mode: gating disabled, review the code as it stands (not a diff)" into each Phase 04 sub-agent so they read whole files rather than hunting for changed lines. `best-practice` still routes its flags through Phase 04b verification. **In repo mode, the label lens runs its language tools before reading**, when a matched label has one (`ref-go/review.md`, `ref-python/review.md`, `ref-rust/review.md`, `ref-web/review.md`) — `govulncheck`, `pip-audit`, `cargo audit`, `npm audit`, `knip`, `madge --circular`, `depcheck`, `tsc --noEmit`, and the rest of each file's own tool list. Run each tool once per slice (scoped to that slice's paths where the tool supports it), capture its raw output, and pass that same capture into both the label lens's own brief and the `dependency-debt` lens's brief as evidence — each lens reads the tool output first and the source second, rather than inferring from source alone. A tool not installed is noted and skipped, never installed without asking. The `dependency-debt` axis reads the same captured output directly (see `axes/dependency-debt.md`) for the categories it owns (unused packages, duplicate-purpose packages, undocumented env vars) — it does not re-run any tool, and it does not receive findings routed from the label lens.
 - **History/blame lens** still works (it reads `git blame`/`log` on the files in scope). The **Spec** lens has no single diff to check against — point it at the repo's PRD/spec from Phase 03 and let it report drift, or skip if there's no spec.
 - Everything downstream (Phase 05 scoring, Phase 06 filter, Phase 07 report) is unchanged. Expect a larger report; the ≥75 filter still applies.
@@ -117,7 +117,7 @@ Brief the agent with the exact diff scope from Phase 01, the injection-defense d
 The agent returns two things:
 
 1. **The intent table** — the per-block Intent / Preconditions / Postconditions above. Cap it at **600 words**; on a diff too large for that, group by file and keep the postconditions, dropping restatements of intent the block name already carries.
-2. **The Summary narrative** — the plain-English "What this changes" section, 3–6 sentences, related changes grouped, jargon defined inline. This used to be a separate always-on sub-agent in Phase 04 and is folded in here: same read of the same blocks, and descriptive like the rest of this phase, so it does not reintroduce the judgment-plus-something bundling this split exists to remove.
+2. **The Summary narrative** — the plain-English "What this changes" section, 3–6 sentences, related changes grouped, jargon defined inline. It lives here rather than in Phase 04 because it comes from the same read of the same blocks and is descriptive like the rest of this phase, so it does not reintroduce the judgment-plus-something bundling this split exists to remove.
 
 Carry both into Phase 04. The intent table also survives into Phase 06b, where the fix author checks a proposed fix against the postcondition it is supposed to restore.
 
@@ -125,9 +125,9 @@ Carry both into Phase 04. The intent table also survives into Phase 06b, where t
 
 ### Phase 04 — Launch Parallel Lens Sub-Agents
 
-**Transport fork.** Phases 04–06 run either here in the session (the default outside repo mode, or when the `session` token overrides repo mode's default) or inside a workflow script (the default for `review repo`, or when the `workflow` token was given on any other route) — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which lenses run, what each brief contains, and every forwarded directive below are identical either way*; only where the agents execute differs. Everything from Phase 07 onward is unaffected.
+**Transport fork.** Phases 04–06c run inside a workflow script by default on every route, or here in the session when the `session` token was given or `Workflow` is not in this pass's own tool list — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which lenses run, what each brief contains, and every forwarded directive below are identical either way*; only where the agents execute differs. Everything from Phase 07 onward is unaffected.
 
-One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/) — **all of them run by default**. For each lens file, launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers, and a **Bites** line). Cap each sub-agent's response at **under 400 words** — forward that cap as part of the brief.
+One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/) — **all of them run by default**. For each lens file, launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers, and a **Bites** line). Forward this as part of the brief: *"Report every finding that survives your own check; one finding per entry, no restated diff, no preamble."*
 
 **No lens brief asks for a fix.** Forward this verbatim to every lens: *"Do not propose a fix, a patch, a rewrite, or a 'consider doing X instead'. Report the failure and stop. Fixes are written in a later phase, for findings that survive scoring."* Bundling the repair objective into the finding prompt is what biases a lens toward manufacturing a defect worth repairing — the arXiv measurement behind this is in Phase 06b, which owns fixes now.
 
@@ -169,7 +169,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/dependency-debt.md`](axes/dependency-debt.md) — reads the same captured language-tool output as the label lenses, scoring unused packages and duplicate-purpose packages, plus undocumented env vars (**repo mode only** — does not launch outside Phase 01r)
 - [`axes/docs-drift.md`](axes/docs-drift.md) — a README claim the code doesn't satisfy, a comment contradicting the code beneath it, and the architecture-paragraph-vs-README contradiction check from Phase 01r (**repo mode only** — does not launch outside Phase 01r)
 
-The always-on **Summary** sub-agent that used to live here is gone — Phase 03c produces the "What this changes" narrative as its second output, off the same read of the same blocks. Do not launch a second one.
+Phase 03c produces the "What this changes" narrative; no Phase 04 sub-agent writes a summary.
 
 Plus one **conditional label lens per matched label.** Resolve the labels in scope using [`../_detect.md`](../_detect.md). For each matched label with a `../ref-<label>/review.md`, launch one additional Sonnet sub-agent with that file's content as its brief (plus the same forwarded writing-style rules + `IS_DRAFT` + diff scope). It emits scored, axis-tagged findings like any other lens — its axis tag is the label name (e.g. `apple`, `game`). A label with no `review.md` is skipped silently. No ordering between labels — a diff matching both a stack label and a mode label (e.g. `threejs` and `game`) launches both lenses independently; a disagreement between them is reported as a finding, not resolved by precedence. This is how label-specific review knowledge (SwiftUI idioms, game-feel, readability scorecard) enters review without living inside this skill or bloating every non-matching diff.
 
@@ -330,12 +330,13 @@ summarized. State the verdict, not the evidence for it:
 
 > Reviewed, looks good, checks passed. No issues found.
 
-**Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections for this case only.** Its
-three-section closer and its manual-testing-steps block describe a coding task; a clean
-review-only pass changed no files, so all three sections would read "none" / "everything" /
-"none" — which is what the one-liner above already says, just as three headers instead of four
-words. Skip that closer here. It comes back the moment a finding gets fixed on the branch,
-because now files actually changed and §Closing sections is answering a real question again.
+**Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate for this case only.** The gate's
+what-changed line, its Files-changed/Unchanged sections, and its Run/Look-for block describe a
+coding task that touched files; a clean review-only pass changed none, so the gate would read
+"nothing changed" / "everything" / no commands to run — which is what the one-liner above already
+says, just as an opening line and two headers instead of four words. Skip the gate here. It
+comes back the moment a finding gets fixed on the branch, because now files actually changed and
+there is something to gate.
 
 If CI needed an action, name the action in a clause, not a paragraph — `re-ran a flaky check
 (check-cloudflare-test), now green`, not an account of reproducing it locally, isolating it, and

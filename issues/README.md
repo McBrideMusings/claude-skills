@@ -43,8 +43,7 @@ invents a bare one.
 | `backlog spec` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
 | `backlog next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
-| `implement` | list, ready, claim, close | selector resolution lives in `implement/SELECTORS.md` |
-| `backlog shape` | list, create, dep, label | files open questions, wires blockers |
+| `backlog shape` | list, create, dep, label | files open questions, wires blockers; selector resolution lives in `implement/SELECTORS.md` |
 | `backlog file` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |
 | `wrap-up` | close, comment, list | plus PR work, which is always `gh` |

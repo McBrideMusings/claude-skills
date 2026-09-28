@@ -23,11 +23,9 @@ Resolve in this order, stop at the first that answers:
 5. **A repo whose line has an empty label set** is *classified, nothing applies* — not
    unclassified. Generic-only, no overlay, and step 3 does not re-run for it.
 
-**A per-repo `.claude/domain` marker is no longer used.** Five existed, four were committed
-into their project repos, and one disagreed with the code it described. They were removed on
-2026-08-23. Two reasons the central map replaces them: a marker naming a private label
-discloses that label to anyone who clones the repo, and a worktree needs its parent's labels
-rather than a copy that drifts.
+**No per-repo marker file holds labels.** A marker naming a private label discloses that label
+to anyone who clones the repo, and a worktree needs its parent's labels rather than a copy that
+drifts.
 
 ## Map grammar
 

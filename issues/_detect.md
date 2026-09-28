@@ -266,10 +266,10 @@ local only*, you have made this exact mistake — stop and read [`beads.md`](bea
 
 ## Concurrent writers
 
-Beads' default embedded Dolt engine **serves one writer at a time**. a swarmed `/implement` fans out N
-worktrees, and all worktrees share the main repository's single `.beads` workspace, so N agents
-writing at once will contend. Either keep tracker writes on the orchestrator (workers report, the
-orchestrator records) or have the repo run `bd init --server`. Read paths are unaffected.
+Beads' default embedded Dolt engine **serves one writer at a time**. Every worktree of a repo
+shares that repo's single `.beads` workspace, so two sessions each running `implement` in a
+different worktree at once will contend the moment both write. Either keep tracker writes to
+one session at a time, or have the repo run `bd init --server`. Read paths are unaffected.
 
 ## Backend capability differences
 

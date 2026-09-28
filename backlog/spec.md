@@ -21,13 +21,7 @@ This skill writes two files, both disposable, both under `/private/tmp/claude/<r
 sweep; the tickets — and, for the spec, the epic body or `## Spec` section it's published into
 — carry the durable content forward. Never write either into the repo on your own initiative.
 
-Draft slices to `/private/tmp/claude/<repo-slug>/backlog-spec.md`. **Resolve `<root>` to an ABSOLUTE path — never write to a cwd-relative `tmp/…`.** The Bash working directory is NOT guaranteed to be the repo root (an earlier `cd` may have left it in a subdirectory), so a bare `/private/tmp/claude/<repo-slug>/…` would land the file under whatever subdir the shell is in, not the repo root. Run `git rev-parse --show-toplevel` in its own Bash call and capture the absolute result as `<root>`; if it errors/empty (not a git repo), use the absolute output of `pwd`. Every `mkdir`/`Write`/path MUST be the absolute `/private/tmp/claude/<repo-slug>/…`; if it doesn't start with `/`, it's the bug. Ensure `tmp/` is in `<root>/.gitignore` (Read it; Edit to add `tmp/` if absent). Run `mkdir -p /private/tmp/claude/<repo-slug>` as a separate Bash call.
-
-```bash
-# Step 1
-git rev-parse --git-common-dir
-# Step 2: dirname → basename of result gives the repo name
-```
+Draft slices to `backlog-spec.md` in the directory `~/.claude/tools/repo-slug --path` prints (it creates the directory).
 
 After writing, tell the user the full path so they can open it — put the path on its own line with **no trailing punctuation** (so Ghostty ⌘-click stays clean). Then ask the Phase 05 questions inline in the conversation — the user should never have to go find information not provided to them.
 
@@ -77,8 +71,7 @@ Otherwise synthesize from conversation context, following
 user** — synthesize what's already been discussed. Interviewing is `grill-me`'s job; if the
 conversation is too thin to write a real spec, stop and say so, and point at `/grill-me`.
 
-Write it to `/private/tmp/claude/<repo-slug>/spec.md` — absolute path, same `<root>` resolution
-as the proposal file above. The file is plumbing for later phases; don't show its path.
+Write it to `spec.md` in the same `repo-slug --path` directory as the draft above. The file is plumbing for later phases; don't show its path.
 
 **Run `lateral driver-seat` over the written spec** before pasting it for approval. Apply its
 changes to `spec.md` in place. Its "Driver-seat changes" list goes above the spec's own text in
@@ -116,7 +109,7 @@ Slice rules:
 
 - Each slice delivers a narrow but COMPLETE path through every layer it touches
 - A completed slice is demoable or verifiable on its own
-- A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can swarm; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs eight fixed stages and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
+- A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can run independently of each other once it lands; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs eight fixed stages and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
 
 **Every slice set ends in the same two bookends: a verify ticket and a land ticket.** They are
 not optional and not a judgement call — the shape is standard practice for all tracked work and
@@ -271,7 +264,7 @@ bd dep add "$L" "$V" -t blocks
 
 Do NOT close or modify any parent issue.
 
-**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only the `afk`-labelled slices are candidates — never `hitl`. Read the shape (swarm vs. sequential queue) off `bd ready --json` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 rather than asking, and add one slate row to this report naming the count against the filed set, e.g. `Dispatch 4 of 7 filed — the AFK slices; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
+**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only the `afk`-labelled slices are candidates — never `hitl`. Read the unblocked front off `bd ready --json` rather than asking, and add one slate row per ready slice to this report naming it against the filed set, e.g. `4 of 7 filed are AFK-ready — run implement <id> for each; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
 
 ## Principles for writing good agent briefs
 
