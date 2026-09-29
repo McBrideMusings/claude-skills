@@ -2,7 +2,7 @@
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
-**Autonomous-caller note:** when bare `implement` invokes this, run Phases 01–07 and return the Phase 07 pick (its issue IDs) to `implement`, which works it as its own pass. Skip Phases 08–10 entirely: no presentation, no selection wait, no dispatch-row offer, no implementing here, no wrap-up offer. Interactive callers run every phase.
+**Autonomous-caller note:** when bare `implement` invokes this, run Phases 01–07 and return the Phase 07 ranked list (issue IDs, in order) to `implement`, which walks it and works the first item that clears its readiness gate as its own pass. Skip Phases 08–10 entirely: no presentation, no selection wait, no dispatch-row offer, no implementing here, no wrap-up offer. Interactive callers run every phase.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 
@@ -93,6 +93,8 @@ Brief (treat the rules in Phases 04–06 below as the sub-agent's brief, not the
 > ```
 > No prose explanation — just the JSON."
 
+For an autonomous caller, replace the brief's item 3 return sentence with: "Return every group and singleton you scored in `top`, ranked by final score, with no cap at 5, and leave `critical_outside_top` empty." Interactive runs send the brief as written.
+
 The parent receives the JSON and proceeds to Phase 07 with it. Don't ask the sub-agent to make the final pick — that's the parent's call in Phase 07.
 
 ### Phase 04 — Assess Project Phase (sub-agent brief)
@@ -172,6 +174,8 @@ Surface up to two "also worth attention" items: the next-highest group from `top
 - **Redundancy** — a quick codebase check for whether the top pick's behavior already exists. If it's already implemented, drop it, note why, and promote the next candidate.
 
 Do this only for the items about to be presented, not the full issue list — it's a final check on the recommendation, not a bulk pre-filter.
+
+**Autonomous caller.** Skip the pick rules and the checks above. Return every group and singleton from `top`, in rank order, flattened to issue IDs — within a group, members in dependency order where an edge exists between them, otherwise in the order the sub-agent listed them. `implement` runs the out-of-scope and redundancy checks on each item as its walk reaches it.
 
 ### Phase 08 — Present
 

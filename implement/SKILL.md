@@ -17,11 +17,14 @@ pass over the diff, once the build is green.
 else. It never launches another session, pane or agent to do the work.
 
 **Bare `implement`, with no argument, picks the item itself and starts.** Run `backlog next`
-in its autonomous mode ([`../backlog/next.md`](../backlog/next.md)), take its top pick (for
-a group, the first member in dependency order that no other member blocks). If that pick is
-an epic, continue as `implement <epic>` below. Otherwise clear the readiness gate
-([`HANDOFF.md`](HANDOFF.md) §1) and work that item as the pass. Never stop to ask which item.
-A pick that fails the gate ends the run: name the item and the test it failed, and stop.
+in its autonomous mode ([`../backlog/next.md`](../backlog/next.md)); it returns every
+candidate it scored, ranked. Walk that list in order. Drop an item that hits `backlog next`'s
+out-of-scope or redundancy check (Phase 07) without asking the user to confirm the match.
+An epic ends the walk and continues as `implement <epic>` below. Otherwise apply the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1);
+the first item that clears it is the pass. Never stop to ask which item. When nothing on the
+list clears, the run ends: name the first item that reached the gate and the test it failed —
+or, when every item was dropped before the gate, each item and the check that dropped it —
+and stop.
 
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
 the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
