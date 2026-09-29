@@ -28,7 +28,7 @@ A `Blocked by` edge orders work; it does not prove the code depends on the block
 
 An item failing any test is not offered. Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work — a clear "not ready, here's why" is a good outcome, not a failure.
 
-Bare `implement` runs `backlog next` in autonomous mode and takes its top pick (the first ID of a group), then applies this gate to that item; `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way.
+Bare `implement` runs `backlog next` in autonomous mode and takes its top pick (for a group, the first member no other member blocks), then applies this gate to that item, stopping with the failed test if it does not clear; `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way.
 
 ## 2. Sizing before the offer
 
