@@ -1,6 +1,6 @@
 # Next
 
-Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
+Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then (on an interactive run) implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
 **Autonomous-caller note:** when bare `implement` invokes this, run Phases 01–07 and return the Phase 07 ranked list (issue IDs, in order) to `implement`, which walks it and works the first item that clears its readiness gate as its own pass. Skip Phases 08–10 entirely: no presentation, no selection wait, no dispatch-row offer, no implementing here, no wrap-up offer. Interactive callers run every phase.
 

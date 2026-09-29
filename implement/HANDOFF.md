@@ -6,7 +6,7 @@ try.
 
 ## 1. What "cleared" means
 
-An item is offerable when four cheap queries all say so — this is a check, not a judgement call:
+An item is offerable when five cheap checks all say so — this is a check, not a judgement call:
 
 - **A slice.** `bd show <id> --json` carries a parent, `bd children <id>` is empty, and the title does not begin `Verify:` or `Land:`. A parent is broken down first (`issues/breakdown.md`) and its slices are what get offered; the Verify and Land children are this session's and never run as a pass.
 - **Open.** `bd show <id> --json` reads its status.
