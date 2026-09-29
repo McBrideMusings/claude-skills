@@ -23,7 +23,7 @@ Which one you're rebuilding changes what belongs in it. Establish this before Ph
 | --- | --- | --- | --- |
 | Holds | Voice, judgment, permission gates, git policy, how to dispatch work, environment, a knowledge map | What the project is in two lines, the commands table, where things live, project-specific conventions, domain vocabulary, gotchas that have actually bitten | Personal calibration for this one checkout — what the user doesn't know here (`Explain until removed`), pointers into a local doc cache |
 | Never holds | Anything about one project | **Anything the global file already says** | Anything a teammate needs — shared conventions belong in the tracked project file |
-| Size threshold | 4,000 words, watched by `hooks/claude-md-size-check.sh` | ~1,200 words, watched by nothing | No fixed budget — the explain algorithm lives once in the global file; this file holds only variable data (concept, symbols, doc cache path), so it stays short by construction |
+| Size threshold | `limit=` in `hooks/claude-md-size-check.sh`, which watches it | ~1,200 words, watched by nothing | No fixed budget — the explain algorithm lives once in the global file; this file holds only variable data (concept, symbols, doc cache path), so it stays short by construction |
 | Audience | Just the user | On a collaborative repo, teammates and their agents too — so no personal preferences | Just the user, this checkout only |
 | Structure owner | This file | `bootstrap` — defer to its layout rather than inventing a competing one | This file — see "The local file has no git safety net" below |
 
@@ -79,9 +79,9 @@ for p in re.split(r'\n(?=## )', t):
 
 The biggest section is almost always the one nobody defends. Lead the conversation with the table.
 
-**Thresholds.** The global file's budget is 4,000 words, enforced by `~/.claude/hooks/claude-md-size-check.sh`, which fires at SessionStart and routes here. That hook is the only place the number lives — don't restate it. A project `CLAUDE.md` has no hook watching it; treat ~1,200 words as its ceiling and raise it unprompted.
+**Thresholds.** The global file's budget is the `limit=` line in `~/.claude/hooks/claude-md-size-check.sh`, which fires at SessionStart and routes here. That hook is the only place the number lives — read it there, never restate it. A project `CLAUDE.md` has no hook watching it; treat ~1,200 words as its ceiling and raise it unprompted.
 
-There is one remedy, and it is the rebuild below. A file over budget is not sorted into "trim this one, rebuild that one" — that fork existed in the hook until 2026-08-23 and disagreed with this file on the number, the remedy, and which direction was the dangerous one.
+There is one remedy, and it is the rebuild below. A file over budget is never sorted into "trim this one, rebuild that one".
 
 ## Phase 3 — Inventory what already enforces behavior
 

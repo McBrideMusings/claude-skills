@@ -167,8 +167,8 @@ Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the
 
 > A job whose connection drops with `ConnectionResetError` now retries with backoff instead of failing on the first attempt.
 >
-> **Files changed** in `~/.worktrees/queue/fix-retry` (`fix/retry-connreset`, `a1b2c3d`)
-> - `worker.py:142` — widened the retry catch to include `ConnectionResetError`
+> **Files changed** in `/Users/you/.worktrees/queue/fix-retry` (`fix/retry-connreset`, `a1b2c3d`)
+> - `/Users/you/.worktrees/queue/fix-retry/worker.py:142` — widened the retry catch to include `ConnectionResetError`
 >
 > **Unchanged**
 > - `queue.db` schema — the fix doesn't need a new column
