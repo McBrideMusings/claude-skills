@@ -5,7 +5,9 @@ them has proposed *"write the instruction more forcefully"*, which is the lazy a
 exist to beat.
 
 Cheapest and most reversible wins. **Say which shapes you rejected and why**, and prefer the
-fix that removes the condition over one that guards it.
+fix that removes the condition over one that guards it. Two gates run first: the prevention
+gate for any skill or `CLAUDE.md` edit, and the concurrency gate for any proposal to run work
+in parallel.
 
 **The prevention gate runs before the five shapes.** A proposed edit to a skill or
 `CLAUDE.md` must name the missing or wrong instruction that *would have prevented the
@@ -14,6 +16,23 @@ instruction that was correct and simply ignored is never reworded: that is model
 and its fix shape is enforcement (`HOOKS.md`) or rehousing (`CONTEXT-PRESSURE.md`), not
 stronger prose. When an edit does survive, prefer replacing existing text over appending —
 appended text is how a rule grows two competing statements.
+
+**A proposal to run two units of work concurrently clears four checks before it is written
+down.** "Neither reads the other's output" is the first check, not the finding:
+
+1. **Data** — neither unit consumes what the other returns.
+2. **Control** — neither unit halts, short-circuits or returns early in a way that skips the
+   other. Concurrency runs a unit the serial order would never have reached.
+3. **Shared state** — neither unit writes what the other reads or writes: the working tree,
+   the index, a file, a lock. Name any path where one reverts, applies or rewrites state
+   mid-run.
+4. **Tests** — grep the test suite for the second unit's name. Name any test asserting call
+   order, invocation count or which units ran; concurrency cannot satisfy it, so the proposal
+   must change that test, and say whether the pass can reach the repo it lives in.
+
+A check that fails does not kill the proposal. It becomes the tradeoff in the option set —
+serialize on that path, or run concurrently anyway, stating how often the conflicting path
+runs (from the corpus, e.g. halts per run).
 
 | Shape | Asks | Answer names |
 | --- | --- | --- |
