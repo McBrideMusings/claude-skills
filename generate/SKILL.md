@@ -25,9 +25,12 @@ first backend that passes its health check:
 
 - `comfy` (local, free) — passes only if the comfy ComfyUI plugin is reachable **and** a working local
   GPU is present. Drive it via the comfy plugin's `generate_image` / `generate_audio` MCP tools.
-- `gemini` / `tripo` / `elevenlabs` (cloud, paid) — pass only if the env key
+- `gemini` / `openai` / `tripo` / `elevenlabs` (cloud, paid) — pass only if the env key
   (`generate/backends.toml` → `[providers.*]`) is present. Probe with the axis file's credential
   check and **paste the probe output**; never assume a key from memory.
+
+A request that names a backend (`--backend openai`, "on comfy") skips the walk: gate that one
+backend and report dormant if it fails, without falling through.
 
 Fall through to the next candidate on a failed gate. If **none** pass, stop and report exactly which
 backends were tried and why each failed (GPU down / key missing) — do **not** fabricate an asset.
@@ -36,7 +39,9 @@ A missing backend is a report, not an error.
 
 ## Phase 03 — Prompt + generate
 
-Build the prompt from the axis file's conventions for that type. Generate. For the image→model chain,
+Build the prompt from the axis file's conventions for that type. Generate. An `image` request that
+supplies an input image plus an instruction is **edit mode** (`image.md` § Edit mode); a backend
+without edit support says so rather than ignoring the input. For the image→model chain,
 an `image` output can feed `model` (image-to-3D) — run `image` first, then hand its file to `model`.
 
 ## Phase 04 — Post-process + integrate
