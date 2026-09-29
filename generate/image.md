@@ -55,6 +55,7 @@ Benched 2026-07-21 against a frozen 5-prompt set (see the unraid `local-genai` p
 | **Z-Image Turbo** (bf16 6B) | Fast iteration + most photoreal portraits/scenes | `comfy-image/image-zimage-turbo.json` | 8 step, euler/simple, cfg 1 | ~8s | 21.9 GB |
 | **Qwen-Image** (fp8) | Legible in-image text + dense/cluttered composition | `comfy-image/image-qwen.json` | 50 step, euler/simple, AuraFlow shift 3.1, cfg 4 | ~128s | 21.4 GB |
 | **SDXL 1.0** (v10 VAEFix) | ControlNet / CHORD ecosystem base only — NOT for text | `comfy-image/image-sdxl.json` | 25 step, DPM++ 2M Karras, cfg 7 | ~7s | 16.3 GB |
+| **FLUX.2 klein 4B** (bf16 distilled, Apache-2.0) | Reference-image edit: screenshot in, edited image out | `comfy-image/image-edit-flux2-klein.json` | 4 step, euler, cfg 1, reference scaled to 1.5 MP, 1536×992 out | 28s cold, ~11s warm | not measured |
 
 Notes: FLUX.1 dev is the **fp8 all-in-one checkpoint** (`CheckpointLoaderSimple`, bundles t5+clip+ae) —
 there is no assemblable bf16 UNET path in the store. Z-Image Turbo loads its Qwen3-4B encoder via
@@ -101,11 +102,16 @@ Rules that come from the caller and must survive:
 - Save under the project's `/private/tmp/claude/<repo-slug>/` comps directory, not `assets/` — a comp is a decision
   artifact, not a shipped asset.
 
-**Not yet supported: reference-image anchoring.** `direction.md` calls for screenshotting a
-representative existing page and passing it as a reference so palette, type and component character
-carry over exactly. No img2img / reference workflow exists in `comfy-image/` today, so on an
-established world say so and fall back to a prose description of the design system — knowing it drifts.
-Building that workflow belongs to the ComfyUI setup repo (`~/Projects/local-genai`), not here.
+**Reference-image anchoring: `image-edit-flux2-klein.json`, layout exploration only.** `direction.md`
+calls for screenshotting a representative existing page and passing it as a reference. The workflow
+takes a `LoadImage` reference plus a prompt (upload the PNG to ComfyUI's `/upload/image` first, then
+POST the workflow to `/prompt`). Tried 2026-09-29 on a 1536×992 screenshot of the Muxarr review view,
+two prompts, seed 42: it moved layout as asked (a new column with a video tile and a five-row list, the
+third row highlighted) but garbled all text, including text the prompt said to keep, and did not add a
+requested tab label or fill a requested black area. Use it to explore where things sit, never as a
+frame a ticket must match word for word. The weights (`flux2-klein/flux-2-klein-4b.safetensors`, the
+`flux2-vae.safetensors` VAE, and the existing `qwen_3_4b.safetensors` encoder loaded as `type=flux2`)
+came from the `Comfy-Org/flux2-klein-4B` Hugging Face repo, which is not gated.
 
 ## Output + integration
 
