@@ -36,7 +36,7 @@ Apply the floor from § 1 across whatever scope is being offered. Every under-fl
 
 `go` performs the merge in `bd`: the surviving item's body gains the absorbed item's body under a `## Absorbed from <id>` heading, dependencies are re-pointed onto the surviving item with `bd dep add`/`bd dep remove`, and the absorbed item is closed with `bd close <id> --reason "merged into <survivor-id>"`. A merged item runs as one pass. `<id> skip` leaves that item as is — offered on its own, under floor.
 
-Never re-implement what `bd` computes for what's ready or blocked. `bd ready`, `bd blocked`, and `bd swarm validate` answer that, and a second implementation is free to disagree with the one beads ships.
+Never re-implement what `bd` computes for what's ready or blocked. `bd ready --limit 0`, `bd blocked`, and `bd swarm validate` answer that, and a second implementation is free to disagree with the one beads ships.
 
 ## 3. The offer is a slate row, never a new word
 

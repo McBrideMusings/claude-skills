@@ -33,7 +33,7 @@ Every issue has a title. In everything the user reads — the queue, an intervie
 
 Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `backlog shape` = every open issue in the current repo. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
 
-**Dependencies are real edges, never prose.** On beads: `bd dep add <id> <blocker-id> -t blocks`, read back with `bd dep tree`, `bd blocked` and `bd ready`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is a **finding** — an edge someone never wired — and Phase 0 offers to convert it. An item is unblocked when every blocker is closed.
+**Dependencies are real edges, never prose.** On beads: `bd dep add <id> <blocker-id> -t blocks`, read back with `bd dep tree`, `bd blocked` and `bd ready --limit 0`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is a **finding** — an edge someone never wired — and Phase 0 offers to convert it. An item is unblocked when every blocker is closed.
 
 **`bd ready` trusts a denormalized `is_blocked` flag that can go stale** after a pull whose scoped recompute was skipped, or a merge conflict resolved by hand. Run `bd recompute-blocked` before any read that orders work, or the roadmap silently hides ready issues.
 
@@ -80,7 +80,7 @@ Runs first, every time, before the AFK gate. A backlog with no types, no groupin
 
 ### 0a. Backend readiness
 
-Resolve the backend by invoking `issues`. Beads is the target: the graph work below is `bd dep`, `bd swarm validate`, `bd ready` and `bd graph`, none of which has a GitHub equivalent worth hand-writing.
+Resolve the backend by invoking `issues`. Beads is the target: the graph work below is `bd dep`, `bd swarm validate`, `bd ready --limit 0` and `bd graph`, none of which has a GitHub equivalent worth hand-writing.
 
 **No `.beads/` in the repo** → offer it once, as one slate row:
 
@@ -214,7 +214,7 @@ If nothing fails and there is no fog, report that the scope is already AFK-worka
 
 Order the **failing** issues by unblock leverage: how many in-scope issues each transitively blocks. Highest first — a decision gating three issues outranks a leaf.
 
-**Read the leverage off the graph; never recompute it.** `bd dep tree <id>` gives the transitive closure, `bd blocked` the blocked set, `bd ready` the unblocked one. A second traversal written here would be free to disagree with the one beads runs, and two orderings over one graph is the drift condition, not a check against it. Run `bd recompute-blocked` first.
+**Read the leverage off the graph; never recompute it.** `bd dep tree <id>` gives the transitive closure, `bd blocked` the blocked set, `bd ready --limit 0` the unblocked one. A second traversal written here would be free to disagree with the one beads runs, and two orderings over one graph is the drift condition, not a check against it. Run `bd recompute-blocked` first.
 
 Tiebreak on the native `priority` field (`0-4`), then ascending ID. Print the queue with each issue's name, URL, one-line question, and what it needs, so the user sees the whole shape before the first interview.
 
@@ -312,7 +312,7 @@ Already dispatched from Phase 3 (cc-111) is not offered again — name it in a l
 - **Don't implement, don't commit code.** This skill never writes product code and never commits it — body edits, posted answers, closing answered questions, and grill-me's ADRs are the only writes it makes itself. Offering a cleared item to `implement`, and dispatching it on `go`, is not implementing — it is this skill's exit, available from Phase 3 onward, not only at Phase 4. Never close a work item — with **one exception**: Phase 0 may close a backlog-hygiene item whose entire content it just performed (retype these, label those, parent that set), and the close reason must name the tier-1 action that satisfied it. The item has to be hygiene the phase actually did; a work item that merely *looks* finished still stays open.
 - **Interview one issue at a time** — never batch questions across issues into one message.
 - **Every issue named to the user carries its full clickable URL.** `#121` on its own is not enough.
-- **Never re-implement what `bd` computes.** Ready fronts, cycle detection, orphan checks, transitive blocking, duplicate detection, staleness — `bd swarm validate`, `bd ready`, `bd blocked`, `bd orphans`, `bd find-duplicates`, `bd stale`, `bd doctor --check=conventions`. A second implementation here is free to disagree with the one beads ships.
+- **Never re-implement what `bd` computes.** Ready fronts, cycle detection, orphan checks, transitive blocking, duplicate detection, staleness — `bd swarm validate`, `bd ready --limit 0`, `bd blocked`, `bd orphans`, `bd find-duplicates`, `bd stale`, `bd doctor --check=conventions`. A second implementation here is free to disagree with the one beads ships.
 - **An inferred edge is a requirement, never a sequence.** "Do A then B" is not an edge. `bd swarm validate` reports temporal edges as a structural error, so a wrong edge costs more than a missing one.
 - **`bd github sync` is refused outright in a repo labelled `tracker:beads-stealth`** — not defaulted off, not offered with a warning. Refused, with a one-line reason.
 - **Tier 1 writes without asking; tier 2 never does.** Types, `area:`/`platform:` labels and priority are one-command-to-undo and are reported as counts. Epics and edges always reach the user as a slate.
