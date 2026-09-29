@@ -44,7 +44,7 @@ token is gone; it says nothing about whether what replaced it is right, so a dif
 recomputes a number wrongly passes every such check. When the diff changes a computed value —
 a formula, a unit conversion, a figure in prose, a count of call sites — at least one recheck
 compares the output against the specific expected number from the item's worked example
-(`HANDOFF.md` §1's plan test): run the formula on a known input and match the result, or count
+([`HANDOFF.md`](HANDOFF.md) §1's plan test): run the formula on a known input and match the result, or count
 the call sites and match the count. Redo the arithmetic the old line encoded before trusting
 the new one. Absence checks may accompany it, never replace it.
 
