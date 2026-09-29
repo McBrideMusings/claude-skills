@@ -16,6 +16,12 @@ pass over the diff, once the build is green.
 `implement <issue>` works that item here, in this session and this checkout, and nowhere
 else. It never launches another session, pane or agent to do the work.
 
+**Bare `implement`, with no argument, picks the item itself and starts.** Run `backlog next`
+in its autonomous mode ([`../backlog/next.md`](../backlog/next.md)), take its top pick (the
+first ID when it recommends a group). If that pick is an epic, continue as `implement <epic>`
+below. Otherwise clear the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1) and work that item
+as the pass. Never stop to ask which item; the gate is the only thing that can hold it.
+
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
 the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
 (`../wrap-up/SKILL.md`).

@@ -2,7 +2,7 @@
 
 Decide what's worth doing next based on **project phase + issue priority**, recommend one concrete starting point, then implement on the current branch. Reads the resolved issue tracker — beads or GitHub.
 
-**Autonomous-caller note:** when invoked by `implement` (its Phase 01), skip the Phase 08 selection wait, skip the Phase 08 dispatch-row offer, skip the Phase 09 plan-draft question, AND skip Phase 10 (offer wrap-up) — the autonomous caller runs wrap-up itself, and an `implement` pass never invokes itself recursively. Proceed immediately with option 1 at Phase 08 (the top recommendation) and implement directly at Phase 09. Interactive callers wait for the user's selection at Phase 08, see the dispatch-row offer at Phase 08, see the plan-draft question at Phase 09, and see the wrap-up offer at Phase 10.
+**Autonomous-caller note:** when bare `implement` invokes this, run Phases 01–07 and return the Phase 07 pick (its issue IDs) to `implement`, which works it as its own pass. Skip Phases 08–10 entirely: no presentation, no selection wait, no dispatch-row offer, no implementing here, no wrap-up offer. Interactive callers run every phase.
 
 **Don't favor bugs by default.** Early-stage projects should usually push features forward; mature projects with users should usually fix meaningful bugs first. Judge project phase from evidence — don't ask the user.
 
@@ -240,7 +240,7 @@ Backlog next's work is done. Wrap up? Reply with a number, or tell me something 
 3. Just commit — create a commit on the current branch without running the rest of wrap-up, for when the change should be captured but isn't ready for the full close-out.
 ```
 
-Skip this phase entirely when invoked by an autonomous caller (per the Autonomous-caller note above) — those callers run wrap-up themselves and a second invocation would double-commit.
+Skip this phase entirely when invoked by an autonomous caller (per the Autonomous-caller note above); that caller's pass ends at its own gate, and `go` there runs wrap-up.
 
 Skip when Phase 09 produced no diff (nothing to wrap up).
 
