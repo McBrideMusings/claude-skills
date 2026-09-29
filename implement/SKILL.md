@@ -85,7 +85,8 @@ elsewhere, squashed by `wrap-up`.
 
 ## The steps
 
-1. **Plan.** State the files to touch and an objective acceptance check. If you cannot, stop
+1. **Plan.** State the files to touch and an objective acceptance check — for a changed value,
+   one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
    — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
    gate, and it should not have been offered.
 2. **Edit.** Make the change directly, in the checkout you stand in.

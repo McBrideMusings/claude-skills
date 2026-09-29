@@ -39,6 +39,15 @@ on a criterion you could not satisfy, whether the *data* is what is out of line 
 outside the numbering the item defines, a fixture predating the schema, a database filled from
 the constant this item is changing. If it is, name the row and the rule it violates and stop.
 
+**At least one recheck asserts a value, not an absence.** A grep expecting no output proves a
+token is gone; it says nothing about whether what replaced it is right, so a diff that
+recomputes a number wrongly passes every such check. When the diff changes a computed value —
+a formula, a unit conversion, a figure in prose, a count of call sites — at least one recheck
+compares the output against the specific expected number from the item's worked example
+(`HANDOFF.md` §1's plan test): run the formula on a known input and match the result, or count
+the call sites and match the count. Redo the arithmetic the old line encoded before trusting
+the new one. Absence checks may accompany it, never replace it.
+
 **A pass that touched tests must prove the tests discriminate.** A test is evidence only if it
 fails without the change. Capture the production half of the diff as a patch, reverse it, run
 only the new tests, restore, and record `mutation.discriminates`, which has three states.
