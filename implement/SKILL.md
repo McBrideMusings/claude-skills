@@ -80,6 +80,8 @@ those two are exempt, both session bookkeeping rather than work in progress:
 In the primary `~/.claude` checkout, a dirty file there belongs to another concurrent session
 sharing that index, not to this pass — not a halt.
 
+**Resolve the verification skill now.** `ls` the absolute path of `<repo>/.claude/skills/verify-project/SKILL.md` and print it. Step 4 reads that file; a pass that verified with its own ad hoc check without reading it has not verified.
+
 **No commit-count guard.** One commit on the default branch; as many as the work needs
 elsewhere, squashed by `wrap-up`.
 
@@ -137,7 +139,8 @@ check, which keeps the image out of context and returns words.
 **Commit messages never attribute the work to Claude, an AI, or any tool** — no
 `Co-Authored-By`, no session link, no trailer naming a model; sign as the repo's user and
 nothing else. Conventional Commits, imperative, ≤72 characters of prose, item id in trailing
-parens.
+parens — except in a repo labelled `beads:stealth` in `~/.claude/domains-map`, where no tracker id
+appears in any commit message, branch name or PR text.
 
 ## Halt conditions
 
@@ -162,6 +165,10 @@ re-derived, never re-run just to fill the gate. When a recheck command runs insi
 and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when this session
 stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`
 first.
+
+Close the gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
+
+> Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
 
 `go` means run `wrap-up` now, in the checkout this pass worked in — bare `wrap-up` when
 standing in it, `wrap-up <worktree>` when not. `park` leaves the branch standing, records
