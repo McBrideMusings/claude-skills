@@ -54,7 +54,7 @@ Target
   baseState     pr.baseRefName == <default> ? 'default' : the base branch's own PRs, from
                 gh pr list --head <pr.baseRefName> --state all --json number,state,mergedAt
   pr            {number,state,mergeable,baseRefName,url} | null
-  mine          pr ? pr.author.login == my login : (branch starts with 'pierce' | last commit email is mine)
+  mine          pr ? pr.author.login == my login : (branch starts with my git user.name | last commit email is mine)
   checks        {failing:[…]} | 'none-configured' | 'no-pr'
   lastCommit    newest commit date on the branch
   lastFeedback  newest non-author thread / review body / conversation comment | null
@@ -239,10 +239,10 @@ Print, once, whatever the pass actually did — one line per gate that fired, no
 that did not:
 
 ```
-freshness  origin/pierce/leagues-lp was rewritten; reset local to match
+freshness  origin/feat/leagues-lp was rewritten; reset local to match
 conflicts  resolved 4 in 2 files (packages/leagues/src/cohort.ts, apps/cloudflare/src/do/league.ts)
 tests      2 failing, both fixed — check-cloudflare-test (3), check-cloudflare-test (7)
-feedback   1 body-only review from alexthemighty — 3 points: 2 addressed, 1 reply
+feedback   1 body-only review from reviewer — 3 points: 2 addressed, 1 reply
 ```
 
 Then **one slate, and it is the only thing this skill asks — every outward action the pass
@@ -250,10 +250,10 @@ produced goes in it, numbered, each with your pick**. `FEEDBACK.md` Phase 08's r
 re-request are not rows of their own; they are the rest of the push row, and that file prints no
 prompt. Close the slate with `CLAUDE.md`'s escape hatch:
 
-> `unblock` made 3 commits on `pierce/leagues-lp`. Outward actions waiting:
+> `unblock` made 3 commits on `feat/leagues-lp`. Outward actions waiting:
 >
-> 1. **push + reply + re-request** — 3 commits to `origin/pierce/leagues-lp`, then post the
->    3-point response block above and re-request @alexthemighty, who reviewed `4c1f9ab` before
+> 1. **push + reply + re-request** — 3 commits to `origin/feat/leagues-lp`, then post the
+>    3-point response block above and re-request @reviewer, who reviewed `4c1f9ab` before
 >    any of them existed. My pick: all three.
 >
 > Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
@@ -301,7 +301,7 @@ action is the push alone (see the own-branch bullet below).
 
   Name the reason in the row's own words — what the pass pushed, not what the reviewer said:
   `push + reply + re-request — 2 commits, then the 3-point reply and a re-request for
-  @alexthemighty, who reviewed 1e0555f4 before the main merge and the export fix existed.`
+  @reviewer, who reviewed 1e0555f4 before the main merge and the export fix existed.`
 
 - **A skipped push takes the reply and the re-request with it.** `1 skip` means none of the three
   happened — say so in one clause. Telling a reviewer what changed, or putting them back in the

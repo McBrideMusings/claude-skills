@@ -229,7 +229,7 @@ These are words posted under the user's name on someone else's PR. Tone is not d
 **Worked reduction.** The same three items, before and after:
 
 ```
-Thanks @alexthemighty — quick rundown:
+Thanks @reviewer — quick rundown:
 
 1. Side pot going to the wrong player at showdown — fixed. I reworked
    evaluateShowdown so that it now takes kickers into account before it
@@ -259,7 +259,7 @@ Thanks @alexthemighty — quick rundown:
 ```
 1 item needs you:
 
-4. @alexthemighty wants cohort assignment to prefer the smallest cohort; the branch prefers the newest. Both are defensible and the choice is yours.
+4. @reviewer wants cohort assignment to prefer the smallest cohort; the branch prefers the newest. Both are defensible and the choice is yours.
 
 The other 6 are applied and the response doc is written.
 ```
@@ -325,7 +325,7 @@ A review-fix commit is read by the reviewer, in the PR's commit list, next to th
 **Review-specific rules on top:**
 
 - **Never name the review as the change.** `fix: address review comments`, `fix: PR feedback`, `chore: review fixes` are all banned — they describe your Tuesday, not the code. The subject names what the code now does.
-- **The body may cite where the finding came from, on its own last line**, one line, no thanks: `Raised by @alexthemighty on PR #214.` Omit it when the subject and body already stand alone.
+- **The body may cite where the finding came from, on its own last line**, one line, no thanks: `Raised by @reviewer on PR #214.` Omit it when the subject and body already stand alone.
 - **One finding per commit** when the findings are unrelated. The reviewer reads the commit list against their own comments; a commit satisfying four unrelated findings cannot be checked against any of them.
 - **ABSOLUTE — no attribution to any tool, assistant, model, or vendor**, in the subject, the body, or a trailer. No `Co-Authored-By` of any kind, no generated-with footer, no emoji badge. Scan every message before `git commit`.
 
@@ -339,7 +339,7 @@ a board-paired two pair the 3,200-chip side pot went to the player
 holding the 9 kicker instead of the one holding the ace. Kickers now
 break the tie before the pot is assigned.
 
-Raised by @alexthemighty on PR #214.
+Raised by @reviewer on PR #214.
 ```
 
 ```
@@ -373,8 +373,8 @@ The offer applies to a reviewer who submitted a **formal review of any state** �
 **This phase prints no prompt of its own, and contributes no row of its own.** Phase U5 carries both the reply and the re-request inside its `push + reply + re-request` row, and that row is the whole ask:
 
 ```
-1. **push + reply + re-request** — 2 commits to `origin/pierce/leagues-lp`, then post the
-   4-item reply above and re-request @alexthemighty, who reviewed 4c1f9ab before any of it
+1. **push + reply + re-request** — 2 commits to `origin/feat/leagues-lp`, then post the
+   4-item reply above and re-request @reviewer, who reviewed 4c1f9ab before any of it
    existed. My pick: all three.
 ```
 

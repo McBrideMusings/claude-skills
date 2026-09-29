@@ -85,7 +85,7 @@ Name them in the skipped list with the reason, so the user can see it was a deci
 
 ```
 skipped, blocked (author must fix first):
-  #1973 alexthemighty  CONFLICTING + 4 red    #1951 alexthemighty  CONFLICTING
+  #1973 reviewer  CONFLICTING + 4 red    #1951 reviewer  CONFLICTING
 ```
 
 **Re-read `mergeable` immediately before starting each session, not once at selection time.** A
@@ -186,7 +186,7 @@ a duplicate:
 herdr workspace list | jq -r '.result.workspaces[]? | select(.worktree) | "\(.workspace_id) \(.worktree.checkout_path)"'
 ```
 
-`<slug>` is the branch with any `pierce/` prefix dropped and `/` replaced by `-`, capped at 28
+`<slug>` is the branch with any `<git user.name>/` prefix dropped and `/` replaced by `-`, capped at 28
 characters. Read the pane id from `.result.root_pane.pane_id` (worktree open) or
 `.result.pane.pane_id` (split). **Never `--focus`** — the user is working.
 
