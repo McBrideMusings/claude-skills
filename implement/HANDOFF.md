@@ -24,6 +24,8 @@ Passing all five makes an item eligible to offer, not yet ready to run. The read
 2. **Objectivity test.** Is "done" verifiable without a qualitative, taste, product or design call that is the user's to make? Does the item hide an unresolved decision, missing information, or an ambiguity that would have to be *invented* to proceed? If so it fails — inventing that answer autonomously is exactly the mistake this gate exists to stop.
 3. **Reachability test.** Does every file the item names, and every acceptance criterion, live inside the one repo it would be confined to? A nested submodule (for example `claude-skills` inside `~/.claude`) is a *different* repo even though it sits inside the parent's directory tree. An item naming a path in both fails this test and is split into one item per repo before either half is offered.
 
+A `Blocked by` edge orders work; it does not prove the code depends on the blocker. Before working a blocked item, or stacking its branch on the blocker's, say what the edge rests on: a named symbol or file the blocker changes that this item needs, or only shared files. For a shared-files edge, put the item's own commits on `origin/<default>` in a scratch worktree and run the typecheck and tests; a pass means the item runs on the default branch and the edge is soft.
+
 An item failing any test is not offered. Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work — a clear "not ready, here's why" is a good outcome, not a failure.
 
 Bare `implement` resolves its item the same way `backlog next` would, in chat, before this gate runs; `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way.

@@ -35,7 +35,7 @@ git rev-parse --show-toplevel
 git branch --show-current
 gh repo view --json owner --jq .owner.login      # failure ⇒ no GitHub remote
 gh api user --jq .login
-gh pr view --json number,state,mergeable,author,headRefName,url
+gh pr view --json number,state,mergeable,author,headRefName,baseRefName,url
 ```
 
 **On the repo's default branch → this is a sweep.** Go to [SWEEP.md](SWEEP.md) and stop reading
@@ -50,8 +50,10 @@ Target
   root          git rev-parse --show-toplevel
   branch        git branch --show-current
   remote        'none' | 'github'
-  base          remote=='github' ? origin/<default> : <default>
-  pr            {number,state,mergeable,url} | null
+  base          pr ? origin/<pr.baseRefName> : remote=='github' ? origin/<default> : <default>
+  baseState     pr.baseRefName == <default> ? 'default' : the base branch's own PRs, from
+                gh pr list --head <pr.baseRefName> --state all --json number,state,mergedAt
+  pr            {number,state,mergeable,baseRefName,url} | null
   mine          pr ? pr.author.login == my login : (branch starts with 'pierce' | last commit email is mine)
   checks        {failing:[…]} | 'none-configured' | 'no-pr'
   lastCommit    newest commit date on the branch
@@ -60,6 +62,16 @@ Target
 
 **Never ask the user whose PR it is, which PR is meant, or what "the tests" means.** Every one
 of those is answered above. Asking anyway tells the user you did not look.
+
+**A stacked base is reported first, as its own line, whatever else fires.** When
+`pr.baseRefName` is not the default branch, print `baseState`: the base branch's PR number and
+whether it is open, merged or closed unmerged. Merged or closed means the stack is over and the
+branch's next step is a retarget to the default branch, not a repair against the old base. Read
+the PR body and its comments for a stated plan (`rebase onto main once #N closes`) before
+proposing any option for a diverged branch: the local commits may be that rebase. Before
+resolving conflicts on a base that is still open, test the branch against the default branch —
+cherry-pick its own commits onto `origin/<default>` in a scratch worktree and run the typecheck
+and tests. A pass means the stack is unneeded, and the slate proposes a retarget.
 
 **Not mine** (a teammate's PR) → gates 1 and 2 **diagnose but do not fix**: you do not push
 commits to someone else's branch to get their CI green. Gate 3 does not apply at all — their
