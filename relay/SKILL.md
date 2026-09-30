@@ -32,8 +32,9 @@ instead of reimplementing it, then relay this pane to the orchestration/watch ro
 
 ## Never fire blind
 
-Relay always proposes and waits, with one exception: the `auto` token, which takes
-every default without asking.
+Relay always proposes and waits, with two exceptions: the `auto` token, which takes
+every default without asking, and [walk mode](#walk-mode), where the user's one `go` on the
+epic already covered every hop.
 
 The proposal is **one message, plain markdown, one free-text reply**. Never
 `AskUserQuestion`, never a chip-picker — the answer is free-form (numbers, ranges,
@@ -167,6 +168,39 @@ it.
 
 If the clear fails, the sender prompts into the existing context instead of losing
 the work, and logs why to `/private/tmp/claude/<repo-slug>/relay/relay.log`.
+
+## Walk mode
+
+Invoked by `wrap-up` Step D inside `implement <epic> walk`
+([`../implement/SKILL.md`](../implement/SKILL.md) §The walk). The user has already said `go` to
+the whole epic, so there is no proposal and no halt, and follow-ups were settled by `wrap-up`
+(Step 3 does not run again).
+
+1. **Pick the next slice from beads, not from Step 1's ranking.** Run
+   `~/.claude/skills/implement/epic-plan <repo> <epic-id>`; the next [run] row in plan order
+   is the work. No [run] row, or the next row is `human`, P3 or lower, or fails the readiness
+   gate: decline the relay and print the walk's stop message instead.
+2. **Write the marker per Step 4, with the walk block first in the brief** — before the task.
+   It is the one part of the brief that must survive every hop, so each hop copies it forward
+   and updates only `Done` and `Next`:
+
+```markdown
+EPIC WALK — do not ask for confirmation between slices.
+Epic: <epic-id> "<title>" in <repo>. pierce said `go` once for the whole epic and is away.
+Done: <slice-id> (<sha>), <slice-id> (<sha>)
+Next: <slice-id> "<title>"
+Each slice runs: implement → informational gate → wrap-up (walk mode, picks its own
+follow-up dispositions, no ask) → relay (walk mode) into the next slice.
+Stop only at a `human`, P3 or lower, or gate-failing slice, a halt condition, or when no
+[run] row is left. On a stop, say which slice, why, and list Done plus every bead filed.
+```
+
+   Then the usual brief: task, where it lives, constraints not in the code, and
+   `Start by: implement <epic-id> walk`, ending with `When it's done and landed, run /wrap-up.`
+3. **End the turn** per Step 5.
+
+A session in a linked worktree cannot relay (Step 1's first stop condition); a walk there
+continues in its own context and says so in the stop message.
 
 ## `relay auto`
 

@@ -205,11 +205,19 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 ### Step A — Resolve follow-ups (must fully settle before summarizing)
 
-**Never write "no next work" from memory.** The sentence is earned by the `relay-candidates` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. The turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
+**Never write "no next work" from memory.** The sentence is earned by the `relay-candidates` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. Outside a walk, the turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
 
 Invoke the `backlog file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
 
-**HALT here and collect dispositions from the user.** Wrap-up always runs interactively — do not file, do not skip, do not proceed until the user has chosen per item.
+**In an epic walk (`implement <epic> walk`, [`../implement/SKILL.md`](../implement/SKILL.md) §The walk) there is no halt and no ask.** Choose every candidate's disposition yourself, then run the Act pass:
+
+- **fix** — the finding sits inside this slice's diff and one edit plus the slice's own check settles it.
+- **file** — real work outside this slice, or an `Architecture:` finding. Filed to the tracker under the walk's epic where it fits, so the user sees it on return.
+- **skip** — a duplicate of an open bead, a finding the session already answered, or noise.
+
+Print the numbered list with each row's chosen disposition as a record, not a question. A `fix` that cannot be applied still halts the walk. After Step C lands the slice, append one line to the epic's notes: `bd update <epic> --append-notes "<slice-id> landed at <sha>: fixed <n>, filed <ids>, skipped <n>"`. Step D relays per `relay` §Walk mode.
+
+**Otherwise, HALT here and collect dispositions from the user.** Wrap-up always runs interactively — do not file, do not skip, do not proceed until the user has chosen per item.
 
 **Presentation (required):**
 
@@ -331,6 +339,8 @@ precondition, not a nicety.
 - The user already answered this in Step A's single ask. `yes` (or `go`) → invoke `relay`
   and hand it the chosen next work; it writes the marker and you end the turn. `no relay`,
   or relay was unavailable → stop here as normal.
+- **In an epic walk** there is no ask to read: invoke `relay` in walk mode (`relay` §Walk mode)
+  unless relay is unavailable, in which case continue `implement <epic> walk` in this context.
 - **Outside herdr** (`HERDR_ENV` unset) — skip silently. There is no pane to clear.
 
 Do not clear the pane, send keys, or call `herdr` yourself. `relay` writes a marker;

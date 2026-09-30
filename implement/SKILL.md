@@ -37,7 +37,8 @@ pass: **Verify is this session's**, via `verify-project`, and `human` stops it u
 looks; Land is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
-**`implement <epic>` proposes a plan and starts nothing until pierce answers.** The order
+**`implement <epic>` proposes a plan and starts nothing until pierce answers;
+`implement <epic> walk` skips the slate (§The walk).** The order
 comes from beads, never from reading the titles:
 
 ```text
@@ -53,15 +54,36 @@ slate, one row per step, in plan order:
   Verify                       -> "Run <id> here via verify-project" once its blockers
                                   are closed                                          [run | hold]
   Land                         -> "wrap-up <id> after Verify passes"                  [hold]
-go -> work the [run] row here, to its gate; after it lands, re-run epic-plan and start the next
-      [run] row (P1 before P2, then dependency order) without asking again
+go -> `implement <epic> walk`: work the [run] row here, then wrap up, relay, and repeat
 ```
 
-- **`go` on an epic plan is the ask for every ready P1/P2 slice.** Each slice is its own pass
-  and its own gate, and lands through `wrap-up`; `relay` carries the walk into a fresh context
-  for the next one, so no second `go` is needed between slices. The walk stops at a `human`
-  slice, a P3 or lower slice, a slice that fails the readiness gate, a failed check, or
-  when no ready slice is left; then it names why it stopped.
+## The walk — one `go`, the whole epic
+
+**`go` on an epic plan is the ask for every ready P1/P2 slice.** `implement <epic> walk` is that
+ask already given: it prints the plan as one record line (no slate, no wait) and works the first
+[run] row. The `go` and every relay brief in the walk start the next session with this same
+command, so the walk is never re-asked.
+
+Each slice is its own pass, run in this order with nobody answering in between:
+
+1. **Implement** — the steps below, to a green build, verification and blind review.
+2. **Gate, informational** — print the gate ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate)
+   without its closing sentence and do not wait; the walk treats the verified pass as `go`.
+3. **Wrap up** — run `wrap-up` in walk mode ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md)
+   Phase 6): it picks every follow-up's disposition itself, lands the slice, and appends one
+   line to the epic's notes.
+4. **Relay** — `relay` in walk mode ([`../relay/SKILL.md`](../relay/SKILL.md) §Walk mode)
+   clears the context and starts `implement <epic> walk` in the same pane. One slice per
+   context is the cost control; the brief is how the walk survives it.
+
+The walk stops, and says why in one message that also lists the slices done, the follow-ups
+filed and the stop reason, at: a `human` slice; a P3 or lower slice; a slice that fails the
+readiness gate; a halt condition below (`BLOCKED`, a build that will not go green, a review
+finding that contradicts the item); a blocker `wrap-up` cannot resolve; relay unavailable
+(outside herdr, or a linked worktree), in which case it continues in this context instead; or
+no ready slice left. The Verify row is a [run] row once its blockers close: the walk runs it
+here through `verify-project` and stops at the Land row, which stays [hold].
+
 - **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
   still works them one after another.
 - **An epic with no open slice** still gets a plan: its Verify and Land rows are the plan (run
@@ -183,7 +205,10 @@ and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when 
 stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`
 first.
 
-Close the gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
+In a walk, stop after the gate's **Look for:** block; the closing sentence below and its wait
+belong to a single pass, not a walk.
+
+Close a single pass's gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
 
 > Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
 
