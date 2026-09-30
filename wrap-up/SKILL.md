@@ -211,7 +211,7 @@ Invoke the `backlog file` skill in Generate mode to surface candidates from this
 
 *Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work, which the closing sentence names. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the closing sentence can name the pick. When relay is unavailable, or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
+Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now, as the first action of the ask pass and before any slate is written: run `test "${HERDR_ENV:-}" = 1 && echo relay-ok` and the tracker's open list (`bd list --status open`, or `gh issue list --state open`), print both results in chat, then rank 2–3 candidates per `relay` Step 1 so the closing sentence can name the pick. A slate written without those two outputs printed is not ready to send. When relay is unavailable, or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
