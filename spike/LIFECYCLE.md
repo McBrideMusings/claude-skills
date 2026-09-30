@@ -47,7 +47,7 @@ running it, and never run it on a repo the user does not own.
 
 ## Getting comments back
 
-Every build carries the comment layer: the user presses the speech-bubble button (or `a`), marks
+Every HTML build carries the comment layer (a worktree route has none; ask for comments in chat): the user presses the speech-bubble button (or `a`), marks
 things up, and presses **Copy comments**. The markdown starts with
 `<!-- folio-feedback: <slug> -->`, so you can either ask them to paste it, or wait for it —
 [`CONTRACT.md`](CONTRACT.md) § Getting comments back has the `pbpaste` watcher. Say which you are doing.

@@ -153,7 +153,7 @@ Per slice show:
 - **Blocked by** — which other slices must complete first (numeric refs for now, real issue IDs later)
 - **User stories covered** — by number, against the Phase 03 spec. Every user story must be covered by at least one slice; call out any that aren't and say why (out of scope, or a gap you missed).
 
-For a UI slice, also show its **reference comp** — the dsys ref it's built against — and the state names it claims to cover.
+For a UI slice, also show its **reference comp** — the PNG it's built against, stored as a dsys ref when Phase 07 creates the ticket — and the state names it claims to cover.
 
 Ask, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set — one numbered question per row below, each with lettered picks (accept as shown / adjust) and your own recommendation marked:
 
@@ -238,6 +238,7 @@ Per slice:
     one, otherwise the run epic ID from Phase 06 directly. A one-slice slate has no epic at all
     (see Phase 06's fallback) and omits `--parent`.
   - **A UI slice's Visual acceptance block goes in `--design-file <path>`, not the body.** `bd show` renders design separately, so the agent gets the reference comp's dsys ref, the state list, and the copy strings as their own section instead of buried in prose. Write the block to a scratch file and pass the path. Non-UI slices omit the flag.
+  - **The comp's ref exists only after the slice does**, because `dsys refs add` takes the bead id. Create the UI slice with its design block minus the ref, run `dsys refs add <id> <comp.png>` (the PNG is in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`), write the printed ref into the design block, then `bd update <id> --design-file <path>`. Phase 05 shows the comp's file path, not a ref, for that reason.
   - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `backlog next` and `implement` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
   - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
@@ -247,7 +248,8 @@ Per slice:
     reused there. A one-slice slate has no milestone at all (see Phase 06's fallback) and omits
     `--milestone`.
   - **GitHub has no design field**, so a UI slice keeps its Visual acceptance block as a `## Visual acceptance` section in the body. Same content, different shape — this is the one place the two backends diverge.
-  - **A dsys ref in a GitHub issue body does not render as an image.** Cite it as a ref in backticks, never as `![](…)` markdown that will show a broken image. The agent runs `dsys refs get <ref>` to fetch the PNG; that's the consumer that matters.
+  - **`dsys refs add` keys a comp to a bead id, and GitHub issues have none**, so a GitHub-backed slice has no stored comp: its `## Visual acceptance` section states the layout and copy in words, and says the comp was discarded. Only a repo on beads stores comps.
+  - **A dsys ref in a beads-backed GitHub mirror's issue body does not render as an image.** Cite it as a ref in backticks, never as `![](…)` markdown that will show a broken image. The agent runs `dsys refs get <ref>` to fetch the PNG; that's the consumer that matters.
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
   - Blockers are prose only (`Blocked by #N` in the body) — GitHub has no dependency edges.
 

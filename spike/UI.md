@@ -17,16 +17,16 @@ write it.
 
 ## When this is the right shape
 
-- "What should this look like?" / "I want to see a few options before committing."
-- "Try a different layout for the settings screen."
-- Any time the user would otherwise spend a day picking between vague mockups in their head.
+- The look is settled or a comp showed it, and what is open is behaviour: transitions, states reached by clicking, how a real component responds.
+- A complex change, or a comp that could not answer the question.
+- "I want to see a few options working before committing", where working means clickable. Options judged by look alone are comps ([COMP.md](COMP.md)).
 
 ## The artifact — always one standalone HTML file
 
 `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html`, where `<slug>` names what the prototype is for
 **and which device it targets** — one file per device type, rebuilt in place (see SKILL.md
 "One prototype, one device type"). Self-contained, inline CSS and JS, opened directly
-in a browser. No dev server, no route, no framework, and **no edit to any production file** (the throwaway route below is the one exception, and lives in a discarded worktree). This holds
+in a browser. (A route is the exception below.) No dev server, no route, no framework, and **no edit to any production file** (the throwaway route below is the one exception, and lives in a discarded worktree). This holds
 even when the project is React, Vue, or SwiftUI: hand-written HTML/CSS/JS is the fastest path to
 something you can look at, and the winning direction gets rewritten in the project's stack at
 promotion anyway.
@@ -42,7 +42,7 @@ Make it look native to the product without importing anything from it:
   from `DESIGN.md`; paste its declarations into the fragment's `<style>` with the `@theme` at-rule
   renamed `:root` (browsers ignore `@theme`, and everything inside it is a plain custom property).
   The tool rejects any network request, so the file is inlined, not linked. Re-run `dsys export`
-  and re-paste rather than editing a token by hand. A repo with no `DESIGN.md` and no app yet has
+  and re-paste rather than editing a token by hand. `dsys export` runs in owned repos only; a repo with no `DESIGN.md`, or one that is not owned, has
   no export: use the restrained default in Phase 02.
 - **Tailwind projects** — the browser build is a CDN `<script>`, and the tool rejects any network
   request, because a prototype that only renders online isn't self-contained. Use the exported
