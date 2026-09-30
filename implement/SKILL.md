@@ -129,10 +129,14 @@ elsewhere, squashed by `wrap-up`.
    one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
    — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
    gate, and it should not have been offered.
-2. **Edit.** Make the change directly, in the checkout you stand in.
+2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
+   feature that needs a design token or component `DESIGN.md` lacks adds it to `DESIGN.md` in
+   the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
 3. **Build green.** Run the build, test, lint or typecheck yourself, in the foreground,
    bounded — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the
-   runner is chatty). Explicit `timeout`, up to 600000; never background it.
+   runner is chatty). Explicit `timeout`, up to 600000; never background it. In a repo with a
+   `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green and a
+   nonzero exit fails the step ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
 4. **Verify at the surface.** The project's own `verify-project` skill owns what verification
    means here — read `<repo>/.claude/skills/verify-project/SKILL.md` as a file and follow it
    (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). Write one
@@ -199,7 +203,8 @@ item's own model says should not exist. Verify treats doubt as `FAIL`.
 ## The gate
 
 Once verification and review clear, show the gate: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
-§Gate. The commands in **Run:**/**Look for:** are the ones already run in step 4 above — never
+§Gate. When the pass changed `DESIGN.md`, the gate carries its diff ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
+§Gate). The commands in **Run:**/**Look for:** are the ones already run in step 4 above — never
 re-derived, never re-run just to fill the gate. When a recheck command runs inside a worktree
 and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when this session
 stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`

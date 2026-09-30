@@ -39,6 +39,29 @@ on a criterion you could not satisfy, whether the *data* is what is out of line 
 outside the numbering the item defines, a fixture predating the schema, a database filled from
 the constant this item is changing. If it is, name the row and the rule it violates and stop.
 
+## Design-system checks
+
+A repo governed by `dsys` has a `DESIGN.md` (owned) or a `DESIGN.local.yaml` overlay
+(non-owned). Run `dsys status` first; its `mode`, `DESIGN.md`, `export` and `lint wired` lines
+say which of the checks below exist:
+
+- **Owned repo** (`mode: owned`, `DESIGN.md` present): build-green runs `dsys check` and the
+  repo's ESLint with the `eslint.dsys.config.mjs` fragment (`dsys status` reads
+  `lint wired: yes`). Either exiting nonzero fails the step. `dsys check` covers a design.md
+  lint error, a stale export, a missing implementations entry and colour-token checks; the
+  raw hex class `bg-[#ff0000]` passed it in a fixture run, while the fragment's `shadcn/no-arbitrary-values` rule
+  reported it. Fix the code, or add the missing token or component to
+  `DESIGN.md` in the same commit and run `dsys export` so the generated `@theme` file matches.
+- **Non-owned repo** (`mode: non-owned`): `DESIGN.local.yaml` is an overlay, `DESIGN.md` is
+  not edited, and `dsys check` and `dsys export` are skipped unless `dsys status` says they are
+  available. `lint wired: no` means the ESLint fragment is not installed; report that, never
+  install it.
+- **No `DESIGN.md`** (`DESIGN.md: absent`): none of this runs.
+
+A `dsys check` or ESLint-fragment failure is a `FAIL`, not a `BLOCKED`: the diff violates the contract.
+
+---
+
 **At least one recheck asserts a value, not an absence.** A grep expecting no output proves a
 token is gone; it says nothing about whether what replaced it is right, so a diff that
 recomputes a number wrongly passes every such check. When the diff changes a computed value —
