@@ -8,9 +8,9 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The shape.** Numbered question, lettered options beneath it. Each option is a bolded line naming what physically happens — which file gets edited, what value gets written where, which process computes it, when — never a noun with no location. Bullets beneath state the strongest case for that option; the last bullet is always the cost. The option you'd pick is marked ` — my pick` on its bolded line, not with a separate marker. Options under one question are mutually exclusive; when two could sensibly combine, write the combination as its own lettered option rather than leaving it for the reader to compose.
 
-**The carrier.** An option set goes out as one Canvas card (`canvas post`), not as chat prose. The card opens with the decision in prose, then each option under its letter (`1A`, `1B`) with its best argument and its cost in the same block, rendered where the option has a visual or structural form. Chat carries only the closing reply line below — never the card's URL. If `canvas post` fails, retry once, then write the set in chat and say the card failed.
+**The carrier.** An option set is written in chat. When the options are visual or structural — UI states, layouts, diagrams, renders — it goes out as one Canvas card (`canvas post`) instead: the decision in prose, then each option under its letter (`1A`, `1B`) with its best argument and its cost in the same block, rendered. Chat then carries only the closing reply line below, never the card's URL. A short decision whose options read fine as text stays in chat.
 
-**Worked example** (the shape the card carries; in chat, only the last line appears):
+**Worked example:**
 
 > **1. Where does the retry count live?**
 > **1A. Add a `retry_count` column to `jobs` in `queue.db`, incremented in the worker's catch block** — *my pick*
