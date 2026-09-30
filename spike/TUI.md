@@ -151,7 +151,7 @@ below; in a dump the bar is absent, so a `.txt` is the design alone.
 ### Dumping one variant
 
 `-variant <name>` dumps just that one, **and writes unprefixed filenames**. That is what lets a
-second, exploratory variant exist without renaming the committed reference frames:
+second, exploratory variant exist without renaming the cited reference frames:
 
 ```bash
 go run . -dump -dir . -variant Settled   # commands.txt, repo.txt, … — the cited names
@@ -165,7 +165,7 @@ Phases 01–03 and 05–06 are [UI.md](UI.md)'s, unchanged — scope to one scre
 variant, present the set and let the user choose. UI.md's Phase 05 points to
 [`CONTRACT.md`](CONTRACT.md) "Before handing it over" for hand-off — that pass is HTML/browser-only
 (screenshot, contrast check, the Tweaks panel) and does not apply here; this file's own "Verification"
-and "Frames as committed reference" sections are the TUI hand-off. Two things differ:
+and "Frames as reference" sections are the TUI hand-off. Two things differ:
 
 **Recon reads the tests, not a stylesheet.** A Go TUI's design rules are usually pinned as assertions
 rather than written down. Find them before designing: a parity or layout test naming a palette, a
@@ -176,11 +176,11 @@ program and look at it for anything the assertion cannot see — colour that van
 a column rule that stops mid-frame, a selection marker that shifts its row off its neighbours. All
 three of those shipped past a green dump.
 
-## Frames as committed reference
+## Frames as reference
 
-`-dump` is what lets tickets cite a design. A frame is a fixed target an agent can compare against and
-you can read without launching anything, and it is checked into `docs/spikes/<slug>/` beside the build
-per SKILL.md's "Tickets from a prototype" — including its step 3, the delete-me issue.
+`-dump` is what lets a design be read without launching anything. A frame is a fixed target to compare
+against; it stays in `/private/tmp/claude/<repo-slug>/spikes/<slug>/` and is shown per
+[CONTRACT.md](CONTRACT.md) rule 10. Nothing is committed ([LIFECYCLE.md](LIFECYCLE.md)).
 
 **The frames are dumps of the running program, never hand-written strings.** Hand-written frames drift
 from the prototype they claim to depict, silently, and nothing catches it.

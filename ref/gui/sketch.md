@@ -5,7 +5,7 @@ layout decisions; emit a sibling empty Monodraw stub on disk so the user can dra
 visually if the ASCII proposal isn't quite right.
 
 This is the lowest rung of `spike`'s fidelity ladder ([`../../spike/SKILL.md`](../../spike/SKILL.md)):
-ASCII here, then a rendered `wireframe`, then a `prototype`.
+ASCII here (a greybox `wireframe` when proportion matters), then an image comp, then an interactive prototype.
 
 ## When to reach for sketch
 
@@ -102,8 +102,8 @@ width, how far down the page the third region sits, whether a column of numbers 
 can't show any of that honestly, so a yes/no given against ASCII would be answering a different
 question.
 
-When that's where you are, the question has outgrown ASCII. `spike` owns every fidelity above ASCII — `wireframe` (greybox, colour withheld) and
-`prototype` (working variants behind a picker). Escalating is a routing step, not a
+When that's where you are, the question has outgrown ASCII. `spike` owns every fidelity above ASCII — `wireframe` (greybox, colour withheld), then the image comp
+and the `prototype` (working variants behind a picker). Escalating is a routing step, not a
 different build: read [`spike/SKILL.md`](../../spike/SKILL.md), then build the greybox:
 
 ```bash
@@ -114,7 +114,7 @@ different build: read [`spike/SKILL.md`](../../spike/SKILL.md), then build the g
   --out /private/tmp/claude/<repo-slug>/spikes/<slug>.html
 ```
 
-Stop at `wireframe`. Going straight to `prototype` because it looks better is how a
+Stop at `wireframe`. Going straight to a comp or `prototype` because it looks better is how a
 layout question turns into a style conversation — that jump is a decision the user makes,
 not one that happens because the tool offered it.
 

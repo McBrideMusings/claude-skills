@@ -1,6 +1,6 @@
 ---
 name: spike
-description: "Build a throwaway prototype to settle a design or technical question — an ASCII layout sketch, UI variations behind a picker, a greybox wireframe, competing TUI designs, or competing approaches measured against one fixture. 'Artifact' means a prototype built here, never a hosted page. Use to sketch a layout, prototype, mock up, wireframe, spike, or 'let me see it working first'."
+description: "Build a throwaway prototype to settle a design or technical question — an ASCII layout sketch, an image comp, a throwaway interactive UI prototype, competing TUI designs, or competing approaches measured against one fixture. 'Artifact' means a prototype built here, never a hosted page. Use to sketch a layout, prototype, mock up, wireframe, spike, or 'let me see it working first'."
 ---
 
 # spike — throwaway builds that settle a question
@@ -23,11 +23,29 @@ Hand-writing one loses the slug scheme, the Tweaks panel, the device frames — 
 
 Identify the question being answered — from the prompt, the code, or by asking if the user is around:
 
-- **"What should this look like?"** → [UI.md](UI.md). UI versions in one HTML file, picker-flipped (`spike --kind prototype`).
-- **"Where do the regions sit?"** → an ASCII sketch in chat first ([`../ref/gui/sketch.md`](../ref/gui/sketch.md)) — no build, the fastest yes/no. When the answer depends on proportion, escalate to `--kind wireframe`, a greybox — fidelity *below* a prototype. This is for one design whose open question is where things sit; genuinely different takes on density, motion, personality or interaction model are the prototype shape above, because a sketch filters on the wrong information.
+- **"What should this look like?"** → the fidelity ladder below. Start at the lowest rung that answers the question; climb only when it doesn't.
 - **"What should this terminal screen look like?"** → [TUI.md](TUI.md). Real toolkit (`spike tui`), never `--kind prototype`.
 - **"Does this logic / state model hold up?"** → [LOGIC.md](LOGIC.md). A terminal app through hard cases.
 - **"Which technical approach?"** → [COMPARE.md](COMPARE.md). Real implementations against one fixture.
+
+## The fidelity ladder — UI questions
+
+Three rungs. Nothing from any rung is committed to a project's tracked tree. Each rung shows its
+result the way [CONTRACT.md](CONTRACT.md) rule 10 says.
+
+| Rung | Answers | Start here when | Build |
+| --- | --- | --- | --- |
+| 1. ASCII sketch | Where the regions sit | Arrangement is the open question | In chat, per [`../ref/gui/sketch.md`](../ref/gui/sketch.md) — no build. When the answer depends on proportion, a greybox: `--kind wireframe` |
+| 2. Image comp | What it looks like | A minor visual change, or a new screen whose look is open. **The default for a UI question** | [COMP.md](COMP.md) |
+| 3. Interactive prototype | How it behaves | A complex change, behaviour only visible under interaction, or a comp that settled nothing | [UI.md](UI.md) |
+
+Climb when the lower rung cannot answer: a sketch or greybox that cannot settle the look goes to a comp; a
+comp that cannot show a transition, a state or a real component's behaviour goes to a prototype.
+Genuinely different takes on density, motion, personality or interaction model skip the sketch —
+a sketch filters on the wrong information — and go straight to a comp set or the prototype picker.
+
+The winning comp is stored with `dsys refs add` and tickets cite that ref ([LIFECYCLE.md](LIFECYCLE.md)).
+A prototype is never stored: its answer goes into `DESIGN.md` or an ADR, and the files are deleted.
 
 Wrong shape wastes the prototype. Ambiguous and unreachable → default by subject, state the assumption.
 
@@ -56,7 +74,8 @@ The shape is the *mechanism*; the domain is the *mode of software*. Resolve per 
 
 | Open | When |
 | --- | --- |
+| [`COMP.md`](COMP.md) | Rung 2: generating, revising and storing an image comp. |
 | [`CONTRACT.md`](CONTRACT.md) | Build contract: kinds, fragments, one-device rule, naming, rules for every shape. |
 | [`EXPORT.md`](EXPORT.md) | Handing a prototype to a phone or a person outside this repo. |
-| [`LIFECYCLE.md`](LIFECYCLE.md) | Done, kept, updated-not-duplicated, cutting tickets. |
+| [`LIFECYCLE.md`](LIFECYCLE.md) | Done, what gets stored, cutting tickets, old `docs/spikes/` directories. |
 | [`CRITIQUE.md`](CRITIQUE.md) | The pass before handing a build over. |

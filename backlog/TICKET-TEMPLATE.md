@@ -35,7 +35,7 @@ Reference **types, function signatures, and behavioral contracts**. Do NOT refer
 
 **Required for any slice that renders something a person looks at. Omit the section entirely otherwise — don't leave it empty.**
 
-**Reference frame:** `docs/spikes/<slug>/<state>.png` — the frame this slice is built against, plus `docs/spikes/<slug>/index.html` for the clickable version.
+**Reference comp:** dsys ref `<ref>` (as printed by `dsys refs add`) — the comp this slice is built against. `dsys refs get <ref>` writes the PNG to scratch.
 
 **States** — every one this slice must handle, by name:
 

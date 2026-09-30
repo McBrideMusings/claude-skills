@@ -31,22 +31,16 @@ After writing, tell the user the full path so they can open it — put the path 
 
 Work from whatever is in the conversation. If the user passes an issue reference (ID, number, URL, path) as an argument, fetch it (`bd show <id> --json` on beads, `gh issue view <N>` on GitHub) and read its full body + comments.
 
-**If the source is a prototype or an explainer**, read `../spike/SKILL.md` § Tickets from a
-prototype before writing the slate. It gets committed as a directory — `docs/spikes/<slug>/`
-for a prototype or wireframe, `docs/explainers/<slug>/` for an explainer — holding the build
-**and one screenshot per named state**.
+**If the source is a spike**, read `../spike/LIFECYCLE.md` § Tickets from a spike before writing
+the slate. A spike commits nothing to the project: the winning image comp is stored with
+`dsys refs add <bead-id> <comp.png>` once the UI slice's ticket exists, and the ticket cites the
+printed ref in its design field. **If the source is an explainer**, it is committed as
+`docs/explainers/<slug>/`.
 
-**Whether the slate ends in a teardown issue depends on which kind of prototype it is**, and
-that section is the authority. An expiring prototype gets one, and it is not optional there.
-A **living** prototype — one whose README declares it the design source of truth, maintained
-ahead of the code — never gets one, because the teardown would delete the artifact the next
-slate is supposed to cite. Read the README before writing the last ticket; if it does not
-say which kind it is, ask in one line before publishing.
-
-**If the work is UI and there is no prototype yet, stop and say so.** A UI slice needs a
-reference frame to cite, and inventing the visual target inside a ticket body is how a slate
-ends up unbuildable. Point at `/spike` to build one — an ASCII sketch (`ref/gui/sketch.md`) if the question is
-only arrangement. Come back after.
+**If the work is UI and there is no winning comp yet, stop and say so.** A UI slice needs a
+reference comp to cite, and inventing the visual target inside a ticket body is how a slate
+ends up unbuildable. Point at `/spike` to make one — an ASCII sketch (`ref/gui/sketch.md`) if the
+question is only arrangement, then an image comp (`../spike/COMP.md`). Come back after.
 
 ### Phase 02 — Explore the codebase (if needed)
 
@@ -159,7 +153,7 @@ Per slice show:
 - **Blocked by** — which other slices must complete first (numeric refs for now, real issue IDs later)
 - **User stories covered** — by number, against the Phase 03 spec. Every user story must be covered by at least one slice; call out any that aren't and say why (out of scope, or a gap you missed).
 
-For a UI slice, also show its **reference frame** — the `docs/spikes/<slug>/<state>.png` it's built against — and the state names it claims to cover.
+For a UI slice, also show its **reference comp** — the dsys ref it's built against — and the state names it claims to cover.
 
 Ask, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set — one numbered question per row below, each with lettered picks (accept as shown / adjust) and your own recommendation marked:
 
@@ -243,7 +237,7 @@ Per slice:
   - **Every slice gets a `--parent`:** the milestone group's child epic ID when it belongs to
     one, otherwise the run epic ID from Phase 06 directly. A one-slice slate has no epic at all
     (see Phase 06's fallback) and omits `--parent`.
-  - **A UI slice's Visual acceptance block goes in `--design-file <path>`, not the body.** `bd show` renders design separately, so the agent gets the reference frame, the state list, and the copy strings as their own section instead of buried in prose. Write the block to a scratch file and pass the path. Non-UI slices omit the flag.
+  - **A UI slice's Visual acceptance block goes in `--design-file <path>`, not the body.** `bd show` renders design separately, so the agent gets the reference comp's dsys ref, the state list, and the copy strings as their own section instead of buried in prose. Write the block to a scratch file and pass the path. Non-UI slices omit the flag.
   - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `backlog next` and `implement` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
   - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
@@ -253,7 +247,7 @@ Per slice:
     reused there. A one-slice slate has no milestone at all (see Phase 06's fallback) and omits
     `--milestone`.
   - **GitHub has no design field**, so a UI slice keeps its Visual acceptance block as a `## Visual acceptance` section in the body. Same content, different shape — this is the one place the two backends diverge.
-  - **A `docs/spikes/` path in a GitHub issue body does not render as an image.** Cite it as a path in backticks, never as `![](…)` markdown that will show a broken image. The agent opens it from the checkout; that's the consumer that matters.
+  - **A dsys ref in a GitHub issue body does not render as an image.** Cite it as a ref in backticks, never as `![](…)` markdown that will show a broken image. The agent runs `dsys refs get <ref>` to fetch the PNG; that's the consumer that matters.
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
   - Blockers are prose only (`Blocked by #N` in the body) — GitHub has no dependency edges.
 
@@ -279,7 +273,7 @@ Issues from this skill go into AFK pipelines. The issue body is the contract.
 - **Behavioral, not procedural.** Describe **what** the system should do, not **how** to implement it. The agent will explore the codebase fresh and make its own implementation decisions.
 - **Complete acceptance criteria.** The agent needs to know when it's done. Concrete, testable, independently verifiable.
 - **Explicit scope boundaries.** State what's out of scope. Prevents gold-plating and assumption-drift.
-- **Visual work is described empirically or not at all.** A slice that renders something carries the Visual acceptance block from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md): every state named, copy verbatim, design tokens instead of raw values, one transition line per interaction, and a reference frame from `docs/spikes/<slug>/`. An agent cannot check "matches the design"; it can check that `empty` renders the string `"No sessions yet"`.
+- **Visual work is described empirically or not at all.** A slice that renders something carries the Visual acceptance block from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md): every state named, copy verbatim, design tokens instead of raw values, one transition line per interaction, and a reference comp cited by dsys ref. An agent cannot check "matches the design"; it can check that `empty` renders the string `"No sessions yet"`.
 
 ### Good vs bad
 

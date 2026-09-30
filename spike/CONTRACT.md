@@ -116,7 +116,7 @@ changes and the row that changes per prototype must not read as two instances of
 
 ```html
 <style>
-  /* the host project's tokens, copied — not imported */
+  /* the host project's tokens: the `dsys export` declarations, with @theme renamed :root */
   :root { --brand: #2f6df6; --radius-card: 10px; }
 </style>
 
@@ -357,8 +357,7 @@ A prototype has **one output file**, and a build replaces it:
 ```
 
 There are no rounds and nothing is carried forward. Refining is editing the fragment and building
-again over the top; earlier attempts live in git if the file is committed, and nowhere if it is not,
-which is what "throwaway" means. Keeping every attempt inside the artifact doubled its size and left
+again over the top; earlier attempts are gone, which is what "throwaway" means. Keeping every attempt inside the artifact doubled its size and left
 stale designs one click away from the current one.
 
 The controls never share a letter:
@@ -484,7 +483,7 @@ Why: a platform is an interaction model, not a width. Touch, pointer and remote-
 
 A prototype gets **one kebab-case slug naming what it is for**, and the slug is the whole filename: `wheelhouse-phone`, `settings-desktop`, `queue-backend`. Everything for it lives in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`.
 
-**There are no rounds and no versions.** A rebuild replaces the file. Earlier attempts live in git if the file is committed, and nowhere if it is not — which is correct, because a prototype is throwaway. `?v=` is the only axis in the URL, and it means variant.
+**There are no rounds and no versions.** A rebuild replaces the file. Earlier attempts are gone — which is correct, because a prototype is throwaway. `?v=` is the only axis in the URL, and it means variant.
 
 Rules:
 
@@ -498,6 +497,7 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 ## Rules for every shape
 
 1. **The artifact never lives in production files.** Everything is written under `/private/tmp/claude/<repo-slug>/spikes/<slug>/` (gitignored). No new route, no edit to an existing page, no entry added to `package.json`. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real file.
+   One exception: the throwaway `/__spike/<slug>` route of [UI.md](UI.md) lives in a linked worktree made for the spike, which is never merged or pushed and is discarded when the question is settled.
    Domain exception: a surface that can't be a file (a Roblox Place) uses the scratch surface named in its domain cell, under the same "throwaway, never production" rule.
 2. **One command, or one double-click.** UI opens directly in a browser — the `spike` build step is agent-side, and what the user gets is still a single self-contained file. Logic and compare run with the project's existing runtime straight off the path — `bun /private/tmp/claude/<repo-slug>/spikes/queue/run.ts` — never by registering a script somewhere real.
 3. **No persistence by default.** State is in memory. Persistence is what the prototype is *checking*, not something it depends on. If the question is about a DB, use a scratch file inside the prototype directory.
@@ -509,8 +509,9 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a direction wins, implement it properly in the project's stack and conventions, then delete the prototype. Never move the file into the codebase.
 10. **Show a visual prototype on Canvas.** One card with screenshots inline. A prototype that needs
     interaction adds a clickable `file://` link to its HTML under
-    `/private/tmp/claude/<repo-slug>/spikes/<slug>/`. `/private/tmp` is emptied after three untouched
-    days, so a kept spike is copied to `docs/spikes/<slug>/` first ([LIFECYCLE.md](LIFECYCLE.md)).
+    `/private/tmp/claude/<repo-slug>/spikes/<slug>/`. A worktree route has no HTML file, so its card
+    carries screenshots and chat names the dev-server URL. `/private/tmp` is emptied after three
+    untouched days and a spike is not kept: the answer is recorded ([LIFECYCLE.md](LIFECYCLE.md)).
     Canvas carries rich media only: the prototype's short questions and decisions stay in chat, and
     only a visual or structural option set goes on a card.
 11. **Variants diverge on one named axis** — structure, density, emphasis, type, or voice. Secondary
