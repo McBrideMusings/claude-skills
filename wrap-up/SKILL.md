@@ -199,6 +199,8 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 ### Step A — Resolve follow-ups (must fully settle before summarizing)
 
+**Never write "no next work" from memory.** The sentence is earned by the `relay-candidates` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. The turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
+
 Invoke the `backlog file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
 
 **HALT here and collect dispositions from the user.** Wrap-up always runs interactively — do not file, do not skip, do not proceed until the user has chosen per item.
@@ -211,7 +213,7 @@ Invoke the `backlog file` skill in Generate mode to surface candidates from this
 
 *Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work, which the closing sentence names. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now, as the first action of the ask pass and before any slate is written: run `test "${HERDR_ENV:-}" = 1 && echo relay-ok` and the tracker's open list (`bd list --status open`, or `gh issue list --state open`), print both results in chat, then rank 2–3 candidates per `relay` Step 1 so the closing sentence can name the pick. A slate written without those two outputs printed is not ready to send. When relay is unavailable, or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
+Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now, as the first action of the ask pass and before any slate is written: run `~/.claude/tools/relay-candidates <repo>` (relay availability, the open count, and every open epic's ready children; on GitHub run `gh issue list --state open` beside `test "${HERDR_ENV:-}" = 1`), print its output in chat, then rank 2–3 candidates per `relay` Step 1 so the closing sentence can name the pick. A slate written without those two outputs printed is not ready to send. When relay is unavailable, or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
