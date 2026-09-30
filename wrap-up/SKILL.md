@@ -88,6 +88,12 @@ Remove the marker (`rm -f`) as the last action of Phase 6, once Step C has lande
 branch and Step D has resolved — fired, declined, or skipped — not before. Until it is
 removed, the hook blocks the turn from ending.
 
+**One exception: a turn that ends to wait for the user.** Step A's ask ends the turn on
+purpose, and the hook cannot tell that from an abandoned pass. `rm -f` the marker
+immediately before sending the Step A slate, and `touch` it again as the first action of
+the Act pass once the user replies. The hook then guards only turns that run, never a
+turn that waits.
+
 ---
 
 ## Phase 1: Assess what was done
