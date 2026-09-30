@@ -55,6 +55,16 @@ place_pane() {
     repo_ws="$(herdr workspace list | jq -r --arg key "$common" '
       [.result.workspaces[] | select(.worktree.repo_key == $key and .worktree.is_linked_worktree == false)
        | .workspace_id][0] // empty')"
+    # `workspace list` leaves `.worktree` off some workspaces; ask each of those which
+    # repo it is the source checkout of.
+    if [ -z "$repo_ws" ]; then
+      local id
+      for id in $(herdr workspace list | jq -r '.result.workspaces[] | select(.worktree == null) | .workspace_id'); do
+        if [ "$(herdr worktree list --workspace "$id" 2>/dev/null | jq -r '.result.source.repo_key // empty')" = "$common" ]; then
+          repo_ws="$id"; break
+        fi
+      done
+    fi
     [ -n "$repo_ws" ] || echo "herdr-agent: no open workspace for repo $common — the worktree's workspace opens at top level" >&2
     opened="$(herdr worktree open ${repo_ws:+--workspace "$repo_ws"} --path "$top" --no-focus)" || {
       echo "herdr-agent: could not open a workspace for $top" >&2; return 1; }
