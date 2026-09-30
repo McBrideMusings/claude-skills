@@ -42,8 +42,8 @@ A directory holding **three files, of which you write one**:
 Inside an existing module no `go.mod` is written, so the prototype uses the project's own bubbletea
 and lipgloss rather than shadowing them.
 
-**Wire `admin prototype <slug>` in the same pass** — and a TUI target has two extra requirements
-that fail silently if missed. [ADMIN.md](ADMIN.md).
+**Show it on Canvas** — one card with screenshots of the screen inline. Rule 10 in
+[CONTRACT.md](CONTRACT.md).
 
 ## What the harness gives you
 

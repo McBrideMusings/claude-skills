@@ -60,4 +60,3 @@ The shape is the *mechanism*; the domain is the *mode of software*. Resolve per 
 | [`EXPORT.md`](EXPORT.md) | Handing a prototype to a phone or a person outside this repo. |
 | [`LIFECYCLE.md`](LIFECYCLE.md) | Done, kept, updated-not-duplicated, cutting tickets. |
 | [`CRITIQUE.md`](CRITIQUE.md) | The pass before handing a build over. |
-| [`ADMIN.md`](ADMIN.md) | Wiring `admin prototype`. |
