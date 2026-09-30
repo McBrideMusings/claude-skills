@@ -53,11 +53,17 @@ slate, one row per step, in plan order:
   Verify                       -> "Run <id> here via verify-project" once its blockers
                                   are closed                                          [run | hold]
   Land                         -> "wrap-up <id> after Verify passes"                  [hold]
-go -> work the [run] row here, to its gate; after it lands, re-run epic-plan and offer the next
+go -> work the [run] row here, to its gate; after it lands, re-run epic-plan and start the next
+      [run] row (P1 before P2, then dependency order) without asking again
 ```
 
-- **One slice at a time, in this session.** Slices in the same wave could run in parallel, but
-  `implement` still works them one after another, here.
+- **`go` on an epic plan is the ask for every ready P1/P2 slice.** Each slice is its own pass
+  and its own gate, and lands through `wrap-up`; `relay` carries the walk into a fresh context
+  for the next one, so no second `go` is needed between slices. The walk stops at a `human`
+  slice, a P3 or lower slice, a slice that fails the readiness gate, a failed check, or
+  when no ready slice is left; then it names why it stopped.
+- **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
+  still works them one after another.
 - **An epic with no open slice** still gets a plan: its Verify and Land rows are the plan (run
   Verify here, then Land). Never answer "only Verify and Land remain" with no next step.
 - **An epic with no children** is not ready for `implement`; offer `backlog spec` to break it
