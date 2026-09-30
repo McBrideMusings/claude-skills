@@ -45,6 +45,7 @@ A relay that manufactures busywork is worse than no relay. Stop conditions, chec
 in order — if any holds, **decline the relay**, say which condition fired in one
 line, and let the session end normally with the pane intact:
 
+- The session's checkout is a linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`). A worktree is confined to the task it was made for and is retired when the pass lands, and a pane's cwd is fixed, so a relay would start new work inside a checkout about to disappear. Follow-ups stay available; new work does not.
 - The tracker (`gh` or beads, whichever the repo uses) has no open items in scope.
 - Every remaining item needs the user in the loop — an HITL-labelled ticket, an open
   question, a decision, a credential, a device.
