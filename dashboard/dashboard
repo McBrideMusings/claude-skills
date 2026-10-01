@@ -72,7 +72,9 @@ def fail(msg: str):
 def slot_file(slot: str, suffix: str = ".json") -> Path:
     if not re.fullmatch(SLOT_RE, slot):
         fail(f"slot {slot!r}: use letters, digits and : . _ - (drop a leading #)")
-    return scratch_dir() / (slot.replace(":", "~") + suffix)   # "~" is outside SLOT_RE, so no two slots share a file
+    # "~" and "+" are outside SLOT_RE: "~" stands in for ":", and every per-slot sidecar
+    # ("+history.json", "+page.html") starts with "+", so no slot's files can collide.
+    return scratch_dir() / (slot.replace(":", "~") + suffix)
 
 
 def load_state(slot: str) -> dict:
@@ -129,8 +131,18 @@ def probe_implement(state: dict) -> dict:
     return live
 
 
-def probe_monitor(state: dict, slot: str) -> dict:
-    hist_path = slot_file(slot, ".history.json")
+def tone_for(p: dict, v: float) -> str | None:
+    """danger/warn when a reading crosses its threshold: *At rising, *Below falling."""
+    for level in ("danger", "warn"):
+        at, below = p.get(f"{level}At"), p.get(f"{level}Below")
+        if (at is not None and v >= at) or (below is not None and v <= below):
+            return level
+    return None
+
+
+def probe_monitor(state: dict, slot: str, record: bool) -> dict:
+    """Run every probe. Only a recording call (data, post, push) adds to the history."""
+    hist_path = slot_file(slot, "+history.json")
     try:
         history = json.loads(hist_path.read_text()) if hist_path.exists() else {}
         if not isinstance(history, dict):
@@ -157,24 +169,24 @@ def probe_monitor(state: dict, slot: str) -> dict:
             continue
         v = float(m.group())
         r["value"] = v
-        if p.get("dangerAt") is not None and v >= p["dangerAt"]:
-            r["tone"] = "danger"
-        elif p.get("warnAt") is not None and v >= p["warnAt"]:
-            r["tone"] = "warn"
-        history[label] = (history.get(label, []) + [[stamp, v]])[-HISTORY_CAP:]
-    tmp = hist_path.with_suffix(f".{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(history))
-    tmp.replace(hist_path)   # atomic, so a refresh and a push never read a half-written file
+        if tone := tone_for(p, v):
+            r["tone"] = tone
+        if record:
+            history[label] = (history.get(label, []) + [[stamp, v]])[-HISTORY_CAP:]
+    if record:
+        tmp = hist_path.with_name(f"{hist_path.name}.{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(history))
+        tmp.replace(hist_path)   # atomic, so a refresh and a push never read a half-written file
     return {"readings": readings, "history": history}
 
 
-def build_data(slot: str) -> dict:
+def build_data(slot: str, record: bool = True) -> dict:
     state = load_state(slot)
     kind = state["kind"]
     if kind == "implement":
         state["live"] = probe_implement(state)
     elif kind == "monitor":
-        state["live"] = probe_monitor(state, slot)
+        state["live"] = probe_monitor(state, slot, record)
     state["updated"] = now()
     return state
 
@@ -280,7 +292,7 @@ def refresh_command(slot: str) -> str:
 
 def cmd_post(a) -> None:
     state = build_data(a.slot)
-    page, widget = slot_file(a.slot, ".page.html"), slot_file(a.slot, ".widget.html")
+    page, widget = slot_file(a.slot, "+page.html"), slot_file(a.slot, "+widget.html")
     page.write_text(shell(state, "page"))
     widget.write_text(shell(state, "widget"))
     args = ["post", str(page), "--format", "html"]
@@ -323,7 +335,7 @@ def main() -> None:
     if a.verb == "path":
         print(slot_file(a.slot))
     elif a.verb in ("page", "widget"):
-        print(shell(build_data(a.slot), a.verb))
+        print(shell(build_data(a.slot, record=False), a.verb))
     elif a.verb == "data":
         print(json.dumps(build_data(a.slot)))
     else:

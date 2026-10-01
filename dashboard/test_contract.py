@@ -86,7 +86,7 @@ class TestScriptBehaviour(unittest.TestCase):
         self.assertEqual(r["bad"]["error"], "boom")
         self.assertEqual(r["hot"]["tone"], "danger")
         D.build_data("monitor:t")
-        hist = json.loads(D.slot_file("monitor:t", ".history.json").read_text())
+        hist = json.loads(D.slot_file("monitor:t", "+history.json").read_text())
         self.assertEqual(len(hist["ok"]), 2)
 
     def test_page_and_widget_embed_state_and_kind_renderer(self):
@@ -184,7 +184,7 @@ class TestScriptBehaviour(unittest.TestCase):
 
     def test_corrupt_history_and_probe_without_cmd_do_not_crash(self):
         self.write("monitor:h", {"kind": "monitor", "title": "h", "probes": [{"label": "nocmd"}]})
-        D.slot_file("monitor:h", ".history.json").write_text("{not json")
+        D.slot_file("monitor:h", "+history.json").write_text("{not json")
         r = D.build_data("monitor:h")["live"]["readings"][0]
         self.assertEqual(r["error"], "probe has no cmd")
 
@@ -195,6 +195,26 @@ class TestScriptBehaviour(unittest.TestCase):
 
     def test_slots_that_differ_only_by_colon_get_different_files(self):
         self.assertNotEqual(D.slot_file("a:b"), D.slot_file("a__b"))
+
+    def test_no_slot_state_file_is_another_slots_history(self):
+        self.assertNotEqual(D.slot_file("monitor:disk.history"), D.slot_file("monitor:disk", "+history.json"))
+
+    def test_below_thresholds_turn_falling_readings_amber_and_red(self):
+        self.write("monitor:free", {"kind": "monitor", "title": "f", "probes": [
+            {"label": "low", "cmd": "echo 15", "warnBelow": 50, "dangerBelow": 20},
+            {"label": "mid", "cmd": "echo 40", "warnBelow": 50, "dangerBelow": 20},
+            {"label": "ok", "cmd": "echo 90", "warnBelow": 50, "dangerBelow": 20}]})
+        r = {x["label"]: x.get("tone") for x in D.build_data("monitor:free")["live"]["readings"]}
+        self.assertEqual(r, {"low": "danger", "mid": "warn", "ok": None})
+
+    def test_only_recording_calls_add_history(self):
+        self.write("monitor:r", {"kind": "monitor", "title": "r", "probes": [{"label": "n", "cmd": "echo 1"}]})
+        D.build_data("monitor:r", record=False)
+        self.assertFalse(D.slot_file("monitor:r", "+history.json").exists())
+        D.build_data("monitor:r")
+        D.build_data("monitor:r", record=False)
+        hist = json.loads(D.slot_file("monitor:r", "+history.json").read_text())
+        self.assertEqual(len(hist["n"]), 1)
 
     def test_relative_link_and_shot_paths_are_dropped(self):
         html = D.static_html({"links": [{"path": "javascript:alert(1)"}, {"label": "no path"}, {"path": "/ok", "bytes": "12"}],
