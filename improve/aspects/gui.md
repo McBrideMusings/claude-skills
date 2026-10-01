@@ -6,6 +6,8 @@ Axis tag: `gui` — matching the `ref/gui/` label. Applicability: a UI surface e
 
 Its motion-opportunities pass ([`../../ref/gui/opportunities.md`](../../ref/gui/opportunities.md)) always runs here: absent motion is an opportunity this aspect owns and no other one looks for.
 
+The stated-personality pass (`critique.md` pass 8) is attempted on every run here: in an owned repo with a `DESIGN.md`, the critique measures the surface against that file's `## Overview`, and a finding quotes the Overview sentence it contradicts.
+
 ## Aspect-specific rules
 
 - **Every verdict is anchored to a concrete reason** — the craft lens it fails, the slop-catalog entry it matches, the motion term it's missing. "Looks dated" with no lens named is ungrounded.
