@@ -76,6 +76,7 @@ command that cannot start is a real error the user needs to see.
 | [`bootstrap.md`](bootstrap.md) | Writing or editing `admin.toml` — Phase 0 through Phase 6, the standard command layout, archetype docs. |
 | [`services.md`](services.md) | `[launchd]` always-on services — macOS, Linux, or remote over SSH. |
 | [`logging.md`](logging.md) | Env injection, `[logs]` tailing, per-command file logging, `[log_bridge]`. |
+| [`workflow.md`](workflow.md) | `kind = "workflow"` actions, `[terminal]` launcher and `locale`, worker dispatch, reaping, the Work tab. |
 | [`migrate.md`](migrate.md) | Inline code → `admin_lib`, the `pty` fix, legacy bundled `./admin`. |
 
 `archetypes/` and `references/` are unchanged; [`bootstrap.md`](bootstrap.md) says when to open them.
