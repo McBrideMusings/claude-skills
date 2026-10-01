@@ -25,7 +25,7 @@ verdict, give the verdict **and** its concrete reason — don't stop at the mech
 
 Every other lens is read through this one. Pick the register from **the requested surface, not the
 product**: a developer tool's landing page is still Persuade; a fashion house's documentation is still
-Read; a docs index is Read, not Persuade. (Impeccable, Apache-2.0.)
+Read; a docs index is Read, not Persuade.
 
 | Register | The visitor… | What outranks what |
 | --- | --- | --- |
@@ -234,7 +234,7 @@ a legitimate option to put on the table.
 ## The craft floor — checks on the built result
 
 Load these when UI is actually being *edited*, not during planning. Each is a check on what shipped,
-not on an intention. (Impeccable, Apache-2.0.) Most are already stated as lenses above; these are the
+not on an intention. Most are already stated as lenses above; these are the
 ones that get skipped:
 
 - **Depth.** A shadow carries an offset **and** a soft blur. A zero-offset coloured halo is decoration,

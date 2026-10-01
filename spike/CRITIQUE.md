@@ -3,8 +3,7 @@
 One pass. Build the whole thing, inspect it once in a batch, fix everything that round shows in one
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
 
-Adapted from Impeccable's craft floor (`pbakaus/impeccable`, Apache-2.0) and
-`ref/gui/slop.md`, narrowed to what a hermetic single-file mockup, prototype or wireframe can actually
+Adapted from `ref/gui/slop.md`, narrowed to what a hermetic single-file mockup, prototype or wireframe can actually
 get wrong.
 
 ## Look first
@@ -13,7 +12,8 @@ get wrong.
    path per cell and theme (a wireframe is one page). A prototype: shoot each variant at the
    platform's width, driving variants and tweaks through `--query` (`v=2&conn=down`: `v` and one
    param per tweak) so each shot is one command with no clicking. One batched round, not a trip
-   per surface.
+   per surface. When the cells move, also run `spike video <slug> --theme both`: it prints a
+   `.webp` (the animation) and a `-strip.png` (frames side by side) per cell and theme; open both.
 2. **Open each image.** Contrast shows on the page: read any text that looks faint against its
    ground, in both themes, and fix the value.
 

@@ -23,22 +23,31 @@ Explainers are a separate kind of document with their own tool, `explainer`.
               [--subtitle <s>] [--lang en] [--extra-css <abs.css>]
   spike shot  <slug> [--dir <abs-dir>] [--size WxH] [--scale N]
               [--theme light|dark|both] [--cell id,id] [--query q]
+  spike video  <slug> [--dir <abs-dir>] [--size WxH] [--scale N] [--theme light|dark|both]
+              [--cell id,id] [--query q] [--reduced] [--fps N] [--duration ms] [--hold ms]
+              [--strip N] [--quality Q]
   spike tui   --out <abs-dir> --title <t> [--force] [--force-gomod]
   spike kinds
   spike serve <abs-path> [--port 8000]
 """
 
 import argparse
+import base64
 import glob
+import hashlib
 import html
+import json
 import os
 import re
 import shutil
 import signal
+import socket
+import struct
 import subprocess
 import sys
 import tempfile
 import time
+import urllib.parse
 
 STORE = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 KINDS_DIR = os.path.join(STORE, "kinds")
@@ -129,7 +138,7 @@ def parse_attrs(s):
 def extract_variants(fragment):
     """Pull <template data-variant="..."> blocks out of the fragment.
 
-    Returns (variants, remainder). Each variant is a dict with name/state/motion/body/raw.
+    Returns (variants, remainder). Each variant is a dict with name/state/motion/video_duration/body/raw.
     """
     variants = []
     for m in TEMPLATE_RE.finditer(fragment):
@@ -140,6 +149,7 @@ def extract_variants(fragment):
             "name": attrs["data-variant"],
             "state": attrs.get("data-state", ""),
             "motion": "data-motion" in m.group("attrs").lower(),
+            "video_duration": attrs.get("data-video-duration"),
             "body": m.group("body"),
             "raw": m.group(0),
         })
@@ -200,6 +210,21 @@ def build_panel(variants, title, subtitle):
 
 def kebab(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def video_duration_attr(variant):
+    """The cell's `data-video-duration="MS"`: how long `spike video` records it."""
+    raw = variant["video_duration"]
+    if raw is None:
+        return ""
+    try:
+        ok = 0 < float(raw) < 600000
+    except ValueError:
+        ok = False
+    if not ok:
+        die("data-video-duration on %r must be a number of milliseconds above 0 and below 600000 (got %r)"
+            % (variant["name"], raw))
+    return ' data-video-duration="%s"' % html.escape(raw, quote=True)
 
 
 def mockup_cells(variants):
@@ -270,9 +295,9 @@ def cmd_build(args):
         cells = mockup_cells(variants)
         css.append(read(os.path.join(KINDS_DIR, "mockup.css")))
         body = "%s\n<div id=\"mk\">\n%s\n</div>" % (remainder.strip(), "\n".join(
-            '<div class="mk-cell" id="%s" data-variant="%s" data-state="%s">\n%s\n</div>'
+            '<div class="mk-cell" id="%s" data-variant="%s" data-state="%s"%s>\n%s\n</div>'
             % (cid, html.escape(v["name"], quote=True), html.escape(v["state"] or "default", quote=True),
-               v["body"].strip())
+               video_duration_attr(v), v["body"].strip())
             for cid, v in cells))
     else:
         css += [read(os.path.join(KINDS_DIR, "_base.css")),
@@ -489,6 +514,396 @@ def cmd_shot(args):
         print(path)
 
 
+# --- video -------------------------------------------------------------------
+
+VIDEO_DEFAULT_FPS = 30
+VIDEO_DEFAULT_HOLD_MS = 600
+VIDEO_DEFAULT_STRIP = 6
+
+# The page's clock, installed before any page script runs. It replaces performance.now,
+# Date, setTimeout, setInterval and requestAnimationFrame with a clock that moves only when
+# the recorder says so, so a script sees the same times on every run. CSS animations and
+# transitions run on the browser's own clock, which cannot be replaced: a style sheet holds
+# every CSS animation at its start from the first style calculation, a transition is paused
+# the moment a script callback creates it, and the recorder sets each one's currentTime from
+# this clock.
+VIDEO_CLOCK_JS = """(function(){
+  var now = 0, id = 0, timers = [], frames = [], started = new WeakMap(), tracked = [];
+  var RealDate = Date, base = 1700000000000, realRaf = window.requestAnimationFrame.bind(window);
+  function FakeDate(){
+    if (!(this instanceof FakeDate)) return new RealDate(base + now).toString();
+    if (arguments.length === 0) return new RealDate(base + now);
+    return Reflect.construct(RealDate, arguments, new.target);
+  }
+  FakeDate.prototype = RealDate.prototype;
+  RealDate.prototype.constructor = FakeDate;
+  FakeDate.now = function(){ return base + now; };
+  FakeDate.parse = RealDate.parse;
+  FakeDate.UTC = RealDate.UTC;
+  window.Date = FakeDate;
+  var hold = new CSSStyleSheet();
+  hold.replaceSync("*, ::before, ::after { animation-play-state: paused !important; }");
+  document.adoptedStyleSheets = [hold];
+  performance.now = function(){ return now; };
+  function addTimer(fn, ms, args, every){
+    ms = Math.max(1, +ms || 0);
+    timers.push({id: ++id, at: now + ms, ms: ms, fn: fn, args: args, every: every});
+    return id;
+  }
+  window.setTimeout = function(fn, ms){ return addTimer(fn, ms, [].slice.call(arguments, 2), false); };
+  window.setInterval = function(fn, ms){ return addTimer(fn, ms, [].slice.call(arguments, 2), true); };
+  window.clearTimeout = window.clearInterval = function(i){
+    timers = timers.filter(function(t){ return t.id !== i; });
+  };
+  window.requestAnimationFrame = function(fn){ frames.push({id: ++id, fn: fn}); return id; };
+  window.cancelAnimationFrame = function(i){
+    frames = frames.filter(function(f){ return f.id !== i; });
+  };
+  function adopt(){
+    document.getAnimations().forEach(function(a){
+      if (started.has(a)) return;
+      started.set(a, now);
+      tracked.push(a);
+      a.pause();
+    });
+  }
+  function run(fn, args){
+    try { fn.apply(window, args); } catch (e) { console.error(e); }
+    adopt();
+  }
+  window.__video = {
+    adopt: adopt,
+    step: function(to){
+      var guard = 0;
+      for (;;) {
+        var next = null;
+        timers.forEach(function(t){ if (t.at <= to && (!next || t.at < next.at)) next = t; });
+        if (!next || ++guard > 100000) break;
+        now = Math.max(now, next.at);
+        if (next.every) next.at += next.ms; else timers.splice(timers.indexOf(next), 1);
+        run(next.fn, next.args);
+      }
+      now = Math.max(now, to);
+      var due = frames;
+      frames = [];
+      due.forEach(function(f){ run(f.fn, [now]); });
+      tracked.forEach(function(a){ a.currentTime = Math.max(0, now - started.get(a)); });
+      return new Promise(function(done){ realRaf(function(){ realRaf(function(){ done(true); }); }); });
+    }
+  };
+})()"""
+
+# Called once the page has loaded: takes over every animation already running (they start at
+# 0 ms) and reports the page's size and the longest end time among the animations under the
+# root. An animation that never ends counts for one iteration.
+VIDEO_PREPARE_JS = """(function(sel){
+  var root = sel ? document.getElementById(sel) : document.documentElement;
+  window.__video.adopt();
+  var end = 0, count = 0;
+  root.getAnimations({subtree: true}).forEach(function(a){
+    count++;
+    var t = a.effect.getComputedTiming();
+    var e = isFinite(t.endTime) ? t.endTime : t.delay + t.duration;
+    if (e > end) end = e;
+  });
+  var r = document.documentElement;
+  return {count: count, end: end, declared: root.getAttribute("data-video-duration"),
+          height: r.scrollHeight, width: innerWidth};
+})(%s)"""
+
+VIDEO_STEP_JS = "window.__video.step(%s)"
+
+
+class Cdp:
+    """A Chrome DevTools Protocol client over one WebSocket, standard library only."""
+
+    def __init__(self, ws_url):
+        u = urllib.parse.urlparse(ws_url)
+        try:
+            self.sock = socket.create_connection((u.hostname, u.port), timeout=CHROME_TIMEOUT)
+        except OSError as e:
+            die("cannot reach Chrome's DevTools port: %s" % e)
+        key = base64.b64encode(os.urandom(16)).decode()
+        self.sock.sendall(("GET %s HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: websocket\r\n"
+                           "Connection: Upgrade\r\nSec-WebSocket-Key: %s\r\n"
+                           "Sec-WebSocket-Version: 13\r\n\r\n"
+                           % (u.path, u.hostname, u.port, key)).encode())
+        head = b""
+        while b"\r\n\r\n" not in head:
+            chunk = self.sock.recv(1)
+            if not chunk:
+                die("Chrome closed the DevTools connection during the handshake")
+            head += chunk
+        if b" 101 " not in head.split(b"\r\n")[0]:
+            die("Chrome refused the DevTools WebSocket: %s" % head.split(b"\r\n")[0].decode())
+        self.next_id = 0
+        self.events = []
+
+    def _read(self, n):
+        buf = b""
+        while len(buf) < n:
+            try:
+                chunk = self.sock.recv(n - len(buf))
+            except socket.timeout:
+                die("Chrome did not answer within %ds" % CHROME_TIMEOUT)
+            if not chunk:
+                die("Chrome closed the DevTools connection")
+            buf += chunk
+        return buf
+
+    def _recv(self):
+        message = b""
+        while True:
+            b1, b2 = self._read(2)
+            op, size = b1 & 0x0F, b2 & 0x7F
+            if size == 126:
+                size = struct.unpack(">H", self._read(2))[0]
+            elif size == 127:
+                size = struct.unpack(">Q", self._read(8))[0]
+            payload = self._read(size)
+            if op == 0x9:
+                continue
+            if op == 0x8:
+                die("Chrome closed the DevTools connection")
+            message += payload
+            if b1 & 0x80:
+                return json.loads(message)
+
+    def _send(self, text):
+        data = text.encode()
+        mask = os.urandom(4)
+        n = len(data)
+        head = bytes([0x81])
+        if n < 126:
+            head += bytes([0x80 | n])
+        elif n < 65536:
+            head += bytes([0x80 | 126]) + struct.pack(">H", n)
+        else:
+            head += bytes([0x80 | 127]) + struct.pack(">Q", n)
+        masked = bytes(b ^ mask[i % 4] for i, b in enumerate(data))
+        self.sock.sendall(head + mask + masked)
+
+    def call(self, method, params=None, session=None):
+        self.next_id += 1
+        msg = {"id": self.next_id, "method": method, "params": params or {}}
+        if session:
+            msg["sessionId"] = session
+        self._send(json.dumps(msg))
+        while True:
+            reply = self._recv()
+            if reply.get("id") == self.next_id:
+                if "error" in reply:
+                    die("DevTools %s failed: %s" % (method, reply["error"].get("message")))
+                return reply.get("result", {})
+            self.events.append(reply)
+
+    def wait_event(self, method, session):
+        for i, ev in enumerate(self.events):
+            if ev.get("method") == method and ev.get("sessionId") == session:
+                del self.events[i]
+                return
+        while True:
+            ev = self._recv()
+            if ev.get("method") == method and ev.get("sessionId") == session:
+                return
+            self.events.append(ev)
+
+
+def launch_chrome(chrome, profile):
+    """Start Chrome with a DevTools port; return (process, browser WebSocket URL)."""
+    cmd = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--no-first-run",
+           "--remote-debugging-port=0", "--user-data-dir=" + profile, "about:blank"]
+    err = tempfile.TemporaryFile("w+")
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err, start_new_session=True)
+    deadline = time.time() + CHROME_TIMEOUT
+    while time.time() < deadline:
+        err.seek(0)
+        m = re.search(r"DevTools listening on (ws://\S+)", err.read())
+        if m:
+            return proc, m.group(1)
+        if proc.poll() is not None:
+            break
+        time.sleep(0.1)
+    stop_chrome(proc)
+    die("Chrome did not open a DevTools port")
+
+
+def stop_chrome(proc):
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+    proc.wait()
+
+
+def require_tool(name):
+    path = shutil.which(name) or os.path.join("/opt/homebrew/bin", name)
+    if not os.path.exists(path):
+        die("`%s` is not installed, and spike video needs it to encode frames "
+            "(macOS: `brew install webp ffmpeg`)." % name)
+    return path
+
+
+def video_times(end, fps):
+    """Frame timestamps in ms from 0 to `end` inclusive, one every 1000/fps."""
+    step = 1000.0 / fps
+    n = max(1, int(round(end / step)))
+    times = [min(end, i * step) for i in range(n)]
+    times.append(float(end))
+    return times
+
+
+def video_durations(times, hold):
+    """Per-frame display time in whole ms: the gaps between timestamps, then the hold."""
+    marks = [int(round(t)) for t in times]
+    gaps = [marks[i + 1] - marks[i] for i in range(len(marks) - 1)]
+    return [max(1, g) for g in gaps] + [max(1, hold)]
+
+
+def cmd_video(args):
+    if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", args.slug):
+        die("slug %r must be kebab-case: lowercase letters, digits and single hyphens" % args.slug)
+    m = re.match(r"^(\d{2,5})\s*[x×]\s*(\d{2,5})$", args.size.strip())
+    if not m:
+        die("--size must be WxH in CSS pixels, e.g. 390x844 (got %r)" % args.size)
+    width, min_height = int(m.group(1)), int(m.group(2))
+    if args.fps < 1 or args.fps > 60:
+        die("--fps must be between 1 and 60 (got %s)" % args.fps)
+    if args.hold < 1 or (args.duration is not None and args.duration <= 0):
+        die("--hold must be at least 1 ms and --duration above 0")
+    if not 0 <= args.quality <= 100:
+        die("--quality must be between 0 and 100 (got %s)" % args.quality)
+    try:
+        float(args.scale)
+    except ValueError:
+        die("--scale must be a number (got %r)" % args.scale)
+    if args.strip < 2:
+        die("--strip must be at least 2 frames (got %s)" % args.strip)
+
+    img2webp, ffmpeg = require_tool("img2webp"), require_tool("ffmpeg")
+    out_dir = spike_dir(args.slug, args.dir)
+    page = os.path.join(out_dir, args.slug + ".html")
+    source = read(page)
+    cell_ids = CELL_RE.findall(source)
+    query = ("?" + args.query.lstrip("?")) if args.query else ""
+    if cell_ids:
+        if args.cell:
+            want = split_list(args.cell)
+            missing = [c for c in want if c not in cell_ids]
+            if missing:
+                die("no such cell %s. Cells in %s: %s"
+                    % (", ".join(missing), page, ", ".join(cell_ids)))
+            cell_ids = want
+        targets = [(cid, query + "#" + cid, "#" + cid) for cid in cell_ids]
+    else:
+        if args.cell:
+            die("%s has no mockup cells, so --cell has nothing to select" % page)
+        stem = args.slug + (("-" + kebab(args.query)) if args.query else "")
+        targets = [(stem, query, None)]
+
+    themes = ["light", "dark"] if args.theme == "both" else [args.theme]
+    chrome = find_chrome()
+    written = []
+    with tempfile.TemporaryDirectory() as profile, tempfile.TemporaryDirectory() as frames:
+        proc, ws_url = launch_chrome(chrome, profile)
+        try:
+            cdp = Cdp(ws_url)
+            for stem, suffix, selector in targets:
+                for theme in themes:
+                    suffix_name = ("-dark" if theme == "dark" else "") + ("-reduced" if args.reduced else "")
+                    base = os.path.join(out_dir, stem + suffix_name)
+                    written += video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix,
+                                        selector, theme, width, min_height, base)
+        finally:
+            stop_chrome(proc)
+    for path in written:
+        print(path)
+
+
+def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
+             width, min_height, base):
+    target = cdp.call("Target.createTarget", {"url": "about:blank"})["targetId"]
+    session = cdp.call("Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
+    try:
+        send = lambda method, params=None: cdp.call(method, params, session)
+        send("Page.enable")
+        send("Emulation.setEmulatedMedia", {"features": [
+            {"name": "prefers-color-scheme", "value": theme},
+            {"name": "prefers-reduced-motion", "value": "reduce" if args.reduced else "no-preference"}]})
+        send("Emulation.setDeviceMetricsOverride", {
+            "width": width, "height": min_height, "deviceScaleFactor": float(args.scale),
+            "mobile": False})
+        send("Page.addScriptToEvaluateOnNewDocument", {"source": VIDEO_CLOCK_JS})
+        send("Page.navigate", {"url": "file://%s%s" % (page, suffix)})
+        cdp.wait_event("Page.loadEventFired", session)
+        sel = json.dumps(selector.lstrip("#") if selector else None)
+        info = send("Runtime.evaluate", {
+            "expression": VIDEO_PREPARE_JS % sel, "returnByValue": True})["result"]["value"]
+        height = max(min_height, int(info["height"]))
+        send("Emulation.setDeviceMetricsOverride", {
+            "width": width, "height": height, "deviceScaleFactor": float(args.scale),
+            "mobile": False})
+        if args.duration is not None:
+            end = float(args.duration)
+        elif info["declared"] is not None:
+            end = float(info["declared"])
+        else:
+            end = float(info["end"])
+        times = video_times(end, args.fps) if end > 0 else [0.0]
+        if end <= 0:
+            sys.stderr.write("spike video: %s has no length: no --duration, no data-video-duration "
+                             "and no animation with a length at load, so every frame is the "
+                             "resting state%s. A page whose script drives the motion needs one "
+                             "of the first two.\n" % (os.path.basename(base),
+                             " under prefers-reduced-motion" if args.reduced else ""))
+        shot_dir = tempfile.mkdtemp(dir=frames)
+        paths = []
+        for i, t in enumerate(times):
+            send("Runtime.evaluate", {"expression": VIDEO_STEP_JS % json.dumps(t),
+                                      "awaitPromise": True, "returnByValue": True})
+            data = send("Page.captureScreenshot", {"format": "png"})["data"]
+            path = os.path.join(shot_dir, "f%04d.png" % i)
+            with open(path, "wb") as f:
+                f.write(base64.b64decode(data))
+            paths.append(path)
+    finally:
+        try:
+            cdp.call("Target.closeTarget", {"targetId": target})
+        except SystemExit:
+            pass
+
+    # Animated WebP: lossy, looping forever, gaps between timestamps, a hold on the last frame.
+    durations = video_durations(times, args.hold)
+    cmd = [img2webp, "-loop", "0", "-lossy", "-q", str(args.quality), "-m", "4"]
+    for path, d in zip(paths, durations):
+        cmd += ["-d", str(d), path]
+    webp = base + ".webp"
+    cmd += ["-o", webp]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0 or not os.path.getsize(webp):
+        die("img2webp failed: %s" % proc.stderr.strip()[-400:])
+
+    # Frame strip: --strip frames spread evenly from the first to the last, side by side.
+    n = min(args.strip, len(paths))
+    picks = sorted({int(round(i * (len(paths) - 1) / max(1, n - 1))) for i in range(n)})
+    strip = base + "-strip.png"
+    cmd = [ffmpeg, "-y", "-loglevel", "error"]
+    for i in picks:
+        cmd += ["-i", paths[i]]
+    if len(picks) == 1:
+        cmd += ["-frames:v", "1", strip]
+    else:
+        cmd += ["-filter_complex", "".join("[%d:v]" % k for k in range(len(picks)))
+                + "hstack=inputs=%d" % len(picks), "-frames:v", "1", strip]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0 or not os.path.isfile(strip):
+        die("ffmpeg failed: %s" % proc.stderr.strip()[-400:])
+    sys.stderr.write("spike video: %s — %d frame(s), %d ms, strip at %s ms\n" % (
+        os.path.basename(webp), len(paths), int(times[-1]),
+        ", ".join(str(int(round(times[i]))) for i in picks)))
+    return [webp, strip]
+
+
 def cmd_kinds(_args):
     width = max(len(k) for k in KINDS)
     for k in sorted(KINDS):
@@ -497,6 +912,10 @@ def cmd_kinds(_args):
     print("A mockup fragment is one <template data-variant=\"Name\" [data-state=\"State\"]> per cell;")
     print("`spike shot <slug>` writes one PNG per cell, named variant-state.png; a build with no")
     print("cells (wireframe, prototype) gets one PNG, with --query choosing the variant and tweaks.")
+    print()
+    print("`spike video <slug>` records each cell's motion (CSS animation and transition, and script")
+    print("timers and requestAnimationFrame) as an animated WebP plus a frame-strip PNG, named")
+    print("variant-state.webp and variant-state-strip.png.")
     print()
     print("A prototype gets the Tweaks panel; a mockup and a wireframe get nothing but the fragment.")
     print()
@@ -620,6 +1039,35 @@ def main():
     h.add_argument("--query", metavar="Q", help="URL query for a prototype or wireframe, e.g. "
                    "'v=2&conn=down' (the variant and tweak params of CONTRACT.md)")
     h.set_defaults(func=cmd_shot)
+
+    f = sub.add_parser("video", help="animated WebP and frame-strip PNG of each cell's CSS "
+                                    "animation, sampled at exact timestamps")
+    f.add_argument("slug", help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html")
+    f.add_argument("--dir", help="absolute spike directory, instead of the repo's scratch root")
+    f.add_argument("--size", default="1280x900", metavar="WxH",
+                   help="window width x minimum height in CSS pixels (default 1280x900)")
+    f.add_argument("--scale", default="1", help="device scale factor (default 1)")
+    f.add_argument("--theme", default="light", choices=["light", "dark", "both"],
+                   help="prefers-color-scheme to render under (default light)")
+    f.add_argument("--cell", metavar="ID,ID", help="only these cells (default all)")
+    f.add_argument("--query", metavar="Q", help="URL query for a build with no cells")
+    f.add_argument("--reduced", action="store_true",
+                   help="render under prefers-reduced-motion: reduce; a project that disables "
+                        "its animations there yields resting frames, which is correct")
+    f.add_argument("--fps", type=int, default=VIDEO_DEFAULT_FPS,
+                   help="frames per second, 1-60 (default %d)" % VIDEO_DEFAULT_FPS)
+    f.add_argument("--duration", type=float, metavar="MS",
+                   help="length to record in ms (default: the cell's data-video-duration, else the "
+                        "longest end time among the animations running at load)")
+    f.add_argument("--hold", type=int, default=VIDEO_DEFAULT_HOLD_MS, metavar="MS",
+                   help="how long the last frame stays before the loop restarts (default %d)"
+                        % VIDEO_DEFAULT_HOLD_MS)
+    f.add_argument("--strip", type=int, default=VIDEO_DEFAULT_STRIP, metavar="N",
+                   help="frames in the frame-strip PNG, evenly spaced (default %d)"
+                        % VIDEO_DEFAULT_STRIP)
+    f.add_argument("--quality", type=int, default=80, metavar="Q",
+                   help="lossy WebP quality 0-100 (default 80)")
+    f.set_defaults(func=cmd_video)
 
     t = sub.add_parser("tui", help="scaffold a terminal prototype (Go harness + variants stub)")
     t.add_argument("--out", required=True, help="absolute path to the prototype directory")

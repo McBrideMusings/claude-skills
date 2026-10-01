@@ -1,7 +1,7 @@
 # Amplitude — turning a surface up or down
 
 Read when the request is a **volume** change on a surface that already ships: *bolder*,
-*quieter*, *distill*, *overdrive*. Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0).
+*quieter*, *distill*, *overdrive*.
 
 Amplitude is not direction. The world is settled; the question is how loudly it speaks. If the world
 itself is wrong, that's `direction.md`, not this cell.

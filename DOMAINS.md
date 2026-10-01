@@ -140,7 +140,7 @@ accessibility) + `opportunities.md` (the **opportunity** half: the four-question
 sweep, and the required rejected-candidates section, read by `critique.md`) + `critique.md` (the
 design-quality passes run against a screenshot, which is what `improve`'s `gui` aspect loads) +
 `slop.md` (objective AI-slop banned-patterns catalog, read by `critique.md` and the
-`review`/`verify` engines; harvested from pbakaus/impeccable +
+`review`/`verify` engines; harvested from
 Leonxlnx/taste-skill) + `direction.md` (choosing the visual world: the external-dice mechanism, the
 challenger deal, the comp discipline, and the single path to image generation via `generate`) +
 `amplitude.md` (volume changes on a shipped surface — bolder, quieter, distill, overdrive) +

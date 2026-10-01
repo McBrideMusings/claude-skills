@@ -3,9 +3,10 @@
 A mockup is static HTML in the project's real CSS: several **variants**, each in several
 **states**, with no harness chrome in the output. `spike shot` screenshots every variant and
 state headless and writes PNGs. It answers "what does this look like, exactly" for a project
-that already has tokens and components. It cannot show behaviour; when the question is a
-transition, a state reached by clicking or a real component's response, climb to
-[UI.md](UI.md).
+that already has tokens and components. `spike video` does the same for motion: it plays a
+cell's motion, whether CSS animation and transition or a script on a timer, and writes an
+animated WebP and a frame-strip PNG. A mockup cannot show behaviour that needs input: a state
+reached by clicking, or a real component's response. That climbs to [UI.md](UI.md).
 
 ## Steps
 
@@ -44,6 +45,57 @@ transition, a state reached by clicking or a real component's response, climb to
    directory when the scratch root differs.
 6. **Open every PNG and look at it** ([CRITIQUE.md](CRITIQUE.md)), then show the result per
    [CONTRACT.md](CONTRACT.md) rule 10 and stop: the choice is the user's.
+
+## Recording motion
+
+When a cell's question is motion that needs no input, write it in the cell's own markup: a CSS
+`animation` or `transition`, or a script that runs on its own from `requestAnimationFrame`,
+`setTimeout`, `setInterval`, `performance.now()` or `Date.now()`. Then record it:
+
+```bash
+"$HOME/.claude/skills/spike/tool/spike" video <slug> --size 390x844 --theme both
+```
+
+For each cell and theme it prints two absolute paths: `<variant>-<state>.webp`, a looping
+animated WebP, and `<variant>-<state>-strip.png`, six frames side by side. `-dark` is appended
+for the dark scheme, `-reduced` for a `--reduced` run, before the extension.
+
+The page runs on a clock the tool controls. Before any page script runs, the tool replaces
+`performance.now`, `Date`, `setTimeout`, `setInterval` and `requestAnimationFrame` with a clock
+that starts at 0 ms on the page's first frame and moves one frame at a time, so a script sees
+the same times on every run. Each CSS animation is held at its start from the first style
+calculation, and each transition, including one a script starts later by changing a class or a
+style, is paused the moment it starts; both are set to the time since they started on that
+clock. The clock does not replace `document.timeline.currentTime`, `event.timeStamp` or
+`performance.timeOrigin`, so a script that reads those is not deterministic. Every frame is exact and two recordings of one page are byte-identical; a
+screen recording would be neither.
+
+The length is, in order: `--duration`; else `data-video-duration="MS"` on the cell's
+`<template>`; else the longest end time among the animations running at load, delay included,
+where an animation with infinite iterations counts for one. A script's motion has no end time the
+tool can read, so a cell driven by script declares its length:
+
+```html
+<template data-variant="Clock" data-state="Countdown" data-video-duration="1200">
+```
+
+A cell with no animation at load and no declared length records one resting frame and says so.
+Flags:
+
+| Flag | Meaning |
+| --- | --- |
+| `--size`, `--theme`, `--cell`, `--scale`, `--dir`, `--query` | As for `spike shot` |
+| `--reduced` | Render under `prefers-reduced-motion: reduce`. A project that disables its animations there, and declares no length, gets one resting frame and the tool says so; that is the right output. Script timers still run, so a script that should stop under reduced motion must check the media query itself |
+| `--fps N` | Frames per second, 1–60 (default 30) |
+| `--duration MS` | Record this long instead of the declared or animation length |
+| `--hold MS` | How long the last frame stays before the loop restarts (default 600) |
+| `--strip N` | Frames in the frame-strip PNG, evenly spaced from first to last (default 6) |
+| `--quality Q` | Lossy WebP quality 0–100 (default 80) |
+
+`spike video` needs `img2webp` and `ffmpeg` (`brew install webp ffmpeg`) and names the missing
+one. Open the WebP wherever it animates and the strip wherever only stills show; look at both
+([CRITIQUE.md](CRITIQUE.md)). Motion that needs a click or a hover to start is a prototype
+question: the tool cannot send input.
 
 ## What the width means
 

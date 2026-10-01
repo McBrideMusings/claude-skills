@@ -110,6 +110,77 @@ else
   say ok "Chrome absent — shot render checks skipped"
 fi
 
+echo "--- video ---"
+cat > "$WORK/anim.html" <<'EOF'
+<style>
+.pop { display: inline-block; animation: pop 400ms linear both; }
+@keyframes pop { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none; } }
+</style>
+<template data-variant="Pop" data-state="Win"><div class="pop">You won</div></template>
+EOF
+mkdir -p "$WORK/flm"
+"$ART" build --kind mockup --title F --fragment "$WORK/anim.html" --out "$WORK/flm/flm.html" >/dev/null 2>&1
+"$ART" video flm --dir "$WORK/flm" --cell nope >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "video rejects an unknown --cell" || say f "video accepted an unknown --cell"
+"$ART" video flm --dir "$WORK/flm" --fps 0 >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "video rejects --fps 0" || say f "video accepted --fps 0"
+"$ART" video flm --dir flm >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "video rejects a relative --dir" || say f "video accepted a relative --dir"
+if [ "$CHROME_OK" = 1 ] && command -v img2webp >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
+  "$ART" video flm --dir "$WORK/flm" --size 320x200 --fps 25 --theme both >"$WORK/video.out" 2>"$WORK/video.err"
+  [ "$(grep -c '^/.*\.webp$' "$WORK/video.out")" -eq 2 ] && [ "$(grep -c '^/.*-strip\.png$' "$WORK/video.out")" -eq 2 ] \
+    && say ok "video prints a WebP and a frame strip per cell and theme" || say f "video output: $(head -3 "$WORK/video.out")"
+  has "$WORK/flm/pop-win.webp" ANIM && say ok "the WebP is animated" || say f "the WebP has no ANIM chunk"
+  grep -q 'pop-win.webp — 11 frame(s), 400 ms' "$WORK/video.err" \
+    && say ok "400 ms at 25 fps is 11 frames: the length comes from the animation" || say f "video frame count: $(head -2 "$WORK/video.err")"
+  [ -s "$WORK/flm/pop-win-dark.webp" ] && [ -s "$WORK/flm/pop-win-dark-strip.png" ] \
+    && say ok "the dark theme gets its own pair" || say f "dark video files missing"
+  "$ART" video flm --dir "$WORK/flm" --size 320x200 --reduced >"$WORK/video2.out" 2>"$WORK/video2.err"
+  grep -q 'pop-win-reduced.webp — 1 frame(s)' "$WORK/video2.err" && [ -s "$WORK/flm/pop-win-reduced-strip.png" ] \
+    && say ok "--reduced records the resting state: one frame, not an error" || say f "reduced video: $(head -2 "$WORK/video2.err")"
+  grep -q 'under prefers-reduced-motion' "$WORK/video2.err" \
+    && say ok "--reduced says the frames are the resting state" || say f "reduced video did not say so"
+
+  # tile <strip> <index> <x> <y> <w> <h> [avg]: hash of one region of one 320px tile, or its mean RGB
+  tile() {
+    local vf="crop=$5:$6:$(($2 * 320 + $3)):$4"
+    if [ "${7:-}" = avg ]; then
+      ffmpeg -loglevel error -i "$1" -vf "$vf,scale=1:1" -f rawvideo -pix_fmt rgb24 - | od -An -tu1
+    else
+      ffmpeg -loglevel error -i "$1" -vf "$vf" -f md5 -
+    fi
+  }
+  mkdir -p "$WORK/sm"
+  "$ART" build --kind mockup --title SM --fragment "$TOOL/tests/fixtures/script-motion.html" --out "$WORK/sm/sm.html" >/dev/null 2>&1
+  "$ART" video sm --dir "$WORK/sm" --size 320x200 --fps 25 --strip 6 >/dev/null 2>"$WORK/sm.err"
+  S="$WORK/sm/clock-countdown-strip.png"
+  grep -q 'clock-countdown.webp — 31 frame(s), 1200 ms' "$WORK/sm.err" \
+    && say ok "a cell's data-video-duration sets the length: 1200 ms at 25 fps is 31 frames" || say f "script video frames: $(head -2 "$WORK/sm.err")"
+  [ "$(for i in 0 1 2 3 4 5; do tile "$S" $i 0 24 280 60; done | sort -u | wc -l)" -eq 6 ] \
+    && say ok "the digits a script repaints from requestAnimationFrame differ in every frame" || say f "script-driven digits repeat between frames"
+  [ "$(for i in 0 1 2 3 4 5; do tile "$S" $i 0 84 280 12; done | sort -u | wc -l)" -eq 6 ] \
+    && say ok "the bar a script scales by inline transform differs in every frame" || say f "script-driven bar repeats between frames"
+  [ "$(for i in 0 1 2 3 4 5; do tile "$S" $i 0 0 280 24; done | sort -u | wc -l)" -eq 6 ] \
+    && say ok "the CSS animation that runs on load moves in every frame" || say f "the load animation repeats between frames"
+  [ "$(for i in 0 1 2 3 4 5; do tile "$S" $i 0 96 280 20; done | sort -u | wc -l)" -eq 6 ] \
+    && say ok "text a setInterval writes from Date.now() differs in every frame" || say f "setInterval text repeats between frames"
+  first=$(tile "$S" 0 0 24 280 60 avg); last=$(tile "$S" 5 0 24 280 60 avg)
+  set -- $first; fr=$1; fg=$2
+  set -- $last; lr=$1; lg=$2
+  [ $((fr - fg)) -le 1 ] && [ $((lr - lg)) -ge 5 ] \
+    && say ok "the class the script adds part-way turns the digits red through its CSS transition" || say f "digit colour: first $first, last $last"
+  cp "$S" "$WORK/sm-first.png"; cp "$WORK/sm/clock-countdown.webp" "$WORK/sm-first.webp"
+  "$ART" video sm --dir "$WORK/sm" --size 320x200 --fps 25 --strip 6 >/dev/null 2>&1
+  cmp -s "$S" "$WORK/sm-first.png" && cmp -s "$WORK/sm/clock-countdown.webp" "$WORK/sm-first.webp" \
+    && say ok "two recordings of the same page are byte-identical" || say f "recordings differ between runs"
+  "$ART" video sm --dir "$WORK/sm" --size 320x200 --fps 25 --duration 400 >/dev/null 2>"$WORK/sm2.err"
+  grep -q 'clock-countdown.webp — 11 frame(s), 400 ms' "$WORK/sm2.err" \
+    && say ok "--duration overrides data-video-duration" || say f "--duration did not override: $(head -2 "$WORK/sm2.err")"
+else
+  say ok "Chrome, img2webp or ffmpeg absent — video render checks skipped"
+fi
+
 echo "--- prototype ---"
 cat > "$WORK/twk.html" <<'EOF'
 <template data-variant="Quiet"><div class="frame"><button>Go</button></div></template>
