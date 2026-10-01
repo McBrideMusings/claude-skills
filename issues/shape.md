@@ -273,7 +273,7 @@ Re-order what remains by leverage and continue at 3a.
 
 ## Dispatching a subagent
 
-The pattern for `fact` and `artifact` items. The subagent does the expensive building; the user does the reacting, here, in this session. This is `dispatch agent` — the default target everywhere ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) owns the ladder). Nothing here meets that ladder's bar for escalating to `split`, `workspace`, `window`, or a vendor: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
+The pattern for `fact` and `artifact` items. The subagent does the expensive building; the user does the reacting, here, in this session. This is `dispatch agent` — the default target everywhere ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) owns the ladder). Nothing here meets that ladder's bar for escalating to `workspace`, `window`, or a vendor: the work is Claude-shaped, the user is not meant to watch it, and it is expected to finish inside this session.
 
 1. **Write the brief.** A short file under `/private/tmp/claude/<repo-slug>/` capturing what the subagent can't infer from the issue body alone — decisions already made this pass, alternatives ruled out and why, the destination from the milestone brief. Note its absolute path.
 2. **Dispatch it.** Use the **Agent tool**, `run_in_background: true`, `model: "sonnet"` unless the work is genuinely heavy. The prompt: read the brief at `<absolute-path>`, read issue `<url>`, run the `research` skill (for `fact`) or the `spike` skill (for `artifact`), write the output under `/private/tmp/claude/<repo-slug>/`, and return its absolute path plus what it found. Tell it to **stop and report rather than guess** if it hits a decision the user owns.
