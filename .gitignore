@@ -24,3 +24,6 @@ __pycache__/
 # Private skills that register by name (a procedure, not a ref cell), kept out of this
 # public repo the same way. The pattern names none of them.
 /local-*/
+
+# Bundled office skills (docx, pdf, pptx, xlsx, ...) written by the harness sync. Theirs to update, not ours to track.
+synced/
