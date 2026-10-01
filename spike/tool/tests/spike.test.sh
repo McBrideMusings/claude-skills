@@ -110,6 +110,39 @@ else
   say ok "Chrome absent — shot render checks skipped"
 fi
 
+echo "--- film ---"
+cat > "$WORK/anim.html" <<'EOF'
+<style>
+.pop { display: inline-block; animation: pop 400ms linear both; }
+@keyframes pop { from { opacity: 0; transform: scale(.5); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pop { animation: none; } }
+</style>
+<template data-variant="Pop" data-state="Win"><div class="pop">You won</div></template>
+EOF
+mkdir -p "$WORK/flm"
+"$ART" build --kind mockup --title F --fragment "$WORK/anim.html" --out "$WORK/flm/flm.html" >/dev/null 2>&1
+"$ART" film flm --dir "$WORK/flm" --cell nope >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "film rejects an unknown --cell" || say f "film accepted an unknown --cell"
+"$ART" film flm --dir "$WORK/flm" --fps 0 >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "film rejects --fps 0" || say f "film accepted --fps 0"
+"$ART" film flm --dir flm >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "film rejects a relative --dir" || say f "film accepted a relative --dir"
+if [ "$CHROME_OK" = 1 ] && command -v img2webp >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
+  "$ART" film flm --dir "$WORK/flm" --size 320x200 --fps 25 --theme both >"$WORK/film.out" 2>"$WORK/film.err"
+  [ "$(grep -c '^/.*\.webp$' "$WORK/film.out")" -eq 2 ] && [ "$(grep -c '^/.*-strip\.png$' "$WORK/film.out")" -eq 2 ] \
+    && say ok "film prints a WebP and a filmstrip per cell and theme" || say f "film output: $(head -3 "$WORK/film.out")"
+  has "$WORK/flm/pop-win.webp" ANIM && say ok "the WebP is animated" || say f "the WebP has no ANIM chunk"
+  grep -q 'pop-win.webp — 11 frame(s), 400 ms' "$WORK/film.err" \
+    && say ok "400 ms at 25 fps is 11 frames: the length comes from the animation" || say f "film frame count: $(head -2 "$WORK/film.err")"
+  [ -s "$WORK/flm/pop-win-dark.webp" ] && [ -s "$WORK/flm/pop-win-dark-strip.png" ] \
+    && say ok "the dark theme gets its own pair" || say f "dark film files missing"
+  "$ART" film flm --dir "$WORK/flm" --size 320x200 --reduced >"$WORK/film2.out" 2>"$WORK/film2.err"
+  grep -q 'pop-win-reduced.webp — 1 frame(s)' "$WORK/film2.err" && [ -s "$WORK/flm/pop-win-reduced-strip.png" ] \
+    && say ok "--reduced films the resting state: one frame, not an error" || say f "reduced film: $(head -2 "$WORK/film2.err")"
+else
+  say ok "Chrome, img2webp or ffmpeg absent — film render checks skipped"
+fi
+
 echo "--- prototype ---"
 cat > "$WORK/twk.html" <<'EOF'
 <template data-variant="Quiet"><div class="frame"><button>Go</button></div></template>

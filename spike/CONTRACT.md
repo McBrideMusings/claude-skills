@@ -27,7 +27,7 @@ falling back to absolute `pwd`) and build `/private/tmp/claude/<repo-slug>/…` 
 
 | Kind | For | Output | Palette |
 |---|---|---|---|
-| `mockup` | The project's real CSS, several variants each in several states | Static; no harness chrome. `spike shot` screenshots it ([MOCKUP.md](MOCKUP.md)) | **None** — your fragment and `--extra-css` carry the project's CSS |
+| `mockup` | The project's real CSS, several variants each in several states | Static; no harness chrome. `spike shot` screenshots it and `spike film` films its CSS animation ([MOCKUP.md](MOCKUP.md)) | **None** — your fragment and `--extra-css` carry the project's CSS |
 | `prototype` | Several genuinely different working versions of one UI | Interactive; the Tweaks panel | **None** — your fragment carries the host project's tokens |
 | `wireframe` | Greybox layout: structure and hierarchy only | Static | **Withheld on purpose** — do not add colour |
 
@@ -243,7 +243,8 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
 1. Run the build; a non-zero exit means nothing was written.
 2. **Look at it.** `spike shot <slug>`, then open every PNG: one per cell of a mockup, one for a
    wireframe, and for a prototype one per variant (`--query 'v=2'`) and per tweak state
-   that matters. A path is delivery, not verification — a font falling back, an
+   that matters. When the question is motion, `spike film <slug>` and open each WebP and
+   filmstrip PNG too. A path is delivery, not verification — a font falling back, an
    overlap, or a blank variant is invisible in source.
 3. **Run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md). One batched round; fix what it finds
    in one batch and stop; it is a pass, not a loop.
