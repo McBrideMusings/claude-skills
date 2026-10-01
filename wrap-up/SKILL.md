@@ -335,6 +335,8 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 
 Landing an `implement` pass here still runs steps 9–10 above after the merge into the feature branch (or the PR, on the feature branch itself): retire the worktree, close the tracked item.
 
+Once an `implement` pass has landed, by either route, unpin its dashboard: `~/.claude/skills/dashboard/dashboard end implement:<id>`. A pass that never pinned one gets a one-line "no pin" error from it, which is fine to ignore.
+
 ### Step D — Relay into the next body of work
 
 Runs **last**, after the branch has landed and `git status` is clean. A relay clears

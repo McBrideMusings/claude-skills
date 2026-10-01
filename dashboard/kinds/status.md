@@ -1,15 +1,10 @@
----
-name: project-status
-description: "Reality check: measure a project's code against its declared vision (README, PRD, plan docs) and report where it actually stands, with evidence. Triggers: 'project status', 'reality check', 'how far along is this actually', 'what actually works'."
----
-
-# Project Status
+# dashboard status — the reality check
 
 A **reality check**: docs are the measuring stick, code is the ground truth, and the gap between them is the product. Extract the declared vision, rate each goal against the actual code, categorize the gaps, check whether the open backlog would close them, and end on a steering recommendation.
 
-Read-only. This skill writes no code, files no tickets, and edits no docs — bridging a gap is a handoff offered in the closing slate.
+Read-only on the project: it writes no code, files no tickets, and edits no docs — bridging a gap is a handoff offered in the closing slate. The one thing it writes is the dashboard's state file (Phase 05).
 
-`project-status push` runs the same assessment, then escalates the steering recommendation through ambition rounds before presenting (Phase 06).
+`dashboard status push` runs the same assessment, then escalates the steering recommendation through ambition rounds before presenting (Phase 06).
 
 ## Input
 
@@ -62,9 +57,21 @@ Present in chat, in this order:
 4. **Gaps** — each named gap with its category and who/what it hurts.
 5. **Steering recommendation** — the numbered slate (Phase 07).
 
+Then pin the result. Write the state to `"$D" path status` and run `"$D" post status --scope repo`. The repo scope keeps the card pinned after this session, until the next reality check replaces it:
+
+```ts
+{ kind: "status", title: "<repo> · status",
+  headline: string,                     // the Headline paragraph's first sentence
+  goals: {n, goal, source, status, evidence}[],   // every checklist row, statuses as rated
+  gatingGap?: string,                   // the single gating gap, if one was named
+  coverage?: string }                   // the fourth honest answer, one sentence
+```
+
+A scoped run pins to `status:<scope-slug>` instead, so it never replaces the full check.
+
 ### Phase 06 — Ambition Push (`push` mode only)
 
-Skip entirely unless invoked as `project-status push`.
+Skip entirely unless invoked as `dashboard status push`.
 
 Before presenting, run 2–3 escalation rounds over the draft steering recommendation. Each round: acknowledge what the current draft achieves, then demand dramatically more ambition, depth, and sophistication — models default to safe, obvious next steps unless pushed. Inject domain knowledge (resolve via `_detect.md`) where it sharpens a recommendation. Revise the recommendation **in place** each round — one recommendation list exists at the end, never a stack of drafts. The Vision Checklist and statuses are facts and are exempt: escalation rewrites where to steer, never what was measured.
 

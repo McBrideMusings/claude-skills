@@ -39,6 +39,8 @@ If you can't state the prediction, it's a vibe. Discard or sharpen.
 
 **Show the ranked list to the user before testing.** They often re-rank instantly ("we just deployed a change to #3") or know hypotheses they've ruled out. Don't block — proceed with your ranking if the user is AFK.
 
+Pin the list as the hypothesis board with `dashboard diagnose` ([`../dashboard/kinds/diagnose.md`](../dashboard/kinds/diagnose.md)); push each hypothesis as it is ruled in or out, and end the pin once Phase 05's fix is verified.
+
 ## Phase 04 — Instrument
 
 Each probe maps to a Phase 03 prediction. **Change one variable at a time.**

@@ -47,6 +47,8 @@ Targeted `du -sh … | sort -hr` — not a full scan of `~`. The usual big ones:
 
 Done when every category above has a number next to it or an explicit "nothing here".
 
+Then pin the survey with `dashboard monitor` as slot `monitor:disk` ([`../dashboard/kinds/monitor.md`](../dashboard/kinds/monitor.md)): every measured folder as a link, so each opens in Finder.
+
 ### 3. Confirm the safe tier, then clear it
 
 The safe tier is build artifacts and package-manager caches — things a tool rebuilds on demand. Show the user the survey list with sizes and the total it would reclaim, and take one yes for the whole tier before deleting anything. On a no, skip to step 4.
@@ -66,3 +68,5 @@ For large files worth keeping, with a drive mounted: `rsync -a` to the drive →
 ### 6. Wrap up
 
 Report what was freed immediately, what's sitting in the Trash, and what was left alone and why. Ask the user to empty the Trash, then re-run `df -h /System/Volumes/Data` and show the before/after.
+
+Re-post `monitor:disk` with the re-measured folders, then end it.

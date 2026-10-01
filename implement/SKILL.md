@@ -139,7 +139,9 @@ elsewhere, squashed by `wrap-up`.
 1. **Plan.** State the files to touch and an objective acceptance check — for a changed value,
    one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
    — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
-   gate, and it should not have been offered.
+   gate, and it should not have been offered. Then pin the pass with `dashboard implement`
+   ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
+   each step below.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
    feature that needs a design token or component `DESIGN.md` lacks adds it to `DESIGN.md` in
    the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
@@ -230,7 +232,8 @@ Close a single pass's gate with exactly this sentence (from [`../CHAT-FORMAT.md`
 
 `go` means run `wrap-up` now, in the checkout this pass worked in — bare `wrap-up` when
 standing in it, `wrap-up <worktree>` when not. `park` leaves the branch standing, records
-`bd update <id> --notes "parked at gate: <worktree-or-branch>, verified at <sha>"`, and ends
+`bd update <id> --notes "parked at gate: <worktree-or-branch>, verified at <sha>"`, runs
+`~/.claude/skills/dashboard/dashboard end implement:<id>`, and ends
 the turn — a later session finds the note and resumes at the gate.
 
 **Owner feedback at a gate starts a new round.** If the reply names a located cause with a

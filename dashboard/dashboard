@@ -1,0 +1,334 @@
+#!/usr/bin/env python3
+"""dashboard: build, pin, refresh and clear one live dashboard card.
+
+A dashboard is addressed by its slot ("implement:canvas-12", "status", "monitor:disk").
+Its state is one JSON file the caller writes; `path` prints where it lives. Every other
+verb reads that file:
+
+  dashboard path <slot>                    where the state file for <slot> lives
+  dashboard page <slot>                    the card HTML (page shell + current values)
+  dashboard widget <slot>                  the 200x104 widget HTML
+  dashboard data <slot>                    state + live probes as one JSON value
+  dashboard post <slot> [--scope session|repo] [--every SECS] [--no-pin]
+                                           write page and widget, then canvas post --pin;
+                                           --every adds a refresh that cds into this
+                                           checkout and runs `dashboard data <slot>`
+  dashboard push <slot>                    data | canvas data --slot <slot> -
+  dashboard end <slot>                     canvas unpin <slot>
+
+Failures exit 1 with one line on stderr. Log: every verb appends a timestamped line to
+<scratch>/dashboard/dashboard.log.
+"""
+
+import argparse
+import datetime as dt
+import html
+import json
+import os
+import re
+import shlex
+import signal
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose"]
+MERMAID_KINDS = {"diagram", "diagnose"}
+MERMAID_SRC = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+MERMAID_SRI = "sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
+HISTORY_CAP = 120
+PROBE_TIMEOUT = 10
+SLOT_RE = r"[A-Za-z0-9][A-Za-z0-9:._-]*"
+
+
+def now() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def scratch_dir() -> Path:
+    try:
+        out = subprocess.run([str(Path.home() / ".claude/tools/repo-slug"), "--path"],
+                             capture_output=True, text=True, timeout=PROBE_TIMEOUT)
+        base = Path(out.stdout.strip()) if out.returncode == 0 and out.stdout.strip() else None
+    except (OSError, subprocess.TimeoutExpired):
+        base = None
+    d = (base or Path("/private/tmp/claude/no-repo")) / "dashboard"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def log(msg: str) -> None:
+    with (scratch_dir() / "dashboard.log").open("a") as f:
+        f.write(f"{now()} {msg}\n")
+
+
+def fail(msg: str):
+    log(f"error {msg}")
+    print(f"dashboard: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def slot_file(slot: str, suffix: str = ".json") -> Path:
+    if not re.fullmatch(SLOT_RE, slot):
+        fail(f"slot {slot!r}: use letters, digits and : . _ - (drop a leading #)")
+    return scratch_dir() / (slot.replace(":", "~") + suffix)   # "~" is outside SLOT_RE, so no two slots share a file
+
+
+def load_state(slot: str) -> dict:
+    p = slot_file(slot)
+    if not p.exists():
+        fail(f"no state for slot {slot!r}: write it to {p} first")
+    try:
+        state = json.loads(p.read_text())
+    except json.JSONDecodeError as e:
+        fail(f"{p} is not JSON: {e}")
+    if not isinstance(state, dict) or state.get("kind") not in KINDS:
+        fail(f"{p}: \"kind\" must be one of {', '.join(KINDS)}")
+    state["slot"] = slot
+    return state
+
+
+def sh(cmd: list[str]) -> str:
+    """stdout of a read-only probe, or "" when it fails, is missing or hangs."""
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=PROBE_TIMEOUT)
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def run_probe(cmd: str) -> tuple[int, str, str]:
+    """Run a shell probe in its own process group so a timeout kills every child it started."""
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, start_new_session=True)
+    try:
+        out, err = proc.communicate(timeout=PROBE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
+        raise
+    return proc.returncode, out, err
+
+
+# ---- live probes, per kind -------------------------------------------------
+
+def probe_implement(state: dict) -> dict:
+    base = state.get("base") or next((b for b in ("origin/main", "main", "origin/master", "master")
+                                      if sh(["git", "rev-parse", "--verify", "--quiet", b])), "")
+    live = {"branch": sh(["git", "branch", "--show-current"])}
+    if base:
+        # Committed work since the fork point, plus whatever is uncommitted on top of it.
+        ranges = [[f"{base}...HEAD"], ["HEAD"]]
+        stats = " ".join(sh(["git", "diff", "--shortstat", *r]) for r in ranges)
+        files = set().union(*(sh(["git", "diff", "--name-only", *r]).splitlines() for r in ranges)) - {""}
+        live.update(diff=f"+{sum(map(int, re.findall(r'(\d+) insertion', stats)))} "
+                         f"−{sum(map(int, re.findall(r'(\d+) deletion', stats)))}",
+                    filesChanged=len(files),
+                    ahead=sh(["git", "rev-list", "--count", f"{base}..HEAD"]) or "0")
+    return live
+
+
+def probe_monitor(state: dict, slot: str) -> dict:
+    hist_path = slot_file(slot, ".history.json")
+    try:
+        history = json.loads(hist_path.read_text()) if hist_path.exists() else {}
+        if not isinstance(history, dict):
+            history = {}
+    except json.JSONDecodeError:
+        history = {}
+    stamp = dt.datetime.now().strftime("%H:%M:%S")
+    readings = []
+    for p in state.get("probes", []):
+        label = str(p.get("label") or p.get("cmd") or "probe")
+        r = {"label": label, "unit": p.get("unit", "")}
+        readings.append(r)
+        if not p.get("cmd"):
+            r["error"] = "probe has no cmd"
+            continue
+        try:
+            code, out, err = run_probe(p["cmd"])
+        except subprocess.TimeoutExpired:
+            r["error"] = f"timed out after {PROBE_TIMEOUT}s"
+            continue
+        m = re.search(r"-?\d+(?:\.\d+)?", out)
+        if code != 0 or not m:
+            r["error"] = (err.strip().splitlines() or [f"exit {code}, no number in output"])[0]
+            continue
+        v = float(m.group())
+        r["value"] = v
+        if p.get("dangerAt") is not None and v >= p["dangerAt"]:
+            r["tone"] = "danger"
+        elif p.get("warnAt") is not None and v >= p["warnAt"]:
+            r["tone"] = "warn"
+        history[label] = (history.get(label, []) + [[stamp, v]])[-HISTORY_CAP:]
+    tmp = hist_path.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(history))
+    tmp.replace(hist_path)   # atomic, so a refresh and a push never read a half-written file
+    return {"readings": readings, "history": history}
+
+
+def build_data(slot: str) -> dict:
+    state = load_state(slot)
+    kind = state["kind"]
+    if kind == "implement":
+        state["live"] = probe_implement(state)
+    elif kind == "monitor":
+        state["live"] = probe_monitor(state, slot)
+    state["updated"] = now()
+    return state
+
+
+# ---- HTML ------------------------------------------------------------------
+
+def num(v) -> float | None:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def static_html(state: dict) -> str:
+    """Links and images a host only honours when they are in the posted HTML.
+    Only absolute paths are written; anything else is dropped."""
+    parts = []
+    links = [l for l in state.get("links") or [] if isinstance(l, dict) and str(l.get("path", "")).startswith("/")]
+    if links:
+        top = max((num(l.get("bytes")) or 0) for l in links) or 1
+        rows = ""
+        for l in links:
+            size = num(l.get("bytes"))
+            rows += (f'<a href="{html.escape(l["path"])}"><span>{html.escape(str(l.get("label") or l["path"]))}</span>'
+                     f'<b>{html.escape(human(size)) if size is not None else ""}</b>'
+                     + (f'<i class="bar" style="width:{max(2, 100 * size / top):.0f}%"></i>' if size else "")
+                     + "</a>")
+        parts.append(f'<section><h2>{html.escape(str(state.get("linksTitle", "Open in Finder")))}</h2><div class="links">{rows}</div></section>')
+    shots = [v for v in state.get("variants") or [] if isinstance(v, dict) and str(v.get("shot", "")).startswith("/")]
+    if shots:
+        figs = "".join(f'<figure><img src="{html.escape(v["shot"])}" alt="{html.escape(str(v.get("name", "")))}">'
+                       f'<figcaption>{html.escape(str(v.get("name", "")))}</figcaption></figure>' for v in shots)
+        parts.append(f'<section><h2>Screenshots</h2><div class="shots">{figs}</div></section>')
+    return "".join(parts)
+
+
+def human(n: float) -> str:
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if abs(n) < 1024 or unit == "TB":
+            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
+        n /= 1024
+    return str(n)
+
+
+def scripts_for(kind: str) -> str:
+    files = ["lib.js"] + (["kinds/diagram.js"] if kind in MERMAID_KINDS else []) + ([f"kinds/{kind}.js"] if kind != "diagram" else [])
+    return "\n".join((HERE / f).read_text() for f in files)
+
+
+def shell(state: dict, mode: str) -> str:
+    kind = state["kind"]
+    data = json.dumps(state).replace("<", "\\u003c")   # no "<" at all, so no </script> or <!-- inside the script
+    mermaid = (f'<script src="{MERMAID_SRC}" integrity="{MERMAID_SRI}" crossorigin="anonymous"></script>'
+               if mode == "page" and kind in MERMAID_KINDS else "")
+    body_class = ' class="widget"' if mode == "widget" else ""
+    static = static_html(state) if mode == "page" else ""
+    return f"""<!doctype html><meta charset="utf-8"><title>{html.escape(str(state.get("title", kind)))}</title>
+<style>{(HERE / "card.css").read_text()}</style>
+<body{body_class}><div id="root"></div>{static}
+{mermaid}
+<script>
+{scripts_for(kind)}
+const MODE = {json.dumps(mode)};
+const root = document.getElementById("root");
+let drawn = 0;
+function draw(d) {{
+  const k = KINDS[d.kind];
+  if (!k) {{ root.innerHTML = `<p class="danger">Unknown dashboard kind: ${{esc(d.kind)}}</p>`; return; }}
+  const gen = ++drawn;
+  root.innerHTML = k[MODE](d);
+  if (MODE === "page" && k.after) Promise.resolve(k.after(d, root, () => gen === drawn)).catch(() => {{}});
+}}
+draw({data});
+addEventListener("message", e => {{
+  if (e.source === parent && e.data && e.data.type === "canvas-data" && e.data.value && e.data.value.kind) draw(e.data.value);
+}});
+</script></body>
+"""
+
+
+# ---- verbs -----------------------------------------------------------------
+
+def canvas(args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
+    try:
+        out = subprocess.run(["canvas", *args], input=stdin, capture_output=True, text=True, timeout=60)
+    except FileNotFoundError:
+        fail("canvas is not installed or not on PATH")
+    except subprocess.TimeoutExpired:
+        fail(f"canvas {args[0]} did not answer within 60s")
+    log(f"canvas {' '.join(args)} -> exit {out.returncode} {out.stderr.strip()[:200]}")
+    return out
+
+
+def first_line(out: subprocess.CompletedProcess) -> str:
+    return ((out.stderr.strip() or out.stdout.strip()).splitlines() or [f"exit {out.returncode}"])[0]
+
+
+def refresh_command(slot: str) -> str:
+    # The host runs this from its own directory; cd back here so `data` finds this
+    # checkout's state files and probes this checkout's git.
+    return f"cd {shlex.quote(os.getcwd())} && {shlex.quote(str(HERE / 'dashboard'))} data {shlex.quote(slot)}"
+
+
+def cmd_post(a) -> None:
+    state = build_data(a.slot)
+    page, widget = slot_file(a.slot, ".page.html"), slot_file(a.slot, ".widget.html")
+    page.write_text(shell(state, "page"))
+    widget.write_text(shell(state, "widget"))
+    args = ["post", str(page), "--format", "html"]
+    if not a.no_pin:
+        args += ["--pin", a.slot, "--pin-scope", a.scope, "--widget", str(widget)]
+        if a.every:
+            args += ["--refresh", refresh_command(a.slot), "--every", str(a.every)]
+    out = canvas(args)
+    if out.returncode != 0:
+        fail(f"canvas post failed: {first_line(out)}; the page is at {page}")
+    print(out.stdout.strip())
+
+
+def cmd_push(a) -> None:
+    out = canvas(["data", "--slot", a.slot, "-"], stdin=json.dumps(build_data(a.slot)))
+    if out.returncode != 0:
+        fail(f"canvas data failed: {first_line(out)}")
+    print(f"pushed {a.slot}")
+
+
+def cmd_end(a) -> None:
+    out = canvas(["unpin", a.slot])
+    if out.returncode != 0:
+        fail(f"canvas unpin failed: {first_line(out)}")
+    print(f"unpinned {a.slot}")
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(prog="dashboard", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="verb", required=True)
+    for verb in ("path", "page", "widget", "data", "push", "end"):
+        sub.add_parser(verb).add_argument("slot")
+    post = sub.add_parser("post")
+    post.add_argument("slot")
+    post.add_argument("--scope", choices=["session", "repo"], default="session")
+    post.add_argument("--every", type=int, help="seconds between host-run refreshes; omit to push by hand")
+    post.add_argument("--no-pin", action="store_true", help="post as an ordinary feed card")
+    a = p.parse_args()
+    log(f"{a.verb} {a.slot}")
+    if a.verb == "path":
+        print(slot_file(a.slot))
+    elif a.verb in ("page", "widget"):
+        print(shell(build_data(a.slot), a.verb))
+    elif a.verb == "data":
+        print(json.dumps(build_data(a.slot)))
+    else:
+        {"post": cmd_post, "push": cmd_push, "end": cmd_end}[a.verb](a)
+
+
+if __name__ == "__main__":
+    main()
