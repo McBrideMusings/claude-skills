@@ -23,7 +23,7 @@ Explainers are a separate kind of document with their own tool, `explainer`.
               [--subtitle <s>] [--lang en] [--extra-css <abs.css>]
   spike shot  <slug> [--dir <abs-dir>] [--size WxH] [--scale N]
               [--theme light|dark|both] [--cell id,id] [--query q]
-  spike film  <slug> [--dir <abs-dir>] [--size WxH] [--scale N] [--theme light|dark|both]
+  spike video  <slug> [--dir <abs-dir>] [--size WxH] [--scale N] [--theme light|dark|both]
               [--cell id,id] [--query q] [--reduced] [--fps N] [--duration ms] [--hold ms]
               [--strip N] [--quality Q]
   spike tui   --out <abs-dir> --title <t> [--force] [--force-gomod]
@@ -498,15 +498,15 @@ def cmd_shot(args):
         print(path)
 
 
-# --- film -------------------------------------------------------------------
+# --- video -------------------------------------------------------------------
 
-FILM_DEFAULT_FPS = 30
-FILM_DEFAULT_HOLD_MS = 600
-FILM_DEFAULT_STRIP = 6
+VIDEO_DEFAULT_FPS = 30
+VIDEO_DEFAULT_HOLD_MS = 600
+VIDEO_DEFAULT_STRIP = 6
 
 # Every animation under the root, paused where it is and sized by its own timeline. A
 # transition or animation that never ends (infinite iterations) counts for one iteration.
-FILM_PREPARE_JS = """(function(sel){
+VIDEO_PREPARE_JS = """(function(sel){
   var root = sel ? document.getElementById(sel) : document.documentElement;
   var anims = root.getAnimations({subtree: true});
   var end = 0;
@@ -516,13 +516,13 @@ FILM_PREPARE_JS = """(function(sel){
     var e = isFinite(t.endTime) ? t.endTime : t.delay + t.duration;
     if (e > end) end = e;
   });
-  window.__film = {anims: anims, end: end};
+  window.__video = {anims: anims, end: end};
   var r = document.documentElement;
   return {count: anims.length, end: end, height: r.scrollHeight, width: innerWidth};
 })(%s)"""
 
-FILM_SEEK_JS = """(function(t){
-  window.__film.anims.forEach(function(a){ a.currentTime = t; });
+VIDEO_SEEK_JS = """(function(t){
+  window.__video.anims.forEach(function(a){ a.currentTime = t; });
   return new Promise(function(done){
     requestAnimationFrame(function(){ requestAnimationFrame(function(){ done(true); }); });
   });
@@ -654,12 +654,12 @@ def stop_chrome(proc):
 def require_tool(name):
     path = shutil.which(name) or os.path.join("/opt/homebrew/bin", name)
     if not os.path.exists(path):
-        die("`%s` is not installed, and spike film needs it to encode frames "
+        die("`%s` is not installed, and spike video needs it to encode frames "
             "(macOS: `brew install webp ffmpeg`)." % name)
     return path
 
 
-def film_times(end, fps):
+def video_times(end, fps):
     """Frame timestamps in ms from 0 to `end` inclusive, one every 1000/fps."""
     step = 1000.0 / fps
     n = max(1, int(round(end / step)))
@@ -668,14 +668,14 @@ def film_times(end, fps):
     return times
 
 
-def film_durations(times, hold):
+def video_durations(times, hold):
     """Per-frame display time in whole ms: the gaps between timestamps, then the hold."""
     marks = [int(round(t)) for t in times]
     gaps = [marks[i + 1] - marks[i] for i in range(len(marks) - 1)]
     return [max(1, g) for g in gaps] + [max(1, hold)]
 
 
-def cmd_film(args):
+def cmd_video(args):
     if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", args.slug):
         die("slug %r must be kebab-case: lowercase letters, digits and single hyphens" % args.slug)
     m = re.match(r"^(\d{2,5})\s*[x×]\s*(\d{2,5})$", args.size.strip())
@@ -727,7 +727,7 @@ def cmd_film(args):
                 for theme in themes:
                     suffix_name = ("-dark" if theme == "dark" else "") + ("-reduced" if args.reduced else "")
                     base = os.path.join(out_dir, stem + suffix_name)
-                    written += film_one(cdp, img2webp, ffmpeg, frames, args, page, suffix,
+                    written += video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix,
                                         selector, theme, width, min_height, base)
         finally:
             stop_chrome(proc)
@@ -735,7 +735,7 @@ def cmd_film(args):
         print(path)
 
 
-def film_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
+def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
              width, min_height, base):
     target = cdp.call("Target.createTarget", {"url": "about:blank"})["targetId"]
     session = cdp.call("Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
@@ -752,15 +752,15 @@ def film_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
         cdp.wait_event("Page.loadEventFired", session)
         sel = json.dumps(selector.lstrip("#") if selector else None)
         info = send("Runtime.evaluate", {
-            "expression": FILM_PREPARE_JS % sel, "returnByValue": True})["result"]["value"]
+            "expression": VIDEO_PREPARE_JS % sel, "returnByValue": True})["result"]["value"]
         height = max(min_height, int(info["height"]))
         send("Emulation.setDeviceMetricsOverride", {
             "width": width, "height": height, "deviceScaleFactor": float(args.scale),
             "mobile": False})
         end = float(args.duration) if args.duration is not None else float(info["end"])
-        times = film_times(end, args.fps) if end > 0 else [0.0]
+        times = video_times(end, args.fps) if end > 0 else [0.0]
         if info["count"] == 0:
-            sys.stderr.write("spike film: %s has no animations to seek%s (none defined, or all had finished "
+            sys.stderr.write("spike video: %s has no animations to seek%s (none defined, or all had finished "
                              "before the page loaded); every frame is the resting state.\n" % (os.path.basename(base),
                              " under prefers-reduced-motion" if args.reduced else ""))
             times = [0.0]
@@ -768,7 +768,7 @@ def film_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
         paths = []
         for i, t in enumerate(times):
             if info["count"]:
-                send("Runtime.evaluate", {"expression": FILM_SEEK_JS % json.dumps(t),
+                send("Runtime.evaluate", {"expression": VIDEO_SEEK_JS % json.dumps(t),
                                           "awaitPromise": True, "returnByValue": True})
             data = send("Page.captureScreenshot", {"format": "png"})["data"]
             path = os.path.join(shot_dir, "f%04d.png" % i)
@@ -782,7 +782,7 @@ def film_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
             pass
 
     # Animated WebP: lossy, looping forever, gaps between timestamps, a hold on the last frame.
-    durations = film_durations(times, args.hold)
+    durations = video_durations(times, args.hold)
     cmd = [img2webp, "-loop", "0", "-lossy", "-q", str(args.quality), "-m", "4"]
     for path, d in zip(paths, durations):
         cmd += ["-d", str(d), path]
@@ -807,7 +807,7 @@ def film_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0 or not os.path.isfile(strip):
         die("ffmpeg failed: %s" % proc.stderr.strip()[-400:])
-    sys.stderr.write("spike film: %s — %d frame(s), %d ms, strip at %s ms\n" % (
+    sys.stderr.write("spike video: %s — %d frame(s), %d ms, strip at %s ms\n" % (
         os.path.basename(webp), len(paths), int(times[-1]),
         ", ".join(str(int(round(times[i]))) for i in picks)))
     return [webp, strip]
@@ -945,7 +945,7 @@ def main():
                    "'v=2&conn=down' (the variant and tweak params of CONTRACT.md)")
     h.set_defaults(func=cmd_shot)
 
-    f = sub.add_parser("film", help="animated WebP and filmstrip PNG of each cell's CSS "
+    f = sub.add_parser("video", help="animated WebP and filmstrip PNG of each cell's CSS "
                                     "animation, sampled at exact timestamps")
     f.add_argument("slug", help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html")
     f.add_argument("--dir", help="absolute spike directory, instead of the repo's scratch root")
@@ -959,20 +959,20 @@ def main():
     f.add_argument("--reduced", action="store_true",
                    help="render under prefers-reduced-motion: reduce; a project that disables "
                         "its animations there yields resting frames, which is correct")
-    f.add_argument("--fps", type=int, default=FILM_DEFAULT_FPS,
-                   help="frames per second, 1-60 (default %d)" % FILM_DEFAULT_FPS)
+    f.add_argument("--fps", type=int, default=VIDEO_DEFAULT_FPS,
+                   help="frames per second, 1-60 (default %d)" % VIDEO_DEFAULT_FPS)
     f.add_argument("--duration", type=float, metavar="MS",
-                   help="length to film in ms (default: the longest end time among the "
+                   help="length to record in ms (default: the longest end time among the "
                         "cell's animations, delay included)")
-    f.add_argument("--hold", type=int, default=FILM_DEFAULT_HOLD_MS, metavar="MS",
+    f.add_argument("--hold", type=int, default=VIDEO_DEFAULT_HOLD_MS, metavar="MS",
                    help="how long the last frame stays before the loop restarts (default %d)"
-                        % FILM_DEFAULT_HOLD_MS)
-    f.add_argument("--strip", type=int, default=FILM_DEFAULT_STRIP, metavar="N",
+                        % VIDEO_DEFAULT_HOLD_MS)
+    f.add_argument("--strip", type=int, default=VIDEO_DEFAULT_STRIP, metavar="N",
                    help="frames in the filmstrip PNG, evenly spaced (default %d)"
-                        % FILM_DEFAULT_STRIP)
+                        % VIDEO_DEFAULT_STRIP)
     f.add_argument("--quality", type=int, default=80, metavar="Q",
                    help="lossy WebP quality 0-100 (default 80)")
-    f.set_defaults(func=cmd_film)
+    f.set_defaults(func=cmd_video)
 
     t = sub.add_parser("tui", help="scaffold a terminal prototype (Go harness + variants stub)")
     t.add_argument("--out", required=True, help="absolute path to the prototype directory")

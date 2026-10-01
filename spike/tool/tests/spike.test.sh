@@ -110,7 +110,7 @@ else
   say ok "Chrome absent — shot render checks skipped"
 fi
 
-echo "--- film ---"
+echo "--- video ---"
 cat > "$WORK/anim.html" <<'EOF'
 <style>
 .pop { display: inline-block; animation: pop 400ms linear both; }
@@ -121,26 +121,26 @@ cat > "$WORK/anim.html" <<'EOF'
 EOF
 mkdir -p "$WORK/flm"
 "$ART" build --kind mockup --title F --fragment "$WORK/anim.html" --out "$WORK/flm/flm.html" >/dev/null 2>&1
-"$ART" film flm --dir "$WORK/flm" --cell nope >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "film rejects an unknown --cell" || say f "film accepted an unknown --cell"
-"$ART" film flm --dir "$WORK/flm" --fps 0 >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "film rejects --fps 0" || say f "film accepted --fps 0"
-"$ART" film flm --dir flm >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "film rejects a relative --dir" || say f "film accepted a relative --dir"
+"$ART" video flm --dir "$WORK/flm" --cell nope >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "video rejects an unknown --cell" || say f "video accepted an unknown --cell"
+"$ART" video flm --dir "$WORK/flm" --fps 0 >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "video rejects --fps 0" || say f "video accepted --fps 0"
+"$ART" video flm --dir flm >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "video rejects a relative --dir" || say f "video accepted a relative --dir"
 if [ "$CHROME_OK" = 1 ] && command -v img2webp >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
-  "$ART" film flm --dir "$WORK/flm" --size 320x200 --fps 25 --theme both >"$WORK/film.out" 2>"$WORK/film.err"
-  [ "$(grep -c '^/.*\.webp$' "$WORK/film.out")" -eq 2 ] && [ "$(grep -c '^/.*-strip\.png$' "$WORK/film.out")" -eq 2 ] \
-    && say ok "film prints a WebP and a filmstrip per cell and theme" || say f "film output: $(head -3 "$WORK/film.out")"
+  "$ART" video flm --dir "$WORK/flm" --size 320x200 --fps 25 --theme both >"$WORK/video.out" 2>"$WORK/video.err"
+  [ "$(grep -c '^/.*\.webp$' "$WORK/video.out")" -eq 2 ] && [ "$(grep -c '^/.*-strip\.png$' "$WORK/video.out")" -eq 2 ] \
+    && say ok "video prints a WebP and a filmstrip per cell and theme" || say f "video output: $(head -3 "$WORK/video.out")"
   has "$WORK/flm/pop-win.webp" ANIM && say ok "the WebP is animated" || say f "the WebP has no ANIM chunk"
-  grep -q 'pop-win.webp — 11 frame(s), 400 ms' "$WORK/film.err" \
-    && say ok "400 ms at 25 fps is 11 frames: the length comes from the animation" || say f "film frame count: $(head -2 "$WORK/film.err")"
+  grep -q 'pop-win.webp — 11 frame(s), 400 ms' "$WORK/video.err" \
+    && say ok "400 ms at 25 fps is 11 frames: the length comes from the animation" || say f "video frame count: $(head -2 "$WORK/video.err")"
   [ -s "$WORK/flm/pop-win-dark.webp" ] && [ -s "$WORK/flm/pop-win-dark-strip.png" ] \
-    && say ok "the dark theme gets its own pair" || say f "dark film files missing"
-  "$ART" film flm --dir "$WORK/flm" --size 320x200 --reduced >"$WORK/film2.out" 2>"$WORK/film2.err"
-  grep -q 'pop-win-reduced.webp — 1 frame(s)' "$WORK/film2.err" && [ -s "$WORK/flm/pop-win-reduced-strip.png" ] \
-    && say ok "--reduced films the resting state: one frame, not an error" || say f "reduced film: $(head -2 "$WORK/film2.err")"
+    && say ok "the dark theme gets its own pair" || say f "dark video files missing"
+  "$ART" video flm --dir "$WORK/flm" --size 320x200 --reduced >"$WORK/video2.out" 2>"$WORK/video2.err"
+  grep -q 'pop-win-reduced.webp — 1 frame(s)' "$WORK/video2.err" && [ -s "$WORK/flm/pop-win-reduced-strip.png" ] \
+    && say ok "--reduced records the resting state: one frame, not an error" || say f "reduced video: $(head -2 "$WORK/video2.err")"
 else
-  say ok "Chrome, img2webp or ffmpeg absent — film render checks skipped"
+  say ok "Chrome, img2webp or ffmpeg absent — video render checks skipped"
 fi
 
 echo "--- prototype ---"

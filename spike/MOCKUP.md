@@ -3,7 +3,7 @@
 A mockup is static HTML in the project's real CSS: several **variants**, each in several
 **states**, with no harness chrome in the output. `spike shot` screenshots every variant and
 state headless and writes PNGs. It answers "what does this look like, exactly" for a project
-that already has tokens and components. `spike film` does the same for motion: it plays a
+that already has tokens and components. `spike video` does the same for motion: it plays a
 cell's CSS animations and transitions and writes an animated WebP and a filmstrip PNG. A
 mockup cannot show behaviour that needs input: a state reached by clicking, or a real
 component's response. That climbs to [UI.md](UI.md).
@@ -46,13 +46,13 @@ component's response. That climbs to [UI.md](UI.md).
 6. **Open every PNG and look at it** ([CRITIQUE.md](CRITIQUE.md)), then show the result per
    [CONTRACT.md](CONTRACT.md) rule 10 and stop: the choice is the user's.
 
-## Filming motion
+## Recording motion
 
 When a cell's question is an animation, write it as CSS `animation` or `transition` that runs
-on load, in the cell's own markup, then film it:
+on load, in the cell's own markup, then record it:
 
 ```bash
-"$HOME/.claude/skills/spike/tool/spike" film <slug> --size 390x844 --theme both
+"$HOME/.claude/skills/spike/tool/spike" video <slug> --size 390x844 --theme both
 ```
 
 For each cell and theme it prints two absolute paths: `<variant>-<state>.webp`, a looping
@@ -69,14 +69,14 @@ one. Flags:
 | `--size`, `--theme`, `--cell`, `--scale`, `--dir`, `--query` | As for `spike shot` |
 | `--reduced` | Render under `prefers-reduced-motion: reduce`. A project that disables its animations there has nothing to seek, so every frame is the resting state and the tool says so; that is the right output |
 | `--fps N` | Frames per second, 1–60 (default 30) |
-| `--duration MS` | Film this long instead of the animation's own length |
+| `--duration MS` | Record this long instead of the animation's own length |
 | `--hold MS` | How long the last frame stays before the loop restarts (default 600) |
 | `--strip N` | Frames in the filmstrip PNG, evenly spaced from first to last (default 6) |
 | `--quality Q` | Lossy WebP quality 0–100 (default 80) |
 
-`spike film` needs `img2webp` and `ffmpeg` (`brew install webp ffmpeg`) and names the missing
+`spike video` needs `img2webp` and `ffmpeg` (`brew install webp ffmpeg`) and names the missing
 one. Open the WebP wherever it animates and the strip wherever only stills show; look at both
-([CRITIQUE.md](CRITIQUE.md)). Only animations running at load are filmed: a transition that
+([CRITIQUE.md](CRITIQUE.md)). Only animations running at load are recorded: a transition that
 needs a click or a hover to start is a prototype question.
 
 ## What the width means
