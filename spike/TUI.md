@@ -42,8 +42,7 @@ A directory holding **three files, of which you write one**:
 Inside an existing module no `go.mod` is written, so the prototype uses the project's own bubbletea
 and lipgloss rather than shadowing them.
 
-**Show it on Canvas** — one card with screenshots of the screen inline. Rule 10 in
-[CONTRACT.md](CONTRACT.md).
+**Show the result** per rule 10 in [CONTRACT.md](CONTRACT.md): screenshots of the screen, by absolute path.
 
 ## What the harness gives you
 
@@ -164,7 +163,7 @@ Phases 01–03 and 05–06 are [UI.md](UI.md)'s, unchanged — scope to one scre
 (here: which ANSI slots the project already uses), name each direction and its axis, verify every
 variant, present the set and let the user choose. UI.md's Phase 05 points to
 [`CONTRACT.md`](CONTRACT.md) "Before handing it over" for hand-off — that pass is HTML/browser-only
-(screenshot, contrast check, the Tweaks panel) and does not apply here; this file's own "Verification is the dump
+(screenshot, the Tweaks panel) and does not apply here; this file's own "Verification is the dump
 plus your own eyes" paragraph and "Frames as reference" section are the TUI hand-off. Two things differ:
 
 **Recon reads the tests, not a stylesheet.** A Go TUI's design rules are usually pinned as assertions

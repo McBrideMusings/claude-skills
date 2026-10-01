@@ -4,34 +4,18 @@ One pass. Build the whole thing, inspect it once in a batch, fix everything that
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
 
 Adapted from Impeccable's craft floor (`pbakaus/impeccable`, Apache-2.0) and
-`ref/gui/slop.md`, narrowed to what a hermetic single-file prototype or wireframe can actually
+`ref/gui/slop.md`, narrowed to what a hermetic single-file mockup, prototype or wireframe can actually
 get wrong.
 
-## Measure first, then look
+## Look first
 
-The spike carries its own instruments. Use them before your eyes.
-
-1. **Contrast, both themes** (a wireframe themes; a prototype's colours come from the host project's
-   tokens, so check both there if the fragment themes them). Press `c`, read the toast, switch theme,
-   press `c` again. The target is "All N text elements pass WCAG AA" twice. Any failure names its own
-   ratio; fix the value, don't argue with the number.
-2. **Screenshot every variant, in the device frame it was built for.** A picker gets every variant;
-   anything themed gets both themes. This is one batched round, not a trip per surface.
-
-   **Use headless Chrome, not Playwright's screenshot tool.** Two separate failures make Playwright
-   the wrong instrument here: it refuses `file://` outright, and on a freshly built spike served over
-   http its `browser_take_screenshot` times out at 5000ms — every attempt, always after logging
-   "fonts loaded", with the page rendering fine and the console clean. Chrome takes the same shot in
-   one call and needs no server:
-
-   ```bash
-   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu \
-     --screenshot="<abs-out>.png" --window-size=1280,900 --hide-scrollbars "<abs-url-or-file-path>"
-   ```
-
-   It prints two `task_policy_set` errors to stderr on macOS and writes the file anyway; the line to
-   check for is `N bytes written to file`. Drive a prototype's variants and state axes through the
-   URL (`?v=`, and one param per axis) so each shot is one command with no clicking.
+1. **Screenshot every variant and state.** `spike shot <slug> --theme both` prints one absolute PNG
+   path per cell and theme (a wireframe is one page). A prototype: shoot each variant at the
+   platform's width, driving variants and tweaks through `--query` (`v=2&conn=down`: `v` and one
+   param per tweak) so each shot is one command with no clicking. One batched round, not a trip
+   per surface.
+2. **Open each image.** Contrast shows on the page: read any text that looks faint against its
+   ground, in both themes, and fix the value.
 
 ## Then read the screenshot against these
 
@@ -66,12 +50,12 @@ These never survive a critique, whatever the brief:
 - A webfont, a CDN, or any network request. The build is hermetic — this one is also a build error.
 - **Colour on a wireframe.** The whole point is withheld colour; any hue that isn't the greybox
   palette is a build the tool should have refused.
-- **A house palette on a prototype.** `prototype.css` supplies none; every colour comes from the
-  fragment's own copied tokens. A prototype that reaches for spike's own chrome colours instead of the
+- **A house palette on a prototype or mockup.** Neither kind supplies one; every colour comes from the
+  fragment's own copied tokens or the project's CSS. A build that reaches for spike's own chrome colours instead of the
   host project's is answering the wrong question.
 
 ## Stop rule
 
-When the contrast toast is clean in both themes and the list above has nothing left to fix, the pass
-is over. Print the `open` line and hand it over. Further polishing without a new finding is spend
+When every image has been read in both themes and the list above has nothing left to fix, the pass
+is over. Hand it over per CONTRACT.md rule 10. Further polishing without a new finding is spend
 without a result.

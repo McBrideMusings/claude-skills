@@ -102,8 +102,8 @@ width, how far down the page the third region sits, whether a column of numbers 
 can't show any of that honestly, so a yes/no given against ASCII would be answering a different
 question.
 
-When that's where you are, the question has outgrown ASCII. `spike` owns every fidelity above ASCII — `wireframe` (greybox, colour withheld), then the image comp
-and the `prototype` (working variants behind a picker). Escalating is a routing step, not a
+When that's where you are, the question has outgrown ASCII. `spike` owns every fidelity above ASCII — `wireframe` (greybox, colour withheld), then the image comp,
+the HTML `mockup` (the project's real CSS, variants × states, screenshotted) and the `prototype` (working variants behind a Tweaks panel). Escalating is a routing step, not a
 different build: read [`spike/SKILL.md`](../../spike/SKILL.md), then build the greybox:
 
 ```bash

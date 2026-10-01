@@ -1,47 +1,23 @@
-/* tweaks.css — the floating panel: Tweaks, Checks and Comments behind three tabs.
-
-   Supersedes rail.css. The rail was a 272px column pinned to the left edge for as long as
-   it was open, which is width the design under judgement never got — and the reason a
-   1440-wide desktop frame had to be scaled to 67% before it fit. A card that floats over
-   the folio and can be dragged out of the way costs the layout nothing.
-
-   Three tabs, because they are three questions about the same folio and each used to own a
-   surface: what am I looking at, does it pass, and what is wrong with it. Comments were a
-   second full-height column on the other side of the window; the checks were a group at the
-   bottom of the rail you had to scroll past the controls to reach.
+/* tweaks.css — the floating Tweaks card and its pill.
 
    Deliberately NOT theme-aware, like every other piece of harness chrome: the same warm
-   off-white over a light folio and over a dark one, so it always reads as the harness and
-   never as part of the design. Every colour comes from chrome.css.
+   off-white over a light prototype and over a dark one, so it always reads as the harness
+   and never as part of the design. Every colour comes from chrome.css.
 
    Two states, and the panel is only ever in one of them: the card, or the pill. Closing is
-   not hiding — the pill says "Tweaks" in the corner and brings the card back.
-
-   ONE TYPE SYSTEM, and everything in the card obeys it. It had four families, four weights
-   and two caps policies stacked in 120px of height, which reads as noise however good any
-   one line is:
-
-     family   the card's sans, everywhere. Numbers take tabular-nums, not a mono face.
-     size     12px for the title, 11.5px for every other line.
-     weight   600 for anything that NAMES a thing — title, tab, group label, control name.
-              400 for everything else — values, prose, options.
-     case     sentence. Nothing here is uppercased.
-     left     13px. Title, meta and pane content share one edge.
-
-   TWO GROUNDS, and the boundary between them is the tab strip. Everything above and
-   including the tabs is FIXED — the folio's name, which frame it is, when it was built, and
-   the tabs themselves — and it takes the lighter ground. Everything below is what the live
-   tab swapped in, and it takes the darker one. One look tells you which half of the card
-   changes when you click something. */
+   not hiding — the pill says "Tweaks" in the corner and brings the card back. */
 
 :root {
   --at-twk-w: 276px;
 }
 
+
 /* --- the card -------------------------------------------------------------- */
 
 .at-twk {
   position: fixed;
+  top: 12px;
+  right: 12px;
   z-index: 2147483645;
   width: var(--at-twk-w);
   max-height: calc(100vh - 24px);
@@ -61,28 +37,18 @@
 }
 
 :root[data-at-tweaks-collapsed] .at-twk { display: none; }
-html[data-at-embedded] .at-twk { display: none; }
 
-/* --- header: the drag handle ----------------------------------------------- */
-
-/* --- the fixed band: header, meta strip, tabs --- */
-
-.at-twk-head,
-.at-twk-meta,
-.at-twk-tabs { background: rgba(255, 255, 255, 0.42); }
+/* --- header --- */
 
 .at-twk-head {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   padding: 10px 8px 9px 13px;
-  cursor: grab;
+  background: rgba(255, 255, 255, 0.42);
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
 }
-
-.at-twk[data-dragging] .at-twk-head { cursor: grabbing; }
 
 .at-twk-titles { flex: 1; min-width: 0; }
 
@@ -122,9 +88,7 @@ html[data-at-embedded] .at-twk { display: none; }
    Two jobs, both of them the design's: the variant chooser, and any tweak whose value is a
    list of three or less. A trough with the chosen segment lifted out of it in white. Above
    three it is a dropdown instead — six segments across 250px is four characters each, which
-   is a control you have to guess at.
-
-   The tab strip deliberately does NOT use this. See "tabs" below. */
+   is a control you have to guess at. */
 
 .at-twk-seg {
   display: flex;
@@ -164,98 +128,6 @@ html[data-at-embedded] .at-twk { display: none; }
 
 .at-twk-opt:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
-/* --- the meta strip ---
-
-   Which frame this is, how far it is scaled, and when the file was built. Facts about the
-   folio rather than things you change, so they sit above the tabs and stay on screen
-   whichever tab is up. Mono, because two of the three are numbers you compare. */
-
-/* No rule above it. The header and the strip are one block of facts about the folio, and a
-   line between them cut that block in half for no reason a reader could name. */
-.at-twk-meta {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 2px;
-  padding: 8px 13px 9px;
-  color: var(--at-c-faint);
-}
-
-/* One line each, and neither wraps: these are facts to glance at, and a wrapped
-   "1440 ×\A 900" is a number you have to reassemble. */
-.at-twk-meta .at-vp-readout {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  white-space: nowrap;
-}
-
-/* The floating size bar pads this by 8px on the left, which put the device name 8px off the
-   edge every other line in the card sits on. Its BOX was aligned, which is why measuring the
-   element rather than the glyphs said the alignment was fine twice. */
-.at-twk-meta .at-vp-name { padding: 0; font-weight: 600; color: var(--at-c-dim); }
-.at-twk-meta .at-vp-size { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-
-.at-twk-meta[hidden] { display: none; }
-.at-twk-built { white-space: nowrap; color: var(--at-c-fainter); }
-
-/* --- tabs ---
-
-   NOT the segmented control. The segmented control belongs to the design under judgement —
-   a fragment declares one every time it has a three-way choice — and the tabs are the
-   harness's own furniture, permanent on every folio the tool builds. When they shared a
-   look, the row that never changes and the row that changes per prototype read as two
-   instances of one thing.
-
-   So: the last row of the fixed band, each tab taking an equal share of the width, and the
-   live one marked by a rule under its own word rather than a pill around it. Nothing a
-   fragment can declare looks like this — a declared control is always inset, in a rounded
-   trough, with a white pill. */
-
-.at-twk-tabs {
-  flex: none;
-  display: flex;
-  padding: 0 9px;
-  border-bottom: 1px solid var(--at-c-line);
-}
-
-.at-twk-tabs[hidden] { display: none; }
-
-.at-twk-tab {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  padding: 8px 4px 7px;
-  border: 0;
-  background: transparent;
-  color: var(--at-c-faint);
-  font: 600 11.5px/1.2 inherit;
-  cursor: pointer;
-  transition: color 120ms ease-out;
-}
-
-.at-twk-tab:hover { color: var(--at-c-dim); }
-.at-twk-tab[data-active] { color: var(--at-c-ink); }
-
-/* The rule sits ON the bottom border, so the live tab reads as continuous with the pane
-   below it rather than as a chip floating in a strip. */
-.at-twk-tab[data-active]::after {
-  content: "";
-  position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: -1px;
-  height: 2px;
-  background: var(--at-c-ink);
-}
-
-.at-twk-tab:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: -2px; }
-
-/* --- panes ----------------------------------------------------------------- */
-
-/* --- the switched ground: whatever the live tab put here --- */
 
 .at-twk-body {
   flex: 1;
@@ -277,11 +149,10 @@ html[data-at-embedded] .at-twk { display: none; }
   background-clip: content-box;
 }
 
-.at-twk-pane { display: flex; flex-direction: column; gap: 10px; }
-.at-twk-pane[hidden] { display: none; }
+/* The body is a column of groups. */
+.at-twk-body { display: flex; flex-direction: column; gap: 10px; }
 
-/* A group is a label plus its controls. `at-twk-group` is also the slot other harness
-   widgets add to — viewport.js puts the device readout in one. */
+/* A group is a label plus its controls. */
 .at-twk-group { display: flex; flex-direction: column; gap: 6px; }
 
 .at-twk-label {
@@ -450,7 +321,7 @@ select.at-twk-field {
 .at-twk-action:hover { background: rgba(0, 0, 0, 0.1); }
 .at-twk-action:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 1px; }
 
-/* --- replay, note, build stamp --------------------------------------------- */
+/* --- replay --------------------------------------------- */
 
 .at-twk-replay {
   width: 20px;
@@ -467,24 +338,13 @@ select.at-twk-field {
 
 .at-twk-replay:hover { background: rgba(0, 0, 0, 0.07); color: var(--at-c-ink); }
 
-/* Arbitrary prose a fragment can pin under the controls with atTweaks.note(). Rarely the
-   right answer — see CONTRACT.md — and it is not a section every prototype should carry. */
-.at-twk-note {
-  padding-top: 10px;
-  border-top: 1px solid var(--at-c-line);
-  line-height: 1.5;
-  color: var(--at-c-faint);
-}
-
-.at-twk-note b { color: var(--at-c-dim); font-weight: 600; }
-
 /* --- the pill -------------------------------------------------------------- */
 
-/* Not a .at-dock circle: a circle with a glyph would be the fourth identical button in the
-   corner, and this one has to say what it opens. It is still dragged and docked by dock.js,
-   so it snaps to an edge like the others. */
+/* A pill rather than a circle with a glyph: it has to say what it opens. */
 .at-twk-pill {
   position: fixed;
+  top: 12px;
+  right: 12px;
   z-index: 2147483645;
   display: none;
   height: 30px;
@@ -497,54 +357,14 @@ select.at-twk-field {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 20px rgba(0, 0, 0, 0.18);
   color: var(--at-c-ink);
   font: 600 11.5px/1 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
+  cursor: pointer;
 }
 
 :root[data-at-tweaks-collapsed] .at-twk-pill { display: grid; place-items: center; }
-html[data-at-embedded] .at-twk-pill { display: none !important; }
 
 .at-twk-pill:hover { background: var(--at-c-bg); }
-.at-twk-pill[data-dragging] { cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28); }
 .at-twk-pill:focus-visible { outline: 2px solid var(--at-c-sel-edge); outline-offset: 2px; }
 
-/* settings.js's fallback surfaces. Shown only when the Clipboard API is refused —
-   no permission, an insecure context, or Safari, which has no readText at all. */
-.at-twk-io-wrap {
-  position: fixed;
-  inset: 10% 6%;
-  z-index: 2147483000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--at-c-edge);
-  border-radius: 10px;
-  background: var(--at-c-panel);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
-}
-.at-twk-io-title { color: var(--at-c-ink); font-size: 13px; }
-.at-twk-io-row { display: flex; gap: 8px; justify-content: flex-end; }
-.at-twk-io {
-  flex: 1;
-  min-height: 120px;
-  padding: 8px;
-  border: 1px solid var(--at-c-edge);
-  border-radius: 6px;
-  background: var(--at-c-bg);
-  color: var(--at-c-ink);
-  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
-  resize: none;
-}
-/* The bare copy fallback has no wrapper to position it, so it places itself. */
-textarea.at-twk-io:not(.at-twk-io-wrap textarea) {
-  position: fixed;
-  inset: 12% 8%;
-  z-index: 2147483000;
-}
-
 @media print {
-  .at-twk, .at-twk-pill, .at-twk-io-wrap, .at-twk-io { display: none !important; }
+  .at-twk, .at-twk-pill { display: none !important; }
 }

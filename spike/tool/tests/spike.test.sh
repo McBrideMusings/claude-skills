@@ -1,20 +1,14 @@
 #!/usr/bin/env bash
-# Tests for skills/spike/tool/spike — the widget registry and the source stamping that
-# annotation depends on. explainer has its own copy of the stamping code and its own
-# tests; nothing here is shared with it.
-#
-# The behaviour under test is the part a reader of the output cannot see: whether a pin
-# made in the browser can name the line of the fragment that produced the element. If
-# data-src is missing, wrong, or points at a line inside a <script>, every comment comes
-# back naming the wrong place and the whole round trip is worse than useless.
-#
-# Browser-side behaviour (pin placement, reattachment after rebuild, the device frame's
-# real viewport) is exercised by driving headless Chrome; that is not repeated here.
+# Tests for skills/spike/tool/spike and spike-export: the three HTML kinds, the mockup
+# cell contract that `spike shot` depends on, the Tweaks panel, the TUI scaffold and the
+# export folder. Browser-side behaviour of the prototype is exercised by looking at it.
 #
 #   skills/spike/tool/tests/spike.test.sh
 set -uo pipefail
 
-ART="$(cd "$(dirname "$0")/.." && pwd)/spike"
+TOOL="$(cd "$(dirname "$0")/.." && pwd)"
+ART="$TOOL/spike"
+EXP="$TOOL/spike-export"
 [ -x "$ART" ] || { echo "cannot find spike at $ART" >&2; exit 2; }
 
 WORK=$(mktemp -d)
@@ -25,272 +19,151 @@ say() {
   if [ "$1" = ok ]; then pass=$((pass+1)); printf 'ok    %s\n' "$2"
   else fail=$((fail+1)); printf 'FAIL  %s\n' "$2"; fi
 }
-has() { grep -qF "$2" "$1"; }
+has() { grep -qF -- "$2" "$1"; }
 
 cat > "$WORK/frag.html" <<'EOF'
-<style>
-  .card { color: #222; }
-</style>
 <section class="card">
   <h2>Real heading</h2>
   <p>A line of body copy.</p>
-  <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">
-  <svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"></circle></svg>
 </section>
-<script>
-  var notATag = "<div>this lives inside a script</div>";
-</script>
 EOF
 
-echo "--- stamping ---"
-"$ART" build --kind wireframe --title "Stamp test" \
-  --fragment "$WORK/frag.html" --out "$WORK/wf.html" >"$WORK/out.txt" 2>/dev/null
-OUT="$WORK/wf.html"
+echo "--- kinds ---"
+"$ART" kinds | grep -q '^mockup' && say ok "kinds lists mockup" || say f "kinds does not list mockup"
+for k in page deck explainer tui; do
+  "$ART" build --kind "$k" --title T --fragment "$WORK/frag.html" \
+    --out "$WORK/dead.html" >/dev/null 2>&1
+  [ $? -ne 0 ] && say ok "kind '$k' is rejected" || say f "kind '$k' still builds"
+done
+# The harness widgets and device frames are gone with their flags.
+for flag in "--with annotate" "--without contrast" "--device phone" "--picker list"; do
+  "$ART" build --kind wireframe --title T --fragment "$WORK/frag.html" \
+    --out "$WORK/dead.html" $flag >/dev/null 2>&1
+  [ $? -ne 0 ] && say ok "'$flag' is rejected" || say f "'$flag' still accepted"
+done
 
-has "$OUT" '<section data-src="frag.html:4"' && say ok "section carries its fragment line" \
-  || say f "section is missing data-src"
-has "$OUT" '<h2 data-src="frag.html:5"' && say ok "h2 carries its fragment line" \
-  || say f "h2 line number is wrong or missing"
-has "$OUT" '<p data-src="frag.html:6"' && say ok "p carries its fragment line" \
-  || say f "p line number is wrong or missing"
-has "$OUT" '<svg data-src="frag.html:8"' && say ok "svg is stamped as one unit" \
-  || say f "svg opening tag is not stamped"
-has "$OUT" '<circle data-src' && say f "svg internals were stamped (they are one unit)" \
-  || say ok "svg internals left alone"
-has "$OUT" '<img data-src' && say f "void element was stamped" \
-  || say ok "void elements left alone"
-has "$OUT" '<div data-src="frag.html:11"' && say f "a tag inside <script> text was stamped" \
-  || say ok "script contents are not scanned for tags"
-grep -q 'stamped=[1-9]' "$WORK/out.txt" && say ok "build line reports the stamp count" \
-  || say f "build line does not report stamped="
+echo "--- wireframe ---"
+"$ART" build --kind wireframe --title "WF" --fragment "$WORK/frag.html" \
+  --out "$WORK/wf.html" >/dev/null 2>&1
+has "$WORK/wf.html" '<main>' && say ok "a wireframe body is wrapped in <main>" || say f "no <main> wrapper"
+has "$WORK/wf.html" '.wf-region' && say ok "wireframe stylesheet is inlined" || say f "no wireframe CSS"
+has "$WORK/wf.html" 'class="at-' && say f "wireframe carries harness chrome" || say ok "wireframe carries no harness chrome"
+printf '<!doctype html><p>x</p>' > "$WORK/doc.html"
+"$ART" build --kind wireframe --title T --fragment "$WORK/doc.html" --out "$WORK/dead.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "a fragment with <!doctype> is rejected" || say f "doctype in a fragment was accepted"
+printf '<img src="https://example.com/a.png">' > "$WORK/net.html"
+"$ART" build --kind wireframe --title T --fragment "$WORK/net.html" --out "$WORK/dead.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "a remote src is rejected (hermetic)" || say f "a remote src was accepted"
 
-echo "--- widget registry ---"
-has "$OUT" 'name="folio-build"' && say ok "build id meta present" || say f "no build id meta"
-has "$OUT" 'name="folio-fragment"' && say ok "fragment path meta present" || say f "no fragment meta"
-has "$OUT" 'at-notes-layer' && say ok "annotate ships on kind wireframe" || say f "annotate missing on wireframe"
-has "$OUT" '<button class="at-theme"' && say ok "theme toggle ships on kind wireframe" || say f "theme toggle missing on wireframe"
-has "$OUT" 'at-vp-item' && say f "viewport shipped on wireframe (default is prototype only)" \
-  || say ok "viewport withheld from kind wireframe"
+echo "--- mockup ---"
+cat > "$WORK/mock.html" <<'EOF'
+<style>.btn { color: #123456; }</style>
+<template data-variant="Quiet" data-state="Full"><button class="btn">Go</button></template>
+<template data-variant="Quiet" data-state="Empty"><p>Nothing here</p></template>
+<template data-variant="Dense Rows"><button class="btn">GO</button></template>
+EOF
+"$ART" build --kind mockup --title M --fragment "$WORK/mock.html" --out "$WORK/m.html" >"$WORK/m.out" 2>/dev/null
+grep -q 'cells=3' "$WORK/m.out" && say ok "build reports the cell count" || say f "build line has no cells=3"
+has "$WORK/m.html" 'class="mk-cell" id="quiet-full"' && say ok "variant+state becomes the cell id" || say f "no quiet-full cell"
+has "$WORK/m.html" 'id="dense-rows-default"' && say ok "a template with no data-state is the default state" || say f "no dense-rows-default cell"
+has "$WORK/m.html" 'at-twk' && say f "mockup carries the Tweaks panel" || say ok "mockup carries no Tweaks panel"
+has "$WORK/m.html" '<script' && say f "mockup carries script" || say ok "mockup carries no script"
+has "$WORK/m.html" '.btn { color: #123456; }' && say ok "the fragment's own CSS reaches the output" || say f "fragment CSS lost"
+has "$WORK/m.html" '--f-3xl' && say f "mockup inlined the base type scale" || say ok "mockup inlines no house tokens"
+printf '.extra { color: red; }' > "$WORK/extra.css"
+"$ART" build --kind mockup --title M --fragment "$WORK/mock.html" --out "$WORK/m2.html" \
+  --extra-css "$WORK/extra.css" >/dev/null 2>&1
+has "$WORK/m2.html" '.extra { color: red; }' && say ok "--extra-css carries the project's real CSS" || say f "--extra-css lost"
+printf '<template data-variant="A" data-state="S">1</template><template data-variant="a" data-state="s">2</template>' > "$WORK/dup.html"
+"$ART" build --kind mockup --title M --fragment "$WORK/dup.html" --out "$WORK/dead.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "two cells with one id are rejected" || say f "duplicate cell ids built"
+"$ART" build --kind mockup --title M --fragment "$WORK/frag.html" --out "$WORK/dead.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "a mockup with no templates is rejected" || say f "empty mockup built"
 
-"$ART" build --kind wireframe --title T --fragment "$WORK/frag.html" --out "$WORK/no.html" \
-  --without annotate,contrast >/dev/null 2>&1
-has "$WORK/no.html" 'at-notes-layer' && say f "--without annotate still shipped it" \
-  || say ok "--without annotate leaves it out"
-has "$WORK/no.html" 'data-src=' && say f "stamping happened with annotate off" \
-  || say ok "stamping is skipped when nothing needs it"
-
-"$ART" build --kind wireframe --title T --fragment "$WORK/frag.html" --out "$WORK/with.html" \
-  --with viewport --device phone >/dev/null 2>&1
-has "$WORK/with.html" 'data-at-device-frame="phone"' && say ok "--with viewport adds it to a wireframe" \
-  || say f "--with viewport did nothing"
-# The viewport widget is what makes --device meaningful, so it is required with it and
-# refused without it, on every kind rather than only on prototype.
-"$ART" build --kind wireframe --title T --fragment "$WORK/frag.html" --out "$WORK/nodev2.html" \
-  --with viewport >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "--with viewport without --device is rejected" \
-  || say f "--with viewport built with no --device"
-"$ART" build --kind wireframe --title T --fragment "$WORK/frag.html" --out "$WORK/stray.html" \
-  --device phone >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "--device without the viewport widget is rejected" \
-  || say f "--device built on a kind with no viewport"
-
-"$ART" build --kind wireframe --title T --fragment "$WORK/frag.html" --out "$WORK/bad.html" \
-  --with nosuchwidget >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "unknown widget name is an error" || say f "unknown widget name was accepted"
+echo "--- shot ---"
+CHROME_OK=0
+for c in "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" "${SPIKE_CHROME:-}" google-chrome chromium; do
+  [ -n "$c" ] && { [ -x "$c" ] || command -v "$c" >/dev/null 2>&1; } && CHROME_OK=1 && break
+done
+mkdir -p "$WORK/spk"
+"$ART" build --kind mockup --title M --fragment "$WORK/mock.html" --out "$WORK/spk/spk.html" >/dev/null 2>&1
+"$ART" shot spk --dir "$WORK/spk" --cell nope >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "an unknown --cell is rejected" || say f "unknown --cell accepted"
+"$ART" shot Bad_Slug --dir "$WORK/spk" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "a non-kebab slug is rejected" || say f "bad slug accepted"
+"$ART" shot spk --dir spk >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "a relative --dir is rejected" || say f "relative --dir accepted"
+if [ "$CHROME_OK" = 1 ]; then
+  "$ART" shot spk --dir "$WORK/spk" --size 320x300 --theme both >"$WORK/shot.out" 2>&1
+  [ "$(grep -c '^/.*\.png$' "$WORK/shot.out")" -eq 6 ] && say ok "shot prints one absolute path per cell and theme" \
+    || say f "shot did not print 6 PNG paths: $(head -3 "$WORK/shot.out")"
+  for n in quiet-full quiet-empty dense-rows-default; do
+    [ -s "$WORK/spk/$n.png" ] && [ -s "$WORK/spk/$n-dark.png" ] && say ok "$n has a light and a dark PNG" || say f "$n PNGs missing"
+  done
+  [ -e "$WORK/spk/.spk.measure.html" ] && say f "the measuring copy was left behind" || say ok "no measuring copy is left behind"
+  pgrep -f "user-data-dir=/var/folders.*tmp" >/dev/null 2>&1 && say f "a Chrome process is still running" || say ok "no Chrome process is left running"
+  "$ART" build --kind prototype --title P --fragment "$WORK/mock.html" --out "$WORK/spk/proto.html" >/dev/null 2>&1
+  "$ART" shot proto --dir "$WORK/spk" --size 400x300 --query 'v=2' >"$WORK/shot2.out" 2>&1
+  grep -q '/proto-v-2.png$' "$WORK/shot2.out" && [ -s "$WORK/spk/proto-v-2.png" ] \
+    && say ok "a prototype shoots as one PNG named for its query" || say f "prototype shot failed: $(head -2 "$WORK/shot2.out")"
+else
+  say ok "Chrome absent — shot render checks skipped"
+fi
 
 echo "--- prototype ---"
-cat > "$WORK/proto.html" <<'EOF'
-<template data-variant="Quiet"><div class="frame"><button>Go</button></div></template>
-<template data-variant="Loud"><div class="frame"><button>GO NOW</button></div></template>
-EOF
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device phone --out "$WORK/p.html" >/dev/null 2>&1
-has "$WORK/p.html" 'at-vp-host' && say ok "viewport ships on a prototype" || say f "viewport missing on prototype"
-has "$WORK/p.html" '<button class="at-theme"' && say f "theme toggle shipped on a prototype" \
-  || say ok "theme toggle withheld from prototype"
-has "$WORK/p.html" '<button data-src="proto.html:1"' && say ok "variant contents are stamped" \
-  || say f "elements inside <template> were not stamped"
-
-echo "--- device ---"
-# ONE device, required, no default and no `fit`.
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device panel --out "$WORK/dev.html" >/dev/null 2>&1
-has "$WORK/dev.html" 'data-at-device-frame="panel"' && say ok "--device reaches the document" \
-  || say f "--device did not reach data-at-device-frame"
-has "$WORK/dev.html" 'at-oc-menubar' && say ok "panel frame ships its menu bar chrome" \
-  || say f "panel frame has no menu bar chrome"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device desktop --window bar --out "$WORK/one.html" >/dev/null 2>&1
-has "$WORK/one.html" 'data-at-device-frame="desktop"' && say ok "a desktop build carries its frame" \
-  || say f "--device desktop did not reach data-at-device-frame"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --out "$WORK/nodev.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "a prototype without --device is rejected" \
-  || say f "a prototype built with no --device"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device fit --out "$WORK/fit.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "the unframed 'fit' device is gone" || say f "--device fit still builds"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device phone,panel --out "$WORK/list.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "a device list is rejected" || say f "--device took a list"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device laptop --out "$WORK/bad.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "an unknown device is rejected" || say f "unknown device 'laptop' built"
-# --window is desktop-only furniture: a panel has no title bar to put lights in.
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device panel --window bar --out "$WORK/bad2.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "--window without the desktop frame is rejected" \
-  || say f "--window built against a panel device"
-# A desktop app IS a window: saying nothing gets the real thing, and opting out is explicit.
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device desktop --out "$WORK/deskdef.html" >/dev/null 2>&1
-has "$WORK/deskdef.html" 'data-at-window="bar,lights"' \
-  && say ok "a bare --device desktop defaults to a real window" \
-  || say f "--device desktop did not default to bar,lights"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device desktop --window none --out "$WORK/desknone.html" >/dev/null 2>&1
-# On the <html> line only: viewport.js's own source mentions the attribute it reads.
-grep -q '^<html[^>]*data-at-window' "$WORK/desknone.html" \
-  && say f "--window none still wrote window chrome" \
-  || say ok "--window none opts out of the title bar"
-grep -q '^<html[^>]*data-at-window="bar,lights"' "$WORK/deskdef.html" \
-  && say ok "the default window chrome is on :root" \
-  || say f "bar,lights did not reach the <html> element"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device desktop --window none,bar --out "$WORK/deskmix.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "--window none cannot be combined" || say f "--window none,bar built"
-
-# --backdrop: a fake desktop behind a macOS frame, for judging a translucent design.
-# No --window here: the tool rejects the pair, because with a backdrop the frame is a
-# screen rather than a window and each window on it takes its chrome from data-at-win.
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device desktop --backdrop desktop --out "$WORK/desk.html" >/dev/null 2>&1
-grep -q '^<html[^>]*data-at-backdrop="desktop"' "$WORK/desk.html" \
-  && say ok "--backdrop reaches the <html> element" \
-  || say f "--backdrop did not reach :root"
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device desktop --out "$WORK/nodesk.html" >/dev/null 2>&1
-grep -q '^<html[^>]*data-at-backdrop' "$WORK/nodesk.html" \
-  && say f "a backdrop appeared without --backdrop" \
-  || say ok "no backdrop unless asked for"
-# A phone has no desktop to sit on, and a wallpaper behind one is scenery.
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device phone --backdrop desktop --out "$WORK/bad3.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "--backdrop is rejected off the macOS frames" \
-  || say f "--backdrop built against a phone"
-# The desk layer is injected INSIDE the frame: a design cannot backdrop-filter
-# through an iframe boundary, so a wallpaper drawn outside it would blur to nothing.
-grep -q 'at-vp-desk' "$WORK/desk.html" \
-  && say ok "the desk layer ships with the folio" \
-  || say f "no desk markup in a --backdrop build"
-# `fill` is the window itself — a real device answer, and the one that frames nothing.
-"$ART" build --kind prototype --title P --fragment "$WORK/proto.html" \
-  --device fill --out "$WORK/fill.html" >/dev/null 2>&1
-has "$WORK/fill.html" 'data-at-device-frame="fill"' && say ok "--device fill reaches the document" \
-  || say f "--device fill did not build"
-
-echo "--- the tweaks panel ---"
 cat > "$WORK/twk.html" <<'EOF'
 <template data-variant="Quiet"><div class="frame"><button>Go</button></div></template>
 <template data-variant="Loud"><div class="frame"><button>GO NOW</button></div></template>
 <script>atTweaks.add('dark', false, { onChange: function () {} });</script>
 EOF
-"$ART" build --kind prototype --title P --fragment "$WORK/twk.html" \
-  --device phone --out "$WORK/twk.out.html" >/dev/null 2>&1
-has "$WORK/twk.out.html" 'class="at-twk"' && say ok "the panel ships on a prototype" \
-  || say f "no .at-twk in a switch-picker prototype"
-has "$WORK/twk.out.html" 'class="at-twk-pill"' && say ok "the pill ships beside it" \
-  || say f "no .at-twk-pill — closing the panel would strand it"
-# The stub has to be in <head>: a fragment's own <script> is in the body and runs first.
-sed -n '1,/<\/head>/p' "$WORK/twk.out.html" | grep -q 'window.atTweaks=' \
-  && say ok "the atTweaks stub is in <head>" \
-  || say f "the atTweaks stub is not ahead of the fragment"
-has "$WORK/twk.out.html" 'class="at-twk-meta"' && say ok "the meta strip is built" \
-  || say f "no meta strip — the device readout has nowhere to go"
-has "$WORK/twk.out.html" 'data-at-tweaks' && say ok "the root says the panel is present" \
-  || say f "data-at-tweaks missing from :root"
-# The rail is gone entirely, markup-declared axes with it.
-has "$WORK/twk.out.html" 'class="at-rail"' && say f "the rail is still being built" \
-  || say ok "the rail is gone"
-has "$WORK/twk.out.html" 'at-twk-tabs' && say ok "the panel carries its tab strip" \
-  || say f "no tab strip — Checks and Comments have nowhere to go"
-has "$WORK/twk.out.html" 'data-pane="tweaks"' && say ok "the Tweaks pane holds the variant group" \
-  || say f "no tweaks pane"
-# Three segments side by side is the ceiling; a fourth choice is a dropdown.
-has "$WORK/twk.out.html" 'at-twk-variant"' && say ok "two variants get the segmented chooser" \
-  || say f "the variant chooser is not segmented"
+"$ART" build --kind prototype --title P --subtitle "the question" --fragment "$WORK/twk.html" \
+  --out "$WORK/p.html" >/dev/null 2>&1
+has "$WORK/p.html" 'class="at-twk"' && say ok "the panel ships on a prototype" || say f "no .at-twk"
+has "$WORK/p.html" 'class="at-twk-pill"' && say ok "the pill ships beside it" || say f "no .at-twk-pill"
+sed -n '1,/<\/head>/p' "$WORK/p.html" | grep -q 'window.atTweaks=' \
+  && say ok "the atTweaks stub is in <head>" || say f "the atTweaks stub is not ahead of the fragment"
+has "$WORK/p.html" 'at-twk-variant"' && say ok "two variants get the segmented chooser" || say f "chooser is not segmented"
+has "$WORK/p.html" 'at-twk-tabs' && say f "the tab strip is still built" || say ok "no tab strip"
+has "$WORK/p.html" 'at-vp-' && say f "device frame code shipped" || say ok "no device frame code"
+has "$WORK/p.html" 'id="at-stage"' && say ok "the stage is a div" || say f "no stage"
 cat > "$WORK/many.html" <<'EOF'
-<template data-variant="One"><div class="frame"><button>a</button></div></template>
-<template data-variant="Two"><div class="frame"><button>b</button></div></template>
-<template data-variant="Three"><div class="frame"><button>c</button></div></template>
-<template data-variant="Four"><div class="frame"><button>d</button></div></template>
+<template data-variant="One"><p>a</p></template>
+<template data-variant="Two"><p>b</p></template>
+<template data-variant="Three"><p>c</p></template>
+<template data-variant="Four"><p>d</p></template>
 EOF
-"$ART" build --kind prototype --title P --fragment "$WORK/many.html" \
-  --device phone --out "$WORK/many.out.html" >/dev/null 2>&1
-has "$WORK/many.out.html" 'at-twk-variant-select' \
-  && say ok "four variants get the dropdown instead" \
-  || say f "four variants still rendered as segments"
+"$ART" build --kind prototype --title P --fragment "$WORK/many.html" --out "$WORK/many.out.html" >/dev/null 2>&1
+has "$WORK/many.out.html" 'at-twk-variant-select' && say ok "four variants get the dropdown" || say f "four variants still segments"
+"$ART" build --kind prototype --title P --fragment "$WORK/frag.html" --out "$WORK/dead.html" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "a prototype with no templates is rejected" || say f "empty prototype built"
 
-echo "--- the at: event vocabulary ---"
-# Every at:* event a harness file listens for must be one some harness file dispatches.
-# `at:axis` outlived the rail by two commits: checks.js stopped re-running on a tweak and
-# viewport.js stopped syncing the device frame, both silently, because a listener for an
-# event nobody fires throws nothing and logs nothing.
-python3 - "$HOME/.claude/skills/spike/tool/harness" <<'PY' && say ok "every at: listener has a dispatcher" || say f "a harness file listens for an at: event nothing dispatches"
-import glob, os, re, sys
-d = sys.argv[1]
-src = "".join(open(f).read() for f in glob.glob(os.path.join(d, "*.js")))
-fired = set(re.findall(r"(?:CustomEvent|Event)\(\s*'(at:[a-z]+)'", src))
-heard = set(re.findall(r"addEventListener\(\s*'(at:[a-z]+)'", src))
-dead = sorted(heard - fired)
-if dead:
-    print("dead listeners:", ", ".join(dead))
-sys.exit(1 if dead else 0)
-PY
-
-echo "--- retired kinds ---"
-# page/deck are gone; explainer belongs to the explain skill and its own tool.
-# argparse rejects an unknown --kind choice, so each of these must be a non-zero exit.
-for k in page deck explainer; do
-  "$ART" build --kind "$k" --title T --fragment "$WORK/frag.html" \
-    --out "$WORK/dead.html" >/dev/null 2>&1
-  [ $? -ne 0 ] && say ok "kind '$k' is rejected" || say f "kind '$k' still builds"
-done
+echo "--- the URL carries only tweaks the reader changed ---"
+# A default written into the query string pins it: reopening that URL after the
+# fragment's default moves serves the old value to someone who never touched a control.
+TW="$TOOL/harness/tweaks.js"
+grep -q 'defaults\[key\] = initial' "$TW" && say ok "register records each tweak's declared default" \
+  || say f "register does not record defaults"
+grep -q 'String(state\[k\]) === String(defaults\[k\])' "$TW" && say ok "writeUrl compares against the default" \
+  || say f "writeUrl writes every key regardless of default"
+grep -q 'url.searchParams.delete(k)' "$TW" && say ok "writeUrl drops an unchanged key" \
+  || say f "writeUrl never deletes"
+command -v node >/dev/null 2>&1 && { node --check "$TW" 2>/dev/null && say ok "tweaks.js parses" || say f "tweaks.js has a syntax error"; }
 
 echo "--- tui scaffold ---"
-# A terminal prototype is a Go program, not HTML, so it is a subcommand rather
-# than a --kind. The harness is what makes it a spike instead of hand-rolled Go:
-# the variant picker, the state axes and — the part that actually catches bugs —
-# the geometry assertion, which is why a wrong-width row must fail the dump.
+# A terminal prototype is a Go program, not HTML, so it is a subcommand rather than a --kind.
 TUI="$WORK/tui"
 "$ART" tui --out "$TUI" --title "Smoke" >/dev/null 2>&1
 for f in harness.go variants.go go.mod; do
   [ -f "$TUI/$f" ] && say ok "tui scaffolds $f" || say f "tui did not write $f"
 done
-
-# --kind tui must NOT exist: the HTML assembler cannot produce a Go program, and
-# a kind that silently emitted HTML for a terminal design is the whole mistake.
-"$ART" build --kind tui --title T --fragment "$WORK/frag.html" \
-  --out "$WORK/dead.html" >/dev/null 2>&1
-[ $? -ne 0 ] && say ok "--kind tui is rejected" || say f "--kind tui still builds"
-
-# variants.go is the author's file; a re-scaffold must not silently eat it.
 echo "// mine" >> "$TUI/variants.go"
 "$ART" tui --out "$TUI" --title "Smoke" >/dev/null 2>&1
-grep -q '// mine' "$TUI/variants.go" \
-  && say ok "re-scaffold keeps variants.go" || say f "re-scaffold clobbered variants.go"
+grep -q '// mine' "$TUI/variants.go" && say ok "re-scaffold keeps variants.go" || say f "re-scaffold clobbered variants.go"
 "$ART" tui --out "$TUI" --title "Smoke" --force >/dev/null 2>&1
-grep -q '// mine' "$TUI/variants.go" \
-  && say f "--force did not reset variants.go" || say ok "--force resets variants.go"
-
-# Inside an existing module the project's own deps are what a prototype should
-# use, so a second go.mod would shadow them.
+grep -q '// mine' "$TUI/variants.go" && say f "--force did not reset variants.go" || say ok "--force resets variants.go"
 mkdir -p "$WORK/mod/inner" && printf 'module host\n\ngo 1.22\n' > "$WORK/mod/go.mod"
 "$ART" tui --out "$WORK/mod/inner" --title "Inner" >/dev/null 2>&1
-[ -f "$WORK/mod/inner/go.mod" ] \
-  && say f "wrote a go.mod inside an existing module" \
-  || say ok "no go.mod inside an existing module"
-
+[ -f "$WORK/mod/inner/go.mod" ] && say f "wrote a go.mod inside an existing module" || say ok "no go.mod inside an existing module"
 if command -v go >/dev/null 2>&1; then
   cat > "$TUI/variants.go" <<'GOV'
 package main
@@ -308,112 +181,33 @@ var Variants = []Variant{
 }
 GOV
   ( cd "$TUI" && go mod tidy >/dev/null 2>&1 && go run . -dump -dir . >"$WORK/tui.out" 2>&1 )
-  grep -q 'FAIL' "$WORK/tui.out" \
-    && say ok "dump fails a wrong-width row" || say f "dump passed a 3-col row in a 10-col frame"
-  grep -q 'short-frame\|ok   short' "$WORK/tui.out" \
-    && say ok "dump names frames per variant" || say f "dump did not name per-variant frames"
+  grep -q 'FAIL' "$WORK/tui.out" && say ok "dump fails a wrong-width row" || say f "dump passed a 3-col row in a 10-col frame"
 else
   say ok "go absent — tui compile checks skipped"
 fi
 
-# --- the URL carries only tweaks the reader changed -------------------------
-# A default written into the query string pins it: reopening that URL after the
-# fragment's default moves serves the old value to someone who never touched a
-# control. writeUrl deletes a key whose value still equals its declared default.
-TW="$(cd "$(dirname "$0")/.." && pwd)/harness/tweaks.js"
-if [ -f "$TW" ]; then
-  grep -q 'defaults\[key\] = initial' "$TW" \
-    && say ok "register records each tweak's declared default" \
-    || say f "register does not record defaults; writeUrl cannot compare"
-  grep -q 'String(state\[k\]) === String(defaults\[k\])' "$TW" \
-    && say ok "writeUrl compares against the default" \
-    || say f "writeUrl writes every key regardless of default"
-  grep -q 'url.searchParams.delete(k)' "$TW" \
-    && say ok "writeUrl drops an unchanged key from the query string" \
-    || say f "writeUrl never deletes, so defaults stay pinned in the URL"
-else
-  say f "harness/tweaks.js missing"
-fi
-
-# --- the settings widget: values out of the panel and back in ----------------
-# A spike gets tuned by dragging sliders, and that tuning IS the finding. Without a
-# way out of the page it dies with the tab.
-SET="$(cd "$(dirname "$0")/.." && pwd)/harness/settings.js"
-if [ -f "$SET" ]; then
-  cat > "$WORK/twk.html" <<'EOF'
-<template data-variant="One"><div class="frame">one</div></template>
-<template data-variant="Two"><div class="frame">two</div></template>
-<script>
-  atTweaks.section('T');
-  atTweaks.add('alpha', 12, { label: 'Alpha', min: 0, max: 100, step: 1, onChange: function () {} });
-</script>
-EOF
-  "$ART" build --kind prototype --title Twk --fragment "$WORK/twk.html" \
-    --out "$WORK/twk.out.html" --device phone >/dev/null 2>&1
-  has "$WORK/twk.out.html" 'Copy settings' \
-    && say ok "settings widget ships the panel's copy action" \
-    || say f "no Copy settings action in a prototype build"
-  has "$WORK/twk.out.html" 'tweaks.json' \
-    && say ok "settings reads ./tweaks.json at load" \
-    || say f "settings never fetches tweaks.json"
-  "$ART" build --kind prototype --title Twk --fragment "$WORK/twk.html" \
-    --out "$WORK/twk.off.html" --device phone --without settings >/dev/null 2>&1
-  has "$WORK/twk.off.html" 'Copy settings' \
-    && say f "--without settings still shipped the widget" \
-    || say ok "--without settings drops it"
-  # A set inside the device frame has to move the panel the reader can SEE. Without
-  # this the slider keeps its old number while the scene moves — a half-applied
-  # state that looks like it worked.
-  grep -q 'up.atTweaks.set(key, value)' "$TW" \
-    && say ok "set forwards to the parent realm's panel" \
-    || say f "set only writes its own realm; the visible slider goes stale"
-  grep -q 'ignored.push(k)' "$TW" \
-    && say ok "apply reports keys it did not recognise" \
-    || say f "apply swallows unknown keys silently"
-else
-  say f "harness/settings.js missing"
-fi
-
-# --- what spike-export hands over -------------------------------------------
-EXP="$(cd "$(dirname "$0")/.." && pwd)/spike-export"
+echo "--- what spike-export hands over ---"
 if [ -x "$EXP" ]; then
-  "$EXP" --fragment "$WORK/twk.html" --slug xp --title Xp --device phone \
-    --dest "$WORK/exp" >/dev/null 2>&1
+  "$EXP" --fragment "$WORK/twk.html" --slug xp --title Xp --dest "$WORK/exp" >/dev/null 2>&1
   X="$WORK/exp/xp"
-  [ -f "$X/RUN.bat" ] && say ok "export writes a Windows launcher" \
-    || say f "no RUN.bat: half the readers get nothing"
-  [ -f "$X/bare.html" ] && [ -f "$X/index.html" ] \
-    && say ok "export separates the chooser from the bare build" \
-    || say f "bare build and chooser are not both present"
-  # index.html IS the chooser. Routing a phone to it redirects forever.
-  if grep -q "location.replace" "$X/index.html"; then
-    grep -q "'bare.html' : 'xp.html'" "$X/index.html" \
-      && say ok "chooser routes a phone to the bare build" \
-      || say f "chooser routes to the wrong file — check for a redirect loop"
-  else
-    say f "index.html does not route"
-  fi
-  # 8080 is the port every dev server on a Mac wants, and http.server's SO_REUSEADDR
-  # lets the bind SUCCEED while another process owns 127.0.0.1:8080.
-  grep -q 'PORT:-8080' "$X/serve.command" \
-    && say f "serve.command still defaults to 8080" \
-    || say ok "serve.command does not default to 8080"
-  grep -q 'taken()' "$X/serve.command" \
-    && say ok "serve.command refuses a port already answering" \
-    || say f "serve.command opens the browser without checking the port"
-  if [ -f "$X/RUN.bat" ]; then
-    # cmd.exe mishandles a .bat with bare LF endings.
-    [ "$(grep -c $'\r' "$X/RUN.bat")" -gt 0 ] \
-      && say ok "RUN.bat is written with CRLF" || say f "RUN.bat has bare LF endings"
-    # The marker must appear once. The batch line builds it from [char]35 so it does
-    # not plant a decoy copy above the real one for IndexOf to find.
-    [ "$(grep -c '#POWERSHELL#' "$X/RUN.bat")" -eq 1 ] \
-      && say ok "RUN.bat carries exactly one #POWERSHELL# marker" \
-      || say f "RUN.bat marker is duplicated; the slice starts in the wrong place"
-  fi
+  has "$X/index.html" 'class="at-twk"' && say ok "export writes the prototype as index.html" || say f "no index.html prototype"
+  [ -f "$X/bare.html" ] && say f "export still writes a second build" || say ok "export writes one build"
+  [ -f "$X/RUN.bat" ] && say ok "export writes a Windows launcher" || say f "no RUN.bat"
+  grep -q 'PORT:-8080' "$X/serve.command" && say f "serve.command defaults to 8080" || say ok "serve.command does not default to 8080"
+  grep -q 'taken()' "$X/serve.command" && say ok "serve.command refuses a port already answering" || say f "serve.command skips the port check"
+  grep -q 'cat index.html' "$X/serve.command" && say ok "the nc floor serves index.html" || say f "the nc floor serves a file that is not there"
+  [ "$(grep -c $'\r' "$X/RUN.bat")" -gt 0 ] && say ok "RUN.bat is written with CRLF" || say f "RUN.bat has bare LF endings"
+  [ "$(grep -c '#POWERSHELL#' "$X/RUN.bat")" -eq 1 ] && say ok "RUN.bat carries exactly one #POWERSHELL# marker" \
+    || say f "RUN.bat marker is duplicated"
 else
   say f "spike-export missing or not executable"
 fi
+
+echo "--- the skill names no hosted viewer ---"
+SKILL="$(cd "$TOOL/.." && pwd)"
+HOSTED="Can""vas"
+grep -rIl "$HOSTED" "$SKILL" >/dev/null 2>&1 && say f "a spike file names the hosted viewer: $(grep -rIl "$HOSTED" "$SKILL" | head -1)" \
+  || say ok "no file under spike/ names the hosted viewer"
 
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

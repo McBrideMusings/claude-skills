@@ -1,30 +1,18 @@
-/* tweaks.js — the floating Tweaks panel: variant, the fragment's own controls, device.
+/* tweaks.js — the floating Tweaks panel: the variant chooser and the fragment's own controls.
 
-   Supersedes rail.js. Two things changed, and only the second is cosmetic:
+   A FRAGMENT DECLARES THE VALUE, NOT THE WIDGET. The control is chosen by the type of the
+   value being tweaked — a boolean is a switch, a bounded number is a slider, a hex string
+   is a colour well, a list is a picker:
 
-   1. A FRAGMENT NO LONGER DECLARES CONTROLS IN MARKUP. `<nav data-axis>` could only ever
-      be a row of buttons, so every tweak had to be pretended into one: a gap of 0-40px
-      became five chips at arbitrary stops, and a colour became a list of four. The control
-      is now chosen by the TYPE OF THE VALUE being tweaked — a boolean is a switch, a
-      bounded number is a slider, a hex string is a colour well, a list is a picker — and
-      the fragment declares the value, not the widget:
+       atTweaks.add('gap', 12, { max: 40, unit: 'px', onChange: function (v) { … } });
+       atTweaks.add('screen', ['home', 'chat'], { onChange: function (v) { … } });
+       atTweaks.add('dark', false, { onChange: function (v) { … } });
 
-          atTweaks.add('gap', 12, { max: 40, unit: 'px', onChange: function (v) { … } });
-          atTweaks.add('screen', ['home', 'chat'], { onChange: function (v) { … } });
-          atTweaks.add('dark', false, { onChange: function (v) { … } });
+   `atTweaks.toggle/slider/stepper/color/pick/select/text/action` name a widget outright
+   when the inference gets it wrong.
 
-      `atTweaks.toggle/slider/stepper/color/pick/select/text/action` name a widget
-      outright when the inference gets it wrong.
-
-   2. The panel floats and can be dragged, and closing it leaves a "Tweaks" pill in the
-      corner. The rail held 272px of the window for as long as it was open — width the
-      design under judgement never got, and the reason a 1440-wide desktop frame had to be
-      scaled to 67% before it fit.
-
-   THE PANEL ANSWERS NO KEYS, and neither does any other harness widget on a prototype. A
-   prototype is a working interface with keys of its own; the design gets the whole
-   keyboard, the harness gets the mouse. __atHotkeys in dock.js is the one place that says
-   which kinds still take keys.
+   THE PANEL ANSWERS NO KEYS. A prototype is a working interface with keys of its own; the
+   design gets the whole keyboard, the harness gets the mouse.
 
    EVERY CONTROL RE-FIRES AFTER EVERY MOUNT. A variant swap replaces the stage, so the
    fresh markup has never seen an onChange; the panel calls every registered control's
@@ -42,16 +30,10 @@
   if (!panel || !stage || !all.length) return;
 
   var body = panel.querySelector('.at-twk-body');
-  var meta = panel.querySelector('.at-twk-meta');
-  var tabStrip = panel.querySelector('.at-twk-tabs');
   var pill = document.querySelector('.at-twk-pill');
   var variantBtns = [].slice.call(panel.querySelectorAll('.at-twk-variant'));
   var variantSelect = panel.querySelector('.at-twk-variant-select');
   var replay = panel.querySelector('.at-twk-replay');
-  // Created only if a fragment calls atTweaks.note(). No prototype gets one by default —
-  // a standing "Scope" section on every folio is a paragraph nobody reads.
-  var note = null;
-
   var current = 0;          // which variant is mounted
   var state = {};           // tweak key -> live value, survives every variant swap
   var defaults = {};        // tweak key -> the value the fragment declared
@@ -59,25 +41,13 @@
 
   var q = new URLSearchParams(location.search);
 
-  /* data-at-tweak-init wins over the query string: it is how a viewport.js device frame is
-     told what the host was showing, and a srcdoc document has no query string of its own. */
-  var seeded = {};
-  var initAttr = root.getAttribute('data-at-tweak-init');
-  if (initAttr) {
-    try { seeded = JSON.parse(initAttr) || {}; } catch (e) { seeded = {}; }
-  }
-
   function seedFor(key) {
-    if (Object.prototype.hasOwnProperty.call(seeded, key)) return seeded[key];
-    if (!initAttr && q.has(key)) return q.get(key);
-    return undefined;
+    return q.has(key) ? q.get(key) : undefined;
   }
 
   /* ---------------- url ---------------- */
 
   function writeUrl() {
-    // A srcdoc page (a device frame) has no query string to persist into, so this is
-    // best-effort; the data-at-* attributes are the real signal.
     try {
       var url = new URL(location);
       url.searchParams.set('v', current + 1);
@@ -93,82 +63,7 @@
     } catch (e) {}
   }
 
-  function publish() {
-    root.setAttribute('data-at-tweak-state', JSON.stringify(state));
-  }
-
-  /* ---------------- tabs ----------------
-
-     Three questions about the same folio, and each of them used to own a surface of its
-     own: what am I looking at, does it pass, and what is wrong with it. The order is fixed
-     here rather than following registration, so the strip does not reshuffle depending on
-     which widget booted first. A tab appears only once something has filled its pane. */
-
-  var PANES = [
-    { key: 'tweaks',   label: 'Tweaks' },
-    { key: 'checks',   label: 'Checks' },
-    { key: 'comments', label: 'Comments' }
-  ];
-  var panes = {};
-  var tabs = {};
-  var active = 'tweaks';
-
-  PANES.forEach(function (p) {
-    var el = panel.querySelector('.at-twk-pane[data-pane="' + p.key + '"]');
-    if (!el) {
-      el = document.createElement('div');
-      el.className = 'at-twk-pane';
-      el.setAttribute('data-pane', p.key);
-      el.hidden = true;
-      body.appendChild(el);
-    }
-    panes[p.key] = el;
-
-    var b = document.createElement('button');
-    b.className = 'at-twk-tab';
-    b.type = 'button';
-    b.textContent = p.label;
-    b.hidden = true;
-    b.addEventListener('click', function () { selectTab(p.key); });
-    tabStrip.appendChild(b);
-    tabs[p.key] = b;
-  });
-
-  function selectTab(key) {
-    if (!panes[key] || active === key) return;
-    active = key;
-    PANES.forEach(function (p) {
-      panes[p.key].hidden = p.key !== key;
-      tabs[p.key].toggleAttribute('data-active', p.key === key);
-      tabs[p.key].setAttribute('aria-selected', p.key === key ? 'true' : 'false');
-    });
-    /* The tab IS the mode on Comments: the review layer turns on when you open the tab and
-       off when you leave it. It used to be a separate docked button, so the layer could be
-       on with its list on another tab, or the list open with the layer off — two controls
-       for one state, and the button was the only one that actually did anything. */
-    window.dispatchEvent(new CustomEvent('at:tab', { detail: { tab: key } }));
-  }
-
-  /* A tab for an empty pane is a control that opens nothing. The strip itself goes when
-     only one tab would show — a single-segment segmented control says nothing. */
-  function showTab(key) {
-    if (tabs[key]) tabs[key].hidden = false;
-    var shown = PANES.filter(function (p) { return !tabs[p.key].hidden; });
-    tabStrip.hidden = shown.length < 2;
-  }
-
-  showTab('tweaks');
-  panes.tweaks.hidden = false;
-  tabs.tweaks.setAttribute('data-active', '');
-  tabs.tweaks.setAttribute('aria-selected', 'true');
-
   /* ---------------- the panel's own shape ---------------- */
-
-  function slot(el) {
-    // Groups stack above the note, if there is one, which stays pinned to the pane's foot.
-    if (note) panes.tweaks.insertBefore(el, note);
-    else panes.tweaks.appendChild(el);
-  }
 
   function group(label) {
     var g = document.createElement('div');
@@ -179,7 +74,7 @@
       l.textContent = label;
       g.appendChild(l);
     }
-    slot(g);
+    body.appendChild(g);
     return g;
   }
 
@@ -210,9 +105,9 @@
   /* ---------------- registration ---------------- */
 
   /* One place that owns a control's value: it seeds from the URL, calls the handler once
-     at declaration and again after every mount, and keeps the URL and the published state
-     attribute in step. `coerce` turns the string a URL gives back into the value's own
-     type — without it a slider seeded from ?gap=12 hands the fragment "12". */
+     at declaration and again after every mount, and keeps the URL in step. `coerce` turns
+     the string a URL gives back into the value's own type — without it a slider seeded from
+     ?gap=12 hands the fragment "12". */
   function register(key, initial, opts, coerce, paint) {
     var seed = seedFor(key);
     var value = seed === undefined ? initial : coerce(seed, initial);
@@ -233,7 +128,6 @@
       set: function (v) {
         state[key] = v;
         if (paint) paint(v);
-        publish();
         writeUrl();
         apply();
       }
@@ -241,7 +135,6 @@
 
     controls.push({ key: key, apply: apply });
     if (paint) paint(value);
-    publish();
     return handle;
   }
 
@@ -486,13 +379,6 @@
       // Re-fire every control so the freshly mounted markup gets its state applied without
       // every fragment writing its own re-apply-on-mount code.
       controls.forEach(function (c) { c.apply(); });
-      // The stage now has content. Anything that measures the folio — the contrast verdict,
-      // the checks — would otherwise be guessing at a delay, and measuring an empty
-      // document whenever it guessed short.
-      window.dispatchEvent(new CustomEvent('at:mounted'));
-      if (root.hasAttribute('data-at-embedded')) {
-        try { parent.postMessage({ at: 'mounted' }, '*'); } catch (e) {}
-      }
     });
   }
 
@@ -513,8 +399,6 @@
     var t = all[current];
     root.setAttribute('data-at-variant', t.getAttribute('data-variant') || '');
     root.setAttribute('data-at-variant-index', String(current + 1));
-    publish();
-    window.dispatchEvent(new CustomEvent('at:variant', { detail: { index: current } }));
     mount();
   }
 
@@ -541,49 +425,11 @@
       else url.searchParams.delete('tweaks');
       history.replaceState(null, '', url);
     } catch (e) {}
-    window.dispatchEvent(new Event('at:relayout'));
   }
 
   var closeBtn = panel.querySelector('.at-twk-x');
   if (closeBtn) closeBtn.addEventListener('click', function () { setCollapsed(true); });
   if (pill) pill.addEventListener('click', function () { setCollapsed(false); });
-
-  /* When a file was built. Several confusing sessions came down to looking at a folio from
-     before a fix and reasoning about behaviour that no longer existed; the answer was in a
-     meta tag nothing displayed. */
-  // Deferred so it lands under viewport.js's readout: the device is the fact you read first
-  // and the build date the one you read when something looks wrong.
-  setTimeout(function () {
-    var m = document.querySelector('meta[name="folio-built"]');
-    if (!m || !m.content) return;
-    var el = document.createElement('div');
-    el.className = 'at-twk-built';
-    el.textContent = 'built ' + m.content;
-    meta.hidden = false;
-    meta.appendChild(el);
-  }, 0);
-
-  /* ---------------- driven from outside ----------------
-
-     A device frame is a clone of this document, so it runs this same script. Rather than
-     being rebuilt every time the host's state changes — which throws away the frame's
-     scroll position, its typed input and any state the prototype itself holds — it is told
-     what changed and applies it in place. */
-
-  window.addEventListener('message', function (e) {
-    var m = e.data;
-    if (!m || m.at !== 'sync') return;
-    if (m.variantIndex) {
-      var i = Math.min(parseInt(m.variantIndex, 10), all.length) - 1;
-      if (i !== current) setActive(i);
-    }
-    if (m.tweaks) {
-      controls.forEach(function (c) {
-        if (!(c.key in m.tweaks) || state[c.key] === m.tweaks[c.key]) return;
-        if (handles[c.key]) handles[c.key].set(m.tweaks[c.key]);
-      });
-    }
-  });
 
   /* ---------------- the public surfaces ---------------- */
 
@@ -593,15 +439,6 @@
 
   var api = {
     section: function (label) { openGroup = group(label); return api; },
-    note: function (html) {
-      if (!note) {
-        note = document.createElement('div');
-        note.className = 'at-twk-note';
-        body.appendChild(note);
-      }
-      note.insertAdjacentHTML('afterbegin', html);
-      return api;
-    },
     add: function (key, value, opts) { return remember(key, add(key, value, opts)); },
     pick: function (key, options, opts) { return remember(key, pick(key, options, opts)); },
     select: function (key, options, opts) { return remember(key, select(key, options, opts)); },
@@ -614,44 +451,7 @@
     get: function (key) { return state[key]; },
     set: function (key, value) {
       if (handles[key]) handles[key].set(value);
-      /* A device frame is a srcdoc iframe running its own copy of this file, so it has
-         its own handles, its own state and its own (invisible) panel. Setting there moves
-         that realm and leaves the panel the reader can actually see showing the old
-         number — a half-applied state that looks like it worked. Forward to the parent,
-         which owns the visible controls and publishes back down. Guarded by a value
-         comparison rather than a flag, so a parent that syncs down cannot bounce back. */
-      try {
-        var up = window.parent;
-        if (up && up !== window && up.atTweaks && !up.atTweaks.__queue &&
-            String(up.atTweaks.get(key)) !== String(value)) {
-          up.atTweaks.set(key, value);
-        }
-      } catch (e) { /* cross-origin parent: this realm is all there is */ }
       return api;
-    },
-    /* Enough of the registry for a widget to serialise and restore the whole panel
-       without reaching into these closures. */
-    keys: function () { return Object.keys(handles); },
-    values: function () {
-      var out = {};
-      Object.keys(handles).forEach(function (k) { out[k] = state[k]; });
-      return out;
-    },
-    defaults: function () {
-      var out = {};
-      Object.keys(handles).forEach(function (k) { out[k] = defaults[k]; });
-      return out;
-    },
-    /* Applies what it recognises and reports what it did not, so a caller can tell the
-       difference between "nothing matched" and "it worked". */
-    apply: function (obj) {
-      var applied = [], ignored = [];
-      Object.keys(obj || {}).forEach(function (k) {
-        if (!handles[k]) { ignored.push(k); return; }
-        api.set(k, obj[k]);
-        applied.push(k);
-      });
-      return { applied: applied, ignored: ignored };
     }
   };
 
@@ -668,75 +468,10 @@
   });
   window.atTweaks = api;
 
-  /* The slot other harness widgets add to. viewport.js puts its device readout here and
-     checks.js its verdicts, rather than each floating a bar of its own, so every "what am I
-     looking at" control lives in one card. */
-  window.__atTweaks = {
-    /* A named tab's container. Asking for one reveals its tab — a tab over an empty pane is
-       a control that opens nothing, so a folio built without checks or without the comment
-       widget shows no tab for it. */
-    pane: function (key) {
-      if (!panes[key]) return null;
-      showTab(key);
-      return panes[key];
-    },
-    /* Reveal a pane AND put it on screen, opening the panel if it is a pill. Entering
-       comment mode calls this: the comments are in here now, so a review that started with
-       a keypress or the docked button has to bring its own surface up. */
-    show: function (key) {
-      if (!panes[key]) return;
-      showTab(key);
-      selectTab(key);
-      setCollapsed(false);
-    },
-    /* The strip between the header and the tabs: which frame, how far it is scaled, when
-       the file was built. Facts about the folio, true on every tab. */
-    meta: function () {
-      meta.hidden = false;
-      return meta;
-    },
-    group: group,
-    row: function (g) {
-      var r = document.createElement('div');
-      r.className = 'at-twk-row';
-      g.appendChild(r);
-      return r;
-    },
-    item: function (parent, label, onClick) {
-      var b = document.createElement('button');
-      b.className = 'at-twk-opt';
-      b.type = 'button';
-      b.textContent = label;
-      b.addEventListener('click', function () { onClick(b); });
-      parent.appendChild(b);
-      return b;
-    }
-  };
-
   /* ---------------- boot ---------------- */
 
-  if (!root.hasAttribute('data-at-embedded')) {
-    if (q.get('tweaks') === '0') root.setAttribute('data-at-tweaks-collapsed', '');
-    // tweaks.js is inlined before the widget scripts, so dock.js's helpers do not exist
-    // yet. A timeout runs after every inline script has executed.
-    setTimeout(function () {
-      // Both surfaces move with the same helper the floating buttons use, and are
-      // remembered in the same store.
-      if (window.__atDrag) {
-        window.__atDrag(panel, panel.querySelector('.at-twk-head'), 'tweaks', 'tr');
-      }
-      if (pill && window.__atDock) {
-        // Slot 1: the comment toggle owns slot 0 on this edge, and two controls in one
-        // corner is how the pill ended up printed through the comment glyph.
-        window.__atDock(pill, 'tweaks-pill', 'right', 1);
-        // __atDock stamps .at-dock, which is a 30px circle. The pill has to say the word
-        // "Tweaks", so it keeps the dragging and the remembered edge and drops the shape.
-        pill.classList.remove('at-dock');
-      }
-    }, 0);
-  }
+  if (q.get('tweaks') === '0') root.setAttribute('data-at-tweaks-collapsed', '');
 
-  var v0 = parseInt(root.getAttribute('data-at-variant-init'), 10) ||
-    parseInt(q.get('v'), 10) || 1;
+  var v0 = parseInt(q.get('v'), 10) || 1;
   setActive(Math.min(Math.max(v0, 1), all.length) - 1);
 })();

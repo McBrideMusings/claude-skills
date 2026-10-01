@@ -2,8 +2,9 @@
 
 A comp is a generated picture of the screen. It answers "what does this look like" in seconds and
 costs one image call per direction, so it is the default rung for a UI question. It cannot show
-behaviour; when the question is a transition, a state you reach by interacting, or a real
-component's behaviour, climb to [UI.md](UI.md).
+the project's real CSS or every state exactly; when the question needs those, climb to an HTML
+mockup ([MOCKUP.md](MOCKUP.md)), and for a transition, a state you reach by interacting, or a real
+component's behaviour, to [UI.md](UI.md)).
 
 ## Steps
 
@@ -22,7 +23,7 @@ component's behaviour, climb to [UI.md](UI.md).
    against the brief; a misspelled label or a dropped region is invisible until you read the image.
 4. **Directions diverge on one named axis** ([CONTRACT.md](CONTRACT.md) rule 11). Several comps of the
    same idea are one comp.
-5. **Show them** per [CONTRACT.md](CONTRACT.md) rule 10, then stop: the choice is the user's.
+5. **Show them** per [CONTRACT.md](CONTRACT.md) rule 10 — the PNG paths, one per direction — then stop: the choice is the user's.
 
 ## Storing the winner
 

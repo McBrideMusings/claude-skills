@@ -1,4 +1,4 @@
-<h1>Folio review surface — layout only</h1>
+<h1>Session list — layout only</h1>
 <p class="wf-note">Greybox. The question is where things sit, not what they look like.</p>
 
 <div class="wf-region">
@@ -8,36 +8,36 @@
       <div class="wf-text" data-lines="1"></div>
     </div>
     <div style="display:flex; gap:.75rem; justify-content:flex-end;">
-      <span class="wf-control">Contrast</span>
-      <span class="wf-control" data-primary>Export</span>
+      <span class="wf-control">Filter</span>
+      <span class="wf-control" data-primary>New</span>
     </div>
   </div>
 </div>
 
 <div class="wf-grid" data-cols="2">
   <div class="wf-region">
-    <span class="wf-label">Folio</span>
-    <div class="wf-ph">rendered folio, full width</div>
-    <div class="wf-text" data-lines="3"></div>
-  </div>
-
-  <div class="wf-region">
-    <span class="wf-label">Comment list</span>
+    <span class="wf-label">Session list</span>
     <div class="wf-region">
-      <span class="wf-label">Comment 1</span>
+      <span class="wf-label">Session 1</span>
       <div class="wf-text" data-lines="3"></div>
     </div>
     <div class="wf-region">
-      <span class="wf-label">Comment 2 · stale</span>
+      <span class="wf-label">Session 2</span>
       <div class="wf-text"></div>
     </div>
-    <span class="wf-control">Copy all</span>
+    <span class="wf-control">Resume</span>
+  </div>
+
+  <div class="wf-region">
+    <span class="wf-label">Detail</span>
+    <div class="wf-ph">selected session, full height</div>
+    <div class="wf-text" data-lines="3"></div>
   </div>
 </div>
 
 <h2>Empty state</h2>
 <div class="wf-region">
-  <span class="wf-label">Comment list</span>
-  <div class="wf-ph">No comments yet — press <b>a</b> and click anything</div>
+  <span class="wf-label">Session list</span>
+  <div class="wf-ph">Nothing running yet — start a session and it shows up here</div>
 </div>
-<p class="wf-note">Both columns scroll independently; the folio column keeps its own scroll position when a comment is opened.</p>
+<p class="wf-note">Both columns scroll independently; the list keeps its scroll position when a session is opened.</p>

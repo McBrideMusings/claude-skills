@@ -3,20 +3,12 @@
 
 Writes a self-contained directory holding:
 
-  index.html      routes the reader to the right build: a desktop gets the framed
-                  one, a phone gets the bare one. One link, correct either way.
-  <slug>.html     the device-framed build, for looking at on this Mac
-  bare.html       the same prototype with no device frame and no Tweaks panel,
-                  so a phone renders it as the real interface
+  index.html      the prototype, with its Tweaks panel
   serve.command   double-clickable on macOS: opens Terminal, starts a LAN web
                   server, and prints the URL to type into the phone
   RUN.bat         the same on Windows, using PowerShell and .NET, which ship with
                   the OS — nothing to download and nothing to install
-
-The bare build is the point. A phone showing a phone frame inside a phone is
-useless for judging whether a design works in the hand, and the Tweaks panel
-covers the thing being judged. Handing over both files and saying which to open
-is a step that gets skipped, which is what index.html is for.
+  README.md       what the folder is and how to open it
 """
 import argparse
 import datetime
@@ -25,15 +17,8 @@ import shutil
 import stat
 import subprocess
 import sys
-import tempfile
 
 TOOL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "spike")
-
-# The panel is generated from the fragment's atTweaks registrations, so it is
-# not one of the --without widgets. Hiding it is the supported escape hatch.
-HIDE_PANEL = """
-.at-twk, .at-twk-pill { display: none !important; }
-"""
 
 README = """# __TITLE__
 
@@ -42,20 +27,15 @@ look or feel, not to be correct, complete, or shipped. Nothing here is productio
 code and none of it is wired to a real backend — every value on screen is fixed
 sample content.
 
-Exported __DATE__ for the __DEVICE__ frame.
+Exported __DATE__.
 
 ## What is in this folder
 
 | File | What it is |
 | --- | --- |
-| `index.html` | Sends you to the right one of the two below. Open this if you are unsure. |
-| `__SLUG__.html` | The framed build. Double-click it. Opens in your browser and draws the __DEVICE__ frame around the design, so you are judging it at the right size. |
-| `bare.html` | The same prototype with **no frame and no controls panel** — just the interface. This is what a phone should load. |
+| `index.html` | The prototype. Double-click it. It is one file with no internet, no install and no assets alongside it: you can email it, drop it in Slack, or open it on a plane. |
 | `serve.command` | **Mac:** double-click to put this on your local network so a phone can open it. |
 | `RUN.bat` | **Windows:** the same. |
-
-Every HTML file is self-contained: no internet, no install, no assets alongside
-them. You can email one, drop it in Slack, or open it on a plane.
 
 ## Looking at it on a phone
 
@@ -71,20 +51,14 @@ cautious about a file that came from somewhere else.
 Both pick their own free port and print it. To force one:
 `PORT=8850 ./serve.command`, or `set PORT=8850` before `RUN.bat`.
 
-## Using the framed build
+## The controls card
 
-The floating card is the control panel. Drag it by its header; the `×` shrinks it
-to a pill in the corner, and the pill opens it again.
-
-- **Tweaks** — the variant picker plus every parameter this prototype exposes.
-- **Checks** — standing pass/fail checks (contrast, tap targets, overflow, and so on).
-- **Comments** — opening this tab turns on the markup layer. Click anything to leave
-  a note, then press **Copy comments** and paste the result back to whoever sent you
-  this; it comes out as markdown with the prototype's name at the top.
+The floating **Tweaks** card holds the variant chooser and every parameter this
+prototype exposes. The `×` shrinks it to a pill in the corner, and the pill opens it
+again. Add `?tweaks=0` to the address to open with it already shrunk.
 
 The address bar remembers only what you actually change. An untouched control is
-absent from the URL, so a link you send carries your changes and nothing else, and
-a rebuilt prototype's new defaults still reach you.
+absent from the URL, so a link you send carries your changes and nothing else.
 
 ## Reporting something
 
@@ -147,10 +121,9 @@ if ruby -e '' >/dev/null 2>&1; then
 fi
 
 # Floor: one file, one connection at a time, using only /usr/bin/nc. It cannot route,
-# so it answers every path with the BARE build — the phone case, which is the only one
-# that needs a server at all. The framed build is a double-click away on this Mac.
-echo "  [serving with nc — bare build only]"
-LEN="$(wc -c < bare.html | tr -d ' ')"
+# so it answers every path with index.html, which is the only file there is.
+echo "  [serving with nc]"
+LEN="$(wc -c < index.html | tr -d ' ')"
 while :; do
   {
     printf 'HTTP/1.1 200 OK\\r\\n'
@@ -158,7 +131,7 @@ while :; do
     printf 'Content-Length: %s\\r\\n' "$LEN"
     printf 'Cache-Control: no-store\\r\\n'
     printf 'Connection: close\\r\\n\\r\\n'
-    cat bare.html
+    cat index.html
   } | nc -l "$PORT" >/dev/null 2>&1 || sleep 1
 done
 """
@@ -308,30 +281,11 @@ try {
 }
 """
 
-# One URL that lands the reader on the right build. Shipping a framed file and a bare
-# file and telling someone which to open is a step that gets skipped: the phone gets the
-# desktop frame, or the Mac gets an unframed page at whatever size the window happens to
-# be. Coarse pointer AND a narrow screen, so a desktop browser dragged narrow keeps its
-# panel rather than silently losing it.
-CHOOSER = """<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<title>__TITLE__</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>html,body{margin:0;height:100%;background:#14161a;color:#8b93a1;
-font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-p{padding:2rem}</style></head>
-<body><p>Loading&hellip; <a href="__SLUG__.html" style="color:#7aa2f7">open the framed build</a></p>
-<script>
-  var touch = window.matchMedia('(pointer: coarse)').matches;
-  var narrow = Math.min(screen.width, screen.height) < 820;
-  location.replace(touch && narrow ? 'bare.html' : '__SLUG__.html');
-</script></body></html>
-"""
-
-
-def build(fragment, out, title, extra):
+def build(fragment, out, title, subtitle):
     cmd = [TOOL, "build", "--kind", "prototype", "--title", title,
-           "--fragment", fragment, "--out", out] + extra
+           "--fragment", fragment, "--out", out]
+    if subtitle:
+        cmd += ["--subtitle", subtitle]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         sys.stderr.write(proc.stdout + proc.stderr)
@@ -344,11 +298,9 @@ def main():
     ap.add_argument("--fragment", required=True, help="absolute path to the body fragment")
     ap.add_argument("--slug", required=True, help="kebab-case name; becomes the folder name")
     ap.add_argument("--title", required=True)
-    ap.add_argument("--device", required=True,
-                    help="device for the framed copy: phone|tablet|desktop|panel|web|tv|fill")
+    ap.add_argument("--subtitle", default="", help="one line under the Tweaks card title")
     ap.add_argument("--dest", default=os.path.expanduser("~/Desktop"),
                     help="where to write the folder (default: ~/Desktop)")
-    ap.add_argument("--picker", default="switch", choices=["switch", "list"])
     args = ap.parse_args()
 
     fragment = os.path.abspath(os.path.expanduser(args.fragment))
@@ -360,30 +312,12 @@ def main():
         shutil.rmtree(dest)
     os.makedirs(dest)
 
-    framed = os.path.join(dest, args.slug + ".html")
-    build(fragment, framed, args.title,
-          ["--device", args.device, "--picker", args.picker])
-
-    with tempfile.TemporaryDirectory() as tmp:
-        css = os.path.join(tmp, "bare.css")
-        with open(css, "w", encoding="utf-8") as fh:
-            fh.write(HIDE_PANEL)
-        bare = os.path.join(dest, "bare.html")
-        build(fragment, bare, args.title,
-              ["--picker", args.picker, "--extra-css", css,
-               "--without", "viewport,checks,annotate,contrast"])
-
-    # index.html routes rather than being one of the two builds, so a single link is
-    # correct on whatever the reader opens it on.
-    chooser = os.path.join(dest, "index.html")
-    with open(chooser, "w", encoding="utf-8") as fh:
-        fh.write(CHOOSER.replace("__TITLE__", args.title).replace("__SLUG__", args.slug))
+    index = os.path.join(dest, "index.html")
+    build(fragment, index, args.title, args.subtitle)
 
     with open(os.path.join(dest, "README.md"), "w", encoding="utf-8") as fh:
         fh.write(README
                  .replace("__TITLE__", args.title)
-                 .replace("__SLUG__", args.slug)
-                 .replace("__DEVICE__", args.device)
                  .replace("__DATE__", datetime.date.today().isoformat()))
 
     script = os.path.join(dest, "serve.command")
@@ -400,12 +334,10 @@ def main():
         return "%.0f KB" % (os.path.getsize(p) / 1024)
 
     print(dest)
-    print("  %-20s %s   routes: desktop -> framed, phone -> bare" % ("index.html", kb(chooser)))
-    print("  %-20s %s   framed (%s) — open on this Mac" % (args.slug + ".html", kb(framed), args.device))
-    print("  %-20s %s   bare, no panel — what the phone gets" % ("bare.html", kb(bare)))
-    print("  %-20s %s   macOS: double-click to serve on the LAN" % ("serve.command", kb(script)))
-    print("  %-20s %s   Windows: same, needs nothing installed" % ("RUN.bat", kb(winbat)))
-    print("  %-20s %s   what it is and how to use it" % ("README.md", kb(os.path.join(dest, "README.md"))))
+    print("  %-14s %s   the prototype — open on this Mac" % ("index.html", kb(index)))
+    print("  %-14s %s   macOS: double-click to serve on the LAN" % ("serve.command", kb(script)))
+    print("  %-14s %s   Windows: same, needs nothing installed" % ("RUN.bat", kb(winbat)))
+    print("  %-14s %s   what it is and how to use it" % ("README.md", kb(os.path.join(dest, "README.md"))))
 
 
 if __name__ == "__main__":

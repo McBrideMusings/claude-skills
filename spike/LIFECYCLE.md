@@ -9,7 +9,7 @@ The **answer** is the only thing worth keeping. Record it in the place that owns
 | The answer is | It goes in |
 | --- | --- |
 | A look: a token, a type step, a component rule | `DESIGN.md`, then `dsys export` |
-| A winning image comp | `dsys refs add` ([COMP.md](COMP.md)), cited by the tickets |
+| A winning image comp or mockup screenshot | `dsys refs add` ([COMP.md](COMP.md)), cited by the tickets |
 | A decision with a reason | an ADR in `docs/adr/` |
 | Work to build | tickets ([below](#tickets-from-a-spike)) |
 
@@ -23,17 +23,17 @@ source of truth for the design that `DESIGN.md` already owns, and it drifts from
 `DESIGN.md`. When a user asks to keep one, record its answer as the table above says and explain that.
 
 **Never invent a second word for the store.** Everything this skill writes goes in
-`/private/tmp/claude/<repo-slug>/spikes/`. Not `prototypes/`, not `mockups/`, not `artifacts/`,
-not `folios/` — the tool is `spike`, so the directory is `spikes`, everywhere, no exceptions.
+`/private/tmp/claude/<repo-slug>/spikes/`. Not `prototypes/`, not `mockups/`, not `artifacts/` —
+the tool is `spike`, so the directory is `spikes`, everywhere, no exceptions.
 (`explain` owns the parallel directory, `/private/tmp/claude/<repo-slug>/explainers/`.)
 
 ## Tickets from a spike
 
 When `backlog spec` (or any other pass) turns a spike into tickets, each UI slice cites its winning
-comp by dsys ref in the ticket's design field. The ref is created with
-`dsys refs add <bead-id> <comp.png>` once the ticket exists ([COMP.md](COMP.md)). No frame is committed
+comp or mockup screenshot by dsys ref in the ticket's design field. The ref is created with
+`dsys refs add <bead-id> <image.png>` once the ticket exists ([COMP.md](COMP.md)). No frame is committed
 to the project, and no teardown ticket exists, because nothing was committed to tear down. A slice
-that rendered through the interactive rung cites the ref of the comp it was refined from, or states
+that rendered through the interactive rung cites the ref of the comp or mockup it was refined from, or states
 its behaviour in the ticket's acceptance criteria.
 
 ## A repo that still has `docs/spikes/`
@@ -44,10 +44,3 @@ prototype's own notes supply the decisions the code does not show). Ideally purg
 git history too, so old builds and screenshots stop appearing in clones: `git filter-repo --path
 docs/spikes --invert-paths` rewrites every commit and needs a force-push, so ask the user before
 running it, and never run it on a repo the user does not own.
-
-## Getting comments back
-
-Every HTML build carries the comment layer (a worktree route has none; ask for comments in chat): the user presses the speech-bubble button (or `a`), marks
-things up, and presses **Copy comments**. The markdown starts with
-`<!-- folio-feedback: <slug> -->`, so you can either ask them to paste it, or wait for it —
-[`CONTRACT.md`](CONTRACT.md) § Getting comments back has the `pbpaste` watcher. Say which you are doing.
