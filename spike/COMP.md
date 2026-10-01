@@ -3,7 +3,7 @@
 A comp is a generated picture of the screen. It answers "what does this look like" in seconds and
 costs one image call per direction, so it is the default rung for a UI question. It cannot show
 the project's real CSS or every state exactly; when the question needs those, climb to an HTML
-mockup ([MOCKUP.md](MOCKUP.md), which also records CSS animation), and for a state you reach by interacting, or a real
+mockup ([MOCKUP.md](MOCKUP.md), which also records motion), and for a state you reach by interacting, or a real
 component's behaviour, to [UI.md](UI.md).
 
 ## Steps

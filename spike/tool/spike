@@ -138,7 +138,7 @@ def parse_attrs(s):
 def extract_variants(fragment):
     """Pull <template data-variant="..."> blocks out of the fragment.
 
-    Returns (variants, remainder). Each variant is a dict with name/state/motion/body/raw.
+    Returns (variants, remainder). Each variant is a dict with name/state/motion/video_duration/body/raw.
     """
     variants = []
     for m in TEMPLATE_RE.finditer(fragment):
@@ -149,6 +149,7 @@ def extract_variants(fragment):
             "name": attrs["data-variant"],
             "state": attrs.get("data-state", ""),
             "motion": "data-motion" in m.group("attrs").lower(),
+            "video_duration": attrs.get("data-video-duration"),
             "body": m.group("body"),
             "raw": m.group(0),
         })
@@ -209,6 +210,21 @@ def build_panel(variants, title, subtitle):
 
 def kebab(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def video_duration_attr(variant):
+    """The cell's `data-video-duration="MS"`: how long `spike video` records it."""
+    raw = variant["video_duration"]
+    if raw is None:
+        return ""
+    try:
+        ok = 0 < float(raw) < 600000
+    except ValueError:
+        ok = False
+    if not ok:
+        die("data-video-duration on %r must be a number of milliseconds above 0 and below 600000 (got %r)"
+            % (variant["name"], raw))
+    return ' data-video-duration="%s"' % html.escape(raw, quote=True)
 
 
 def mockup_cells(variants):
@@ -279,9 +295,9 @@ def cmd_build(args):
         cells = mockup_cells(variants)
         css.append(read(os.path.join(KINDS_DIR, "mockup.css")))
         body = "%s\n<div id=\"mk\">\n%s\n</div>" % (remainder.strip(), "\n".join(
-            '<div class="mk-cell" id="%s" data-variant="%s" data-state="%s">\n%s\n</div>'
+            '<div class="mk-cell" id="%s" data-variant="%s" data-state="%s"%s>\n%s\n</div>'
             % (cid, html.escape(v["name"], quote=True), html.escape(v["state"] or "default", quote=True),
-               v["body"].strip())
+               video_duration_attr(v), v["body"].strip())
             for cid, v in cells))
     else:
         css += [read(os.path.join(KINDS_DIR, "_base.css")),
@@ -504,29 +520,98 @@ VIDEO_DEFAULT_FPS = 30
 VIDEO_DEFAULT_HOLD_MS = 600
 VIDEO_DEFAULT_STRIP = 6
 
-# Every animation under the root, paused where it is and sized by its own timeline. A
-# transition or animation that never ends (infinite iterations) counts for one iteration.
+# The page's clock, installed before any page script runs. It replaces performance.now,
+# Date, setTimeout, setInterval and requestAnimationFrame with a clock that moves only when
+# the recorder says so, so a script sees the same times on every run. CSS animations and
+# transitions run on the browser's own clock, which cannot be replaced: a style sheet holds
+# every CSS animation at its start from the first style calculation, a transition is paused
+# the moment a script callback creates it, and the recorder sets each one's currentTime from
+# this clock.
+VIDEO_CLOCK_JS = """(function(){
+  var now = 0, id = 0, timers = [], frames = [], started = new WeakMap(), tracked = [];
+  var RealDate = Date, base = 1700000000000, realRaf = window.requestAnimationFrame.bind(window);
+  function FakeDate(){
+    if (!(this instanceof FakeDate)) return new RealDate(base + now).toString();
+    if (arguments.length === 0) return new RealDate(base + now);
+    return Reflect.construct(RealDate, arguments, new.target);
+  }
+  FakeDate.prototype = RealDate.prototype;
+  RealDate.prototype.constructor = FakeDate;
+  FakeDate.now = function(){ return base + now; };
+  FakeDate.parse = RealDate.parse;
+  FakeDate.UTC = RealDate.UTC;
+  window.Date = FakeDate;
+  var hold = new CSSStyleSheet();
+  hold.replaceSync("*, ::before, ::after { animation-play-state: paused !important; }");
+  document.adoptedStyleSheets = [hold];
+  performance.now = function(){ return now; };
+  function addTimer(fn, ms, args, every){
+    ms = Math.max(1, +ms || 0);
+    timers.push({id: ++id, at: now + ms, ms: ms, fn: fn, args: args, every: every});
+    return id;
+  }
+  window.setTimeout = function(fn, ms){ return addTimer(fn, ms, [].slice.call(arguments, 2), false); };
+  window.setInterval = function(fn, ms){ return addTimer(fn, ms, [].slice.call(arguments, 2), true); };
+  window.clearTimeout = window.clearInterval = function(i){
+    timers = timers.filter(function(t){ return t.id !== i; });
+  };
+  window.requestAnimationFrame = function(fn){ frames.push({id: ++id, fn: fn}); return id; };
+  window.cancelAnimationFrame = function(i){
+    frames = frames.filter(function(f){ return f.id !== i; });
+  };
+  function adopt(){
+    document.getAnimations().forEach(function(a){
+      if (started.has(a)) return;
+      started.set(a, now);
+      tracked.push(a);
+      a.pause();
+    });
+  }
+  function run(fn, args){
+    try { fn.apply(window, args); } catch (e) { console.error(e); }
+    adopt();
+  }
+  window.__video = {
+    adopt: adopt,
+    step: function(to){
+      var guard = 0;
+      for (;;) {
+        var next = null;
+        timers.forEach(function(t){ if (t.at <= to && (!next || t.at < next.at)) next = t; });
+        if (!next || ++guard > 100000) break;
+        now = Math.max(now, next.at);
+        if (next.every) next.at += next.ms; else timers.splice(timers.indexOf(next), 1);
+        run(next.fn, next.args);
+      }
+      now = Math.max(now, to);
+      var due = frames;
+      frames = [];
+      due.forEach(function(f){ run(f.fn, [now]); });
+      tracked.forEach(function(a){ a.currentTime = Math.max(0, now - started.get(a)); });
+      return new Promise(function(done){ realRaf(function(){ realRaf(function(){ done(true); }); }); });
+    }
+  };
+})()"""
+
+# Called once the page has loaded: takes over every animation already running (they start at
+# 0 ms) and reports the page's size and the longest end time among the animations under the
+# root. An animation that never ends counts for one iteration.
 VIDEO_PREPARE_JS = """(function(sel){
   var root = sel ? document.getElementById(sel) : document.documentElement;
-  var anims = root.getAnimations({subtree: true});
-  var end = 0;
-  anims.forEach(function(a){
-    a.pause();
+  window.__video.adopt();
+  var end = 0, count = 0;
+  root.getAnimations({subtree: true}).forEach(function(a){
+    count++;
     var t = a.effect.getComputedTiming();
     var e = isFinite(t.endTime) ? t.endTime : t.delay + t.duration;
     if (e > end) end = e;
   });
-  window.__video = {anims: anims, end: end};
   var r = document.documentElement;
-  return {count: anims.length, end: end, height: r.scrollHeight, width: innerWidth};
+  return {count: count, end: end, declared: root.getAttribute("data-video-duration"),
+          height: r.scrollHeight, width: innerWidth};
 })(%s)"""
 
-VIDEO_SEEK_JS = """(function(t){
-  window.__video.anims.forEach(function(a){ a.currentTime = t; });
-  return new Promise(function(done){
-    requestAnimationFrame(function(){ requestAnimationFrame(function(){ done(true); }); });
-  });
-})(%s)"""
+VIDEO_STEP_JS = "window.__video.step(%s)"
 
 
 class Cdp:
@@ -748,6 +833,7 @@ def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme
         send("Emulation.setDeviceMetricsOverride", {
             "width": width, "height": min_height, "deviceScaleFactor": float(args.scale),
             "mobile": False})
+        send("Page.addScriptToEvaluateOnNewDocument", {"source": VIDEO_CLOCK_JS})
         send("Page.navigate", {"url": "file://%s%s" % (page, suffix)})
         cdp.wait_event("Page.loadEventFired", session)
         sel = json.dumps(selector.lstrip("#") if selector else None)
@@ -757,19 +843,24 @@ def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme
         send("Emulation.setDeviceMetricsOverride", {
             "width": width, "height": height, "deviceScaleFactor": float(args.scale),
             "mobile": False})
-        end = float(args.duration) if args.duration is not None else float(info["end"])
+        if args.duration is not None:
+            end = float(args.duration)
+        elif info["declared"] is not None:
+            end = float(info["declared"])
+        else:
+            end = float(info["end"])
         times = video_times(end, args.fps) if end > 0 else [0.0]
-        if info["count"] == 0:
-            sys.stderr.write("spike video: %s has no animations to seek%s (none defined, or all had finished "
-                             "before the page loaded); every frame is the resting state.\n" % (os.path.basename(base),
+        if end <= 0:
+            sys.stderr.write("spike video: %s has no length: no --duration, no data-video-duration "
+                             "and no animation with a length at load, so every frame is the "
+                             "resting state%s. A page whose script drives the motion needs one "
+                             "of the first two.\n" % (os.path.basename(base),
                              " under prefers-reduced-motion" if args.reduced else ""))
-            times = [0.0]
         shot_dir = tempfile.mkdtemp(dir=frames)
         paths = []
         for i, t in enumerate(times):
-            if info["count"]:
-                send("Runtime.evaluate", {"expression": VIDEO_SEEK_JS % json.dumps(t),
-                                          "awaitPromise": True, "returnByValue": True})
+            send("Runtime.evaluate", {"expression": VIDEO_STEP_JS % json.dumps(t),
+                                      "awaitPromise": True, "returnByValue": True})
             data = send("Page.captureScreenshot", {"format": "png"})["data"]
             path = os.path.join(shot_dir, "f%04d.png" % i)
             with open(path, "wb") as f:
@@ -822,8 +913,9 @@ def cmd_kinds(_args):
     print("`spike shot <slug>` writes one PNG per cell, named variant-state.png; a build with no")
     print("cells (wireframe, prototype) gets one PNG, with --query choosing the variant and tweaks.")
     print()
-    print("`spike video <slug>` records each cell's CSS animation as an animated WebP plus a")
-    print("frame-strip PNG, named variant-state.webp and variant-state-strip.png.")
+    print("`spike video <slug>` records each cell's motion (CSS animation and transition, and script")
+    print("timers and requestAnimationFrame) as an animated WebP plus a frame-strip PNG, named")
+    print("variant-state.webp and variant-state-strip.png.")
     print()
     print("A prototype gets the Tweaks panel; a mockup and a wireframe get nothing but the fragment.")
     print()
@@ -965,8 +1057,8 @@ def main():
     f.add_argument("--fps", type=int, default=VIDEO_DEFAULT_FPS,
                    help="frames per second, 1-60 (default %d)" % VIDEO_DEFAULT_FPS)
     f.add_argument("--duration", type=float, metavar="MS",
-                   help="length to record in ms (default: the longest end time among the "
-                        "cell's animations, delay included)")
+                   help="length to record in ms (default: the cell's data-video-duration, else the "
+                        "longest end time among the animations running at load)")
     f.add_argument("--hold", type=int, default=VIDEO_DEFAULT_HOLD_MS, metavar="MS",
                    help="how long the last frame stays before the loop restarts (default %d)"
                         % VIDEO_DEFAULT_HOLD_MS)

@@ -37,12 +37,12 @@ result the way [CONTRACT.md](CONTRACT.md) rule 10 says.
 | --- | --- | --- | --- |
 | 1. ASCII sketch | Where the regions sit | Arrangement is the open question | In chat, per [`../ref/gui/sketch.md`](../ref/gui/sketch.md) — no build. When the answer depends on proportion, a greybox: `--kind wireframe` |
 | 2. Image comp | What it looks like | A new screen whose look is open, with no CSS to build from. **The default for a UI question** | [COMP.md](COMP.md) |
-| 3. HTML mockup | What it looks like, and how its CSS animation plays (`spike video`), in the project's real CSS, across variants and states | The project has tokens and components to render, or the answer needs exact type, spacing and every state side by side | [MOCKUP.md](MOCKUP.md) |
+| 3. HTML mockup | What it looks like, and how its motion plays (`spike video`), in the project's real CSS, across variants and states | The project has tokens and components to render, or the answer needs exact type, spacing and every state side by side | [MOCKUP.md](MOCKUP.md) |
 | 4. Interactive prototype | How it behaves | Behaviour only visible under interaction, or a mockup that settled nothing | [UI.md](UI.md) |
 
 Climb when the lower rung cannot answer: a sketch or greybox that cannot settle the look goes to a comp or a mockup; a
 mockup that cannot show a state reached by clicking, a transition that needs input or a real component's behaviour goes to a prototype.
-A CSS animation that runs on load stays at the mockup rung: `spike video` renders it as an animated WebP.
+Motion that starts on its own, a CSS animation or a script on a timer, stays at the mockup rung: `spike video` renders it as an animated WebP.
 Genuinely different takes on density, motion, personality or interaction model skip the sketch —
 a sketch filters on the wrong information — and go straight to a comp set, a mockup or the prototype.
 

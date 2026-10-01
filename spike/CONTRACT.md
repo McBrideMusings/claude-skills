@@ -27,7 +27,7 @@ falling back to absolute `pwd`) and build `/private/tmp/claude/<repo-slug>/…` 
 
 | Kind | For | Output | Palette |
 |---|---|---|---|
-| `mockup` | The project's real CSS, several variants each in several states | Static; no harness chrome. `spike shot` screenshots it and `spike video` records its CSS animation ([MOCKUP.md](MOCKUP.md)) | **None** — your fragment and `--extra-css` carry the project's CSS |
+| `mockup` | The project's real CSS, several variants each in several states | Static; no harness chrome. `spike shot` screenshots it and `spike video` records its motion ([MOCKUP.md](MOCKUP.md)) | **None** — your fragment and `--extra-css` carry the project's CSS |
 | `prototype` | Several genuinely different working versions of one UI | Interactive; the Tweaks panel | **None** — your fragment carries the host project's tokens |
 | `wireframe` | Greybox layout: structure and hierarchy only | Static | **Withheld on purpose** — do not add colour |
 
@@ -85,7 +85,8 @@ most recognisable machine-made accent there is. Don't introduce one in a fragmen
 
 One `<template data-variant="Name" data-state="State">` per cell; [MOCKUP.md](MOCKUP.md) has the
 steps. The cell id is `variant-state` in kebab case (a template with no `data-state` is the
-`default` state), and two cells may not share one. The output shows one cell at a time through
+`default` state), and two cells may not share one. A template may add
+`data-video-duration="MS"`, the length `spike video` records the cell for. The output shows one cell at a time through
 the URL fragment (`<slug>.html#dense-empty`) and carries no panel, button, frame or script of its
 own. `--extra-css <abs.css>` appends the project's real stylesheet.
 

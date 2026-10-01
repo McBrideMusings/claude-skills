@@ -16,7 +16,7 @@ code in `tool/harness/tweaks.css` and `tweaks.js`, and the tool wires it — you
 
 ## When this is the right shape
 
-- The look is settled or a mockup showed it, and what is open is behaviour: transitions that need input, states reached by clicking, how a real component responds. A CSS animation that runs on load is a mockup question: `spike video` ([MOCKUP.md](MOCKUP.md)).
+- The look is settled or a mockup showed it, and what is open is behaviour: transitions that need input, states reached by clicking, how a real component responds. Motion that starts on its own, a CSS animation or a script on a timer, is a mockup question: `spike video` ([MOCKUP.md](MOCKUP.md)).
 - A mockup or comp that could not answer the question.
 - "I want to see a few options working before committing", where working means clickable. Options judged by look alone are comps or mockups.
 
