@@ -1,4 +1,4 @@
-# Aspect brief: `tests` (delegated → `tdd`)
+# Aspect brief: `tests` (routed to `tdd`)
 
 Axis tag: `tests`. Applicability: always — an absent suite is the lead finding, not a reason to skip.
 

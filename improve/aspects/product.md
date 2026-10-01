@@ -1,4 +1,4 @@
-# Aspect brief: `product` (delegated → `ref/gui/orient.md`)
+# Aspect brief: `product` (routed to `ref/gui/orient.md`)
 
 Axis tag: `product`. Applicability: always.
 

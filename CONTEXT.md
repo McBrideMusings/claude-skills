@@ -14,23 +14,31 @@ The one verb for giving a brief to another executor and taking its result back �
 `dispatch <target>`. Bare `dispatch` with no target is bounced with the target list.
 _Avoid_: hand off, handoff, spawn, delegate, separate session
 
+**worker**:
+The executor a dispatch starts. The dispatcher is the session that handed it the brief.
+_Avoid_: delegate, delegated session
+
 **agent**:
 A dispatch target — the harness `Agent` tool: a subagent in this session, invisible, dies with
 the session.
 _Avoid_: delegate
 
-**split**:
-A dispatch target — a new pane in the current herdr workspace.
-
 **workspace**:
-A dispatch target — a new herdr workspace.
-_Avoid_: space
+A dispatch target — a new herdr space (herdr calls it a workspace) for the worker: a child space
+nested under the repo's space when the worker runs in a linked worktree of a repo herdr tracks,
+a standalone top-level space otherwise.
+
+**report-back** / **fire-and-forget**:
+The two modes of a dispatch, chosen by the dispatcher and named in its first status line.
+`report-back`: the dispatcher started the worker on its own initiative and keeps ownership of
+the result. `fire-and-forget`: the user asked for the dispatch, and the user (or a `SELF-LAND`
+worker) owns the result. See `dispatch/TARGETS.md`.
 
 **window**:
 A dispatch target — a Terminal.app window.
 
 **codex** / **reasonix**:
-Dispatch targets naming another vendor's coding agent. The surface (split/workspace/window) is
+Dispatch targets naming another vendor's coding agent. The surface (workspace/window) is
 resolved by the `dispatch transport` resolver, never asked.
 
 **inline**:

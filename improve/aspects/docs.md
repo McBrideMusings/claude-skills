@@ -1,4 +1,4 @@
-# Aspect brief: `docs` (delegated → `bootstrap` docs-site route)
+# Aspect brief: `docs` (routed to `bootstrap` docs-site route)
 
 Axis tag: `docs`. Applicability: always. Docs are the standing assumption ([`ref/docs/context.md`](../../ref/docs/context.md)) —
 content organisation is this aspect's job whether or not a VitePress site exists; the site's

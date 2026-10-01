@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: "`dispatch <target>` — give a brief to another executor and take its result back. Targets: `agent` (the in-session Claude Agent tool, the default), `split` (a herdr pane), `workspace` (a new herdr workspace), `window` (a Terminal.app window), or a vendor (`codex`, `reasonix`). Read this when wiring, debugging, or extending dispatched work."
+description: "`dispatch <target>` — give a brief to another executor and take its result back. Targets: `agent` (the in-session Claude Agent tool, the default), `workspace` (a herdr space, nested under the repo's space where a worktree allows it), `window` (a Terminal.app window), or a vendor (`codex`, `reasonix`). Read this when wiring, debugging, or extending dispatched work."
 ---
 
 # Dispatch
@@ -17,9 +17,9 @@ difference in the prompt the consuming skill writes.
 
 > ## Every vendor-target call runs through `dispatch exec`
 >
-> `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DELEGATE_AGENT` so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
+> `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DISPATCH_AGENT` so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
 >
-> **Not for `split`, `workspace` or `window` work handed to the user.** Those are managed by the user; the caller never reads the outfile or watches the run (see [TARGETS.md](TARGETS.md) § A dispatched session is the user's). The check and the read-back below apply only to cross-vendor calls where the caller asked for a result, such as `review dual`.
+> **Who reads the outfile depends on the mode.** In a **fire-and-forget** dispatch (the user asked for the `workspace` or `window` run) the caller never reads the outfile or watches the run. In a **report-back** dispatch the caller waits, reads the outfile and verifies the result (see [TARGETS.md](TARGETS.md) § Who feeds the result back). The check and the read-back below apply to report-back calls, such as `review dual`.
 >
 > **Caller-side check:** trust a target's result only when the router-owned outfile (`/tmp/<slug>-dispatch.md`) exists at the path the router reported. Its absence means the router was bypassed or the run failed — don't proceed as if it succeeded.
 
@@ -27,12 +27,12 @@ difference in the prompt the consuming skill writes.
 
 > ## Which target, before any of this
 >
-> **[TARGETS.md](TARGETS.md) owns the choice** of *which target* to dispatch to at all: the default is the in-session **`agent` target** (the Claude `Agent` tool), and only cross-vendor work, work the user must watch or take over, or work that must outlive this session escalates to `split`, `workspace`, or `window`. Read it first; this file is only about what happens once that escalation is warranted.
+> **[TARGETS.md](TARGETS.md) owns the choice** of *which target* to dispatch to at all: the default is the in-session **`agent` target** (the Claude `Agent` tool), and only cross-vendor work, work the user must watch or take over, or work that must outlive this session escalates to `workspace` or `window`. Read it first; this file is only about what happens once that escalation is warranted.
 
 Three layers, kept separate on purpose:
 
 1. **The `dispatch` resolver** (`dispatch` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind four verbs.
-2. **The transport choice** — `split`/`workspace` (herdr) or `window` (Terminal.app). Resolved by `dispatch`, never asked (see below). `dispatch transport` prints the answer and its reason.
+2. **The transport choice** — `workspace` (herdr) or `window` (Terminal.app). Resolved by `dispatch`, never asked (see below). `dispatch transport` prints the answer and its reason.
 3. **The transports themselves** — `herdr-agent` in this directory for the live herdr pane/workspace, and the separate `terminal` skill for the Terminal.app window. Skills never touch a transport directly.
 
 ---
@@ -52,8 +52,9 @@ dispatch agent
 
 dispatch transport
     → prints the surface `exec` would use and why: "herdr (inside herdr and herdr can
-      start claude)", "terminal (inside herdr, but 'reasonix' is not in herdr's --kind
-      enum)", "terminal (not inside herdr)".
+      start claude; it gets a child space of the repo's space)" (or "a standalone space"),
+      "terminal (inside herdr, but 'reasonix' is not in herdr's --kind enum)",
+      "terminal (not inside herdr)".
     → use it to name the target in a status line without running anything.
 
 dispatch check
@@ -64,7 +65,7 @@ dispatch exec [--headless] <prompt-file> <outfile>
     → run the resolved agent with the prompt in <prompt-file>; its answer lands in
       <outfile>. Blocks until the agent finishes, then returns. There is no "review" verb —
       a review is just an exec whose prompt asks for a review.
-    → the surface is resolved, not chosen: a live agent as `split`/`workspace` when we're
+    → the surface is resolved, not chosen: a live agent as a `workspace` when we're
       inside herdr, else `window` (a one-shot in a visible Terminal.app window). Same
       contract either way.
     → --headless: skip both surfaces. Runs the agent as a plain subprocess, output straight
@@ -97,7 +98,7 @@ Run `dispatch exec` with the Bash tool's **background** mode: the agent can take
 
 ## Selecting the vendor
 
-`dispatch` resolves the agent from **`$CLAUDE_DELEGATE_AGENT`** (`codex` | `reasonix` | `claude`):
+`dispatch` resolves the agent from **`$CLAUDE_DISPATCH_AGENT`** (`codex` | `reasonix` | `claude`):
 
 - Set it per-profile in **`settings.local.json`**'s `env` block — the only per-profile spot, since `settings.json` is symlinked/shared. Personal → `reasonix`, work → `codex`. It's gitignored and holds only the agent *name*, never a key.
 - A single repo can override it in its own `.claude/settings.local.json`; Claude Code's settings merge gives project scope precedence over user scope, so the override is free.
@@ -105,10 +106,10 @@ Run `dispatch exec` with the Bash tool's **background** mode: the agent can take
 
 ### The `claude` vendor (Claude-to-Claude)
 
-Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. Two optional env knobs, set alongside `CLAUDE_DELEGATE_AGENT`:
+Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. Two optional env knobs, set alongside `CLAUDE_DISPATCH_AGENT`:
 
-- **`CLAUDE_DELEGATE_MODEL`** — the target's model (`sonnet`, `haiku`, `opus`, or a full model id). Unset → the CLI's default. This is the point of the vendor: a cheap plan-follower or a heavyweight, chosen per profile or per repo.
-- **`CLAUDE_DELEGATE_PERMISSION_MODE`** — defaults to `auto`: the auto-mode classifier approves or refuses each tool call, so a dispatched session nobody is watching does not stop on a permission prompt. Hooks and deny rules still apply. Set a narrower mode here (`acceptEdits`, `manual`) for a task that should ask before running commands.
+- **`CLAUDE_DISPATCH_MODEL`** — the target's model (`sonnet`, `haiku`, `opus`, or a full model id). Unset → the CLI's default. This is the point of the vendor: a cheap plan-follower or a heavyweight, chosen per profile or per repo.
+- **`CLAUDE_DISPATCH_PERMISSION_MODE`** — defaults to `auto`: the auto-mode classifier approves or refuses each tool call, so a dispatched session nobody is watching does not stop on a permission prompt. Hooks and deny rules still apply. Set a narrower mode here (`acceptEdits`, `manual`) for a task that should ask before running commands.
 
 The dispatched agent is a full Claude Code session: it reads the repo's CLAUDE.md, skills, and settings from whatever profile `CLAUDE_CONFIG_DIR` routing gives the spawned shell (the Terminal window inherits the cwd, so profile routing behaves exactly as if the user opened a terminal there).
 
@@ -133,25 +134,25 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 | Condition | Transport |
 |---|---|
 | `--headless` | plain subprocess, no surface at all |
-| `HERDR_ENV=1` **and** the vendor is in herdr's `--kind` enum | **`split`/`workspace`** |
+| `HERDR_ENV=1` **and** the vendor is in herdr's `--kind` enum | **`workspace`** (a herdr space) |
 | anything else | **Terminal.app window** |
-| `DELEGATE_TRANSPORT=terminal\|herdr` | forces one; forcing `herdr` where it can't run is an error, not a fallback |
+| `DISPATCH_TRANSPORT=terminal\|herdr` | forces one; forcing `herdr` where it can't run is an error, not a fallback |
 
 `dispatch exec` prints the resolved transport and its reason as its first line, and `dispatch transport` prints the same without running anything. **Put that line in the status message** — a target the user is told to go watch, that was only ever a background subprocess, is the failure this exists to stop.
 
-**`reasonix` is not in herdr's `--kind` enum**, so a `dispatch reasonix` always lands in Terminal.app even inside herdr. On the personal profile (`CLAUDE_DELEGATE_AGENT=reasonix`) that is the normal case, not an edge.
+**`reasonix` is not in herdr's `--kind` enum**, so a `dispatch reasonix` always lands in Terminal.app even inside herdr. On the personal profile (`CLAUDE_DISPATCH_AGENT=reasonix`) that is the normal case, not an edge.
 
-### herdr — a live agent as `split` or `workspace` (`herdr-agent` in this directory)
+### herdr — a live agent in its own space (`herdr-agent` in this directory)
 
-`herdr tab create` (never `herdr pane split` — that would squeeze the caller's own pane, the one the user is reading) → wait for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`. This is the `split` target — a new tab in the workspace the caller is already in. The `workspace` target is `dispatch exec` run from inside a linked worktree made with `git worktree add`. `herdr-agent` opens that worktree's workspace with `herdr worktree open --workspace` and starts the agent in its first tab. Never open the workspace yourself first: `herdr-agent` would find it already open and put the agent in an extra `delegate-<pid>` tab.
+`herdr-agent` gives the worker a **space** (herdr's workspace), never a tab of the caller's. Run from a linked worktree of a repo herdr tracks, it runs `herdr worktree open --workspace <repo-workspace-id>`: a child space nested under the repo's space, with the agent in its first tab. Anywhere else — read-only work in the main checkout, a worktree herdr refuses (one of the skills submodule), a directory that is not a repo — it runs `herdr workspace create --cwd <dir> --label <slug> --no-focus`: a standalone top-level space, because `herdr workspace create` has no parent option. It never runs `herdr tab create` as a fallback and never `herdr pane split`, which would squeeze the caller's own pane, the one the user is reading. The one tab it still adds is `dispatch-<pid>`, when the child space was already open: never open the space yourself first. Then it waits for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`.
 
 **Never write `/<skill>` into a dispatched prompt** — slash expansion is an interactive-input feature; text delivered by herdr agent prompt, `--exec`, or a relay arrives as plain user text and is never expanded. Write "call `Skill(<name>)` first, then …" instead.
 
 What runs is the vendor's **real interactive TUI**, not a piped one-shot. Three consequences:
 
 - **It has no stdout to tee**, so `herdr-agent` appends a paragraph to the prompt telling the agent to write its complete answer to `<outfile>` itself. **That appended paragraph is the outfile contract** — remove it and every caller reads an empty file. If the agent finishes without writing it, `herdr-agent` scrapes `herdr pane read` into `<outfile>` and says on stderr that it did.
-- **You can take it over.** Switch to the tab and type. That is the reason to prefer this surface.
-- **It outlives us.** The tab and the agent survive this Claude session dying. `herdr-agent` never closes the tab and never focuses it — focusing marks it seen and collapses a `done` into `idle`. The user closes it.
+- **You can take it over.** Switch to the space and type. That is the reason to prefer this surface.
+- **It outlives us.** The space and the agent survive this Claude session dying. `herdr-agent` never closes the space and never focuses it — focusing marks it seen and collapses a `done` into `idle`. Whoever owns the result closes it (`herdr workspace close`).
 
 Completion is herdr's own agent lifecycle state, not a sentinel: herdr already tracks whether the agent is `working`, so there is nothing to poll a file for.
 

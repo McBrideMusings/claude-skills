@@ -87,11 +87,11 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 
 **It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `retro`'s [steering-conflict](../retro/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `retro` generally, not this skill.
 
-Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap` (its layout and docs-site routes), `profiling`, `tdd`, and the `ref/gui/` cells `critique.md` and `orient.md`. The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
+Every routed owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap` (its layout and docs-site routes), `profiling`, `tdd`, and the `ref/gui/` cells `critique.md` and `orient.md`. The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
 
 ## Routing
 
-- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; delegated aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no HTML report. IMPROVE-CORE.md is not involved — **except its Phase 08**, which this route still runs: score the findings yourself against [GROUNDING.md](GROUNDING.md), then take the survivors to tickets. The grilling loop is what sharpens a finding into a ticket body worth handing to `implement`; it is not a licence to build the thing.
+- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; routed aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no HTML report. IMPROVE-CORE.md is not involved — **except its Phase 08**, which this route still runs: score the findings yourself against [GROUNDING.md](GROUNDING.md), then take the survivors to tickets. The grilling loop is what sharpens a finding into a ticket body worth handing to `implement`; it is not a licence to build the thing.
 - **Several aspects named** (`improve gui tests`) → survey over exactly those, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 - **Nothing named** (bare `improve`) → survey over every applicable aspect, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 

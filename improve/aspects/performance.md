@@ -1,4 +1,4 @@
-# Aspect brief: `performance` (delegated → `profiling`)
+# Aspect brief: `performance` (routed to `profiling`)
 
 Axis tag: `performance`. Applicability: the app is launchable through an **existing** entry point — an `./admin` task or a package script. Check this before anything else; if there is none, return `not measurable — no launchable entry point` and stop.
 

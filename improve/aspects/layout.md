@@ -1,10 +1,10 @@
-# Aspect brief: `layout` (delegated → `bootstrap`)
+# Aspect brief: `layout` (routed to `bootstrap`)
 
 Axis tag: `layout`. Applicability: always.
 
 **Read:** `../../bootstrap/SKILL.md`, its **Findings-only invocation** contract, then run `PHASE-01-STATE-DETECTION.md` and return its audit table as findings. Run no later phase.
 
-**bootstrap's act-don't-ask rule is suspended for you.** Create nothing, migrate nothing, commit nothing. This is the one delegated aspect whose owner normally writes files by default, so the suspension matters more here than anywhere else.
+**bootstrap's act-don't-ask rule is suspended for you.** Create nothing, migrate nothing, commit nothing. This is the one routed aspect whose owner normally writes files by default, so the suspension matters more here than anywhere else.
 
 ## Aspect-specific rules
 

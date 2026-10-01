@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# herdr-agent — run one delegated task as a LIVE interactive agent in its own herdr tab.
+# herdr-agent — run one dispatched task as a LIVE interactive agent in its own herdr space.
 #
 #   herdr-agent run <kind> <prompt-file> <outfile> [-- <agent-arg>...]
 #
 # The herdr counterpart to `terminal run`. Same caller contract — prompt in a file,
-# response in <outfile>, blocks until done — but the thing in the tab is a real
+# response in <outfile>, blocks until done — but the thing in the space is a real
 # interactive agent session, not a piped one-shot:
 #
-#   * you can switch to its tab and type at it while it works, or take it over after
-#   * it outlives this Claude session (the tab and the agent stay up if we die)
+#   * you can switch to its space and type at it while it works, or take it over after
+#   * it outlives this Claude session (the space and the agent stay up if we die)
 #   * it writes <outfile> ITSELF, because an interactive TUI has no stdout to tee.
 #     The instruction to do that is appended to the prompt below — that appended
 #     paragraph IS the outfile contract. Remove it and the caller reads an empty file.
@@ -16,9 +16,9 @@
 # Completion is `herdr agent prompt --wait`, not a sentinel: herdr already tracks the
 # agent's lifecycle state, so we wait on `idle`/`done` rather than polling a file.
 #
-# The tab is deliberately LEFT OPEN and never focused. Focusing marks it seen and
+# The space is deliberately LEFT OPEN and never focused. Focusing marks it seen and
 # collapses a `done` into `idle`; closing it throws away the session you might want
-# to take over. The user closes it.
+# to take over. Whoever owns the worker closes it.
 set -eu
 
 TIMEOUT_MS=2400000   # 40m, matching `terminal run`'s ceiling
@@ -41,66 +41,65 @@ wait_pane_ready() {
   return 1
 }
 
-# Pick where the agent's pane goes, and set pane/tab/ws/where for the caller.
-# A linked worktree gets its own workspace nested under its repo's workspace, the
-# same place `herdr worktree create --workspace` puts one; a tab in the caller's
-# workspace would hide it behind the caller's own tab. Anything else gets a tab
-# in the caller's workspace.
+# Start a standalone top-level space (herdr workspace) in $PWD and set pane/tab/ws/where.
+# `herdr workspace create` has no parent option, so this space sits at the top of the sidebar.
+new_space() {
+  local created
+  created="$(herdr workspace create --cwd "$PWD" --label "$slug" --no-focus)" || {
+    echo "herdr-agent: could not create a space in $PWD" >&2; return 1; }
+  pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
+  tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+  ws="$(printf '%s' "$created" | jq -r '.result.workspace.workspace_id // empty')"
+  where="standalone space $slug ($ws)"
+  [ -n "$pane" ] || { echo "herdr-agent: no pane id came back for $where" >&2; return 1; }
+}
+
+# Pick where the agent's pane goes, and set pane/tab/ws/where for the caller. The agent
+# always gets a space of its own, never a tab of the caller's. A linked worktree of a repo
+# herdr tracks gets a child space nested under the repo's space, the same place
+# `herdr worktree create --workspace` puts one. Everything else gets a standalone top-level
+# space: the main checkout, a worktree herdr refuses (one of the skills submodule), a
+# directory that is not a repo. The only tab ever added is `dispatch-<pid>`, in a child
+# space that was already open when we got here.
 place_pane() {
-  local gitdir common top repo_ws opened already created
+  local gitdir common top repo_ws opened already created id
   gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null || true)"
   common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
-  if [ -n "$gitdir" ] && [ "$gitdir" != "$common" ]; then
-    top="$(git -C "$PWD" rev-parse --show-toplevel)"
-    repo_ws="$(herdr workspace list | jq -r --arg key "$common" '
-      [.result.workspaces[] | select(.worktree.repo_key == $key and .worktree.is_linked_worktree == false)
-       | .workspace_id][0] // empty')"
-    # `workspace list` leaves `.worktree` off some workspaces; ask each of those which
-    # repo it is the source checkout of.
-    if [ -z "$repo_ws" ]; then
-      local id
-      for id in $(herdr workspace list | jq -r '.result.workspaces[] | select(.worktree == null) | .workspace_id'); do
-        if [ "$(herdr worktree list --workspace "$id" 2>/dev/null | jq -r '.result.source.repo_key // empty')" = "$common" ]; then
-          repo_ws="$id"; break
-        fi
-      done
-    fi
-    [ -n "$repo_ws" ] || echo "herdr-agent: no open workspace for repo $common — the worktree's workspace opens at top level" >&2
-    # herdr only opens a workspace for a worktree of a repo it tracks; one of a submodule
-    # (the skills repo) is refused. The agent still starts in the worktree, as a tab of the
-    # caller's workspace.
-    if ! opened="$(herdr worktree open ${repo_ws:+--workspace "$repo_ws"} --path "$top" --no-focus)"; then
-      echo "herdr-agent: herdr cannot open a workspace for $top; starting a tab of the calling workspace in it instead" >&2
-      created="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$slug" --no-focus)" || {
-        echo "herdr-agent: could not create a tab" >&2; return 1; }
-      pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
-      tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
-      ws="$HERDR_WORKSPACE_ID"
-      where="a new tab of the calling workspace ($ws), started in $top"
-    else
-      ws="$(printf '%s' "$opened" | jq -r '.result.workspace.workspace_id // empty')"
-      already="$(printf '%s' "$opened" | jq -r '.result.already_open')"
-      if [ "$already" = "true" ]; then
-        created="$(herdr tab create --workspace "$ws" --cwd "$PWD" --label "$slug" --no-focus)" || {
-          echo "herdr-agent: could not create a tab in workspace $ws" >&2; return 1; }
-        pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
-        tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
-      else
-        pane="$(printf '%s' "$opened" | jq -r '.result.root_pane.pane_id // empty')"
-        tab="$(printf '%s' "$opened" | jq -r '.result.tab.tab_id // empty')"
+  if [ -z "$gitdir" ] || [ "$gitdir" = "$common" ]; then
+    new_space; return
+  fi
+  top="$(git -C "$PWD" rev-parse --show-toplevel)"
+  repo_ws="$(herdr workspace list | jq -r --arg key "$common" '
+    [.result.workspaces[] | select(.worktree.repo_key == $key and .worktree.is_linked_worktree == false)
+     | .workspace_id][0] // empty')"
+  # `workspace list` leaves `.worktree` off some workspaces; ask each of those which
+  # repo it is the source checkout of.
+  if [ -z "$repo_ws" ]; then
+    for id in $(herdr workspace list | jq -r '.result.workspaces[] | select(.worktree == null) | .workspace_id'); do
+      if [ "$(herdr worktree list --workspace "$id" 2>/dev/null | jq -r '.result.source.repo_key // empty')" = "$common" ]; then
+        repo_ws="$id"; break
       fi
-      where="workspace $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)"
-    fi
-  else
-    # A tab, never a split. Splitting the caller's pane squeezes the surface the user is
-    # actually reading; --no-focus keeps the tab unseen so a later `done` stays `done`.
-    created="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$slug" --no-focus)" || {
-      echo "herdr-agent: could not create a tab" >&2; return 1; }
+    done
+  fi
+  [ -n "$repo_ws" ] || echo "herdr-agent: no open workspace for repo $common — the worktree's space opens at top level" >&2
+  # herdr only opens a space for a worktree of a repo it tracks; one of a submodule
+  # (the skills repo) is refused.
+  if ! opened="$(herdr worktree open ${repo_ws:+--workspace "$repo_ws"} --path "$top" --no-focus 2>/dev/null)"; then
+    echo "herdr-agent: herdr cannot open a child space for $top; starting a standalone space in it instead" >&2
+    new_space; return
+  fi
+  ws="$(printf '%s' "$opened" | jq -r '.result.workspace.workspace_id // empty')"
+  already="$(printf '%s' "$opened" | jq -r '.result.already_open')"
+  if [ "$already" = "true" ]; then
+    created="$(herdr tab create --workspace "$ws" --cwd "$PWD" --label "$slug" --no-focus)" || {
+      echo "herdr-agent: could not create a tab in space $ws" >&2; return 1; }
     pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
     tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
-    ws="$HERDR_WORKSPACE_ID"
-    where="a new tab of the calling workspace ($ws)"
+  else
+    pane="$(printf '%s' "$opened" | jq -r '.result.root_pane.pane_id // empty')"
+    tab="$(printf '%s' "$opened" | jq -r '.result.tab.tab_id // empty')"
   fi
+  where="child space $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)${repo_ws:+ of $repo_ws}"
   [ -n "$pane" ] || { echo "herdr-agent: no pane id came back for $where" >&2; return 1; }
 }
 
@@ -147,24 +146,23 @@ cmd_run() {
   [ -f "$promptfile" ] || { echo "herdr-agent: prompt file not found: $promptfile" >&2; return 1; }
 
   [ "${HERDR_ENV:-}" = "1" ] || { echo "herdr-agent: not running inside herdr (HERDR_ENV != 1)" >&2; return 1; }
-  [ -n "${HERDR_WORKSPACE_ID:-}" ] || { echo "herdr-agent: HERDR_WORKSPACE_ID is unset" >&2; return 1; }
   need herdr; need jq
 
   # Agent names must match [a-z][a-z0-9_-]{0,31} and be unique among live agents.
-  local slug="delegate-$$"
+  local slug="dispatch-$$"
 
   : > "$outfile"
 
   local pane tab ws where
   place_pane || return 1
 
-  # `agent start` requires the pane to be sitting at its interactive shell prompt. A tab
+  # `agent start` requires the pane to be sitting at its interactive shell prompt. A space
   # created a moment ago is still spawning its shell, and starting into that returns
   # `agent_pane_busy`. The pane is ready when the only foreground process IS the shell.
-  wait_pane_ready "$pane" || { echo "herdr-agent: pane $pane never reached a shell prompt — leaving tab $tab open" >&2; return 1; }
+  wait_pane_ready "$pane" || { echo "herdr-agent: pane $pane never reached a shell prompt — leaving space $ws open" >&2; return 1; }
 
   if ! herdr agent start "$slug" --kind "$kind" --pane "$pane" --timeout "$READY_MS" -- "$@" >/dev/null; then
-    echo "herdr-agent: '$kind' did not come up in pane $pane — leaving tab $tab open to inspect" >&2
+    echo "herdr-agent: '$kind' did not come up in pane $pane — leaving space $ws open to inspect" >&2
     return 1
   fi
   echo "herdr-agent: $slug started in $where, pane $pane" >&2
@@ -212,7 +210,7 @@ Do not summarise it there; that file IS your answer and is the only part that is
     herdr pane read "$pane" --lines 600 > "$outfile" 2>/dev/null || true
   fi
 
-  echo "herdr-agent: $kind finished → $outfile (tab $tab left open — switch to it to take over, close it when done)"
+  echo "herdr-agent: $kind finished → $outfile (space $ws left open — switch to it to take over, close it when done)"
 }
 
 case "${1:-}" in

@@ -1,4 +1,4 @@
-# Aspect brief: `gui` (delegated → `ref/gui/critique.md`)
+# Aspect brief: `gui` (routed to `ref/gui/critique.md`)
 
 Axis tag: `gui` — matching the `ref/gui/` label. Applicability: a UI surface exists — rendered components, a stylesheet, a terminal UI, a page. No surface → return `not applicable — <reason>` and stop.
 

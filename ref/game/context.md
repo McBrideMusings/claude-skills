@@ -20,6 +20,6 @@
 | [`diagnose.md`](diagnose.md) | Debugging a physics, timing or state bug. |
 | [`review.md`](review.md) | Reviewing gameplay code. |
 | [`roblox.md`](roblox.md) | The target is Roblox — Luau, DataStores, replication. |
-| [`build-arc.md`](build-arc.md) | Building a whole game end to end — the seven phases and what each delegates to. |
+| [`build-arc.md`](build-arc.md) | Building a whole game end to end — the seven phases and what each hands off to. |
 
 3D rendering craft is [`ref/threejs`](../threejs/context.md).

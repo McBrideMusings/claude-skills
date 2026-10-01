@@ -777,7 +777,7 @@ Item: ${item.id} — ${item.title}
 ${item.acceptance && item.acceptance.length ? `Acceptance criteria:\n${item.acceptance.map((x) => `- ${x}`).join('\n')}` : 'No acceptance criteria were written down; verify the behaviour the item describes.'}
 Files changed: ${touchedFiles.join(', ')}
 
-**Do not read a screenshot into this context — a stage cannot delegate that to another agent.** Prove the result from text the surface already produces: logs, exit codes, a DOM or text dump. If an image genuinely must be captured, save it to a path and assert on it via text or exit code, naming the path in \`evidence\` rather than reading the image here.${
+**Do not read a screenshot into this context — a stage cannot hand that to another agent.** Prove the result from text the surface already produces: logs, exit codes, a DOM or text dump. If an image genuinely must be captured, save it to a path and assert on it via text or exit code, naming the path in \`evidence\` rather than reading the image here.${
     a.constraints
       ? `
 

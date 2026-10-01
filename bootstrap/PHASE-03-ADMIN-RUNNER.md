@@ -4,7 +4,7 @@
 
 ## Branches
 
-- **Missing** → delegate to the `admin` skill to bootstrap. The admin skill runs `admin new` to detect the stack and write a starter `admin.toml`, then validates with `admin check`. Don't reimplement that logic here.
+- **Missing** → hand off to the `admin` skill to bootstrap. The admin skill runs `admin new` to detect the stack and write a starter `admin.toml`, then validates with `admin check`. Don't reimplement that logic here.
 - **Standard** → no-op. (The `admin` skill audits independently when invoked.)
 - **Non-standard:** if there's a `Makefile`, `justfile`, or top-level `package.json` scripts and no `admin.toml`, mention to the user:
 

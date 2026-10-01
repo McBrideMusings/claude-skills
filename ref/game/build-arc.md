@@ -1,6 +1,6 @@
 # Building a game end-to-end — the arc
 
-Conduct the build without holding game knowledge inline: sequence the phases, delegating each to its
+Conduct the build without holding game knowledge inline: sequence the phases, handing each to its
 owning skill or implementing while reading the named axis. Knowledge lives in `ref/game/*` (game
 mode) and `ref/<stack>/*` (the stack) — never duplicate it here. Impose no tech stack: a game may
 be a fresh Vite/three.js app or embedded in an existing host (devvit, cloudflare, a native shell);
@@ -12,7 +12,7 @@ First, ensure the `game` label is set in the `.claude/domain` marker (see
 A bare "build me a game" walks Phases 1→7; an ask naming a phase ("add a boss fight", "the frame rate
 stutters") jumps straight there.
 
-| # | Phase | Delegates to |
+| # | Phase | Hands off to |
 | --- | --- | --- |
 | 1 | **Design** | invoke `grill-me`; read [`design.md`](design.md) (MDA / Clockwork — what is this, where's the decision) |
 | 2 | **Scaffold** *(new game only)* | invoke `bootstrap`; then implement a thin, stack-agnostic game-loop skeleton (canvas + fixed-step update / render split) into the existing host; write the `game` marker |
@@ -27,7 +27,7 @@ toy / puzzle / contest / game, the MDA chain, where the ambiguous decision is �
 It never declares something fun, engaging, or "better"; present concrete structural facts and the human
 decides. Hard rule, not a style preference.
 
-**Ledger.** Keep a short running ledger of which phases ran, what each delegated to, and the evidence
+**Ledger.** Keep a short running ledger of which phases ran, what each handed off to, and the evidence
 (screenshot, profile number, review verdict) at `/private/tmp/claude/<repo-slug>/game-ledger.md`.
 Phase 6 gates Phase 7 — don't call prototype-quality work shipped.
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# delegate — delegation resolver (cross-vendor or Claude-to-Claude).
+# dispatch — worker resolver (cross-vendor or Claude-to-Claude).
 #
-# Resolves a non-interactive coding agent from $CLAUDE_DELEGATE_AGENT and runs it.
-# The delegate flavors (review dual, implement delegate) call only these three verbs
+# Resolves a coding agent from $CLAUDE_DISPATCH_AGENT and runs it as a worker.
+# The skills that dispatch (review dual, implement dispatch) call only these verbs
 # and never name a specific vendor:
 #
 #   dispatch agent                       print the resolved agent (codex|reasonix|claude), or fail
@@ -11,22 +11,22 @@
 #   dispatch exec [--headless] <prompt-file> <outfile>
 #                                          run the agent with the prompt; output to <outfile>.
 #                                          default: in whichever watchable surface this session lives in —
-#                                          a herdr tab when we're inside herdr, else a Terminal.app window.
+#                                          a herdr space when we're inside herdr, else a Terminal.app window.
 #                                          --headless: no surface — run as a plain subprocess (backend-only,
 #                                          for cron / SSH / no-GUI where AppleScript can't open a window).
 #
 # Transport is resolved, never asked: inside herdr (HERDR_ENV=1) with a vendor herdr can
-# start, the delegate is a LIVE agent in its own tab you can take over; otherwise it is a
-# one-shot piped into a Terminal.app window. $DELEGATE_TRANSPORT=terminal|herdr forces one.
+# start, the worker is a LIVE agent in its own herdr space you can take over; otherwise it is a
+# one-shot piped into a Terminal.app window. $DISPATCH_TRANSPORT=terminal|herdr forces one.
 # Either way the caller's contract is identical — prompt in a file, answer in <outfile>.
 #
-# Selection: $CLAUDE_DELEGATE_AGENT, set per-profile in settings.local.json
+# Selection: $CLAUDE_DISPATCH_AGENT, set per-profile in settings.local.json
 # (reasonix on personal, codex on work; claude for Claude-to-Claude). A repo can
 # override it in its own .claude/settings.local.json. Unset/unknown is a hard
 # error — never guess a vendor.
-# claude extras (both optional): $CLAUDE_DELEGATE_MODEL picks the delegate's
+# claude extras (both optional): $CLAUDE_DISPATCH_MODEL picks the worker's
 # model (e.g. sonnet, haiku, opus); unset uses the CLI's default.
-# $CLAUDE_DELEGATE_PERMISSION_MODE sets the delegate's permission mode
+# $CLAUDE_DISPATCH_PERMISSION_MODE sets the worker's permission mode
 # (default auto — the auto-mode classifier approves or refuses each call, so a
 # session nobody is watching does not stop on a prompt; hooks and deny rules
 # still apply).
@@ -35,9 +35,9 @@ set -eu
 KNOWN="codex reasonix claude"
 
 resolve_agent() {
-  local a="${CLAUDE_DELEGATE_AGENT:-}"
+  local a="${CLAUDE_DISPATCH_AGENT:-}"
   if [ -z "$a" ]; then
-    echo "dispatch: no delegate configured — set CLAUDE_DELEGATE_AGENT (codex|reasonix|claude) in settings.local.json" >&2
+    echo "dispatch: no agent configured — set CLAUDE_DISPATCH_AGENT (codex|reasonix|claude) in settings.local.json" >&2
     return 1
   fi
   case " $KNOWN " in
@@ -49,7 +49,7 @@ resolve_agent() {
 cmd_agent() { resolve_agent; }
 
 # The herdr `agent start --kind` value for a vendor, or empty if herdr cannot start it.
-# reasonix is absent from herdr's fixed --kind enum, so a reasonix delegate can only ever
+# reasonix is absent from herdr's fixed --kind enum, so a reasonix worker can only ever
 # run in Terminal.app — that is a herdr limitation, not a preference.
 herdr_kind() {
   case "$1" in
@@ -59,23 +59,38 @@ herdr_kind() {
   esac
 }
 
-# Which surface `exec` will run the delegate in. Prints "<transport>\t<reason>".
+# Which kind of herdr space `herdr-agent` will give the worker from $PWD: a child space
+# nested under the repo's space for a linked worktree, a standalone top-level space for
+# anything else. herdr may still refuse a worktree it does not track; herdr-agent then
+# falls back to a standalone space and says so.
+space_kind() {
+  local gitdir common
+  gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null || true)"
+  common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  if [ -n "$gitdir" ] && [ "$gitdir" != "$common" ]; then
+    printf "a child space of the repo's space"
+  else
+    printf 'a standalone space'
+  fi
+}
+
+# Which surface `exec` will run the worker in. Prints "<transport>\t<reason>".
 resolve_transport() {
-  local a="$1" forced="${DELEGATE_TRANSPORT:-}" kind
+  local a="$1" forced="${DISPATCH_TRANSPORT:-}" kind
   kind="$(herdr_kind "$a")"
 
   if [ -n "$forced" ]; then
     case "$forced" in
-      terminal) printf 'terminal\tforced by DELEGATE_TRANSPORT\n'; return 0 ;;
+      terminal) printf 'terminal\tforced by DISPATCH_TRANSPORT\n'; return 0 ;;
       herdr)
         if [ "${HERDR_ENV:-}" != "1" ]; then
-          echo "dispatch: DELEGATE_TRANSPORT=herdr but this session is not inside herdr (HERDR_ENV != 1)" >&2; return 1
+          echo "dispatch: DISPATCH_TRANSPORT=herdr but this session is not inside herdr (HERDR_ENV != 1)" >&2; return 1
         fi
         if [ -z "$kind" ]; then
-          echo "dispatch: DELEGATE_TRANSPORT=herdr but '$a' is not in herdr's --kind enum" >&2; return 1
+          echo "dispatch: DISPATCH_TRANSPORT=herdr but '$a' is not in herdr's --kind enum" >&2; return 1
         fi
-        printf 'herdr\tforced by DELEGATE_TRANSPORT\n'; return 0 ;;
-      *) echo "dispatch: unknown DELEGATE_TRANSPORT '$forced' (expected terminal|herdr)" >&2; return 1 ;;
+        printf 'herdr\tforced by DISPATCH_TRANSPORT; it gets %s\n' "$(space_kind)"; return 0 ;;
+      *) echo "dispatch: unknown DISPATCH_TRANSPORT '$forced' (expected terminal|herdr)" >&2; return 1 ;;
     esac
   fi
 
@@ -86,7 +101,7 @@ resolve_transport() {
   elif ! command -v herdr >/dev/null 2>&1; then
     printf 'terminal\tinside herdr, but the herdr CLI is not on PATH\n'
   else
-    printf 'herdr\tinside herdr and herdr can start %s\n' "$kind"
+    printf 'herdr\tinside herdr and herdr can start %s; it gets %s\n' "$kind" "$(space_kind)"
   fi
 }
 
@@ -132,7 +147,9 @@ cmd_exec() {
   if [ "${1:-}" = "--headless" ]; then headless=1; shift; fi
   local promptfile="${1:-}" outfile="${2:-}"
   if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
-    echo "usage: dispatch exec [--headless] <prompt-file> <outfile>" >&2; return 2
+    echo "usage: dispatch exec [--headless] <prompt-file> <outfile>" >&2
+    echo "  env: CLAUDE_DISPATCH_AGENT (codex|reasonix|claude), CLAUDE_DISPATCH_MODEL, CLAUDE_DISPATCH_PERMISSION_MODE, DISPATCH_TRANSPORT (terminal|herdr)" >&2
+    return 2
   fi
   [ -f "$promptfile" ] || { echo "dispatch: prompt file not found: $promptfile" >&2; return 1; }
 
@@ -149,31 +166,31 @@ cmd_exec() {
   local rc=0
 
   if [ "$transport" = "herdr" ]; then
-    # A live interactive agent in its own tab — the user can watch it, type at it, and
+    # A live interactive agent in its own herdr space — the user can watch it, type at it, and
     # keep it after this session ends. It is the agent's own TUI, so there are no
     # -p/exec flags here; `herdr-agent` tells it to write <outfile> itself.
     local -a iargs=()
     case "$a" in
-      claude) iargs=(--permission-mode "${CLAUDE_DELEGATE_PERMISSION_MODE:-auto}")
-              [ -n "${CLAUDE_DELEGATE_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DELEGATE_MODEL") ;;
+      claude) iargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
+              [ -n "${CLAUDE_DISPATCH_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DISPATCH_MODEL") ;;
       codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac
     "$(cd "$(dirname "$0")" && pwd -P)/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
     return "$rc"
   fi
 
-  # Terminal.app: a one-shot piped into the vendor's non-interactive mode. delegate owns
+  # Terminal.app: a one-shot piped into the vendor's non-interactive mode. dispatch owns
   # *which vendor command runs*; the `terminal` skill owns the window, the sentinel and
   # polling, the cold-start guard, and the window-left-open behavior.
   local runner
   case "$a" in
     codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
     reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
-    claude)   runner="claude -p --permission-mode ${CLAUDE_DELEGATE_PERMISSION_MODE:-auto}${CLAUDE_DELEGATE_MODEL:+ --model $CLAUDE_DELEGATE_MODEL}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
+    claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${CLAUDE_DISPATCH_MODEL:+ --model $CLAUDE_DISPATCH_MODEL}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
   esac
 
   local terminal; terminal="$(cd "$(dirname "$0")" && pwd -P)/terminal"
-  local payload; payload="$(mktemp -t delegate-payload.XXXXXX)"
+  local payload; payload="$(mktemp -t dispatch-payload.XXXXXX)"
   printf 'cat %q | %s\n' "$promptfile" "$runner" > "$payload"
 
   if [ "$headless" -eq 1 ]; then
