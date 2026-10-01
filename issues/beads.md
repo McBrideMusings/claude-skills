@@ -404,6 +404,14 @@ Non-negotiables:
 
 `bug | feature | task | epic | chore | decision`. Aliases: `feat`→`feature`, `adr`/`dec`→`decision`.
 
+**A bead's title never carries its type.** The `-t` field already holds it, and `bd list` shows it
+in its own column, so `[bug]`, `bug:`, `Bug —`, `Feature:`, `Epic:` and `Task:` in the title say
+it twice. Name the thing: "Killing a hosted worker sends SIGKILL with no grace period", not
+"[bug] Killing a hosted worker sends SIGKILL with no grace period". This applies to every
+`bd create` and `bd update --title`, including `file`, `spec` and `shape`. A title that arrives
+with such a prefix (from a GitHub issue, a followup, a papercut) loses the prefix when it
+becomes a bead, and the type goes in `-t`.
+
 ## Sync
 
 ### Where the truth lives — read this before answering any question about it

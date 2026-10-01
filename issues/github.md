@@ -8,6 +8,9 @@ written `#42` in prose).
 `gh label create` before first use, and its nine default labels (`enhancement`, `bug`,
 `question`, `wontfix`, …) are duplicates of type/status and get deleted on adoption.
 
+A GitHub issue title may carry a category prefix such as `[bug]`, because GitHub has no type
+column to show it. It is optional. A bead never does; see [`beads.md`](beads.md) §Types.
+
 ## Verb table
 
 | Verb | Command |
