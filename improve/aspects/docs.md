@@ -1,12 +1,12 @@
-# Aspect brief: `docs` (delegated → `docs`)
+# Aspect brief: `docs` (delegated → `bootstrap` docs-site route)
 
-Axis tag: `docs`. Applicability: always. Docs are the standing assumption (`docs/SKILL.md`) —
+Axis tag: `docs`. Applicability: always. Docs are the standing assumption ([`ref/docs/context.md`](../../ref/docs/context.md)) —
 content organisation is this aspect's job whether or not a VitePress site exists; the site's
 own presence is `layout`'s finding.
 
-**Read:** `../../docs/SKILL.md`, its **Findings-only invocation** contract. Run
-`PHASE-01-STATE-DETECTION.md`. When `docs/` + `.vitepress/` both exist, also evaluate
-`PHASE-03-AUDIT.md`'s mechanical and substantive checklists as a **report instead of applying
+**Read:** `../../bootstrap/docs-site/DOCS-SITE.md`, its **Findings-only invocation** contract. Run
+`../../bootstrap/docs-site/PHASE-01-STATE-DETECTION.md`. When `docs/` + `.vitepress/` both exist, also evaluate
+`../../bootstrap/docs-site/PHASE-03-AUDIT.md`'s mechanical and substantive checklists as a **report instead of applying
 them**. Skip Phases 05–06 entirely.
 
 ## Aspect-specific rules
@@ -18,7 +18,7 @@ them**. Skip Phases 05–06 entirely.
   missing sidebar entry) is cheap and certain; a substantive one (a page that documents a flow
   the code no longer has) needs the code cited alongside the page. Don't let a pile of
   mechanical hits bury the one substantive finding.
-- Do not create, migrate, or rename anything. The docs skill's act-don't-ask behavior is
+- Do not create, migrate, or rename anything. The docs-site flow's act-don't-ask behavior is
   suspended for you.
 - **The VitePress checklist above is the site-exists-only half.** The organisation checklist
   below runs regardless of whether a VitePress site exists — a repo with no site can still
@@ -31,7 +31,7 @@ Each finding quotes the file.
 
 - **Files the standard forbids.** A `PRD.md`, `docs/PRD.md`, `ROADMAP.md`, `docs/roadmap.md`,
   or similar planning/prediction doc anywhere in `docs/` or the repo root. These are forbidden
-  outright — forward-looking work belongs on the issue tracker (`backlog shape` prints a roadmap
+  outright — forward-looking work belongs on the issue tracker (`issues shape` prints a roadmap
   from the dependency graph on demand).
 - **Misnamed files.** A file that should be `docs/CONTEXT.md` or `docs/adr/NNNN-slug.md` under
   a different name or path (`GLOSSARY.md`, `docs/decisions/`, `001-foo.md` missing the

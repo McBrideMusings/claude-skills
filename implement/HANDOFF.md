@@ -12,7 +12,7 @@ An item is offerable when five cheap checks all say so — this is a check, not 
 - **Open.** `bd show <id> --json` reads its status.
 - **Not carrying the `human` label.** `human` is beads' one legal bare label, and there is deliberately no positive "AFK" label — removing `human` from an item is what makes it AFK. Check for its absence; do not invent a label to check for its presence.
 - **Listed by `bd ready --limit 0 --json`.** Nothing blocks it. Without `--limit 0` the list stops at 100 and an item past it silently fails this check ([`../issues/beads.md`](../issues/beads.md)). Run `bd recompute-blocked` first — `bd ready` reads a denormalized flag that goes stale after a hand-resolved merge and will silently hide ready work.
-- **Sized.** Count the distinct files the item's body names — paths, backticked or bare, under the repo root. Fewer than three, and the body does not state that the item is a fan-out root or an expand–contract stage, means the item is under `backlog spec`'s slice-size floor. This is checked here, against the whole scope, rather than per item, because merging needs the neighbour, which only a view of the whole scope can see. An under-floor item is not excluded here; it is flagged for the merge offer in § 2.
+- **Sized.** Count the distinct files the item's body names — paths, backticked or bare, under the repo root. Fewer than three, and the body does not state that the item is a fan-out root or an expand–contract stage, means the item is under `issues spec`'s slice-size floor. This is checked here, against the whole scope, rather than per item, because merging needs the neighbour, which only a view of the whole scope can see. An under-floor item is not excluded here; it is flagged for the merge offer in § 2.
 
 Passing all five makes an item eligible to offer, not yet ready to run. The readiness gate below is what decides that, run once per item, here in chat.
 
@@ -28,7 +28,7 @@ A `Blocked by` edge orders work; it does not prove the code depends on the block
 
 An item failing any test is not offered. Be strict: this gate exists to stop a pass that would otherwise guess at intent and produce confidently wrong work — a clear "not ready, here's why" is a good outcome, not a failure.
 
-Bare `implement` applies this gate to each item of its walk down `backlog next`'s ranked list ([`SKILL.md`](SKILL.md)); `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way.
+Bare `implement` applies this gate to each item of its walk down `issues next`'s ranked list ([`SKILL.md`](SKILL.md)); `implement <parent>` runs the breakdown in chat first, then gates each slice child the same way.
 
 ## 2. Sizing before the offer
 

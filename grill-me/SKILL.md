@@ -53,7 +53,7 @@ At session start, check for these in the current repo:
 
 ### Live glossary maintenance
 
-As terms resolve during the conversation, capture them per the `docs` skill's vocabulary rule: each is a slate row (term, one-line meaning, where it's already used), and the write to `docs/CONTEXT.md` happens on `go` — never inline mid-conversation. See [../docs/SKILL.md](../docs/SKILL.md)'s "Standing rules" and [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md) for the format.
+As terms resolve during the conversation, capture them per the `ref/docs` vocabulary rule: each is a slate row (term, one-line meaning, where it's already used), and the write to `docs/CONTEXT.md` happens on `go` — never inline mid-conversation. See [../ref/docs/STANDING-RULES.md](../ref/docs/STANDING-RULES.md) and [../ref/docs/CONTEXT-FORMAT.md](../ref/docs/CONTEXT-FORMAT.md) for the format.
 
 **Keep `docs/CONTEXT.md` a glossary and nothing else.** It must stay totally devoid of implementation details — it is not a spec, not a scratchpad, not a home for implementation decisions. Resolved vocabulary only; decisions go to ADRs, plans go to plan files.
 
@@ -70,7 +70,7 @@ If the user states how something works and the code disagrees, surface it: *"You
 
 ### ADRs, sparingly
 
-Apply the `docs` skill's any-session ADR rule (three-conditions test; a passing decision is a slate row that turn). See [../docs/ADR-FORMAT.md](../docs/ADR-FORMAT.md) for the template and qualifiers.
+Apply the `ref/docs` any-session ADR rule (three-conditions test; a passing decision is a slate row that turn). See [../ref/docs/ADR-FORMAT.md](../ref/docs/ADR-FORMAT.md) for the template and qualifiers.
 
 ## Assumption-breaking lenses
 
@@ -82,6 +82,8 @@ Two symptoms in an interview are not "ask a better question" problems — they a
 | The effort might be solving the wrong problem — the stated need arrives already shaped as a solution ("we need a dashboard"), or three rounds have refined a mechanism nobody has justified | `lateral concept-fan` — "what is this a way of doing?", widen, then come back down |
 
 **These stay inside the interview's rules.** The output of a lens is options and a recommendation in the standard format, one question per message, waiting for the human. It is never a verdict, and it never advances on an answer you supplied yourself. `concept-fan` in particular widens the scope — if it lands somewhere the current effort doesn't cover, that is a scope-check finding to surface, not a licence to re-plan the project.
+
+**Every option on a list you wrote is the same shape** (same mechanism, differing in detail) → run `lateral random-stimulus` once on the list before presenting it, without asking. This is the default for a homogeneous list and is not counted against the one-lens-per-session limit above.
 
 **Don't reach for either on a settled question.** A human who has already justified a constraint is not stuck; inverting it there wastes a turn and reads as contrarianism.
 
@@ -128,9 +130,9 @@ Once this skill is loaded, every later message reads as an answer to the current
 If a written record is useful at the end, offer it — don't assume:
 
 - Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
-- Durable product spec → invoke `/backlog spec`, which synthesizes the spec as its Phase 03. (`/backlog spec` owns spec generation; don't write the spec by hand here.)
+- Durable product spec → invoke `/issues spec`, which synthesizes the spec as its Phase 03. (`/issues spec` owns spec generation; don't write the spec by hand here.)
 
-Glossary entries and ADRs are captured *as slate rows* during the session, per the `docs` skill's standing rules — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
+Glossary entries and ADRs are captured *as slate rows* during the session, per the `ref/docs` standing rules — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
 
 ## Never build by hand what another skill owns
 
@@ -139,7 +141,7 @@ Never chain into another interview. It does not mean build things yourself. The 
 | The user asks for | Invoke |
 | --- | --- |
 | a prototype, mockup, variants, "show me a few options" | `spike` |
-| a spec or PRD, tickets, or issues from what was decided | `backlog spec` |
+| a spec or PRD, tickets, or issues from what was decided | `issues spec` |
 | a diagram or a visual explanation | `explain` |
 | an ASCII layout sketch for one arrangement | `spike` |
 

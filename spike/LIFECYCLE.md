@@ -29,7 +29,7 @@ the tool is `spike`, so the directory is `spikes`, everywhere, no exceptions.
 
 ## Tickets from a spike
 
-When `backlog spec` (or any other pass) turns a spike into tickets, each UI slice cites its winning
+When `issues spec` (or any other pass) turns a spike into tickets, each UI slice cites its winning
 comp or mockup screenshot by dsys ref in the ticket's design field. The ref is created with
 `dsys refs add <bead-id> <image.png>` once the ticket exists ([COMP.md](COMP.md)). No frame is committed
 to the project, and no teardown ticket exists, because nothing was committed to tear down. A slice

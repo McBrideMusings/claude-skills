@@ -16,4 +16,4 @@ The knowledge lives in `improve/`; this cell is the route to it.
 Judging a document that already exists, rather than writing one, is `improve` —
 [`improve/aspects/skills.md`](../../improve/aspects/skills.md) for a skill,
 [`improve/aspects/claude-md.md`](../../improve/aspects/claude-md.md) for a `CLAUDE.md`.
-Judging whether a rule was obeyed across real sessions is `audit-session`.
+Judging whether a rule was obeyed across real sessions is `retro`.

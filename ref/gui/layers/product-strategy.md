@@ -1,6 +1,6 @@
 # Product & service strategy layer (layer 4)
 
-Read when scope/direction decisions are live; its output feeds `backlog spec`. A library of
+Read when scope/direction decisions are live; its output feeds `issues spec`. A library of
 techniques, not a script — see "Applying a cell" in [`../working-layers.md`](../working-layers.md).
 Adapted from jamiemill/layers-skills (MIT).
 

@@ -5,7 +5,7 @@ or dropped. Loaded by [SKILL.md](SKILL.md) at end of pass, after the report is w
 
 **This file formats findings you are handing *to* an author.** Answering a reviewer who has
 already read your code is the opposite job and lives in
-[../unblock/FEEDBACK.md](../unblock/FEEDBACK.md) — different shape, different caps, different
+[../mergeable/FEEDBACK.md](../mergeable/FEEDBACK.md) — different shape, different caps, different
 banned phrases. Do not read one for the other.
 
 [RULES.md](RULES.md) binds this file. RULE 0 applies hardest at exactly this point: the

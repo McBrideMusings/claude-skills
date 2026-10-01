@@ -211,7 +211,7 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 **Never write "no next work" from memory.** The sentence is earned by the `relay-candidates` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. Outside a walk, the turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
 
-Invoke the `backlog file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
+Invoke the `issues file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
 
 **In an epic walk (`implement <epic> walk`, [`../implement/SKILL.md`](../implement/SKILL.md) §The walk) there is no halt and no ask.** Choose every candidate's disposition yourself, then run the Act pass:
 

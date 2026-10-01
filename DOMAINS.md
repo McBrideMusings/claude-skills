@@ -106,7 +106,7 @@ tests, and a **project-local** `verify` skill (which built-in `verify` bootstrap
 `ref/<label>/testing.md` for stack-specific drive/harness knowledge.
 
 The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique
-lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `backlog shape`, and
+lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `issues shape`, and
 `ref/game`'s design phase read it optionally when the label is in scope. Design cells name structure
 and tradeoffs — they never deliver a fun/good verdict.
 
@@ -121,8 +121,8 @@ finding, because ranking the cells would guard a duplication that should be remo
 
 Every label in the vocabulary carries a `context.md`, except `node`. It is deliberately
 empty for the same reason `tracker:github` is: it sits on half of all repos, so a cell would
-fire constantly to say what was already assumed. Docs are a standing assumption owned by the
-`docs` skill, not a label.
+fire constantly to say what was already assumed. Docs are a standing assumption, not a map label:
+`ref/docs/` is a cell every repo uses, reached by the picker and the edit hook rather than by `domains-map`.
 
 `ref/apple/` has all four engine cells (`review`, `diagnose`, `profiling`, `testing`);
 `ref/web/` has `profiling` + `testing` + `review`; `ref/react/` has `review`; `ref/threejs/` has

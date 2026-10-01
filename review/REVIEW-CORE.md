@@ -34,7 +34,7 @@ Findings are produced without a fix (Phase 04), scored by reading (Phase 05), **
 
 ### Phase 01a — Assert the checkout is at the branch head
 
-**[../unblock/SKILL.md](../unblock/SKILL.md) Phase U1 owns this** — it fetches, detects the five divergence states, repairs the safe ones, and stops on local-only work. [SKILL.md](SKILL.md) Phase 00.1 runs it before any lens is launched. This phase only asserts the result.
+**[../mergeable/SKILL.md](../mergeable/SKILL.md) Phase U1 owns this** — it fetches, detects the five divergence states, repairs the safe ones, and stops on local-only work. [SKILL.md](SKILL.md) Phase 00.1 runs it before any lens is launched. This phase only asserts the result.
 
 Why it matters enough to assert twice: a checkout is not proof of currency. A worktree left over from an earlier session, a branch the author force-pushed or rebased since you last fetched, a PR head that moved after you were assigned — each leaves a local `HEAD` that looks perfectly healthy while pointing at code that no longer exists upstream. Every lens then reviews the stale tree and reports findings about lines the author already changed. That failure is **silent and total**: the report reads normally, the file:line citations resolve locally, and nothing in the output hints that the whole pass is void.
 
@@ -45,7 +45,7 @@ git rev-parse HEAD
 gh pr view <n> --json headRefOid --jq .headRefOid       # or: git rev-parse '@{u}'
 ```
 
-Equal → continue, say nothing. **Not equal → `unblock` did not run, or ran and left the branch diverged. Stop and say which.** Do not repair it here; do not review around it.
+Equal → continue, say nothing. **Not equal → `mergeable` did not run, or ran and left the branch diverged. Stop and say which.** Do not repair it here; do not review around it.
 
 ### Phase 01r — Repo mode
 
@@ -377,7 +377,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 Execution gate: 6 qualifying · 3 reproduced · 2 not-reproduced (dropped) · 1 not-executable (input needs a live database) · repro scripts + `bun run test`, 41s baseline
 ```
 
-- **Branch state** — a third line whenever [../unblock/SKILL.md](../unblock/SKILL.md) left something unfinished: a test still red, a conflict hunk still open, a feedback point still waiting on the user. Name what the review was run against, so nobody reads the findings as applying to a merged, green branch when they don't. Omit the line entirely when `unblock` returned clean or did not need to run.
+- **Branch state** — a third line whenever [../mergeable/SKILL.md](../mergeable/SKILL.md) left something unfinished: a test still red, a conflict hunk still open, a feedback point still waiting on the user. Name what the review was run against, so nobody reads the findings as applying to a merged, green branch when they don't. Omit the line entirely when `mergeable` returned clean or did not need to run.
 
 ```
 Branch state: 12 commits behind origin/main (not merged) · 2 checks red (check-cloudflare-test (3), check-devvit-test) — reviewed anyway at user's request

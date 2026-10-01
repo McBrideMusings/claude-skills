@@ -1,6 +1,6 @@
 # UI design axis
 
-Read by **planning** skills (`grill-me`, `backlog shape`, [`critique.md`](critique.md)) when the domain is `gui`. Design-time
+Read by **planning** skills (`grill-me`, `issues shape`, [`critique.md`](critique.md)) when the domain is `gui`. Design-time
 critique lenses for interactive interfaces — not a code engine. Loaded on top of whatever the planning
 skill already does, the same way the engines layer platform + domain.
 
