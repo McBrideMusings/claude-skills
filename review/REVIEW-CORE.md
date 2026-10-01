@@ -133,7 +133,7 @@ One message, all sub-agents in parallel. The scored lenses live as separate brie
 
 **Every finding carries a Bites line, and it opens with a concrete failing input.** Forward this verbatim too: *"For each finding, write one line in the form `<exact input or state> → <what it costs, in real units, and how often>`. The left side is real values a reader could type: `entries=[]`, `score=-1`, `user.email=None`, `two concurrent calls with the same orderId`, `a row written before the 2026-03 migration`. `an empty list` is an input; `edge cases`, `malformed input`, `certain conditions`, `race conditions` are not — a finding whose input is a category is a guess about a class of inputs, not an observation about this code. The right side is pots, dollars, seconds, rows, players, requests, plus when it fires. If you cannot name the input, write `input: none found` and drop the finding rather than describing the category."* Phase 05b feeds the left side of that arrow to the running code, so a vague left side is a finding that can never be verified.
 
-**`negative-space`, `architecture`, `test-debt`, `dependency-debt` and `docs-drift` are exempt from the input clause** and write **Bites** as impact-only. An unmet obligation the diff creates — a caller left un-updated, an error path with no handler — is real before any input reaches it, and demanding a failing input would silently suppress the whole axis. The same is true of an absence: no test file, an unused dependency, or a stale doc is true before any input reaches it.
+**`negative-space`, `architecture`, `design`, `test-debt`, `dependency-debt` and `docs-drift` are exempt from the input clause** and write **Bites** as impact-only. An unmet obligation the diff creates — a caller left un-updated, an error path with no handler — is real before any input reaches it, and demanding a failing input would silently suppress the whole axis. The same is true of an absence: no test file, an unused dependency, or a stale doc is true before any input reaches it.
 
 **The intent table from Phase 03c goes to four lenses and no others**, appended to those briefs under the header `AUTHOR INTENT (extracted separately — treat as the contract this code is measured against, not as evidence it is met)`:
 
@@ -146,6 +146,7 @@ One message, all sub-agents in parallel. The scored lenses live as separate brie
 | `architecture` | **no** | Its unit is the module and the seam, not the block. A per-block table drags it down to per-function complaints and away from the layer question. |
 | `slop` | **no** | Actively harmful — a lens handed "the intent is X" will rationalize dead structure as serving X. Slop is judged on whether the structure carries meaning *at all*, which is a question about the code alone. |
 | `standards` | **no** | Matches the diff against CLAUDE.md rules. Intent doesn't excuse a rule and doesn't create one. |
+| `design` | **no** | Measures UI against a rule the owner already wrote in `DESIGN.md`. Intent doesn't excuse a broken rule and doesn't create one. |
 | `history` | **no** | Its evidence is `git blame` and prior commits — what the code *used* to intend, which the table doesn't hold. |
 | `security` | **no** | Stated intent is exactly what an attacker ignores. Scoping this lens to the author's postconditions narrows the threat surface to the paths the author already thought about. |
 | `best-practice` | **no** | Compares dependency usage against live official docs. Author intent has no bearing on what the docs say. |
@@ -164,6 +165,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/spec.md`](axes/spec.md) — spec compliance (consumes the Phase 03 spec source + `IS_DRAFT`)
 - [`axes/negative-space.md`](axes/negative-space.md) — unmet obligations the diff itself creates
 - [`axes/slop.md`](axes/slop.md) — structure that adds no meaning (comment/helper/type/memo/effect slop, compatibility cruft, diff churn)
+- [`axes/design.md`](axes/design.md) — UI code against the repo's `DESIGN.md` Do's and Don'ts, Named Rules, tokens and `dsys check --json` (**gated** — runs only when the diff touches UI and `dsys status --json` reads `mode: "owned"` with `designMd: true`; in any other repo it reports nothing)
 - [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs (**gated** — most diffs skip it; emits *flags* verified in Phase 04b, not findings)
 - [`axes/test-debt.md`](axes/test-debt.md) — churned files with no adjacent test, tests that assert shape instead of behavior, skipped tests (**repo mode only** — a diff review's `negative-space` lens already covers obligations the diff itself creates; this lens does not launch outside Phase 01r)
 - [`axes/dependency-debt.md`](axes/dependency-debt.md) — reads the same captured language-tool output as the label lenses, scoring unused packages and duplicate-purpose packages, plus undocumented env vars (**repo mode only** — does not launch outside Phase 01r)
@@ -184,7 +186,7 @@ The **best-practice** lens produces *flags*, not findings — it has no doc acce
 
 ### Phase 05 — Score Every Issue
 
-For each issue from any of the ten scored lenses (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
+For each issue from any scored lens (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
 
 ### Phase 05b — Reproduction gate
 
@@ -196,7 +198,7 @@ Run it after Phase 05 scoring and before the Phase 06 filter. It never touches t
 
 **Qualifies** — `bug`, `spec/wrong-impl`, `security`, and correctness `standards` findings whose **Bites** line names a constructible input and whose claim is behavioral: a wrong value, a crash, a missed branch, a leaked value.
 
-**Cannot be executed, and this is not a defect of the finding:** `architecture`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `spec/missing-partial`, `test-debt`, `dependency-debt`, `docs-drift`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, a deprecated-API citation, a missing test, an unused package, and a stale doc are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
+**Cannot be executed, and this is not a defect of the finding:** `architecture`, `design`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `spec/missing-partial`, `test-debt`, `dependency-debt`, `docs-drift`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, a deprecated-API citation, a missing test, an unused package, and a stale doc are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
 
 #### The scratch worktree — never the user's tree
 
@@ -594,6 +596,7 @@ Every issue is tagged `[<axis>(/<subtype>) · T<n> · <severity>]` — axis (wit
 - `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit. Default visual: file tree with `+`/`-` gutters.
 - `negative-space` — from the Negative-space lens (an unmet obligation the diff creates: un-updated caller, unhandled failure path, missing test/validation/observability, unflagged breaking change or migration). Always a design call — surface, never auto-fix; bounded to obligations the diff itself creates. Use **Fix (design call):** framing.
 - `slop` — from the Code slop lens (structure that adds no meaning: comment/helper/type/memo/effect slop, compatibility cruft, diff churn). Never blocking — slop doesn't make behavior wrong. Most land `low`.
+- `design` — from the Design lens (UI code that breaks a written `DESIGN.md` rule, or a `dsys check --json` entry the diff introduced). The report entry **must quote the cited rule or name the `dsys check` kind**; a design finding with no cited rule is dropped. Never raised in a repo `dsys status --json` does not report as `owned`.
 - `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.
 - `<platform>` (e.g. `apple`) — from the conditional platform lens (Phase 04), when the diff's platform has a `ref/<platform>/review.md`. Platform-idiom findings with a concrete cost (deprecation, correctness, accessibility, perf). Scored like any other axis; group under a `### <Platform>` section.
 - `<domain>` (e.g. `game`) — from the conditional domain lens (Phase 04), when a domain marker is in scope and `ref/<domain>/review.md` exists. Mode-specific findings (game-feel, readability, difficulty) with a concrete cost. Scored like any other axis; group under a `### <Domain>` section.

@@ -35,6 +35,15 @@ Run every pass **against a screenshot of the running surface, not against the so
    one-CTA-per-page, title/meta/favicon and no-placeholder-text checks, plus its
    parallel-checker-then-single-fixer procedure for running the whole audit at that scale.
 
+8. **Stated personality** — when the repo has a `DESIGN.md`, read its `## Overview` first and judge
+   the surface against the personality it states: the adjectives, the audience, the stance it takes
+   against competitors. Each finding names the Overview sentence it contradicts (quoted) and the
+   rendered element that contradicts it. Run `dsys status --json` for the gate: `designMd` says whether the file exists and `mode` whether the repo is owned. In an owned repo
+   (`mode: "owned"`) the personality is the standard and a mismatch is a finding. In any other repo, read
+   whatever design sources exist (`DESIGN.md`, `DESIGN.local.yaml`, the stylesheet, the existing
+   components) to critique the surface in its own idiom, and never report non-conformance to them.
+   With no `DESIGN.md`, the pass is unrun, and the critique says so.
+
 ## Output
 
 Ranked findings, each with its concrete reason and a proposed fix. Tag each finding

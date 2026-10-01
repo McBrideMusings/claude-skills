@@ -16,9 +16,28 @@ pass over the diff, once the build is green.
 `implement <issue>` works that item here, in this session and this checkout, and nowhere
 else. It never launches another session, pane or agent to do the work.
 
+**Bare `implement`, with no argument, picks the item itself and starts.** Run `backlog next`
+in its autonomous mode ([`../backlog/next.md`](../backlog/next.md)); it returns every
+candidate it scored, ranked. Walk that list in order. Drop an item that hits `backlog next`'s
+out-of-scope or redundancy check (Phase 07) without asking the user to confirm the match.
+An epic ends the walk and continues as `implement <epic>` below. Otherwise apply the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1);
+the first item that clears it is the pass. Never stop to ask which item. When nothing on the
+list clears, the run ends: name the first item that reached the gate and the test it failed —
+or, when every item was dropped before the gate, each item and the check that dropped it —
+and stop.
+
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
 the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
 (`../wrap-up/SKILL.md`).
+
+**`implement <id> afk` is the unattended pass** — a worker a lead dispatched, with nobody at the
+gate. It runs every step below, then skips the gate's hatch and its wait: once verification and
+review clear it runs `wrap-up` (bare when standing in the checkout, `wrap-up <worktree>` when
+not) with no `go`, and closes the bead with `bd close <id>` after the branch has landed. It
+asks the lead nothing. It halts only on the halt conditions below, and then says why in its
+own pane and closes nothing. A worker that cannot remove its own worktree leaves it for the
+harness to reap. It never runs `git push origin --delete` for a branch it never pushed: a hook stops that command for a person's yes, which nobody is there to give. The mode lives in the argument, which `/clear` drops: any prompt that
+re-enters the pass (a relay brief, a resume) restates `afk` in its `implement` line.
 
 ## The unit is a slice — an epic becomes a plan
 
@@ -27,7 +46,8 @@ pass: **Verify is this session's**, via `verify-project`, and `human` stops it u
 looks; Land is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
-**`implement <epic>` proposes a plan and starts nothing until pierce answers.** The order
+**`implement <epic>` proposes a plan and starts nothing until pierce answers;
+`implement <epic> walk` skips the slate (§The walk).** The order
 comes from beads, never from reading the titles:
 
 ```text
@@ -43,11 +63,38 @@ slate, one row per step, in plan order:
   Verify                       -> "Run <id> here via verify-project" once its blockers
                                   are closed                                          [run | hold]
   Land                         -> "wrap-up <id> after Verify passes"                  [hold]
-go -> work the [run] row here, to its gate; after it lands, re-run epic-plan and offer the next
+go -> `implement <epic> walk`: work the [run] row here, then wrap up, relay, and repeat
 ```
 
-- **One slice at a time, in this session.** Slices in the same wave could run in parallel, but
-  `implement` still works them one after another, here.
+## The walk — one `go`, the whole epic
+
+**`go` on an epic plan is the ask for every ready P1/P2 slice.** `implement <epic> walk` is that
+ask already given: it prints the plan as one record line (no slate, no wait) and works the first
+[run] row. The `go` and every relay brief in the walk start the next session with this same
+command, so the walk is never re-asked.
+
+Each slice is its own pass, run in this order with nobody answering in between:
+
+1. **Implement** — the steps below, to a green build, verification and blind review.
+2. **Gate, informational** — print the gate ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate)
+   without its closing sentence and do not wait; the walk treats the verified pass as `go`.
+3. **Wrap up** — run `wrap-up` in walk mode ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md)
+   Phase 6): it picks every follow-up's disposition itself, lands the slice, and appends one
+   line to the epic's notes.
+4. **Relay** — `relay` in walk mode ([`../relay/SKILL.md`](../relay/SKILL.md) §Walk mode)
+   clears the context and starts `implement <epic> walk` in the same pane. One slice per
+   context is the cost control; the brief is how the walk survives it.
+
+The walk stops, and says why in one message that also lists the slices done, the follow-ups
+filed and the stop reason, at: a `human` slice; a P3 or lower slice; a slice that fails the
+readiness gate; a halt condition below (`BLOCKED`, a build that will not go green, a review
+finding that contradicts the item); a blocker `wrap-up` cannot resolve; relay unavailable
+(outside herdr, or a linked worktree), in which case it continues in this context instead; or
+no ready slice left. The Verify row is a [run] row once its blockers close: the walk runs it
+here through `verify-project` and stops at the Land row, which stays [hold].
+
+- **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
+  still works them one after another.
 - **An epic with no open slice** still gets a plan: its Verify and Land rows are the plan (run
   Verify here, then Land). Never answer "only Verify and Land remain" with no next step. Land
   is `wrap-up` even when the tree is clean: never close the epic with a hand-run `bd close` or
@@ -93,10 +140,14 @@ elsewhere, squashed by `wrap-up`.
    one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
    — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
    gate, and it should not have been offered.
-2. **Edit.** Make the change directly, in the checkout you stand in.
+2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
+   feature that needs a design token or component `DESIGN.md` lacks adds it to `DESIGN.md` in
+   the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
 3. **Build green.** Run the build, test, lint or typecheck yourself, in the foreground,
    bounded — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the
-   runner is chatty). Explicit `timeout`, up to 600000; never background it.
+   runner is chatty). Explicit `timeout`, up to 600000; never background it. In a repo with a
+   `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green and a
+   nonzero exit fails the step ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
 4. **Verify at the surface.** The project's own `verify-project` skill owns what verification
    means here — read `<repo>/.claude/skills/verify-project/SKILL.md` as a file and follow it
    (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). Write one
@@ -163,13 +214,17 @@ item's own model says should not exist. Verify treats doubt as `FAIL`.
 ## The gate
 
 Once verification and review clear, show the gate: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
-§Gate. The commands in **Run:**/**Look for:** are the ones already run in step 4 above — never
+§Gate. When the pass changed `DESIGN.md`, the gate carries its diff ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
+§Gate). The commands in **Run:**/**Look for:** are the ones already run in step 4 above — never
 re-derived, never re-run just to fill the gate. When a recheck command runs inside a worktree
 and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when this session
 stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`
 first.
 
-Close the gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
+In a walk, stop after the gate's **Look for:** block; the closing sentence below and its wait
+belong to a single pass, not a walk.
+
+Close a single pass's gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
 
 > Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
 

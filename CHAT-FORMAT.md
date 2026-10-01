@@ -8,6 +8,8 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The shape.** Numbered question, lettered options beneath it. Each option is a bolded line naming what physically happens — which file gets edited, what value gets written where, which process computes it, when — never a noun with no location. Bullets beneath state the strongest case for that option; the last bullet is always the cost. The option you'd pick is marked ` — my pick` on its bolded line, not with a separate marker. Options under one question are mutually exclusive; when two could sensibly combine, write the combination as its own lettered option rather than leaving it for the reader to compose.
 
+**The carrier.** An option set is written in chat. When the options are visual or structural — UI states, layouts, diagrams, renders — it goes out as one Canvas card (`canvas post`) instead: the decision in prose, then each option under its letter (`1A`, `1B`) with its best argument and its cost in the same block, rendered. Chat then carries only the closing reply line below, never the card's URL. A short decision whose options read fine as text stays in chat.
+
 **Worked example:**
 
 > **1. Where does the retry count live?**
@@ -155,6 +157,7 @@ The gate (below):
 
 - **First line** — what the change does now, in one or two plain sentences: the behavior a user sees, not the process that produced it. Never open with landing status, a branch name, or "done".
 - **Files changed** — the header names where the work sits: `**Files changed** in <worktree> (<branch>, <sha>)`, or `(<sha>)` alone for work committed in place. Then every file touched, one line each.
+- **DESIGN.md diff** — only when the pass changed `DESIGN.md`: the output of `git diff <base>...HEAD -- DESIGN.md` in a fenced `diff` block, directly under **Files changed**. A pass that left `DESIGN.md` alone omits this line.
 - **Unchanged** — only files a reader would have expected touched and weren't, with the reason. "Nothing" is a real answer.
 - **Run:** the exact commands, the ones the agent ran, one per line — written for the directory this session stands in: `admin -w <worktree-or-bead-id> <task>` when the project has `admin.toml` and this session sits outside the worktree named above, plain `admin <task>` when it sits inside it.
 - **Look for:** what a pass looks like — the output the agent saw.

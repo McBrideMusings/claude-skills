@@ -33,7 +33,8 @@ a sibling, and most of this does not apply there.
 | [`opportunities.md`](opportunities.md) | Hunting for missing or weak motion — the gap no other lens looks for. |
 | [`icons.md`](icons.md) | Picking or drawing iconography. |
 | [`alt-text.md`](alt-text.md) | Writing alt text and accessible labels. |
-| [`a11y.md`](a11y.md) | Verifying accessibility on an interface. |
+| [`a11y.md`](a11y.md) | Verifying accessibility on an interface, including the desktop/tablet/phone viewport walk. |
+| [`forms.md`](forms.md) | Designing or critiquing a form: validation timing, inline errors, defaults, autofill, submit states, multi-step. |
 | [`copy.md`](copy.md) | Writing the words in the interface: labels, errors, toggles, tone. |
 | [`native-first.md`](native-first.md) | Tempted to write a component the platform already ships. |
 | [`libraries.md`](libraries.md) | Choosing a component or styling library. |

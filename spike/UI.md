@@ -3,9 +3,13 @@
 Build **several genuinely different working versions** of one piece of UI in a single standalone HTML
 file, flipped through with the picker, and let the user pick a winner.
 
+This is rung 3 of the fidelity ladder ([SKILL.md](SKILL.md)). If the open question is arrangement,
+sketch it in ASCII ([`../ref/gui/sketch.md`](../ref/gui/sketch.md)); if it is how the screen looks,
+make an image comp ([COMP.md](COMP.md)). Come here for a complex change, behaviour only visible under
+interaction, or a comp that settled nothing.
+
 If the question is logic/state → [LOGIC.md](LOGIC.md). If it's "which technical approach" →
-[COMPARE.md](COMPARE.md). If there is one design and the open question is arrangement, this is too
-expensive — sketch it in ASCII first ([`../ref/gui/sketch.md`](../ref/gui/sketch.md)).
+[COMPARE.md](COMPARE.md).
 
 Adapted from emilkowalski/skills `prototype` (MIT, © 2026 Emil Kowalski); the selection spec now lives
 as real code in `tool/harness/tweaks.css` and `tweaks.js`, and the tool wires it — you never
@@ -13,16 +17,16 @@ write it.
 
 ## When this is the right shape
 
-- "What should this look like?" / "I want to see a few options before committing."
-- "Try a different layout for the settings screen."
-- Any time the user would otherwise spend a day picking between vague mockups in their head.
+- The look is settled or a comp showed it, and what is open is behaviour: transitions, states reached by clicking, how a real component responds.
+- A complex change, or a comp that could not answer the question.
+- "I want to see a few options working before committing", where working means clickable. Options judged by look alone are comps ([COMP.md](COMP.md)).
 
 ## The artifact — always one standalone HTML file
 
 `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html`, where `<slug>` names what the prototype is for
 **and which device it targets** — one file per device type, rebuilt in place (see SKILL.md
 "One prototype, one device type"). Self-contained, inline CSS and JS, opened directly
-in a browser. No dev server, no route, no framework, and **no edit to any production file**. This holds
+in a browser. (A route is the exception below.) No dev server, no route, no framework, and **no edit to any production file** (the throwaway route below is the one exception, and lives in a discarded worktree). This holds
 even when the project is React, Vue, or SwiftUI: hand-written HTML/CSS/JS is the fastest path to
 something you can look at, and the winning direction gets rewritten in the project's stack at
 promotion anyway.
@@ -34,21 +38,39 @@ precisely so nothing competes with the design being judged.
 
 Make it look native to the product without importing anything from it:
 
-- **Copy the design tokens into the fragment's `<style>`** — the colours, radii, spacing scale, font
-  stack, easing and duration variables read off the project's CSS/theme file during recon. Copied
-  values, not imports.
+- **Load the exported token file.** `dsys export` writes the project's Tailwind v4 `@theme` file
+  from `DESIGN.md`; paste its declarations into the fragment's `<style>` with the `@theme` at-rule
+  renamed `:root` (browsers ignore `@theme`, and everything inside it is a plain custom property).
+  The tool rejects any network request, so the file is inlined, not linked. Re-run `dsys export`
+  and re-paste rather than editing a token by hand. `dsys export` runs in owned repos only; a repo with no `DESIGN.md`, or one that is not owned, has
+  no export: use the restrained default in Phase 02.
 - **Tailwind projects** — the browser build is a CDN `<script>`, and the tool rejects any network
-  request, because a prototype that only renders online isn't self-contained. Copy the handful of
-  utilities a variant actually uses into the fragment's `<style>` as real CSS, or write plain classes.
+  request, because a prototype that only renders online isn't self-contained. Use the exported
+  tokens as custom properties in plain classes, or copy the handful of utilities a variant actually
+  uses into the fragment's `<style>` as real CSS.
 - **Type realistic content by hand** — real product copy, plausible names and numbers, a row count
   close to the real one.
 
-**Wire `admin prototype <slug>` in the same pass** so the file is one command away rather than a
-path to retype: [ADMIN.md](ADMIN.md).
+**Show it on Canvas** — one card with screenshots of each variant inline; add a clickable `file://`
+link to the HTML when the prototype needs interaction. Rule 10 in [CONTRACT.md](CONTRACT.md).
 
 Two things this costs, both accepted: a variant cannot use the project's actual components, and
 density can't be judged against genuinely live data. When the whole question is "does our real
-`<DataGrid>` work here", that's a promotion-time question, not a prototype one.
+`<DataGrid>` work here", build the route below instead.
+
+## When the question is a real component's behaviour — a throwaway route
+
+Build it inside the project, in a linked worktree made for the spike, as a route at
+`/__spike/<slug>` that renders the real components. The worktree is never merged, pushed or
+committed to a shared branch, and is discarded when the question is settled, so nothing reaches the
+project's main branch. Everything else in this file (scope, directions, live controls, the
+critique pass) applies unchanged; the differences are:
+
+- There is no `spike build`, no device frame and no Tweaks panel: the project's dev server runs the
+  route and the project's own dev tooling drives it.
+- Screenshot each direction from the running route and show the screenshots per
+  [CONTRACT.md](CONTRACT.md) rule 10.
+- Stop the dev server you started when you hand over.
 
 ## Process
 
@@ -67,7 +89,7 @@ diverges from what is already there instead of repeating it, and build over the 
 
 Before designing anything, map the ground the variants stand on:
 
-- **Tokens** — colours, radii, spacing, fonts, easing/duration variables, to copy into `:root`.
+- **Tokens** — colours, radii, spacing, fonts, easing/duration variables: the `dsys export` file, inlined as `:root`.
 - **Personality** — playful consumer app or crisp dashboard? This bounds how far the boldest variant
   may go.
 - **Context** — what the piece renders against: background, neighbours, sizes.
@@ -226,10 +248,10 @@ the top.
 
 ### Phase 06 — Promote and delete
 
-When a direction wins: capture the answer and why (commit message, ADR, issue), implement it properly
-in the project's stack and conventions — a rewrite, never a copy of prototype markup — then delete
-`/private/tmp/claude/<repo-slug>/spikes/<slug>/`. Record which variant won.
-Keep the files only if the user asks.
+When a direction wins: record the answer and why in `DESIGN.md` (a token or component rule), an ADR,
+or the ticket; implement it properly in the project's stack and conventions — a rewrite, never a
+copy of prototype markup — then delete `/private/tmp/claude/<repo-slug>/spikes/<slug>/`, or the
+worktree for a route. Record which variant won. A prototype is not kept ([LIFECYCLE.md](LIFECYCLE.md)).
 
 ## Anti-patterns
 

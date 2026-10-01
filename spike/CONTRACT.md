@@ -116,7 +116,7 @@ changes and the row that changes per prototype must not read as two instances of
 
 ```html
 <style>
-  /* the host project's tokens, copied — not imported */
+  /* the host project's tokens: the `dsys export` declarations, with @theme renamed :root */
   :root { --brand: #2f6df6; --radius-card: 10px; }
 </style>
 
@@ -357,8 +357,7 @@ A prototype has **one output file**, and a build replaces it:
 ```
 
 There are no rounds and nothing is carried forward. Refining is editing the fragment and building
-again over the top; earlier attempts live in git if the file is committed, and nowhere if it is not,
-which is what "throwaway" means. Keeping every attempt inside the artifact doubled its size and left
+again over the top; earlier attempts are gone, which is what "throwaway" means. Keeping every attempt inside the artifact doubled its size and left
 stale designs one click away from the current one.
 
 The controls never share a letter:
@@ -484,7 +483,7 @@ Why: a platform is an interaction model, not a width. Touch, pointer and remote-
 
 A prototype gets **one kebab-case slug naming what it is for**, and the slug is the whole filename: `wheelhouse-phone`, `settings-desktop`, `queue-backend`. Everything for it lives in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`.
 
-**There are no rounds and no versions.** A rebuild replaces the file. Earlier attempts live in git if the file is committed, and nowhere if it is not — which is correct, because a prototype is throwaway. `?v=` is the only axis in the URL, and it means variant.
+**There are no rounds and no versions.** A rebuild replaces the file. Earlier attempts are gone — which is correct, because a prototype is throwaway. `?v=` is the only axis in the URL, and it means variant.
 
 Rules:
 
@@ -497,10 +496,10 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 
 ## Rules for every shape
 
-1. **The artifact never lives in production files.** Everything is written under `/private/tmp/claude/<repo-slug>/spikes/<slug>/` (gitignored). No new route, no edit to an existing page, no entry added to `package.json`, no committed task-runner entry. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real file.
+1. **The artifact never lives in production files.** Everything is written under `/private/tmp/claude/<repo-slug>/spikes/<slug>/` (gitignored). No new route, no edit to an existing page, no entry added to `package.json`. Nothing in the repo imports it. This is what makes a prototype free: there is nothing to accidentally ship and nothing to clean out of a real file.
+   One exception: the throwaway `/__spike/<slug>` route of [UI.md](UI.md) lives in a linked worktree made for the spike, which is never merged or pushed and is discarded when the question is settled.
    Domain exception: a surface that can't be a file (a Roblox Place) uses the scratch surface named in its domain cell, under the same "throwaway, never production" rule.
-   `admin.toml` is the one carve-out, and only because it is globally gitignored and committed nowhere — see rule 10. A `package.json` script is still forbidden; that file ships.
-2. **One command, or one double-click.** UI opens directly in a browser — the `spike` build step is agent-side, and what the user gets is still a single self-contained file. Logic and compare run with the project's existing runtime straight off the path — `bun /private/tmp/claude/<repo-slug>/spikes/queue/run.ts` — never by registering a script somewhere real.
+2. **One command, or one double-click.** UI opens directly in a browser (a worktree route runs on the project's own dev server) — the `spike` build step is agent-side, and what the user gets is still a single self-contained file. Logic and compare run with the project's existing runtime straight off the path — `bun /private/tmp/claude/<repo-slug>/spikes/queue/run.ts` — never by registering a script somewhere real.
 3. **No persistence by default.** State is in memory. Persistence is what the prototype is *checking*, not something it depends on. If the question is about a DB, use a scratch file inside the prototype directory.
 4. **Skip the polish.** No tests, no error handling beyond what makes it runnable, no abstractions, no "what if we later want".
 5. **Surface the state.** After every action (logic), variant switch (UI), or run (compare), show the full relevant state so the user can see what changed.
@@ -508,11 +507,13 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something, every destructive button shows what it would do — the reject path as much as the approve path. A dead control reads as a bug and derails the conversation the prototype exists to have. A control with nowhere to go does not go in.
 8. **Name the device deliberately** (UI shape). `--device` is a judgement about this design, made fresh each time: `phone` for a phone surface, `desktop` for a desktop one, `tv` for a ten-foot one. It is required, so there is no default to accept — and never draw device chrome by hand, since the harness owns the status bar, notch, window title bar and browser chrome.
 9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a direction wins, implement it properly in the project's stack and conventions, then delete the prototype. Never move the file into the codebase.
-10. **Wire an `admin prototype` action in the same pass that builds it**, on any project with an
-    `admin.toml`, without asking — the manifest is committed nowhere, so it is never a commit
-    question. One `prototype` command, one sub-target per prototype, named for the slug; delete
-    the sub-target when the prototype goes. A prototype nobody can open is a prototype nobody
-    looks at. **The shape, the two silent traps, and how to verify it: [ADMIN.md](ADMIN.md).**
+10. **Show a visual prototype on Canvas.** One card with screenshots inline. A prototype that needs
+    interaction adds a clickable `file://` link to its HTML under
+    `/private/tmp/claude/<repo-slug>/spikes/<slug>/`. A worktree route has no HTML file, so its card
+    carries screenshots and chat names the dev-server URL. `/private/tmp` is emptied after three
+    untouched days and a spike is not kept: the answer is recorded ([LIFECYCLE.md](LIFECYCLE.md)).
+    Canvas carries rich media only: the prototype's short questions and decisions stay in chat, and
+    only a visual or structural option set goes on a card.
 11. **Variants diverge on one named axis** — structure, density, emphasis, type, or voice. Secondary
     choices follow from the primary position (a dense variant may take a smaller type step — that's
     coherence, not a second axis). Three variants that differ in accent colour teach nothing, and
