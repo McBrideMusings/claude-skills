@@ -30,6 +30,15 @@ and stop.
 the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
 (`../wrap-up/SKILL.md`).
 
+**`implement <id> afk` is the unattended pass** — a worker a lead dispatched, with nobody at the
+gate. It runs every step below, then skips the gate's hatch and its wait: once verification and
+review clear it runs `wrap-up` (bare when standing in the checkout, `wrap-up <worktree>` when
+not) with no `go`, and closes the bead with `bd close <id>` after the branch has landed. It
+asks the lead nothing. It halts only on the halt conditions below, and then says why in its
+own pane and closes nothing. A worker that cannot remove its own worktree leaves it for the
+harness to reap. The mode lives in the argument, which `/clear` drops: any prompt that
+re-enters the pass (a relay brief, a resume) restates `afk` in its `implement` line.
+
 ## The unit is a slice — an epic becomes a plan
 
 A pass takes **one slice child** — `myproj-25.1`. A Verify/Land child is never worked as a
