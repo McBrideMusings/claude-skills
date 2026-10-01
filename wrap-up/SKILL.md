@@ -10,6 +10,8 @@ Work through each phase below. Skip any phase that doesn't apply to this project
 
 **A clean tree on the default branch is not a reason to skip `wrap-up`.** With nothing to commit or land, Phase 5 and Step C do nothing, but Phase 2 still closes finished issues and epics and Phase 6 still prints the `relay-candidates` output, takes the follow-up slate, and relays. An epic whose children all closed in earlier sessions ends here, not in a hand-run `bd close`.
 
+**A small change is not a reason to skip the follow-up round or the next-steps line.** Size only shortens Phase 4: a change of a few lines may take an inline read instead of the staged review. Phase 6 Step A still runs in full — the slate (even with every row `[skip]`, or one row saying nothing surfaced) and the next-work line from `relay-candidates` are printed and answered before the turn ends.
+
 ---
 
 ## ⛔ RUN TO COMPLETION — wrap-up is not done until the work is committed, pushed, AND landed
