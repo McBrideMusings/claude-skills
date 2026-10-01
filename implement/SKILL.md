@@ -49,7 +49,9 @@ go -> work the [run] row here, to its gate; after it lands, re-run epic-plan and
 - **One slice at a time, in this session.** Slices in the same wave could run in parallel, but
   `implement` still works them one after another, here.
 - **An epic with no open slice** still gets a plan: its Verify and Land rows are the plan (run
-  Verify here, then Land). Never answer "only Verify and Land remain" with no next step.
+  Verify here, then Land). Never answer "only Verify and Land remain" with no next step. Land
+  is `wrap-up` even when the tree is clean: never close the epic with a hand-run `bd close` or
+  skip `wrap-up` for "nothing to land".
 - **An epic with no children** is not ready for `implement`; offer `backlog spec` to break it
   down ([`../issues/breakdown.md`](../issues/breakdown.md)).
 - `epic-plan` expands a child epic in place, and names blockers outside the epic as `external`

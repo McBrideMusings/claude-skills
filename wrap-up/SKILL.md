@@ -8,6 +8,8 @@ Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined 
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
 
+**A clean tree on the default branch is not a reason to skip `wrap-up`.** With nothing to commit or land, Phase 5 and Step C do nothing, but Phase 2 still closes finished issues and epics and Phase 6 still prints the `relay-candidates` output, takes the follow-up slate, and relays. An epic whose children all closed in earlier sessions ends here, not in a hand-run `bd close`.
+
 ---
 
 ## ⛔ RUN TO COMPLETION — wrap-up is not done until the work is committed, pushed, AND landed
