@@ -66,20 +66,31 @@ place_pane() {
       done
     fi
     [ -n "$repo_ws" ] || echo "herdr-agent: no open workspace for repo $common — the worktree's workspace opens at top level" >&2
-    opened="$(herdr worktree open ${repo_ws:+--workspace "$repo_ws"} --path "$top" --no-focus)" || {
-      echo "herdr-agent: could not open a workspace for $top" >&2; return 1; }
-    ws="$(printf '%s' "$opened" | jq -r '.result.workspace.workspace_id // empty')"
-    already="$(printf '%s' "$opened" | jq -r '.result.already_open')"
-    if [ "$already" = "true" ]; then
-      created="$(herdr tab create --workspace "$ws" --cwd "$PWD" --label "$slug" --no-focus)" || {
-        echo "herdr-agent: could not create a tab in workspace $ws" >&2; return 1; }
+    # herdr only opens a workspace for a worktree of a repo it tracks; one of a submodule
+    # (the skills repo) is refused. The agent still starts in the worktree, as a tab of the
+    # caller's workspace.
+    if ! opened="$(herdr worktree open ${repo_ws:+--workspace "$repo_ws"} --path "$top" --no-focus)"; then
+      echo "herdr-agent: herdr cannot open a workspace for $top; starting a tab of the calling workspace in it instead" >&2
+      created="$(herdr tab create --workspace "$HERDR_WORKSPACE_ID" --cwd "$PWD" --label "$slug" --no-focus)" || {
+        echo "herdr-agent: could not create a tab" >&2; return 1; }
       pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
       tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+      ws="$HERDR_WORKSPACE_ID"
+      where="a new tab of the calling workspace ($ws), started in $top"
     else
-      pane="$(printf '%s' "$opened" | jq -r '.result.root_pane.pane_id // empty')"
-      tab="$(printf '%s' "$opened" | jq -r '.result.tab.tab_id // empty')"
+      ws="$(printf '%s' "$opened" | jq -r '.result.workspace.workspace_id // empty')"
+      already="$(printf '%s' "$opened" | jq -r '.result.already_open')"
+      if [ "$already" = "true" ]; then
+        created="$(herdr tab create --workspace "$ws" --cwd "$PWD" --label "$slug" --no-focus)" || {
+          echo "herdr-agent: could not create a tab in workspace $ws" >&2; return 1; }
+        pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
+        tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+      else
+        pane="$(printf '%s' "$opened" | jq -r '.result.root_pane.pane_id // empty')"
+        tab="$(printf '%s' "$opened" | jq -r '.result.tab.tab_id // empty')"
+      fi
+      where="workspace $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)"
     fi
-    where="workspace $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)"
   else
     # A tab, never a split. Splitting the caller's pane squeezes the surface the user is
     # actually reading; --no-focus keeps the tab unseen so a later `done` stays `done`.

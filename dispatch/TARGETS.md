@@ -195,6 +195,10 @@ qodercli, maki`). **`reasonix` is not in it**, so `dispatch reasonix` can only e
 profile, where `CLAUDE_DELEGATE_AGENT=reasonix`, it is the common case. `dispatch transport`
 says so in as many words.
 
+herdr also refuses to open a workspace for a worktree of a repo it does not track, such as the
+skills submodule. `herdr-agent` then starts the agent in a tab of the calling workspace, with
+the worktree as its directory, and says so on stderr.
+
 `--headless` skips step 3 entirely and always runs a plain subprocess: cron, SSH, and
 scheduled agents have no GUI session and no herdr session to put anything in.
 
