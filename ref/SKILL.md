@@ -45,6 +45,7 @@ reached by the same hooks; they are never listed here.
 | [`game`](game/context.md) | Game development — game feel, playable loop, fixed timestep, prototyping, tuning, profiling, and the end-to-end build arc. |
 | [`go`](go/context.md) | Go — go test, vet, gofmt, error handling, never discarding an error, concurrency. |
 | [`gui`](gui/context.md) | Interface design — what to build, design layers, layout sketches, critique, states, colour, typography, motion, AI-slop, accessibility. |
+| [`jev`](jev/context.md) | Jev, TypeSafe's typed-decision model and its API (`TYPESAFE_API_KEY`) — what it is, when to call it for routing, scoring or yes/no checks, request and response shapes. |
 | [`mobile`](mobile/context.md) | Mobile apps — small screens, unreliable network, backgrounded processes, real-device testing. |
 | [`python`](python/context.md) | Python — venv and uv rather than a global interpreter, packaging, tooling, idioms. |
 | [`react`](react/context.md) | React — derive during render rather than syncing with effects, stable keys, state ownership, component boundaries. |
