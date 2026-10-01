@@ -130,7 +130,7 @@ mkdir -p "$WORK/flm"
 if [ "$CHROME_OK" = 1 ] && command -v img2webp >/dev/null 2>&1 && command -v ffmpeg >/dev/null 2>&1; then
   "$ART" video flm --dir "$WORK/flm" --size 320x200 --fps 25 --theme both >"$WORK/video.out" 2>"$WORK/video.err"
   [ "$(grep -c '^/.*\.webp$' "$WORK/video.out")" -eq 2 ] && [ "$(grep -c '^/.*-strip\.png$' "$WORK/video.out")" -eq 2 ] \
-    && say ok "video prints a WebP and a filmstrip per cell and theme" || say f "video output: $(head -3 "$WORK/video.out")"
+    && say ok "video prints a WebP and a frame strip per cell and theme" || say f "video output: $(head -3 "$WORK/video.out")"
   has "$WORK/flm/pop-win.webp" ANIM && say ok "the WebP is animated" || say f "the WebP has no ANIM chunk"
   grep -q 'pop-win.webp — 11 frame(s), 400 ms' "$WORK/video.err" \
     && say ok "400 ms at 25 fps is 11 frames: the length comes from the animation" || say f "video frame count: $(head -2 "$WORK/video.err")"

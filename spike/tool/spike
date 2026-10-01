@@ -792,7 +792,7 @@ def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme
     if proc.returncode != 0 or not os.path.getsize(webp):
         die("img2webp failed: %s" % proc.stderr.strip()[-400:])
 
-    # Filmstrip: --strip frames spread evenly from the first to the last, side by side.
+    # Frame strip: --strip frames spread evenly from the first to the last, side by side.
     n = min(args.strip, len(paths))
     picks = sorted({int(round(i * (len(paths) - 1) / max(1, n - 1))) for i in range(n)})
     strip = base + "-strip.png"
@@ -821,6 +821,9 @@ def cmd_kinds(_args):
     print("A mockup fragment is one <template data-variant=\"Name\" [data-state=\"State\"]> per cell;")
     print("`spike shot <slug>` writes one PNG per cell, named variant-state.png; a build with no")
     print("cells (wireframe, prototype) gets one PNG, with --query choosing the variant and tweaks.")
+    print()
+    print("`spike video <slug>` records each cell's CSS animation as an animated WebP plus a")
+    print("frame-strip PNG, named variant-state.webp and variant-state-strip.png.")
     print()
     print("A prototype gets the Tweaks panel; a mockup and a wireframe get nothing but the fragment.")
     print()
@@ -945,7 +948,7 @@ def main():
                    "'v=2&conn=down' (the variant and tweak params of CONTRACT.md)")
     h.set_defaults(func=cmd_shot)
 
-    f = sub.add_parser("video", help="animated WebP and filmstrip PNG of each cell's CSS "
+    f = sub.add_parser("video", help="animated WebP and frame-strip PNG of each cell's CSS "
                                     "animation, sampled at exact timestamps")
     f.add_argument("slug", help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html")
     f.add_argument("--dir", help="absolute spike directory, instead of the repo's scratch root")
@@ -968,7 +971,7 @@ def main():
                    help="how long the last frame stays before the loop restarts (default %d)"
                         % VIDEO_DEFAULT_HOLD_MS)
     f.add_argument("--strip", type=int, default=VIDEO_DEFAULT_STRIP, metavar="N",
-                   help="frames in the filmstrip PNG, evenly spaced (default %d)"
+                   help="frames in the frame-strip PNG, evenly spaced (default %d)"
                         % VIDEO_DEFAULT_STRIP)
     f.add_argument("--quality", type=int, default=80, metavar="Q",
                    help="lossy WebP quality 0-100 (default 80)")
