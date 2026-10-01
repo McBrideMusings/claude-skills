@@ -1,7 +1,7 @@
 # RULE 0 and RULE 1
 
 The two rules that bind every pass which judges code and then asks what to do about it —
-`review` and `unblock` alike, plus every file either one loads and every subagent either one
+`review` and `mergeable` alike, plus every file either one loads and every subagent either one
 spawns.
 
 **Load this file first, before any routing.** Both skills state that they bind; this is the
@@ -14,12 +14,12 @@ answered by a typed keyword. The `AskUserQuestion` tool (the arrow-key option se
 never called at any point.**
 
 This is a hard, non-negotiable ban with the same standing as the no-AI-attribution rule. It
-holds regardless of how the pass was entered — typed `/review` or `/unblock`, routed here from
+holds regardless of how the pass was entered — typed `/review` or `/mergeable`, routed here from
 `implement`, `wrap-up`, or any other skill. A caller's habits do not unlock the
 tool; the pass is a no-selector zone from the moment this file loads until it ends, **including
 every sub-file** ([REVIEW-CORE.md](REVIEW-CORE.md), [POSTING.md](POSTING.md),
-[../unblock/FEEDBACK.md](../unblock/FEEDBACK.md), [../unblock/CONFLICTS.md](../unblock/CONFLICTS.md),
-[../unblock/TESTS.md](../unblock/TESTS.md), [../unblock/SWEEP.md](../unblock/SWEEP.md)) and any
+[../mergeable/FEEDBACK.md](../mergeable/FEEDBACK.md), [../mergeable/CONFLICTS.md](../mergeable/CONFLICTS.md),
+[../mergeable/TESTS.md](../mergeable/TESTS.md), [../mergeable/SWEEP.md](../mergeable/SWEEP.md)) and any
 project-local skill either one loads.
 
 It covers **every** decision point, not just the ones spelled out below. Non-exhaustive:
@@ -81,7 +81,7 @@ reasonable in the moment. Treat these as named tripwires:
    *"1 fix, 2 post, 3 skip."*
 
 A selector looks reasonable precisely when the question feels like routing rather than judgment.
-**From `/review` or `/unblock` until the pass ends, there is no such thing as a routing question
+**From `/review` or `/mergeable` until the pass ends, there is no such thing as a routing question
 that escapes this rule.**
 
 ## RULE 1 — effort NEVER decides what gets fixed
@@ -89,7 +89,7 @@ that escapes this rule.**
 **How much work a fix is — its size, its difficulty, how many files it touches, how long it
 would "take" — is banned as a reason to skip it, defer it, downgrade it, or recommend against
 it.** This binds everywhere: scoring a reviewer's comment
-([../unblock/FEEDBACK.md](../unblock/FEEDBACK.md) Phase 05), choosing which failing test to fix,
+([../mergeable/FEEDBACK.md](../mergeable/FEEDBACK.md) Phase 05), choosing which failing test to fix,
 the end-of-pass fix/post/skip disposition, the blocking verdict, and every subagent spawned
 during the pass.
 
@@ -116,14 +116,14 @@ three reasons before presenting.
 
 ## RULE 2 — a gate does the job it names, it does not ask permission to do it
 
-**`unblock` never stops to ask whether it should unblock.** A branch that conflicts gets its
+**`mergeable` never stops to ask whether it should unblock.** A branch that conflicts gets its
 conflicts resolved. A branch with red checks gets its failures diagnosed and fixed. A PR with
 unanswered feedback gets answered. Those are the skill's job, not a proposal it puts to the
 user, and printing *"the branch conflicts with origin/main — `resolve` · `review anyway` ·
 `stop`"* and then waiting is the exact failure this rule exists to stop.
 
 **What still asks, and it is the only thing:** the single push confirm at the end of an
-`unblock` pass, batched over everything the pass did. See `unblock/SKILL.md` Phase U5.
+`mergeable` pass, batched over everything the pass did. See `mergeable/SKILL.md` Phase U5.
 
 The two escapes, both narrow:
 

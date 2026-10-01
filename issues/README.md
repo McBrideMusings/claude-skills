@@ -14,7 +14,10 @@ skill holds its *process* once and stays backend-agnostic: it resolves the backe
 
 ```
 issues/
-  SKILL.md          <- the map: which file to open for which task
+  SKILL.md          <- the front door: the four verbs and the pointer to REFERENCE.md
+  REFERENCE.md      <- the map: which tracker file to open for which task
+  file.md spec.md next.md shape.md  <- one file per verb
+  SPEC-TEMPLATE.md TICKET-TEMPLATE.md OUT-OF-SCOPE.md  <- shapes the verbs publish and check against
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
   breakdown.md      <- standard practice at pickup: slicing one issue + verify/land bookends
@@ -40,11 +43,11 @@ an issue reads it before picking a label, and never invents a bare one.
 
 | Skill | Uses | Notes |
 | --- | --- | --- |
-| `backlog spec` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
-| `backlog next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
+| `issues spec` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
+| `issues next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
-| `backlog shape` | list, create, dep, label | files open questions, wires blockers; selector resolution lives in `implement/SELECTORS.md` |
-| `backlog file` | create, list | halts when neither backend resolves |
+| `issues shape` | list, create, dep, label | files open questions, wires blockers; selector resolution lives in `implement/SELECTORS.md` |
+| `issues file` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |
 | `wrap-up` | close, comment, list | plus PR work, which is always `gh` |
 | `review` | comment, create | PR review flow is always `gh` (see below) |
@@ -53,7 +56,7 @@ an issue reads it before picking a label, and never invents a bare one.
 ## Pull requests are always GitHub
 
 Beads has no pull-request concept. Anything touching a PR — `review`'s PR queue and
-`unblock`'s FEEDBACK.md, `wrap-up`'s landing phase, `summary`'s branch read — keeps using `gh pr …`
+`mergeable`'s FEEDBACK.md, `wrap-up`'s landing phase, `summary`'s branch read — keeps using `gh pr …`
 unchanged regardless of which issue backend resolved. Only *issues* route through this skill.
 
 ## Adding a backend

@@ -121,7 +121,7 @@ Adding without considering the other four is how **sediment** and **duplication*
 
 ## Companion scripts pin the shared contract in a test
 
-A skill whose prose describes what a companion script computes has a seam no single-file read can check: edit either side alone and the doc now tells the model a wrong meaning for a number the script still emits. Pin the shared contract — the flags the prose tells the model to run, the semantics the prose assigns to outputs — in a small test beside the scripts, asserting both directions: every flag the docs name exists in the script's CLI, and every load-bearing claim string is still present in the doc. The drift then fails a test run instead of surfacing as a confidently wrong report. First instance: `../audit-session/test_contract.py`.
+A skill whose prose describes what a companion script computes has a seam no single-file read can check: edit either side alone and the doc now tells the model a wrong meaning for a number the script still emits. Pin the shared contract — the flags the prose tells the model to run, the semantics the prose assigns to outputs — in a small test beside the scripts, asserting both directions: every flag the docs name exists in the script's CLI, and every load-bearing claim string is still present in the doc. The drift then fails a test run instead of surfacing as a confidently wrong report. First instance: `../retro/test_contract.py`.
 
 ---
 
@@ -131,7 +131,7 @@ For `improve`'s `skills` aspect: no writes, no commits, no questions. Judge one 
 
 Everything above is the authoring contract — it says what to write and why. Audit mode reads the same principles backwards: each becomes a question asked of a skill that already exists. Run the ten axes in [aspects/skills.md](aspects/skills.md); this file supplies the vocabulary behind them.
 
-**Scope boundary.** This judges a skill **in isolation**, as if it were the only one loaded. Two skills that contradict each other in the same session is a real failure and not this one's — route it to `audit-session`'s [steering-conflict](../audit-session/axes/steering-conflict.md) lens, which can see which sources actually landed together.
+**Scope boundary.** This judges a skill **in isolation**, as if it were the only one loaded. Two skills that contradict each other in the same session is a real failure and not this one's — route it to `retro`'s [steering-conflict](../retro/axes/steering-conflict.md) lens, which can see which sources actually landed together.
 
 **Read the skill in full first, including its sibling files.** A finding that does not quote the skill's own line is not a finding. Same rule `claude-md` carries, same reason: a clause judged out of context routinely contradicts one three sections down.
 

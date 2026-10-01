@@ -13,7 +13,7 @@ matches, say so rather than guessing.
 Three hooks load cells without anyone calling this skill. At session start, a repo's labels
 inject each cell's headline, which says the cell exists. On the first Edit, Write or MultiEdit of a
 file in a label's domain, `hooks/ref-edit-inject.sh` injects that label's whole `context.md`.
-The extension or filename picks the label: `.go` is `go`, `SKILL.md` is `agent-docs`, and
+The extension or filename picks the label: `.go` is `go`, `SKILL.md` is `agent-docs`, any file under `docs/adr/` or `docs/CONTEXT.md` is `docs`, and
 `.ts` is `web` only where the repo's map carries `web` for that path. On every prompt except
 one made only of control words (`go`, `park` …), `hooks/ref-picker.sh` asks a model to choose one label from the table below, or none, and
 injects the chosen label's whole `context.md`; `REF_PICKER` selects the model (`jev`, the
@@ -42,6 +42,7 @@ reached by the same hooks; they are never listed here.
 | [`computer-use`](computer-use/context.md) | Driving a browser or desktop GUI app for testing or automation without stealing focus, optionally with a local decision model. |
 | [`container`](container/context.md) | Containers — Dockerfile, Compose, multi-stage builds, healthchecks, image size. |
 | [`desktop`](desktop/context.md) | Desktop apps — packaging, code signing, per-platform install and update. |
+| [`docs`](docs/context.md) | Recording a new term, an ADR-worthy decision or a subsystem in `docs/CONTEXT.md`, `docs/adr/` and `docs/<name>.md` — slate rows, the three-conditions test, formats. |
 | [`game`](game/context.md) | Game development — game feel, playable loop, fixed timestep, prototyping, tuning, profiling, and the end-to-end build arc. |
 | [`go`](go/context.md) | Go — go test, vet, gofmt, error handling, never discarding an error, concurrency. |
 | [`gui`](gui/context.md) | Interface design — what to build, design layers, layout sketches, critique, states, colour, typography, motion, AI-slop, accessibility. |

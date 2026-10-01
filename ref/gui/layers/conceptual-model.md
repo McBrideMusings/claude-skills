@@ -1,6 +1,6 @@
 # Conceptual model layer (layer 5)
 
-Read when the objects are the live question — in a design session, `grill-me`, or `backlog spec`.
+Read when the objects are the live question — in a design session, `grill-me`, or `issues spec`.
 A library of techniques, not a script — see "Applying a cell" in
 [`../working-layers.md`](../working-layers.md). Adapted from jamiemill/layers-skills (MIT).
 

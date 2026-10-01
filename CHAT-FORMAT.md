@@ -151,7 +151,7 @@ The gate (below):
 
 ## Gate
 
-**When it applies.** The end of every coding task, whatever skill produced it — `implement`, inline work, `unblock`, a small fix. The hatch at the bottom is what offers `wrap-up`; nothing above it restates that the work has not landed.
+**When it applies.** The end of every coding task, whatever skill produced it — `implement`, inline work, `mergeable`, a small fix. The hatch at the bottom is what offers `wrap-up`; nothing above it restates that the work has not landed.
 
 **The shape.** What changed, then two sections, then testing steps, then the hatch:
 

@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then Verify and Land. Bare `implement` discovers one via `backlog next`."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then Verify and Land. Bare `implement` discovers one via `issues next`."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -16,9 +16,9 @@ pass over the diff, once the build is green.
 `implement <issue>` works that item here, in this session and this checkout, and nowhere
 else. It never launches another session, pane or agent to do the work.
 
-**Bare `implement`, with no argument, picks the item itself and starts.** Run `backlog next`
-in its autonomous mode ([`../backlog/next.md`](../backlog/next.md)); it returns every
-candidate it scored, ranked. Walk that list in order. Drop an item that hits `backlog next`'s
+**Bare `implement`, with no argument, picks the item itself and starts.** Run `issues next`
+in its autonomous mode ([`../issues/next.md`](../issues/next.md)); it returns every
+candidate it scored, ranked. Walk that list in order. Drop an item that hits `issues next`'s
 out-of-scope or redundancy check (Phase 07) without asking the user to confirm the match.
 An epic ends the walk and continues as `implement <epic>` below. Otherwise apply the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1);
 the first item that clears it is the pass. Never stop to ask which item. When nothing on the
@@ -99,7 +99,7 @@ here through `verify-project` and stops at the Land row, which stays [hold].
   Verify here, then Land). Never answer "only Verify and Land remain" with no next step. Land
   is `wrap-up` even when the tree is clean: never close the epic with a hand-run `bd close` or
   skip `wrap-up` for "nothing to land".
-- **An epic with no children** is not ready for `implement`; offer `backlog spec` to break it
+- **An epic with no children** is not ready for `implement`; offer `issues spec` to break it
   down ([`../issues/breakdown.md`](../issues/breakdown.md)).
 - `epic-plan` expands a child epic in place, and names blockers outside the epic as `external`
   rather than following them; an external blocker holds its row.

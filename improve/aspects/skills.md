@@ -6,7 +6,7 @@ Axis tag: `skills`. Applicability: a `skills/` or `.claude/skills/` directory ex
 
 Judge whether a skill's **process** will actually run the way it is written. Distinct from `claude-md`, which judges a document that loads every turn; a skill loads on demand and is a procedure, so it fails in ways a document cannot.
 
-**Scope: one skill directory at a time.** A contradiction between two skills co-loaded into the same session is real and common, and it is not this aspect's — it belongs to `audit-session`'s [steering-conflict](../../audit-session/axes/steering-conflict.md) lens, which can see which sources actually landed together. Judge each skill as if it were the only one loaded. Say so when a finding smells cross-skill, and route it.
+**Scope: one skill directory at a time.** A contradiction between two skills co-loaded into the same session is real and common, and it is not this aspect's — it belongs to `retro`'s [steering-conflict](../../retro/axes/steering-conflict.md) lens, which can see which sources actually landed together. Judge each skill as if it were the only one loaded. Say so when a finding smells cross-skill, and route it.
 
 ## The eleven axes
 
@@ -20,7 +20,7 @@ Run every one against every skill in scope. Each finding quotes the skill's own 
 | 4 | **Ungated phase** | A phase the agent can skip with nothing noticing. Ask of every phase: what does the next phase read that only this one produces? If the answer is nothing, the phase is advisory. |
 | 5 | **Unhalted decision point** | A step that says choose, ask, or confirm, in a skill that can run unattended, with no halt and no stated default. Either it halts, or it names what happens when nobody answers. |
 | 6 | **Missing escape hatch** | A slate of recommendations that does not close with `go` — and `park` too where the slate proposes next work. Applies to every list of dispositions the skill tells the agent to present. |
-| 7 | **Contradiction** | Two lines in one skill that cannot both be obeyed. Read the whole file before judging any clause: `../../audit-session/FIX-MODE.md:19` — "a clause removed in isolation routinely contradicts one three sections down." Quote both halves or it is not a finding. |
+| 7 | **Contradiction** | Two lines in one skill that cannot both be obeyed. Read the whole file before judging any clause: `../../retro/FIX-MODE.md:19` — "a clause removed in isolation routinely contradicts one three sections down." Quote both halves or it is not a finding. |
 | 8 | **Additive drift** | A rule sitting beside the older one it should have replaced or narrowed. Before any guidance was added, one of replace / narrow / move / delete should have been considered. Two rules covering one behaviour is the condition that produces axis 7. |
 | 9 | **Retained forensics** | A sha, session id, date, count, or retold incident inside a rule. The rule stays; the evidence goes to the commit message. This is a compress, never a delete — the behaviour is fine, the proof is what costs tokens on every load. One clause of reason is allowed where the agent would otherwise choose wrong. |
 | 10 | **Size** | `SKILL.md` body past 500 lines, or a `description` carrying more than routing and constraints. Measure words per section, never line count. |

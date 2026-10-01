@@ -1,7 +1,7 @@
 # Selectors — resolving a scope
 
 Shared table: any skill that needs to resolve a named scope of issues into a concrete list —
-`backlog shape`'s Scope section, a batch of followups, a range of numbers — uses this table
+`issues shape`'s Scope section, a batch of followups, a range of numbers — uses this table
 rather than inventing its own syntax, because a selector means the same thing everywhere.
 
 Resolve the issue backend once — invoke `issues` and run its detection step — before resolving

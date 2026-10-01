@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `backlog spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `issues spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
 ---
 
 # Improve
@@ -12,7 +12,7 @@ The hub for opportunity-finding: "nothing is technically broken, but this could 
 
 This file is the **router**. The survey engine — phases, briefs, scoring, merge — lives in [IMPROVE-CORE.md](IMPROVE-CORE.md); load it only once routing has picked survey mode.
 
-**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `backlog spec`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
+**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `issues spec`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
 
 ## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a survey
 
@@ -78,16 +78,16 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `product` | [aspects/product.md](aspects/product.md) | [`ref/gui/orient.md`](../ref/gui/orient.md) | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
 | `game` | [aspects/game.md](aspects/game.md) | `ref/game/` cells | `.claude/domain` marker includes `game` |
-| `docs` | [aspects/docs.md](aspects/docs.md) | `docs` audit branch | always |
+| `docs` | [aspects/docs.md](aspects/docs.md) | [`bootstrap/docs-site/`](../bootstrap/docs-site/DOCS-SITE.md) audit branch | always |
 | `layout` | [aspects/layout.md](aspects/layout.md) | `bootstrap` audit branch | always |
 
 **The brief column is what a survey sub-agent gets** — a short file naming exactly what to read and what this aspect asks, so no agent burns a read of a 300-line `SKILL.md` hunting for one section. The owner column is what an *interactive* single-aspect run loads, in full, grilling loop included.
 
 **Improving a skill itself** is the `skills` aspect above — read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md), pointer wording in [POINTERS.md](POINTERS.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, description discipline, and the precision pass. Folded in from the standalone `writing-skills` skill on 2026-08-20.
 
-**It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `audit-session`'s [steering-conflict](../audit-session/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `audit-session` generally, not this skill.
+**It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `retro`'s [steering-conflict](../retro/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `retro` generally, not this skill.
 
-Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, and the `ref/gui/` cells `critique.md` and `orient.md`. The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
+Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap` (its layout and docs-site routes), `profiling`, `tdd`, and the `ref/gui/` cells `critique.md` and `orient.md`. The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
 
 ## Routing
 

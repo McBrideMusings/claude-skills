@@ -1,8 +1,8 @@
 # Phase 05 — Issue Tracker
 
 Resolve which issue backend this repo uses, offer to set up beads if it has none, and record the
-answer so every downstream skill (`backlog spec`, `backlog next`, `implement`,
-`backlog shape`, `backlog file`, `wrap-up`) picks it up without re-deriving it.
+answer so every downstream skill (`issues spec`, `issues next`, `implement`,
+`issues shape`, `issues file`, `wrap-up`) picks it up without re-deriving it.
 
 ## Step 1 — Detect
 

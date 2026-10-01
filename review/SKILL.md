@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Perform a code review. Routes by what you're standing in: uncommitted changes review the working tree, a feature branch reviews against its base, an explicit branch/PR/path argument overrides, the default branch sweeps every PR awaiting your review. Blocked branches go to `unblock` first, without asking. Modes: `review dual`, `review repo`, `session`, `noverify`. Choices are typed keywords in chat, never AskUserQuestion."
+description: "Perform a code review. Routes by what you're standing in: uncommitted changes review the working tree, a feature branch reviews against its base, an explicit branch/PR/path argument overrides, the default branch sweeps every PR awaiting your review. Blocked branches go to `mergeable` first, without asking. Modes: `review dual`, `review repo`, `session`, `noverify`. Choices are typed keywords in chat, never AskUserQuestion."
 ---
 
 # Review
@@ -10,7 +10,7 @@ Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined 
 
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs.
 
-**This skill evaluates a diff for defects** — bugs, vulnerabilities, quality issues, spec and architecture fit. When the branch isn't mergeable yet — conflicts, red checks, feedback nobody has answered — it calls [unblock](../unblock/SKILL.md) to get there first, then continues.
+**This skill evaluates a diff for defects** — bugs, vulnerabilities, quality issues, spec and architecture fit. When the branch isn't mergeable yet — conflicts, red checks, feedback nobody has answered — it calls [mergeable](../mergeable/SKILL.md) to get there first, then continues.
 
 | file | what it owns |
 | --- | --- |
@@ -20,7 +20,7 @@ Review code changes for bugs, **security vulnerabilities**, quality issues, CLAU
 | [POSTING.md](POSTING.md) | end-of-pass dispositions, the comment budget, the verdict |
 | [FALSE-POSITIVES.md](FALSE-POSITIVES.md) | what not to flag |
 | [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the workflow transport's mechanics, and when the session transport runs instead |
-| [../unblock/SWEEP.md](../unblock/SWEEP.md) | fan-out when invoked on the default branch |
+| [../mergeable/SWEEP.md](../mergeable/SWEEP.md) | fan-out when invoked on the default branch |
 
 Load a file only once you've routed to it — that keeps context small.
 
@@ -52,7 +52,7 @@ gh pr view --json number,url,state,author,mergeable
 | --- | --- | --- |
 | 1 | working tree is dirty | **the uncommitted changes** — `git diff HEAD` |
 | 2 | on a non-default branch, clean tree | **the branch** — `<base>...HEAD` |
-| 3 | on the default branch, collaborative repo | **sweep** — every PR waiting on my review, [../unblock/SWEEP.md](../unblock/SWEEP.md) |
+| 3 | on the default branch, collaborative repo | **sweep** — every PR waiting on my review, [../mergeable/SWEEP.md](../mergeable/SWEEP.md) |
 | 4 | on the default branch, owned repo, clean tree | nothing to diff → offer `review repo` |
 
 **Uncommitted changes win over the branch, and that is deliberate.** If you have edits in the tree, those are what you are asking about; the committed branch is already behind you. Say in one clause which you took: *"reviewing 3 uncommitted files; the branch's 8 commits are not in this pass."*
@@ -74,9 +74,9 @@ No PR at all → the branch name decides: mine if it starts with `pierce` (case-
 | **teammate's PR** | n/a | review → document → offer per finding: fix small low/med issues on the branch, post the rest |
 | **not mine, no PR** | review → document, no offer | review → document, no offer |
 
-## Phase 00.1 — Hand a blocked branch to `unblock`, then continue
+## Phase 00.1 — Hand a blocked branch to `mergeable`, then continue
 
-**Three things make a review void before it starts**, and all three are `unblock`'s to fix:
+**Three things make a review void before it starts**, and all three are `mergeable`'s to fix:
 
 - the checkout is not at the branch head,
 - the branch **conflicts** with its base,
@@ -84,7 +84,7 @@ No PR at all → the branch name decides: mine if it starts with `pierce` (case-
 
 A fourth, unanswered reviewer feedback, is not a review problem at all: it is work owed to a reviewer, and a self-review that ignores it produces a second report nobody asked for while a real one sits unread.
 
-**So: invoke [unblock](../unblock/SKILL.md) and let it finish. Do not offer to. Do not ask.**
+**So: invoke [mergeable](../mergeable/SKILL.md) and let it finish. Do not offer to. Do not ask.**
 
 This is RULE 2, and it is the reason this phase is four lines instead of the gate ladder it replaced. What that ladder did was print
 
@@ -94,20 +94,20 @@ This is RULE 2, and it is the reason this phase is four lines instead of the gat
 and wait — making the user approve the tool doing the thing the tool is for. That specific output is the failure. It does not come back.
 
 ```
-skip unblock entirely if:
+skip mergeable entirely if:
   target is the uncommitted working tree     (nothing is merging; nothing is red about a diff you haven't committed)
   target is not mine and has no PR           (not mine to fix)
   no GitHub remote                           (nothing to be blocked against)
 
 otherwise:
-  run ../unblock/SKILL.md against the target branch
+  run ../mergeable/SKILL.md against the target branch
   it runs its own gates, makes its own commits, takes its own single push confirm
   it returns a one-line state summary
   RE-PROBE the branch from scratch — the sha moved
   continue to Phase 00.5
 ```
 
-**Not my branch** → `unblock` runs in diagnose-only mode by its own rules: it reads the failing checks and hands the diagnosis back as evidence, fixes nothing, pushes nothing. Carry that diagnosis into the report; a finding that came from a failing test is the strongest kind to post back, because the log is the reproduction.
+**Not my branch** → `mergeable` runs in diagnose-only mode by its own rules: it reads the failing checks and hands the diagnosis back as evidence, fixes nothing, pushes nothing. Carry that diagnosis into the report; a finding that came from a failing test is the strongest kind to post back, because the log is the reproduction.
 
 **Distance behind the base is not a reason for anything, at any number.** A branch 200 commits behind `origin/main` that merges cleanly reviews exactly as well as one that is current: the diff under review is the branch's own changes against its merge base, and commits landing elsewhere on main do not alter it. Never count `HEAD..<base>`, never mention how far behind a branch is, and never merge main in as a precondition for reviewing.
 
@@ -124,7 +124,7 @@ feedback are both older than the marker's mtime, nothing has changed since you l
 nothing pushed and no new feedback since the last pass. `again` · `axes <names>` · `stop`
 ```
 
-**This one asks, and it is not a RULE 2 violation** — there is no job to do. Re-running produces a byte-identical report, so the only question is what the user wants *instead*, which is a genuine unknown. Run `unblock` first regardless: fixing a red test moves the branch's newest commit, which is an input to this check.
+**This one asks, and it is not a RULE 2 violation** — there is no job to do. Re-running produces a byte-identical report, so the only question is what the user wants *instead*, which is a genuine unknown. Run `mergeable` first regardless: fixing a red test moves the branch's newest commit, which is an input to this check.
 
 ## Phase 00.5 — Explain the PR before reviewing it
 
@@ -187,7 +187,7 @@ PROMPT
 
 ## Sweep mode — `review` on the default branch
 
-Phase 00 context 3. Instead of reviewing `main` itself, review everything waiting on you: one worktree and one session per PR, per [../unblock/SWEEP.md](../unblock/SWEEP.md), which owns the fan-out mechanics, the herdr and Terminal transports, the sequential fallback, and the proof step.
+Phase 00 context 3. Instead of reviewing `main` itself, review everything waiting on you: one worktree and one session per PR, per [../mergeable/SWEEP.md](../mergeable/SWEEP.md), which owns the fan-out mechanics, the herdr and Terminal transports, the sequential fallback, and the proof step.
 
 Two things are review's to supply, and SWEEP.md reads them from here:
 
@@ -196,6 +196,6 @@ Two things are review's to supply, and SWEEP.md reads them from here:
   skill's own last phase is the disposition list and the proposed verdict, and naming an earlier step
   ("report findings") is what has made fanned-out reviews stop there instead of reaching it.
 
-**Sweep is a dispatch, not a review.** Each session runs the full skill — Phase 00.1's `unblock` call
+**Sweep is a dispatch, not a review.** Each session runs the full skill — Phase 00.1's `mergeable` call
 included, and Phase 07/POSTING.md's disposition list and verdict proposal too — inside its own worktree.
 This context's job ends at S8's proof step; don't also review the PRs here.

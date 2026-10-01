@@ -29,12 +29,12 @@ component's behaviour, climb to [UI.md](UI.md).
 A comp is stored with `dsys refs add <bead-id> <winner.png> --meta '{"prompt": …, "backend": …, "source": …}'`,
 where `source` is the screenshot an edit started from. The command prints the ref
 (`design-refs:<bead-id>-<file>.png`) and needs the bead id, so it runs when the ticket exists — in
-`backlog spec`, which cites the ref in the ticket's design field ([LIFECYCLE.md](LIFECYCLE.md)).
+`issues spec`, which cites the ref in the ticket's design field ([LIFECYCLE.md](LIFECYCLE.md)).
 `dsys refs get <ref>` writes the PNG back to scratch for whoever builds against it.
 
 The PNG lives in `/private/tmp`, which is emptied after three untouched days. When the winner is
 picked, say its absolute path and that it expires; if no ticket has been cut by then, the comp is
 regenerated from its prompt, since nothing else holds it. A repo tracked on GitHub issues has no
-bead id, so its comps are not stored; `backlog spec` puts the layout and copy in the ticket text.
+bead id, so its comps are not stored; `issues spec` puts the layout and copy in the ticket text.
 
 Losing comps are not stored. They stay in the spike directory until `/private/tmp` ages them out.

@@ -24,7 +24,7 @@ Also probe:
   git check-ignore -q CLAUDE.local.md   # local notes
   ```
   A non-zero exit means not covered. Also check whether anything already slipped through: `git ls-files tmp/ .env`
-- **Legacy planning docs** the `docs` skill knows how to clean up: `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/` — flag in summary, defer action to [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md)
+- **Legacy planning docs** the docs-site flow knows how to clean up: `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/` — flag in summary, defer action to [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md)
 
 ## Report the state table BEFORE doing anything
 

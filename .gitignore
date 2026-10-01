@@ -13,7 +13,7 @@ tldraw-offline/
 # Installed via `npx skills add ogulcancelik/herdr` — third-party skill (symlink into ~/.agents), theirs to update, not ours to track.
 herdr
 
-# Python bytecode from the audit-session scanners. Running adherence.py left the
+# Python bytecode from the retro scanners. Running adherence.py left the
 # submodule dirty on every invocation.
 __pycache__/
 

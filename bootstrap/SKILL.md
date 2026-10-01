@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Idempotent bootstrap and audit of the standard repo layout (CLAUDE.md, .gitignore, admin runner, VitePress docs, docs/adr/). Use for setting up, scaffolding, or auditing a repo's layout against the standard."
+description: "Idempotent bootstrap and audit of the standard repo layout (CLAUDE.md, .gitignore, admin runner, VitePress docs, docs/adr/). Routes: the full layout, `docs site` (bootstrap, audit or migrate a VitePress docs site), `glossary` (audit docs/CONTEXT.md). Use for setting up, scaffolding, or auditing a repo's layout against the standard."
 user_invocable: true
 ---
 
@@ -35,10 +35,20 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | [PHASE-01-STATE-DETECTION.md](PHASE-01-STATE-DETECTION.md) | Probe non-standard locations, build the audit table |
 | [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md) | `CLAUDE.md` (root) + `CLAUDE.local.md` (root) |
 | [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md) | `admin.toml` (delegates to `/admin`) |
-| [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (delegates to `/docs`) |
+| [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (runs the docs-site flow) |
 | [PHASE-05-ISSUE-TRACKER.md](PHASE-05-ISSUE-TRACKER.md) | Resolve the issue backend (beads / GitHub / local), offer `bd init` or a GitHub→beads migration, record the answer |
 | [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`. No PRD, no roadmap — the phase says why |
 | [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/grill-me` Backfill on existing-codebase audits |
+
+## Routes
+
+| Invocation | Does |
+| --- | --- |
+| `bootstrap` | The full layout, Phases 01–07 above. |
+| `bootstrap docs site` | Only the VitePress docs site: bootstrap, audit or migrate it. Open [`docs-site/DOCS-SITE.md`](docs-site/DOCS-SITE.md); it carries its own phased flow and routes from its own state detection. |
+| `bootstrap glossary` | Audit `docs/CONTEXT.md` against the code: [`docs-site/PHASE-07-GLOSSARY-AUDIT.md`](docs-site/PHASE-07-GLOSSARY-AUDIT.md). Standalone; skips every other phase. |
+
+The standing rules for vocabulary, ADRs and subsystem docs are not part of this skill; they live in [`../ref/docs/context.md`](../ref/docs/context.md).
 
 ## Findings-only invocation
 
