@@ -2,7 +2,7 @@
 
 Read by **planning** (a [`critique.md`](critique.md) pass) and the **engines** (`review`, `verify`) when the
 domain is `gui`. Objective banned-patterns and AI tells — the part that fixes "every AI frontend looks
-the same." Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0) and Taste Skill
+the same." Harvested from Taste Skill
 (`Leonxlnx/taste-skill`, MIT). Unlike the lenses, almost none
 of this is a judgement call: it's match-and-refuse.
 
@@ -30,7 +30,7 @@ plus the rewrite, not as "feels generic".
   tablet/mobile. Test heading copy at every breakpoint; reduce clamp max or rewrite. The viewport is part
   of the design.
 
-## Costume & stand-in tells (Impeccable craft floor)
+## Costume & stand-in tells (craft floor)
 
 Reaching for one of these means the axis was never decided. Unlike the absolute bans, a brief's own
 words can earn any of them back — but recognising one means **rewriting the element, not softening it**.

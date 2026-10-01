@@ -2,7 +2,7 @@
 
 Read when the question is **which world this surface lives in**, not how loud it is
 (`amplitude.md`) or whether it's well made (`design.md` + `slop.md`). Runs on a new surface, a
-replacement look, or any greenfield build. Harvested from Impeccable (`pbakaus/impeccable`, Apache-2.0).
+replacement look, or any greenfield build.
 
 ## The finding this cell exists for
 

@@ -3,8 +3,7 @@
 One pass. Build the whole thing, inspect it once in a batch, fix everything that round shows in one
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
 
-Adapted from Impeccable's craft floor (`pbakaus/impeccable`, Apache-2.0) and
-`ref/gui/slop.md`, narrowed to what a hermetic single-file mockup, prototype or wireframe can actually
+Adapted from `ref/gui/slop.md`, narrowed to what a hermetic single-file mockup, prototype or wireframe can actually
 get wrong.
 
 ## Look first
