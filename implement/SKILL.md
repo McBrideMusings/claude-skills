@@ -36,7 +36,7 @@ review clear it runs `wrap-up` (bare when standing in the checkout, `wrap-up <wo
 not) with no `go`, and closes the bead with `bd close <id>` after the branch has landed. It
 asks the lead nothing. It halts only on the halt conditions below, and then says why in its
 own pane and closes nothing. A worker that cannot remove its own worktree leaves it for the
-harness to reap. The mode lives in the argument, which `/clear` drops: any prompt that
+harness to reap. It never runs `git push origin --delete` for a branch it never pushed: a hook stops that command for a person's yes, which nobody is there to give. The mode lives in the argument, which `/clear` drops: any prompt that
 re-enters the pass (a relay brief, a resume) restates `afk` in its `implement` line.
 
 ## The unit is a slice — an epic becomes a plan
