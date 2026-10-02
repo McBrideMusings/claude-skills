@@ -87,12 +87,17 @@ for c in "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" "${SPIKE
 done
 mkdir -p "$WORK/spk"
 "$ART" build --kind mockup --title M --fragment "$WORK/mock.html" --out "$WORK/spk/spk.html" >/dev/null 2>&1
-"$ART" shot spk --dir "$WORK/spk" --cell nope >/dev/null 2>&1
+"$ART" shot spk --dir "$WORK/spk" --size 320x300 --cell nope >/dev/null 2>&1
 [ $? -ne 0 ] && say ok "an unknown --cell is rejected" || say f "unknown --cell accepted"
-"$ART" shot Bad_Slug --dir "$WORK/spk" >/dev/null 2>&1
+"$ART" shot Bad_Slug --dir "$WORK/spk" --size 320x300 >/dev/null 2>&1
 [ $? -ne 0 ] && say ok "a non-kebab slug is rejected" || say f "bad slug accepted"
-"$ART" shot spk --dir spk >/dev/null 2>&1
+"$ART" shot spk --dir spk --size 320x300 >/dev/null 2>&1
 [ $? -ne 0 ] && say ok "a relative --dir is rejected" || say f "relative --dir accepted"
+"$ART" shot spk --dir "$WORK/spk" >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "a shot with no --platform or --size is rejected" || say f "shot with no size accepted"
+"$ART" shot spk --dir "$WORK/spk" --platform phone --size 320x300 >/dev/null 2>&1
+[ $? -ne 0 ] && say ok "--platform with --size is rejected" || say f "--platform with --size accepted"
+pngdim() { python3 -c 'import struct,sys;print("%d %d"%struct.unpack(">II",open(sys.argv[1],"rb").read(24)[16:24]))' "$1"; }
 if [ "$CHROME_OK" = 1 ]; then
   "$ART" shot spk --dir "$WORK/spk" --size 320x300 --theme both >"$WORK/shot.out" 2>&1
   [ "$(grep -c '^/.*\.png$' "$WORK/shot.out")" -eq 6 ] && say ok "shot prints one absolute path per cell and theme" \
@@ -103,9 +108,29 @@ if [ "$CHROME_OK" = 1 ]; then
   [ -e "$WORK/spk/.spk.measure.html" ] && say f "the measuring copy was left behind" || say ok "no measuring copy is left behind"
   pgrep -f "user-data-dir=/var/folders.*tmp" >/dev/null 2>&1 && say f "a Chrome process is still running" || say ok "no Chrome process is left running"
   "$ART" build --kind prototype --title P --fragment "$WORK/mock.html" --out "$WORK/spk/proto.html" >/dev/null 2>&1
-  "$ART" shot proto --dir "$WORK/spk" --size 400x300 --query 'v=2' >"$WORK/shot2.out" 2>&1
-  grep -q '/proto-v-2.png$' "$WORK/shot2.out" && [ -s "$WORK/spk/proto-v-2.png" ] \
+  mkdir -p "$WORK/pro"; cp "$WORK/spk/proto.html" "$WORK/pro/proto.html"
+  "$ART" shot proto --dir "$WORK/pro" --size 400x300 --query 'v=2' >"$WORK/shot2.out" 2>&1
+  grep -q '/proto-v-2.png$' "$WORK/shot2.out" && [ -s "$WORK/pro/proto-v-2.png" ] \
     && say ok "a prototype shoots as one PNG named for its query" || say f "prototype shot failed: $(head -2 "$WORK/shot2.out")"
+  # A design taller than the platform size is cropped to it, not captured at full height.
+  mkdir -p "$WORK/tall"
+  printf '<template data-variant="Tall" data-state="A"><div style="height:2000px">x</div></template><template data-variant="Tall" data-state="B"><p>short</p></template>' > "$WORK/tall.html"
+  "$ART" build --kind mockup --title T --fragment "$WORK/tall.html" --out "$WORK/tall/tall.html" >/dev/null 2>&1
+  "$ART" shot tall --dir "$WORK/tall" --size 320x300 >/dev/null 2>&1
+  [ "$(pngdim "$WORK/tall/tall-a.png")" = "320 300" ] && [ "$(pngdim "$WORK/tall/tall-b.png")" = "320 300" ] \
+    && say ok "a full-screen shot is exactly the requested size" || say f "full-screen shot size: $(pngdim "$WORK/tall/tall-a.png")"
+  "$ART" shot tall --dir "$WORK/tall" --size 320x300 --partial --cell tall-a >/dev/null 2>&1
+  [ "$(pngdim "$WORK/tall/tall-a.png")" = "320 2000" ] \
+    && say ok "--partial grows to the content" || say f "partial shot size: $(pngdim "$WORK/tall/tall-a.png")"
+  "$ART" shot tall --dir "$WORK/tall" --size 320x300 --cell tall-b >/dev/null 2>&1
+  "$ART" shot tall --dir "$WORK/tall" --size 320x500 --partial --cell tall-a >/dev/null 2>&1
+  [ $? -eq 0 ] && say ok "a partial PNG is not held to the full-screen size" || say f "partial PNG tripped the size check"
+  "$ART" shot tall --dir "$WORK/tall" --size 320x300 --cell tall-a >/dev/null 2>&1
+  "$ART" shot tall --dir "$WORK/tall" --size 320x400 --cell tall-b >"$WORK/mix.out" 2>&1
+  [ $? -ne 0 ] && grep -q 'tall-a.png' "$WORK/mix.out" && grep -q 'tall-b.png' "$WORK/mix.out" \
+    && say ok "two full-screen sizes on one platform fail and name the files" || say f "size mismatch not reported: $(head -4 "$WORK/mix.out")"
+  "$ART" shot tall --dir "$WORK/tall" --platform phone >/dev/null 2>&1
+  [ "$(pngdim "$WORK/tall/tall-b.png")" = "390 844" ] && say ok "--platform phone shoots 390x844" || say f "phone size: $(pngdim "$WORK/tall/tall-b.png")"
 else
   say ok "Chrome absent — shot render checks skipped"
 fi

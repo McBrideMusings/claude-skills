@@ -34,13 +34,28 @@ reached by clicking, or a real component's response. That climbs to [UI.md](UI.m
 5. **Shoot:**
 
    ```bash
-   "$HOME/.claude/skills/spike/tool/spike" shot <slug> --size 390x844 --theme both
+   "$HOME/.claude/skills/spike/tool/spike" shot <slug> --platform phone --theme both
    ```
 
    Reads `<slug>.html` in the spike directory and prints one absolute PNG path per line,
-   `<variant>-<state>.png` (`-dark` appended for the dark scheme), in that same directory. `--size WxH` is the
-   window width and the minimum height (default `1280x900`); a taller design is captured at its
-   full height. `--theme light|dark|both` sets `prefers-color-scheme`. `--cell id,id` reshoots
+   `<variant>-<state>.png` (`-dark` appended for the dark scheme), in that same directory.
+
+   **A shot of a whole screen has one fixed size per platform.** Every full-screen PNG of a
+   platform has the same pixel size and aspect ratio, and that size approximates the real
+   device, so a phone shot looks like a phone. `--platform phone|tablet|desktop` picks it:
+   `phone` 390x844 and `tablet` 820x1180 are the CSS viewports of the iPhone 12/13/14 and the
+   iPad Air 4/5 in portrait; `desktop` 1280x800 is a 16:10 laptop viewport. Covering every
+   device does not matter; consistency and a realistic ratio do. The PNG is exactly that size,
+   so a taller design is cropped at the bottom, never captured at full height. `--size WxH`
+   names another size, for a platform the list lacks. After shooting, the tool records each
+   PNG's size in `.shots.json` beside it, and when full-screen PNGs of one platform differ in
+   size it names the files and exits non-zero.
+
+   **`--partial` marks a shot of a narrow part of a screen, a single component, or a
+   before-and-after of one.** The size is then the width and the minimum height, and a taller
+   design is captured at its full height. Partial PNGs are not held to the platform size.
+
+   `--theme light|dark|both` sets `prefers-color-scheme`. `--cell id,id` reshoots
    some cells. `--scale 2` doubles the pixel density. `--dir <abs-dir>` names the spike
    directory when the scratch root differs.
 6. **Open every PNG and look at it** ([CRITIQUE.md](CRITIQUE.md)), then show the result per
@@ -84,7 +99,8 @@ Flags:
 
 | Flag | Meaning |
 | --- | --- |
-| `--size`, `--theme`, `--cell`, `--scale`, `--dir`, `--query` | As for `spike shot` |
+| `--theme`, `--cell`, `--scale`, `--dir`, `--query` | As for `spike shot` |
+| `--size WxH` | Window width and minimum height (default `1280x900`); a taller design is recorded at its full height |
 | `--reduced` | Render under `prefers-reduced-motion: reduce`. A project that disables its animations there, and declares no length, gets one resting frame and the tool says so; that is the right output. Script timers still run, so a script that should stop under reduced motion must check the media query itself |
 | `--fps N` | Frames per second, 1–60 (default 30) |
 | `--duration MS` | Record this long instead of the declared or animation length |
@@ -99,8 +115,8 @@ question: the tool cannot send input.
 
 ## What the width means
 
-Screen size is the shot's `--size`, never a variant. A phone design and a desktop design are
-two spikes with two slugs, shot at their own widths (`390x844`, `1440x900`).
+Screen size is the shot's `--platform` or `--size`, never a variant. A phone design and a desktop design are
+two spikes with two slugs, shot at their own platform sizes.
 
 ## Rebuilding
 

@@ -12,7 +12,7 @@ What you write is a **body fragment**: real content, nothing else. No `<!DOCTYPE
   --fragment /private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav/wheelhouse-nav.body.html \
   --out /private/tmp/claude/<repo-slug>/spikes/wheelhouse-nav/wheelhouse-nav.html
 
-"$HOME/.claude/skills/spike/tool/spike" shot wheelhouse-nav --size 390x844
+"$HOME/.claude/skills/spike/tool/spike" shot wheelhouse-nav --platform phone
 ```
 
 `spike kinds` lists the kinds. `spike` carries `serve <path>` as a contingency that shells to
@@ -242,7 +242,7 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
 ## Before handing it over
 
 1. Run the build; a non-zero exit means nothing was written.
-2. **Look at it.** `spike shot <slug>`, then open every PNG: one per cell of a mockup, one for a
+2. **Look at it.** `spike shot <slug> --platform <platform>`, then open every PNG: one per cell of a mockup, one for a
    wireframe, and for a prototype one per variant (`--query 'v=2'`) and per tweak state
    that matters. When the question is motion, `spike video <slug>` and open each WebP and
    frame-strip PNG too. A path is delivery, not verification — a font falling back, an
@@ -264,7 +264,7 @@ per refinement.
 
 A prototype gets **one kebab-case slug naming what it is for**, and the slug is the whole filename: `wheelhouse-phone`, `settings-desktop`, `queue-backend`. Everything for it lives in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`.
 
-**A spike targets exactly one platform, and the slug names it.** A phone design, a desktop design and a TV design are three slugs — never one file switching between them. A platform is an interaction model, not a width: touch, pointer and remote-focus are different designs that happen to share a product, and one file holding all three spends every variant slot on "which platform" instead of on the question the spike exists to answer. A mockup is shot at its platform's size (`spike shot --size`).
+**A spike targets exactly one platform, and the slug names it.** A phone design, a desktop design and a TV design are three slugs — never one file switching between them. A platform is an interaction model, not a width: touch, pointer and remote-focus are different designs that happen to share a product, and one file holding all three spends every variant slot on "which platform" instead of on the question the spike exists to answer. A mockup is shot at its platform's fixed size ([MOCKUP.md](MOCKUP.md) step 5).
 
 **There are no rounds and no versions.** A rebuild replaces the file. Earlier attempts are gone — which is correct, because a prototype is throwaway. `?v=` is the only axis in a prototype's URL, and it means variant.
 
