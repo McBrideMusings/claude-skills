@@ -183,9 +183,8 @@ first learned of the PR from `gh pr list`. Landing and verification belong to wh
 result: the user, or the `SELF-LAND` worker, for a fire-and-forget dispatch; the dispatcher, for
 a report-back one.
 
-**The `SELF-LAND` marker is for repos where work lands on the default branch without review**
-— the user's own repos and local-only repos. Check `git -C <repo> remote get-url origin` before
-touching it. On a repo that takes PR review (any other owner), never create the marker and
+**The `SELF-LAND` marker is for an `owned` repo only.** Run `~/.claude/tools/repo-tier <repo>`
+before touching it. When it prints `collaborative` or `unlisted`, never create the marker and
 never write "SELF-LAND" into the brief: nothing there lands itself. The worker's outward
 actions are the ones the brief names on its own PR branch — an ordinary push, or
 `git push --force-with-lease=<branch>:<old-sha> origin HEAD:<branch>` after a rebase, and

@@ -74,7 +74,7 @@ Invoke `issues` and run its detection step:
 - **`beads`** → the destination is the beads database. No repo argument needed; `bd` finds it.
 - **`github`** → the destination is a `github.com[:/]OWNER/REPO` remote from `git remote -v`.
   - **One GitHub remote** → that `OWNER/REPO`.
-  - **Several** (e.g. your fork plus a read-only upstream) → prefer the one you own: resolve your login once with `gh api user --jq .login` and pick the remote whose `OWNER` matches; if none match you, use the remote named `origin`.
+  - **Several** (e.g. your fork plus a read-only upstream) → prefer the one you own: run `~/.claude/tools/repo-tier . <remote>` for each and pick the remote that prints `owned`; if none does, use the remote named `origin`.
 
 ### Step 3: Compile suggestions
 

@@ -106,9 +106,9 @@ to fall back on. Read the label first; if it is there, it decides and nothing be
 **No label yet** → propose a default from two signals, either of which is sufficient:
 
 - **Path.** Under `~/Work/**` or `~/Freelance/**` → stealth.
-- **Owner.** `gh repo view --json owner --jq .owner.login` ≠ `gh api user --jq .login` → stealth.
-  No remote at all → stealth. Path alone is not enough: a repo can sit in `~/Projects/` and
-  belong to someone else.
+- **Owner.** `~/.claude/tools/repo-tier` prints `collaborative` or `unlisted` → stealth.
+  No remote at all → stealth, though the tool prints `owned` for it. Path alone is not
+  enough: a repo can sit in `~/Projects/` and belong to someone else.
 
 Confirm the proposal with the user, then **write the answer into `domains-map`**. The inference
 runs once; the label runs forever.

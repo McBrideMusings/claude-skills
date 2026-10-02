@@ -93,7 +93,7 @@ edges, and a validated ready-front order. Decline and I do tier 1 only.
 Before that row, resolve **stealth**:
 
 - The `tracker:beads-stealth` label in `~/.claude/domains-map` is the source of truth.
-- **No label yet** → propose a default from the repo's path (`~/Work/**`, `~/Freelance/**` → stealth) *and* its owner (`gh repo view --json owner --jq .owner.login` ≠ `gh api user --jq .login` → stealth; no remote at all → stealth). Either signal alone is enough. Confirm with the user, then write the label into `domains-map` — from then on the label decides, not the inference.
+- **No label yet** → propose a default from the repo's path (`~/Work/**`, `~/Freelance/**` → stealth) *and* its owner (`~/.claude/tools/repo-tier` prints `collaborative` or `unlisted` → stealth; no remote at all → stealth). Either signal alone is enough. Confirm with the user, then write the label into `domains-map` — from then on the label decides, not the inference.
 - **Stealth** → `bd init --stealth --skip-agents --skip-hooks`. Stealth mode configures `.git/info/exclude`, which is never pushed, so no `.gitignore` diff appears and no collaborator sees anything. Auto-export is off by default, so no `.beads/issues.jsonl` lands either.
 - **Stealth forbids sync.** `bd github sync` is **refused** in a stealth repo with a one-line error, never offered and never merely defaulted off. One sync pushes a private graph into someone else's GitHub organisation.
 - Tell the user the one thing stealth does not hide: `.beads/` still sits in the working directory, invisible to `git status` but visible to anyone with filesystem access to that checkout.

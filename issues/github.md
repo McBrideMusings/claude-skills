@@ -103,12 +103,12 @@ or write the body to a file under `/private/tmp/claude/<repo-slug>/` and pass `-
 Several skills branch on whether the repo is the user's own:
 
 ```bash
-gh repo view --json owner --jq .owner.login    # vs
-gh api user --jq .login
+~/.claude/tools/repo-tier    # owned | collaborative | unlisted
 ```
 
-Equal → owned (commit to `main`, close issues freely). Different → collaborative (feature
-branches, PRs, and **never** close issues the user doesn't own).
+`owned` → commit to `main`, close issues freely. `collaborative` or `unlisted` → feature
+branches, PRs, and **never** close issues the user doesn't own. That tool is the only place
+that decides it; never compare an owner to a login or a name here.
 
 ## Pull requests
 

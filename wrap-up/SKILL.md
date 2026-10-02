@@ -115,7 +115,7 @@ Summarize the work completed this session by reviewing:
 
 Check for and update ANY of these tracking mechanisms that exist. Do not create any that don't exist. Capture which issues closed this pass for the Phase 6 summary.
 
-**Ownership check — do this first (reused again in Phase 6 landing).** `gh repo view --json owner --jq .owner.login` vs `gh api user --jq .login`. Owner == my login (or no GitHub remote) → **owned (solo)**; else → **collaborative**. A beads-only repo with no GitHub remote is always **owned** — there is nobody else's lifecycle to respect.
+**Ownership check — do this first (reused again in Phase 6 landing).** Run `~/.claude/tools/repo-tier <repo>` and take its answer; never compare an owner to a login or a name yourself. `owned` → **owned (solo)**; `collaborative` or `unlisted` → **collaborative**. A repo with no remote prints `owned` — there is nobody else's lifecycle to respect.
 
 ### Issues and Milestones
 

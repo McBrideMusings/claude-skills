@@ -43,8 +43,9 @@ With no argument, four contexts, resolved in this order. Every one is decidable 
 ```
 git status --porcelain
 git branch --show-current
-gh repo view --json defaultBranchRef,owner --jq '[.defaultBranchRef.name,.owner.login]'
-gh api user --jq .login
+gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
+~/.claude/tools/repo-tier                        # owned | collaborative | unlisted
+gh api user --jq .login                          # for "is this PR mine", never for the repo
 gh pr view --json number,url,state,author,mergeable
 ```
 
@@ -59,7 +60,7 @@ gh pr view --json number,url,state,author,mergeable
 
 ### Ownership — needed for the offers, not the routing
 
-**Do I own the repo?** `owner.login == my login` → **owned repo**: I work alone here and never open PRs, so there is nothing to post to. Otherwise → **collaborative repo**.
+**Do I own the repo?** `repo-tier` printed `owned` → **owned repo**: I work alone here and never open PRs, so there is nothing to post to. `collaborative` or `unlisted` → **collaborative repo**.
 
 **Is this PR mine?** **When a PR exists, `author.login` decides it and nothing else does.** Being the assignee does not make it mine; neither does having pushed commits to the branch, nor a branch name, nor `git log` authorship. Those are all *normal* on a PR I'm reviewing or helping on, so treating any of them as an ownership signal manufactures ambiguity out of the ordinary case.
 
