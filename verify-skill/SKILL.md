@@ -46,6 +46,11 @@ Answer these by reading the codebase; only ask what you can't observe:
   payload, a CLI run with real flags).
 - **Observe** — what evidence can be captured? Screenshots, terminal transcripts,
   response bodies, logs, exit codes, DB state, real output pasted from an actual run.
+- **Logs and state** — for anything that runs: where its log files are, how the control
+  surface reports that path, and what its state query returns per feature. Check both
+  against [`../ref/observability/checklist.md`](../ref/observability/checklist.md); a missing
+  log file or a count where items belong goes in the generated skill as a named gap, and in
+  the report.
 - **Isolate** — can two instances run side by side (ports, data dirs, profiles)? If not,
   say so in the generated skill: refusing to double-drive a shared instance beats
   corrupting the user's session.
@@ -73,6 +78,9 @@ and when to reach for it.
   the final screen. Verify side effects (files written, rows inserted, messages sent)
   alongside what's visible. When the safe path is a dry-run, verify what it actually
   skips by observing (files, network, git refs), not by trusting its name.
+- **Logs and state** — the command that prints the log directory, the command that reads
+  the state query, and for each mapped feature the log lines and state fields a drive
+  must produce (checklist §4). Every drive ends by reading both back.
 - **Cleanup** — tear down what this run started, never by process name. Cleanup removes
   instances and scratch state, never the evidence.
 - **Helpers** — any shipped script is executable and its invocation is shown in the
@@ -102,7 +110,8 @@ paragraph, then exactly four H2s in order:
 1. `Sub-features` — short IDs, one line each.
 2. `How to get to it (user POV)` — every user entry point.
 3. `Driving it with <harness>` — starts with `Preconditions:`, then labeled bullets
-   pairing each user action with an exact command and observable result.
+   pairing each user action with an exact command and observable result, ending with the
+   log lines and state fields that action must produce.
 4. `Gotchas` — traps that can waste or invalidate a run.
 
 Keep implementation details out — name only user paths, stable handles, required state,
@@ -119,7 +128,9 @@ step. A generated skill that was never executed is a draft, not a deliverable.
 ## Audit mode
 
 Keeps a `verify-project` honest as the app changes. The unit of rigor is the feature (or
-section), not every sentence.
+section), not every sentence. For each feature, drive it and confirm the log lines and state
+fields its map entry names still appear; one that names none is a gap against
+[`../ref/observability/checklist.md`](../ref/observability/checklist.md).
 
 **Outcomes — pick one, say which:**
 

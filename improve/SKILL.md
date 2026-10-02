@@ -69,6 +69,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `interface-safety` | [aspects/interface-safety.md](aspects/interface-safety.md) | native — [INTERFACE-SAFETY.md](INTERFACE-SAFETY.md) | always |
 | `agent-ergonomics` | [aspects/agent-ergonomics.md](aspects/agent-ergonomics.md) | native — [AGENT-ERGONOMICS.md](AGENT-ERGONOMICS.md) | always |
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
+| `observability` | [aspects/observability.md](aspects/observability.md) | native — [`ref/observability/checklist.md`](../ref/observability/checklist.md) | only when named: `improve observability` |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `skills` | [aspects/skills.md](aspects/skills.md) | native — [WRITING-SKILLS.md](WRITING-SKILLS.md), vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md) | a `skills/` or `.claude/skills/` directory exists |
 | `behavior` | [aspects/behavior.md](aspects/behavior.md) | native — [BEHAVIOR.md](BEHAVIOR.md) | product launchable AND drivable (scripting surface, CLI, browser tool, harness) |

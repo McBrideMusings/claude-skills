@@ -139,7 +139,11 @@ elsewhere, squashed by `wrap-up`.
 1. **Plan.** State the files to touch and an objective acceptance check — for a changed value,
    one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
    — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
-   gate, and it should not have been offered. Then pin the pass with `dashboard implement`
+   gate, and it should not have been offered. When the change adds or alters a feature of
+   something that runs, the plan also names each boundary the feature crosses, the log line
+   each one writes, and the state-query field that shows what the feature displays
+   ([`../ref/observability/checklist.md`](../ref/observability/checklist.md)); building those is
+   part of this item, never a follow-up. Then pin the pass with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
    each step below.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
@@ -152,7 +156,10 @@ elsewhere, squashed by `wrap-up`.
    nonzero exit fails the step ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
 4. **Verify at the surface.** The project's own `verify-project` skill owns what verification
    means here — read `<repo>/.claude/skills/verify-project/SKILL.md` as a file and follow it
-   (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). Write one
+   (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). For a
+   feature, the proof includes checklist §4: the state query shows the planned field with raw
+   values, and the log file at the path the control surface reports holds the planned lines
+   from this run. Write one
    from the repo's `README.md`, `CLAUDE.md` and `admin.toml` when none exists, naming this
    repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
    `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:

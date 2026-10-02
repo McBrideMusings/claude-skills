@@ -29,6 +29,7 @@ root=$(git rev-parse --show-toplevel) && cd "$root" && {
 |---|---|
 | `architecture`, `interface-safety`, `agent-ergonomics` (runs `lateral driver-seat`), `security`, `product`, `layout` | always |
 | `tests` | always — an absent suite is the lead finding |
+| `observability` | never in a survey — only when named: `improve observability` |
 | `claude-md` | `claude-md=` non-empty |
 | `gui` | a UI surface in the tree — components, stylesheets, a page, or a TUI |
 | `performance` | `admin=yes` or `scripts=` names a start/dev/run entry |
