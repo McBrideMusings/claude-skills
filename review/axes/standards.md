@@ -68,4 +68,17 @@ The smell baseline above catches duplication *inside the diff*. This rule catche
 
 Overlap with the `slop` axis: "this wrapper adds no meaning" is slop; "this already exists at `path/x.ts`" is this rule. Don't double-report.
 
+## One decision, one owner — search before accepting a second answer
+
+The reuse rule covers a new *thing*. This rule covers a new *answer to a question the repo already answers*: a test that sorts its input into kinds, such as whose repo this is, which profile or environment is active, which tracker or transport applies, whether this is the default branch or the primary checkout, whether a caller is permitted.
+
+**When the diff adds or edits such a test, grep the whole repo for every other place that answers the same question.** Search by the question, not by the code shape: the commands it runs, the values it compares, the names of the kinds it returns.
+
+- **Prose counts as an implementation.** A line in a skill, an agent brief, a `CLAUDE.md` or a doc that says "run `X` and compare it to `Y`" decides the question each time an agent follows it. It is a copy, the same as a function in a hook or a tool.
+- **A second answer is a finding even when the two agree today.** They differ the first time one is edited, and nothing fails when they do. Report every place found with its path and line, and name the differences that already exist: a different comparison, a kind one place knows and another doesn't, an input one handles and another ignores.
+- **The fix names one owner and routes the rest through it**: code calls the owning function, prose says "run `<the owning tool>`" and states no test of its own. Where no owner exists, the finding is that one must be created; say where.
+- Not a finding: a place that *reads* the owner's verdict and acts on it, or a test that asks a different question with similar commands (who authored this pull request is not who owns this repo).
+
+Without the search, "this is decided elsewhere too" is a guess — don't file it.
+
 Axis tag: `standards`.
