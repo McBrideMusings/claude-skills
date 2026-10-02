@@ -61,8 +61,6 @@ function fit() {                       // scale to the window only outside shot 
 
 - **Name states for what the screen shows** (`list`, `detail-empty`), matching the
   proposal's Design table headings. The PNG name is `<platform>-<state>.png`.
-- **The screen clips to the platform size.** `spike shot` captures a taller page at its full
-  height, so an unclipped screen gives one platform's shots different heights.
 - **A state that differs only by a tweak** (a closed record, an offline connection) is one
   `JUMP` entry plus that tweak in the query, not a second copy of the state.
 
@@ -71,7 +69,9 @@ function fit() {                       // scale to the window only outside shot 
 `shoot.sh` sits in the topic directory beside the prototype source. Each platform's built
 prototype is its own spike slug and directory (`<topic>-phone/`, `<topic>-desktop/`, per
 [`../spike/UI.md`](../spike/UI.md)), next to that topic directory. The script shoots each
-state with `spike shot --query` and renames the PNG into one image directory:
+state with `spike shot --platform --query`, which fixes the size per platform
+([`../spike/MOCKUP.md`](../spike/MOCKUP.md) step 5), and renames the PNG into one image
+directory:
 
 ```bash
 #!/bin/bash
@@ -80,17 +80,16 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 SPIKE="$HOME/.claude/skills/spike/tool/spike"
 OUT="$DIR/proposal"
-PHONE=<WxH>; DESKTOP=<WxH>             # the platform sizes from spike/MOCKUP.md
 mkdir -p "$OUT"
-shoot() { # platform size variant state [extra query, starting with &]
+shoot() { # platform variant state [extra query, starting with &]
   local slug="<topic>-$1" png
-  png="$("$SPIKE" shot "$slug" --dir "$DIR/../$slug" --size "$2" \
-          --query "v=$3&shot=$4${5:-}" | tail -1)"
-  mv "$png" "$OUT/$1-$4.png"
-  echo "$OUT/$1-$4.png"
+  png="$("$SPIKE" shot "$slug" --dir "$DIR/../$slug" --platform "$1" \
+          --query "v=$2&shot=$3${4:-}" | tail -1)"
+  mv "$png" "$OUT/$1-$3.png"
+  echo "$OUT/$1-$3.png"
 }
-for s in start confirm waiting count list; do shoot phone "$PHONE" 1 "$s"; done
-for s in start count list;                 do shoot desktop "$DESKTOP" 1 "$s"; done
+for s in start confirm waiting count list; do shoot phone 1 "$s"; done
+for s in start count list;                 do shoot desktop 1 "$s"; done
 ```
 
 Add `--theme dark` and a `-dark` suffix when the proposal shows both themes.

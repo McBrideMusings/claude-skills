@@ -34,7 +34,7 @@ can be named.
    role's flow from start to end. Each piece of feedback is a rebuild over the same file and
    one line saying what changed.
 4. **Screenshot mode** — this skill, [SCREENSHOTS.md](SCREENSHOTS.md). Full-screen sizes per
-   platform are `spike`'s rule, in [`../spike/MOCKUP.md`](../spike/MOCKUP.md). Done when
+   platform are `spike`'s rule, [`../spike/MOCKUP.md`](../spike/MOCKUP.md) step 5. Done when
    SCREENSHOTS.md's own done-when holds.
 5. **Write** — this skill, [TEMPLATE.md](TEMPLATE.md). Load `show-shape` before the Flows and
    Pseudo-code sections. Done when the build needs nothing from the prototype: every state in
