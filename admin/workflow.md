@@ -69,7 +69,7 @@ Full `[terminal]` contract, with a herdr example: `docs/adr/0020-the-launcher-is
 The dashboard tick runs `ReapWorker` (`internal/kinds/reap.go`) on each worker row.
 
 - **Finished** means `done` exits 0 (5-second limit; a timeout or error is not finished). With no `done`, `[terminal].status` reporting the pane gone. A hosted worker finishes only through a passing `done`.
-- **Safe to delete** is fixed in Go and not configurable. The worktree must be clean and `origin/main..<branch>` must be empty.
+- **Safe to delete** is fixed in Go and not configurable. The worktree must be clean and `origin/main..<branch>` must be empty. Ignored files count: one the primary checkout lacks blocks the reap (a worker-made `.env` or build output), except a `node_modules` directory, which a package manager recreates. The row note names up to 3 blocking paths.
 - On pass: `[terminal].kill` (or the pty kill for hosted), remove the worktree and branch, mark the row exited, free the ceiling slot.
 - On fail: everything stays and the reason shows on the row.
 
