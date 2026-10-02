@@ -43,7 +43,9 @@ can be named.
    - Show the draft rendered with its images: one Canvas card of the Markdown, images as
      absolute paths. In chat, one slate row ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row)
      naming where it goes and what changes there: a new issue or file, or which sections of the
-     existing one are replaced. Wait for `go`.
+     existing one are replaced. Going to GitHub, check [SHARE.md](SHARE.md) §When this step
+     applies; when it does, the prototype's gist row sits above this one and goes out first.
+     Wait for `go`.
    - Publish to the target the user named:
      - **Document:** a Markdown file at the path the user gives, with the PNGs copied from the
        shoot directory into a sibling directory its relative links name. No path given: ask.
@@ -77,3 +79,4 @@ can be named.
 | --- | --- |
 | [TEMPLATE.md](TEMPLATE.md) | Step 5: the sections, in order, and what each one must hold. |
 | [SCREENSHOTS.md](SCREENSHOTS.md) | Step 4: adding `?shot=` to a prototype and writing the shoot script. |
+| [SHARE.md](SHARE.md) | Step 6, publishing to GitHub with a prototype: whether to share it, the gist, the htmlpreview link, its read-back. |

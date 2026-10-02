@@ -16,6 +16,9 @@ must never break, stated as one sentence.}
 {One line: what the screenshots were made from (the project's real stylesheets, fonts and
 assets) and the pixel size per platform.}
 
+{When the prototype is shared (SHARE.md): "Try it: [phone](<htmlpreview link>) ·
+[desktop](<htmlpreview link>)", pinned to the reviewed revision.}
+
 ### {Role}, on {platform}
 | {State} | {State} | {State} |
 | --- | --- | --- |
