@@ -21,8 +21,8 @@ Explainers are a separate kind of document with their own tool, `explainer`.
   spike build --kind wireframe|mockup|prototype --title <t>
               --fragment <abs.html> --out <abs.html>
               [--subtitle <s>] [--lang en] [--extra-css <abs.css>]
-  spike shot  <slug> [--dir <abs-dir>] [--size WxH] [--scale N]
-              [--theme light|dark|both] [--cell id,id] [--query q]
+  spike shot  <slug> (--platform phone|tablet|desktop | --size WxH) [--partial]
+              [--dir <abs-dir>] [--scale N] [--theme light|dark|both] [--cell id,id] [--query q]
   spike video  <slug> [--dir <abs-dir>] [--size WxH] [--scale N] [--theme light|dark|both]
               [--cell id,id] [--query q] [--reduced] [--fps N] [--duration ms] [--hold ms]
               [--strip N] [--quality Q]
@@ -364,7 +364,7 @@ def cmd_build(args):
         detail += ", variants=%d" % len(variants)
     print("%s  (%s, %.1f KB)" % (out_path, detail, size / 1024.0))
     if kind == "mockup":
-        print("Next: spike shot <slug> — then open every PNG and look at it.", file=sys.stderr)
+        print("Next: spike shot <slug> --platform phone|tablet|desktop — then open every PNG and look at it.", file=sys.stderr)
     else:
         print("Screenshot it and look at it before handing it over.", file=sys.stderr)
 
@@ -436,13 +436,73 @@ def run_chrome(chrome, profile, flags, url, done):
             proc.wait()
 
 
+# A full-screen shot is exactly one size per platform, so every PNG of a slug is comparable.
+# phone and tablet are the CSS viewports of the iPhone 12/13/14 and the iPad Air 4/5 in
+# portrait; desktop is a 16:10 laptop viewport.
+PLATFORMS = {"phone": (390, 844), "tablet": (820, 1180), "desktop": (1280, 800)}
+MANIFEST = ".shots.json"
+SIZE_RE = re.compile(r"^(\d{2,5})\s*[x\u00d7]\s*(\d{2,5})$")
+
+
+def png_size(path):
+    with open(path, "rb") as f:
+        head = f.read(24)
+    if head[:8] != b"\x89PNG\r\n\x1a\n":
+        die("%s is not a PNG" % path)
+    return struct.unpack(">II", head[16:24])
+
+
+def record_shots(out_dir, entries):
+    """Merge this run's shots into the slug's manifest and return it."""
+    path = os.path.join(out_dir, MANIFEST)
+    try:
+        with open(path, encoding="utf-8") as f:
+            manifest = json.load(f)
+    except (OSError, ValueError):
+        manifest = {}
+    manifest = {n: v for n, v in manifest.items() if os.path.isfile(os.path.join(out_dir, n))}
+    manifest.update(entries)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=1, sort_keys=True)
+    return manifest
+
+
+def check_full_screen_sizes(manifest):
+    """Die when one platform has full-screen PNGs at two sizes."""
+    groups = {}
+    for name, v in manifest.items():
+        if v["mode"] == "full":
+            groups.setdefault(v["platform"], {}).setdefault(tuple(v["px"]), []).append(name)
+    bad = []
+    for platform, sizes in sorted(groups.items()):
+        if len(sizes) > 1:
+            bad.append("platform %s has full-screen PNGs at %d sizes:" % (platform, len(sizes))
+                       + "".join("\n  %dx%d: %s" % (w, h, ", ".join(sorted(names)))
+                                 for (w, h), names in sorted(sizes.items())))
+    if bad:
+        die("full-screen shots of one platform must share one size.\n" + "\n".join(bad)
+            + "\nReshoot the odd files at the platform size, or pass --partial for a shot of "
+              "part of a screen.")
+
+
 def cmd_shot(args):
     if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", args.slug):
         die("slug %r must be kebab-case: lowercase letters, digits and single hyphens" % args.slug)
-    m = re.match(r"^(\d{2,5})\s*[x×]\s*(\d{2,5})$", args.size.strip())
-    if not m:
-        die("--size must be WxH in CSS pixels, e.g. 390x844 (got %r)" % args.size)
-    width, min_height = int(m.group(1)), int(m.group(2))
+    if args.platform and args.size:
+        die("pass --platform or --size, not both")
+    if args.platform:
+        width, min_height = PLATFORMS[args.platform]
+        platform = args.platform
+    elif args.size:
+        m = SIZE_RE.match(args.size.strip())
+        if not m:
+            die("--size must be WxH in CSS pixels, e.g. 390x844 (got %r)" % args.size)
+        width, min_height = int(m.group(1)), int(m.group(2))
+        platform = "custom"
+    else:
+        die("name the screen size: --platform %s, or --size WxH"
+            % "|".join(sorted(PLATFORMS)))
+    mode = "partial" if args.partial else "full"
 
     out_dir = spike_dir(args.slug, args.dir)
     page = os.path.join(out_dir, args.slug + ".html")
@@ -468,6 +528,7 @@ def cmd_shot(args):
     themes = ["light", "dark"] if args.theme == "both" else [args.theme]
     chrome = find_chrome()
     written = []
+    entries = {}
     with tempfile.TemporaryDirectory() as profile:
         # Measure each cell once: a design taller than the window would otherwise be
         # cropped at the window's height without a word.
@@ -491,7 +552,9 @@ def cmd_shot(args):
                         "different layout. Install chrome-headless-shell "
                         "(`npx playwright install chromium-headless-shell`) or set SPIKE_CHROME."
                         % (chrome, wm.group(1) if wm else "an unknown number of", width))
-                height = max(min_height, int(hm.group(1)))
+                # A full-screen shot is exactly the platform size, cropped if the design is
+                # taller; a partial shot grows to the content.
+                height = max(min_height, int(hm.group(1))) if args.partial else min_height
                 for theme in themes:
                     name = stem + ("-dark" if theme == "dark" else "") + ".png"
                     out = os.path.join(out_dir, name)
@@ -506,12 +569,22 @@ def cmd_shot(args):
                                lambda o, e: "bytes written to file" in e)
                     if not os.path.isfile(out) or os.path.getsize(out) == 0:
                         die("Chrome wrote no screenshot for %s (%s)" % (stem, theme))
+                    got = png_size(out)
+                    want = (int(round(width * float(args.scale))),
+                            int(round(height * float(args.scale))))
+                    if got != want:
+                        die("%s is %dx%d px, expected %dx%d" % (out, got[0], got[1],
+                                                                want[0], want[1]))
                     written.append(out)
+                    entries[os.path.basename(out)] = {"mode": mode, "platform": platform,
+                                                      "px": [width, height]}
         finally:
+            manifest = record_shots(out_dir, entries)
             if os.path.exists(probe):
                 os.remove(probe)
     for path in written:
         print(path)
+    check_full_screen_sizes(manifest)
 
 
 # --- video -------------------------------------------------------------------
@@ -1029,9 +1102,14 @@ def main():
                                     "any other build) to PNG")
     h.add_argument("slug", help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html")
     h.add_argument("--dir", help="absolute spike directory, instead of the repo's scratch root")
-    h.add_argument("--size", default="1280x900", metavar="WxH",
-                   help="window width x minimum height in CSS pixels (default 1280x900); a "
-                        "taller design is captured at its full height")
+    h.add_argument("--platform", choices=sorted(PLATFORMS),
+                   help="full-screen size for the platform: %s"
+                   % ", ".join("%s %dx%d" % (k, w, hh) for k, (w, hh) in PLATFORMS.items()))
+    h.add_argument("--size", metavar="WxH",
+                   help="an explicit size in CSS pixels, instead of --platform")
+    h.add_argument("--partial", action="store_true",
+                   help="a shot of part of a screen or one component: the size is the width and "
+                        "the minimum height, and a taller design is captured at its full height")
     h.add_argument("--scale", default="1", help="device scale factor (default 1)")
     h.add_argument("--theme", default="light", choices=["light", "dark", "both"],
                    help="prefers-color-scheme to render under (default light)")

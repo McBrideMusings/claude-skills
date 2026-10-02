@@ -171,6 +171,11 @@ needs a page behind it, a card needs siblings, a button needs a form. It never s
 side-by-side at small scale distorts spacing, and judging UI at postage-stamp size is the failure the
 harness exists to prevent.
 
+**Sibling views render a shared component from one function.** When a prototype shows the same
+component in more than one view (a list that appears on two screens, a sheet used by two flows),
+every view calls one render function for it, so a change asked for once reaches all of them. This is
+about views within one variant; variants still share no layout ([Anti-patterns](#anti-patterns)).
+
 **Every control is live — this is not a stretch goal, it is the deliverable.** Every tab switches,
 every toggle toggles, every row opens something, every destructive button shows what it would do.
 Not the happy path only: the reject button works as well as the approve button. A dead control reads

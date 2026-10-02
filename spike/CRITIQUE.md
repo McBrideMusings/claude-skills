@@ -8,9 +8,9 @@ get wrong.
 
 ## Look first
 
-1. **Screenshot every variant and state.** `spike shot <slug> --theme both` prints one absolute PNG
+1. **Screenshot every variant and state.** `spike shot <slug> --platform <phone|tablet|desktop> --theme both` (size rule: [MOCKUP.md](MOCKUP.md) step 5) prints one absolute PNG
    path per cell and theme (a wireframe is one page). A prototype: shoot each variant at the
-   platform's width, driving variants and tweaks through `--query` (`v=2&conn=down`: `v` and one
+   platform's size, driving variants and tweaks through `--query` (`v=2&conn=down`: `v` and one
    param per tweak) so each shot is one command with no clicking. One batched round, not a trip
    per surface. When the cells move, also run `spike video <slug> --theme both`: it prints a
    `.webp` (the animation) and a `-strip.png` (frames side by side) per cell and theme; open both.
