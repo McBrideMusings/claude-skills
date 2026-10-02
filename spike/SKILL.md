@@ -71,6 +71,7 @@ The shape is the *mechanism*; the domain is the *mode of software*. Resolve per 
 
 - Judging or improving an existing interface → `improve gui` for design quality ([`ref/gui/critique.md`](../ref/gui/critique.md)), `review` for code defects.
 - Picking a library → [`ref/gui/libraries.md`](../ref/gui/libraries.md).
+- Turning the mockups and prototype into a feature proposal, a document or tracker issue the build reads instead of the prototype → `proposal`.
 
 ---
 
