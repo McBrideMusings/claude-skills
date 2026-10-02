@@ -129,6 +129,9 @@ fire constantly to say what was already assumed. Docs are a standing assumption,
 `review` + `diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in
 `ref/game/`).
 
+`ref/audio/` — `review.md` (the `review` engine's lens) + `volume.md` and the other audio
+knowledge files; `improve audio` reads them through `improve/aspects/audio.md`.
+
 `ref/game/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs.
 numbers questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
 majidmanzarpour/threejs-game-skills. `build-arc.md` carries the build arc that conducts

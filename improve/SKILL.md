@@ -78,6 +78,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `product` | [aspects/product.md](aspects/product.md) | [`ref/gui/orient.md`](../ref/gui/orient.md) | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
 | `game` | [aspects/game.md](aspects/game.md) | `ref/game/` cells | `.claude/domain` marker includes `game` |
+| `audio` | [aspects/audio.md](aspects/audio.md) | `ref/audio/` cells | `.claude/domain` marker includes `audio` |
 | `docs` | [aspects/docs.md](aspects/docs.md) | [`bootstrap/docs-site/`](../bootstrap/docs-site/DOCS-SITE.md) audit branch | always |
 | `layout` | [aspects/layout.md](aspects/layout.md) | `bootstrap` audit branch | always |
 

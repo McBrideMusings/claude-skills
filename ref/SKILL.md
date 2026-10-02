@@ -36,6 +36,7 @@ reached by the same hooks; they are never listed here.
 | [`app-store`](app-store/context.md) | App Store submission — review queues, metadata, rejections, release timing, and the `asc` CLI. |
 | [`apple`](apple/context.md) | Apple platforms — signing, provisioning, simulators, XCTest, Instruments, xcodebuild. |
 | [`architecture`](architecture/context.md) | Code design — module boundaries, coupling, the conditions a bug needs to exist, interface safety, security. |
+| [`audio`](audio/context.md) | Audio — volume sliders and gain curves, dB and loudness, normalisation, playback and signal handling. |
 | [`backend`](backend/context.md) | Backend services — secrets and logging discipline, data access, service boundaries. |
 | [`cli`](cli/context.md) | Building a command-line tool — its exit codes, stdout versus stderr, TTY detection, flags, piping. |
 | [`cloudflare`](cloudflare/context.md) | Cloudflare Workers, KV, D1, R2 — wrangler, bindings, secrets, deploys. |

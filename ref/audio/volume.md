@@ -1,8 +1,8 @@
 # Volume and gain controls
 
 Read when building or critiquing a volume slider or any other audio gain control. The generic
-slider, focus and state rules are in [`context.md`](context.md); this cell owns the mapping from
-slider position to loudness.
+slider, focus and state rules are in [`../gui/context.md`](../gui/context.md); this cell owns the
+mapping from slider position to loudness.
 
 ## A linear slider is the defect
 

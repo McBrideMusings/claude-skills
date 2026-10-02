@@ -111,7 +111,7 @@ example. A cell there would fire in most repos and say only what was already ass
 
 ## Vocabulary
 
-`admin, api, app-store, apple, backend, cli, cloudflare, container, desktop, docs-site,
+`admin, api, app-store, apple, audio, backend, cli, cloudflare, container, desktop, docs-site,
 game, go, gui, mobile, node, python, react, rust, threejs, tui, tvos, web`
 
 Plus private labels, which are not listed here.
@@ -147,6 +147,7 @@ audio file all produced wrong labels.
 | `go.mod` / `Cargo.toml` / `pyproject.toml` / `package.json` | `go` / `rust` / `python` / `node` |
 | `cobra` / `clap` / `commander` / `typer` in the manifest | `cli` |
 | `gin` / `axum` / `express` / `fastapi` in the manifest | `backend` |
+| `import AVFoundation` / `AVAudioEngine` in `*.swift`; `howler` / `tone` / `wavesurfer.js` npm dep; `cpal` / `rodio` in `Cargo.toml` | `audio` |
 | `Dockerfile` / `docker-compose.y*ml` | `container` |
 | `admin.toml` | `admin` |
 | `.beads/` present / absent | `tracker:beads` / `tracker:github` |

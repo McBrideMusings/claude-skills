@@ -1,7 +1,8 @@
 # Web / CSS / React motion review lens
 
 Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04 when the
-diff in scope contains CSS / JSX / animation code (transitions, keyframes, Framer Motion, WAAPI). Same
+diff in scope contains CSS / JSX / animation code (transitions, keyframes, Framer Motion, WAAPI), or
+touches anything listed under "Other checks" below. Same
 output contract as the other lenses: report only genuine problems, `file:line`, a full-sentence
 headline, a **Why** (concrete cost), and a **Fix** with a before/after where it clarifies. Axis tag:
 `web`. Do not nitpick style or invent issues.
@@ -142,6 +143,15 @@ run`; the `-p` form names the package explicitly and resolves.
 - `setPointerCapture` once dragging starts, so tracking continues past the element bounds.
 - Multi-touch protection: ignore extra touch points after a drag begins (`if (isDragging) return`).
 - Damping/friction past a boundary instead of a hard stop.
+
+## Other checks, by what the diff touches
+
+Each file is the rule set; flag a deviation the diff introduces, with the file's own cost as the
+**Why**.
+
+- `<img>`, `srcset`, a CSS background image, or an image asset → [`images.md`](images.md)
+- A service worker, `push` or `showNotification` handler, or a Cache API install → [`push.md`](push.md)
+- `<a>`, `rel`, `Referrer-Policy`, `referrerpolicy`, or code resolving relative URLs → [`links.md`](links.md)
 
 ## Output
 
