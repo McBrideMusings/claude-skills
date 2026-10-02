@@ -62,18 +62,9 @@ The two files cannot drift, because the fragment is the only source. The gist na
 
    A tweak a step does not name keeps whatever the previous step left. Name it in every step
    that depends on its value.
-3. **Harness chrome.** Insert both of these as the first children of `<head>`, before any
-   harness script.
-
-   ```html
-   <script>history.replaceState = function () {}; history.pushState = function () {};</script>
-   <style>.at-twk, .at-twk-pill { display: none !important; }</style>
-   ```
-
-   - **The script is required.** The harness writes the variant and tweaks into the query
-     string on load and on every `atTweaks.set`. Behind htmlpreview, that rewrite turns the
-     address bar into a URL that loads a blank page.
-   - **The style removes the Tweaks panel.** The bar replaces it.
+3. **Hide the Tweaks panel** in the share block; the bar replaces it:
+   `.at-twk, .at-twk-pill { display: none !important; }`. Behind htmlpreview the harness
+   leaves the address bar alone, since its query string is the gist URL.
 
 ## Before it goes out
 

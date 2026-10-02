@@ -47,20 +47,30 @@
 
   /* ---------------- url ---------------- */
 
-  function writeUrl() {
+  /* Every address-bar write goes through here. A query that is itself a URL belongs
+     to a viewer page rendering this file (htmlpreview.github.io/?https://…), and
+     rewriting it leaves the reader a link that loads blank. */
+  function replaceUrl(edit) {
+    if (/^\?https?:/.test(location.search)) return;
     try {
       var url = new URL(location);
-      url.searchParams.set('v', current + 1);
+      edit(url.searchParams);
+      history.replaceState(null, '', url);
+    } catch (e) {}
+  }
+
+  function writeUrl() {
+    replaceUrl(function (params) {
+      params.set('v', current + 1);
       /* Only carry what the reader actually changed. Writing a value that still
          equals its default pins it: reopening that URL after the fragment's
          default moves would silently serve the old number, and a reader who
          never touched a control would be looking at a stale build's settings. */
       Object.keys(state).forEach(function (k) {
-        if (String(state[k]) === String(defaults[k])) url.searchParams.delete(k);
-        else url.searchParams.set(k, String(state[k]));
+        if (String(state[k]) === String(defaults[k])) params.delete(k);
+        else params.set(k, String(state[k]));
       });
-      history.replaceState(null, '', url);
-    } catch (e) {}
+    });
   }
 
   /* ---------------- the panel's own shape ---------------- */
@@ -419,12 +429,10 @@
 
   function setCollapsed(on) {
     root.toggleAttribute('data-at-tweaks-collapsed', on);
-    try {
-      var url = new URL(location);
-      if (on) url.searchParams.set('tweaks', '0');
-      else url.searchParams.delete('tweaks');
-      history.replaceState(null, '', url);
-    } catch (e) {}
+    replaceUrl(function (params) {
+      if (on) params.set('tweaks', '0');
+      else params.delete('tweaks');
+    });
   }
 
   var closeBtn = panel.querySelector('.at-twk-x');

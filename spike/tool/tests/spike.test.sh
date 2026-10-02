@@ -241,8 +241,14 @@ grep -q 'defaults\[key\] = initial' "$TW" && say ok "register records each tweak
   || say f "register does not record defaults"
 grep -q 'String(state\[k\]) === String(defaults\[k\])' "$TW" && say ok "writeUrl compares against the default" \
   || say f "writeUrl writes every key regardless of default"
-grep -q 'url.searchParams.delete(k)' "$TW" && say ok "writeUrl drops an unchanged key" \
+grep -q 'params.delete(k)' "$TW" && say ok "writeUrl drops an unchanged key" \
   || say f "writeUrl never deletes"
+# Behind htmlpreview the query string is the gist URL; rewriting it leaves a link that loads blank.
+# One replaceState call, inside replaceUrl, which returns first on a query that is a URL.
+[ "$(grep -c 'history.replaceState' "$TW")" -eq 1 ] && say ok "every address-bar write goes through one function" \
+  || say f "tweaks.js writes the address bar from more than one place"
+grep -A1 'function replaceUrl' "$TW" | grep -q 'https?:/.test(location.search)) return' \
+  && say ok "replaceUrl leaves a viewer's URL query alone" || say f "replaceUrl rewrites a query that is a URL"
 command -v node >/dev/null 2>&1 && { node --check "$TW" 2>/dev/null && say ok "tweaks.js parses" || say f "tweaks.js has a syntax error"; }
 
 echo "--- tui scaffold ---"
