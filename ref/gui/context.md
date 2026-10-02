@@ -35,6 +35,7 @@ a sibling, and most of this does not apply there.
 | [`alt-text.md`](alt-text.md) | Writing alt text and accessible labels. |
 | [`a11y.md`](a11y.md) | Verifying accessibility on an interface, including the desktop/tablet/phone viewport walk. |
 | [`forms.md`](forms.md) | Designing or critiquing a form: validation timing, inline errors, defaults, autofill, submit states, multi-step. |
+| [`volume.md`](volume.md) | Building or critiquing a volume slider or any audio gain control. |
 | [`copy.md`](copy.md) | Writing the words in the interface: labels, errors, toggles, tone. |
 | [`native-first.md`](native-first.md) | Tempted to write a component the platform already ships. |
 | [`libraries.md`](libraries.md) | Choosing a component or styling library. |
