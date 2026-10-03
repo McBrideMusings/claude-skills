@@ -527,6 +527,17 @@ and migration path — keep it on disk, gitignored. It is not a sync path: `bd i
 upsert-only, so a bead deleted on one machine never disappears on another, and `bd export --help`
 notes it "does not capture Dolt branches, commit history, working-set state, or non-issue tables."
 
+**Auto-export is throttled and says nothing about it.** With `export.auto` on, bd writes the
+file at most once per `export.interval` (60s by default; setting `0s` does not remove the
+throttle). A write inside the window succeeds, prints no export line, and leaves the file
+stale until a later write lands outside it. The only trace is under `bd -v`: `auto-export:
+throttled (last export 1s ago, interval 1s)`. When a recovery or migration needs the file
+current, write it yourself in place — it stays gitignored and unstaged:
+
+```bash
+bd export -o .beads/issues.jsonl
+```
+
 ### Turning it off in a repo that has it on
 
 ```bash
