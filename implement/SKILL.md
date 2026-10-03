@@ -122,9 +122,9 @@ On failure, print the reason and stop.
 those two are exempt, both session bookkeeping rather than work in progress:
 
 - **`.claude/`** — `scheduled_tasks.lock`, `papercuts.md`, `review-rejected.md`.
-- **`.beads/`** — `issues.jsonl` and `interactions.jsonl`, rewritten by nearly every `bd`
-  command including the `bd show` that resolves the item itself. Do not stash or commit them
-  to clear the check.
+- **`.beads/`** — tracker state. Under the no-tracked-export standard its JSONL files are
+  gitignored and never show here; a repo still tracking them is converted per
+  `issues/beads.md` § Turning it off, never stashed or committed to clear the check.
 
 In the primary `~/.claude` checkout, a dirty file there belongs to another concurrent session
 sharing that index, not to this pass — not a halt.

@@ -72,8 +72,8 @@ their repo. Ask once:
   bd github sync --pull-only --dry-run
   ```
   Show the dry-run result, then run it for real without `--dry-run`. Pulled issues carry their
-  GitHub number as `--external-ref gh-<n>`, so `bd show` still points back. Then apply the JSONL
-  export standard above.
+  GitHub number as `--external-ref gh-<n>`, so `bd show` still points back. Then apply the
+  no-tracked-export standard above.
 
   Then **wire the dependencies the import can't see.** GitHub has no dependency edges, so
   "Blocked by #N" lives in issue bodies as prose. Grep the imported descriptions for
@@ -93,8 +93,8 @@ Same question, shorter, since there's nothing to migrate:
 > No issue tracker here. Beads works with no remote and no account, and gives a dependency-aware
 > ready queue. Run `bd init`? (yes / no — this repo stays without a tracker)
 
-- **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`, then apply the JSONL export
-  standard above.
+- **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`, then apply the
+  no-tracked-export standard above.
 - **no** → record that the repo has no tracker. Every skill that files work will halt on it
   until one exists; there is no file-based fallback.
 
