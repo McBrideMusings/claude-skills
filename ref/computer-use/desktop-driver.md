@@ -19,6 +19,15 @@ behavior:
   the target process rather than the system-wide event queue — your cursor still doesn't move,
   but it is a real synthesized input event, not an AX API call.
 
+**From a script, run one `cua-driver mcp` session, not several `cua-driver call`s.** A
+`get_window_state` snapshot, with its `element_token`s and screenshot context, lives only as
+long as the process that took it. A `click` from a second `cua-driver call` is refused with
+`stale_element_token` (or `screenshot_context_missing` on the pixel path), and a bare
+`element_index` with `snapshot_id_required`. Spawn `cua-driver mcp`, send `initialize`, then
+`tools/call` for `list_windows`, `get_window_state` and `click` as JSON-RPC lines over its
+stdin, and the token stays valid. A WKWebView's DOM shows up in the AX tree, so a page
+button's `aria-label` is its `label`.
+
 `delivery_mode: "background"` (the default) uses whichever of the above without fronting the
 window. `delivery_mode: "foreground"` briefly fronts the window, acts, then restores the prior
 frontmost app — only needed for modifier-key clicks (macOS needs to observe physical modifier
