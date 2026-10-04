@@ -53,6 +53,6 @@ fix it will never look, and it distorts the receiving repo's counts and every `b
 you find one already misfiled, move it — create in the right tracker with a `Moved from <repo>
 (<old-id>)` line, close the original naming the new id — without asking.
 
-**Labels get reconciled to [`./labels.md`](./labels.md) on sight, without asking.** A label that
-is off-schema is drift, not a local convention: delete it, or map it onto the schema. This is
-never a question to put to the user.
+**Labels get reconciled to the repo's `.beads/labels.toml` on sight, without asking.** A label
+the file does not define is drift: map it onto a defined label, or delete it. A label the work
+needs that the file lacks is a change to the file, proposed first ([`./labels.md`](./labels.md)).

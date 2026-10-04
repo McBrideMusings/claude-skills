@@ -145,6 +145,16 @@ Two things go in the chat explanation:
 
 Continue into [REVIEW-CORE.md](REVIEW-CORE.md) against the routed target. Then [POSTING.md](POSTING.md) for the dispositions.
 
+### Bead labels the branch touched
+
+When the diff changes `.beads/issues.jsonl` and `~/.claude/tools/bead-labels path` finds a
+`.beads/labels.toml`, check the beads the branch wrote. Their ids are on the `+` lines of
+`git diff <base>...HEAD -- .beads/issues.jsonl`; run
+`bead-labels check --jsonl <(git show HEAD:.beads/issues.jsonl)` and keep the lines whose id is
+one of them. Each kept line is a finding — the bead id, the problem the tool printed, and the
+fix (`bd update <id> --set-labels …` from the file's vocabulary). Beads the branch did not touch
+are `issues shape`'s job, not this review's. The rules are [`../issues/labels.md`](../issues/labels.md).
+
 ## Dual flavor (`review dual`)
 
 When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor `dispatch codex`/`dispatch reasonix` target on the **same** diff, then reconcile.

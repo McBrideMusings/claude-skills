@@ -21,7 +21,7 @@ issues/
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
   breakdown.md      <- standard practice at pickup: slicing one issue + verify/land bookends
-  labels.md         <- the label schema, backend-independent: area: / mode: / platform:
+  labels.md         <- how labels work: flat words, each repo's .beads/labels.toml, the checks
   beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   beads-stealth-context.md  <- injected in a stealth repo: the posture, not the verbs
   beads-mirror-context.md   <- injected where GitHub Issues mirrors beads: read/write rules
@@ -34,10 +34,10 @@ never picked up again, and it puts a must-not-delete file inside a disposable tr
 
 ## Labels are backend-independent
 
-The verb tables say *how* to attach a label. [`labels.md`](labels.md) says *which* — one
-vocabulary across every backend and every repo, on two prefixed axes (`area:`, `platform:`;
-`mode:` belongs to beads, written by `bd set-state`, not this schema). Any skill that labels
-an issue reads it before picking a label, and never invents a bare one.
+The verb tables say *how* to attach a label. [`labels.md`](labels.md) says *which*: flat
+words, as the beads docs recommend, from the repo's own `.beads/labels.toml`. Any skill that
+labels an issue reads that file (`~/.claude/tools/bead-labels list`) before picking a label,
+and never invents one. A repo without the file gets a proposed labeling session, not guesses.
 
 ## Who reads what
 

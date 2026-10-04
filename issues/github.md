@@ -4,7 +4,7 @@ The default for any repo with a GitHub remote and an authed `gh`. IDs are issue 
 written `#42` in prose).
 
 **Which label to attach is never a GitHub question** — the vocabulary is
-[`labels.md`](labels.md) (`area:` / `mode:` / `platform:`). GitHub needs each one created with
+[`labels.md`](labels.md) (flat words, from the repo's `.beads/labels.toml`). GitHub needs each one created with
 `gh label create` before first use, and its nine default labels (`enhancement`, `bug`,
 `question`, `wontfix`, …) are duplicates of type/status and get deleted on adoption.
 

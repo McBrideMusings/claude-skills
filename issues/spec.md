@@ -241,7 +241,8 @@ Per slice:
   - **The comp's ref exists only after the slice does**, because `dsys refs add` takes the bead id. Create the UI slice with its design block minus the ref, run `dsys refs add <id> <comp.png>` (the PNG is in `/private/tmp/claude/<repo-slug>/spikes/<slug>/`), write the printed ref into the design block, then `bd update <id> --design-file <path>`. Phase 05 shows the comp's file path, not a ref, for that reason.
   - **Wire blockers as real edges, not prose:** `bd dep add <id> <blocker-id> -t blocks`. This is the whole reason beads beats a flat list — `issues next` and `implement` read `bd ready`, which only works if the edges exist. A "Blocked by" line left in the body alone is a bug, not a shortcut.
   - Put the acceptance criteria in `--acceptance` rather than burying them in the description; `implement` checks against that field.
-  - AFK/HITL becomes a real label: `-l afk` or `-l hitl`.
+  - HITL becomes `-l human`; AFK gets no label. Every other label comes from `.beads/labels.toml`
+    ([labels.md](labels.md)).
 - **`github`:** `gh issue create --title "<title>" --body "<body>" --milestone "<milestone name>"`
   - **Every slice gets `--milestone`:** the milestone group's name when it belongs to one,
     otherwise the run milestone's name from Phase 06. The name must match a title created or

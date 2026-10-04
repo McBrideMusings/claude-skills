@@ -207,7 +207,7 @@ because they are detection-time decisions, not usage-time ones:
 - **⛔ A pull also overwrites `labels`, `issue_type` and `priority` — not just title and
   description.** GitHub holds no type or priority, so a pull resets them to defaults and
   replaces the bead's label set with GitHub's. Measured on `bd 1.2.x` across seven mirrored
-  beads: after `gh issue edit` + `bd github sync --pull-only --issues <id>`, every `area:`
+  beads: after `gh issue edit` + `bd github sync --pull-only --issues <id>`, every category
   label was gone (two beads came back carrying only GitHub's stale `bug`, one carrying
   nothing), two beads had the wrong `issue_type` and three the wrong `priority`. No warning,
   no conflict. Only dependencies, parent, and beads with **no** `external_ref` survive a pull.
@@ -217,12 +217,12 @@ because they are detection-time decisions, not usage-time ones:
   path at all.
 
   When you do pull — to collect a person's GitHub-UI edit — reduce what it costs first:
-  **make GitHub carry the label set**, creating the `area:`/`human` labels there and applying
+  **make GitHub carry the label set**, creating the repo's labels and `human` there and applying
   them with `gh issue edit`, so a pull rewrites labels with the same values instead of wiping
   them. Type and priority have no GitHub representation and reset regardless, so scope the
   pull with `--issues <id>` and re-apply those two afterwards.
 
-- **⛔ A push invents `type::`/`priority::` labels in their repo and pushes no `area:` label.**
+- **⛔ A push invents `type::`/`priority::` labels in their repo and pushes none of the bead's own labels.**
   It applies both to the issue and leaves the issue's stale labels in place. That matters more
   here than in your own repos, because the labels appear in a tracker other people read.
   Reconcile GitHub labels with `gh issue edit`, never with a push, and run the repo-wide

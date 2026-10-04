@@ -76,7 +76,7 @@ Fog only ever gathers *toward* the destination. Work past it is **Out of scope**
 
 Runs first, every time, before the AFK gate. A backlog with no types, no grouping and no edges cannot be ordered, cannot be searched, and cannot be scoped down to something smaller than "everything" — so the gate would produce a queue nobody finishes. Phase 0 fixes the shape; Phase 1 judges the contents.
 
-**A clean backlog skips it.** If every in-scope issue already has a type, an `area:`, and a parent, and `bd swarm validate` reports no warnings, say so in one line and go to Phase 1.
+**A clean backlog skips it.** If the repo has a `.beads/labels.toml`, `~/.claude/tools/bead-labels check` prints nothing, every in-scope issue has a type and a parent, and `bd swarm validate` reports no warnings, say so in one line and go to Phase 1.
 
 ### 0a. Backend readiness
 
@@ -114,7 +114,7 @@ bd find-duplicates               # semantically similar issues
 
 ### 0c. One read, two tiers
 
-Hand every in-scope body to a **Sonnet** sub-agent — same isolation rule as Phase 1, and the same read serves both phases where possible. It returns, per issue: `issue_type`, `area:` and `platform:` labels, `priority` (0–4), a proposed epic, and proposed `blocks` edges.
+Hand every in-scope body to a **Sonnet** sub-agent — same isolation rule as Phase 1, and the same read serves both phases where possible. It returns, per issue: `issue_type`, a label set from `.beads/labels.toml`, `priority` (0–4), a proposed epic, and proposed `blocks` edges. Give it the file's path and the rules in [`./labels.md`](./labels.md); have it run `bead-labels set <labels>` on every proposed set and fix what fails before returning. Each issue's current labels go in as input: a `human` or `hitl` already on an issue stays `human`.
 
 **When the Agent tool is unavailable, degrade — do not skip the isolation.** A session carrying a harness-injected "do not call the Agent tool unless the user requested it" instruction cannot spawn the reader, and that instruction wins. The fallback: write a paging script under the scratchpad that prints one truncated line per issue (ID, title, first ~700 characters), read it in chunks, and classify from that. Say in the report that the read ran inline. **Never page full bodies into the main context** — a 111-issue backlog read whole costs upward of 100k tokens per turn for the rest of the pass, which is the exact cost the sub-agent exists to avoid.
 
@@ -128,23 +128,28 @@ edge(A blocks B) is valid only if B *requires* A's output.
 
 `bd swarm validate` rejects temporal edges as a structural error, so an inferred edge of that shape is worse than no edge.
 
-**Tier 1 — mechanical, applied without a slate.** `issue_type`, `area:`/`platform:` labels, `priority`. Apply in bulk (`bd update`, `bd label add`, `bd priority`), and **report as counts, not rows**:
+**Tier 1 — mechanical, applied without a slate.** `issue_type`, labels from `.beads/labels.toml`, `priority`. Apply in bulk (`bd update --set-labels`, `bd priority`), and **report as counts, not rows**:
 
 ```
 294 typed: 168 bug, 91 task, 35 feature.
-Labelled: 142 area:ui, 88 area:data, 41 area:infra, 17 area:perf.
+Labelled: 150 client, 80 mac, 127 server, 42 perf, 47 human.
 6 unclassifiable — listed below.
 ```
 
 The unclassifiable remainder is the part worth the user's eyes; it would be buried in a 294-row list. Every tier-1 write is one command to undo.
 
-**⛔ Tier 1 may only write labels that already exist as vocabulary.** That is the nine `area:` values in [`./labels.md`](./labels.md), plus any `area:` or `platform:` value the repo's own `CLAUDE.md` declares under a "Labels" heading. **A value outside that set is not a tier-1 write** — it goes to the tier-2 slate as a proposed new label, carrying the one-line definition of what it owns and what existing value it was preferred over. Inventing a taxonomy is the single most expensive thing this phase can do wrong: it is applied at backlog scale, reported as a count rather than a row, and every later search and filter is built on it. `bd label list-all` after the pass must return no value this rule did not authorise.
+**The repo's labels come from `.beads/labels.toml`, and Phase 0 makes sure it exists.** Run `~/.claude/tools/bead-labels path` first.
 
-**Tier 2 — judgment, slated.** Proposed **epics** (name, member count, member issue names), proposed **edges**, proposed **new label values**, and one **migration row per off-schema label**. Roughly fifteen rows, never three hundred. Grouping and ordering are what the user cannot recover by eye; a wrong `area:` costs one `--remove-label`, a wrong epic reorganises how they think about the project.
+- **Exit 2, no file** → this pass is the repo's labeling session. Name its parts from its submodules, apps, services and open issues, and draft the file in the shape [`./labels.md`](./labels.md) shows: families with their members as `parent` children, a short cross-cutting set, `human`, and the `required` list. It is a tier-2 slate row with the whole proposed file in the body. On `go`, write it, add the pre-commit block from `labels.md` where `.beads/hooks/` exists, and relabel every issue against it — closed ones too, so filters over past work answer.
+- **File present** → run `bead-labels check`. Every finding is drift and this pass fixes it.
 
-**Off-schema labels are drift and Phase 0 retires them.** Run `bd label list-all` and reconcile *every* value against [`./labels.md`](./labels.md) — it owns the vocabulary and the reconciliation rule, and this skill deliberately does not restate the mappings, because a second copy of a vocabulary is the drift it exists to prevent. Give the slate one row per surviving value. A pass that adds a taxonomy without retiring the one it supersedes leaves two vocabularies where there was one.
+**⛔ Tier 1 may only write labels the file defines.** A label the work needs that the file lacks is not a tier-1 write — it goes to the tier-2 slate as a change to `.beads/labels.toml`, carrying its `about` line, its `parent`, and the existing label it was preferred over. Inventing a taxonomy is the single most expensive thing this phase can do wrong: it is applied at backlog scale, reported as a count rather than a row, and every later search and filter is built on it. `beads-label-guard.sh` denies a write outside the file, and `bead-labels check` after the pass must print nothing.
 
-**A prefix is not a passport — check prefixed labels too.** The expensive miss is a label that *looks* schema-shaped: `mode:hitl` reads like `area:ui`, survives any check written as "no bare labels", and is wrong twice over. It shadows `human`, and `mode:` is a prefix **beads itself owns** — `bd set-state <id> <dimension>=<value>` removes any existing label for that dimension before writing, so a label parked under `mode:`, `patrol:` or `health:` is one beads will silently delete. Only `area:` and `platform:` are ours.
+**Tier 2 — judgment, slated.** Proposed **epics** (name, member count, member issue names), proposed **edges**, proposed **changes to `.beads/labels.toml`**, and one **migration row per label the file does not define**. Roughly fifteen rows, never three hundred. Grouping and ordering are what the user cannot recover by eye; a wrong label costs one `--remove-label`, a wrong epic reorganises how they think about the project.
+
+**Labels the file does not define are drift and Phase 0 retires them.** Run `bd label list-all` and map *every* value onto a label the file defines, or delete it. [`./labels.md`](./labels.md) owns the rules — `hitl` becomes `human`, `afk` and any label restating a type or priority is deleted — and this skill deliberately does not restate them. A rename across the tracker is `bd label rename <old> <new>`. A pass that adds a vocabulary without retiring the one it supersedes leaves two where there was one.
+
+**A colon in a category label is drift too.** `area:ui` or `mode:hitl` looks like a schema, and `mode:`, `patrol:` and `health:` are dimensions **beads itself owns**: `bd set-state <id> <dimension>=<value>` removes any existing label for that dimension before writing, so a label parked there is one beads will silently delete. Categories are flat words.
 
 **The cheap positive test: run `bd human list` in Phase 0.** It is the whole reason `human` is bare. An empty queue on a backlog that visibly holds device work, credentials or unmade calls means the flag is being written somewhere `bd` cannot read — which is drift the label listing alone will not make obvious.
 
@@ -315,4 +320,4 @@ Already dispatched from Phase 3 (cc-111) is not offered again — name it in a l
 - **Never re-implement what `bd` computes.** Ready fronts, cycle detection, orphan checks, transitive blocking, duplicate detection, staleness — `bd swarm validate`, `bd ready --limit 0`, `bd blocked`, `bd orphans`, `bd find-duplicates`, `bd stale`, `bd doctor --check=conventions`. A second implementation here is free to disagree with the one beads ships.
 - **An inferred edge is a requirement, never a sequence.** "Do A then B" is not an edge. `bd swarm validate` reports temporal edges as a structural error, so a wrong edge costs more than a missing one.
 - **`bd github sync` is refused outright in a repo labelled `tracker:beads-stealth`** — not defaulted off, not offered with a warning. Refused, with a one-line reason.
-- **Tier 1 writes without asking; tier 2 never does.** Types, `area:`/`platform:` labels and priority are one-command-to-undo and are reported as counts. Epics and edges always reach the user as a slate.
+- **Tier 1 writes without asking; tier 2 never does.** Types, labels the repo's `.beads/labels.toml` defines, and priority are one-command-to-undo and are reported as counts. Epics and edges always reach the user as a slate.

@@ -42,7 +42,7 @@ If ambiguous, assume **Add** (capture) — unless the user clearly wants to see 
 
 First resolve the destination with the **same rule as Generate** (see Step 2 under Generate): **a tracker exists → the item is an issue in it; no tracker → halt and offer `bd init`.** A quick "remember to …" on a tracked repo becomes an issue.
 
-- **`beads`** → dedup first against `bd list --all --json` (skip if the core idea already appears), then `bd create "<title>" -t task -d "<body>" --silent` with a provenance line in the body. If the item was discovered while working another issue, wire that provenance as a real edge: `--deps discovered-from:<id>`.
+- **`beads`** → dedup first against `bd list --all --json` (skip if the core idea already appears), then `bd create "<title>" -t task -l <labels> -d "<body>" --silent` with a provenance line in the body. The labels come from the repo's `.beads/labels.toml` (`~/.claude/tools/bead-labels list`); with no file, file it unlabeled and say the repo needs a labeling session ([labels.md](labels.md)). If the item was discovered while working another issue, wire that provenance as a real edge: `--deps discovered-from:<id>`.
 - **`github`** → file it as an issue. Dedup first against `gh issue list --repo OWNER/REPO --state all --limit 50` (skip if the core idea already appears), then `gh issue create --repo OWNER/REPO` with the body via HEREDOC (never an inline quoted `--body`), including a provenance line. Same mechanics as Generate's Step 5 GitHub branch.
 
 On a beads repo, a freshly-filed item that happens to clear all three conditions gets the same dispatch-row offer as Generate's Step 5 — see that section's **Dispatch offer** below.
@@ -139,7 +139,7 @@ If suggestions exist, ask once — as a plain chat question (see the **HARD RULE
 If no suggestions exist, just report "Nothing worth flagging this session" and stop.
 
 **Filing:**
-- **beads:** Run `bd list --all --json` first; skip items whose core idea already appears. File via `bd create "<title>" -t <task|bug|feature> --body-file <path> --silent`. Include the provenance line in the body, and add `--deps discovered-from:<id>` when the item surfaced while working a known issue. Write multi-line bodies to a file under `/private/tmp/claude/<repo-slug>/` and pass `--body-file` rather than inlining them.
+- **beads:** Run `bd list --all --json` first; skip items whose core idea already appears. File via `bd create "<title>" -t <task|bug|feature> -l <labels> --body-file <path> --silent`, labels from `.beads/labels.toml` as above. Include the provenance line in the body, and add `--deps discovered-from:<id>` when the item surfaced while working a known issue. Write multi-line bodies to a file under `/private/tmp/claude/<repo-slug>/` and pass `--body-file` rather than inlining them.
 - **GitHub:** Run `gh issue list --repo OWNER/REPO --state all --limit 50` first; skip items whose core idea already appears. File via `gh issue create --repo OWNER/REPO`. Include the provenance line in the body. **Always pass `--body` via HEREDOC** — never inline the body as a quoted string. A newline followed by `#` inside a quoted argument triggers a path-validation security hook. Use: `gh issue create --repo OWNER/REPO --title "..." --body "$(cat <<'EOF'\n## Section\n...\nEOF\n)"`
 - **Followups file:** Append in the standard format with provenance: `- **Title** — description. (Saw this because: ...)`
 

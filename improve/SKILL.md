@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `issues spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, backlog, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `issues spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
 ---
 
 # Improve
@@ -82,6 +82,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `audio` | [aspects/audio.md](aspects/audio.md) | `ref/audio/` cells | `.claude/domain` marker includes `audio` |
 | `docs` | [aspects/docs.md](aspects/docs.md) | [`bootstrap/docs-site/`](../bootstrap/docs-site/DOCS-SITE.md) audit branch | always |
 | `layout` | [aspects/layout.md](aspects/layout.md) | `bootstrap` audit branch | always |
+| `backlog` | [aspects/backlog.md](aspects/backlog.md) | native — fixes route to `issues shape` | a `.beads/` directory exists |
 
 **The brief column is what a survey sub-agent gets** — a short file naming exactly what to read and what this aspect asks, so no agent burns a read of a 300-line `SKILL.md` hunting for one section. The owner column is what an *interactive* single-aspect run loads, in full, grilling loop included.
 

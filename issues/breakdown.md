@@ -57,6 +57,11 @@ returns `neutrino-25.1`. So an ID reads as: plain numeric = pulled from their Gi
 your breakdown of theirs, hashed (`neutrino-a3f2`) = wholly yours. Nothing else needs to record
 which tier a bead is in.
 
+A child created with `--parent` inherits the parent's labels, so slices start with the right
+family labels. Add a narrower label with `-l` where the slice touches less than the parent; pass
+`--no-inherit-labels` only when the child belongs to a different part entirely, and give it its
+own set from `.beads/labels.toml`.
+
 ```bash
 P=neutrino-25
 bd create "Wire the taxonomy parser" -t task --parent "$P"          # → $P.1

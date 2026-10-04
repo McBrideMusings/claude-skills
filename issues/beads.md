@@ -74,7 +74,7 @@ don't route around the allow by asking in chat first.
 | **comment** | `bd comment <id> "<text>"` (`--file <path>` / `--stdin`) |
 | **label add / remove** | `bd label add <id> <label>` / `bd label remove <id> <label>` — which label: [`labels.md`](labels.md) |
 | set labels wholesale | `bd update <id> --set-labels a,b` |
-| audit label drift | `bd label list-all` — anything that is not `human` and has no `area:`/`platform:` prefix is drift |
+| audit label drift | `~/.claude/tools/bead-labels check` — every bead against `.beads/labels.toml`; `bd label list-all` for counts |
 | **assign** | `bd update <id> -a <who>` |
 | **count open** | `bd count --status open` (`--by-label`, `--by-priority`, `--by-status`) |
 | **link** (dependency) | `bd dep add <id> <blocker-id> -t blocks` |
@@ -193,7 +193,7 @@ bd human stats
 ```
 
 Pair it with `-t decision` (`bd types` ships `decision`, plus `spike`, `story` and `milestone`).
-`human` is the only bare label the schema permits — see [`labels.md`](labels.md).
+`human` is in every repo's `.beads/labels.toml` — see [`labels.md`](labels.md).
 
 ## GitHub sync — beads and GitHub are not exclusive
 
@@ -336,9 +336,9 @@ Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has
 - **An epic is a body of work that *completes*.** It has an end state, so `bd epic status`
   reports a fraction and `bd epic close-eligible` closes it once every child is done.
   "M9: Native App", "Auth rewrite", a release — these are epics.
-- **A label is a cross-cutting attribute that never completes.** `area:ui`, `platform:ios`,
-  `human`. Nothing ever finishes being presentation work. The permitted vocabulary is
-  [`labels.md`](labels.md) — and note that a label restating `issue_type` (`enhancement`,
+- **A label is an attribute that never completes.** `client`, `mac`, `perf`, `human`.
+  Nothing ever finishes being Mac work. Each repo's vocabulary is its `.beads/labels.toml`,
+  shaped by [`labels.md`](labels.md) — and a label restating `issue_type` (`enhancement`,
   `bug`) is a duplicate field, not an attribute.
 
 Everything group-aware in `bd` keys off parent-child, not labels: `bd epic status`,
@@ -588,12 +588,12 @@ or `--prefer-local` / `--prefer-github`). Preview anything unfamiliar with `--dr
 
 ### ⛔ A push invents `::` labels in the repo. Delete them afterwards.
 
-Measured on `bd 1.2.x`: pushing one bead carrying `area:perf`, `area:reliability` created
+Measured on `bd 1.2.x`: pushing one bead carrying two category labels created
 `type::bug` and `priority::medium` **in the GitHub repo**, applied both to the issue, pushed
-none of the `area:` labels, and left the issue's stale labels in place. Those two restate
+none of the bead's own labels, and left the issue's stale labels in place. Those two restate
 `issue_type` and `priority`, which [`labels.md`](labels.md) forbids as second copies of a
-tracker field, and `::` is a third prefix scheme on top of `area:`/`platform:` and beads' own
-`mode:`/`patrol:`. **There is no config key to disable it.** After any push:
+tracker field, and `::` is a prefix scheme beside beads' own `mode:`/`patrol:` state labels.
+**There is no config key to disable it.** After any push:
 
 ```bash
 gh label list --json name --jq '.[].name' | grep -E '^(type|priority)::' \
@@ -602,4 +602,4 @@ gh label list --json name --jq '.[].name' | grep -E '^(type|priority)::' \
 
 Deleting a label removes it from every issue in one call, so this is one command however many
 issues the push touched. Reconcile GitHub's labels with `gh issue edit`, never with a push —
-`area:` and `human` do not travel outward at all.
+a bead's own labels do not travel outward at all.

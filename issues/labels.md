@@ -1,153 +1,123 @@
-# Label schema — every tracker, every repo
+# Labels — every tracker, every repo
 
-One vocabulary for issue labels, backend-independent. Read this before adding a label to any
-issue, and before inventing a new label anywhere.
+Read this before adding a label to any issue, and before inventing a new label anywhere.
 
-**The rule that makes the rest work: a label carries an attribute the tracker's own fields do
-not already carry.** `bd` has `issue_type` (feature/task/bug/epic/decision), `priority`,
-`status`, and `parent`. GitHub has type, milestone, assignee, state. A label named
-`enhancement`, `bug`, or `p1` is a second copy of a field that already exists, and second
-copies drift. Delete them.
+## The shape: flat words, as the beads docs recommend
 
-## The two axes
+The [beads labels guide](https://github.com/steveyegge/beads/blob/main/docs/core-concepts/labels.md)
+recommends plain lowercase words for which part of the system and which domain an issue
+touches (`backend`, `auth`, `payments`), hyphen-separated when a label needs two words
+(`ui-ux`, `team-infra`). We follow it.
 
-Every prefixed label belongs to exactly one axis and carries its axis as a prefix. The prefix is
-not decoration — it is what lets `area:` be swept, counted, and grepped without matching a
-platform by accident, and what stops the next label from landing on the wrong axis.
+**A family is a label of its own, not a prefix.** Where a repo has a family of parts, the
+family name is one label and each member is another, applied together: a Mac-only client
+issue is `client` + `mac`, never `client:mac`. `--label client` finds the whole family and
+`--label mac` the member.
 
-| Axis | Prefix | Answers |
-| --- | --- | --- |
-| Area | `area:` | Which part of the product does this touch? |
-| Platform | `platform:` | Which build does this ship in? |
+**Never put a colon in a category label.** Beads reserves the `<dimension>:<value>` shape for
+operational state that has exactly one value at a time (`patrol:muted`, `health:failing`).
+`bd set-state <id> platform=mac` deletes every other `platform:` label on the bead first, and
+`bd state` reads the dimension back as a single value. A category such as "this touches the
+Mac and the server" has several values at once, so it never takes that shape.
 
-An issue carries **zero or more `area:`** and **zero or more `platform:`**.
+**A label carries what the tracker's own fields do not.** `bd` has `issue_type`
+(task/bug/feature/epic/chore/spike/decision), `priority`, `status` and `parent`. A label named
+`bug`, `epic`, `spike`, `enhancement` or `p1` is a second copy of a field, and second copies
+drift. So is `afk`: the absence of `human` already says an agent can do it.
 
-**One bare label is legal, and only one: `human`.** It is not an axis — it is the name `bd human`
-queries on, so it is a tracker field wearing a label's clothes. See below.
+## Each repo's vocabulary lives in `.beads/labels.toml`
 
-**The `<prefix>:<value>` shape is beads' own convention, not ours** — `bd set-state --help`
-documents it and ships examples (`patrol:active`, `health:healthy`). That means prefixes are a
-shared namespace, and **`mode:`, `patrol:` and `health:` belong to beads**. `bd set-state` writes
-a dimension's label by *removing any existing label for that dimension first*, so a label parked
-in a beads-owned prefix is a label beads will delete. Never define an axis on one of those names.
+The same path in every repo, and the repo's beads posture decides who sees it: where `.beads/`
+is committed the file is committed with it, and in a stealth repo `.git/info/exclude` lists
+`.beads/`, so the file stays private. Nothing about labels goes in `CLAUDE.md`.
 
-## `area:` — the nine
+```toml
+# Every bead carries at least one of these.
+required = ["client", "server", "tooling"]
 
-Fixed and global. These nine exist in every software product; do not rename them per repo.
+[labels.client]
+about = "Any game client work."
 
-| Label | Owns | The test |
-| --- | --- | --- |
-| `area:ui` | Presentation: layout, theme, typography, colour, icons, chrome, spacing. | Pixels change. |
-| `area:ux` | Interaction and flow: shortcuts, navigation, defaults, empty states, affordances. | Behaviour changes, no visual redesign. |
-| `area:data` | Model, storage, persistence, migration, sync, conflict resolution. | Something written down changes shape. |
-| `area:api` | Any contract someone else calls: public interfaces, protocols, CLI, endpoints, the agentic control surface. | Breaking it breaks a caller you don't own. |
-| `area:perf` | Time, memory, battery, bandwidth, cost. | The complaint is a number. |
-| `area:reliability` | Crashes, error handling, retries, degraded states, correctness under failure. | It works until something goes wrong. |
-| `area:security` | Auth, secrets, permissions, sandboxing, privacy, entitlements. | Getting it wrong leaks or grants. |
-| `area:infra` | Build, CI, tooling, release, deploy, dev environment, scripts. | Ships to developers, not users. |
-| `area:docs` | Documentation, ADRs, READMEs, comments. | The deliverable is words. |
+[labels.mac]
+parent = "client"          # mac never appears without client
+about = "Only the Mac client."
 
-**`area:ui` vs `area:ux`** is the pair that gets confused, so: `area:ui` means the pixels
-change — a theme, a layout, an icon. `area:ux` means the flow changes without a visual
-redesign — a hotkey, a default, where focus lands. **Both when both**, which is common and
-correct. "Presentation of the app at a glance" is `bd list --label-any area:ui,area:ux`.
+[labels.perf]
+about = "The complaint is a number: fps, tick time, memory."
+```
 
-An issue with no `area:` is unclassified, not neutral. Sweep it.
+A label with a `parent` never appears without it, all the way up: a grandchild carries its
+parent and its parent's parent. Each `about` is one line saying what the label covers, so the
+next agent can pick it without asking.
 
-## `human` — the one bare label, and it isn't ours
+**Read it before labeling:** `~/.claude/tools/bead-labels list` prints the tree. Choose from
+what the issue changes, never from its title alone: one of the `required` labels, the family
+members that apply, then a cross-cutting label only where it clearly applies.
 
-Needs a person: hardware, an account, a physical device, a judgement call, an offline step.
-Autonomous passes skip it.
+**No `.beads/labels.toml` in the repo:** do not label from a guess. Say the repo has no label
+list and propose a labeling session: name the repo's parts from its submodules, apps,
+services and open beads, put the proposed file to the user as a slate row, and on `go` write
+it and relabel every bead against it. `issues shape` runs that session ([shape.md](shape.md)
+Phase 0).
 
-**Do not invent a prefix for this.** `bd` ships the queries keyed on the literal string `human`:
+## `human` — keep it in every repo's file
+
+Needs a person: a decision, hardware, an account, a manual check. Autonomous passes skip it.
+`bd` ships the queries keyed on the literal string, so never rename it:
 
 ```bash
 bd human list                      # every issue awaiting a person
 bd human respond <id> "<answer>"   # comments and closes in one call
 bd human dismiss <id>
-bd human stats
 ```
 
-Prefixing it (`mode:hitl`) would break every one of those. Pair it with `-t decision` when the
-whole content of the issue is an unmade call.
+Pair it with `-t decision` when the whole issue is an unmade call. `hitl` maps to `human`.
 
-**Unlabelled means AFK.** There is no `mode:afk` and no positive marker for "an agent can do
-this alone" — the absence of `human` is the answer. A second label saying the same thing in
-reverse is a second copy of a field, and second copies drift.
+## What enforces it
 
-## `platform:` — the axis is global, the values are per repo
+| Where | What it checks |
+| --- | --- |
+| `hooks/beads-label-guard.sh` | Denies a `bd create`, `bd update --set-labels/--add-label/--remove-label` or `bd label add/remove` whose result breaks the file, and prints the vocabulary. A `bd create --parent` is judged with the labels it inherits from the parent. |
+| `.beads/hooks/pre-commit` | One block after the `END BEADS INTEGRATION` marker runs `bead-labels check` on the staged `issues.jsonl`. Beads keeps content outside its markers across `bd hooks install`, `--force` included. Stealth repos install no beads git hooks, so only the guard covers them. |
+| `bead-labels check` | Every bead in the tracker; `--jsonl <file>` checks an export instead. |
+| `issues shape` | Runs the check first and fixes every finding. |
+| `review` | Runs the check on beads the branch touched and reports drift as findings. |
 
-Only for repos that genuinely ship more than one build. The prefix is fixed; the values are
-declared in that repo's `CLAUDE.md` and nowhere else. Typical: `platform:macos`,
-`platform:ios`, `platform:web`, `platform:android`, `platform:server`, `platform:cli`.
+The block for a repo's `.beads/hooks/pre-commit`, after the `END BEADS INTEGRATION` line:
 
-A single-platform repo uses no `platform:` label at all. Labelling every issue with the one
-platform you have is noise.
+```sh
+# Bead labels: the staged export must match .beads/labels.toml (~/.claude/tools/bead-labels).
+if git diff --cached --name-only | grep -qx .beads/issues.jsonl && [ -x "$HOME/.claude/tools/bead-labels" ]; then
+  _bl_tmp=$(mktemp) && git show :.beads/issues.jsonl > "$_bl_tmp"
+  "$HOME/.claude/tools/bead-labels" check --jsonl "$_bl_tmp"; _bl_exit=$?
+  rm -f "$_bl_tmp"
+  if [ $_bl_exit -ne 0 ]; then echo >&2 "bead labels: fix the beads above, run bd export -o .beads/issues.jsonl, and commit again"; exit 1; fi
+fi
+```
 
-## Reconciling an off-schema label — always, unasked
+## Changing the vocabulary
 
-**When you touch a tracker and see a label this file does not define, fix it in the same pass.**
-Do not ask, do not file a ticket to do it later, do not treat it as the repo's local convention.
-An off-schema label is drift by definition: this file is the vocabulary, and a label outside it
-carries an attribute nobody else's tooling can read.
+A label the work needs but the file lacks is a change to `.beads/labels.toml`, proposed to the
+user before it is written. A rename runs `bd label rename <old> <new>` across the tracker in
+the same pass, then `bead-labels check` to confirm nothing still carries the old name.
 
-Three outcomes, in order of preference:
+**A label whose name collides with a word the repo already spends on something else gets a
+different name.** `admin` in a repo whose task runner is `admin` reads as the task runner;
+call the label `ops`. The reader cannot tell, and the reader is who the label is for.
 
-1. **Maps onto the schema** — rewrite it. `hitl` → `human`. `area:companion` on an iOS bug →
-   `area:ui` + `platform:ios`.
-2. **Restates a tracker field, or restates another label in reverse** — delete it outright, no
-   replacement. `afk` is the whole of this case: absence of `human` already means AFK.
-3. **Genuinely doesn't map** — it is a tenth `area:`, so it gets a line in that repo's
-   `CLAUDE.md` under a "Labels" heading saying what it owns. An undocumented tenth is drift
-   wearing a prefix.
+## GitHub
 
-**A label whose name collides with a word the repo already spends on something else is renamed,
-even if it is otherwise legal.** `area:harness` in a repo that was building its own agent harness
-read as that harness; it meant Claude Code's. The reader cannot tell, and the reader is who the
-label is for.
-
-## Extending
-
-- **The nine `area:` values do not grow globally.** A repo that needs a tenth — a subsystem
-  that genuinely doesn't map — declares it in its own `CLAUDE.md` under a "Labels" heading,
-  with one line saying what it owns. Undocumented labels are drift, not vocabulary.
-- **New axes need a real question they answer**, one the existing three don't. Adding an axis
-  means editing this file, not a repo.
-- **Never label from the ticket title alone.** Read what the issue actually changes.
-
-## Setting it up in a repo
+The same names, created with `gh label create` before first use. Delete GitHub's nine default
+labels on adoption (`enhancement`, `bug`, `documentation`, `question`, `duplicate`,
+`invalid`, `wontfix`, `good first issue`, `help wanted`): each restates a type, status, close
+reason or assignee.
 
 ```bash
-# beads — labels are free-form; nothing to create up front.
-bd label add <id> area:ui
-bd label remove <id> enhancement
-bd label propagate <parent-id> area:ui                 # push a label to every child
-bd list --label-any area:ui,area:ux --status open      # the presentation sweep
-bd label list-all                                      # audit for drift; `human` is the only legal bare label
-bd human list                                          # the awaiting-a-person queue
-
-# GitHub — labels must exist before use.
-gh label create area:ui --description "Presentation: layout, theme, typography, icons, chrome" --color 1D76DB
-gh issue edit <n> --add-label area:ui --remove-label enhancement
-gh issue list --label area:ui --state open
+gh label create mac --description "Only the Mac client" --color 1D76DB
+gh label create human --description "Needs a person" --color B60205
+gh issue edit <n> --add-label client,mac --remove-label enhancement
 ```
 
-The same "must exist before use" rule binds `bd github push` too, and there it's enforced
-automatically: `bd` derives `type::`/`priority::`/`status::` labels from a bead's own fields and
-sends them with the push, and GitHub's API will silently define a brand-new repo-level label for
-any name in that set the repo doesn't already have. `hooks/beads-github-label-guard.sh` blocks a
-push that would do that — see [`beads.md`](beads.md) § GitHub sync.
-
-Colour convention on GitHub, so the label reads at a glance in the issue list:
-
-| Label | Colour |
-| --- | --- |
-| `area:` | `1D76DB` (blue) |
-| `human` | `B60205` (red) |
-| `platform:` | `5319E7` (purple) |
-
-## What to delete on adoption
-
-`enhancement`, `bug`, `documentation`, `question`, `duplicate`, `invalid`, `wontfix`,
-`good first issue`, `help wanted` — every one restates `issue_type`, `status`, a close reason,
-or an assignee. GitHub ships them by default; that is not a reason to keep them.
+`bd github push` derives `type::`/`priority::` labels from a bead's own fields and GitHub
+creates any it lacks; `hooks/beads-github-label-guard.sh` blocks a push that would. See
+[`beads.md`](beads.md) § GitHub sync.
