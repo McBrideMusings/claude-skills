@@ -77,8 +77,8 @@ Pair it with `-t decision` when the whole issue is an unmade call. `hitl` maps t
 
 | Where | What it checks |
 | --- | --- |
-| `hooks/beads-label-guard.sh` | Denies a `bd create`, `bd update --set-labels/--add-label/--remove-label` or `bd label add/remove` whose result breaks the file, and prints the vocabulary. A `bd create --parent` is judged with the labels it inherits from the parent. |
-| `.beads/hooks/pre-commit` | One block after the `END BEADS INTEGRATION` marker runs `bead-labels check` on the staged `issues.jsonl`. Beads keeps content outside its markers across `bd hooks install`, `--force` included. Stealth repos install no beads git hooks, so only the guard covers them. |
+| `hooks/beads-label-guard.sh` | Denies a `bd create`, `bd q`, `bd update --set-labels/--add-label/--remove-label`, `bd tag` or `bd label add/remove` whose result breaks the file, and prints the vocabulary. A `bd create --parent` is judged with the labels it inherits. An edit to an existing bead is denied only for a problem it introduces, so old labels come off one at a time. It does not see `bd create -f`/`--graph`, `bd import` or `bd set-state`; the pre-commit block and `bead-labels check` catch those. |
+| `.beads/hooks/pre-commit` | One block after the `END BEADS INTEGRATION` marker runs `bead-labels check` on the staged `issues.jsonl` against the staged `labels.toml`. Beads keeps content outside its markers across `bd hooks install`, `--force` included. Stealth repos install no beads git hooks, so only the guard covers them. |
 | `bead-labels check` | Every bead in the tracker; `--jsonl <file>` checks an export instead. |
 | `issues shape` | Runs the check first and fixes every finding. |
 | `review` | Runs the check on beads the branch touched and reports drift as findings. |
@@ -86,12 +86,17 @@ Pair it with `-t decision` when the whole issue is an unmade call. `hitl` maps t
 The block for a repo's `.beads/hooks/pre-commit`, after the `END BEADS INTEGRATION` line:
 
 ```sh
-# Bead labels: the staged export must match .beads/labels.toml (~/.claude/tools/bead-labels).
-if git diff --cached --name-only | grep -qx .beads/issues.jsonl && [ -x "$HOME/.claude/tools/bead-labels" ]; then
-  _bl_tmp=$(mktemp) && git show :.beads/issues.jsonl > "$_bl_tmp"
-  "$HOME/.claude/tools/bead-labels" check --jsonl "$_bl_tmp"; _bl_exit=$?
-  rm -f "$_bl_tmp"
-  if [ $_bl_exit -ne 0 ]; then echo >&2 "bead labels: fix the beads above, run bd export -o .beads/issues.jsonl, and commit again"; exit 1; fi
+# Bead labels: the staged export must match the staged .beads/labels.toml (~/.claude/tools/bead-labels).
+if git cat-file -e :.beads/labels.toml 2>/dev/null && [ -x "$HOME/.claude/tools/bead-labels" ] \
+   && git diff --cached --name-only | grep -qx -e .beads/issues.jsonl -e .beads/labels.toml; then
+  _bl_dir=$(mktemp -d) || { echo >&2 "bead labels: mktemp failed"; exit 1; }
+  trap 'rm -rf "$_bl_dir"' EXIT INT TERM
+  git show :.beads/labels.toml > "$_bl_dir/labels.toml"
+  git show :.beads/issues.jsonl > "$_bl_dir/issues.jsonl" 2>/dev/null || : > "$_bl_dir/issues.jsonl"
+  if ! "$HOME/.claude/tools/bead-labels" --toml "$_bl_dir/labels.toml" check --jsonl "$_bl_dir/issues.jsonl"; then
+    echo >&2 "bead labels: fix the beads above, run bd export -o .beads/issues.jsonl, and commit again"
+    exit 1
+  fi
 fi
 ```
 
