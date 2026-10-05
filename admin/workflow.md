@@ -12,7 +12,7 @@ tracker = ["beads"]                 # which tracker(s) the project uses; "beads"
 [actions.implement]
 kind = "workflow"
 over = "selection"                  # or: over = { query = "ready" }
-run  = 'claude "/implement $ADMIN_TARGET afk"'
+run  = 'claude "/implement $ADMIN_TARGET auto"'
 done = 'bd show "$ADMIN_TARGET" --json | jq -e ".[0].status == \"closed\""'
 locale = "window"                   # where workers run; default window
 

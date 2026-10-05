@@ -31,11 +31,18 @@ When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands t
 
 Bare `/wrap-up` targets the checkout the session is already standing in. `wrap-up <worktree>` — the form `implement` uses to land a pass — names a different one: every git operation in Phases 1–5 runs as `git -C <worktree> …` against that path instead, regardless of where this session itself is standing. Phase 0's marker, Phase 5's commit and push, and Phase 6 Step C's teardown all follow the same target.
 
-## Pass mode — always interactive
+## Pass mode — interactive, except inside `auto`
 
-Wrap-up always runs interactively: a human typed `go` at `implement`'s gate, or invoked
-`/wrap-up` directly, and the Phase 6 follow-up step **halts** so they review what the session
+Wrap-up runs interactively when a human typed `go` at `implement`'s gate or invoked
+`/wrap-up` directly: the Phase 6 follow-up step **halts** so they review what the session
 uncovered and choose fix-now / file / skip per item.
+
+Inside an `implement … auto` run nothing halts for a reply
+([`../implement/AUTO.md`](../implement/AUTO.md)). Phase 6 Step A picks its own dispositions,
+and any step that needs a person's yes after landing — a deploy, a restart, a publish — is
+skipped and added to the run's `Needs you` line with its exact command, never asked. On a
+repo that is not `owned`, Step C's PR offer never runs: the branch is parked with `needs a PR`
+(AUTO.md §Parking an item).
 
 ---
 
@@ -209,19 +216,19 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 ### Step A — Resolve follow-ups (must fully settle before summarizing)
 
-**Never write "no next work" from memory.** The sentence is earned by the `relay-candidates` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. Outside a walk, the turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
+**Never write "no next work" from memory.** The sentence is earned by the `relay-candidates` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. Outside an `auto` run, the turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
 
 Invoke the `issues file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
 
-**In an epic walk (`implement <epic> walk`, [`../implement/SKILL.md`](../implement/SKILL.md) §The walk) there is no halt and no ask.** Choose every candidate's disposition yourself, then run the Act pass:
+**In an `implement … auto` run ([`../implement/AUTO.md`](../implement/AUTO.md)) there is no halt and no ask.** Choose every candidate's disposition yourself, then run the Act pass:
 
-- **fix** — the finding sits inside this slice's diff and one edit plus the slice's own check settles it.
-- **file** — real work outside this slice, or an `Architecture:` finding. Filed to the tracker under the walk's epic where it fits, so the user sees it on return.
+- **fix** — the finding sits inside this pass's diff and one edit plus the pass's own check settles it.
+- **file** — real work outside this pass, or an `Architecture:` finding. Filed to the tracker under the run's epic where it fits, so the user sees it on return.
 - **skip** — a duplicate of an open bead, a finding the session already answered, or noise.
 
-Print the numbered list with each row's chosen disposition as a record, not a question. A `fix` that cannot be applied still halts the walk. After Step C lands the slice, append one line to the epic's notes: `bd update <epic> --append-notes "<slice-id> landed at <sha>: fixed <n>, filed <ids>, skipped <n>"`. Step D relays per `relay` §Walk mode.
+Print the numbered list with each row's chosen disposition as a record, not a question, and no closing sentence. A `fix` that cannot be applied still halts the run. In an epic run, after Step C lands the slice, append one line to the epic's notes: `bd update <epic> --append-notes "<slice-id> landed at <sha>: fixed <n>, filed <ids>, skipped <n>"`. Step D relays per `relay` §Auto.
 
-**Otherwise, HALT here and collect dispositions from the user.** Wrap-up always runs interactively — do not file, do not skip, do not proceed until the user has chosen per item.
+**Otherwise, HALT here and collect dispositions from the user.** An attended wrap-up never decides for them — do not file, do not skip, do not proceed until the user has chosen per item.
 
 **Presentation (required):**
 
@@ -231,7 +238,7 @@ Print the numbered list with each row's chosen disposition as a record, not a qu
 
 *Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work, which the closing sentence names. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; the session's own checkout (the directory this session stands in, not the `<worktree>` being wrapped) is the repo's primary checkout, not a linked worktree — a session in the primary that wraps a pass's worktree can relay; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now, as the first action of the ask pass and before any slate is written: run `~/.claude/tools/relay-candidates <repo>` (relay availability, the open count, and every open epic's ready children; on GitHub run `gh issue list --state open` beside `test "${HERDR_ENV:-}" = 1`), print its output in chat, then rank 2–3 candidates per `relay` Step 1 so the closing sentence can name the pick. A slate written without those two outputs printed is not ready to send. When relay is unavailable (a linked worktree included: drop the Next-work line, keep the follow-up slate), or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
+Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive (an `auto` run relays through Step D instead); the session's own checkout (the directory this session stands in, not the `<worktree>` being wrapped) is the repo's primary checkout, not a linked worktree — a session in the primary that wraps a pass's worktree can relay; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now, as the first action of the ask pass and before any slate is written: run `~/.claude/tools/relay-candidates <repo>` (relay availability, the open count, and every open epic's ready children; on GitHub run `gh issue list --state open` beside `test "${HERDR_ENV:-}" = 1`), print its output in chat, then rank 2–3 candidates per `relay` Step 1 so the closing sentence can name the pick. A slate written without those two outputs printed is not ready to send. When relay is unavailable (a linked worktree included: drop the Next-work line, keep the follow-up slate), or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
@@ -346,8 +353,8 @@ precondition, not a nicety.
 - The user already answered this in Step A's single ask. `yes` (or `go`) → invoke `relay`
   and hand it the chosen next work; it writes the marker and you end the turn. `no relay`,
   or relay was unavailable → stop here as normal.
-- **In an epic walk** there is no ask to read: invoke `relay` in walk mode (`relay` §Walk mode)
-  unless relay is unavailable, in which case continue `implement <epic> walk` in this context.
+- **In an `auto` run** there is no ask to read: invoke `relay` §Auto, which relays or prints
+  the run's report. When relay is unavailable, continue the run in this context.
 - **Outside herdr** (`HERDR_ENV` unset) — skip silently. There is no pane to clear.
 
 Do not clear the pane, send keys, or call `herdr` yourself. `relay` writes a marker;

@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then Verify and Land. Bare `implement` discovers one via `issues next`."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then Verify and Land. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and parked — and reports what only a person can finish."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -30,14 +30,18 @@ and stop.
 the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
 (`../wrap-up/SKILL.md`).
 
-**`implement <id> afk` is the unattended pass** — a worker a lead dispatched, with nobody at the
-gate. It runs every step below, then skips the gate's hatch and its wait: once verification and
-review clear it runs `wrap-up` (bare when standing in the checkout, `wrap-up <worktree>` when
-not) with no `go`, and closes the bead with `bd close <id>` after the branch has landed. It
-asks the lead nothing. It halts only on the halt conditions below, and then says why in its
-own pane and closes nothing. A worker that cannot remove its own worktree leaves it for the
-harness to reap. It never runs `git push origin --delete` for a branch it never pushed: a hook stops that command for a person's yes, which nobody is there to give. The mode lives in the argument, which `/clear` drops: any prompt that
-re-enters the pass (a relay brief, a resume) restates `afk` in its `implement` line.
+**`auto` is the one unattended mode** — `implement auto [n|all]`, `implement <epic> auto
+[n|all]`, `implement <id> auto`. Nothing waits for a reply: the gate prints as a record,
+`wrap-up` takes its bracketed defaults, `relay` carries the run's count, a decision the item
+leaves open is made and the work parked on an unlanded branch, and everything only a person can
+finish goes into one report at the end. Every wait point and what replaces it:
+[`AUTO.md`](AUTO.md).
+
+**`implement <id>` on an item whose notes carry `auto parked: <branch>` or `parked at gate:
+<branch>`** resumes that branch: switch to it, print the decision or verification note, re-run
+step 4 against it, and show the gate. A reply there naming a different answer to the decision is
+owner feedback (§The gate): rework the branch to that answer and update the bead's
+`auto decided` note.
 
 ## The unit is a slice — an epic becomes a plan
 
@@ -47,7 +51,7 @@ looks; Land is `wrap-up`. Item → pass, and the readiness gate every item clear
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
 **`implement <epic>` proposes a plan and starts nothing until pierce answers;
-`implement <epic> walk` skips the slate (§The walk).** The order
+`implement <epic> auto` skips the slate ([`AUTO.md`](AUTO.md)).** The order
 comes from beads, never from reading the titles:
 
 ```text
@@ -63,35 +67,13 @@ slate, one row per step, in plan order:
   Verify                       -> "Run <id> here via verify-project" once its blockers
                                   are closed                                          [run | hold]
   Land                         -> "wrap-up <id> after Verify passes"                  [hold]
-go -> `implement <epic> walk`: work the [run] row here, then wrap up, relay, and repeat
+go -> `implement <epic> auto`: work every [run] row here, one pass per context
 ```
 
-## The walk — one `go`, the whole epic
-
-**`go` on an epic plan is the ask for every ready P1/P2 slice.** `implement <epic> walk` is that
-ask already given: it prints the plan as one record line (no slate, no wait) and works the first
-[run] row. The `go` and every relay brief in the walk start the next session with this same
-command, so the walk is never re-asked.
-
-Each slice is its own pass, run in this order with nobody answering in between:
-
-1. **Implement** — the steps below, to a green build, verification and blind review.
-2. **Gate, informational** — print the gate ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate)
-   without its closing sentence and do not wait; the walk treats the verified pass as `go`.
-3. **Wrap up** — run `wrap-up` in walk mode ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md)
-   Phase 6): it picks every follow-up's disposition itself, lands the slice, and appends one
-   line to the epic's notes.
-4. **Relay** — `relay` in walk mode ([`../relay/SKILL.md`](../relay/SKILL.md) §Walk mode)
-   clears the context and starts `implement <epic> walk` in the same pane. One slice per
-   context is the cost control; the brief is how the walk survives it.
-
-The walk stops, and says why in one message that also lists the slices done, the follow-ups
-filed and the stop reason, at: a `human` slice; a P3 or lower slice; a slice that fails the
-readiness gate; a halt condition below (`BLOCKED`, a build that will not go green, a review
-finding that contradicts the item); a blocker `wrap-up` cannot resolve; relay unavailable
-(outside herdr, or a linked worktree), in which case it continues in this context instead; or
-no ready slice left. The Verify row is a [run] row once its blockers close: the walk runs it
-here through `verify-project` and stops at the Land row, which stays [hold].
+`go` on an epic plan is the ask for every ready slice: it runs `implement <epic> auto`
+([`AUTO.md`](AUTO.md)), which works the slices one at a time in plan order. The Verify row is a
+[run] row once its blockers close: auto runs it here through `verify-project` and stops at the
+Land row, which stays [hold].
 
 - **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
   still works them one after another.
@@ -215,6 +197,9 @@ appears in any commit message, branch name or PR text.
   model.
 - A review finding and the item's own stated criteria contradict each other.
 
+In `auto`, the item-level conditions park the item and the run continues; which ones stop the
+whole run is in [`AUTO.md`](AUTO.md) §What ends the run early.
+
 **A `BLOCKED` on a fixture is never a code problem.** The environment's data cannot express
 what the criterion asks — a seed row outside the domain the item defines, a fixture predating
 the schema. Fix the data or fix the criterion; never edit product code to satisfy data the
@@ -230,8 +215,8 @@ and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when 
 stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`
 first.
 
-In a walk, stop after the gate's **Look for:** block; the closing sentence below and its wait
-belong to a single pass, not a walk.
+In `auto`, stop after the gate's **Look for:** block; the closing sentence below and its wait
+belong to an attended pass.
 
 Close a single pass's gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
 
@@ -239,7 +224,7 @@ Close a single pass's gate with exactly this sentence (from [`../CHAT-FORMAT.md`
 
 `go` means run `wrap-up` now, in the checkout this pass worked in — bare `wrap-up` when
 standing in it, `wrap-up <worktree>` when not. `park` leaves the branch standing, records
-`bd update <id> --notes "parked at gate: <worktree-or-branch>, verified at <sha>"`, runs
+`bd update <id> --append-notes "parked at gate: <worktree-or-branch>, verified at <sha>"`, runs
 `~/.claude/skills/dashboard/dashboard end implement:<id>`, and ends
 the turn — a later session finds the note and resumes at the gate.
 
@@ -259,7 +244,7 @@ Implement complete: <one-sentence summary>. Halt: <reason | none>.
 ## Notes
 
 - One pass works **one** item; never bundle two.
-- A pass never writes to the tracker — `wrap-up` closes it after landing, once the branch is
+- A pass never writes to the tracker, except the `auto` notes [`AUTO.md`](AUTO.md) names — `wrap-up` closes it after landing, once the branch is
   merged or its PR opened.
 - A pass never removes a worktree it did not create.
 
@@ -267,5 +252,6 @@ Implement complete: <one-sentence summary>. Halt: <reason | none>.
 
 | Open | When |
 | --- | --- |
+| [`AUTO.md`](AUTO.md) | Any `auto` token: every wait point it replaces, parking, the end-of-run report. |
 | [`HANDOFF.md`](HANDOFF.md) | Clearing an item, the readiness gate, offering it as a slate row. |
 | [`VERDICTS.md`](VERDICTS.md) | What verification means, `BLOCKED` conditions, asserting a changed value, proving a touched test discriminates. |
