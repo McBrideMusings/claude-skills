@@ -123,7 +123,7 @@ All three relays this session logged `agent never went idle; prompting without c
 
 Definitions of `go`, `park`, and the row verbs: [`CONTEXT.md`](CONTEXT.md). This file owns their shape on the page; that one owns what each word means.
 
-**The four canonical sentences, byte-for-byte.** Three of the four end in a trailing parenthetical example, byte-for-byte up to and including its opening parenthesis and ending at `).` with nothing after it on the line — only the parenthetical's contents vary from site to site, naming two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren. The gate's sentence, below, carries no parenthetical at all — it is byte-for-byte in full, every time.
+**The four canonical sentences, byte-for-byte.** The two slate sentences end in a trailing parenthetical example, byte-for-byte up to and including its opening parenthesis and ending at `).` with nothing after it on the line — only the parenthetical's contents vary from site to site, naming two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren. The option-set sentence varies only in its first backticked example, which names that set's own picks (`1A` for one question, `1A 2C` for two). The gate's sentence, below, carries no example at all — it is byte-for-byte in full, every time.
 
 Slates and findings, no next work pending:
 

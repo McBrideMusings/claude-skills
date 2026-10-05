@@ -350,8 +350,8 @@ Runs **last**, after the branch has landed and `git status` is clean. A relay cl
 this context; anything uncommitted at this point is gone, so Step C completing is the
 precondition, not a nicety.
 
-- The user already answered this in Step A's single ask. `yes` (or `go`) → invoke `relay`
-  and hand it the chosen next work; it writes the marker and you end the turn. `no relay`,
+- The user already answered this in Step A's single ask. `go` → invoke `relay`
+  and hand it the chosen next work; it writes the marker and you end the turn. `park`, `no relay`,
   or relay was unavailable → stop here as normal.
 - **In an `auto` run** there is no ask to read: invoke `relay` §Auto, which relays or prints
   the run's report. When relay is unavailable, continue the run in this context.

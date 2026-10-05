@@ -248,7 +248,7 @@ feedback   1 body-only review from reviewer — 3 points: 2 addressed, 1 reply
 Then **one slate, and it is the only thing this skill asks — every outward action the pass
 produced goes in it, numbered, each with your pick**. `FEEDBACK.md` Phase 08's reply and
 re-request are not rows of their own; they are the rest of the push row, and that file prints no
-prompt. Close the slate with `CLAUDE.md`'s escape hatch:
+prompt. Close the slate with the slate hatch from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch:
 
 > `mergeable` made 3 commits on `feat/leagues-lp`. Outward actions waiting:
 >
@@ -256,7 +256,7 @@ prompt. Close the slate with `CLAUDE.md`'s escape hatch:
 >    3-point response block above and re-request @reviewer, who reviewed `4c1f9ab` before
 >    any of them existed. My pick: all three.
 >
-> Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
+> Type `go` to apply my picks as described, or answer per row (`1 skip`).
 
 **One slate, one keyword, however many rows.** Two prompts at the bottom of one message —
 `push` / `hold` on one line and `re-request` / `skip` on the next — is the failure this phase

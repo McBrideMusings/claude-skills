@@ -96,7 +96,8 @@ The Claude Code runtime, never a test rig; a project's test rig is its `verify-p
 ### Dispositions
 
 **go**:
-Apply every stated pick and continue into proposed next work. The only accept word; `yes`,
+Apply every stated pick and continue into proposed next work; on an option set, take every
+pick. The only accept word; `yes`,
 `approve`, `ok`, `confirm`, `send` are never accepts. At the gate, `go` means run wrap-up now —
 land the standing branch (or, for already-committed work, run wrap-up from that commit).
 

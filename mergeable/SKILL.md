@@ -14,6 +14,6 @@ Four things block a branch: the local checkout isn't at the branch head (checked
 
 **Brief the worker with:** the repo root, the branch, the PR (if any), and whether the branch is mine — the diagnosis-and-repair procedure itself now lives in [`agents/mergeable-worker.md`](../../agents/mergeable-worker.md) (the `~/.claude` repo), sourced from [`WORKER-PROMPT.md`](WORKER-PROMPT.md) here.
 
-**Presenting what it returns:** one line per gate that actually fired, then one slate — every outward action (push, reply, re-request) as numbered rows with your pick, closed with `CLAUDE.md`'s `go` escape hatch. Never split push from the reply/re-request it enables into separate rows.
+**Presenting what it returns:** one line per gate that actually fired, then one slate — every outward action (push, reply, re-request) as numbered rows with your pick, closed with the slate hatch from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch. Never split push from the reply/re-request it enables into separate rows.
 
 On the default branch, this is a sweep across every blocked branch you own, not a single-target run. Load [`SWEEP.md`](SWEEP.md) and follow it instead of the steps above: one full session per branch, not subagents.
