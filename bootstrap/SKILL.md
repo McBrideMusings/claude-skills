@@ -1,6 +1,6 @@
 ---
 name: bootstrap
-description: "Idempotent bootstrap and audit of the standard repo layout (CLAUDE.md, .gitignore, admin runner, VitePress docs, docs/adr/). Routes: the full layout, `docs site` (bootstrap, audit or migrate a VitePress docs site), `glossary` (audit docs/CONTEXT.md). Use for setting up, scaffolding, or auditing a repo's layout against the standard."
+description: "Idempotent bootstrap and audit of the standard repo layout (CLAUDE.md, .gitignore, admin runner, VitePress docs, docs/adr/, DESIGN.md for a web UI). Routes: the full layout, `docs site` (bootstrap, audit or migrate a VitePress docs site), `glossary` (audit docs/CONTEXT.md). Use for setting up, scaffolding, or auditing a repo's layout against the standard."
 user_invocable: true
 ---
 
@@ -16,7 +16,9 @@ Walk through the standard project layout. **Create what's missing, migrate what'
 §Deciding & designing requires options and a pick before significant work and at every
 decision point inside it. **This skill overrides that for creating a missing standard
 artifact, and only for that** — writing `CLAUDE.md`, `CLAUDE.local.md`, `.gitignore` lines,
-`admin.toml`, `docs/CONTEXT.md` and `docs/adr/` is a no-question action even though each is a
+`admin.toml`, `docs/CONTEXT.md`, `docs/adr/`, and Phase 07's `DESIGN.md`, export, ESLint
+fragment, the lines wiring them in, the dev dependencies `dsys lint-config` names and the
+`npx eslint --suppress-all` file is a no-question action even though each is a
 file appearing in the user's repo. Everything else in this skill stays under the options rule:
 the Phase 05 issue-backend choice, every destructive migration, and any judgement call a phase
 does not name. Without this line the two rules are simply in conflict, and whichever one gets
@@ -24,7 +26,7 @@ obeyed is invisible to the user.
 
 **Any confirmation you do surface is a plain-chat question** — never the `AskUserQuestion` tool / structured-question schema. Answered inline in free-form ("skip admin", "yes but leave the glossary"), which the chip-picker UI can't carry.
 
-**Don't commit — and don't ask about committing.** Bootstrap prepares the ground and stops; the user (or `/wrap-up`) commits. Do NOT end with "commit to main?" or any variant — that is exactly the dumb question this rule kills. Just do the work, then report per [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md). The user commits when they choose. (Destructive migrations may shuffle git history — leave the moves staged for the user to review.)
+**Don't commit — and don't ask about committing.** Bootstrap prepares the ground and stops; the user (or `/wrap-up`) commits. Do NOT end with "commit to main?" or any variant — that is exactly the dumb question this rule kills. Just do the work, then report per [PHASE-08-SUMMARY-AND-BACKFILL.md](PHASE-08-SUMMARY-AND-BACKFILL.md). The user commits when they choose. (Destructive migrations may shuffle git history — leave the moves staged for the user to review.)
 
 ## Phases
 
@@ -38,13 +40,14 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (runs the docs-site flow) |
 | [PHASE-05-ISSUE-TRACKER.md](PHASE-05-ISSUE-TRACKER.md) | Resolve the issue backend (beads / GitHub / local), offer `bd init` or a GitHub→beads migration, record the answer |
 | [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`. No PRD, no roadmap — the phase says why |
-| [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/grill-me` Backfill on existing-codebase audits |
+| [PHASE-07-DESIGN-SYSTEM.md](PHASE-07-DESIGN-SYSTEM.md) | Web UI only: reconstruct `DESIGN.md` with `dsys`, wire the export and ESLint fragment, turn `dsys check` records into follow-up rows |
+| [PHASE-08-SUMMARY-AND-BACKFILL.md](PHASE-08-SUMMARY-AND-BACKFILL.md) | Before/after report + offer `/grill-me` Backfill on existing-codebase audits |
 
 ## Routes
 
 | Invocation | Does |
 | --- | --- |
-| `bootstrap` | The full layout, Phases 01–07 above. |
+| `bootstrap` | The full layout, Phases 01–08 above. |
 | `bootstrap docs site` | Only the VitePress docs site: bootstrap, audit or migrate it. Open [`docs-site/DOCS-SITE.md`](docs-site/DOCS-SITE.md); it carries its own phased flow and routes from its own state detection. |
 | `bootstrap glossary` | Audit `docs/CONTEXT.md` against the code: [`docs-site/PHASE-07-GLOSSARY-AUDIT.md`](docs-site/PHASE-07-GLOSSARY-AUDIT.md). Standalone; skips every other phase. |
 

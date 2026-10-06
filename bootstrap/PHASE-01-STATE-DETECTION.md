@@ -12,6 +12,7 @@ For each piece of the standard layout, classify into one of: `missing`, `standar
 | `docs/` + `.vitepress/config.mts` | bare `docs/` (no VitePress), `documentation/`, `wiki/` |
 | `docs/CONTEXT.md` | `CONTEXT.md` (root), `GLOSSARY.md`, `docs/glossary.md`, `docs/terms.md`, per-context `src/*/CONTEXT.md` without a map |
 | `docs/adr/` | `adr/`, `decisions/`, `docs/decisions/`, `docs/adrs/`, `architecture/decisions/` |
+| `DESIGN.md` (web UI only) | run the Gate in [PHASE-07-DESIGN-SYSTEM.md](PHASE-07-DESIGN-SYSTEM.md); it alone decides whether `dsys status --json` runs |
 
 Also probe:
 
@@ -41,6 +42,7 @@ Bootstrap audit — <project name>
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md                   |
 | docs/adr/              | non-standard at ./decisions/ (3 ADRs)          |
 | Issue tracker          | gh ok                                          |
+| Design system          | missing / export stale / lint not wired / non-owned / dsys not installed / n/a — no web UI |
 ```
 
 When the table contains proposed migrations, close it with the escape hatch: *"Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)."* Then proceed to [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md); the user can still redirect any migration as the walk proceeds.

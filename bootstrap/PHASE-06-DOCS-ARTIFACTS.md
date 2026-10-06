@@ -26,7 +26,7 @@ Their owners already handle the missing-file case:
   ordered, and closed as work lands. `bd ready` cannot go stale; a markdown list of intentions
   always does.
 
-**If the repo finished Phase 05 with no tracker at all**, say so in the Phase 07 summary and
+**If the repo finished Phase 05 with no tracker at all**, say so in the Phase 08 summary and
 name `bd init` as the fix. Do not write a roadmap as a consolation prize — that is how the
 divergence above happens.
 
@@ -124,4 +124,4 @@ run = "python3 ~/.claude/tools/docs-refs.py --validate"
 
 Then `admin check`. `admin docs-refs src/checkout/` lists governing refs; `admin docs-refs` dumps the full map; `admin docs-validate` exits non-zero when any `applies-to` glob points at a deleted/moved path. Don't add `applies-to`/`_applies-to_` proactively — it's opt-in per ADR or term when one is genuinely path-scoped.
 
-Then proceed to [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md).
+Then proceed to [PHASE-07-DESIGN-SYSTEM.md](PHASE-07-DESIGN-SYSTEM.md).

@@ -120,7 +120,8 @@ elsewhere, squashed by `wrap-up`.
    something that runs, the plan also names each boundary the feature crosses, the log line
    each one writes, and the state-query field that shows what the feature displays
    ([`../ref/observability/checklist.md`](../ref/observability/checklist.md)); building those is
-   part of this item, never a follow-up. Then pin the pass with `dashboard implement`
+   part of this item, never a follow-up. In a repo with a `DESIGN.md`, save the `dsys check`
+   baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). Then pin the pass with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
    each step below.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
@@ -129,8 +130,9 @@ elsewhere, squashed by `wrap-up`.
 3. **Build green.** Run the build, test, lint or typecheck yourself, in the foreground,
    bounded — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the
    runner is chatty). Explicit `timeout`, up to 600000; never background it. In a repo with a
-   `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green and a
-   nonzero exit fails the step ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
+   `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green: a `dsys
+   check` record the diff added, or an ESLint error, fails the step; a record in the step-1
+   baseline does not ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
 4. **Verify at the surface.** The project's own `verify-project` skill owns what verification
    means here — read `<repo>/.claude/skills/verify-project/SKILL.md` as a file and follow it
    (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). For a

@@ -45,9 +45,21 @@ A repo governed by `dsys` has a `DESIGN.md` (owned) or a `DESIGN.local.yaml` ove
 (non-owned). Run `dsys status` first; its `mode`, `DESIGN.md`, `export` and `lint wired` lines
 say which of the checks below exist:
 
-- **Owned repo** (`mode: owned`, `DESIGN.md` present): build-green runs `dsys check` and the
-  repo's ESLint with the `eslint.dsys.config.mjs` fragment (`dsys status` reads
-  `lint wired: yes`). Either exiting nonzero fails the step. `dsys check` covers a design.md
+- **Owned repo** (`mode: owned`, `DESIGN.md` present): build-green runs `dsys check --json`
+  and the repo's ESLint with the `eslint.dsys.config.mjs` fragment (`dsys status` reads
+  `lint wired: yes`). At step 1, before the first edit, save `dsys check --json` to
+  `/private/tmp/claude/<repo-slug>/dsys-baseline-<id>.json` (its exit code does not matter; the
+  array is on stdout). At build-green, a record the diff added fails the step; a record already
+  in that baseline does not. Match records on `kind`, `file` and `message` with every digit
+  run removed: `line` moves with edits, and a `theme-unused` message carries a token count
+  that changes when the diff adds a token to that group. A `design.md` lint error stops
+  `dsys check` before its other scans, so a baseline holding one is incomplete: when the diff
+  clears that error, records of kinds the baseline could not report do not fail the step; list
+  them as follow-ups. A repo
+  `bootstrap` just gave a `DESIGN.md` starts with `theme-unused` records for every group the
+  code has not moved onto tokens yet, and those are filed work, not this pass's failure. An
+  ESLint error fails the step; violations recorded by `npx eslint --suppress-all` do not
+  report. `dsys check` covers a design.md
   lint error, a stale export, a missing implementations entry and colour-token checks; the
   raw hex class `bg-[#ff0000]` passed it in a fixture run, while the fragment's `shadcn/no-arbitrary-values` rule
   reported it. Fix the code, or add the missing token or component to

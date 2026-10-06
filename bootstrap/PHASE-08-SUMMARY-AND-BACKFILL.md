@@ -1,4 +1,4 @@
-# Phase 07 — Summary + Backfill Offer
+# Phase 08 — Summary + Backfill Offer
 
 Report results, optionally offer a Backfill grill-me session, **don't** commit.
 
@@ -19,12 +19,17 @@ Bootstrap result — <project name>
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md    | migrated + refs updated       |
 | docs/adr/              | non-standard at ./decisions/    | migrated (3 files renumbered) |
 | Issue tracker          | gh ok                           | no-op                         |
+| Design system          | missing                         | DESIGN.md from 3 stylesheets; export + lint wired |
 ```
 
 Note deferred decisions:
 
 - *"No issue tracker — the scope ladder has nowhere to live. Run `bd init`."* Say this when Phase 05 ended with no backend; never write a roadmap instead.
 - *"Run `/admin` to wrap Makefile as admin.toml."*
+- Phase 07's follow-up rows — competing design sources, `theme-unused` groups and other
+  `dsys check` records — each as its own numbered row with the default that phase gives it.
+  Once the reply settles the slate, each `file` row is filed through `issues file` on the
+  Phase 05 backend and each `fix` row is applied, the same way `go` applies every other row.
 
 ## Offer Backfill grill-me
 
@@ -42,7 +47,7 @@ The user can accept (parent invokes `/grill-me` — grill-me picks Backfill mode
 
 ## Close with the escape hatch
 
-The deferred decisions and the Backfill offer together are one slate proposing next work (the deferred follow-ups — `/admin`, docs-site restructure, `/grill-me` Backfill, whichever apply), so it takes both words per `../CHAT-FORMAT.md` §Hatch: *"Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`)."* When nothing was deferred and no Backfill applies, skip the sentence.
+The deferred decisions and the Backfill offer together are one slate proposing next work (the deferred follow-ups — `/admin`, docs-site restructure, the design-system rows, `/grill-me` Backfill, whichever apply), so it takes both words per `../CHAT-FORMAT.md` §Hatch: *"Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`)."* When nothing was deferred and no Backfill applies, skip the sentence.
 
 ## Don't commit
 

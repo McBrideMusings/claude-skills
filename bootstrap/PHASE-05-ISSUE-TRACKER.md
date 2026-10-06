@@ -16,7 +16,7 @@ Invoke `issues` and run its detection step. It gives one of:
 | **blocked** | `.beads/` exists but `bd` is not on PATH |
 
 **Blocked** → stop this phase, tell the user `brew install beads`, record nothing, move on to
-Phase 07. Don't guess at a backend when the real one is unreadable.
+Phase 08. Don't guess at a backend when the real one is unreadable.
 
 ## Step 2 — Act on the state
 
