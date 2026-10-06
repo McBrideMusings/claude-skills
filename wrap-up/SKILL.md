@@ -328,7 +328,7 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
     git log <default>..<branch>                                             # must be empty — fully merged
     pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=                       # must be empty — nothing is standing in it
     ```
-    A live process in the worktree forbids teardown exactly as uncommitted work does — `pgrep -f` matches the command line, not the working directory, so when it is empty and you still suspect a hold, `lsof +D <worktree>` answers for certain. Quote the path, use `xargs -r`, never `pgrep -fl` (one npm-exec match can run tens of thousands of characters). A gitignored file the pass created is invisible to every check above, and `hooks/worktree-remove-locals-guard.sh` denies the removal when one exists — copy it to the primary checkout, then re-run. **Refuse, do not name-and-remove:** say which condition fired and which process holds it.
+    A live process in the worktree forbids teardown exactly as uncommitted work does — `pgrep -f` matches the command line, not the working directory, so when it is empty and you still suspect a hold, `lsof +D <worktree>` answers for certain. Quote the path and use `xargs -r`. A gitignored file the pass created is invisible to every check above, and `hooks/worktree-remove-locals-guard.sh` denies the removal when one exists — copy it to the primary checkout, then re-run. **Refuse, do not name-and-remove:** say which condition fired and which process holds it.
     ```bash
     git -C <repo> worktree remove --force <worktree> && git -C <repo> branch -d <branch>
     ```
