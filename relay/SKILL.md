@@ -17,8 +17,10 @@ The two share no mechanism. Relay never touches the target ladder; dispatch neve
 touches `/clear` or the Stop hook.
 
 **One seam:** when the next body of work needs a different checkout, relay cannot
-carry it — a pane's cwd is fixed for its lifetime. Call `dispatch` for that case
-instead of reimplementing it, then relay this pane to the orchestration/watch role.
+carry it — a pane's cwd is fixed for its lifetime. When the user asked for a relay, say so in
+one line and ask whether to `dispatch` it instead; never dispatch in place of a relay they
+named. When relay chose itself, call `dispatch` rather than reimplementing it, then relay this
+pane to the orchestration/watch role.
 
 ## Preconditions — check these before proposing anything
 
@@ -43,7 +45,10 @@ The proposal is **one message, plain markdown, one free-text reply**. Never
 
 A relay that manufactures busywork is worse than no relay. Stop conditions, checked
 in order — if any holds, **decline the relay**, say which condition fired in one
-line, and let the session end normally with the pane intact:
+line, and let the session end normally with the pane intact. When the user asked for a relay by
+name, a stop condition is a question, not a verdict: name the condition in one line and let them
+choose (relay anyway, `dispatch`, or end here). A relay they confirm in the same message is not
+asked about again. Never substitute another mechanism unasked:
 
 - The session's checkout is a linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`). A worktree is confined to the task it was made for and is retired when the pass lands, and a pane's cwd is fixed, so a relay would start new work inside a checkout about to disappear. Follow-ups stay available; new work does not.
 - The tracker (`gh` or beads, whichever the repo uses) has no open items in scope.
