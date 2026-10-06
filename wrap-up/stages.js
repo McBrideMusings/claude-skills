@@ -37,7 +37,13 @@ const BASE = `${WHERE}
 
 Read \`${WRAP}\`. Execute ONLY the phase named below.
 
-Open the repo with \`~/.claude/tools/repo-snapshot ${dir || '.'}\` — one call, not several separate git calls. Route every build, test, lint or typecheck run through the \`build-runner\` subagent so raw output never lands in your context.`
+Open the repo with \`~/.claude/tools/repo-snapshot ${dir || '.'}\` — one call, not several separate git calls. Route every build, test, lint or typecheck run through the \`build-runner\` subagent so raw output never lands in your context.
+
+A tool call denied with \`[blocked-on-approval]\` needed a person and did not run. Never retry it or work around it: put the call, verbatim, in \`blocked\` and finish the rest of the phase. The calling session runs it with the user present.`
+
+// Calls a subagent could not make: hooks/subagent-ask-deny.sh denies every
+// permission prompt a subagent raises, so it never waits on a person unseen.
+const BLOCKED = { type: 'array', items: { type: 'string' } }
 
 // minLength/minItems are load-bearing, not decoration. A bare `type: 'string'`
 // accepted `summary: "test"`, `files: ["a"]` — placeholder output that validated
@@ -53,6 +59,7 @@ const ASSESSMENT = {
     branch: { type: 'string', minLength: 1 },
     items: { type: 'array', items: { type: 'string' } },
     scope_creep: { type: 'array', items: { type: 'string' } },
+    blocked: BLOCKED,
   },
 }
 
@@ -63,6 +70,7 @@ const EDITS = {
     done: { type: 'array', items: { type: 'string' } },
     skipped: { type: 'array', items: { type: 'string' } },
     followups: { type: 'array', items: { type: 'string' } },
+    blocked: BLOCKED,
   },
 }
 
@@ -74,6 +82,7 @@ const QUALITY = {
     findings: { type: 'array', items: { type: 'string' } },
     fixed: { type: 'array', items: { type: 'string' } },
     followups: { type: 'array', items: { type: 'string' } },
+    blocked: BLOCKED,
   },
 }
 
@@ -99,8 +108,11 @@ const looksReal = (r) => r && r.summary.trim().length >= 120
 // here silently mislabels the whole run. One retry that names the rejection, then
 // halt rather than fan out over junk.
 let assessment = await agent(ASSESS_PROMPT, { phase: 'Assess', model, schema: ASSESSMENT })
+// A rejected attempt's calls still never ran.
+const rejected = []
 
 if (assessment && !looksReal(assessment)) {
+  rejected.push(assessment)
   log('Assess returned placeholder-looking output — retrying once.')
   assessment = await agent(
     `${ASSESS_PROMPT}
@@ -112,9 +124,10 @@ Your previous answer was REJECTED as placeholder output: summary ${JSON.stringif
   )
 }
 
-if (!assessment) return { ok: false, halted_on: 'assess' }
+const haltBlocked = () => [...rejected, assessment].flatMap((r) => (r && r.blocked) || [])
+if (!assessment) return { ok: false, halted_on: 'assess', blocked: haltBlocked() }
 if (!looksReal(assessment))
-  return { ok: false, halted_on: 'assess', reason: 'placeholder assessment', assessment }
+  return { ok: false, halted_on: 'assess', reason: 'placeholder assessment', assessment, blocked: haltBlocked() }
 
 phase('Fan-out')
 
@@ -171,10 +184,11 @@ return {
     ...((docs && docs.followups) || []),
     ...((quality && quality.followups) || []),
   ],
+  blocked: [...rejected, assessment, tracking, docs, quality].flatMap((r) => (r && r.blocked) || []),
   // Phases 5 and 6 (commit, push, follow-up dispositions, summarize, land) are
   // deliberately NOT run here. They return to the caller, which owns the
   // human-facing steps: on a standalone wrap-up the follow-up dispositions are
   // a single batched question to the user, and landing a branch is a step the
   // user may want to watch.
-  next: 'Run wrap-up Phase 5 (commit and push) and Phase 6 (follow-ups, summary, land) in the calling context.',
+  next: 'Run every call in `blocked` here first, with the user present, then wrap-up Phase 5 (commit and push) and Phase 6 (follow-ups, summary, land) in the calling context.',
 }

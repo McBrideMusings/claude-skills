@@ -70,7 +70,7 @@ wrap-up fires at the most expensive moment there is: the end of a session, when 
 
 Phases 1–4 are near-pure fan-out with compact returns, so they run staged — `Workflow({ scriptPath: '<this skill's base directory>/stages.js', args: { repo, item, mode } })`, with the base directory written out as the absolute path the skill loaded from — `scriptPath` does not expand `~`. The script lives beside this file rather than in `~/.claude/workflows/`, so it never shows in the slash menu as a second `/wrap-up` that runs only half the close-out. Assess runs first; tracking, docs and quality then run in parallel; each returns a small validated object.
 
-**Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see.
+**Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see. Before Phase 5, run each call in the result's `blocked` list here: `hooks/subagent-ask-deny.sh` denied it in the subagent because it needed the user's approval.
 
 **An `implement` pass never calls this skill itself.** It ends at the gate with the branch standing; landing is deliberately a separate step. `/implement` invokes this skill once, at the gate's `go`.
 
