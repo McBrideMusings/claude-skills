@@ -90,20 +90,23 @@ When invoked by `implement`, wrap-up runs unattended and a single permission pro
 ## Phase 0: Mark wrap-up in flight
 
 Before anything else, write the marker the `Stop` hook (`~/.claude/hooks/wrap-up-stop.sh`)
-checks: `mkdir -p` and `touch` `<that path>/wrapup/inflight`, where `<that path>` comes
-from `~/.claude/tools/repo-slug --path` (prints `/private/tmp/claude/<repo-slug>` and
-creates it). Never derive the slug by hand — see `relay`'s Step 4 for why a guessed
-slug can put the marker where the hook never looks.
+checks: `~/.claude/tools/wrapup-mark set <target>`, where `<target>` is the checkout being
+wrapped (omit it for bare `/wrap-up`). It writes
+`/private/tmp/claude/<repo-slug>/wrapup/inflight-<session-id>` and prints the path. The
+session id makes the marker this session's own: the hook reads only the marker named for
+the session whose turn is ending, so one this session abandons never blocks another. Never
+write the marker by hand — the tool takes the slug from `repo-slug` and the id from
+`CLAUDE_CODE_SESSION_ID`, and exits 1 rather than write a marker no session owns.
 
-Remove the marker (`rm -f`) as the last action of Phase 6, once Step C has landed the
-branch and Step D has resolved — fired, declined, or skipped — not before. Until it is
-removed, the hook blocks the turn from ending.
+Clear the marker (`~/.claude/tools/wrapup-mark clear <target>`) as the last action of
+Phase 6, once Step C has landed the branch and Step D has resolved — fired, declined, or
+skipped — not before. Until it is cleared, the hook blocks the turn from ending.
 
 **One exception: a turn that ends to wait for the user.** Step A's ask ends the turn on
-purpose, and the hook cannot tell that from an abandoned pass. `rm -f` the marker
-immediately before sending the Step A slate, and `touch` it again as the first action of
-the Act pass once the user replies. The hook then guards only turns that run, never a
-turn that waits.
+purpose, and the hook cannot tell that from an abandoned pass. `wrapup-mark clear`
+immediately before sending the Step A slate, and `wrapup-mark set` again as the first
+action of the Act pass once the user replies. The hook then guards only turns that run,
+never a turn that waits.
 
 ---
 
