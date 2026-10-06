@@ -30,7 +30,7 @@ it prints that note and ends: a parked item waits for the user.
 | Picking the item | Walks the ranked list (`issues next`, or `epic-plan`'s rows for an epic run) through the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1). Drops every candidate whose `bd show <id> --json` notes carry `auto parked`. Never asks which item. |
 | The epic plan slate | Prints the plan as one record line and works the first `[run]` row. |
 | A sizing merge ([`HANDOFF.md`](HANDOFF.md) §2) | Takes its default pick. |
-| An item that fails the readiness gate on a decision | Decides it and parks the work (§A decision nobody made). |
+| An item that fails the readiness gate on a decision | Decides it, records it on the bead, and lands the work (§A decision nobody made). |
 | An item that fails on a fact, the `human` label, or the reachability test | Adds it to `Needs you` (§Run state) and takes the next item. |
 | Step 1's "if you cannot plan, stop" | Same split: a decision is decided, a missing fact goes to `Needs you`. |
 | The gate | Prints it in full, `Run:` and `Look for:` included, as the record. Drops the closing sentence and goes straight to `wrap-up`. |
@@ -66,7 +66,11 @@ item. It decides:
    Alternative: <alternative>."` Pick the answer the repo's own docs, ADRs, `CONTEXT.md` and
    neighbouring code point to; when they are silent, pick the one that is cheapest to reverse.
 2. Work the pass: plan, edit, build green, verify, blind review. Every step holds.
-3. Park it instead of running `wrap-up`. The reason is `decided: <question> -> <answer>`.
+3. Land it through `wrap-up` like any other pass. The run-state `Landed` row carries the
+   decision as `decided: <question> -> <answer>`, so the report names it.
+
+The `auto decided` note and the commit are what make a wrong call cheap to undo: the user reads
+the decision in the report and reverts the one commit, or replies with the other answer.
 
 A fact is not a decision. A credential, a device, a measurement only the user can take, or a
 value the item needs that nothing in the repo states goes to `Needs you`.
@@ -112,8 +116,8 @@ top of every relay brief ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto):
 ```markdown
 IMPLEMENT AUTO — nobody is at the keyboard; never wait for a reply.
 Run: implement [<epic-id>] auto in <repo>. Limit: <n | all>. Used: <landed + parked so far>
-Landed: <id> (<sha>), …
-Parked: <id> <branch> (<decided: question -> answer | needs eyes: what | blocked: command | needs a PR | failed: reason>), …
+Landed: <id> (<sha>[, decided: question -> answer]), …
+Parked: <id> <branch> (<needs eyes: what | blocked: command | needs a PR | failed: reason>), …
 Needs you: <id or step> — <the exact thing to supply or command to run>, …
 ```
 
@@ -129,9 +133,9 @@ decided, or on a halt above. It always prints this report from the run-state blo
 per item: id, title, and the one thing the user does next. A section with nothing in it prints
 `none`.
 
-**Decided for you** — `Parked` rows with `decided:`. Each line names the decision as `question
--> answer` and the branch. Next action: `implement <id>`, which resumes the branch at the gate;
-`go` there lands it, and a reply with the other answer reworks it.
+**Decided for you** — `Landed` rows with `decided:`. Each line names the decision as `question
+-> answer` and the commit. Next action: nothing when the answer is right; `git revert <sha>`
+through `implement <id>` with the other answer when it is wrong.
 
 **Needs your eyes** — `Parked` rows with `needs eyes:`. Next action: what to look at, then
 `implement <id>` to resume at the gate.

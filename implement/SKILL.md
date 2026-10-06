@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs `verify-project` over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and parked — and reports what only a person can finish."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs `verify-project` over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and recorded — and reports what only a person can finish."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -33,7 +33,7 @@ the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, 
 **`auto` is the one unattended mode** — `implement auto [n|all]`, `implement <epic> auto
 [n|all]`, `implement <id> auto`. Nothing waits for a reply: the gate prints as a record,
 `wrap-up` takes its bracketed defaults, `relay` carries the run's count, a decision the item
-leaves open is made and the work parked on an unlanded branch, and everything only a person can
+leaves open is made, recorded on the bead and landed, and everything only a person can
 finish goes into one report at the end. Every wait point and what replaces it:
 [`AUTO.md`](AUTO.md).
 
