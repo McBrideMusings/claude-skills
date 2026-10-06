@@ -235,11 +235,25 @@ already exists as a defined label on the target repo.** Create it there first
 label sneak in as a side effect of an issue update. This only applies to beads that actually reach
 GitHub — a bead never pushed carries whatever labels it wants.
 
-## Initialising a repo — always `--skip-agents`
+## Initialising a repo — always `--skip-agents --skip-hooks`
 
 ```bash
-bd init --skip-agents
+bd init --skip-agents --skip-hooks
+bd config set export.auto false
+bd config set export.git-add false
+printf 'issues.jsonl\ninteractions.jsonl\n' >> .beads/.gitignore
+git show --stat HEAD                   # the commit bd init just made on the current branch
 ```
+
+**`bd init` commits by itself, on whatever branch is checked out, with the message `bd init:
+initialize beads issue tracking`.** That commit is not limited to `.beads/`: it also stages the
+repo's other untracked files (an untracked `.claude/settings.json` went in with it), the empty
+`.beads/interactions.jsonl` export, and `.beads/hooks/` when hooks are installed. Read
+`git show --stat HEAD` before anything else. While it is unpushed, redo it:
+`git reset --soft HEAD~1`, unstage everything outside `.beads/` and the `.gitignore` lines it
+added, unstage any `.jsonl`, and recommit under the repo's commit convention.
+`--skip-hooks` and the two `export` settings keep the JSONL export out of every later commit;
+§ Turning it off explains why the hooks alone would bring it back.
 
 **`bd init` writes an `AGENTS.md` into the repo by default. Never take it.** What it generates is
 a worse copy of this file — the Dolt architecture note, a five-verb quick reference, a
