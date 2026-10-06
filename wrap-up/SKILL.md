@@ -29,7 +29,7 @@ When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands t
 
 ## Target — this checkout, or an explicit worktree
 
-Bare `/wrap-up` targets the checkout the session is already standing in. `wrap-up <worktree>` — the form `implement` uses to land a pass — names a different one: every git operation in Phases 1–5 runs as `git -C <worktree> …` against that path instead, regardless of where this session itself is standing. Phase 0's marker, Phase 5's commit and push, and Phase 6 Step C's teardown all follow the same target.
+Bare `/wrap-up` targets the checkout the session is already standing in. `wrap-up <worktree>` — the form `implement` uses to land a pass — names a different one: every git operation in Phases 1–5 runs as `git -C <worktree> …` against that path instead, regardless of where this session itself is standing. Phase 5's commit and push and Phase 6 Step C's teardown follow the same target; Phase 0's marker does not, since it belongs to the session.
 
 ## Pass mode — interactive, except inside `auto`
 
@@ -90,15 +90,16 @@ When invoked by `implement`, wrap-up runs unattended and a single permission pro
 ## Phase 0: Mark wrap-up in flight
 
 Before anything else, write the marker the `Stop` hook (`~/.claude/hooks/wrap-up-stop.sh`)
-checks: `~/.claude/tools/wrapup-mark set <target>`, where `<target>` is the checkout being
-wrapped (omit it for bare `/wrap-up`). It writes
-`/private/tmp/claude/<repo-slug>/wrapup/inflight-<session-id>` and prints the path. The
+checks: `~/.claude/tools/wrapup-mark set`, run from where this session stands, even for
+`wrap-up <worktree>` — the hook looks under the session's own checkout, never the target.
+It writes `/private/tmp/claude/<repo-slug>/wrapup/inflight-<session-id>` and prints the
+path. The
 session id makes the marker this session's own: the hook reads only the marker named for
 the session whose turn is ending, so one this session abandons never blocks another. Never
 write the marker by hand — the tool takes the slug from `repo-slug` and the id from
 `CLAUDE_CODE_SESSION_ID`, and exits 1 rather than write a marker no session owns.
 
-Clear the marker (`~/.claude/tools/wrapup-mark clear <target>`) as the last action of
+Clear the marker (`~/.claude/tools/wrapup-mark clear`) as the last action of
 Phase 6, once Step C has landed the branch and Step D has resolved — fired, declined, or
 skipped — not before. Until it is cleared, the hook blocks the turn from ending.
 
