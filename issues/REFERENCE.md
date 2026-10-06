@@ -4,7 +4,7 @@
 | --- | --- |
 | [`./README.md`](./README.md) | Orientation to the whole cell — open when you need who-reads-what across the files. |
 | [`./_detect.md`](./_detect.md) | **Always first.** Confirms the backend and resolves the two things that vary: mirror mode and stealth. |
-| [`./breakdown.md`](./breakdown.md) | **Standard practice.** Breaking one issue into slices plus the two bookends every breakdown carries — a verify bead and a land bead. Open before slicing any issue into tracked work. |
+| [`./breakdown.md`](./breakdown.md) | **Standard practice.** Breaking one issue into the fewest children that each end at a checkable outcome, sized by the block of code that merges; no verify or land bead by default. Open before slicing any issue into tracked work. |
 | [`./beads.md`](./beads.md) | `bd` verbs, the Dolt store, mirror mode and `external_ref`. |
 | [`./github.md`](./github.md) | The repo has no beads yet and resolved to GitHub: `gh issue` verbs and its own conventions. |
 | [`./beads-stealth-context.md`](./beads-stealth-context.md) | Working in a stealth repo and needing the posture rather than the verbs. |
@@ -15,8 +15,8 @@
 
 ## Starting an issue means breaking it down — and only then
 
-**When you pick an issue up**, create its children in `bd`: the vertical slices, then a
-**verify** bead and a **land** bead, wired with `bd dep add`. Standard practice on both backends
+**When you pick an issue up**, create its children in `bd`: the vertical slices, as few as the merged block of code allows,
+wired with `bd dep add`. Standard practice on both backends
 and in every repo — [`./breakdown.md`](./breakdown.md) is the shape, and it is not a decision to
 re-take per project. Stealth and mirror differ only in whether the children get pushed.
 

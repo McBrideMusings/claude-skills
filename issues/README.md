@@ -20,7 +20,7 @@ issues/
   SPEC-TEMPLATE.md TICKET-TEMPLATE.md OUT-OF-SCOPE.md  <- shapes the verbs publish and check against
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
-  breakdown.md      <- standard practice at pickup: slicing one issue + verify/land bookends
+  breakdown.md      <- standard practice at pickup: slicing one issue into the fewest checkable children
   labels.md         <- how labels work: flat words, each repo's .beads/labels.toml, the checks
   beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   beads-stealth-context.md  <- injected in a stealth repo: the posture, not the verbs
@@ -43,7 +43,7 @@ and never invents one. A repo without the file gets a proposed labeling session,
 
 | Skill | Uses | Notes |
 | --- | --- | --- |
-| `issues spec` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
+| `issues spec` | create, epic/parent, dep | publishes a slate of tickets, sized per `breakdown.md` |
 | `issues next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
 | `issues shape` | list, create, dep, label | files open questions, wires blockers; selector resolution lives in `implement/SELECTORS.md` |

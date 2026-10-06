@@ -8,7 +8,7 @@
   denies every unscoped form. Flatten an epic first, and refresh theirs pull-only:
   [beads.md](beads.md) § Stealth.
 - **Read `bd list`, never `gh issue list`.**
-- **Starting an issue — never before — means slices plus a verify and a land bead under it**,
+- **Starting an issue — never before — means the fewest slices that each end at a checkable outcome under it**,
   private, dotted (`neutrino-7.1`). Shape: [breakdown.md](breakdown.md).
 - **`bd dolt push` needs a `file://` remote you own**, or it adopts the git origin.
 

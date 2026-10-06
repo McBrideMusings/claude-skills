@@ -9,9 +9,6 @@ the unblocked front with `bd ready --parent --limit 0`, then prints every open c
   waves    open slices grouped by depth — wave 1 is the unblocked front, wave N waits on
            something in wave N-1. Items in one wave share no edge and can run at once.
   person   open slices labelled `human` — a person does them; listed with their wave.
-  verify   the epic's `Verify:` children — run by the root via verify-project once every
-           slice it waits on is closed.
-  land     the epic's `Land:` children — run through wrap-up after Verify.
   done     closed children, for context.
 
 A child that is itself an epic is expanded in place, one level at a time, so a nested
@@ -74,11 +71,9 @@ def main():
         return {"id": i, "title": c.get("title", ""), "wave": depth[i], "ready": i in ready,
                 "labels": c.get("labels") or [], "external_blockers": ext,
                 "blocked_by": [b for b in blockers.get(i, []) if b in items and items[b].get("status") != "closed"]}
-    kind = lambda i: ("verify" if items[i].get("title", "").startswith("Verify:") else
-                      "land" if items[i].get("title", "").startswith("Land:") else
-                      "person" if "human" in (items[i].get("labels") or []) else "slice")
+    kind = lambda i: "person" if "human" in (items[i].get("labels") or []) else "slice"
     plan = {"epic": {"id": epic, "title": head.get("title", "")},
-            "waves": {}, "person": [], "verify": [], "land": [],
+            "waves": {}, "person": [],
             "done": [{"id": i, "title": c.get("title", "")} for i, c in items.items() if c.get("status") == "closed"]}
     for i in sorted(open_ids, key=lambda i: (depth[i], i)):
         k = kind(i)
@@ -94,12 +89,11 @@ def main():
             extra = f"  after {', '.join(r['blocked_by'])}" if r["blocked_by"] else ""
             extra += f"  external: {', '.join(r['external_blockers'])}" if r["external_blockers"] else ""
             print(f"  {r['id']}  {r['title']}{extra}")
-    for k, label in (("person", "needs a person"), ("verify", "verify (root, via verify-project)"), ("land", "land (wrap-up)")):
-        if plan[k]:
-            print(f"\n{label}")
-            for r in plan[k]:
-                extra = f"  after {', '.join(r['blocked_by'])}" if r["blocked_by"] else ""
-                print(f"  {r['id']}  {r['title']}{extra}" + ("  ready" if r["ready"] else ""))
+    if plan["person"]:
+        print("\nneeds a person")
+        for r in plan["person"]:
+            extra = f"  after {', '.join(r['blocked_by'])}" if r["blocked_by"] else ""
+            print(f"  {r['id']}  {r['title']}{extra}" + ("  ready" if r["ready"] else ""))
     if plan["done"]:
         print(f"\ndone: {', '.join(d['id'] for d in plan['done'])}")
     if not open_ids:

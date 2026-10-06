@@ -103,32 +103,17 @@ Slice rules:
 
 - Each slice delivers a narrow but COMPLETE path through every layer it touches
 - A completed slice is demoable or verifiable on its own
-- A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can run independently of each other once it lands; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs the fixed sequence of steps in `implement/SKILL.md` and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
+- A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Slice by the block of code that merges, per [`./breakdown.md`](./breakdown.md) § How fine to break it down: in a `collaborative` repo whose run becomes one PR, a slice is a chunk a reviewer reads together, so the run gets few; in an `owned` repo a slice may be a small iterative merge, but only with an outcome a test or screenshot can check, and a step without one bundles. Never pick a number first. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can run independently of each other once it lands; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs the fixed sequence of steps in `implement/SKILL.md` and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
 
-**Every slice set ends in the same two bookends: a verify ticket and a land ticket.** They are
-not optional and not a judgement call, apart from the one case below — the shape is standard practice for all tracked work and
-is specified in [`./breakdown.md`](./breakdown.md). Read it before drafting.
+**A slice set has no verify ticket and no land ticket.** Landing is `wrap-up`, and
+`verify-project` runs after the last slice. File one `human` verify ticket for the run only when
+a person has to look at something a session cannot stand in for (a real account, a device, a
+visual sign-off); its `--acceptance` says what to look at and what a pass looks like. Backend or
+text work the tests cover gets none. The shape is in [`./breakdown.md`](./breakdown.md).
 
-- **Verify** — one per run, blocked by every slice. Its `--acceptance` is what "done" means.
-  Label it `human` when a person has to look: always for anything visual, almost always for a
-  feature, and for backend or text work only when the tests do not actually cover the claim.
-  A `human` verify ticket is HITL by definition.
-- **Land** — one per run, blocked by verify. It carries the PR or merge body while it is being
-  written: `--design` holds the current draft, `bd comment` holds the log.
-
-On the `beads` backend both are real beads, children of the run epic. On `github` they are
-two more issues — GitHub has no `--design` or `--acceptance`, so the draft body and the
-acceptance criteria become `## PR draft` and `## Acceptance` sections instead.
-
-**A set is the whole run, never one area or milestone group.** A run files one verify and one
-land ticket, both children of the run epic. Slices that land independently — findings from an
-`improve` pass, where each ticket ships as its own PR through `wrap-up` — file neither. Their
-`--acceptance` already says what done means, and a verify ticket over them only restates it.
-
-**The bookends belong to the slate this run is filing, and to nothing else.** They close out one
-approved spec being published now. They are never added to issues already sitting in the
-backlog, and this rule never licenses a pass that walks open issues creating structure for them
-— see the ⛔ in [`./breakdown.md`](./breakdown.md).
+**A set is the whole run, never one area or milestone group,** and it belongs to the slate this
+run is filing and to nothing else. This rule never licenses a pass that walks open issues
+creating structure for them — see the ⛔ in [`./breakdown.md`](./breakdown.md).
 
 ### Wide refactors — the exception to vertical slicing
 
@@ -254,14 +239,12 @@ Per slice:
   - No labels — there's no GitHub labeling strategy yet. The AFK/HITL split still lives in the proposal as a note for you; it just doesn't become a label.
   - Blockers are prose only (`Blocked by #N` in the body) — GitHub has no dependency edges.
 
-The two bookends publish last, after every slice, so their blocker edges can name real IDs:
+A `human` verify ticket, when the run needs one, publishes last, after every slice, so its blocker edges can name real IDs:
 
 ```bash
-V=$(bd create "Verify: <what done looks like>" -t task --parent "<run-epic-id>" \
-      --acceptance "<criteria>" --silent)         # add -l human when a person must look
-L=$(bd create "Land: <PR title>" -t task --parent "<run-epic-id>" --silent)
+V=$(bd create "<what a person looks at>" -t task --parent "<run-epic-id>" \
+      --acceptance "<criteria>" -l human --silent)
 for s in $SLICE_IDS; do bd dep add "$V" "$s" -t blocks; done
-bd dep add "$L" "$V" -t blocks
 ```
 
 Do NOT close or modify any parent issue.

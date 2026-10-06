@@ -14,7 +14,7 @@ bd github sync --push-only --issues <id>
 - **⛔ Every push invents `type::`/`priority::` labels.** Cleanup in [beads.md](beads.md).
 - **⛔ A pull resets labels, `issue_type` and `priority`.** Pull scoped, `--issues <id>`.
 - **A bead's own labels and `human` never travel outward.** Apply them with `gh issue edit`.
-- **Starting an issue — never before — means slices plus a verify and a land bead under it**,
+- **Starting an issue — never before — means the fewest slices that each end at a checkable outcome under it**,
   pushed like any other. Shape: [breakdown.md](breakdown.md).
 
 Depth: [_detect.md](_detect.md) § Mirror mode, [beads.md](beads.md) § GitHub sync.

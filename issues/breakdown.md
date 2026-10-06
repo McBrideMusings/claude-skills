@@ -1,8 +1,9 @@
 # Breaking one issue into tracked work — standard practice
 
-**Every issue you actually work gets broken down in beads, and every breakdown carries the same
-two bookends: a verify bead and a land bead.** This is not a per-project convention to decide
-each time. It is how work is tracked in every repo, on both backends.
+**Every issue you actually work gets broken down in beads, into the fewest children that each
+end at something a reviewer or a test can check.** There is no verify bead and no land bead by
+default: landing is `wrap-up`, and verification is `verify-project` run after the last slice. How
+many children, and how big, is a judgement about the block of code that merges, set out below.
 
 ## ⛔ Create the children when work starts. Never in advance.
 
@@ -33,6 +34,22 @@ The only thing that varies is what leaves the machine, and that is settled by
 [`_detect.md`](_detect.md): in a **stealth** repo the breakdown stays local and only the parent
 exists upstream; in a **mirror** repo you push the children too. Same structure either way.
 
+## How fine to break it down
+
+**Size the children by what merges, not by what is possible to separate.** Every child costs a
+context window: a pass pays the plan, build, verify and review sequence once per child, and
+splitting one feature across many windows makes it slower, not more organised. Think about the
+block of code that lands on the default branch when the work is done, and cut only where a cut
+has its own checkable outcome.
+
+| Repo (`~/.claude/tools/repo-tier`) | What lands | Breakdown |
+| --- | --- | --- |
+| `owned` — personal | Each change merges straight to the default branch | Small iterative children are fine, **each with an outcome a test or a screenshot can verify**. A step with no verifiable outcome of its own bundles into the step that uses it |
+| `collaborative` — work | A pull request, usually one larger feature | The PR is the unit. Children are the coherent chunks a reviewer would read together; a spec that becomes one PR gets few children, not one per file group or per layer |
+
+State no target count. A child that cannot be demoed or tested on its own folds into its
+neighbour; two children that always change together are one child.
+
 ## The skeleton — built at pickup, in one pass
 
 ```
@@ -41,16 +58,12 @@ neutrino-25                    parent — from GitHub #25 in a stealth repo, or 
 │                              rewrites its title, body, labels, type and priority, so status
 │                              is the only field worth editing locally.
 ├── neutrino-25.1  task        slice 1 — vertical, cuts every layer, ends at a commit
-│                              (sized to at least three files or a complete user-visible path —
-│                              see the Phase 04 "Slice rules" in ./spec.md)
-├── neutrino-25.2  task        slice 2      dep: 25.1
-├── neutrino-25.3  task        VERIFY       dep: every slice
-│                              --acceptance holds what "done" means
-│                              `human` when a person has to look
-└── neutrino-25.4  task        LAND         dep: 25.3
-                               --design holds the current PR/merge body draft
-                               comments hold the running log
+│                              (see the Phase 04 "Slice rules" in ./spec.md)
+└── neutrino-25.2  task        slice 2      dep: 25.1
 ```
+
+A slice bead closes when its work is committed and verified on the branch the epic ships from
+(`wrap-up`, at the gate's `go`), not when the PR merges. The parent closes with its last slice.
 
 **Child IDs are the tier marker and they cost nothing.** `bd create --parent neutrino-25`
 returns `neutrino-25.1`. So an ID reads as: plain numeric = pulled from their GitHub, dotted =
@@ -65,10 +78,8 @@ own set from `.beads/labels.toml`.
 ```bash
 P=neutrino-25
 bd create "Wire the taxonomy parser" -t task --parent "$P"          # → $P.1
-bd create "Verify: parser rejects a malformed heading" -t task --parent "$P" --acceptance "…"
-bd create "Land: PR for #25" -t task --parent "$P"
-bd dep add "$P.3" "$P.1" ; bd dep add "$P.3" "$P.2"                 # verify waits on the slices
-bd dep add "$P.4" "$P.3"                                            # land waits on verify
+bd create "Reject a malformed heading" -t task --parent "$P"        # → $P.2
+bd dep add "$P.2" "$P.1"                                            # slice 2 waits on slice 1
 bd ready --parent "$P" --limit 0                                    # what is startable now
 bd children "$P"                                                    # the tree
 ```
@@ -88,37 +99,21 @@ silently resets.
 An epic is still right for a body of work you authored yourself and never pull — a milestone, a
 multi-issue effort with no upstream parent. Type those `-t epic` freely.
 
-## The verify bead
+## When a person has to look: one `human` bead, made when it is known
 
-**Exactly one per breakdown, and `human` goes on it by judgement rather than by rule.** Applying
-`human` puts it in `bd human list`, which is the native queue of everything genuinely waiting on
-a person across every issue in flight — so the label has to mean it.
-
-| Kind of change | `human` |
-| --- | --- |
-| A feature | almost always — someone uses it before it is done |
-| Anything visual | always — unverified until a person looked at the image |
-| Backend, text, data | only when the tests do not actually cover the claim |
-
-The last row is the one that needs honesty. "Do the tests cover this" is asked at the moment you
-are most motivated to say yes. If the suite proves the behaviour, skip `human`; if it proves the
-code runs, do not.
-
-`--acceptance` on the verify bead is often the only written record of what "done" meant. It
-**REPLACES** on write like `--notes` and `--description` — read it before you touch it.
+A verify bead is not part of the skeleton. After the last slice, `verify-project` runs inline and
+its result goes in the gate. Create **one** `human` bead for the epic only when something needs
+a person that a session cannot stand in for: a real account, a device, a production surface, a
+visual sign-off. Write what to look at, and what a pass looks like, in `--acceptance`
+(`REPLACES` on write like `--notes` and `--description`, so read it first). Never create it up
+front, and never create one for work the tests cover.
 
 ```bash
 bd human list                    # the agenda: everything awaiting a person
 bd human respond <id> "<answer>" # comments and closes in one call
 ```
 
-## The land bead
-
-It holds the PR or merge body while it is still being written. **`--design` carries the current
-draft; `bd comment` carries the log.** `--design` is meant to be superseded, which is what a
-draft is. Comments are append-only by construction, so the chronology survives.
-
-`--design` REPLACES with no diff and no warning. Read it with `bd show <id>` before rewriting.
+Landing has no bead. `wrap-up` writes the PR body and lands the branch.
 
 ## Five practices this makes possible
 

@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then Verify and Land. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and parked — and reports what only a person can finish."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs `verify-project` over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and parked — and reports what only a person can finish."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -45,9 +45,9 @@ owner feedback (§The gate): rework the branch to that answer and update the bea
 
 ## The unit is a slice — an epic becomes a plan
 
-A pass takes **one slice child** — `myproj-25.1`. A Verify/Land child is never worked as a
-pass: **Verify is this session's**, via `verify-project`, and `human` stops it until a person
-looks; Land is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
+A pass takes **one slice child** — `myproj-25.1`. A `human` child is never worked as a pass: it
+waits for a person. Verification over the epic is this session's, via `verify-project`, and
+landing is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
 **`implement <epic>` proposes a plan and starts nothing until pierce answers;
@@ -56,31 +56,26 @@ comes from beads, never from reading the titles:
 
 ```text
 ~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children, blocks edges, bd ready --parent --limit 0
-  -> open slices in dependency order (wave 1 = unblocked now), slices needing a person,
-     Verify, Land, done
+  -> open slices in dependency order (wave 1 = unblocked now), slices needing a person, done
 readiness gate (HANDOFF.md §1) on the first slice          # in chat, before the slate
 slate, one row per step, in plan order:
   the first unblocked slice that clears the gate -> "Work <id> here"                 [run]
   a slice that fails the gate  -> what is missing, and who supplies it               [hold]
   every later slice            -> "<id>, after <ids>"                                 [hold]
   `human` slices               -> what pierce has to do or decide                     [hold]
-  Verify                       -> "Run <id> here via verify-project" once its blockers
-                                  are closed                                          [run | hold]
-  Land                         -> "wrap-up <id> after Verify passes"                  [hold]
+  after the last slice         -> "verify-project over the epic, then the gate"       [hold]
 go -> `implement <epic> auto`: work every [run] row here, one pass per context
 ```
 
 `go` on an epic plan is the ask for every ready slice: it runs `implement <epic> auto`
-([`AUTO.md`](AUTO.md)), which works the slices one at a time in plan order. The Verify row is a
-[run] row once its blockers close: auto runs it here through `verify-project` and stops at the
-Land row, which stays [hold].
+([`AUTO.md`](AUTO.md)), which works the slices one at a time in plan order. After the last slice,
+auto runs `verify-project` over the epic here and stops at the gate.
 
 - **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
   still works them one after another.
-- **An epic with no open slice** still gets a plan: its Verify and Land rows are the plan (run
-  Verify here, then Land). Never answer "only Verify and Land remain" with no next step. Land
-  is `wrap-up` even when the tree is clean: never close the epic with a hand-run `bd close` or
-  skip `wrap-up` for "nothing to land".
+- **An epic with no open slice** still gets a plan: run `verify-project` here, then the gate.
+  Never answer "nothing remains" with no next step. Close the epic through `wrap-up` even when
+  the tree is clean, never with a hand-run `bd close`.
 - **An epic with no children** is not ready for `implement`; offer `issues spec` to break it
   down ([`../issues/breakdown.md`](../issues/breakdown.md)).
 - `epic-plan` expands a child epic in place, and names blockers outside the epic as `external`
@@ -244,8 +239,7 @@ Implement complete: <one-sentence summary>. Halt: <reason | none>.
 ## Notes
 
 - One pass works **one** item; never bundle two.
-- A pass never writes to the tracker, except the `auto` notes [`AUTO.md`](AUTO.md) names — `wrap-up` closes it after landing, once the branch is
-  merged or its PR opened.
+- A pass never writes to the tracker, except the `auto` notes [`AUTO.md`](AUTO.md) names — `wrap-up` closes it. A slice of an epic that ships as one PR closes at its gate's `go`, once its commit is on the epic's branch; any other item closes after landing, once the branch is merged or its PR opened.
 - A pass never removes a worktree it did not create.
 
 ## Read on demand

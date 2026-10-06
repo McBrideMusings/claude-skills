@@ -8,7 +8,7 @@ try.
 
 An item is offerable when five cheap checks all say so — this is a check, not a judgement call:
 
-- **A slice.** `bd show <id> --json` carries a parent, `bd children <id>` is empty, and the title does not begin `Verify:` or `Land:`. A parent is broken down first (`issues/breakdown.md`) and its slices are what get offered; the Verify and Land children are this session's and never run as a pass.
+- **A slice.** `bd show <id> --json` carries a parent, `bd children <id>` is empty, and it is not labelled `human`. A parent is broken down first (`issues/breakdown.md`) and its slices are what get offered; a `human` child never runs as a pass.
 - **Open.** `bd show <id> --json` reads its status.
 - **Not carrying the `human` label.** `human` is beads' one legal bare label, and there is deliberately no positive "AFK" label — removing `human` from an item is what makes it AFK. Check for its absence; do not invent a label to check for its presence.
 - **Listed by `bd ready --limit 0 --json`.** Nothing blocks it. Without `--limit 0` the list stops at 100 and an item past it silently fails this check ([`../issues/beads.md`](../issues/beads.md)). Run `bd recompute-blocked` first — `bd ready` reads a denormalized flag that goes stale after a hand-resolved merge and will silently hide ready work.
