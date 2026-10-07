@@ -121,7 +121,7 @@ elsewhere, squashed by `wrap-up`.
    each one writes, and the state-query field that shows what the feature displays
    ([`../ref/observability/checklist.md`](../ref/observability/checklist.md)); building those is
    part of this item, never a follow-up. In a repo with a `DESIGN.md`, save the `dsys check`
-   baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). Then pin the pass with `dashboard implement`
+   baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). Then start the pass's dashboard with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
    each step below.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a

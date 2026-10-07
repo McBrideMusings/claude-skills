@@ -68,9 +68,15 @@ class TestScriptBehaviour(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.dir = Path(self.tmp.name)
-        D.scratch_dir = lambda: self.dir
+        D.scratch_dir = lambda: self.dir / "slug" / "dashboard"
+        self.home = tempfile.TemporaryDirectory()
+        self.old_home = os.environ.get("HOME")
+        os.environ["HOME"] = self.home.name
+        (self.dir / "slug" / "dashboard").mkdir(parents=True)
 
     def tearDown(self):
+        os.environ["HOME"] = self.old_home
+        self.home.cleanup()
         self.tmp.cleanup()
 
     def write(self, slot, state):
@@ -150,7 +156,7 @@ class TestScriptBehaviour(unittest.TestCase):
         old = os.environ["PATH"]
         os.environ["PATH"] = str(self.dir)   # no canvas on PATH
         try:
-            code, err = self.run_verb(D.cmd_post, slot="chart:c", scope="session", every=None, no_pin=False)
+            code, err = self.run_verb(D.cmd_post, slot="chart:c", every=None, card=False)
         finally:
             os.environ["PATH"] = old
         self.assertEqual(code, 1)
@@ -163,6 +169,27 @@ class TestScriptBehaviour(unittest.TestCase):
             finally:
                 os.environ["PATH"] = old
             self.assertEqual((code, len(err.strip().splitlines())), (1, 1), err)
+
+    def test_artifact_record_is_dropped_only_on_a_404(self):
+        fake = self.dir / "bin"
+        fake.mkdir()
+        (fake / "canvas").write_text('#!/bin/sh\necho "$CANVAS_FAKE" >&2; exit 1\n')
+        (fake / "canvas").chmod(0o755)
+        rec = D.artifact_record("chart:c")
+        rec.write_text("art-1")
+        old = os.environ["PATH"]
+        os.environ["PATH"] = f"{fake}:{old}"
+        try:
+            os.environ["CANVAS_FAKE"] = "canvasd returned HTTP 503"
+            code, err = self.run_verb(D.cmd_end, slot="chart:c")
+            self.assertEqual(code, 1)
+            self.assertTrue(rec.exists(), "a transient failure must keep the record")
+            os.environ["CANVAS_FAKE"] = "canvasd returned HTTP 404 (no artifact with that id)"
+            self.assertIsNone(D.artifact_id("chart:c"))
+            self.assertFalse(rec.exists())
+        finally:
+            os.environ["PATH"] = old
+            os.environ.pop("CANVAS_FAKE", None)
 
     def test_refresh_command_cds_into_this_checkout_and_quotes_the_slot(self):
         cmd = D.refresh_command("implement:canvas-12")

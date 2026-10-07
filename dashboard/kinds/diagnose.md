@@ -1,6 +1,6 @@
 # dashboard diagnose — the hypothesis board
 
-Slot `diagnose:<symptom-slug>`, scope `session`. Post once the first hypotheses are written down;
+Slot `diagnose:<symptom-slug>`. Post once the first hypotheses are written down;
 push each time one is ruled in or out. No `--every`.
 
 ```ts

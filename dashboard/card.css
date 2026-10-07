@@ -5,6 +5,7 @@
   --muted: #6b6b6b; --line: #e2e0d8; --soft: #f1efe8; --soft-ink: #1a1a1a;
   --ok: #1f7a3a; --warn: #8a5a00; --danger: #b91c1c; --accent: #2563eb; --accent-soft: #dbe6fd;
 }
+body:not(.widget) { margin: 0; padding: 16px 20px; }
 @media (prefers-color-scheme: dark) {
   :root {
     --muted: #9a978f; --line: #36363d; --soft: #2a2a31; --soft-ink: #e8e6e1;
@@ -44,9 +45,9 @@ svg.chart .grid { stroke: var(--line); }
 .shots figcaption { padding: 5px 8px; font-size: 12px; }
 .pill { display: inline-block; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; }
 .empty { color: var(--muted); font-style: italic; }
-/* widget: 180x88 of content inside the host's 200x104 frame */
-body.widget { font-size: 12px; overflow: hidden; }
-.w-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 40px 6px 0; }
+/* widget: 196px wide, 120px tall at most; the host draws the border and clips the rest */
+body.widget { font-size: 12px; overflow: hidden; margin: 0; padding: 6px 10px; }
+.w-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 16px 6px 0; }
 .w-big { font-size: 20px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .w-row { display: flex; gap: 10px; }
 .w-row div { display: flex; flex-direction: column; min-width: 0; }

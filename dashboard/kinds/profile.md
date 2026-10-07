@@ -1,6 +1,6 @@
 # dashboard profile — a measurement loop
 
-Slot `profile:<metric-slug>`, scope `session`. Post it once the baseline is measured; push after
+Slot `profile:<metric-slug>`. Post it once the baseline is measured; push after
 every measured run. No `--every`: the numbers come only from your runs.
 
 ```ts

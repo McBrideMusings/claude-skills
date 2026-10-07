@@ -46,7 +46,7 @@ Motion that starts on its own, a CSS animation or a script on a timer, stays at 
 Genuinely different takes on density, motion, personality or interaction model skip the sketch —
 a sketch filters on the wrong information — and go straight to a comp set, a mockup or the prototype.
 
-Once a comp set or mockup has its screenshots, pin the choice with `dashboard spike` ([`../dashboard/kinds/spike.md`](../dashboard/kinds/spike.md)) and push each verdict; end the pin when the winner is picked.
+Once a comp set or mockup has its screenshots, show the choice with `dashboard spike` ([`../dashboard/kinds/spike.md`](../dashboard/kinds/spike.md)) and push each verdict; end the dashboard when the winner is picked.
 
 The winning comp or mockup screenshot is stored with `dsys refs add` and tickets cite that ref ([LIFECYCLE.md](LIFECYCLE.md)).
 A prototype is never stored: its answer goes into `DESIGN.md` or an ADR, and the files are deleted.

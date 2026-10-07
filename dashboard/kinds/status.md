@@ -57,7 +57,7 @@ Present in chat, in this order:
 4. **Gaps** — each named gap with its category and who/what it hurts.
 5. **Steering recommendation** — the numbered slate (Phase 07).
 
-Then pin the result. Write the state to `"$D" path status` and run `"$D" post status --scope repo`. The repo scope keeps the card pinned after this session, until the next reality check replaces it:
+Then publish the result. Write the state to `"$D" path status` and run `"$D" post status`. The artifact stays after this session, until the next reality check replaces its page or `"$D" end status` deletes it:
 
 ```ts
 { kind: "status", title: "<repo> · status",
@@ -67,7 +67,7 @@ Then pin the result. Write the state to `"$D" path status` and run `"$D" post st
   coverage?: string }                   // the fourth honest answer, one sentence
 ```
 
-A scoped run pins to `status:<scope-slug>` instead, so it never replaces the full check.
+A scoped run posts to `status:<scope-slug>` instead, so it never replaces the full check.
 
 ### Phase 06 — Ambition Push (`push` mode only)
 

@@ -1,6 +1,6 @@
 # dashboard chart — numbers as a chart
 
-Slot `chart:<slug>`, scope `session`. Post when the numbers exist; push when they change. No
+Slot `chart:<slug>`. Post when the numbers exist; push when they change. No
 `--every`: the series come from you.
 
 ```ts
@@ -12,5 +12,5 @@ Slot `chart:<slug>`, scope `session`. Post when the numbers exist; push when the
 ```
 
 The widget shows the first series' last value and a sparkline, so put the series that matters
-first. End with `"$D" end chart:<slug>`, or post with `--no-pin` when the chart is a one-off that
+first. End with `"$D" end chart:<slug>`, or post with `--card` when the chart is a one-off that
 never changes.

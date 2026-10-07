@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
-"""dashboard: build, pin, refresh and clear one live dashboard card.
+"""dashboard: build, refresh and delete one live dashboard artifact.
 
-A dashboard is addressed by its slot ("implement:canvas-12", "status", "monitor:disk").
-Its state is one JSON file the caller writes; `path` prints where it lives. Every other
-verb reads that file:
+A dashboard is addressed by its slot ("implement:canvas-12", "status", "monitor:free").
+Its state is one JSON file the caller writes; `path` prints where it lives. The slot maps
+to one Canvas artifact, whose id is recorded in ~/.local/state/dashboard/. Every other verb reads
+the state file:
 
   dashboard path <slot>                    where the state file for <slot> lives
   dashboard page <slot>                    the card HTML (page shell + current values)
-  dashboard widget <slot>                  the 200x104 widget HTML
+  dashboard widget <slot>                  the widget HTML (196px wide, 120px tall at most)
   dashboard data <slot>                    state + live probes as one JSON value
-  dashboard post <slot> [--scope session|repo] [--every SECS] [--no-pin]
-                                           write page and widget, then canvas post --pin;
-                                           --every adds a refresh that cds into this
-                                           checkout and runs `dashboard data <slot>`
-  dashboard push <slot>                    data | canvas data --slot <slot> -
-  dashboard end <slot>                     canvas unpin <slot>
+  dashboard post <slot> [--every SECS] [--card]
+                                           write page and widget, then create the slot's
+                                           artifact or put them into it; --every adds a
+                                           refresh that cds into this checkout and runs
+                                           `dashboard data <slot>`, and lasts as long as
+                                           this agent; --card posts the page as a plain
+                                           feed card instead
+  dashboard push <slot>                    data | canvas data <artifact_id> -
+  dashboard end <slot>                     canvas artifact delete <artifact_id>
 
 Failures exit 1 with one line on stderr. Log: every verb appends a timestamped line to
 <scratch>/dashboard/dashboard.log.
 """
+
+from __future__ import annotations
 
 import argparse
 import datetime as dt
@@ -124,8 +130,9 @@ def probe_implement(state: dict) -> dict:
         ranges = [[f"{base}...HEAD"], ["HEAD"]]
         stats = " ".join(sh(["git", "diff", "--shortstat", *r]) for r in ranges)
         files = set().union(*(sh(["git", "diff", "--name-only", *r]).splitlines() for r in ranges)) - {""}
-        live.update(diff=f"+{sum(map(int, re.findall(r'(\d+) insertion', stats)))} "
-                         f"−{sum(map(int, re.findall(r'(\d+) deletion', stats)))}",
+        added = sum(map(int, re.findall(r"(\d+) insertion", stats)))
+        removed = sum(map(int, re.findall(r"(\d+) deletion", stats)))
+        live.update(diff=f"+{added} −{removed}",
                     filesChanged=len(files),
                     ahead=sh(["git", "rev-list", "--count", f"{base}..HEAD"]) or "0")
     return live
@@ -290,34 +297,85 @@ def refresh_command(slot: str) -> str:
     return f"cd {shlex.quote(os.getcwd())} && {shlex.quote(str(HERE / 'dashboard'))} data {shlex.quote(slot)}"
 
 
+def artifact_record(slot: str) -> Path:
+    """Where the slot's artifact id lives: outside the scratch dir, which macOS clears after
+    three days, because the artifact outlives that."""
+    if not re.fullmatch(SLOT_RE, slot):
+        fail(f"slot {slot!r}: use letters, digits and : . _ - (drop a leading #)")
+    d = Path.home() / ".local/state/dashboard" / scratch_dir().parent.name
+    d.mkdir(parents=True, exist_ok=True)
+    return d / (slot.replace(":", "~") + ".artifact")
+
+
+def artifact_id(slot: str) -> str | None:
+    """The artifact recorded for this slot, or None when none is recorded or Canvas says
+    (404) it no longer exists. Any other failure stops the verb: the artifact may still be there."""
+    p = artifact_record(slot)
+    if not p.exists():
+        return None
+    aid = p.read_text().strip()
+    out = canvas(["artifact", "show", aid])
+    if out.returncode == 0:
+        return aid
+    if "404" in out.stderr:
+        p.unlink()
+        return None
+    fail(f"canvas artifact show {aid} failed: {first_line(out)}")
+
+
 def cmd_post(a) -> None:
     state = build_data(a.slot)
-    page, widget = slot_file(a.slot, "+page.html"), slot_file(a.slot, "+widget.html")
+    site, widget = slot_file(a.slot, "+site"), slot_file(a.slot, "+widget.html")
+    site.mkdir(exist_ok=True)
+    page = site / "index.html"
     page.write_text(shell(state, "page"))
     widget.write_text(shell(state, "widget"))
-    args = ["post", str(page), "--format", "html"]
-    if not a.no_pin:
-        args += ["--pin", a.slot, "--pin-scope", a.scope, "--widget", str(widget)]
-        if a.every:
-            args += ["--refresh", refresh_command(a.slot), "--every", str(a.every)]
-    out = canvas(args)
+    if a.card:
+        out = canvas(["post", str(page), "--format", "html"])
+        if out.returncode != 0:
+            fail(f"canvas post failed: {first_line(out)}; the page is at {page}")
+        print(out.stdout.strip())
+        return
+    refresh = ["--refresh", refresh_command(a.slot), "--every", str(a.every)] if a.every else []
+    aid = artifact_id(a.slot)
+    if not aid:
+        out = canvas(["artifact", "new", "--title", str(state.get("title", state["kind"])),
+                      "--widget", str(widget), *refresh])
+        if out.returncode != 0:
+            fail(f"canvas artifact new failed: {first_line(out)}; the page is at {page}")
+        try:
+            aid = json.loads(out.stdout)["id"]
+        except (json.JSONDecodeError, KeyError, TypeError):
+            fail(f"canvas artifact new printed no id (an untracked artifact titled "
+                 f"{state.get('title')!r} may exist): {out.stdout.strip()[:200]}")
+        artifact_record(a.slot).write_text(aid)
+        refresh = []
+    out = canvas(["artifact", "put", aid, str(site), "--widget", str(widget), *refresh])
     if out.returncode != 0:
-        fail(f"canvas post failed: {first_line(out)}; the page is at {page}")
-    print(out.stdout.strip())
+        fail(f"canvas artifact put {aid} failed: {first_line(out)}; the page is at {page}")
+    print(json.dumps({"slot": a.slot, "artifact_id": aid}))
 
 
 def cmd_push(a) -> None:
-    out = canvas(["data", "--slot", a.slot, "-"], stdin=json.dumps(build_data(a.slot)))
+    state = build_data(a.slot)
+    aid = artifact_id(a.slot)
+    if not aid:
+        fail(f"no artifact for slot {a.slot!r}: run `dashboard post {a.slot}` first")
+    out = canvas(["data", aid, "-"], stdin=json.dumps(state))
     if out.returncode != 0:
         fail(f"canvas data failed: {first_line(out)}")
-    print(f"pushed {a.slot}")
+    print(f"pushed {a.slot} to {aid}")
 
 
 def cmd_end(a) -> None:
-    out = canvas(["unpin", a.slot])
+    aid = artifact_id(a.slot)
+    if not aid:
+        fail(f"no artifact for slot {a.slot!r}: nothing to end")
+    out = canvas(["artifact", "delete", aid])
     if out.returncode != 0:
-        fail(f"canvas unpin failed: {first_line(out)}")
-    print(f"unpinned {a.slot}")
+        fail(f"canvas artifact delete {aid} failed: {first_line(out)}")
+    artifact_record(a.slot).unlink(missing_ok=True)
+    print(f"deleted {aid} for {a.slot}")
 
 
 def main() -> None:
@@ -327,9 +385,8 @@ def main() -> None:
         sub.add_parser(verb).add_argument("slot")
     post = sub.add_parser("post")
     post.add_argument("slot")
-    post.add_argument("--scope", choices=["session", "repo"], default="session")
     post.add_argument("--every", type=int, help="seconds between host-run refreshes; omit to push by hand")
-    post.add_argument("--no-pin", action="store_true", help="post as an ordinary feed card")
+    post.add_argument("--card", action="store_true", help="post the page as an ordinary feed card, no artifact")
     a = p.parse_args()
     log(f"{a.verb} {a.slot}")
     if a.verb == "path":

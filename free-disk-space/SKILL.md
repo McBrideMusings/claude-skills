@@ -48,7 +48,7 @@ Targeted `du -sh … | sort -hr` — not a full scan of `~`. The usual big ones:
 
 Done when every category above has a number next to it or an explicit "nothing here".
 
-Then pin the survey with `dashboard monitor` as slot `monitor:disk` ([`../dashboard/kinds/monitor.md`](../dashboard/kinds/monitor.md)): every measured folder as a link, so each opens in Finder.
+Then show the survey in the standing `Disk` artifact: find it with `canvas artifact list` (title `Disk`), run `canvas focus <its id>`, and read the measured folders off its page. Never create, replace or delete it. When no artifact titled `Disk` exists, say so in chat and carry on with the survey as text; do not recreate a monitor.
 
 ### 3. Confirm the safe tier, then clear it
 
@@ -70,4 +70,4 @@ For large files worth keeping, with a drive mounted: `rsync -a` to the drive →
 
 Report what was freed immediately, what's sitting in the Trash, and what was left alone and why. Ask the user to empty the Trash, then re-run `df -h /System/Volumes/Data` and show the before/after.
 
-Re-post `monitor:disk` with the re-measured folders, then end it.
+Re-measure the folders and report the new sizes in chat; the `Disk` artifact keeps running.

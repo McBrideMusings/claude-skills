@@ -97,7 +97,7 @@ function chart(c, w = 800, h = 220) {
   return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(c.title || "chart")}">${svg}</svg>${legend}${c.yUnit ? `<div class="muted" style="font-size:11px">${esc(c.xLabel || "")}${c.xLabel ? " · " : ""}${esc(c.yUnit)}</div>` : ""}`;
 }
 
-function spark(points, w = 180, h = 22) {
+function spark(points, w = 176, h = 22) {
   const ys = (points || []).map(p => +(Array.isArray(p) ? p[1] : p));
   if (ys.length < 2) return "";
   const max = Math.max(...ys), min = Math.min(...ys), span = max - min || 1;

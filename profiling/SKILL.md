@@ -35,7 +35,7 @@ the matched label's profiler (e.g. Instruments Time Profiler, `perf`, `py-spy`, 
 
 Completion: the baseline number is stated in chat before Phase 03 begins.
 
-Then pin the loop with `dashboard profile` ([`../dashboard/kinds/profile.md`](../dashboard/kinds/profile.md)), the baseline as its first run; push each Phase 05 measurement to it.
+Then show the loop with `dashboard profile` ([`../dashboard/kinds/profile.md`](../dashboard/kinds/profile.md)), the baseline as its first run; push each Phase 05 measurement to it.
 
 ## Phase 03 — Isolate the dominant cost
 

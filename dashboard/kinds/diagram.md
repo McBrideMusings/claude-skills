@@ -1,6 +1,6 @@
 # dashboard diagram — a structure, drawn
 
-Slot `diagram:<slug>`, scope `session`. The page loads Mermaid 11.4.1 from jsdelivr and draws the
+Slot `diagram:<slug>`. The page loads Mermaid 11.4.1 from jsdelivr and draws the
 source; a source error shows under the diagram with the source still visible. No `--every`.
 
 ```ts
@@ -11,5 +11,5 @@ source; a source error shows under the diagram with the source still visible. No
 
 Keep it to the nodes the question needs: a flowchart past about 25 nodes stops being readable at
 card width. The widget shows only the connection count; the diagram is in the full page. Push
-after editing the source; end with `"$D" end diagram:<slug>`, or post with `--no-pin` for a
+after editing the source; end with `"$D" end diagram:<slug>`, or post with `--card` for a
 one-off.
