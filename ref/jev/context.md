@@ -13,3 +13,4 @@
 | Open | When |
 | --- | --- |
 | [`api.md`](api.md) | Writing a Jev call: request and response shapes for each question type, confidence, and what to keep in the state. |
+| [`driving.md`](driving.md) | Driving a browser or desktop UI with Jev: the read-choose-act-check loop and its limits. |
