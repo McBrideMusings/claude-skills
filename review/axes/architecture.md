@@ -1,3 +1,7 @@
+---
+run: always
+---
+
 # Architecture fit lens
 
 Evaluate whether the *diff* sits correctly in the existing structure. This is a read-only surface check on the change, not a full architecture review — for a dedicated deepening pass, the `improve` skill is the heavier tool, and this brief should point the reader there when a finding clearly warrants it. Use the architecture vocabulary from `improve`'s `ARCHITECTURE.md` (module, interface, depth, seam — not "component/service/boundary"), and judge the change on these five lenses:

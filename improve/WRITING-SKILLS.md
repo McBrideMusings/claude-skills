@@ -135,4 +135,4 @@ Everything above is the authoring contract — it says what to write and why. Au
 
 **Read the skill in full first, including its sibling files.** A finding that does not quote the skill's own line is not a finding. Same rule `claude-md` carries, same reason: a clause judged out of context routinely contradicts one three sections down.
 
-Each finding: the **gap**, **evidence** (the quoted line), **fix** (the concrete rewrite — for a missing gate, the artifact that proves the step ran), **strength** (`Strong` / `Worth exploring` / `Speculative`). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
+Each finding: the **gap**, **evidence** (the quoted line), **fix** (the concrete rewrite — for a missing gate, the artifact that proves the step ran), **impact** (`P0`–`P3`, the scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags). Card fields per [HTML-REPORT.md](HTML-REPORT.md).

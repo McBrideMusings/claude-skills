@@ -1,7 +1,12 @@
+---
+run: gated
+when:
+  - labels: [react]
+---
+
 # React / Next.js quality review lens
 
-Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04 when the diff
-in scope contains React or Next.js code. Same output contract as the other lenses: report only genuine
+Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04. Same output contract as the other lenses: report only genuine
 problems, `file:line`, a full-sentence headline, a **Why** (concrete cost), and a **Fix** with a
 before/after where it clarifies. Axis tag: `react`. Do not nitpick style or invent issues.
 

@@ -1,11 +1,16 @@
+---
+run: gated
+when:
+  - labels: [rust]
+---
+
 # Rust review lens
 
-Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04 when the
-`rust` label is in scope. Same output contract as the other lenses: report only genuine problems,
+Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04. Same output contract as the other lenses: report only genuine problems,
 `file:line`, a full-sentence headline, a **Why** (concrete cost), and a **Fix** with a before/after
 where it clarifies. Axis tag: `rust`. Do not nitpick style or invent issues.
 
-**In repo mode, run these tools before reading any source** — Phase 01r's "gating is off" rule
+**In repo mode, run these tools before reading any source** — Phase 01r
 forwards each tool's raw output into this brief as evidence, and this lens reads that output rather
 than inferring a finding from source alone. In diff mode, run the same commands over the whole
 workspace (Cargo's tools don't accept a path list the way `go vet`/`ruff` do) but only surface
@@ -27,8 +32,8 @@ pulls it in.
 
 - **`cargo audit`** — every reported advisory is a scored `rust` finding: cite the RUSTSEC ID, the
   crate and version, and the patched version if one exists. An advisory marked "unmaintained" with no
-  CVE and no known exploit is still a `rust` finding — note the lower severity (maintenance risk, not
-  an active vulnerability) in the finding body rather than dropping it.
+  CVE and no known exploit is still a `rust` finding — rate it `P2` (maintenance risk, not
+  an active vulnerability) rather than dropping it.
 - **`cargo udeps` / `cargo machete`** — an unused dependency reported by either becomes a `rust`
   finding — cross-check both tools agree before reporting (they use different detection strategies and
   either can miss a macro-only or feature-gated usage); report only the intersection, and drop a

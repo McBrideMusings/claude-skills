@@ -1,6 +1,12 @@
+---
+run: gated
+when:
+  - labels: [audio]
+---
+
 # audio — review lens
 
-Added by the `review` engine when `audio` is in scope. The reasoning and sources are in
+Added by the `review` engine. The reasoning and sources are in
 [volume.md](volume.md). Each item is a finding only when the diff introduces or leaves it.
 
 1. **A volume slider whose position is the gain.** `gain = position` puts 50% at −6 dB and

@@ -1,3 +1,7 @@
+---
+run: always
+---
+
 # Negative-space lens
 
 What obligations does this change create that it leaves *unmet*? Bound this **strictly to obligations the diff itself creates** — not hypothetical features, not a generic "more tests would be nice." Walk:

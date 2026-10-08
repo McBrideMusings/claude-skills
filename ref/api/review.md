@@ -1,6 +1,12 @@
+---
+run: gated
+when:
+  - labels: [api]
+---
+
 # api — review lens
 
-Added by the `review` engine when `api` is in scope. Full reasoning in [design.md](design.md).
+Added by the `review` engine. Full reasoning in [design.md](design.md).
 
 Check, in this order — the first three are the ones that cost real money when missed:
 

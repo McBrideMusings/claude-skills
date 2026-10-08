@@ -22,7 +22,7 @@ Walk the ones that apply to what the project actually is:
 
 ## Findings
 
-Each finding: the **gap** (what's absent or weak), **evidence** (file/config that shows it), **practice** (the concrete thing to adopt — named tool, named pattern, where it would live), **strength** (`Strong` / `Worth exploring` / `Speculative`, same badges as architecture). Card fields per [HTML-REPORT.md](HTML-REPORT.md) — no before/after diagram required; a small table or config snippet carries a security card fine.
+Each finding: the **gap** (what's absent or weak), **evidence** (file/config that shows it), **practice** (the concrete thing to adopt — named tool, named pattern, where it would live), **impact** (`P0`–`P3`, the scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags). Card fields per [HTML-REPORT.md](HTML-REPORT.md) — no before/after diagram required; a small table or config snippet carries a security card fine.
 
 ## Interactive follow-up
 

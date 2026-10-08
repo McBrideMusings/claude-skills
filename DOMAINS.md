@@ -35,7 +35,8 @@ ref/<label>/
                            start in every repo carrying this label, a short body, and the label's
                            Files map (see below). The whole file is INJECTED on the session's
                            first edit of a file in this label's domain
-  review.md             <- lens the `review` engine adds when this label is in scope
+  review.md             <- lens the `review` engine adds; opens with `run: gated` / `when: - labels:
+                           [<label>]` frontmatter, which review/tool/lens-gate evaluates
   diagnose.md           <- what to instrument / watch, read at diagnose's instrument phase
   profiling.md          <- profiler catalog / performance gate, read by the `profiling` engine
   testing.md            <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)

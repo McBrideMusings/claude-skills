@@ -1,7 +1,12 @@
+---
+run: gated
+when:
+  - labels: [threejs]
+---
+
 # Three.js review axis
 
-Read by the `review` engine when the platform is `threejs`. Added as one extra lens sub-agent at
-Phase 04. Covers the three.js/WebGL *stack* — resource lifetime, reuse, resize/DPR, loader error
+Added by the `review` engine as one extra lens sub-agent at Phase 04. Covers the three.js/WebGL *stack* — resource lifetime, reuse, resize/DPR, loader error
 handling, and common misuse. Not game design.
 
 Adapted from majidmanzarpour/threejs-game-skills.

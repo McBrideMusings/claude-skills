@@ -17,7 +17,7 @@ Verify that the product behaves as its code and docs claim: describe a sample of
 ## Aspect-specific rules
 
 - **The evidence rule is absolute:** no claim is reported as verified without the recorded command and output beside it.
-- **RULE 2 override (stated in BEHAVIOR.md):** a defect verified against the running product is a full finding with evidence and severity, not a `review-territory` line — there is no diff for `review` to run on. Suspected-but-unverified defects stay `review-territory`.
+- **RULE 2 override (stated in BEHAVIOR.md):** a defect verified against the running product is a full finding with evidence and a P-level, not a `review-territory` line — there is no diff for `review` to run on. Suspected-but-unverified defects stay `review-territory`.
 - A failed check may mean the description is wrong, not the product. Say which.
 - Leave the product as you found it: restore volume, playback, open windows, working state after driving it.
 - **No file writes.** The durable-prose extraction (`docs/CONTEXT.md`, per-surface docs) belongs to the interactive run; name it as a finding instead.

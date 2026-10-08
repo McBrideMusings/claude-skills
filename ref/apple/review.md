@@ -1,7 +1,12 @@
+---
+run: gated
+when:
+  - labels: [apple]
+---
+
 # Apple / SwiftUI review lens
 
-Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04 when
-the diff in scope contains Swift/SwiftUI files. Same output contract as the other `axes/` lenses:
+Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04. Same output contract as the other `axes/` lenses:
 report only genuine problems, `file:line`, a full-sentence headline, a **Why**, and a **Fix** with
 a before/after where it clarifies. Axis tag: `apple`. Do not nitpick style or invent issues.
 

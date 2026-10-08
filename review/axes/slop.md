@@ -1,3 +1,7 @@
+---
+run: always
+---
+
 # Code slop lens
 
 Flag code in the diff that adds shape without adding meaning. Slop is not a bug and not a style nit — it is structure a reader has to walk past to reach the actual logic, and every piece of it makes the next change slower.
@@ -34,7 +38,7 @@ Each of these is a *prompt to look*, not an automatic finding:
 
 ## Bounds
 
-- **Slop findings are never blocking.** They don't make behavior wrong. Score them accordingly and expect most to land `low`.
+- **Slop findings are never blocking.** They don't make behavior wrong. Rate every one `P3`.
 - **Skip what the repo's own tooling actually reports on this diff** — configured, running, and failing where the author will see it; anything not wired up, or green while the problem is real, is ours.
 - **Don't flag brevity for its own sake.** A helper with two real callers, a type that names a domain concept, a comment explaining *why* a non-obvious choice was made — none of those are slop.
 - **Overlap with `standards`**: duplicated logic and Fowler smells stay on the `standards` axis. If a finding is "this already exists elsewhere in the repo", that's the reuse rule in `standards.md`, not here. Don't double-report.

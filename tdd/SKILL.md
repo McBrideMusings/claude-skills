@@ -104,7 +104,7 @@ The build loop's criteria, applied retrospectively. Use when asked to audit or i
 
 ### Findings-only invocation
 
-When another skill (e.g. `improve`'s survey) invokes the audit: no file writes, no commits, no questions — run steps 1–5 and return the findings structured (finding, evidence `file:line`, strength `Strong`/`Worth exploring`/`Speculative`, proposed fix).
+When another skill (e.g. `improve`'s survey) invokes the audit: no file writes, no commits, no questions — run steps 1–5 and return the findings structured (finding, evidence `file:line`, impact `P0`–`P3` per `review/REVIEW-CORE.md` §Axis tags, proposed fix).
 
 ## Per-Cycle Checklist
 

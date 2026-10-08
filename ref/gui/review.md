@@ -1,7 +1,12 @@
+---
+run: gated
+when:
+  - labels: [gui]
+---
+
 # UI motion defect lens
 
-Platform-agnostic lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04
-when the `gui` label is in scope. Same output contract as the other lenses: report only genuine
+Platform-agnostic lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04. Same output contract as the other lenses: report only genuine
 problems, `file:line`, a full-sentence headline, a **Why** (the concrete cost), and a **Fix**. Axis
 tag: `gui`. Do not nitpick style or invent issues.
 
@@ -93,10 +98,10 @@ Deleting motion outright is a legitimate outcome, but "this shouldn't animate at
 100+ times a day" is an `opportunities.md` finding, not a review finding — note it and route it there
 rather than reporting it here.
 
-## Interface-change severity floor (any UI diff, not just motion)
+## Interface-change P1 floor (any UI diff, not just motion)
 
 Adapted from `jakubkrehel/skills` `better-interface` (MIT). Once confirmed present, each of these is
-severe on sight — never averaged down because the surface is minor:
+`P1` or worse on sight — never averaged down because the surface is minor:
 
 - An interactive control with no accessible name, or keyboard-reachable with no visible focus indicator.
 - A control or path reachable by pointer but not by keyboard.
@@ -109,7 +114,7 @@ severe on sight — never averaged down because the surface is minor:
 - A state change carried by motion alone — no colour, icon, or label when the animation doesn't run.
 - A misbinding — a label, price, status or warning that the layout binds to the wrong object.
 
-These set severity, not new rules — the owning cell (`a11y.md`, `design.md`, `grouping.md`,
+These set the P-level, not new rules — the owning cell (`a11y.md`, `design.md`, `grouping.md`,
 `states.md`) decides
 whether the symptom is present; this list decides what it costs.
 

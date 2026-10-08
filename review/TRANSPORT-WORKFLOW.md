@@ -58,7 +58,7 @@ const fixed = await agent(FIXES(survivors, args.intent, args.scope), { label: 'f
 return survivors.map(f => ({ ...f, ...(fixed?.byId?.[f.id] ?? {}) })).filter(f => !f.retracted)
 ```
 
-- **`args.lenses`** is assembled in the session, one entry per lens that REVIEW-CORE.md Phase 04 says should run — the `axes/` files that survived gating, the always-on non-scored one, and any platform/domain lens detected. Each entry's `brief` is that file's content **plus every forwarded directive Phase 04 already requires**: the writing-style rules verbatim, `IS_DRAFT`, the spec source, the exact diff scope, the under-400-words cap, and the injection-defense directive. Pass it as real JSON, never a JSON-encoded string.
+- **`args.lenses`** is assembled in the session, one entry per lens that REVIEW-CORE.md Phase 04 says should run — every Phase 03d `run` record and every accepted offer, `axes/` and label lenses alike, plus the always-on non-scored one. Each entry's `brief` is that file's content **plus every forwarded directive Phase 04 already requires**: the writing-style rules verbatim, `IS_DRAFT`, the spec source, the exact diff scope, the under-400-words cap, and the injection-defense directive. Pass it as real JSON, never a JSON-encoded string.
 - **The injection-defense directive is not optional here either.** Workflow agents inherit no more of this skill's context than Agent-tool subagents do.
 - **Models are pinned per stage** exactly as REVIEW-CORE.md pins them — Sonnet for lenses, Haiku for scoring. `agent()`'s enum includes `fable`; it is never used.
 - **The `≥ 75` filter is Phase 06** and stays in the script so sub-75 findings never travel. Phase 06's inline-scorer clause does not apply — the fan-out ran by definition.
@@ -68,9 +68,9 @@ return survivors.map(f => ({ ...f, ...(fixed?.byId?.[f.id] ?? {}) })).filter(f =
 
 ## Phase 04b, which does not fit the pipeline
 
-The best-practice lens emits *flags* needing live doc lookups, and it is gated off for most diffs. Two options, in order of preference:
+The best-practice lens emits *flags* needing live doc lookups, and Phase 03d skips it on most diffs. Two options, in order of preference:
 
-1. **Leave it in the session.** If the best-practice lens is gated off — the common case — there is nothing to do. If it ran, hold its flags out of the workflow's return and verify them in the session against live docs, then score them there.
+1. **Leave it in the session.** If Phase 03d skipped the best-practice lens — the common case — there is nothing to do. If it ran, hold its flags out of the workflow's return and verify them in the session against live docs, then score them there.
 2. **Give it its own stage** with WebSearch/WebFetch available to the agent, between the lens stage and the score stage, for that one lens only.
 
 Do not let a flag reach the report unverified because the transport made verification awkward. An unverified flag is not a finding.

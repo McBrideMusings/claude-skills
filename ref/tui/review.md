@@ -1,6 +1,12 @@
+---
+run: gated
+when:
+  - labels: [tui]
+---
+
 # tui — review lens
 
-Added by the `review` engine when `tui` is in scope. Reasoning in [design.md](design.md).
+Added by the `review` engine. Reasoning in [design.md](design.md).
 
 1. **An action reachable only by mouse.** Click-to-select with no keyboard equivalent
    strands anyone over SSH or in a terminal without mouse reporting.

@@ -54,9 +54,9 @@ bracket at the end of the line — not a paragraph, never an option menu. Shape:
 [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row.
 
 ```
-1. [bug · T1 · high] <one-line finding> — verified `reproduced` — `post` · `fix` · `skip` [post]
-2. [best-practice · T2 · low] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip` [fix]
-3. [slop · T2 · low] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`) [skip]
+1. [bug · T1 · P0] <one-line finding> — verified `reproduced` — `post` · `fix` · `skip` [post]
+2. [best-practice · T2 · P3] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip` [fix]
+3. [slop · T2 · P3] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`) [skip]
 
 Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 ```
@@ -105,18 +105,18 @@ picks per finding:
 **Default split — fix the small stuff, hand the rest back.** Propose this stance up front, then
 let the user override per finding:
 
-- **Fix directly:** `low`- or `medium`-severity findings that are small, contained, and
+- **Fix directly:** findings at any P-level below `P0` that are small, contained, and
   **behavior-preserving** — a missing guard, a one-line bug fix, helper reuse, a typo, dead-code
   removal, a flag correction. They don't change what the author built, so applying them is safe
   and saves a round-trip.
-- **Hand to the author:** `high`-severity findings, `architecture` / `negative-space` design
+- **Hand to the author:** `P0` findings, `architecture` / `negative-space` design
   calls, or **anything that would change or break the PR's intended behavior, feature, or
   outcome**. Here the author's intent is load-bearing — a direct edit risks overwriting a
   deliberate choice. When unsure whether a fix would alter intended behavior, treat it as
   hand-to-author.
 
-Split on "is this small, safe, and intent-neutral," **not** on the blocking verdict — severity ≠
-blocking still holds, so a blocking bug can be a tiny behavior-preserving one-liner that belongs
+Split on "is this small, safe, and intent-neutral," **not** on the blocking verdict — a blocking
+`P1` bug can be a tiny behavior-preserving one-liner that belongs
 in the fix bucket, while a non-blocking architecture note usually belongs in the hand-back bucket.
 
 **Fixing on the branch — mechanics + gate.** Pushing commits to someone else's PR branch is an
@@ -146,12 +146,12 @@ longer comment list — say that in chat.
 
 **Ranking for the cap**, applied after the Phase 06 filter:
 
-1. **Tier 1 with verdict `reproduced`** — post every one. **The cap does not apply to these and
-   they are never cut, at any count.** If seven reproduced Tier 1 findings survive, all seven
+1. **`P0` and `P1`** — post every one. **The cap does not apply to these and they are never cut,
+   at any count.** If seven blocking findings survive, all seven
    post, and you say in chat that blocking findings exceeded the budget. Shipping broken behavior
    to save a comment slot is not a trade this rule permits.
-2. **Tier 1, `not-executable`** — highest score first.
-3. **Tier 2** — highest score first, then by file path.
+2. **`P2`** — highest score first, then by file path.
+3. **`P3`** — highest score first, then by file path.
 
 Fill the remaining slots down that order and stop. Tier 3 never enters the list because it never
 survives Phase 06.
@@ -159,11 +159,11 @@ survives Phase 06.
 **The posted comment says nothing about what was withheld.** No "3 additional non-blocking items
 omitted", no counts, no axis summary, no offer to expand. A disclosure line is an invitation to
 ask for the rest, which reinstates exactly the round-trip the cap removes. **Tell the user
-instead**, in chat, in one line naming the count, the axes, and the report path: `3 Tier 2
+instead**, in chat, in one line naming the count, the axes, and the report path: `3 P3
 findings held back (contracts, slop) — full list in the report.` They can post any of them by
 name if they disagree.
 
-## The verdict — block on broken behavior, not on severity
+## The verdict — `P0` and `P1` block
 
 For the findings going back to the author, propose one consolidated review verdict. On a PR you
 didn't author GitHub records that verdict as your review decision (Request changes even gates the
@@ -182,18 +182,19 @@ instance of this skill telling the user their review responsibilities are not it
 to be told twice, in the same session, that finding nothing wrong on a teammate's PR **is** a
 finished review with a verdict, not a review with no ending.
 
-What separates blocking from non-blocking is *what the finding is about*, never how confident or
-how large it is:
+What separates blocking from non-blocking is the finding's P-level ([REVIEW-CORE.md](REVIEW-CORE.md) §Axis tags),
+never how confident the scorer was:
 
-- **Blocking → Request changes** (`gh pr review --request-changes`; gates the merge). Any finding
-  that the diff makes behavior *wrong*: a new bug, or existing behavior this diff breaks. **New or
-  newly-broken behavior is always blocking** — a `low`-confidence regression still blocks, because
+- **Blocking → Request changes** (`gh pr review --request-changes`; gates the merge). Any `P0` or
+  `P1` finding — which includes every case where the diff makes behavior *wrong*: a new bug, or
+  existing behavior this diff breaks. **New or
+  newly-broken behavior is always blocking** — a regression the scorer was barely sure of still blocks, because
   the question is "does this ship something broken," not "how sure am I". Axis-independent: a
   `spec/wrong-impl`, a `contracts` violation that breaks a caller, a `negative-space` un-updated
   caller, or a `standards` correctness breach each block exactly as a `bug` does. One such
   survivor → Request changes.
-- **Non-blocking → Comment** (`gh pr review --comment`; on record, no merge gate). Everything
-  where behavior is *correct* but the code could be more elegant, more efficient, better
+- **Non-blocking → Comment** (`gh pr review --comment`; on record, no merge gate). `P2` and `P3`:
+  everything where behavior is *correct* but the code could be more elegant, more efficient, better
   organized, or better documented. Pure-quality `architecture`, `best-practice`, and most
   `contracts`/`standards` findings live here. A pre-existing bug the diff merely sits near, but
   does not introduce or worsen, is a non-blocking note.
@@ -201,9 +202,9 @@ how large it is:
   entries either), **or** every survivor has just been fixed on the branch. After the fix commits
   land, nothing broken or unaddressed remains, so Approve is the honest verdict.
 
-### Low-severity, non-blocking finding → the fix-on-branch offer is MANDATORY
+### Only `P2`/`P3` findings → the fix-on-branch offer is MANDATORY
 
-When the survivors are all `low`-severity, non-blocking quality notes and nothing is broken, you
+When the survivors are all `P2`/`P3` quality notes and nothing is broken, you
 **must** present **fix it on the branch, then Approve** as a listed option — and lead with it. Do
 **not** present "Comment / Approve as-is / Neither" as the *only* choices: an offer set with no
 fix-on-branch path buries a fixable nit or ships it unaddressed, and is the specific failure this

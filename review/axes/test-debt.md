@@ -1,11 +1,15 @@
+---
+run: gated
+when:
+  - repo-mode: true
+---
+
 # Test-debt lens
 
-**Repo mode only.** A diff review's `negative-space` lens already catches a new branch the diff itself
-leaves untested — that's bound to obligations the diff creates. This lens exists for the debt that
-accumulated before the diff under review: a whole codebase's relationship between its code and its
-tests, which no diff-scoped lens can see because no single diff created it. If invoked outside repo
-mode (a diff review, a fixed-point review, or uncommitted changes), output `Skipped — test-debt is
-repo-mode only.` and exit.
+A diff review's `negative-space` lens already catches a new branch the diff itself leaves untested
+— that's bound to obligations the diff creates. This lens exists for the debt that accumulated
+before the diff under review: a whole codebase's relationship between its code and its tests,
+which no diff-scoped lens can see because no single diff created it.
 
 **What to look for**, walking the slice's files:
 

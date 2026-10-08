@@ -1,11 +1,16 @@
+---
+run: gated
+when:
+  - labels: [python]
+---
+
 # Python review lens
 
-Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04 when the
-`python` label is in scope. Same output contract as the other lenses: report only genuine problems,
+Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04. Same output contract as the other lenses: report only genuine problems,
 `file:line`, a full-sentence headline, a **Why** (concrete cost), and a **Fix** with a before/after
 where it clarifies. Axis tag: `python`. Do not nitpick style or invent issues.
 
-**In repo mode, run these tools before reading any source** — Phase 01r's "gating is off" rule
+**In repo mode, run these tools before reading any source** — Phase 01r
 forwards each tool's raw output into this brief as evidence, and this lens reads that output rather
 than inferring a finding from source alone. In diff mode, scope each tool to the changed files where
 the tool supports it (`ruff check <paths>`, `mypy <paths>` against a project actually configured for

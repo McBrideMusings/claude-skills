@@ -1,8 +1,12 @@
+---
+run: gated
+when:
+  - labels: [web]
+---
+
 # Web / CSS / React motion review lens
 
-Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04 when the
-diff in scope contains CSS / JSX / animation code (transitions, keyframes, Framer Motion, WAAPI), or
-touches anything listed under "Other checks" below. Same
+Platform lens for the `review` engine. Runs as one additional Sonnet sub-agent in Phase 04. Same
 output contract as the other lenses: report only genuine problems, `file:line`, a full-sentence
 headline, a **Why** (concrete cost), and a **Fix** with a before/after where it clarifies. Axis tag:
 `web`. Do not nitpick style or invent issues.
@@ -81,7 +85,7 @@ constant motion → `linear`. Built-in CSS easings are weak; expect strong custo
 
 ## Tooling (in repo mode, run before reading source)
 
-Phase 01r's "gating is off" rule forwards each tool's raw output into this brief as evidence in repo
+Phase 01r forwards each tool's raw output into this brief as evidence in repo
 mode; this lens reads that output rather than inferring a finding from source alone. In diff mode,
 prefer each tool's incremental/changed-files mode where one exists so a finding always cites something
 the diff actually touches. **An `npm audit` advisory is exempt from that diff-scope filter** — its
@@ -100,7 +104,7 @@ diff mode even when the diff never touches the affected package.
 
 - **`npm audit`** — every reported advisory is a scored `web` finding: cite the advisory ID, the
   package/version, and the patched version if one exists. A `low`/`moderate` advisory with no available
-  fix is still a `web` finding — note the tracked-risk severity in the finding body rather than
+  fix is still a `web` finding — rate it `P2` (a tracked risk) rather than
   dropping it.
 - **`knip`** and **`depcheck`** — both report unused code/dependencies; treat them as corroborating,
   not independent, since they overlap heavily. A dead *export* becomes a `web` finding — cross-check

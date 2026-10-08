@@ -1,0 +1,337 @@
+#!/usr/bin/env python3
+"""lens-gate — decide which review lenses run, skip, or are offered.
+
+Every lens file (review/axes/*.md, ref/<label>/review.md, ref/local/<label>/review.md) opens
+with frontmatter:
+
+    run: always | gated | offered
+    when:                        # every entry must hold; omitted for run: always
+      - paths: ["**/*.css"]      # the diff touches a path matching any glob
+      - dsys: {mode: owned, designMd: true}   # fields of `dsys status --json`
+      - repo-mode: true          # the review is (true) or is not (false) a repo-mode review
+      - labels: [web]            # a domains-map label resolved for the diff's paths
+      - jev: {noul: "<question>", min_p: 0.6, min_confidence: 0.5, state: diff-stat+subjects}
+
+Decisions: `run` (always, or gated and every entry holds), `offer` (offered and every entry
+holds, or a Jev entry that failed or answered below its confidence floor), `skip` (any entry
+fails). In repo mode there is no diff, so `paths` and `jev` entries hold without being asked.
+
+Usage:
+    lens-gate (--base REF | --uncommitted | --repo-mode) [--repo DIR] [--labels a,b] [--json]
+
+Env: LENS_GATE_JEV_URL overrides the Jev endpoint; LENS_GATE_LOG overrides the log file
+(default ~/.local/state/lens-gate/lens-gate.log).
+"""
+
+import argparse
+import datetime
+import fnmatch
+import json
+import os
+import re
+import subprocess
+import sys
+import urllib.request
+from pathlib import Path
+
+import yaml
+
+SKILLS = Path(__file__).resolve().parents[2]
+JEV_URL = os.environ.get("LENS_GATE_JEV_URL", "https://api.typesafe.ai/v1/systemone")
+LOG = Path(os.environ.get("LENS_GATE_LOG",
+                          Path.home() / ".local/state/lens-gate/lens-gate.log"))
+STATE_KINDS = ("diff-stat+subjects", "diff")
+DIFF_CAP = 20000
+
+
+class GateError(Exception):
+    pass
+
+
+def git(repo, *args):
+    out = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
+    if out.returncode != 0:
+        raise GateError(f"git {' '.join(args)}: {out.stderr.strip()}")
+    return out.stdout
+
+
+def lens_files():
+    for f in sorted((SKILLS / "review/axes").glob("*.md")):
+        yield f.stem, f
+    for root in (SKILLS / "ref", SKILLS / "ref/local"):
+        for f in sorted(root.glob("*/review.md")):
+            yield f.parent.name, f
+
+
+def frontmatter(path):
+    text = path.read_text()
+    m = re.match(r"---\n(.*?)\n---\n", text, re.S)
+    if not m:
+        raise GateError(f"{path}: no frontmatter")
+    fm = yaml.safe_load(m.group(1)) or {}
+    run = fm.get("run")
+    if run not in ("always", "gated", "offered"):
+        raise GateError(f"{path}: run must be always, gated or offered, not {run!r}")
+    when = fm.get("when")
+    if run == "always" and when:
+        raise GateError(f"{path}: run: always takes no when:")
+    if run != "always" and not when:
+        raise GateError(f"{path}: run: {run} needs a when: list")
+    for entry in when or []:
+        if not isinstance(entry, dict) or len(entry) != 1:
+            raise GateError(f"{path}: each when: entry is one key, got {entry!r}")
+        (kind, val), = entry.items()
+        if kind not in ("paths", "dsys", "repo-mode", "labels", "jev"):
+            raise GateError(f"{path}: unknown when: entry {kind!r}")
+        if kind == "jev":
+            missing = {"noul", "min_p", "min_confidence", "state"} - set(val)
+            if missing:
+                raise GateError(f"{path}: jev entry lacks {sorted(missing)}")
+            if val["state"] not in STATE_KINDS:
+                raise GateError(f"{path}: jev state must be one of {STATE_KINDS}")
+    return run, when or []
+
+
+class Scope:
+    """What the review covers: the diff's paths, its stat and subjects, and repo facts."""
+
+    def __init__(self, repo, base, uncommitted, repo_mode, labels):
+        self.repo = Path(repo).resolve()
+        self.repo_mode = repo_mode
+        self.explicit_labels = labels
+        if repo_mode:
+            self.range = None
+            self.paths = git(self.repo, "ls-files").splitlines()
+        elif uncommitted:
+            self.range = ["HEAD"]
+            tracked = git(self.repo, "diff", "--name-only", "HEAD").splitlines()
+            untracked = git(self.repo, "ls-files", "--others", "--exclude-standard").splitlines()
+            self.paths = tracked + untracked
+        else:
+            self.range = [f"{base}...HEAD"]
+            self.paths = git(self.repo, "diff", "--name-only", *self.range).splitlines()
+        self.base = base
+        self._dsys = None
+        self._labels = None
+        self._state = {}
+
+    def dsys(self):
+        if self._dsys is None:
+            try:
+                out = subprocess.run(["dsys", "status", "--json"], cwd=self.repo,
+                                     capture_output=True, text=True)
+                self._dsys = (json.loads(out.stdout) if out.returncode == 0
+                              else {"_error": f"dsys status exited {out.returncode}"})
+            except FileNotFoundError:
+                self._dsys = {"_error": "dsys not installed"}
+            except json.JSONDecodeError:
+                self._dsys = {"_error": "dsys status printed no JSON"}
+        return self._dsys
+
+    def labels(self):
+        if self._labels is None:
+            if self.explicit_labels is not None:
+                self._labels = set(self.explicit_labels)
+            else:
+                self._labels = map_labels(self.repo, self.paths, self.repo_mode)
+        return self._labels
+
+    def untracked(self):
+        """--uncommitted: new files git diff HEAD leaves out, as (path, content) pairs."""
+        if self.range != ["HEAD"]:
+            return []
+        out = []
+        for p in git(self.repo, "ls-files", "--others", "--exclude-standard").splitlines():
+            try:
+                out.append((p, (self.repo / p).read_text(errors="replace")))
+            except OSError:
+                out.append((p, ""))
+        return out
+
+    def state(self, kind):
+        """The text Jev judges. `truncated` is True when the diff did not fit DIFF_CAP, so a
+        Jev `no` read only part of the change."""
+        if kind not in self._state:
+            new = self.untracked()
+            stat = git(self.repo, "diff", "--stat", *self.range)
+            stat += "".join(f" {p} | new file, {c.count(chr(10))} lines\n" for p, c in new)
+            if kind == "diff":
+                body = git(self.repo, "diff", "-U0", *self.range)
+                body += "".join(f"new file {p}:\n{c}\n" for p, c in new)
+                self._state[kind] = (f"diff stat:\n{stat}\ndiff:\n{body[:DIFF_CAP]}",
+                                     len(body) > DIFF_CAP)
+            else:
+                subjects = ""
+                if self.base:
+                    subjects = git(self.repo, "log", "--format=%s", f"{self.base}..HEAD")
+                self._state[kind] = (f"diff stat:\n{stat}\ncommit subjects:\n{subjects}", False)
+        return self._state[kind]
+
+
+def main_root(repo):
+    gitdir = git(repo, "rev-parse", "--absolute-git-dir").strip()
+    if "/.git/worktrees/" in gitdir:
+        return gitdir.split("/.git/worktrees/")[0]
+    if gitdir.endswith("/.git"):
+        return gitdir[: -len("/.git")]
+    return git(repo, "rev-parse", "--show-toplevel").strip()
+
+
+def map_labels(repo, paths, repo_mode):
+    """Labels per ../../_detect.md: the repo's domains-map block, rules matched by scope path."""
+    dmap = Path.home() / ".claude/domains-map"
+    if not dmap.exists():
+        return set()
+    want, labels, inrepo = os.path.realpath(main_root(repo)), set(), False
+    for line in dmap.read_text().splitlines():
+        if line.startswith("/"):
+            inrepo = os.path.realpath(line.rstrip().rstrip(":")) == want
+            continue
+        if not inrepo or ":" not in line or line.lstrip().startswith("#"):
+            continue
+        glob, _, rhs = line.strip().partition(": ")
+        if not rhs:
+            glob, _, rhs = line.strip().partition(":")
+        if glob == "**" or repo_mode or any(fnmatch.fnmatch(p, glob) for p in paths):
+            labels.update(x.strip() for x in rhs.split(",") if x.strip())
+    return labels
+
+
+def ask_jev(question, state):
+    """One yes/no judgment. `noul` answers carry no confidence, so ask it as a two-way choice,
+    which returns both a probability and a confidence. None on any failure."""
+    key = os.environ.get("TYPESAFE_API_KEY", "")
+    env = Path.home() / ".claude/.env"
+    if not key and env.exists():
+        for line in env.read_text().splitlines():
+            m = re.match(r"\s*(?:export\s+)?TYPESAFE_API_KEY=(.*)", line)
+            if m:
+                key = re.sub(r"\s#.*$", "", m.group(1)).strip().strip("\"'")
+                break
+    if not key:
+        return None
+    body = json.dumps({"state": state, "model": "jev-latest", "questions": {"q": {
+        "type": "choice", "instructions": question,
+        "criteria": {"yes": "Yes, this holds", "no": "No, this does not hold"}}}}).encode()
+    req = urllib.request.Request(JEV_URL, data=body, headers={
+        "Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=5) as r:
+            ans = json.loads(r.read())["answers"]["q"]
+        return float(ans["probabilities"]["yes"]), float(ans["confidence"])
+    except Exception:
+        return None
+
+
+def check(kind, val, scope):
+    """(holds: True|False|None, reason, extra). None means unknown: a judgment gate that
+    could not decide, which turns the lens into an offer."""
+    if kind == "repo-mode":
+        return scope.repo_mode == bool(val), ("repo mode" if scope.repo_mode
+                                               else "not repo mode"), {}
+    if kind == "paths":
+        if scope.repo_mode:
+            return True, "repo mode", {}
+        hits = [p for p in scope.paths if any(fnmatch.fnmatch(p, g) or
+                                              fnmatch.fnmatch(p, g.removeprefix("**/"))
+                                              for g in val)]
+        if hits:
+            more = f" +{len(hits) - 3}" if len(hits) > 3 else ""
+            return True, "touches " + ", ".join(hits[:3]) + more, {}
+        return False, "diff touches no " + " ".join(val), {}
+    if kind == "dsys":
+        st = scope.dsys()
+        if "_error" in st:
+            return False, st["_error"], {}
+        bad = [f"{k}={st.get(k)!r}" for k, v in val.items() if st.get(k) != v]
+        if bad:
+            return False, "dsys " + ", ".join(bad), {}
+        return True, "dsys " + ", ".join(f"{k}={v}" for k, v in val.items()), {}
+    if kind == "labels":
+        have = scope.labels() & set(val)
+        if have:
+            return True, "label " + ", ".join(sorted(have)), {}
+        return False, "no " + "/".join(val) + " label in scope", {}
+    if kind == "jev":
+        if scope.repo_mode:
+            return True, "repo mode", {}
+        state, truncated = scope.state(val["state"])
+        ans = ask_jev(val["noul"], state)
+        if ans is None:
+            return None, "Jev call failed", {"jev": None}
+        p, conf = ans
+        extra = {"jev": {"p": p, "confidence": conf}}
+        if conf < val["min_confidence"]:
+            return None, f"Jev unsure (p={p:.2f}, confidence={conf:.2f})", extra
+        if p >= val["min_p"]:
+            return True, f"Jev yes (p={p:.2f}, confidence={conf:.2f})", extra
+        if truncated:
+            return None, (f"Jev no on a diff cut at {DIFF_CAP} characters "
+                          f"(p={p:.2f}, confidence={conf:.2f})"), extra
+        return False, f"Jev no (p={p:.2f}, confidence={conf:.2f})", extra
+    raise GateError(f"unknown entry {kind}")
+
+
+def decide(lens, path, scope):
+    run, when = frontmatter(path)
+    rec = {"lens": lens, "file": str(path.relative_to(SKILLS)), "run": run}
+    if run == "always":
+        return {**rec, "decision": "run", "reason": "always"}
+    # Deterministic entries first, so a lens that already fails never costs a Jev call.
+    ordered = sorted(when, key=lambda e: "jev" in e)
+    reasons, unknown = [], False
+    for entry in ordered:
+        (kind, val), = entry.items()
+        holds, reason, extra = check(kind, val, scope)
+        rec.update(extra)
+        reasons.append(reason)
+        if holds is False:
+            return {**rec, "decision": "skip", "reason": reason}
+        if holds is None:
+            unknown = True
+    decision = "offer" if unknown or run == "offered" else "run"
+    return {**rec, "decision": decision, "reason": "; ".join(reasons)}
+
+
+def log(records, scope):
+    try:
+        LOG.parent.mkdir(parents=True, exist_ok=True)
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+        target = "repo-mode" if scope.repo_mode else " ".join(scope.range)
+        with LOG.open("a") as f:
+            for r in records:
+                f.write(f"{now} repo={scope.repo} range={target} lens={r['lens']} "
+                        f"decision={r['decision']} reason={r['reason']!r}"
+                        f"{' jev=' + json.dumps(r['jev']) if 'jev' in r else ''}\n")
+    except OSError:
+        pass
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="lens-gate", description=__doc__.split("\n")[0])
+    target = ap.add_mutually_exclusive_group(required=True)
+    target.add_argument("--base", help="review <base>...HEAD")
+    target.add_argument("--uncommitted", action="store_true", help="review the working tree")
+    target.add_argument("--repo-mode", action="store_true", help="whole-repo review")
+    ap.add_argument("--repo", default=".", help="repository (default: .)")
+    ap.add_argument("--labels", help="comma-separated labels; overrides the domains-map")
+    ap.add_argument("--json", action="store_true", help="one JSON record per lens")
+    a = ap.parse_args()
+    try:
+        labels = a.labels.split(",") if a.labels is not None else None
+        scope = Scope(a.repo, a.base, a.uncommitted, a.repo_mode, labels)
+        records = [decide(lens, path, scope) for lens, path in lens_files()]
+    except GateError as e:
+        print(f"lens-gate: {e}", file=sys.stderr)
+        return 2
+    log(records, scope)
+    if a.json:
+        print(json.dumps(records, indent=2))
+    else:
+        for r in records:
+            print(f"{r['decision']:<6} {r['lens']:<16} {r['reason']}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

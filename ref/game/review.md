@@ -1,6 +1,12 @@
+---
+run: gated
+when:
+  - labels: [game]
+---
+
 # Game review axis
 
-Read by the `review` engine when the `game` label is in scope, stacked alongside any matched stack label — no ordering between them.
+Read by the `review` engine, stacked alongside any matched stack label — no ordering between them.
 
 Adapted from majidmanzarpour/threejs-game-skills.
 

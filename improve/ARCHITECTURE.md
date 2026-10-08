@@ -100,7 +100,7 @@ Apply the **deletion test** to anything you suspect is shallow.
 Each candidate is one card (see [HTML-REPORT.md](HTML-REPORT.md)):
 
 - **Title** — names the deepening (e.g. "Collapse the Order intake pipeline").
-- **Recommendation strength** — a badge: `Strong` (happy/green), `Worth exploring` (caution/amber), `Speculative` (muted).
+- **Impact** — a `P0`–`P3` badge (scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags).
 - **Files** — monospaced list of the modules involved.
 - **Before / After diagram** — the centrepiece. Hand-authored inline SVG showing the shallowness and the deepening, side by side.
 - **Problem** — one sentence: what hurts.

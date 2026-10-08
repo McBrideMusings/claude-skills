@@ -1,13 +1,17 @@
+---
+run: gated
+when:
+  - paths: ["**/*.css", "**/*.scss", "**/*.sass", "**/*.less", "**/*.tsx", "**/*.jsx",
+            "**/*.vue", "**/*.svelte", "**/*.astro", "**/*.html", "**/DESIGN.md",
+            "**/DESIGN.local.yaml", "**/*tokens*"]
+  - dsys: {mode: owned, designMd: true}
+---
+
 # Design lens
 
 Flag UI code in the diff that breaks the repo's own written design contract. The contract is `DESIGN.md`: its **Do's and Don'ts** prose, its **Named Rules**, its token and component sections, and what `dsys check --json` reports. This lens judges conformance to a standard the owner already wrote down, so every finding cites a rule. A finding without a cited rule is a taste call and does not belong here; `improve gui` owns taste ([`../../ref/gui/critique.md`](../../ref/gui/critique.md)).
 
-**Gate.** Run `dsys status --json` in the repo root and read two fields:
-
-- `mode: "owned"` and `designMd: true` → the lens runs and reports findings.
-- anything else (`mode: "non-owned"`, or `designMd: false`) → the lens reports nothing. In a repo Pierce does not own, read whatever design sources exist (`DESIGN.md`, `DESIGN.local.yaml`, the stylesheet, the component library) so the diff is understood in its own idiom, and never report non-conformance to them. Return `not applicable — <mode and designMd values>` and stop.
-
-The lens also skips a diff that touches no UI surface (no component, template, stylesheet or design-token file).
+When this lens runs is its frontmatter, which [`../tool/lens-gate`](../tool/lens-gate) evaluates.
 
 ## What to check
 
@@ -21,6 +25,6 @@ The lens also skips a diff that touches no UI surface (no component, template, s
 - **Never report a rule that the diff's own commit amends.** A diff that edits `DESIGN.md` changes the contract; check the rest of the diff against the edited file.
 - **Skip what the repo's lint already reports on this diff** — the dsys ESLint fragment, wired and failing where the author will see it. `dsys status --json` says `lintWired`.
 - **Overlap with `ref/gui` lenses.** Motion defects and visual slop stay with the `gui` label lens ([`../../ref/gui/review.md`](../../ref/gui/review.md)). This lens takes only what a written `DESIGN.md` rule decides.
-- **Not blocking by itself.** A design finding is blocking only when the rule it cites guards behaviour (a focus ring, a contrast floor, a hit-area minimum); a palette or spacing rule is `low`.
+- **Rate by what the broken rule guards.** A rule that guards behaviour (a focus ring, a contrast floor, a hit-area minimum) is `P1` or worse; a palette or spacing rule is `P3`.
 
 Axis tag: `design` (flat — name the rule in the headline prose, e.g. "the button hard-codes `#1a73e8` where `DESIGN.md` defines the `primary` token").

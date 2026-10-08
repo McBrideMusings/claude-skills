@@ -1,8 +1,18 @@
+---
+run: gated
+when:
+  - jev:
+      noul: "The diff touches security-relevant surface: authentication or authorization, session, token or credential handling, cryptography, parsing of user- or network-supplied input, SQL or other query construction, shell or subprocess execution, deserialization, file-path or filesystem access, outbound HTTP requests, template or HTML rendering, or a dependency or lockfile change."
+      min_p: 0.3
+      min_confidence: 0.5
+      state: diff
+---
+
 # Security lens
 
 Does the diff introduce a security vulnerability an attacker could actually exploit?
 
-**Gated on relevance — skip when the diff has no security surface.** Run this lens **only** when the change touches security-relevant surface: authentication/authorization, session/token/credential handling, cryptography, parsing of user- or network-supplied input, SQL or other query construction, shell/subprocess execution, deserialization, file-path or filesystem access, outbound HTTP / SSRF-reachable requests, template or HTML rendering, or a dependency/lockfile change. If the diff touches none of these, output `Skipped — no security-relevant surface in this diff.` and exit. **In repo mode this gate is off — the lens always runs across the whole tree.**
+When this lens runs is its frontmatter, which [`../tool/lens-gate`](../tool/lens-gate) evaluates.
 
 **What to look for** — concrete, reachable weaknesses this diff introduces or worsens:
 

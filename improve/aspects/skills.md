@@ -45,4 +45,4 @@ Three things worth running before writing findings, because each answers an axis
 - Sibling `.md` files versus the ones `SKILL.md` names — axis 1. A file reached only through another file is the finding, not just a file reached through none.
 - `git log --follow -p -- <skill>/SKILL.md` — axes 8 and 9. Carry-over across rewrites is the strongest evidence available: survived every rewrite means load-bearing; removed once and added back means the removal was wrong.
 
-Card fields per [../HTML-REPORT.md](../HTML-REPORT.md). Each finding: the **gap**, **evidence** (the quoted line), **fix** (the concrete rewrite), **strength** (`Strong` / `Worth exploring` / `Speculative`).
+Card fields per [../HTML-REPORT.md](../HTML-REPORT.md). Each finding: the **gap**, **evidence** (the quoted line), **fix** (the concrete rewrite), **impact** (`P0`–`P3`, the scale in [`../../review/REVIEW-CORE.md`](../../review/REVIEW-CORE.md) §Axis tags).

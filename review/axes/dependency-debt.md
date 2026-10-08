@@ -1,7 +1,10 @@
-# Dependency-debt lens
+---
+run: gated
+when:
+  - repo-mode: true
+---
 
-**Repo mode only.** If invoked outside repo mode (a diff review, a fixed-point review, or uncommitted
-changes), output `Skipped — dependency-debt is repo-mode only.` and exit.
+# Dependency-debt lens
 
 **This lens scores tool output — it does not infer from reading.** Phase 01r captures each language
 tool's raw output once per slice and hands the same capture to both the matched label lens

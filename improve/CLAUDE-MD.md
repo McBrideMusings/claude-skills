@@ -219,6 +219,6 @@ If most of the file should go, say so plainly. The scaffolding the user is proud
 
 For `improve`'s survey fan-out: no writes, no commits, no questions. Run phases 1b (project file only), 2, 3, 5, and 6 read-only and return findings. Never audit a `CLAUDE.local.md` — it's append-only per "The local file has no git safety net" above, and a survey pass has no standing to propose cuts to it.
 
-Each finding: the **gap** (what's flat, duplicated, guard-shaped, stale, or vague), **evidence** (the actual line quoted — never a generic complaint), **fix** (the concrete rewrite: narrowed condition, the hook to write, the path to substitute), **strength** (`Strong` / `Worth exploring` / `Speculative`). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
+Each finding: the **gap** (what's flat, duplicated, guard-shaped, stale, or vague), **evidence** (the actual line quoted — never a generic complaint), **fix** (the concrete rewrite: narrowed condition, the hook to write, the path to substitute), **impact** (`P0`–`P3`, the scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
 
 Read the file in full before judging it. A finding that doesn't quote the repo's own `CLAUDE.md` isn't a finding.

@@ -56,4 +56,4 @@ cell), or `park` to apply them and stop.
 
 When another skill (e.g. `improve`'s survey) runs this non-interactively: run the passes exactly as
 above with no file writes, no commits, no questions, and skip the escape hatch. Structure each
-finding as (finding, evidence/reason, strength, proposed fix, surface-fix vs deeper-layer tag).
+finding as (finding, evidence/reason, impact `P0`–`P3`, proposed fix, surface-fix vs deeper-layer tag).

@@ -1,3 +1,7 @@
+---
+run: always
+---
+
 # Code comments and contracts lens
 
 Two questions, both about what a caller is promised.

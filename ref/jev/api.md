@@ -39,7 +39,7 @@ Content-Type: application/json
  "usage": {"input_tokens": 331, "output_tokens": 48}}
 ```
 
-A live call confirmed the `noul`, `choice` and `usage` shapes. `noul` carries no `confidence` field.
+A live call confirmed the `noul`, `choice` and `usage` shapes. `noul` carries no `confidence` field, so a yes/no judgment that needs a confidence floor is asked as a two-option `choice` (`yes`/`no`), which returns both; `review/tool/lens-gate` does this.
 
 Read a choice with `jq -r '.answers.<key>.choice'`. `confidence` is separate from probability: a spread-out distribution gives low confidence even when one option leads, so gate an action on `confidence`, not only on the top probability.
 

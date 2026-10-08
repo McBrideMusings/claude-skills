@@ -1,3 +1,7 @@
+---
+run: always
+---
+
 # Standards / CLAUDE.md compliance lens
 
 Review the changes against the `CLAUDE.md` files located in Phase 02. Only flag violations of **specific, stated rules**. **Skip what the repo's own tooling actually reports on this diff** — configured, running, and failing where the author will see it; anything not wired up, or green while the problem is real, is ours.

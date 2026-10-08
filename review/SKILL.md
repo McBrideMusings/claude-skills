@@ -16,7 +16,7 @@ Review code changes for bugs, **security vulnerabilities**, quality issues, CLAU
 | --- | --- |
 | [RULES.md](RULES.md) | RULE 0 (no selector), RULE 1 (effort never decides), RULE 2 (a gate does its job). **Load first.** |
 | [REVIEW-CORE.md](REVIEW-CORE.md) | the per-axis dispatch, scoring, verification, report format |
-| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt` (repo mode only), `design` (owned repo with a `DESIGN.md` only), `docs-drift` (repo mode only), `history`, `negative-space`, `security`, `slop`, `spec`, `standards`, `test-debt` (repo mode only). REVIEW-CORE dispatches to them; a lens agent gets exactly one. |
+| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt`, `design`, `docs-drift`, `history`, `negative-space`, `security`, `slop`, `spec`, `standards`, `test-debt`. Each declares when it runs in frontmatter; REVIEW-CORE Phase 03d runs `tool/lens-gate` to decide, then dispatches; a lens agent gets exactly one. |
 | [POSTING.md](POSTING.md) | end-of-pass dispositions, the comment budget, the verdict |
 | [FALSE-POSITIVES.md](FALSE-POSITIVES.md) | what not to flag |
 | [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the workflow transport's mechanics, and when the session transport runs instead |
@@ -30,7 +30,7 @@ Load a file only once you've routed to it — that keeps context small.
 - **`review dual`** — Claude reviews, *and* an independent cross-vendor target (`dispatch codex` or the resolved vendor) reviews the same diff; the two are reconciled into one source-tagged report. See **Dual flavor** below.
 - **Transport** — every route runs Phases 04–06c (lens fan-out, best-practice verification, scoring, the reproduction gate, the ≥75 filter, fix authoring) as a workflow script, so only surviving findings enter this context. Routing, the report, and every question stay in the session. **`session`** forces those phases back into the session (`review session`, `review repo session`). A pass whose own tool list has no `Workflow` — typically inside a workflow agent such as wrap-up's quality stage, or inside a subagent — runs the session transport and says so in one line. Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). RULE 0 holds under both transports.
 - **`noverify`** — turns off Phase 05b, which feeds each behavior-claiming finding's stated input to the running code in a throwaway git worktree and keeps only what reproduces. The gate is **on by default**, costs ≤8 minutes, and never touches the working tree. Use `noverify` when the toolchain is unavailable, and expect a noisier report. There is no permanent off switch, because "the model read it and was confident" is the thing it exists to distrust.
-- **`repo`** — reviews the **whole codebase on the current branch** instead of a diff. Every axis runs, gating off; context-heavy; always confirms before starting. Combinable with dual. Under the workflow transport its slices run as a `pipeline()`. Mechanics: [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r, [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
+- **`repo`** — reviews the **whole codebase on the current branch** instead of a diff. `lens-gate --repo-mode` decides which lenses run; context-heavy; always confirms before starting. Combinable with dual. Under the workflow transport its slices run as a `pipeline()`. Mechanics: [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r, [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
 
 ## Phase 00 — Route by context
 
@@ -72,7 +72,7 @@ No PR at all → the branch name decides: mine if it starts with `pierce` (case-
 |---|---|---|
 | **uncommitted changes** | review → document → offer fix | review → document → offer fix |
 | **my branch / my PR** | review → document → offer fix | review → document → offer fix (no post — GitHub blocks self-verdicts) |
-| **teammate's PR** | n/a | review → document → offer per finding: fix small low/med issues on the branch, post the rest |
+| **teammate's PR** | n/a | review → document → offer per finding: fix small behavior-preserving issues on the branch, post the rest |
 | **not mine, no PR** | review → document, no offer | review → document, no offer |
 
 ## Phase 00.1 — Hand a blocked branch to `mergeable`, then continue
@@ -191,7 +191,8 @@ Report two dimensions separately:
   CODE: correctness, types, nil-safety, concurrency, lifecycle, edge cases, error handling, dead code.
   ARCHITECTURE: fit, abstraction level, pattern consistency, structural scalability, ownership clarity —
     always design calls, never style nits.
-Output prioritized findings (Critical / Important / Minor), terse, no praise.
+Rate each finding P0–P3 by the scale below, terse, no praise.
+<paste REVIEW-CORE.md §Axis tags: the P-level table and the two paragraphs beneath it>
 PROMPT
 "$D" exec "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
 ```
