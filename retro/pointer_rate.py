@@ -41,6 +41,15 @@ Measurement traps this script already avoids -- do not hand-roll around them:
      any read. They are useless as a control; do not add one.
   4. Sessions with fewer than 3 assistant turns are probes and aborts. Counting
      them drags every rate toward zero.
+  5. Subagent transcripts (`<session>/subagents/*.jsonl`) are not sessions: no
+     user prompt reaches them and they never steer by CLAUDE.md's knowledge map.
+     Every mode skips them. They outnumber sessions, so counting them would put
+     each rate's denominator mostly outside what the rate is about.
+  6. A skill loads three ways: a Skill call (`"skill":"name"`, or `"plugin:name"`
+     for a scoped one), a typed `/name`, and a Read of its SKILL.md -- `implement`
+     reads a project's verify-project as a file. `--fires` counts all three with
+     load-pattern.ere, the file hooks/ref-picker.sh reads to decide a skill is
+     already loaded.
 """
 import argparse
 import re
@@ -50,9 +59,13 @@ from pathlib import Path
 
 ROOT = Path.home() / ".claude" / "projects"
 SKILLS = Path.home() / ".claude" / "skills"
+LOAD_PATTERN = Path(__file__).resolve().parent / "load-pattern.ere"
 MIN_TURNS = 3
 MIN_FIRES = 20          # below this a warm rate is noise
 MIN_BYTES = 2000
+# Skills every project carries in its own .claude/skills/ (CLAUDE.md requires them), so
+# model_invoked_skills, which reads only the global catalog, never sees them.
+PROJECT_SKILLS = ("verify-project",)
 
 # Cold targets: what CLAUDE.md's Knowledge map points at.
 COLD = {
@@ -74,6 +87,8 @@ def transcripts(since=None):
         import datetime
         cutoff = datetime.datetime.strptime(since, "%Y-%m-%d").timestamp()
     for jf in ROOT.rglob("*.jsonl"):
+        if "subagents" in jf.parts:
+            continue
         try:
             if cutoff and jf.stat().st_mtime < cutoff:
                 continue
@@ -99,7 +114,16 @@ def model_invoked_skills():
         if re.search(r'^disable-model-invocation:\s*true', head, re.M):
             continue
         out.append(d.name)
-    return out
+    return out + [n for n in PROJECT_SKILLS if n not in out]
+
+
+def load_patterns(name):
+    """The loads of `name` in raw transcript JSONL -- see trap 6. The file holds one POSIX
+    ERE per line, which Python's re reads the same way, with NAME standing for the skill.
+    Each line is compiled alone: every one starts with a literal re can scan for, where one
+    alternation of all three is a byte-by-byte search that takes minutes over the corpus."""
+    return [re.compile(line.replace("NAME", re.escape(name)))
+            for line in LOAD_PATTERN.read_text().splitlines() if line]
 
 
 def report_fires(since):
@@ -111,13 +135,15 @@ def report_fires(since):
     is not working. A narrow-by-design skill that suddenly climbs is misfiring.
     """
     names = model_invoked_skills()
-    pats = {n: re.compile(r'"skill"\s*:\s*"%s"' % re.escape(n)) for n in names}
+    pats = {n: load_patterns(n) for n in names}
     fired = Counter()
     sessions = 0
     for _, raw in transcripts(since):
         sessions += 1
         for n, p in pats.items():
-            if p.search(raw):
+            # Every load pattern contains the bare name; the substring test skips the regex
+            # on the transcripts that cannot match.
+            if n in raw and any(x.search(raw) for x in p):
                 fired[n] += 1
     if not sessions:
         print("no transcripts in window", file=sys.stderr)

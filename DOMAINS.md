@@ -80,7 +80,7 @@ extension, or for a few files its name (`SKILL.md` → `agent-docs`, `Dockerfile
 candidate labels that count only where the map carries them for that path (`.ts` → `web` under a
 `web` rule). An extension with no entry injects nothing. `hooks/ref-picker.sh` asks a model, on
 every prompt, to choose one label from `ref/SKILL.md`'s table or none, and injects the chosen
-label's whole `context.md`; both hooks claim the label in one shared place, so a session gets
+label's whole `context.md` (and, in the same call, a load line for any skill whose yes/no trigger answers confidently yes); both hooks claim the label in one shared place, so a session gets
 each cell once. Otherwise the body is read on demand, by whichever engine has resolved this
 label into its scope.
 

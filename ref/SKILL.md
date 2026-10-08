@@ -16,7 +16,7 @@ file in a label's domain, `hooks/ref-edit-inject.sh` injects that label's whole 
 The extension or filename picks the label: `.go` is `go`, `SKILL.md` is `agent-docs`, any file under `docs/adr/` or `docs/CONTEXT.md` is `docs`, and
 `.ts` is `web` only where the repo's map carries `web` for that path. On every prompt except
 one made only of control words (`go`, `park` …), `hooks/ref-picker.sh` asks a model to choose one label from the table below, or none, and
-injects the chosen label's whole `context.md`; `REF_PICKER` selects the model (`jev`, the
+injects the chosen label's whole `context.md`. In the same call it asks one yes/no question per skill in its `TRIGGERS` table and injects a load line for each confident yes (see `retro/SKILL-SHAPE.md`); `REF_PICKER` selects the model (`jev`, the
 default, `local`, or `off`). The two body-injecting hooks share one claim per label, so a
 session gets each cell at most once, whichever hook fires first. Any other domain's body is
 yours to read when the work enters it.
