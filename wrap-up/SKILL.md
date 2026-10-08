@@ -177,7 +177,7 @@ Apply mechanical doc updates (file-map.md, CLAUDE.md doc-table additions) automa
 
 ## Phase 4: Quality checks
 
-Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md](../review/REVIEW-CORE.md)) over the session diff — plus code-simplifier (in parallel where possible). This is the same eight-axis engine `review` runs on a teammate's PR, turned on our own work: architecture-fit is one of its axes, so it no longer needs a separate check.
+Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md](../review/REVIEW-CORE.md)) over the session diff — plus code-simplifier (in parallel where possible). This is the same lens engine `review` runs on a teammate's PR, turned on our own work: architecture-fit is one of its axes, so it no longer needs a separate check.
 
 **The reviewer does not get this session's conversation.** An agent reviewing code it just wrote holds every justification it built while writing it, and grades accordingly — that is the weakest possible reviewer. Dispatch the review to a sub-agent that receives the diff and nothing else, so the standards get applied to what actually landed rather than to what we meant.
 
