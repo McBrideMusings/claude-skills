@@ -16,5 +16,5 @@ ahead on each refresh, so the card keeps moving during a long build.
 
 - **Push** at each step change: set `stage`, `note` and `tests`, then `"$D" push implement:<id>`.
   The stages follow the pass's steps; Commit has none, and `gate` is set when the gate is shown.
-- **End** with `"$D" end implement:<id>` after `wrap-up` lands the pass, or at `park`. The `--every` refresh stops when this
+- **End** with `"$D" end implement:<id>` after `wrap-up` lands the pass. The `--every` refresh stops when this
   session ends; the artifact stays until `end`.
