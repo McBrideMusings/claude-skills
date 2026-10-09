@@ -3,7 +3,7 @@ run: gated
 when:
   - paths: ["**/*.css", "**/*.scss", "**/*.sass", "**/*.less", "**/*.tsx", "**/*.jsx",
             "**/*.vue", "**/*.svelte", "**/*.astro", "**/*.html", "**/DESIGN.md",
-            "**/DESIGN.local.yaml", "**/*tokens*"]
+            "**/DESIGN.local.yaml", "**/*tokens*", "**/*tokens*/**"]
   - dsys: {mode: owned, designMd: true}
 ---
 

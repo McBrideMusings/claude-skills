@@ -227,6 +227,21 @@ EOF
 expect offered-screen "$WORK/offered.json" critique offer
 ( cd "$R" && git checkout -q docs && "$T/review/tool/lens-gate" --json --base main ) > "$WORK/offered2.json" 2>/dev/null
 expect offered-docs "$WORK/offered2.json" critique skip
+
+echo "--- a path glob's * stays inside one directory; **/ also matches the root ---"
+printf -- '---\nrun: gated\nwhen:\n  - paths: ["src/*.css"]\n---\n' > "$T/review/axes/flatcss.md"
+printf -- '---\nrun: gated\nwhen:\n  - paths: ["**/README.md"]\n---\n' > "$T/review/axes/readme.md"
+printf -- '---\nrun: gated\nwhen:\n  - paths: ["src/**/*.css"]\n---\n' > "$T/review/axes/deepcss.md"
+for fx in screen colour docs; do
+  ( cd "$R" && git checkout -q "$fx" && "$T/review/tool/lens-gate" --json --base main ) > "$WORK/glob-$fx.json" 2>/dev/null
+done
+expect "src/*.css vs src/screens/lobby.css" "$WORK/glob-screen.json" flatcss skip
+expect "src/*.css vs src/theme.css" "$WORK/glob-colour.json" flatcss run
+expect "src/**/*.css vs src/screens/lobby.css" "$WORK/glob-screen.json" deepcss run
+expect "src/**/*.css vs src/theme.css" "$WORK/glob-colour.json" deepcss run
+expect "**/README.md vs README.md" "$WORK/glob-docs.json" readme run
+expect "**/README.md vs no README" "$WORK/glob-screen.json" readme skip
+rm -f "$T/review/axes/flatcss.md" "$T/review/axes/readme.md" "$T/review/axes/deepcss.md"
 printf '# no frontmatter\n' > "$T/review/axes/bare.md"
 ( cd "$R" && "$T/review/tool/lens-gate" --json --base main ) > /dev/null 2> "$WORK/bare.err"
 rc=$?
