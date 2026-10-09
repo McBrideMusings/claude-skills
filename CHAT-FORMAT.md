@@ -139,7 +139,7 @@ Option sets (reply grammar is number-first — `1A 2C`, not `A1 C2`):
 
 The gate (below):
 
-> Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
+> Type `go` to run wrap-up when you're ready, or reply with anything you find while testing.
 
 **Worked example:**
 
@@ -162,9 +162,11 @@ The gate (below):
 - **Run:** the exact commands, the ones the agent ran, one per line — written for the directory this session stands in: `admin -w <worktree-or-bead-id> <task>` when the project has `admin.toml` and this session sits outside the worktree named above, plain `admin <task>` when it sits inside it.
 - **Look for:** what a pass looks like — the output the agent saw.
 
-Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the worked example's closing line. `go` always means "run wrap-up now" — landing the branch, whatever that takes on this repo (merge, PR, `land`). `park` leaves the worktree and branch standing and ends the turn.
+Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the worked example's closing line. `go` always means "run wrap-up now" — landing the branch, whatever that takes on this repo (merge, PR, `land`). The gate offers no second word: an owner who wants to hold the branch simply doesn't answer.
 
-**A run of several items closes with one report naming what already landed, plus one full gate per item still unlanded** — never one gate speaking for a whole run, since `go`/`park` name a single branch and worktree each. An item that landed while the run was running needs no gate at all; only what a run halted on still owes one.
+**`go` at the gate settles testing.** It means the owner has tested the change or chose not to — never ask whether it was tested, never hold the landing for a manual check, and never note in wrap-up that testing went unreported.
+
+**A run of several items closes with one report naming what already landed, plus one full gate per item still unlanded** — never one gate speaking for a whole run, since `go` names a single branch and worktree. An item that landed while the run was running needs no gate at all; only what a run halted on still owes one.
 
 **Worked example:**
 
@@ -179,4 +181,4 @@ Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the
 > **Run:** `pytest tests/test_worker.py -k retry`
 > **Look for:** all 4 retry tests passing, including the new `test_connection_reset_retries` case
 >
-> Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
+> Type `go` to run wrap-up when you're ready, or reply with anything you find while testing.

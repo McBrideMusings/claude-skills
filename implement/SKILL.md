@@ -37,7 +37,7 @@ leaves open is made, recorded on the bead and landed, and everything only a pers
 finish goes into one report at the end. Every wait point and what replaces it:
 [`AUTO.md`](AUTO.md).
 
-**`implement <id>` on an item whose notes carry `auto parked: <branch>` or `parked at gate:
+**`implement <id>` on an item whose notes carry `auto parked: <branch>` or `at gate:
 <branch>`** resumes that branch: switch to it, print the decision or verification note, re-run
 step 4 against it, and show the gate. A reply there naming a different answer to the decision is
 owner feedback (§The gate): rework the branch to that answer and update the bead's
@@ -217,13 +217,13 @@ belong to an attended pass.
 
 Close a single pass's gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
 
-> Test it and reply with what you find, or type `go` to run wrap-up, or `park` to leave it unlanded.
+> Type `go` to run wrap-up when you're ready, or reply with anything you find while testing.
 
 `go` means run `wrap-up` now, in the checkout this pass worked in — bare `wrap-up` when
-standing in it, `wrap-up <worktree>` when not. `park` leaves the branch standing, records
-`bd update <id> --append-notes "parked at gate: <worktree-or-branch>, verified at <sha>"`, runs
-`~/.claude/skills/dashboard/dashboard end implement:<id>`, and ends
-the turn — a later session finds the note and resumes at the gate.
+standing in it, `wrap-up <worktree>` when not. `go` also means the owner has tested the change
+or chose not to; wrap-up never asks. Before printing the gate, record
+`bd update <id> --append-notes "at gate: <worktree-or-branch>, verified at <sha>"`, so a later
+session finds the note and resumes at the gate if the owner never answers.
 
 **Owner feedback at a gate starts a new round.** If the reply names a located cause with a
 small edit, fix it directly; otherwise treat the reply as a new brief and repeat the steps
