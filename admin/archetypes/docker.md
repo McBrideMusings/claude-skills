@@ -254,8 +254,36 @@ interval = 2      # seconds between polls, default 2 (floored at 1)
 
 The poll runs **on the deploy target**, so a `127.0.0.1:PORT` url resolves against
 the published port on the host rather than the machine running `admin`. Uses `curl`.
-On timeout, deploy exits non-zero and points at `docker logs <container>`. Omit the
-table to skip the check entirely. `--dry-run` prints the poll it would run.
+On timeout, deploy exits non-zero and points at `docker logs <container>` and the
+restore script. Omit the table to skip the check entirely. `--dry-run` prints the
+poll it would run.
+
+**The prune of dangling images runs only after this passes.** Before that, the
+deploy pins the outgoing image to `<repo>:previous` — `docker load` or an on-host
+build has already moved the image's own tag to the new build, so the old one is
+dangling and a prune would delete the only rollback target. The tag moves only when
+the outgoing container is healthy right now (one probe of this url, or with no
+`[docker_run.health]`, running and not restarting), so two failed deploys in a row
+still roll back to the last good build. `/tmp/<container>-restore.sh` on the target
+removes the current container and starts that tag.
+
+## `[docker_run.preflight]` — refuse a deploy the new image can't boot
+
+Runs a command from the **new** image on the target, after the image arrives and
+before the running container is touched. A non-zero exit refuses the deploy with
+the old container still serving.
+
+```toml
+[docker_run.preflight]
+entrypoint = "etv-station"                     # required; replaces the image's ENTRYPOINT
+args       = ["--config", "/config/station.yaml", "--check-config"]
+```
+
+It runs with the container's own `[docker_run]` env, devices, user and runtime, every
+bind mount forced `:ro`, and no `-p`/`--restart`/`--hostname`/`--mac-address`/`-i`/`-t`
+(those would collide with the container still running beside it). So the command must
+read the config and write only inside the container, e.g. under `/tmp`. A table with
+no `entrypoint` is an error, not a skipped check. `--dry-run` prints it masked.
 
 ## `logs` — follow by default, `--no-follow` to get an answer back
 
