@@ -11,10 +11,10 @@ Divergence is not a licence to ship a sloppy variant. A weak variant doesn't wid
 it loses on execution and teaches nothing about the direction it was standing for. Before showing the
 set, each variant passes:
 
-- **`design.md` Lens 1 (frequency)** — how often is this piece seen? That decides whether it animates
+- **`design/motion.md` Lens 1 (frequency)** — how often is this piece seen? That decides whether it animates
   at all. A variant whose whole identity is motion on a 100+/day surface is not a direction, it's a
   mistake with a name.
-- **`design.md` Lens 2 (purpose)** — every animation in every variant maps to feedback, spatial
+- **`design/motion.md` Lens 2 (purpose)** — every animation in every variant maps to feedback, spatial
   consistency, state indication, explanation, or preventing a jarring change. "It looks cool" isn't on
   the list, including inside the boldest variant.
 - **Motion mechanics** — `ease-out` on entrances (never `ease-in`), UI motion under 300 ms,

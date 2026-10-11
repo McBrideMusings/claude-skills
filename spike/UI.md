@@ -93,7 +93,7 @@ Before designing anything, map the ground the variants stand on:
   may go.
 - **Context** — what the piece renders against: background, neighbours, sizes.
 - **Frequency** — how often a user hits this. It decides how much motion is allowed at all
-  (`ref/gui/design.md` Lens 1).
+  (`ref/gui/design/motion.md` Lens 1).
 
 No project at all (empty directory, pure exploration)? Skip to Phase 03 with a restrained default look:
 neutral greys, one accent, system font stack.

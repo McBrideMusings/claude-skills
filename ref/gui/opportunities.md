@@ -28,7 +28,7 @@ Record each answer; they go in the report.
 
 ### 1. Frequency — how often is this seen?
 
-Straight from `design.md` Lens 1, applied as a filter:
+Straight from `design/motion.md` Lens 1, applied as a filter:
 
 | Frequency | Verdict |
 | --- | --- |
@@ -41,22 +41,15 @@ Keyboard-initiated actions are a disqualifier, not a judgement call.
 
 ### 2. Purpose — why does it animate?
 
-Must be one of `design.md` Lens 2's five, named explicitly: feedback, spatial consistency, state
+Must be one of `design/motion.md` Lens 2's five, named explicitly: feedback, spatial consistency, state
 indication, preventing a jarring change, explanation. Plus **delight** — allowed *only* at the
 rare/first-run tier. "It looks cool" is not on the list; if the purpose can't be named in one of those
 words, reject.
 
 ### 3. Speed — does it fit the budget?
 
-| Element | Duration |
-| --- | --- |
-| Press feedback | 100–160 ms |
-| Tooltips, small popovers | 125–200 ms |
-| Dropdowns, selects | 150–250 ms |
-| Modals, drawers | 200–500 ms |
-| Marketing / explanatory | Can run longer |
-
-If the moment only works as a slow showy animation, it fails.
+The duration budget per element is the table in `ref/web/review.md`; marketing
+and explanatory motion can run longer. If the moment only works as a slow showy animation, it fails.
 
 ### 4. Function — does motion help or hinder here?
 
@@ -122,8 +115,7 @@ entering lists, empty-state and success components, `transition: all`, `scale(0)
 | 1 | `Toast.tsx:41` | Appears instantly | Preventing a jarring change | Occasional | `@starting-style` entry `opacity: 0; translateY(100%)` → settled, 400 ms ease, exit the same edge |
 
 Every "suggested motion" cell carries **exact values** — curve, duration, properties — taken from
-`ref/web/review.md`'s tokens (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--ease-in-out:
-cubic-bezier(0.77, 0, 0.175, 1)`, `--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1)`) or from the
+`ref/web/review.md`'s easing tokens (`--ease-out`, `--ease-in-out`, `--ease-drawer`) or from the
 project's own tokens, never approximated. `transform` and `opacity` only; include reduced-motion
 handling (gentler, not zero) and `@media (hover: hover) and (pointer: fine)` gating on anything
 hover-triggered.

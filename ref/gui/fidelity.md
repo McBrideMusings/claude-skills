@@ -38,7 +38,7 @@ below*; `design.md` judges *craft quality*. Run both in a critique.)
   that doesn't do all three.
 - **Prominence reflects importance.** What the flow needs the user to notice is what stands out; nothing
   prominent that shouldn't be. (Decide what's primary here; *how* to signal it — size/weight/space — is
-  the layout lens in `design.md`.)
+  the layout lens in `design/layout.md`.)
 - **Accessibility is decided, not defaulted.**
 - **Emotional register matches the emotional and social jobs** from user needs — not the product's
   benefit framed as the user's.

@@ -21,8 +21,7 @@ debt (the system is hard to evolve).
 - What states an object can be in, and which transitions matter
 - The product's vocabulary — one name per concept, one concept per name
 
-If none of these is genuinely open, you may not need this layer right now. Say so rather than working it
-for the sake of it.
+If none of these is open, say so and skip the layer.
 
 ## Disciplines — what keeps the model honest
 

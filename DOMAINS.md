@@ -135,12 +135,13 @@ numbers questions, the throwaway surface per engine, isolate-one-mechanic discip
 majidmanzarpour/threejs-game-skills. `build-arc.md` carries the build arc that conducts
 end-to-end game builds over this store and adds the `game` label on scaffold.
 
-`ref/gui/` — `design.md` (planning-time critique lenses) +
+`ref/gui/` — `design.md` (planning-time critique lenses: the register and the one rule, the rest
+as pages in `design/`, grouping and the Gestalt principles among them) +
 `review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
 accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
 sweep, and the required rejected-candidates section, read by `critique.md`) + `critique.md` (the
 design-quality passes run against a screenshot, which is what `improve`'s `gui` aspect loads) +
-`slop.md` (objective AI-slop banned-patterns catalog, read by `critique.md` and the
+`slop.md` (objective AI-slop banned-patterns catalog, with four more pages in `slop/`, read by `critique.md` and the
 `review`/`verify` engines; harvested from
 Leonxlnx/taste-skill) + `direction.md` (choosing the visual world: the external-dice mechanism, the
 challenger deal, the comp discipline, and the single path to image generation via `generate`) +

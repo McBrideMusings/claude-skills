@@ -16,7 +16,8 @@ ASCII here (a greybox `wireframe` when proportion matters), then an image comp, 
 
 ## What to produce
 
-Every sketch produces **both**:
+Every sketch produces the ASCII below. The second output, a blank Monodraw canvas on disk, is
+opt-in and lives in [`sketch/canvas.md`](sketch/canvas.md).
 
 ### Output 01 — ASCII Sketch in Chat
 
@@ -55,121 +56,15 @@ Default to the smallest sketch that lets the user say yes/no. Six labelled frame
 
 **Challenge the default layout before rendering it.** The first arrangement that comes to mind is the generic one for the component — header + sidebar + card grid, a modal with two stacked buttons, a settings list — and left alone you will sketch it every time. When the layout you are about to draw is that obvious arrangement, either say in one line what a real alternative arrangement would lose (then sketch the default with that justification stated), or sketch the alternative as `Option B` beside it. A default that survives the challenge is fine; a default that was never challenged is the failure. (This is the in-model tier of **default-challenge** — `improve/SKILL-GLOSSARY.md`.)
 
-### Output 02 — Sibling .monojson Stub on Disk (opt-in)
-
-**Do not emit the stub unless the user asks for a canvas.** When the ASCII sketch answers the question, the file is pure confusion — and it has already misfired: a user opened it expecting the sketch, found a blank document, and reasonably concluded the export was broken. It cannot ever contain the sketch. Monodraw's CLI is render-only with no import flag, so there is no path from ASCII back into a Monodraw file.
-
-Emit it when the user asks to redraw, asks for a canvas, or pushes back on the layout in a way that means they want to move things themselves.
-
-Write an empty Monodraw canvas to `/private/tmp/claude/<repo-slug>/sketches/<YYYY-MM-DD>-<HHMM>-<slug>.monojson` and print the path in chat so the user can click it in Ghostty to open Monodraw.
-
-**Slug rules:**
-- kebab-case
-- max 40 characters
-- describes the design topic, not the file purpose (e.g. `conflict-modal-action-column`, not `sketch-1`)
-
-**Example path:** `/private/tmp/claude/<repo-slug>/sketches/2026-05-05-1430-conflict-modal.monojson`
-
-`/private/tmp/claude/<repo-slug>` is the directory `~/.claude/tools/repo-slug --path` prints.
-
-**How to create the stub:**
-
-```bash
-mkdir -p /private/tmp/claude/<repo-slug>/sketches
-cp ~/.claude/skills/ref/gui/seed.monojson \
-   /private/tmp/claude/<repo-slug>/sketches/$(date +%Y-%m-%d-%H%M)-<slug>.monojson
-```
-
-Use the actual slug, not the placeholder. The seed is a valid empty canvas; the user draws into it.
-
-**How to communicate the path to the user:**
-
-After writing the stub, print one line in chat with the full absolute path so it's clickable in Ghostty. The path MUST be the last token on its line with **no trailing punctuation** (`.`, `,`, `)`, etc.) — Ghostty grabs the contiguous run under the cursor and a trailing character breaks the open:
-
-```
-Blank canvas to redraw in: /private/tmp/claude/<repo-slug>/sketches/2026-05-05-1430-conflict-modal.monojson
-```
-
-**Say it is blank, on the line that hands it over.** "Stub:" tells the user nothing about what is inside, so they open it expecting the sketch. Naming it a blank canvas makes the emptiness the stated purpose rather than a surprise.
-
-In a follow-up sentence (not on the same line as the path), tell the user they can ⌘-click that path in Ghostty to open it in Monodraw, draw an alternative, save, and let you know.
-
-## Escalating to a rendered greybox
-
-ASCII is the default because it's instant and disposable. It runs out when the answer depends on
-**proportion** — how wide the sidebar actually is next to the content, how a card grid wraps at a real
-width, how far down the page the third region sits, whether a column of numbers fits. Monospace cells
-can't show any of that honestly, so a yes/no given against ASCII would be answering a different
-question.
-
-When that's where you are, the question has outgrown ASCII. `spike` owns every fidelity above ASCII — `wireframe` (greybox, colour withheld), then the image comp,
-the HTML `mockup` (the project's real CSS, variants × states, screenshotted) and the `prototype` (working variants behind a Tweaks panel). Escalating is a routing step, not a
-different build: read [`spike/SKILL.md`](../../spike/SKILL.md), then build the greybox:
-
-```bash
-"$HOME/.claude/skills/spike/tool/spike" build \
-  --kind wireframe \
-  --title "<what's being laid out>" \
-  --fragment /private/tmp/claude/<repo-slug>/spikes/<slug>.body.html \
-  --out /private/tmp/claude/<repo-slug>/spikes/<slug>.html
-```
-
-Stop at `wireframe`. Going straight to a comp or `prototype` because it looks better is how a
-layout question turns into a style conversation — that jump is a decision the user makes,
-not one that happens because the tool offered it.
-
-Class vocabulary — `.wf-region`, `.wf-label`, `.wf-ph`, `.wf-text`, `.wf-control`, `.wf-note`,
-`.wf-grid` — is in [`spike/CONTRACT.md`](../../spike/CONTRACT.md).
-
-**It stays a sketch.** The `wireframe` kind withholds colour deliberately: no brand palette, no
-imagery, no type personality. The moment a wireframe looks designed, the feedback you get is about the
-style instead of the arrangement, and you've spent a prototype's effort to get a sketch's answer wrong.
-Everything in "stay on layout" above still applies.
-
-**Screenshot it and look at it** before handing it over, then print the path. Same absolute-path rule
-as the stub.
-
-The `.monojson` stub follows the same opt-in rule as above — write it only if the user asks for a canvas, not by default.
-
-## Reading the user's edits
-
-When the user says "I edited it" / "take a look" / "I drew it":
-
-1. Read the file via the `mcp__monodraw__export_diagram` tool (or fall back to `/usr/local/bin/monodraw <path>` via Bash)
-2. Render the result inline in the reply to enable direct reference
-3. Respond to what was actually drawn — what changed, what tradeoffs the user made, whether the layout has issues
-
 ## Inline-in-plan rule
 
 When writing or editing a plan file (under `/private/tmp/claude/<repo-slug>/plans/` or a project's `docs/`) and the conversation included design decisions, embed the ASCII sketch directly in the plan under a `## Design` or `### Layout` heading. Plan files for design work must visually communicate what was decided, not just describe it.
 
 The `.monojson` stub does NOT go into the plan — only the ASCII rendering. Reference the stub path in a "Working files" or "Artifacts" section if relevant.
 
-## Cleanup
+## Past the ASCII
 
-Before writing each new stub, prune the directory:
-
-1. List `/private/tmp/claude/<repo-slug>/sketches/*.monojson`
-2. Delete any file whose `<YYYY-MM-DD>` prefix is more than 30 days before today
-3. If the directory still has more than 50 `.monojson` files, delete oldest until 50 remain (sort by filename, which is chronologically ordered)
-
-A single `find` invocation handles the date-based prune:
-
-```bash
-find /private/tmp/claude/<repo-slug>/sketches -name "*.monojson" -mtime +30 -delete
-```
-
-For the count cap, list and trim:
-
-```bash
-ls -1t /private/tmp/claude/<repo-slug>/sketches/*.monojson 2>/dev/null | tail -n +51 | xargs rm -f
-```
-
-Run both before writing the new stub. Don't announce the cleanup unless something unusual happened.
-
-## Notes
-
-- The .monojson format is a UUID-referenced object graph. Do NOT attempt to author non-trivial .monojson files by hand — only the seed (empty canvas) is hand-authorable. The user is the only writer of meaningful .monojson content; you only read.
-- The Monodraw CLI (`/usr/local/bin/monodraw`) is render-only: `.monojson` → ASCII. It cannot import ASCII back into a `.monojson`. Don't try.
-- If `mcp-monodraw` is not configured in the current project, fall back to invoking the CLI via Bash — the workflow still works, just with one fewer convenience.
-- If the user asks for ASCII without a Monodraw round-trip ("just sketch it"), skip the stub-file step. The ASCII alone is sometimes enough.
+| When | Page |
+| --- | --- |
+| The answer depends on real proportions, so the sketch becomes a rendered greybox | [`sketch/greybox.md`](sketch/greybox.md) |
+| The user asks for a canvas to redraw in, or says they drew in it | [`sketch/canvas.md`](sketch/canvas.md) |

@@ -18,14 +18,14 @@ them *without* the reason is not. This covers design quality, not whether a game
 
 Run every pass **against a screenshot of the running surface, not against the source**.
 
-1. **Lenses** — apply the [`design.md`](design.md) lenses.
-2. **Slop** — run the [`slop.md`](slop.md) catalog.
+1. **Lenses** — apply the lenses [`design.md`](design.md) lists: the register there, the rest in `design/`.
+2. **Slop** — run the [`slop.md`](slop.md) catalog: that page and the four in `slop/`.
 3. **Motion opportunities** — when motion is in scope, run [`opportunities.md`](opportunities.md):
    the four-question gate, the hunt-seam sweep, and its **required** rejected-candidates section.
 4. **Fidelity** — run the [`fidelity.md`](fidelity.md) structural pass: does the surface honour
    the decisions in the layers below — vocabulary, object consistency, breadboard completeness,
    error recovery, accessibility.
-5. **Grouping** — run [`grouping.md`](grouping.md)'s six audit questions as a **required** pass.
+5. **Grouping** — run [`design/grouping.md`](design/grouping.md)'s six audit questions as a **required** pass.
    Every critique states the six answers explicitly; "looks fine" is not an answer to any of them.
    If no screenshot exists, say the grouping pass is unrun rather than claiming it passed.
 6. **States and copy** — on any Operate surface, run [`states.md`](states.md). A happy path at full
