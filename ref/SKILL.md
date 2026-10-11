@@ -28,6 +28,8 @@ text the model chooses by. Keep a new row in the same `` [`label`](label/context
 Likewise each cell's Files table is its page menu: the **When** column is the question the
 model answers, so write it as the work that needs the page ("a dialog, popover or menu"),
 and keep each row in the `` | [`page.md`](page.md) | When | `` shape.
+`python3 ~/.claude/skills/retro/pointer_rate.py --ref` measures the picks and whether sessions
+used them; run it before and after rewriting a Covers or When entry.
 
 Every label's root file is `context.md`: a `> ` headline, a short body, and a **Files** map.
 Everything else in the directory is content, named for what it holds. There is no `SKILL.md`
