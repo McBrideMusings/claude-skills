@@ -93,11 +93,10 @@ Every label may carry a `context.md`, and it has **two tiers**, both enforced by
   injected at session start, and it is injected for every label the repo carries. State the
   one fact whose absence would cause a wrong action.
 - The **body** — everything below it, **120 words**, measured with the headline excluded. A
-  routing table, not a knowledge store: injected whole on the session's first edit of a file
-  in the label's domain (`hooks/ref-edit-inject.sh`) or on the first prompt a model judges
-  to be about the label (`hooks/ref-picker.sh`), otherwise read on demand by whichever
+  routing table, not a knowledge store: injected whole on the first prompt or edit a model
+  judges to be about the label (`hooks/ref-picker.sh`), otherwise read on demand by whichever
   engine resolved this label into its scope, with links to the sibling files that hold the
-  depth.
+  depth. The same hook offers each linked sibling file to the model as a yes/no question.
 
 Only the headline is charged to every session, so injection cost scales with how many labels
 a repo carries, not with how much each cell has to say. A per-cell cap alone bounded nothing

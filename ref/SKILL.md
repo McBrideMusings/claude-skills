@@ -10,19 +10,24 @@ argument-hint: "<label>"
 to for the task at hand. With no label, pick the row below that matches the work; if none
 matches, say so rather than guessing.
 
-Three hooks load cells without anyone calling this skill. At session start, a repo's labels
-inject each cell's headline, which says the cell exists. On the first Edit, Write or MultiEdit of a
-file in a label's domain, `hooks/ref-edit-inject.sh` injects that label's whole `context.md`.
-The extension or filename picks the label: `.go` is `go`, `SKILL.md` is `agent-docs`, any file under `docs/adr/` or `docs/CONTEXT.md` is `docs`, and
-`.ts` is `web` only where the repo's map carries `web` for that path. On every prompt except
-one made only of control words (`go`, `park` …), `hooks/ref-picker.sh` asks a model to choose one label from the table below, or none, and
-injects the chosen label's whole `context.md`. In the same call it asks one yes/no question per skill in its `TRIGGERS` table and injects a load line for each confident yes (see `retro/SKILL-SHAPE.md`); `REF_PICKER` selects the model (`jev`, the
-default, `local`, or `off`). The two body-injecting hooks share one claim per label, so a
-session gets each cell at most once, whichever hook fires first. Any other domain's body is
-yours to read when the work enters it.
+Two hooks load cells without anyone calling this skill. At session start, a repo's labels
+inject each cell's headline, which says the cell exists. Then `hooks/ref-picker.sh` runs on
+every prompt (except one made only of control words: `go`, `park` …) and before every Edit,
+Write or MultiEdit. It asks a model to choose one label from the table below, or none, and
+injects the chosen label's whole `context.md`. A second call asks one yes/no question per
+row of that cell's `## Files` table and injects each page answered yes. Each cell and each
+page arrives at most once per session. On a prompt, the first call also asks one yes/no
+question per skill in its `TRIGGERS` table and injects a load line for each confident yes
+(see `retro/SKILL-SHAPE.md`). On an edit, the model reads the file path, the last prompt and
+the text being written. `REF_PICKER` selects the model (`jev`, the default, `local`, or
+`off`; `local` asks only the label, on prompts only). Any other page is yours to read when
+the work enters it.
 
-The picker reads the table's rows as its menu, so each **Covers** entry is also the text the
-model chooses by. Keep a new row in the same `` [`label`](label/context.md) `` shape.
+The picker reads the table's rows as its label menu, so each **Covers** entry is also the
+text the model chooses by. Keep a new row in the same `` [`label`](label/context.md) `` shape.
+Likewise each cell's Files table is its page menu: the **When** column is the question the
+model answers, so write it as the work that needs the page ("a dialog, popover or menu"),
+and keep each row in the `` | [`page.md`](page.md) | When | `` shape.
 
 Every label's root file is `context.md`: a `> ` headline, a short body, and a **Files** map.
 Everything else in the directory is content, named for what it holds. There is no `SKILL.md`

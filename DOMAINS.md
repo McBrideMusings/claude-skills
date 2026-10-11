@@ -73,16 +73,13 @@ and it is injected for every label the repo carries, so its cost is paid in ever
 such repo. Twelve words, stating the fact whose absence would cause a wrong action.
 
 The **body** is everything between the headline and `## Files`, capped at 120 words. It reaches
-context three ways. `hooks/ref-edit-inject.sh` injects the whole `context.md` the first time a session
-edits a file in the label's domain, once per label per session, with no model deciding. The file's
-extension, or for a few files its name (`SKILL.md` → `agent-docs`, `Dockerfile` → `container`,
-`wrangler.toml` → `cloudflare`), names a definite label (`.go` → `go`, `.swift` → `apple`) and
-candidate labels that count only where the map carries them for that path (`.ts` → `web` under a
-`web` rule). An extension with no entry injects nothing. `hooks/ref-picker.sh` asks a model, on
-every prompt, to choose one label from `ref/SKILL.md`'s table or none, and injects the chosen
-label's whole `context.md` (and, in the same call, a load line for any skill whose yes/no trigger answers confidently yes); both hooks claim the label in one shared place, so a session gets
-each cell once. Otherwise the body is read on demand, by whichever engine has resolved this
-label into its scope.
+context two ways. `hooks/ref-picker.sh` asks a model, on every prompt and before every Edit,
+Write or MultiEdit, to choose one label from `ref/SKILL.md`'s table or none, and injects the
+chosen label's whole `context.md` once per session. It then asks one yes/no question per row of
+the cell's `## Files` table and injects each page answered yes, also once per session. On a
+prompt it also injects a load line for any skill whose yes/no trigger answers confidently yes.
+Otherwise the body is read on demand, by whichever engine has resolved this label into its
+scope.
 
 Why two tiers rather than one 120-word cell: a per-cell cap bounds nothing about the total, and the
 total is what a session actually pays. Tiering makes the cost scale with how many labels a repo carries rather than with
