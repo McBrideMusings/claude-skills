@@ -16,8 +16,11 @@ every prompt (except one made only of control words: `go`, `park` …) and befor
 Write or MultiEdit. It asks a model to choose one label from the table below, or none, and
 injects the chosen label's whole `context.md`. A second call asks one yes/no question per
 row of that cell's `## Files` table and injects each page answered yes. Each cell and each
-page arrives at most once per session. On a prompt, the first call also asks one yes/no
-question per skill in its `TRIGGERS` table and injects a load line for each confident yes
+page arrives at most once per session. One event's output stays within 9,500 bytes, because
+Claude Code cuts longer hook output to a 2KB preview: a cell or page that does not fit is
+left unclaimed and is asked about again on the next prompt or edit, and a page over 7,500
+bytes arrives as a line telling you to read its file. On a prompt, the first call also asks
+one yes/no question per skill in its `TRIGGERS` table and injects a load line for each confident yes
 (see `retro/SKILL-SHAPE.md`). On an edit, the model reads the file path, the last prompt and
 the text being written. `REF_PICKER` selects the model (`jev`, the default, `local`, or
 `off`; `local` asks only the label, on prompts only). Any other page is yours to read when
