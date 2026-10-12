@@ -45,7 +45,7 @@ When the user arrives with an idea rather than a backlog — a greenfield build,
 
 1. **Name the destination.** Run `grill-me` to pin down what this effort finds its way to — a spec, a decision, a change made in place. The destination fixes the scope, so it is settled first.
 2. **Map the frontier.** Grill again, **breadth-first** — fan out across the whole space rather than deep on one thread, surfacing the open decisions and the first steps takeable now. **If no fog surfaces**, the way is already clear: say so and send the user to `/issues spec`. No milestone needed.
-3. **Create the epic.** `bd create "<effort>" -t epic -d "<brief>"` on beads (`bd types` also ships a distinct `milestone` type — that one marks completion of a set and holds no work, so it is not this); a GitHub milestone where there is no beads store. Its title is the effort; its description is the brief:
+3. **Create the epic.** `bd create "<effort>" -t epic -d "<brief>"` on beads (not bd's `milestone` type, which is a release gate over items in several epics, held by `blocks` edges: [`beads.md`](beads.md) §Grouping); a GitHub milestone where there is no beads store. Its title is the effort; its description is the brief:
 
 ```markdown
 ## Destination

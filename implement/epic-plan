@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-"""epic-plan — turn a beads parent into an ordered plan, straight from the tracker.
+"""epic-plan — turn a beads parent or milestone into an ordered plan, straight from the tracker.
 
-    epic-plan [--json] <repo> <parent-id>
+    epic-plan [--json] <repo> <parent-or-milestone-id>
 
 A parent is any item with children, whatever its type — an epic, or a feature broken into
-slices. Reads the parent's children with `bd children`, their blocking edges with `bd show --json`, and
-the unblocked front with `bd ready --parent --limit 0`, then prints every open child in dependency order:
+slices. Its scope is its children, read with `bd children`. A milestone is bd's built-in
+`milestone` type: it holds no work and has no children, and its scope is everything its
+`blocks` edges reach, followed transitively, with each parent met on the way replaced by its
+descendants. Blocking edges come from `bd show --json` and the unblocked front from `bd ready
+--limit 0` (`--parent` for a parent), then every open item prints in dependency order:
 
   waves    open slices grouped by depth — wave 1 is the unblocked front, wave N waits on
            something in wave N-1. Items in one wave share no edge and can run at once.
@@ -17,8 +20,14 @@ the unblocked front with `bd ready --parent --limit 0`, then prints every open c
            `bd list`'s tree draws them indented under the parent all the same.
 
 A child that itself has children is expanded in place, one level at a time, so a nested
-breakdown plans as one graph. Edges to issues outside the tree are reported as `external`
-blockers, never followed. Exit 0 printed, 1 bd failed or the id has no children, 2 usage.
+breakdown plans as one graph. For a parent, edges to issues outside the tree are reported as
+`external` blockers, never followed; a milestone follows every edge, so its only `external`
+blocker is an id bd no longer lists.
+
+`--milestones-for <id>` prints the open milestones whose scope holds that item, or an epic it
+sits under: what `wrap-up` asks before filing a follow-up next to it.
+Exit 0 printed, 1 bd failed, a parent has no children or a milestone has no blocks edge,
+2 usage.
 """
 import json, subprocess, sys
 
@@ -32,18 +41,13 @@ def bd(repo, *args):
 def one(x):
     return x[0] if isinstance(x, list) else x
 
-def main():
-    argv = sys.argv[1:]
-    as_json = "--json" in argv
-    argv = [a for a in argv if a != "--json"]
-    if len(argv) != 2:
-        print("usage: epic-plan [--json] <repo> <epic-id>", file=sys.stderr); sys.exit(2)
-    repo, epic = argv
-    head = one(bd(repo, "show", epic))
+def blocks_of(issue):
+    return [d["id"] for d in issue.get("dependencies") or [] if d.get("dependency_type") == "blocks"]
+
+def parent_scope(repo, epic, head):
     top = bd(repo, "children", epic)
     if not top:
         sys.exit(f"epic-plan: {epic} ({head.get('issue_type')}) has no children — implement it directly")
-
     items, stack = {}, [(epic, top)]
     while stack:
         parent, kids = stack.pop()
@@ -54,13 +58,99 @@ def main():
                 continue
             items[c["id"]] = c
     ready = {r["id"] for r in bd(repo, "ready", "--parent", epic, "--limit", "0")}
+    blockers = {cid: blocks_of(one(bd(repo, "show", cid)))
+                for cid, c in items.items() if c.get("status") != "closed"}
+    return items, blockers, ready
 
+def snapshot(repo):
+    """Every issue with its edges, from one `bd list`, and each parent's children."""
+    issues = {i["id"]: i for i in bd(repo, "list", "--all", "--limit", "0")}
+    kids = {}
+    for i in issues.values():
+        if i.get("parent"):
+            kids.setdefault(i["parent"], []).append(i["id"])
+    return issues, kids
+
+def listed_blocks(issue):
+    return [d["depends_on_id"] for d in issue.get("dependencies") or [] if d.get("type") == "blocks"]
+
+def members(issues, kids, x):
+    """What a group stands for: a parent's children, or a nested milestone's blockers."""
+    if issues[x].get("issue_type") == "milestone":
+        return listed_blocks(issues[x])
+    return kids.get(x, [])
+
+def ancestors(issues, i):
+    out, p = [], issues[i].get("parent")
+    while p in issues and p not in out:
+        out.append(p)
+        p = issues[p].get("parent")
+    return out
+
+def milestone_scope(issues, kids, milestone):
+    """Everything the milestone waits on: its blockers, their blockers, and so on. A group met
+    on the way — a parent, open or closed, or a nested milestone — stands for its members, and
+    so does an edge pointing at one. An item also waits on whatever its ancestors wait on."""
+    items, groups, queue = {}, set(), list(listed_blocks(issues[milestone]))
+    while queue:
+        x = queue.pop()
+        if x in items or x in groups or x not in issues:
+            continue
+        inner = members(issues, kids, x)
+        if inner:
+            groups.add(x)
+            queue += inner
+            if issues[x].get("issue_type") != "milestone":
+                queue += listed_blocks(issues[x])
+            continue
+        items[x] = issues[x]
+        if issues[x].get("status") != "closed":
+            queue += listed_blocks(issues[x])
+    def leaves(i, seen=()):
+        if i not in groups: return [i]
+        if i in seen: return []
+        return [l for k in members(issues, kids, i) for l in leaves(k, seen + (i,))]
     blockers = {}
-    for cid, c in items.items():
+    for i, c in items.items():
         if c.get("status") == "closed":
             continue
-        deps = one(bd(repo, "show", cid)).get("dependencies") or []
-        blockers[cid] = [d["id"] for d in deps if d.get("dependency_type") == "blocks"]
+        edges = listed_blocks(c) + [b for a in ancestors(issues, i) for b in listed_blocks(issues[a])]
+        blockers[i] = sorted({l for b in edges for l in leaves(b) if l != i})
+    return items, blockers, groups
+
+def milestones_for(repo, item):
+    """The open milestones whose scope holds the item, or an epic it sits under."""
+    issues, kids = snapshot(repo)
+    hits = []
+    for m in issues.values():
+        if m.get("issue_type") != "milestone" or m.get("status") == "closed":
+            continue
+        items, _, parents = milestone_scope(issues, kids, m["id"])
+        if item in items or item in parents:
+            hits.append({"id": m["id"], "title": m.get("title", "")})
+    return hits
+
+def main():
+    argv = sys.argv[1:]
+    as_json = "--json" in argv
+    argv = [a for a in argv if a != "--json"]
+    if len(argv) == 3 and argv[1] == "--milestones-for":
+        hits = milestones_for(argv[0], argv[2])
+        print(json.dumps(hits, indent=2) if as_json else "\n".join(f"{h['id']}  {h['title']}" for h in hits))
+        return
+    if len(argv) != 2:
+        print("usage: epic-plan [--json] <repo> <parent-or-milestone-id>\n"
+              "       epic-plan [--json] <repo> --milestones-for <id>", file=sys.stderr); sys.exit(2)
+    repo, epic = argv
+    head = one(bd(repo, "show", epic))
+    if head.get("issue_type") == "milestone":
+        items, blockers, _ = milestone_scope(*snapshot(repo), epic)
+        if not items:
+            sys.exit(f"epic-plan: milestone {epic} has no blocks edges, so nothing is in it — "
+                     f"`bd dep add {epic} <item>` per member, or break the goal down with `issues spec`")
+        ready = {r["id"] for r in bd(repo, "ready", "--limit", "0")} & set(items)
+    else:
+        items, blockers, ready = parent_scope(repo, epic, head)
 
     open_ids = [i for i, c in items.items() if c.get("status") != "closed"]
     depth = {}
@@ -107,7 +197,7 @@ def main():
     if plan["done"]:
         print(f"\ndone: {', '.join(d['id'] for d in plan['done'])}")
     if not open_ids:
-        print("\nnothing open — the parent can close")
+        print("\nnothing open — it can close")
     if plan["unblocks"]:
         print(f"\nunblocks (not children — waiting on {epic} to close): "
               + ", ".join(f"{d['id']} ({d['status']})" for d in plan["unblocks"]))

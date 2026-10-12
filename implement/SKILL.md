@@ -52,6 +52,14 @@ things: `bd list`'s tree indents both under it, but only children are part of it
 `epic-plan` prints the blocked items on an `unblocks` line, and every plan, slate and auto report
 repeats that line so nobody mistakes the chain for unfinished children.
 
+**A milestone plans the same way.** bd's built-in `milestone` type holds no work and has no
+children; its scope is what its `blocks` edges reach, transitively, with every parent on the way
+standing for its open children. `implement <milestone>` and `implement <milestone> auto` run
+exactly like an epic: `epic-plan` detects the type and walks the edges instead of `bd children`,
+so pierce names the milestone and the order comes out of the tracker. Everything below that
+says "epic" covers a milestone too, except that a milestone closes when its blockers do, never
+by `bd epic close-eligible`.
+
 A pass takes **one slice child** — `myproj-25.1`. A `human` child is never worked as a pass
 from a parent run or a discovered list: it waits for a person. **pierce naming a `human` slice
 directly — `implement <id>`, or "do <id>" in chat — is that person taking it**: remove the
@@ -64,7 +72,7 @@ ever offered: [`HANDOFF.md`](HANDOFF.md).
 comes from beads, never from reading the titles:
 
 ```text
-~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children, blocks edges, bd ready --parent --limit 0
+~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children (a milestone: its blockers), blocks edges, bd ready
   -> open slices in dependency order (wave 1 = unblocked now), slices needing a person, done
 readiness gate (HANDOFF.md §1) on the first slice          # in chat, before the slate
 slate, one row per step, in plan order:
@@ -86,7 +94,8 @@ auto runs `verify-project` over the epic here and stops at the gate.
   Never answer "nothing remains" with no next step. Close the epic through `wrap-up` even when
   the tree is clean, never with a hand-run `bd close`.
 - **An epic with no children** is not ready for `implement`; offer `issues spec` to break it
-  down ([`../issues/breakdown.md`](../issues/breakdown.md)). Any other childless item is a slice.
+  down ([`../issues/breakdown.md`](../issues/breakdown.md)). A milestone with no `blocks` edge
+  gets the same offer. Any other childless item is a slice.
 - **A parent whose every open slice is `human`** ends with each slice named, why it carries the
   label, and the one-line way to hand it over: `implement <id>`.
 - `epic-plan` expands any child that has children of its own in place, and names blockers outside the epic as `external`

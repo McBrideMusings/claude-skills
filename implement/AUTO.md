@@ -10,7 +10,7 @@ out of work, and then prints one report of everything only a person can finish.
 | --- | --- | --- |
 | `implement auto` | items `issues next` discovers | 5 |
 | `implement auto <n>` / `implement auto all` | items `issues next` discovers | `<n>` / no limit |
-| `implement <epic> auto [n\|all]` | the epic's slices, in `epic-plan` order | all of them unless `<n>` is given |
+| `implement <epic> auto [n\|all]` | the epic's slices, or for a milestone everything its `blocks` edges reach (each parent standing for its children), in `epic-plan` order | all of them unless `<n>` is given |
 | `implement <id> auto` | that one item | 1 |
 
 The mode lives in the argument, which `/clear` drops. The relay brief carries the run's state

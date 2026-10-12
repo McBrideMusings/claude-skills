@@ -81,7 +81,8 @@ don't route around the allow by asking in chat first.
 | link, other kinds | `-t parent-child \| discovered-from \| related \| supersedes` |
 | unlink | `bd dep remove <id> <blocker-id>` |
 | dependency tree | `bd dep tree <id>` |
-| **epic** (milestone equivalent) | `bd create "<name>" -t epic` then `--parent <epic-id>` on members. The type marks it an epic, so the title never says "epic" — `bd show` prints `(EPIC)` before an epic's title, and that prefix is display, not title text to copy |
+| **milestone** | `bd create "<name>" -t milestone` then `bd dep add <milestone-id> <member-id>` per member; what remains, in order: `~/.claude/skills/implement/epic-plan <repo> <milestone-id>` (§Grouping) |
+| **epic** | `bd create "<name>" -t epic` then `--parent <epic-id>` on members. The type marks it an epic, so the title never says "epic" — `bd show` prints `(EPIC)` before an epic's title, and that prefix is display, not title text to copy |
 | epic progress | `bd epic status` (all epics; `--eligible-only` for those whose children are all done) |
 | **defer** | `bd defer <id> --until "+2w"` — hidden from `bd ready` until then |
 | **external ref** | `--external-ref gh-<n>` on create/update — records the GitHub issue it came from |
@@ -99,7 +100,7 @@ don't route around the allow by asking in chat first.
 | --- | --- |
 | issue number `#42` | `external_ref` + `source_system` — **not** the ID. A pulled bead's ID is a short `bd`-generated slug, never the issue number; see the rename note above |
 | labels | labels (same) |
-| milestone | epic (`-t epic` + `--parent`) |
+| milestone | epic (`-t epic` + `--parent`), the bulk import's verified path below; when the GitHub milestone was a release gate across topics, add a bd `milestone` over those epics afterwards with `bd dep add` |
 | assignee | assignee |
 | `state: open/closed` | `--status open \| in_progress \| blocked \| deferred \| closed` |
 | body | `-d/--description`, plus `--design`, `--acceptance`, `--notes` as separate fields |
@@ -342,14 +343,20 @@ how often their backlog actually changes, not a tight poll.** An hourly `bd gith
 --pull-only` is plenty for a human-paced client backlog; polling every few minutes just spends
 tokens re-reading a tracker that hasn't moved.
 
-## Grouping: epic or label
+## Grouping: epic, milestone or label
 
-Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has no
-`--milestone` filter. Two primitives, and the choice between them is not a matter of taste:
+Three primitives, and the choice between them is not a matter of taste:
 
 - **An epic is a body of work that *completes*.** It has an end state, so `bd epic status`
   reports a fraction and `bd epic close-eligible` closes it once every child is done.
-  "M9: Native App", "Auth rewrite", a release — these are epics.
+  "Auth rewrite", "Worker agent panes": one topic's work, held as its children.
+- **A milestone is a release gate.** bd's built-in `milestone` type holds no work and has no
+  children (`bd types`: "Marks completion of a set of related issues"). Its set is its `blocks`
+  edges: `bd dep add <milestone> <item>` puts an item in it, and an epic in the set brings all
+  of its children. A milestone cuts across epics, which a parent cannot, since a bead has one
+  parent. "MVP: Mac app" and "1.0" are milestones. bd has no milestone command and `bd epic
+  status` skips them; `~/.claude/skills/implement/epic-plan <repo> <milestone>` prints what
+  remains, in dependency order, and `implement <milestone>` works it.
 - **A label is an attribute that never completes.** `client`, `mac`, `perf`, `human`.
   Nothing ever finishes being Mac work. Each repo's vocabulary is its `.beads/labels.toml`,
   shaped by [`labels.md`](labels.md) — and a label restating `issue_type` (`enhancement`,
@@ -361,9 +368,25 @@ Everything group-aware in `bd` keys off parent-child, not labels: `bd epic statu
 defined as "an epic and its children". Labels only get you filtering — `-l` (AND),
 `--label-any` (OR), `--label-pattern`, `--label-regex`.
 
+**Every item filed while a milestone is open gets a yes or no: does it block the milestone?**
+This paragraph owns the rule; `issues file` and `wrap-up` apply it. A milestone's description
+says what done looks like, as a done-when list; write one when you create the milestone.
+
+- **Which milestones ask.** Every open one (`bd list -t milestone --status open`). For a
+  follow-up, `~/.claude/skills/implement/epic-plan <repo> --milestones-for <source-id>` names
+  the ones the item it came from belongs to; those are the ones the answer usually changes.
+- **Yes** when a line of that done-when list fails without the item. File it with
+  `bd dep add <milestone> <new-id>`, unless its `--parent` is already in the milestone's scope
+  (`--milestones-for <parent>` names it); then the parent carries it.
+- **No** otherwise. The item never goes under a parent in the milestone's scope, because a
+  child joins its parent's milestone; another epic, or none.
+- **Record it** in the new item's notes: `bd update <new-id> --append-notes "milestone <id>:
+  yes|no, <the done-when line, or why none fails>"`.
+
 **Children inherit their parent's labels by default** (`--no-inherit-labels` opts out). So an
-epic already gives you the label-style grouping for free. A `milestone:<name>` label *alongside*
-an epic of the same name is duplication — drop the label.
+epic already gives you the label-style grouping for free, and a milestone's edges give it for
+a milestone. A label naming an epic or a milestone (`milestone:mvp`, `post-mvp`) restates that
+grouping and drifts from it — drop the label and keep the epic or the edges.
 
 Child IDs are hierarchical: a child of `oa-4mm` is `oa-4mm.1`, then `.2`. Membership is
 readable straight off the ID, and `id.rsplit('.', 1)[0]` recovers the epic.
@@ -382,7 +405,7 @@ For a whole tracker, not a single issue. `bd import` beats `bd github sync --pul
 sync establishes an ongoing two-way link, which is wrong when you're migrating *off* GitHub.
 Two passes, because children need their epic's real ID:
 
-1. **Epics first.** One `bd create -t epic --silent` per milestone; keep the title→ID map.
+1. **Epics first.** One `bd create -t epic --silent` per GitHub milestone; keep the title→ID map.
 2. **Issues as JSONL, one row each**, then a single `bd import file.jsonl`. Set
    `"id": "<epic-id>.<n>"` yourself and add the edge explicitly — `--parent` has no JSONL
    equivalent:

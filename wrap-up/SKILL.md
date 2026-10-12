@@ -227,7 +227,7 @@ Invoke the `issues file` skill in Generate mode to surface candidates from this 
 **In an `implement … auto` run ([`../implement/AUTO.md`](../implement/AUTO.md)) there is no halt and no ask.** Choose every candidate's disposition yourself, then run the Act pass:
 
 - **fix** — the finding sits inside this pass's diff and one edit plus the pass's own check settles it.
-- **file** — real work outside this pass, or an `Architecture:` finding. Filed to the tracker under the run's epic where it fits, so the user sees it on return.
+- **file** — real work outside this pass, or an `Architecture:` finding. With an open milestone in the repo, the milestone yes-or-no in [`../issues/beads.md`](../issues/beads.md) §Grouping decides each item's parent and edge, and records the call on it; `bd dep tree` does not follow a parent, so use `--milestones-for` as that section says. With none, file under the run's epic where it fits, so the user sees it on return.
 - **skip** — a duplicate of an open bead, a finding the session already answered, or noise.
 
 Print the numbered list with each row's chosen disposition as a record, not a question, and no closing sentence. A `fix` that cannot be applied still halts the run. In an epic run, after Step C lands the slice, append one line to the epic's notes: `bd update <epic> --append-notes "<slice-id> landed at <sha>: fixed <n>, filed <ids>, skipped <n>"`. Step D relays per `relay` §Auto.
