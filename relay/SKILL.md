@@ -98,6 +98,12 @@ is the whole of what the next session needs, and nothing else writes one on the 
 
 The marker is transport, not a record: written, consumed by the Stop hook, deleted.
 
+**Stop this session's subagents first.** A clear erases the memory of every subagent this
+session spawned but leaves each one registered, so the next context answers "is anything
+still running?" wrongly. Run `ListAgents`, `TaskStop` every subagent in it that is not
+`killed` (`completed` included: a subagent can hand back its report and stay open), then run
+`ListAgents` again and name any that are still open in the one line Step 5 says.
+
 **Get the directory from `~/.claude/tools/repo-slug --path`**, which prints
 `/private/tmp/claude/<repo-slug>` and creates it. Never work the slug out yourself: it and
 `hooks/relay-stop.sh` read the same definition (`hooks/repo-slug.sh`), and a slug you derive
@@ -180,7 +186,7 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
 `wrap-up` already settled the follow-ups (Step 3 does not run again).
 
 1. **Stop when the count is spent.** The run-state block's `Used` equal to its `Limit` ends the
-   run: decline the relay and print the auto report
+   run: decline the relay, stop this session's subagents as Step 4 says, and print the auto report
    ([`../implement/AUTO.md`](../implement/AUTO.md) §The report). `all` never runs out.
 2. **The next item is the run's next item, not Step 1's ranking.** Pick it the way auto picks
    ([`../implement/AUTO.md`](../implement/AUTO.md) §Every wait point), `auto parked` items
