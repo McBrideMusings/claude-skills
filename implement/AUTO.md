@@ -145,4 +145,7 @@ through `implement <id>` with the other answer when it is wrong.
 
 **Landed** — each landed pass with its sha.
 
+**Unblocks** — on a parent run, `epic-plan`'s `unblocks` line verbatim: the items waiting on the
+parent to close. They are not children and the run never works them.
+
 Close with `auto: <landed> landed, <parked> parked, limit <Limit>`.

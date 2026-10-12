@@ -20,7 +20,7 @@ else. It never launches another session, pane or agent to do the work.
 in its autonomous mode ([`../issues/next.md`](../issues/next.md)); it returns every
 candidate it scored, ranked. Walk that list in order. Drop an item that hits `issues next`'s
 out-of-scope or redundancy check (Phase 07) without asking the user to confirm the match.
-An epic ends the walk and continues as `implement <epic>` below. Otherwise apply the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1);
+An item with children ends the walk and continues as `implement <epic>` below. Otherwise apply the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1);
 the first item that clears it is the pass. Never stop to ask which item. When nothing on the
 list clears, the run ends: name the first item that reached the gate and the test it failed —
 or, when every item was dropped before the gate, each item and the check that dropped it —
@@ -43,10 +43,19 @@ step 4 against it, and show the gate. A reply there naming a different answer to
 owner feedback (§The gate): rework the branch to that answer and update the bead's
 `auto decided` note.
 
-## The unit is a slice — an epic becomes a plan
+## The unit is a slice — a parent becomes a plan
 
-A pass takes **one slice child** — `myproj-25.1`. A `human` child is never worked as a pass: it
-waits for a person. Verification over the epic is this session's, via `verify-project`, and
+**A parent is any item with children, whatever its `issue_type`** — an epic, or a feature that
+`issues spec` broke into slices. Everything below that says "epic" means a parent; `bd children
+<id>` decides it, never the type. A parent's children and the items it *blocks* are different
+things: `bd list`'s tree indents both under it, but only children are part of its plan.
+`epic-plan` prints the blocked items on an `unblocks` line, and every plan, slate and auto report
+repeats that line so nobody mistakes the chain for unfinished children.
+
+A pass takes **one slice child** — `myproj-25.1`. A `human` child is never worked as a pass
+from a parent run or a discovered list: it waits for a person. **pierce naming a `human` slice
+directly — `implement <id>`, or "do <id>" in chat — is that person taking it**: remove the
+label (`bd label remove <id> human`) and run the pass. Verification over the epic is this session's, via `verify-project`, and
 landing is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
@@ -77,8 +86,10 @@ auto runs `verify-project` over the epic here and stops at the gate.
   Never answer "nothing remains" with no next step. Close the epic through `wrap-up` even when
   the tree is clean, never with a hand-run `bd close`.
 - **An epic with no children** is not ready for `implement`; offer `issues spec` to break it
-  down ([`../issues/breakdown.md`](../issues/breakdown.md)).
-- `epic-plan` expands a child epic in place, and names blockers outside the epic as `external`
+  down ([`../issues/breakdown.md`](../issues/breakdown.md)). Any other childless item is a slice.
+- **A parent whose every open slice is `human`** ends with each slice named, why it carries the
+  label, and the one-line way to hand it over: `implement <id>`.
+- `epic-plan` expands any child that has children of its own in place, and names blockers outside the epic as `external`
   rather than following them; an external blocker holds its row.
 
 ## Commit rule by branch

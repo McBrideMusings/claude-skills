@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""epic-plan — turn a beads epic into an ordered plan, straight from the tracker.
+"""epic-plan — turn a beads parent into an ordered plan, straight from the tracker.
 
-    epic-plan [--json] <repo> <epic-id>
+    epic-plan [--json] <repo> <parent-id>
 
-Reads the epic's children with `bd children`, their blocking edges with `bd show --json`, and
+A parent is any item with children, whatever its type — an epic, or a feature broken into
+slices. Reads the parent's children with `bd children`, their blocking edges with `bd show --json`, and
 the unblocked front with `bd ready --parent --limit 0`, then prints every open child in dependency order:
 
   waves    open slices grouped by depth — wave 1 is the unblocked front, wave N waits on
@@ -11,9 +12,13 @@ the unblocked front with `bd ready --parent --limit 0`, then prints every open c
   person   open slices labelled `human` — a person does them; listed with their wave.
   done     closed children, for context.
 
-A child that is itself an epic is expanded in place, one level at a time, so a nested
-breakdown plans as one graph. Edges to issues outside the epic are reported as `external`
-blockers, never followed. Exit 0 printed, 1 bd failed or the id is not an epic, 2 usage.
+  unblocks items outside the tree that wait on the parent (`blocks` edges pointing at it) —
+           what closing the parent frees. They are not children and not part of this plan;
+           `bd list`'s tree draws them indented under the parent all the same.
+
+A child that itself has children is expanded in place, one level at a time, so a nested
+breakdown plans as one graph. Edges to issues outside the tree are reported as `external`
+blockers, never followed. Exit 0 printed, 1 bd failed or the id has no children, 2 usage.
 """
 import json, subprocess, sys
 
@@ -35,15 +40,17 @@ def main():
         print("usage: epic-plan [--json] <repo> <epic-id>", file=sys.stderr); sys.exit(2)
     repo, epic = argv
     head = one(bd(repo, "show", epic))
-    if head.get("issue_type") != "epic":
-        sys.exit(f"epic-plan: {epic} is a {head.get('issue_type')}, not an epic — implement it directly")
+    top = bd(repo, "children", epic)
+    if not top:
+        sys.exit(f"epic-plan: {epic} ({head.get('issue_type')}) has no children — implement it directly")
 
-    items, stack = {}, [epic]
+    items, stack = {}, [(epic, top)]
     while stack:
-        parent = stack.pop()
-        for c in bd(repo, "children", parent):
-            if c.get("issue_type") == "epic":
-                stack.append(c["id"])
+        parent, kids = stack.pop()
+        for c in kids:
+            grand = bd(repo, "children", c["id"])
+            if grand:
+                stack.append((c["id"], grand))
                 continue
             items[c["id"]] = c
     ready = {r["id"] for r in bd(repo, "ready", "--parent", epic, "--limit", "0")}
@@ -74,7 +81,10 @@ def main():
     kind = lambda i: "person" if "human" in (items[i].get("labels") or []) else "slice"
     plan = {"epic": {"id": epic, "title": head.get("title", "")},
             "waves": {}, "person": [],
-            "done": [{"id": i, "title": c.get("title", "")} for i, c in items.items() if c.get("status") == "closed"]}
+            "done": [{"id": i, "title": c.get("title", "")} for i, c in items.items() if c.get("status") == "closed"],
+            "unblocks": [{"id": d["id"], "title": d.get("title", ""), "status": d.get("status")}
+                         for d in bd(repo, "dep", "list", epic, "--direction=up")
+                         if d.get("dependency_type") == "blocks"]}
     for i in sorted(open_ids, key=lambda i: (depth[i], i)):
         k = kind(i)
         if k == "slice": plan["waves"].setdefault(str(depth[i]), []).append(row(i))
@@ -97,6 +107,9 @@ def main():
     if plan["done"]:
         print(f"\ndone: {', '.join(d['id'] for d in plan['done'])}")
     if not open_ids:
-        print("\nnothing open — the epic can close")
+        print("\nnothing open — the parent can close")
+    if plan["unblocks"]:
+        print(f"\nunblocks (not children — waiting on {epic} to close): "
+              + ", ".join(f"{d['id']} ({d['status']})" for d in plan["unblocks"]))
 
 main()
