@@ -13,7 +13,7 @@
 5. **Wire `package.json`:** `"docs:dev": "vitepress dev docs --port 5193"` (or main app port + 20).
 
    Don't add `docs:build` / `docs:preview` unless project deploys docs. Heuristic: workflows mention Pages / Netlify / Vercel / `vitepress build`, or `gh-pages` / `docs-deploy` script in package.json.
-6. **Wire `admin.toml`** if present. See the `[commands.docs]` shape at the bottom of this file. The change takes effect immediately — the `admin` tool interprets `admin.toml` at runtime, so there's nothing to regenerate. Validate with `admin check`.
+6. **Wire `admin.toml`** if present. See the `[commands.docs]` shape below. The change takes effect immediately — the `admin` tool interprets `admin.toml` at runtime, so there's nothing to regenerate. Validate with `admin check`.
 7. **Update `CLAUDE.md`** Documentation section (template below).
 8. **Append to `.gitignore`** if missing:
 
@@ -58,24 +58,23 @@ Don't write new top-level planning / phase / feature docs in `docs/` — file an
 
 ```toml
 [commands.docs]
+desc     = "serve VitePress docs site with hot reload on http://localhost:5193"
+steps    = ["docs-dev"]
+group    = 2
+priority = 50
+
+[actions.docs-dev]
 kind = "npm"
-desc = "serve VitePress docs site with hot reload on http://localhost:5193"
 run  = "docs:dev"
 ```
 
-**Use `kind = "npm"`** — dedicated renderer that auto-detects npm vs bun (via `bun.lockb`), runs `<pkg> run <script>`, gives standardized output. Don't use `kind = "shell"` with `"npm run docs:dev"` — that bypasses lockfile detection.
+**A `[commands.*]` table takes no `kind` or `run`.** It names its `steps`; the `kind`/`run` pair lives on the `[actions.*]` table each step names. `admin check` rejects a command carrying them inline.
 
-Single command, no sub-targets. No `docs build` / `docs preview` — noise for local viewing. Add `"docs"` to `order` array between `clean` and utility commands. Standard shape:
+**Use `kind = "npm"`** — `run` is the `package.json` script name, and the runner picks bun when a `bun.lockb` or `bun.lock` sits beside `package.json`, npm otherwise. Don't use `kind = "shell"` with `"npm run docs:dev"` — that skips the lockfile check.
 
-```
-order = ["build", "dev", "deploy", "---", "test", "clean", "docs", "icons", "reload"]
-```
-
-(Omit what doesn't apply.) `logs` is auto-registered via `[logs.*]` — don't add it to `order`; the generator validates strictly.
+Single command, no sub-targets. No `docs build` / `docs preview` — noise for local viewing. `group = 2, priority = 50` is the canonical `docs` slot (`admin/bootstrap.md` § The standard layout).
 
 If project deploys docs (rare), use separate `[commands.docs-build]` / `[commands.docs-deploy]` rather than sub-targets.
-
-**Not an action.** `[actions.X]` is for multi-step or shared-between-commands building blocks. Single npm script invocation is neither.
 
 ## ESM gotcha (always use `.mts`)
 

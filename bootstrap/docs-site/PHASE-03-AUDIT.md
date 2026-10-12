@@ -10,7 +10,7 @@ Both `docs/` and `.vitepress/` exist. Verify alignment, apply mechanical fixes s
 4. Add `.gitignore` cache/dist entries (`docs/.vitepress/cache`, `docs/.vitepress/dist`).
 5. Install VitePress if missing from devDeps.
 6. Add `docs:dev` script if missing (port 5193 or main app port + 20).
-7. Fix `admin.toml` `[commands.docs]` if missing or has sub-targets — see [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) for the canonical shape.
+7. Fix `admin.toml` `[commands.docs]` if missing, has sub-targets, or carries `kind`/`run` on the command table instead of an action — see [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) for the canonical shape.
 8. Add `CLAUDE.md` Documentation section if missing — template in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md).
 
 **A roadmap file is never created here and never repaired in place.** An existing one migrates to the tracker — that is a substantive proposal, item 1 below, not a mechanical fix.

@@ -123,7 +123,7 @@ meaning and what it ends with; keep the two in sync if a slot number ever change
 | 2 | 60+ | project-specific (`logs`, `snapshot`, `reload`, …) |
 
 Notes:
-- `docs` = serve docs locally with hot reload. **Single command, no sub-targets** (e.g. `run = "npm run docs:dev"`). Skip docs build/preview/deploy unless the user explicitly publishes.
+- `docs` = serve docs locally with hot reload. **Single command, no sub-targets** — `steps = ["docs-dev"]` naming an `[actions.docs-dev]` with `kind = "npm"`, `run = "docs:dev"` (full shape in `bootstrap/docs-site/PHASE-02-BOOTSTRAP.md`). Skip docs build/preview/deploy unless the user explicitly publishes.
 - `kill` — standard, not project-specific, for any project whose `dev`/`build` can leave something running that outlives the command: a dev server, a Docker container, a background watcher, anything bound to a port. Force-stops it (`pkill`/`docker stop`/free the port), so a crashed or detached `admin dev` doesn't leave a zombie process squatting on a port the next `admin dev` needs. Skip it only for projects with nothing long-running to leave behind (a pure CLI, a static build). Real examples across the fleet: `steps = ["kill-dev"]` (kill stray dev processes + free ports), `steps = ["docker-down", "kill-dev"]` (stop a dev container and stray Electron/Vite), `steps = ["kill-local"]` (kill local servers only, never touch remote).
 
 Legacy `order = [...]` with `"---"` separator still works but prefer group/priority. When using explicit `order`, the first three entries must be `"build", "dev", "deploy"` — always.
@@ -179,7 +179,7 @@ If `admin.toml` uses `${VAR}`, run `admin env` and tell the user which vars to e
 3. **`CLAUDE.md` (committed)** — if the project has no root `CLAUDE.md`, invoke `/init` first.
 4. **`CLAUDE.local.md` (repo root)** — create/update with the dev-process section (Phase 5). Keep thin: admin-specific dev process and machine overrides only. Root, not `.claude/` — Claude Code only auto-loads a local file at the repo root.
 5. **Project `CLAUDE.md`** — note that `admin.toml` is the source of truth and commands run via `admin <cmd>` (the tool is installed on PATH; nothing about admin is committed, the manifest included).
-6. **Docs site, if present** — `admin.toml` must have a single `[commands.docs]` shell command (no sub-targets). If shaped wrong, run `bootstrap docs site`.
+6. **Docs site, if present** — `admin.toml` must have a single `[commands.docs]` (no sub-targets) whose step is an `npm` action running `docs:dev`. If shaped wrong, run `bootstrap docs site`.
 
 **Audit checks:**
 - Committed `CLAUDE.md` exists at project root (if missing, prompt `/init`)
