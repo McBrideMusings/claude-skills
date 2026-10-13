@@ -189,7 +189,7 @@ invents; `bd` ships the queries:
 
 ```bash
 bd human list          # every issue awaiting a human
-bd human respond <id> "<answer>"   # comments and closes in one call
+bd human respond <id> -r "<answer>"   # comments and closes in one call
 bd human dismiss <id>              # permanently, when the question stopped applying
 bd human stats
 ```
