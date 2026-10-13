@@ -1,6 +1,6 @@
 ---
 name: issues
-description: "Read, create, close or label a tracked item, and the five backlog verbs: `file` a follow-up, `spec` a conversation into tickets, `next` to pick what to work on, `shape` a heap of issues into typed, labelled epics with edges, `iron-out` the items waiting on a person (human beads, decisions, HITL) until each is answered and closed or rewritten AFK-ready. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Read before creating, reading, closing or labelling a tracked item."
+description: "Read, create, close or label a tracked item, and the six backlog verbs: `file` a follow-up, `spec` a conversation into tickets, `next` to pick what to work on, `shape` a heap of issues into typed, labelled epics with edges, `iron-out` the items waiting on a person (human beads, decisions, HITL) until each is answered and closed or rewritten AFK-ready, `reconcile` to close beads a merged pull request already shipped. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Read before creating, reading, closing or labelling a tracked item."
 ---
 
 # Issues
@@ -19,7 +19,7 @@ owns the rules. A repo with no file gets its labeling session before its first n
 
 ## Verbs
 
-Five verbs route to a sibling file loaded on demand — read that file, not this one, before acting.
+Six verbs route to a sibling file loaded on demand — read that file, not this one, before acting.
 
 | Verb | Does | Loads |
 | --- | --- | --- |
@@ -28,6 +28,7 @@ Five verbs route to a sibling file loaded on demand — read that file, not this
 | `issues next` | Pick the next work item from the tracker and recommend one concrete starting point. | [`next.md`](next.md) |
 | `issues shape` | Structure a backlog: type and label every issue from `.beads/labels.toml`, group into epics, infer edges, print the roadmap. Also charts a foggy effort from scratch. | [`shape.md`](shape.md) |
 | `issues iron-out` | Resolve every item waiting on a person, one at a time: answer and close questions, rewrite work items until an agent can run them, flag unlabelled ones `human`. | [`iron-out.md`](iron-out.md) |
+| `issues reconcile` | Close beads a merged PR already shipped: closes every PR-linked bead whose PR merged, then matches unlinked open beads against merged PRs and closes the matches you accept. Run when an open bead looks done. | [`reconcile.md`](reconcile.md) |
 
 A request to read, create, close or label an item with no verb is [`REFERENCE.md`](REFERENCE.md)
 work. A request that names none of these and maps to neither → ask which, in plain chat.

@@ -14,9 +14,9 @@ skill holds its *process* once and stays backend-agnostic: it resolves the backe
 
 ```
 issues/
-  SKILL.md          <- the front door: the five verbs and the pointer to REFERENCE.md
+  SKILL.md          <- the front door: the six verbs and the pointer to REFERENCE.md
   REFERENCE.md      <- the map: which tracker file to open for which task
-  file.md spec.md next.md shape.md iron-out.md  <- one file per verb
+  file.md spec.md next.md shape.md iron-out.md reconcile.md  <- one file per verb
   SPEC-TEMPLATE.md TICKET-TEMPLATE.md OUT-OF-SCOPE.md  <- shapes the verbs publish and check against
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
