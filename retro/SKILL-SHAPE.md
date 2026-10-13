@@ -93,7 +93,7 @@ plan.
 
 When no other skill sits at that moment, because the moment is a user prompt, the trigger is
 a yes/no question in `hooks/ref-picker.sh`'s `TRIGGERS` table. Jev asks it of every prompt in
-the call that already picks a ref label. A confident yes injects the skill's load line until
+the call that already asks about each ref label. A confident yes injects the skill's load line until
 the transcript shows the skill loaded (`retro/load-pattern.ere`). `show-shape`, `diagnose`
 and `verify-project` load this way. A new entry needs a `pointer` line in the hook and a test
 in `hooks/tests-ref-picker.sh`. Its load rate comes from `pointer_rate.py --fires`. The

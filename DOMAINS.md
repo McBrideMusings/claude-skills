@@ -74,9 +74,10 @@ such repo. Twelve words, stating the fact whose absence would cause a wrong acti
 
 The **body** is everything between the headline and `## Files`, capped at 120 words. It reaches
 context two ways. `hooks/ref-picker.sh` asks a model, on every prompt and before every Edit,
-Write or MultiEdit, to choose one label from `ref/SKILL.md`'s table or none, and injects the
-chosen label's whole `context.md` once per session. It then asks one yes/no question per row of
-the cell's `## Files` table and injects each page answered yes, also once per session. On a
+Write or MultiEdit, one yes/no question per label in `ref/SKILL.md`'s table, and injects the
+whole `context.md` of every label answered a confident yes, once per session. It then asks one
+yes/no question per row of those cells' `## Files` tables and injects each page answered yes,
+also once per session. On a
 prompt it also injects a load line for any skill whose yes/no trigger answers confidently yes.
 Otherwise the body is read on demand, by whichever engine has resolved this label into its
 scope.

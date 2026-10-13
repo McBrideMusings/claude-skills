@@ -155,7 +155,7 @@ class RefJoin(unittest.TestCase):
 
     def test_a_none_pick_joins_its_prompt_by_timestamp(self):
         _, log, _ = self.corpus()
-        none = [e for e in log if e["label"] is None]
+        none = [e for e in log if not e["labels"]]
         self.assertEqual([e["prompt"] for e in none], ["now polish the empty state"])
 
     def test_a_cut_injection_reads_its_headers_from_the_saved_file(self):
@@ -173,7 +173,19 @@ class RefJoin(unittest.TestCase):
 
     def test_a_failed_page_call_is_parsed(self):
         _, log, _ = self.corpus()
-        self.assertEqual([(e["label"], e["outcome"]) for e in log if e["pages_failed"]], [("go", "claimed")])
+        self.assertEqual([[(lab["name"], lab["outcome"]) for lab in e["labels"]] for e in log if e["pages_failed"]],
+                         [[("go", "claimed")]])
+
+    def test_a_line_choosing_several_labels_keeps_each(self):
+        log = Path(self.tmp.name) / "multi.log"
+        log.write_text(
+            f"2026-10-13T10:00:00Z session={SID} backend=jev event=edit file=\"/a/b.test.ts\" "
+            f"label:web=1.0/1.0:injected label:testing=0.98/0.96:deferred pages=15 "
+            f"page:ref/web/review.md=0.92/0.84:injected prompt=\"fix the form\"\n")
+        (e,) = pr.parse_log(log)
+        self.assertEqual(e["labels"], [{"name": "web", "p": 1.0, "conf": 1.0, "outcome": "injected"},
+                                       {"name": "testing", "p": 0.98, "conf": 0.96, "outcome": "deferred"}])
+        self.assertEqual([pg["name"] for pg in e["pages"]], ["ref/web/review.md"])
 
     def test_since_drops_older_transcripts_and_log_lines(self):
         inj, log, _ = pr.ref_corpus(since="2099-01-01", log_path=self.log, root=self.root)

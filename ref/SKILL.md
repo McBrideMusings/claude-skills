@@ -13,9 +13,10 @@ matches, say so rather than guessing.
 Two hooks load cells without anyone calling this skill. At session start, a repo's labels
 inject each cell's headline, which says the cell exists. Then `hooks/ref-picker.sh` runs on
 every prompt (except one made only of control words: `go`, `park` …) and before every Edit,
-Write or MultiEdit. It asks a model to choose one label from the table below, or none, and
-injects the chosen label's whole `context.md`. A second call asks one yes/no question per
-row of that cell's `## Files` table and injects each page answered yes. Each cell and each
+Write or MultiEdit. It asks a model one yes/no question per label in the table below and
+injects the whole `context.md` of every label answered a confident yes, so a test-file edit
+in a web repo gets both `web` and `testing`. A second call asks one yes/no question per row
+of those cells' `## Files` tables and injects each page answered yes. Each cell and each
 page arrives at most once per session. One event's output stays within 9,500 bytes, because
 Claude Code cuts longer hook output to a 2KB preview: a cell or page that does not fit is
 left unclaimed and is asked about again on the next prompt or edit, and a page over 7,500
@@ -23,11 +24,11 @@ bytes arrives as a line telling you to read its file. On a prompt, the first cal
 one yes/no question per skill in its `TRIGGERS` table and injects a load line for each confident yes
 (see `retro/SKILL-SHAPE.md`). On an edit, the model reads the file path, the last prompt and
 the text being written. `REF_PICKER` selects the model (`jev`, the default, `local`, or
-`off`; `local` asks only the label, on prompts only). Any other page is yours to read when
+`off`; `local` names at most one label, on prompts only). Any other page is yours to read when
 the work enters it.
 
 The picker reads the table's rows as its label menu, so each **Covers** entry is also the
-text the model chooses by. Keep a new row in the same `` [`label`](label/context.md) `` shape.
+text the model judges each label by. Keep a new row in the same `` [`label`](label/context.md) `` shape.
 Likewise each cell's Files table is its page menu: the **When** column is the question the
 model answers, so write it as the work that needs the page ("a dialog, popover or menu"),
 and keep each row in the `` | [`page.md`](page.md) | When | `` shape.

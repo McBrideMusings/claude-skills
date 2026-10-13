@@ -427,8 +427,10 @@ def parse_log(path=REF_LOG):
     """One dict per line of ref-picker.log and of `<log>.1`, the copy the hook rotates out at
     10MB, oldest first.
 
-    A line before cc-sfy5 carries `label=<l>` with no outcome, no event and no prompt; it was
-    always a prompt. `label=none` (or `-`) is a `none` pick.
+    `labels` holds every label the line chose, each with its p, confidence and outcome: one
+    `label:<l>=<p>/<conf>:<outcome>` field per label. An older line chose at most one, as
+    `label=<l>:<outcome>` with no p or confidence, and `label=none` (or `-`) chose none. A line
+    before cc-sfy5 also has no outcome, no event and no prompt; it was always a prompt.
     """
     entries, text = [], ""
     for p in (Path(f"{path}.1"), Path(path)):
@@ -441,7 +443,7 @@ def parse_log(path=REF_LOG):
         if not m:
             continue
         e = {"ts": parse_ts(m.group(1)), "session": m.group(2), "backend": m.group(3),
-             "event": "prompt", "file": None, "label": None, "outcome": None,
+             "event": "prompt", "file": None, "labels": [],
              "failed": False, "pages_failed": False, "pages": [], "prompt": None}
         for key, val in log_fields(m.group(4)):
             if key == "pages":
@@ -456,8 +458,12 @@ def parse_log(path=REF_LOG):
                 e["failed"] = val == "failed"
             elif key == "label":
                 lab, _, outcome = val.partition(":")
-                e["label"] = None if lab in ("-", "none") else lab
-                e["outcome"] = outcome or None
+                if lab not in ("-", "none"):
+                    e["labels"].append({"name": lab, "p": None, "conf": None, "outcome": outcome or None})
+            elif key.startswith("label:"):
+                pc, _, outcome = val.partition(":")
+                p, _, conf = pc.partition("/")
+                e["labels"].append({"name": key[6:], "p": float(p), "conf": float(conf), "outcome": outcome})
             elif key.startswith("page:"):
                 pc, _, outcome = val.partition(":")
                 p, _, conf = pc.partition("/")
@@ -531,8 +537,8 @@ def ref_corpus(since=None, log_path=REF_LOG, root=ROOT):
     # Backend for each transcript injection: the log line that picked it, when there is one.
     picked = {}
     for e in log:
-        if e["label"]:
-            picked.setdefault((e["session"], "label", e["label"]), e)
+        for lab in e["labels"]:
+            picked.setdefault((e["session"], "label", lab["name"]), e)
         for pg in e["pages"]:
             picked.setdefault((e["session"], "page", pg["name"]), e)
     have = set()
@@ -544,7 +550,7 @@ def ref_corpus(since=None, log_path=REF_LOG, root=ROOT):
                         picked[key]["backend"] if key in picked else "unlogged")
     # A logged injection with no transcript record: the transcript is gone or under 3 turns.
     for e in log:
-        found = [("label", e["label"])] if e["label"] and e["outcome"] == "injected" else []
+        found = [("label", lab["name"]) for lab in e["labels"] if lab["outcome"] == "injected"]
         found += [("page", pg["name"]) for pg in e["pages"] if pg["outcome"] == "injected"]
         for kind, name in found:
             key = (e["session"], kind, name)
@@ -608,16 +614,19 @@ def ref_counts(injections, log, actions):
           f"the session opened the saved file after {opened} of them")
     if log:
         print("\n  Every asked prompt or edit, from the log (outcomes start at cc-sfy5, 2026-10-11):")
-        print("  label = injected + claimed + nocell + no outcome; pages failed = the page call failed")
-        print(f"  {'backend/event':18} {'asked':>6} {'label':>6} {'none':>6} {'failed':>7} "
-              f"{'injected':>9} {'claimed':>8} {'nocell':>7} {'no outcome':>11} {'pages failed':>13}")
+        print("  labelled = lines choosing at least one label; labels = labels chosen, which is")
+        print("  injected + claimed + deferred + nocell + no outcome; pages failed = the page call failed")
+        print(f"  {'backend/event':18} {'asked':>6} {'labelled':>9} {'labels':>7} {'none':>6} {'failed':>7} "
+              f"{'injected':>9} {'claimed':>8} {'deferred':>9} {'nocell':>7} {'no outcome':>11} {'pages failed':>13}")
         for b, e in sorted({(x["backend"], x["event"]) for x in log}):
             xs = [x for x in log if (x["backend"], x["event"]) == (b, e)]
-            c = Counter(x["outcome"] for x in xs if x["label"])
-            print(f"  {b + '/' + e:18} {len(xs):>6} {sum(1 for x in xs if x['label']):>6} "
-                  f"{sum(1 for x in xs if not x['label'] and not x['failed']):>6} "
+            c = Counter(lab["outcome"] for x in xs for lab in x["labels"])
+            print(f"  {b + '/' + e:18} {len(xs):>6} {sum(1 for x in xs if x['labels']):>9} "
+                  f"{sum(len(x['labels']) for x in xs):>7} "
+                  f"{sum(1 for x in xs if not x['labels'] and not x['failed']):>6} "
                   f"{sum(1 for x in xs if x['failed']):>7} {c['injected']:>9} {c['claimed']:>8} "
-                  f"{c['nocell']:>7} {c[None]:>11} {sum(1 for x in xs if x['pages_failed']):>13}")
+                  f"{c['deferred']:>9} {c['nocell']:>7} {c[None]:>11} "
+                  f"{sum(1 for x in xs if x['pages_failed']):>13}")
 
 
 def ref_sample(injections, log, sample_n, seed):
@@ -629,8 +638,9 @@ def ref_sample(injections, log, sample_n, seed):
     for e in log:
         if e["failed"]:
             continue
-        logged.add((e["session"], e["label"]))
-        pairs.append((e["ts"], e["session"], e["event"], e["file"], e["prompt"], e["label"] or "none"))
+        names = [lab["name"] for lab in e["labels"]]
+        logged.update((e["session"], name) for name in names)
+        pairs.append((e["ts"], e["session"], e["event"], e["file"], e["prompt"], " + ".join(names) or "none"))
     for i in labels:
         if i["event"] != "edit-ext" and (i["session"], i["name"]) not in logged:
             pairs.append((i["ts"], i["session"], i["event"], i["file"], i["prompt"], i["name"]))
