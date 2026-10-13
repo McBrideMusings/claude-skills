@@ -15,6 +15,7 @@
 | --- | --- |
 | [`scope.md`](scope.md) | What this label covers and what belongs to `game` instead; how the label is detected. |
 | [`testing.md`](testing.md) | Testing scene code. |
+| [`../testing/keeping.md`](../testing/keeping.md) | Writing, adding or committing a test — the four conditions a test meets to be kept. |
 | [`profiling.md`](profiling.md) | Draw calls, frame budget, GPU memory. |
 | [`diagnose.md`](diagnose.md) | Something renders wrong, leaks, or drops frames. |
 | [`review.md`](review.md) | Reviewing 3D code. |

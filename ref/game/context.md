@@ -16,6 +16,7 @@
 | [`design.md`](design.md) | Designing a mechanic, a loop, or a progression. |
 | [`prototype.md`](prototype.md) | Building a throwaway to find out whether something is fun. |
 | [`testing.md`](testing.md) | Testing gameplay — what is worth asserting and what has to be felt. |
+| [`../testing/keeping.md`](../testing/keeping.md) | Writing, adding or committing a test — the four conditions a test meets to be kept. |
 | [`profiling.md`](profiling.md) | Frame budget, spikes, allocation in the loop. |
 | [`diagnose.md`](diagnose.md) | Debugging a physics, timing or state bug. |
 | [`review.md`](review.md) | Reviewing gameplay code. |

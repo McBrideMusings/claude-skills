@@ -83,6 +83,13 @@ compares the output against the specific expected number from the item's worked 
 the call sites and match the count. Redo the arithmetic the old line encoded before trusting
 the new one. Absence checks may accompany it, never replace it.
 
+**A pass that touched tests first checks each one it adds or changes against the four
+conditions in [`../ref/testing/keeping.md`](../ref/testing/keeping.md).** A test that fails any
+condition is deleted before the commit; the surface check in step 4 is the evidence for that
+behavior instead. Record each deleted test and the condition it failed in the gate's
+verification notes. When the item's own acceptance check requires a committed test that fails
+a condition, the item contradicts `keeping.md`: halt and name the test and the condition.
+
 **A pass that touched tests must prove the tests discriminate.** A test is evidence only if it
 fails without the change. Capture the production half of the diff as a patch, reverse it, run
 only the new tests, restore, and record `mutation.discriminates`, which has three states.

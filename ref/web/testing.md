@@ -1,6 +1,6 @@
 # Web testing axis
 
-Read by `tdd` (writing the failing test) and a project's `verify` when the platform is `web`.
+Read when writing a test ([`../testing/writing.md`](../testing/writing.md)) and by a project's `verify` when the platform is `web`.
 Supplies frameworks, seams, and idioms for testing frontend/JS code.
 
 **End-to-end / browser tooling is the Playwright plugin** (`mcp__plugin_playwright_playwright__*`).
@@ -19,7 +19,7 @@ form fills, and assertions against a running page, the same way the apple axis d
 
 ## Idioms
 
-- Test **behavior through the public interface** (the `tdd` core principle) — query by role/label/
+- Test **behavior through the public interface** ([`../testing/writing.md`](../testing/writing.md)) — query by role/label/
   text like a user, not by test-id or DOM structure. A test that breaks on an internal rename was
   testing the wrong thing.
 - Prefer the cheapest seam that still exercises the real behavior: a logic/hook/component test over a
@@ -31,4 +31,4 @@ form fills, and assertions against a running page, the same way the apple axis d
 ## Running
 
 Unit/component: the project's admin runner (`./admin test`) or `vitest` / `jest` — no browser, fast,
-right for the `tdd` red→green loop. Full flows: the Playwright plugin against the dev server.
+right for the red→green loop ([`../testing/loop.md`](../testing/loop.md)). Full flows: the Playwright plugin against the dev server.

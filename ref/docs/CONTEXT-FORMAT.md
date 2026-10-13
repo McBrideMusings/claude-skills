@@ -1,6 +1,6 @@
 # CONTEXT.md Format
 
-`docs/CONTEXT.md` is the single source of truth for **all project vocabulary** — domain terms (Order, Customer, Channel) AND architectural terms (Module, Seam, Adapter, Depth, Leverage, Locality). Other skills (`improve`, `diagnose`, `tdd`) read from it.
+`docs/CONTEXT.md` is the single source of truth for **all project vocabulary** — domain terms (Order, Customer, Channel) AND architectural terms (Module, Seam, Adapter, Depth, Leverage, Locality). Other skills (`improve`, `diagnose`) and `ref/testing` read from it.
 
 Create lazily — only when the first term is resolved. If the file doesn't exist when needed, create `docs/CONTEXT.md` then.
 

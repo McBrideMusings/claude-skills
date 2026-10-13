@@ -29,7 +29,7 @@ conversation truly doesn't cover it.
 - Schema changes, API contracts, architectural decisions
 
 ## Testing Decisions
-- What makes a good test here (behavior through public interface, not implementation details — see `/tdd`)
+- Which behaviors earn a committed test under `ref/testing/keeping.md`, and the seam each is asserted at
 - Which modules to test
 - Prior art for similar tests in this codebase, if any
 

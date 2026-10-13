@@ -66,7 +66,7 @@ A tautological test derives its expected value the same way the implementation c
 These pass, cost maintenance time, and catch nothing — not because they're coupled to
 implementation (that's the red-flag list above), but because there's no real behavior
 underneath the assertion. Read this when auditing a suite for tests to delete, not just
-tests to rewrite.
+tests to rewrite. Each kind fails condition 1 or 3 of [`keeping.md`](keeping.md).
 
 ### a. Existence tests
 

@@ -62,11 +62,12 @@ reached by the same hooks; they are never listed here.
 | [`python`](python/context.md) | Python — venv and uv rather than a global interpreter, packaging, tooling, idioms. |
 | [`react`](react/context.md) | React — derive during render rather than syncing with effects, stable keys, state ownership, component boundaries. |
 | [`rust`](rust/context.md) | Rust — cargo test, clippy, fmt, error handling, unwrap discipline, ownership. |
+| [`testing`](testing/context.md) | Automated tests in any stack — which tests to commit, test-first loop, seams, mocking, auditing a suite. |
 | [`threejs`](threejs/context.md) | Three.js and WebGL — resource disposal, frame-loop allocation, scene graph, GPU profiling. |
 | [`tui`](tui/context.md) | Terminal interfaces — keyboard-first navigation, no hover, on-screen state, reflow to 80 columns. |
 | [`tvos`](tvos/context.md) | tvOS — the focus engine, no touch or cursor, ten-foot viewing distance. |
 | [`web`](web/context.md) | Web frontend — semantic HTML, accessibility, narrow viewports, cold cache, load performance. |
 
-How labels resolve for a repo, and how engines (`review`, `diagnose`, `profiling`, `tdd`) read
+How labels resolve for a repo, and how engines (`review`, `diagnose`, `profiling`) read
 the per-engine files inside each cell: [`../DOMAINS.md`](../DOMAINS.md) and
 [`../_detect.md`](../_detect.md).

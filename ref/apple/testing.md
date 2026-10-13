@@ -1,6 +1,6 @@
 # Apple testing axis
 
-Read by `tdd` (writing the failing test) and `verify` (driving the change) when the platform is
+Read when writing a test ([`../testing/writing.md`](../testing/writing.md)) and by `verify` (driving the change) when the platform is
 `apple`. Supplies the frameworks, harness locations, and idioms for testing Swift/SwiftUI code.
 
 **The tooling is the vendored scripts in [`simulator.md`](simulator.md).** For anything that
@@ -22,13 +22,13 @@ layer* on top: what to write, at which seam, in which framework.
 
 ## Idioms
 
-- Test **behavior through the public interface** (the `tdd` core principle), not `private` internals
+- Test **behavior through the public interface** ([`../testing/writing.md`](../testing/writing.md)), not `private` internals
   or view structure. A test that breaks when you rename an internal function was testing the wrong
   thing.
 - Prefer a logic seam (view-model, reducer, service) over a UI seam — XCUITest is the last resort,
   not the default, because it's slow and flaky relative to a unit test.
 - Mock at system boundaries only (network, clock, `URLSession`, persistence) via protocol-witness or
-  dependency injection — not internal collaborators. See `tdd`'s MOCKING.md.
+  dependency injection — not internal collaborators. See [`../testing/mocking.md`](../testing/mocking.md).
 - Inject `Date`/`UUID`/randomness so tests are deterministic.
 - Name tests as specs in the project's `docs/CONTEXT.md` vocabulary.
 
@@ -36,7 +36,7 @@ layer* on top: what to write, at which seam, in which framework.
 
 Use `simulator.md`'s vendored scripts for build + simulator-boot + XCUITest runs. For a plain logic-test suite,
 the project's admin runner (`./admin test`) or `xcodebuild test` / `swift test` is enough and
-doesn't need a booted simulator — prefer it for speed in the `tdd` red→green loop.
+doesn't need a booted simulator — prefer it for speed in the red→green loop ([`../testing/loop.md`](../testing/loop.md)).
 
 **Build with warnings as errors.** A Swift warning in a log the agent never reads is a bug that
 ships. Pass both to every `xcodebuild build` and `xcodebuild test`:

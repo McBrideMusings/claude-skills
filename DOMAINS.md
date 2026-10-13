@@ -1,7 +1,7 @@
 # Domain cells — label knowledge inside the `ref` skill
 
 A **matrix of label × engine** knowledge that the workflow-engine skills (`review`,
-`diagnose`, `profiling`, and — via `tdd`/`verify` — testing) read from at run time. Each
+`diagnose`, `profiling`, and — via `ref/testing` and `verify` — testing) read from at run time. Each
 label is one directory, `ref/<label>/`, inside the single `ref` skill. Its root file is
 always `context.md`, which carries both the injected text and the label's file map, so the
 two cannot drift apart. No label directory holds a `SKILL.md`; `ref/SKILL.md` is the one
@@ -39,7 +39,7 @@ ref/<label>/
                            [<label>]` frontmatter, which review/tool/lens-gate evaluates
   diagnose.md           <- what to instrument / watch, read at diagnose's instrument phase
   profiling.md          <- profiler catalog / performance gate, read by the `profiling` engine
-  testing.md            <- frameworks/harness/idioms, read by `tdd` (write test) and `verify` (drive it)
+  testing.md            <- frameworks/harness/idioms, read via `ref/testing/writing.md` (write test) and `verify` (drive it)
   design.md             <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
   prototype.md          <- OPTIONAL: what a throwaway prototype answers for this label, read by `spike`
 ```
@@ -95,12 +95,12 @@ rather than staying silent, because silence there is indistinguishable from "no 
 | `review` | `ref/<label>/review.md` | Phase 04 — added as one extra lens sub-agent per matched label |
 | `diagnose` | `ref/<label>/diagnose.md`, `ref/<label>/profiling.md` (perf) | Phase 04 (Instrument) |
 | `profiling` | `ref/<label>/profiling.md` | after label detect |
-| `tdd` | `ref/<label>/testing.md` | Phase 01/02 (write the failing test) |
+| `ref/testing/writing.md` | `ref/<label>/testing.md` | choosing the seam and harness for a test |
 | project `verify` | `ref/<label>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
-store directly. The testing axis reaches verification two ways instead: `tdd` reads it when writing
-tests, and a **project-local** `verify` skill (which built-in `verify` bootstraps per repo) can read
+store directly. The testing axis reaches verification two ways instead: `ref/testing/writing.md` points at it
+when writing tests, and a **project-local** `verify` skill (which built-in `verify` bootstraps per repo) can read
 `ref/<label>/testing.md` for stack-specific drive/harness knowledge.
 
 The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique

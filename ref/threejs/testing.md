@@ -1,6 +1,6 @@
 # Three.js testing axis
 
-Read by `tdd` (write the failing test) and a project-local `verify` (drive the change) when the
+Read when writing a test ([`../testing/writing.md`](../testing/writing.md)) and by a project-local `verify` (drive the change) when the
 platform is `threejs`. Covers headless canvas verification, visual-regression baselines, the
 production-preview + static-host base-path check, and the console-error-free gate — the WebGL
 stack, not gameplay.

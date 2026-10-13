@@ -15,6 +15,7 @@
 | --- | --- |
 | [`simulator.md`](simulator.md) | Driving the simulator: booting, installing, capturing, `simctl`. |
 | [`testing.md`](testing.md) | Writing or running XCTest, and reading its output. |
+| [`../testing/keeping.md`](../testing/keeping.md) | Writing, adding or committing a test — the four conditions a test meets to be kept. |
 | [`profiling.md`](profiling.md) | Instruments, time profiles, memory graphs, energy. |
 | [`diagnose.md`](diagnose.md) | A crash, a hang, or a build failure to track down. |
 | [`review.md`](review.md) | Reviewing Apple-platform code. |

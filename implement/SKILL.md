@@ -163,6 +163,8 @@ elsewhere, squashed by `wrap-up`.
    repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
    `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:
    [`VERDICTS.md`](VERDICTS.md).
+   **A diff that adds or changes a test** runs [`VERDICTS.md`](VERDICTS.md)'s keep check
+   before the commit.
 5. **Blind review.** Once the build is green, spawn `code-reviewer` once — the one subagent
    this process spawns as a matter of course, and this step is what clears a session that
    otherwise carries a standing instruction not to call the `Agent` tool unasked. It gets the

@@ -8,7 +8,7 @@ description: "Front door for making any aspect of a project better — routes to
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
-The hub for opportunity-finding: "nothing is technically broken, but this could be better." Improve holds no aspect knowledge itself except its four native lenses — every other aspect is owned by another skill, and improve **loads the owner, never reimplements its lenses**. Defect-finding is `review`'s front door, not this one.
+The hub for opportunity-finding: "nothing is technically broken, but this could be better." Improve holds no aspect knowledge itself except its native lenses — every other aspect is owned by another skill, and improve **loads the owner, never reimplements its lenses**. Defect-finding is `review`'s front door, not this one.
 
 This file is the **router**. The survey engine — phases, briefs, scoring, merge — lives in [IMPROVE-CORE.md](IMPROVE-CORE.md); load it only once routing has picked survey mode.
 
@@ -74,7 +74,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `skills` | [aspects/skills.md](aspects/skills.md) | native — [WRITING-SKILLS.md](WRITING-SKILLS.md), vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md) | a `skills/` or `.claude/skills/` directory exists |
 | `behavior` | [aspects/behavior.md](aspects/behavior.md) | native — [BEHAVIOR.md](BEHAVIOR.md) | product launchable AND drivable (scripting surface, CLI, browser tool, harness) |
 | `complexity` | [aspects/complexity.md](aspects/complexity.md) | native | a complexity tool is available for the repo's language |
-| `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
+| `tests` | [aspects/tests.md](aspects/tests.md) | native — [`ref/testing/keeping.md`](../ref/testing/keeping.md) | always — an absent suite is the lead finding |
 | `gui` | [aspects/gui.md](aspects/gui.md) | [`ref/gui/critique.md`](../ref/gui/critique.md) | UI surface exists |
 | `product` | [aspects/product.md](aspects/product.md) | [`ref/gui/orient.md`](../ref/gui/orient.md) | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
@@ -90,7 +90,7 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 
 **It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `retro`'s [steering-conflict](../retro/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `retro` generally, not this skill.
 
-Every routed owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap` (its layout and docs-site routes), `profiling`, `tdd`, and the `ref/gui/` cells `critique.md` and `orient.md`. The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
+Every routed owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap` (its layout and docs-site routes), `profiling`, and the `ref/gui/` cells `critique.md` and `orient.md`. The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
 
 ## Routing
 

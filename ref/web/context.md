@@ -17,6 +17,7 @@ platform half.
 | Open | When |
 | --- | --- |
 | [`testing.md`](testing.md) | Testing in a browser. |
+| [`../testing/keeping.md`](../testing/keeping.md) | Writing, adding or committing a test — the four conditions a test meets to be kept. |
 | [`profiling.md`](profiling.md) | Load time, bundle size, runtime cost. |
 | [`profiling/browser-profiling.md`](profiling/browser-profiling.md) | Driving a browser to profile animations or leaks on a live page. |
 | [`profiling/browser-profiling/css-animations.md`](profiling/browser-profiling/css-animations.md) | Proving offscreen CSS animations and canvas or WebGL loops are stopped. |
