@@ -54,10 +54,13 @@ next agent can pick it without asking.
 what the issue changes, never from its title alone: one of the `required` labels, the family
 members that apply, then a cross-cutting label only where it clearly applies.
 
-**No `.beads/labels.toml` in the repo:** do not label from a guess. Say the repo has no label
-list and propose a labeling session: name the repo's parts from its submodules, apps,
-services and open beads, put the proposed file to the user as a slate row, and on `go` write
-it and relabel every bead against it. `issues shape` runs that session ([shape.md](shape.md)
+## No `.beads/labels.toml`
+
+A new bead waits for one: the guard denies `bd create` and `bd q` in a repo without the file,
+and lets edits to existing beads through. Do not label from a guess. Run the labeling session:
+name the repo's parts from its submodules, apps, services and open beads, put the proposed
+file to the user as a slate row, and on `go` write it, relabel every bead against it, then file
+what was waiting. `issues shape` runs the same session at backlog scale ([shape.md](shape.md)
 Phase 0).
 
 ## `human` — keep it in every repo's file
@@ -67,19 +70,21 @@ Needs a person: a decision, hardware, an account, a manual check. Autonomous pas
 
 ```bash
 bd human list                      # every issue awaiting a person
-bd human respond <id> "<answer>"   # comments and closes in one call
+bd human respond <id> -r "<answer>"   # comments and closes in one call
 bd human dismiss <id>
 ```
 
-Pair it with `-t decision` when the whole issue is an unmade call. `hitl` maps to `human`.
+Pair it with `-t decision` when the whole issue is an unmade call; a `decision` bead without
+`human` is denied, since `bd human list` is how anyone finds it. `hitl` maps to `human`.
+`issues iron-out` ([iron-out.md](iron-out.md)) works through everything carrying it.
 
 ## What enforces it
 
 | Where | What it checks |
 | --- | --- |
-| `hooks/beads-label-guard.sh` | Denies a `bd create`, `bd q`, `bd update --set-labels/--add-label/--remove-label`, `bd tag` or `bd label add/remove` whose result breaks the file, and prints the vocabulary. A `bd create --parent` is judged with the labels it inherits. An edit to an existing bead is denied only for a problem it introduces, so old labels come off one at a time. It does not see `bd create -f`/`--graph`, `bd import` or `bd set-state`; the pre-commit block and `bead-labels check` catch those. |
+| `hooks/beads-label-guard.sh` | Denies a `bd create`, `bd q`, `bd update --set-labels/--add-label/--remove-label`, `bd tag` or `bd label add/remove` whose result breaks the file, and prints the vocabulary. Denies a `-t decision` create without `human`, and any `bd create` or `bd q` in a repo with no file. A `bd create --parent` is judged with the labels it inherits. An edit to an existing bead is denied only for a problem it introduces, so old labels come off one at a time. It does not see `bd create -f`/`--graph`, `bd import` or `bd set-state`; the pre-commit block and `bead-labels check` catch those. |
 | `.beads/hooks/pre-commit` | One block after the `END BEADS INTEGRATION` marker runs `bead-labels check` on the staged `issues.jsonl` against the staged `labels.toml`. Beads keeps content outside its markers across `bd hooks install`, `--force` included. Stealth repos install no beads git hooks, so only the guard covers them. |
-| `bead-labels check` | Every bead in the tracker; `--jsonl <file>` checks an export instead. |
+| `bead-labels check` | Every bead in the tracker, a `decision` without `human` included; `--jsonl <file>` checks an export instead. |
 | `issues shape` | Runs the check first and fixes every finding. |
 | `review` | Runs the check on beads the branch touched and reports drift as findings. |
 

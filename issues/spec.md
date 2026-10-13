@@ -162,14 +162,17 @@ exact title match** — never create duplicates. Keep the run epic and any miles
 as two distinct lookups; don't collapse them, or a second run can reuse a milestone epic as the
 run epic and overwrite an unrelated spec.
 
-**`beads`** — the epic type carries both the run epic and, when the proposal groups slices under
+**`beads`** — run `~/.claude/tools/bead-labels list` before the first `bd create` and give every
+epic and slice labels from what it prints. A repo with no `.beads/labels.toml` runs its labeling
+session first ([labels.md](labels.md)); the guard denies every new bead until the file exists.
+The epic type carries both the run epic and, when the proposal groups slices under
 `## Milestone: <name>` headings, a child epic per group:
 
 1. Run epic: look for an existing one — `bd list -t epic --status open --json` and match on the
    spec's title.
    - **Exact title match → reuse its ID.**
    - **No match → create it, with the spec as its body:**
-     `bd create "<spec title>" -t epic --body-file /private/tmp/claude/<repo-slug>/spec.md --silent`
+     `bd create "<spec title>" -t epic -l <labels> --body-file /private/tmp/claude/<repo-slug>/spec.md --silent`
      — capture the printed ID as `<run-epic-id>`.
 2. If the proposal has `## Milestone: <name>` groupings, confirm before publishing:
    > "These slices fall into N milestones: <list>. Create them?"
@@ -217,7 +220,7 @@ Publish in **dependency order** (blockers first) so blockers can reference real 
 
 Per slice:
 
-- **`beads`:** `bd create "<title>" -t <task|bug|feature> -p <0-4> --body-file <path> --silent`
+- **`beads`:** `bd create "<title>" -t <task|bug|feature> -p <0-4> -l <labels> --body-file <path> --silent`
   - Capture the printed ID; later slices need it for their blocker edges.
   - **Every slice gets a `--parent`:** the milestone group's child epic ID when it belongs to
     one, otherwise the run epic ID from Phase 06 directly. A one-slice slate has no epic at all
@@ -249,7 +252,7 @@ for s in $SLICE_IDS; do bd dep add "$V" "$s" -t blocks; done
 
 Do NOT close or modify any parent issue.
 
-**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only the `afk`-labelled slices are candidates — never `hitl`. Read the unblocked front off `bd ready --limit 0 --json` rather than asking, and add one slate row per ready slice to this report naming it against the filed set, e.g. `4 of 7 filed are AFK-ready — run implement <id> for each; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
+**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only slices without `human` are candidates. Read the unblocked front off `bd ready --limit 0 --json` rather than asking, and add one slate row per ready slice to this report naming it against the filed set, e.g. `4 of 7 filed are AFK-ready — run implement <id> for each; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
 
 ## Principles for writing good agent briefs
 

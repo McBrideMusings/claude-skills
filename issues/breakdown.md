@@ -73,7 +73,8 @@ which tier a bead is in.
 A child created with `--parent` inherits the parent's labels, so slices start with the right
 family labels. Add a narrower label with `-l` where the slice touches less than the parent; pass
 `--no-inherit-labels` only when the child belongs to a different part entirely, and give it its
-own set from `.beads/labels.toml`.
+own set from `.beads/labels.toml`. A repo with no file runs its labeling session before the first
+child ([labels.md](labels.md)).
 
 ```bash
 P=neutrino-25
@@ -110,7 +111,7 @@ front, and never create one for work the tests cover.
 
 ```bash
 bd human list                    # the agenda: everything awaiting a person
-bd human respond <id> "<answer>" # comments and closes in one call
+bd human respond <id> -r "<answer>" # comments and closes in one call
 ```
 
 Landing has no bead. `wrap-up` writes the PR body and lands the branch.

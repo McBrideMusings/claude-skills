@@ -52,6 +52,7 @@ don't route around the allow by asking in chat first.
 | Verb | Command |
 | --- | --- |
 | **create** | `bd create "<title>" -t <type> -p <0-4> -l <l1,l2> -d "<body>"` |
+| create, labels | `-l` takes labels from the repo's `.beads/labels.toml`; run `~/.claude/tools/bead-labels list` first. The guard denies any create or quick-capture in a repo without the file, and a `-t decision` without `human` ([`labels.md`](labels.md)) |
 | create, body from file | `bd create "<title>" --body-file <path>` (`-` for stdin) |
 | create, ID only | add `--silent` — prints the ID and nothing else |
 | create as child | add `--parent <parent-id>` |
@@ -193,7 +194,7 @@ bd human dismiss <id>              # permanently, when the question stopped appl
 bd human stats
 ```
 
-Pair it with `-t decision` (`bd types` ships `decision`, plus `spike`, `story` and `milestone`).
+A `-t decision` bead must also carry `human`, and `issues iron-out` resolves them ([`iron-out.md`](iron-out.md)). Pair it with `-t decision` (`bd types` ships `decision`, plus `spike`, `story` and `milestone`).
 `human` is in every repo's `.beads/labels.toml` — see [`labels.md`](labels.md).
 
 ## GitHub sync — beads and GitHub are not exclusive

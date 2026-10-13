@@ -49,6 +49,7 @@ reached by the same hooks; they are never listed here.
 | [`architecture`](architecture/context.md) | Code design — module boundaries, coupling, the conditions a bug needs to exist, interface safety, security. |
 | [`audio`](audio/context.md) | Audio — volume sliders and gain curves, dB and loudness, normalisation, playback and signal handling. |
 | [`backend`](backend/context.md) | Backend services — secrets and logging discipline, data access, service boundaries. |
+| [`backlog`](backlog/context.md) | Beads and issue tracking — filing, labeling from `.beads/labels.toml`, `human` and decision beads, ironing out what waits on a person, relabeling a backlog. |
 | [`cli`](cli/context.md) | Building a command-line tool — its exit codes, stdout versus stderr, TTY detection, flags, piping. |
 | [`cloudflare`](cloudflare/context.md) | Cloudflare Workers, KV, D1, R2 — wrangler, bindings, secrets, deploys. |
 | [`computer-use`](computer-use/context.md) | Driving a browser or desktop GUI app for testing or automation without stealing focus, optionally with a local decision model. |

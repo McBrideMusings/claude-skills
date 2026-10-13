@@ -263,10 +263,10 @@ Parse the reply into per-item dispositions; **unmentioned items default to skip.
 
 *Act pass* — only after every disposition is recorded, execute by group:
 1. **Fix** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change. **A `fix` that cannot be applied — a denied edit, a failing check — halts the pass.** Report the blocker and stop; never land the rest around it.
-2. **File** — batch-file issues on the resolved backend (`bd create` or `gh issue create`); capture the new IDs/URLs for Step B. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
+2. **File** — batch-file through `issues file`'s Step 5 ([`../issues/file.md`](../issues/file.md)), which reads the repo's label vocabulary before the first `bd create`; never a raw `bd create` from here. Capture the new IDs/URLs for Step B. **A repo with no `.beads/labels.toml`** files nothing until it has one: the slate carries one more row proposing the file ([`../issues/labels.md`](../issues/labels.md)), and on `go` that file is written before the items are filed. Declined, or in `auto`, the items go in Step B's summary as unfiled, title and body, waiting on the labeling session. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
 3. **Skip** — drop.
 
-Do not proceed to Step B until every candidate is fixed-and-committed, filed, or skipped, and `git status` is clean.
+Do not proceed to Step B until every candidate is fixed-and-committed, filed, skipped, or listed as waiting on the labeling session, and `git status` is clean.
 
 ### Step B — Summarize
 

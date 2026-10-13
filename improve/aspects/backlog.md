@@ -13,7 +13,7 @@ Everything below is read-only: run the commands, write nothing to the tracker.
 | Run | A finding when |
 | --- | --- |
 | `~/.claude/tools/bead-labels path` | it exits 2: the repo has no `.beads/labels.toml`, so no label is checked. One finding, and it leads. |
-| `~/.claude/tools/bead-labels check` | it prints anything. Group the output by problem (label not in the file, child without parent, no required label) and give counts with three example ids each. |
+| `~/.claude/tools/bead-labels check` | it prints anything. Group the output by problem (label not in the file, child without parent, no required label, open decision without `human`) and give counts with three example ids each. |
 | `bd label list-all` | a label carries a colon, restates a type or priority (`bug`, `epic`, `spike`, `p1`), or is `afk`/`hitl`. |
 | `grep -n -A8 'END BEADS INTEGRATION' .beads/hooks/pre-commit` | `.beads/hooks/` exists and the label block from `labels.md` is missing after the marker. |
 | `bd human list` | it is empty while open beads plainly wait on a person (a decision, a device, an account). |
