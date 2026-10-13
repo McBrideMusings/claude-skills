@@ -35,6 +35,23 @@ test("createUser makes user retrievable", async () => {
 });
 ```
 
+## Well-shaped, still deleted
+
+Good shape is necessary, not sufficient: a test also has to meet the four conditions in
+[`keeping.md`](keeping.md).
+
+```ts
+// Well-shaped — public interface, behavior, survives a refactor. Still deleted.
+test("formats a chip count with thousands separators", () => {
+  expect(formatChips(1234567)).toBe("1,234,567");
+});
+```
+
+It fails condition 1: a wrong separator shows on the first screen of a five-minute run-through.
+It fails condition 2: a misformatted label loses no data and opens no hole. The same shape
+asserting that `settlePot` never creates or destroys chips across a split pot is kept — a wrong
+answer there corrupts balances, and no run-through reliably reaches a three-way split.
+
 ## Tautological tests
 
 ```ts
