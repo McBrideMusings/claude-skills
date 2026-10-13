@@ -84,7 +84,8 @@ model, `conceptual-model.md`).
 
 **Nielsen heuristics, root-layer mapping:** "match between system and real world" violations almost
 always root in the *conceptual model*, not the surface; "user control and freedom" is an *interaction
-structure* decision. Patching these at the surface treats symptoms.
+structure* decision. Patching these at the surface treats symptoms. All ten, with the layer each
+usually roots in: [`heuristics.md`](heuristics.md).
 
 ## Capturing work
 

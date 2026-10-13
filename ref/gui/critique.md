@@ -28,14 +28,16 @@ Run every pass **against a screenshot of the running surface, not against the so
 5. **Grouping** — run [`design/grouping.md`](design/grouping.md)'s six audit questions as a **required** pass.
    Every critique states the six answers explicitly; "looks fine" is not an answer to any of them.
    If no screenshot exists, say the grouping pass is unrun rather than claiming it passed.
-6. **States and copy** — on any Operate surface, run [`states.md`](states.md). A happy path at full
+6. **Usability heuristics** — walk the surface's main tasks and run Nielsen's ten heuristics from
+   [`heuristics.md`](heuristics.md) at every screen. Each finding names the heuristic number it breaks.
+7. **States and copy** — on any Operate surface, run [`states.md`](states.md). A happy path at full
    craft with browser-default everything else is the most reliable sign nobody used the thing.
-7. **Launch readiness** — when the scope is a whole site or app rather than one component, run
+8. **Launch readiness** — when the scope is a whole site or app rather than one component, run
    [`launch-readiness.md`](launch-readiness.md) as a **required** pass: the one-liner,
    one-CTA-per-page, title/meta/favicon and no-placeholder-text checks, plus its
    parallel-checker-then-single-fixer procedure for running the whole audit at that scale.
 
-8. **Stated personality** — when the repo has a `DESIGN.md`, read its `## Overview` first and judge
+9. **Stated personality** — when the repo has a `DESIGN.md`, read its `## Overview` first and judge
    the surface against the personality it states: the adjectives, the audience, the stance it takes
    against competitors. Each finding names the Overview sentence it contradicts (quoted) and the
    rendered element that contradicts it. Run `dsys status --json` for the gate: `designMd` says whether the file exists and `mode` whether the repo is owned. In an owned repo
@@ -46,7 +48,8 @@ Run every pass **against a screenshot of the running surface, not against the so
 
 ## Output
 
-Ranked findings, each with its concrete reason and a proposed fix. Tag each finding
+Ranked findings, each with its concrete reason and a proposed fix. Rank by severity, rated per
+[`heuristics.md`](heuristics.md) § Rating severity after every pass has run. Tag each finding
 **surface-fix** or **deeper-layer**; a deeper-layer finding routes into the matching
 [`layers/`](layers/) cell, worked per [`working-layers.md`](working-layers.md). Close with the
 standard escape hatch: `go` to apply every pick as tagged (deeper ones routed into their `layers/`
@@ -56,4 +59,5 @@ cell), or `park` to apply them and stop.
 
 When another skill (e.g. `improve`'s survey) runs this non-interactively: run the passes exactly as
 above with no file writes, no commits, no questions, and skip the escape hatch. Structure each
-finding as (finding, evidence/reason, impact `P0`–`P3`, proposed fix, surface-fix vs deeper-layer tag).
+finding as (finding, evidence/reason, impact `P0`–`P3` rated per [`heuristics.md`](heuristics.md)
+§ Rating severity, proposed fix, surface-fix vs deeper-layer tag).
