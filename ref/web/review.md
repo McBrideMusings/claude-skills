@@ -74,6 +74,10 @@ constant motion → `linear`. Built-in CSS easings are weak; expect strong custo
 - Symmetric enter/exit on a press-and-hold or deliberate interaction → slow the deliberate phase, snap
   the response (e.g. press `clip-path 2s linear`, release `200ms ease-out`).
 - Everything-at-once group entrance where a 30–80ms stagger belongs.
+- Every tooltip in a group waits its full open delay → once one tooltip is open, the next opens with
+  no delay and no animation until the pointer leaves the group (Radix `skipDelayDuration`, or a
+  `data-instant` attribute that zeroes the transition). Scanning a toolbar otherwise waits on every
+  icon.
 - A crossfade that shows two overlapping states after easing/duration tuning → subtle `filter:
   blur(2px)` during the transition to blend them (keep blur < 20px; heavy blur is costly in Safari).
 
@@ -82,6 +86,11 @@ constant motion → `linear`. Built-in CSS easings are weak; expect strong custo
   transform-based motion — gentler, not zero).
 - `:hover` motion not gated behind `@media (hover: hover) and (pointer: fine)` (touch fires false
   hovers on tap).
+
+**Layout**
+- `height: 100vh` / `h-screen` on a full-height section → `100dvh` / `h-dvh`. On a phone `100vh` is
+  the viewport with the address bar hidden, so the section runs past the visible bottom and cuts off
+  whatever sits there, usually the CTA. `dvh` tracks the visible area as the bar shows and hides.
 
 ## Tooling (repo mode)
 

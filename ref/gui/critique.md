@@ -46,6 +46,11 @@ Run every pass **against a screenshot of the running surface, not against the so
    components) to critique the surface in its own idiom, and never report non-conformance to them.
    With no `DESIGN.md`, the pass is unrun, and the critique says so.
 
+**A check with nothing to judge is N/A, never ticked and never dropped.** When a pass or a checklist
+item inside one refers to an element the surface lacks — a hero on a settings screen, a form on a
+gallery — mark it "N/A" and name the missing element in three words or fewer ("N/A: no form"). A
+check left out reads the same as a check that passed; the N/A line keeps them apart.
+
 ## Output
 
 Ranked findings, each with its concrete reason and a proposed fix. Rank by severity, rated per

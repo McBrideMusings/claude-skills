@@ -9,6 +9,9 @@ ones that get skipped:
 - **Depth.** A shadow carries an offset **and** a soft blur. A zero-offset coloured halo is decoration,
   not depth. Pick a border or a defined shadow, never both as decoration (cf. the Codex ghost-card in
   `../slop.md`).
+- **Shadows take the surface's hue.** A shadow is the background darkened, so tint it toward the
+  background's hue. A pure black shadow (`rgba(0,0,0,…)`) on a light tinted page reads as grey dirt
+  beside it.
 - **Browser surfaces.** The parts you did not draw still carry the design: **text selection, the caret,
   scrollbars, focus rings, underline offset, and the numerals in tabular data** all ship with browser
   defaults belonging to no design system. Theme them from the palette. This is the cheapest signal that

@@ -48,7 +48,10 @@ touch targets.
 - **Touch targets ≥44×44px** even when the glyph is smaller (expand hit area with padding/pseudo-element).
 - **Concentric radii** (Taste Skill) — a rounded element nested in another rounded element must have
   `inner radius = outer radius − padding` or the corners aren't truly concentric and read as sloppy:
-  `border-radius: calc(2rem - 0.375rem)` on the inner when the outer is `2rem` and the gap is `0.375rem`.
+  `border-radius: calc(1rem - 0.375rem)` on the inner when the outer is `1rem` and the gap is `0.375rem`.
+- **One radius scale per page.** Every rounded element draws from one short scale, or from a written
+  rule per component type (buttons pill, cards 16px, inputs 8px). Cards at 12, 16, 20 and 24px on one
+  page say nobody decided; report the count of distinct radii as the fact.
 - **Hairline dividers** — a 1px separator is cleaner as `display: grid; gap: 1px` over a contrasting
   background than as per-child borders (which double up and misalign at corners). (Taste Skill.)
 - **Cross-element alignment is an audit axis** (Taste Skill redesign checks) — this is good continuation

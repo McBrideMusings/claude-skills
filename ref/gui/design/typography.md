@@ -8,6 +8,12 @@ Part of [`design.md`](../design.md) — its one rule holds here: every verdict c
   positive. A single `letter-spacing` for all sizes is wrong somewhere. Display floor: `≥ -0.04em`;
   tighter and letters touch. All-caps/eyebrows want `+0.05–0.12em`.
 - **Leading tracks size inversely** — tight on headings (1.1–1.2), looser on body (1.5–1.7).
+- **Italic descenders need room.** An italic display word with a descender (y g j p q) slants its tail
+  past the box; below `line-height: 1.1`, or inside `overflow: hidden`, the tail is cut off. Give that
+  line ≥1.1 and a little bottom padding, and check the rendered glyph, not the CSS.
+- **Emphasis stays in the family.** Stress a headline word with the headline face's own italic or
+  bold. A word set in a different typeface (one serif word in a sans headline) adds a third voice to
+  the line and breaks its rhythm; it is the reflex move, not a pairing.
 - **Hierarchy = weight + size + leading as a set**, not size alone. Few sizes, more contrast: a 5-step
   scale (caption/secondary/body/subhead/heading) on a committed ratio (1.25 / 1.333 / 1.5). Steps 14/15/16
   are muddy hierarchy.

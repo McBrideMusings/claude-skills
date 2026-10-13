@@ -30,6 +30,17 @@ bans and the model-specific defects there, and the colour/type tells in
 side-stripe border, gradient text, an over-rounded card, an image-on-hover). Report a hit like any
 other finding — `file:line`, the named tell, the **Why**, the **Fix** — never as "looks generic".
 
+**Run the scanner before reading.** `node scripts/preflight.mjs <changed UI files>` (the script sits
+beside this file; Node 20, no install) greps HTML, CSS, JS and component source line by line; hits
+print on stdout and the reason for each rule on stderr. A hard hit (`transition: all`, z-index 999,
+`outline: none` with no `:focus-visible` ring) exits 1 and is a finding as printed. A `WARN:` hit
+names a slop tell or a likely defect; confirm it against the code and the brief before reporting
+it, since a brief can earn a tell back. Exit 2 means a path did not exist. The scanner reads one
+line at a time with flat CSS brace tracking — minified, nested SCSS and `@media`-wrapped rules
+escape it — so a clean run never replaces reading the catalog.
+
+A catalog section with nothing to check is reported N/A, per [`critique.md`](critique.md)'s rule.
+
 Substantive bar from Emil Kowalski (animations.dev) and Apple's *Designing Fluid Interfaces*.
 
 ## What to flag (each carries a measurable cost, not a taste call)

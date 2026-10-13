@@ -27,5 +27,14 @@ The text *content* an AI reaches for. Match-and-rewrite the same way. Harvested 
   to scroll.
 - **Duplicate CTA intent.** "Get in touch" + "Let's talk" + "Start a project" all on one page — three
   buttons, one action. One primary CTA, repeated verbatim if repeated at all.
+- **"X theater" and "not just X, it's Y".** "Stop productivity theater", "Not just a tool, it's a
+  partner". A borrowed contrast standing in for saying what the product does; say what it does.
+- **A sentence about the section under its heading.** "Each of these is a feature we ship today",
+  "Here's how it works". The content already says so; cut it.
+- **A word strip at the foot of the hero.** "BRAND. MOTION. SPATIAL." Three capitalised nouns that
+  name no feature; cut it.
+- **Placeholder people, companies and verbs.** John Doe, Jane Smith and egg-icon avatars; Acme, Nexus,
+  SmartFlow, Cloudly; Elevate, Seamless, Unleash, Revolutionize. A shipped page uses real names and a
+  verb for what the product does. (A mockup can carry placeholders; a page going live cannot.)
 - **Fake-precise invented specs.** `92%`, `4.1×`, `5.8 mm`, `13.4 lb` — oddly specific numbers faking
   engineering precision (distinct from the fake-round `99.99%`). If the number isn't real, don't print it.

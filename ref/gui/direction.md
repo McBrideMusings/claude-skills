@@ -80,6 +80,18 @@ polish on a look that's being discarded.
 A missing design doc does not make a project greenfield. The incumbent code is the visual authority
 until someone decides to replace it.
 
+**A redesign never silently changes what something outside the page depends on.** URLs (bookmarks
+and inbound links break), nav labels (users navigate by them), form field names (autofill, analytics
+and integrations key on them), the logo, and consent or legal copy. Changing any of these is its own
+decision, named to the user. Before the first edit, record the baseline — brand tokens, the page and
+nav structure, titles and meta — so a later check can show what moved.
+
+**A brief that names an established design system gets its official package.** Material, Carbon,
+Fluent, Polaris, Primer, GOV.UK, USWDS: install the system's own components. A hand rebuild from
+screenshots drifts on states and accessibility the package already handles, and importing its tokens
+only to override most of them is a second system wearing the first one's name. One system per
+project.
+
 ## Comps — when the direction should be seen before it's built
 
 Rendering the direction as an image before writing code produces bolder, less expected layouts than

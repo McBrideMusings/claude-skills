@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  .card {
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+  }
+  .card:focus-visible {
+    outline: 2px solid var(--accent);
+  }
+  .card:focus {
+    outline: none;
+  }
+  .modal { z-index: 40; }
+  .enter { transform: scale(0.95); opacity: 0; }
+  .hero { min-height: 100dvh; }
+  h1 { font-family: Geist; }
+  body { font-family: Geist; }
+  :root { --z-modal: 1400; }
+  .tooltip { z-index: 1400; }
+  .panel {
+    border: 1px solid var(--line);
+    box-shadow: 0 1px 2px var(--shadow);
+  }
+  .raised { box-shadow: 0 12px 32px var(--shadow); }
+  /* card radius — matches the input scale */
+  .card { border-radius: 12px; }
+  .pill { border-radius: 9999px; }
+  .tag { border-radius: 100px; }
+  .sheet { border: 1px solid var(--line); box-shadow: inset 0 0 20px var(--shadow); }
+  .screen { height: 100vh; height: 100dvh; }
+  .quote { font-family: inherit; }
+  *:focus-visible { outline: 2px solid var(--accent); }
+  input { outline: none; }
+</style>
+</head>
+<body>
+  <section>One</section>
+  <section>Two</section>
+  <button class="outline-none focus-visible:ring-2">Go</button>
+  <div class="card border shadow-sm rounded-xl">Card</div>
+  <p>This headline uses a period. No banned punctuation here, and 2019–2026 is a range.</p>
+</body>
+</html>

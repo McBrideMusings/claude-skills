@@ -59,6 +59,7 @@ a sibling, and most of this does not apply there.
 | [`libraries.md`](libraries.md) | Choosing a component or styling library. |
 | [`prototype.md`](prototype.md) | Building a throwaway to settle a design question. |
 | [`review.md`](review.md) | Reviewing an interface change for motion defects and slop. |
+| [`scripts/preflight.mjs`](scripts/preflight.mjs) | Scanning HTML, CSS or component files for slop tells and craft defects before reading them. |
 | [`review-floor.md`](review-floor.md) | Reviewing any UI diff for accessibility and misbinding regressions, including removed lines. |
 | [`launch-readiness.md`](launch-readiness.md) | Reviewing a whole site or app about to ship — the last-mile checklist `states.md` and `slop.md` don't cover. |
 

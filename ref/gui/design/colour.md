@@ -14,6 +14,9 @@ Part of [`design.md`](../design.md) — its one rule holds here: every verdict c
   works *because* it's rare.
 - **Semantic-first in product**: accent = primary action / selection / state, never decoration; a colour
   means the same thing on every screen. WCAG: body ≥4.5:1, large/UI ≥3:1; never colour as the only signal.
+- **The accent holds across the page.** Whatever the strategy, the accent is one colour in every
+  section. A pricing band that turns its buttons teal on an orange page has two accents, and
+  neither one means "act here" any more.
 - **Dark mode ≠ inverted light**: depth from surface lightness (lighter = higher), not shadow; desaturate
   accents; drop body weight a notch. Redefine only the semantic token layer.
 - **Alpha is a design smell** — heavy rgba/hsla usually means an incomplete palette; define explicit

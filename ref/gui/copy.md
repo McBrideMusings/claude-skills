@@ -83,3 +83,16 @@ No blame, no "oops", no exclamation marks. Phrase hints positively ("Use only le
 use numbers or symbols") and show format requirements before the mistake, not after. An error that
 keeps firing is an interaction to redesign, not a message to reword. (What an error must answer —
 what failed, why, how to recover — is `states.md`'s structure; this cell owns the wording.)
+
+## Re-read the whole page before calling it done
+
+Every string can pass the rules above alone and the page can still fail. Once the page is built, read
+every visible string in order: headings, buttons, labels, captions, errors, empty states. Rewrite any
+that:
+
+- is ungrammatical,
+- points at nothing — "this", "it" or "them" with no referent on the page,
+- leans on a forced metaphor ("your data's north star").
+
+Then check the page keeps one register — plain throughout or playful throughout, not playful in the
+hero and stiff in the footer.

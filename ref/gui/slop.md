@@ -15,8 +15,8 @@ The catalog is this page plus four pages in [`slop/`](slop/). A full pass runs a
 | Tells | Page |
 | --- | --- |
 | Stand-ins: emoji icons, a system display face, mono as costume, fake charts, a needless modal | [`slop/stand-ins.md`](slop/stand-ins.md) |
-| Structure and layout: the 50/50 hero, nested boxes, bento dead cells, logo walls | [`slop/structure.md`](slop/structure.md) |
-| Copywriting and marketing: separators, version badges, fake credits, duplicate CTAs | [`slop/copy.md`](slop/copy.md) |
+| Structure and layout: the 50/50 hero, nested boxes, bento dead cells, logo walls, and the Persuade-page caps | [`slop/structure.md`](slop/structure.md) |
+| Copywriting and marketing: separators, version badges, fake credits, duplicate CTAs, "X theater", placeholder names | [`slop/copy.md`](slop/copy.md) |
 | Colour and type: cream backgrounds, purple-blue gradients, reflex serifs, glows | [`slop/colour-and-type.md`](slop/colour-and-type.md) |
 
 ## Absolute bans (match-and-refuse — rewrite with different structure)

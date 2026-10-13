@@ -25,3 +25,6 @@ words can earn any of them back — but recognising one means **rewriting the el
   usually laziness; exhaust inline and progressive alternatives first.
 - **Light or dark picked by category.** "Dev tool → dark", "wellness → light" is a training-data
   reflex. Pick it from the use scene: who is using this, where, under what ambient light.
+- **A section that flips theme mid-page.** One dark band in a light page (or the reverse) with no
+  reason in the content. The page picked a theme; a flip is a second, unpicked one. A deliberate
+  colour-block story or a theme change driven by scroll is allowed once per page.
