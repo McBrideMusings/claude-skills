@@ -1,6 +1,6 @@
 ---
 name: issues
-description: "Read, create, close or label a tracked item, and the four backlog verbs: `file` a follow-up, `spec` a conversation into tickets, `next` to pick what to work on, `shape` a vague backlog into AFK-ready issues. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Read before creating, reading, closing or labelling a tracked item."
+description: "Read, create, close or label a tracked item, and the five backlog verbs: `file` a follow-up, `spec` a conversation into tickets, `next` to pick what to work on, `shape` a vague backlog into AFK-ready issues, `reconcile` to close beads a merged pull request already shipped. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Read before creating, reading, closing or labelling a tracked item."
 ---
 
 # Issues
@@ -15,7 +15,7 @@ which-tracker rule.
 
 ## Verbs
 
-Four verbs route to a sibling file loaded on demand — read that file, not this one, before acting.
+Five verbs route to a sibling file loaded on demand — read that file, not this one, before acting.
 
 | Verb | Does | Loads |
 | --- | --- | --- |
@@ -23,6 +23,7 @@ Four verbs route to a sibling file loaded on demand — read that file, not this
 | `issues spec` | Synthesize a spec from conversation, get it approved, slice it into vertical-slice tickets, publish to the tracker. | [`spec.md`](spec.md) |
 | `issues next` | Pick the next work item from the tracker and recommend one concrete starting point. | [`next.md`](next.md) |
 | `issues shape` | Iron out a backlog's structure and ambiguity: type and label every issue, group into epics, infer edges, drive every issue to AFK-ready. Also charts a foggy effort from scratch. | [`shape.md`](shape.md) |
+| `issues reconcile` | Close beads a merged PR already shipped: closes every PR-linked bead whose PR merged, then matches unlinked open beads against merged PRs and closes the matches you accept. Run when an open bead looks done. | [`reconcile.md`](reconcile.md) |
 
 A request to read, create, close or label an item with no verb is [`REFERENCE.md`](REFERENCE.md)
 work. A request that names none of these and maps to neither → ask which, in plain chat.
