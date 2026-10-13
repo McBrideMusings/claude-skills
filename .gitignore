@@ -27,3 +27,6 @@ __pycache__/
 
 # Bundled office skills (docx, pdf, pptx, xlsx, ...) written by the harness sync. Theirs to update, not ours to track.
 synced/
+
+# REA's skill, written by `npx rea-agents setup`. Theirs to update, not ours to track.
+/reverse-engineer-anything/
