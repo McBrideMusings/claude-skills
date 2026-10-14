@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# swarm — run several dispatched workers at once and wait for all of them.
+#
+#   swarm check <manifest>     validate the manifest and gate each agent with `dispatch check`
+#   swarm run   <manifest>     start every worker in parallel, block until all have finished
+#
+# Each worker is one `dispatch exec` call, with CLAUDE_DISPATCH_AGENT (and, for claude,
+# CLAUDE_DISPATCH_MODEL) set for that worker alone. So a worker gets exactly what a single
+# dispatch gets — its own herdr space inside herdr, a Terminal.app window outside it, the
+# outfile contract, the 40-minute ceiling — and swarm owns only the fan-out and the index.
+#
+# Manifest: one worker per line, whitespace-separated, `#` starts a comment.
+#
+#   <label>  <agent>[:<model>]  <brief-file>  [<dir>]
+#
+#   label       [a-z0-9_-]+, unique; names the worker's outfile and log
+#   agent       codex | reasonix | claude (dispatch's vendors); :<model> is claude-only
+#   brief-file  the prompt, a file path
+#   dir         where the worker runs (default: $PWD). Implementing workers need a worktree each.
+#
+# Output goes in a run directory (printed first): <label>.md is the worker's answer,
+# <label>.log its dispatch/herdr-agent stderr (space, pane, blocked-on-prompt notices),
+# index.tsv one row per worker: label, agent, exit code, outfile, log.
+# Exits 0 only when every worker exited 0.
+set -eu
+
+D="$HOME/.claude/skills/dispatch/dispatch"
+
+die() { echo "swarm: $*" >&2; exit 1; }
+
+# Parse <manifest> into the parallel arrays L A M B W (label, agent, model, brief, dir).
+parse() {
+  local manifest="$1" n=0 line label spec brief dir extra
+  [ -f "$manifest" ] || die "manifest not found: $manifest"
+  L=(); A=(); M=(); B=(); W=()
+  while IFS= read -r line || [ -n "$line" ]; do
+    n=$((n + 1))
+    line="${line%%#*}"
+    read -r label spec brief dir extra <<<"$line" || true
+    [ -z "${label:-}" ] && continue
+    [ -n "${extra:-}" ] && die "line $n: too many fields"
+    [ -n "${brief:-}" ] || die "line $n: expected <label> <agent>[:<model>] <brief-file> [<dir>]"
+    [[ "$label" =~ ^[a-z0-9_-]+$ ]] || die "line $n: label '$label' must match [a-z0-9_-]+"
+    local i; for i in "${L[@]+"${L[@]}"}"; do [ "$i" = "$label" ] && die "line $n: duplicate label '$label'"; done
+    local agent="${spec%%:*}" model=""
+    [ "$spec" != "$agent" ] && model="${spec#*:}"
+    case "$agent" in codex|reasonix|claude) ;; *) die "line $n: unknown agent '$agent' (codex|reasonix|claude)" ;; esac
+    [ -n "$model" ] && [ "$agent" != claude ] && die "line $n: a model is only accepted for claude"
+    [ -f "$brief" ] || die "line $n: brief not found: $brief"
+    dir="${dir:-$PWD}"
+    [ -d "$dir" ] || die "line $n: dir not found: $dir"
+    L+=("$label"); A+=("$agent"); M+=("$model")
+    B+=("$(cd "$(dirname "$brief")" && pwd -P)/$(basename "$brief")")
+    W+=("$(cd "$dir" && pwd -P)")
+  done < "$manifest"
+  [ "${#L[@]}" -gt 0 ] || die "manifest has no workers: $manifest"
+}
+
+cmd_check() {
+  parse "${1:-}"
+  local seen=" " i rc=0
+  for i in "${!L[@]}"; do
+    case "$seen" in *" ${A[$i]} "*) ;; *)
+      seen="$seen${A[$i]} "
+      CLAUDE_DISPATCH_AGENT="${A[$i]}" "$D" check || rc=1 ;;
+    esac
+  done
+  for i in "${!L[@]}"; do
+    printf '%s\t%s%s\t%s\t%s\n' "${L[$i]}" "${A[$i]}" "${M[$i]:+:${M[$i]}}" \
+      "$( cd "${W[$i]}" && CLAUDE_DISPATCH_AGENT="${A[$i]}" "$D" transport 2>&1 )" "${W[$i]}"
+  done
+  return "$rc"
+}
+
+cmd_run() {
+  parse "${1:-}"
+  cmd_check "$1" >/dev/null || die "an agent failed its health check — run 'swarm check $1'"
+
+  local base run
+  base="$("$HOME/.claude/tools/repo-slug" --path 2>/dev/null || echo /private/tmp/claude/swarm)"
+  run="$base/swarm-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  mkdir -p "$run"
+  echo "swarm: ${#L[@]} workers, run dir $run" >&2
+
+  local -a pids=()
+  local i
+  for i in "${!L[@]}"; do
+    (
+      cd "${W[$i]}"
+      export CLAUDE_DISPATCH_AGENT="${A[$i]}"
+      if [ -n "${M[$i]}" ]; then export CLAUDE_DISPATCH_MODEL="${M[$i]}"; fi
+      exec "$D" exec "${B[$i]}" "$run/${L[$i]}.md"
+    ) > "$run/${L[$i]}.log" 2>&1 &
+    pids+=("$!")
+    echo "swarm: started ${L[$i]} (${A[$i]}${M[$i]:+:${M[$i]}}) in ${W[$i]}, log $run/${L[$i]}.log" >&2
+  done
+
+  local failed=0 code
+  printf 'label\tagent\texit\toutfile\tlog\n' > "$run/index.tsv"
+  for i in "${!L[@]}"; do
+    code=0; wait "${pids[$i]}" || code=$?
+    [ "$code" -eq 0 ] || failed=$((failed + 1))
+    [ -s "$run/${L[$i]}.md" ] || echo "swarm: ${L[$i]} left no answer in $run/${L[$i]}.md" >&2
+    printf '%s\t%s\t%s\t%s\t%s\n' "${L[$i]}" "${A[$i]}" "$code" "$run/${L[$i]}.md" "$run/${L[$i]}.log" >> "$run/index.tsv"
+    echo "swarm: ${L[$i]} finished, exit $code" >&2
+  done
+
+  echo "swarm: done, $failed of ${#L[@]} failed — index $run/index.tsv" >&2
+  cat "$run/index.tsv"
+  [ "$failed" -eq 0 ]
+}
+
+case "${1:-}" in
+  check) shift; cmd_check "$@" ;;
+  run)   shift; cmd_run "$@" ;;
+  *) echo "usage: swarm {check|run} <manifest>" >&2; exit 2 ;;
+esac
