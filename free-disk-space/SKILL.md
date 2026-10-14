@@ -64,7 +64,7 @@ For each worktree: is it dirty, and does it hold commits that aren't pushed anyw
 
 ### 5. Offload keepers
 
-For large files worth keeping, with a drive mounted: `rsync -a` to the drive → verify the sizes match → trash the original → symlink the old path to the new one. Symlink individual folders, never a whole special directory like `~/Movies`. Warn that the owning app needs the drive mounted or the path breaks.
+For large files worth keeping, with a drive mounted: `rsync -a` to the drive (add `--inplace` when the drive is an SMB share: rsync's temp name for a file starting with `_` begins with `._`, which the share refuses as AppleDouble metadata) → verify the sizes match → trash the original → symlink the old path to the new one. Symlink individual folders, never a whole special directory like `~/Movies`. Warn that the owning app needs the drive mounted or the path breaks.
 
 ### 6. Wrap up
 
