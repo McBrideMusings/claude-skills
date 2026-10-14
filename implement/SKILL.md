@@ -143,11 +143,7 @@ elsewhere, squashed by `wrap-up`.
    part of this item, never a follow-up. In a repo with a `DESIGN.md`, save the `dsys check`
    baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). Then start the pass's dashboard with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
-   each step below. **A bead also carries its stage**, in every mode, worker passes included:
-   at each step, and at the gate, run
-   `bd update <id> --set-metadata stage=<plan|edit|build|verify|review|gate> --set-metadata stage_at=<UTC ISO time>`.
-   It is what the work board and `swarm status` read, from any worktree; the dashboard is only
-   this session's card. A GitHub-issue item has no bead and reports through the dashboard alone.
+   each step below.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
    feature that needs a design token or component `DESIGN.md` lacks adds it to `DESIGN.md` in
    the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
