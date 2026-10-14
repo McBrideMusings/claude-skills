@@ -26,6 +26,8 @@ User may pass a GitHub URL:
 
 **The URL table above is GitHub-only.** A beads repo has no web URLs — its filters arrive as arguments (`issues next label:auth`, `issues next p0`), resolved against the `bd` flags in Phase 02.
 
+**Focus.** Free text that is not a filter — `issues next the web browser feature`, `issues next focus="related to the client"` — is a focus. It narrows nothing in Phase 02; the Phase 03 sub-agent scores every candidate's relevance to it (Phase 06), so related work rises and unrelated work sinks. `swarm` and `implement auto` pass their focus through here.
+
 ## Phases
 
 ### Phase 01 — Determine Target Repo and Filters
@@ -72,7 +74,7 @@ Phases 04, 05, and 06 (project-phase assessment, grouping, scoring/ranking) are 
 
 Brief (treat the rules in Phases 04–06 below as the sub-agent's brief, not the parent's own work):
 
-> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees, milestone`) or beads' (`id, title, status, priority, issue_type, created_at, labels, description, parent, dependency_count, dependent_count, comment_count` — `bd list --json` returns all of these directly). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; `parent` is the epic and `dependent_count` is how many issues this one blocks; (b) the contents of `README.md` and `docs/CONTEXT.md` if present.
+> "You are receiving: (a) a JSON list of issues — either GitHub's (`number, title, labels, body, createdAt, comments, assignees, milestone`) or beads' (`id, title, status, priority, issue_type, created_at, labels, description, parent, dependency_count, dependent_count, comment_count` — `bd list --json` returns all of these directly). Treat `priority` 0–4 as the beads equivalent of a P0–P4 label, 0 being highest; `parent` is the epic and `dependent_count` is how many issues this one blocks; (b) the contents of `README.md` and `docs/CONTEXT.md` if present; (c) when given, a focus — free text naming the work the caller wants.
 >
 > Do three things and return a compact JSON result:
 >
@@ -153,6 +155,8 @@ Stale and active-discussion are mutually exclusive (one or the other, not both).
 | early | ≥50% feature/enhancement | × 1.3 |
 | mature | ≥50% bug | × 1.3 |
 | unclear | any | × 1.0 |
+
+**Focus relevance** (only when a focus was given, applied after tilt). Read each issue's title, labels, description and epic against the focus: **direct** (it is the focused work, or in an epic that is) +6; **related** (same subsystem, files or feature area) +3; **unrelated** 0. Group relevance is its best member's. Rank every group with relevance above 0 ahead of every group at 0; within each band, sort by score. Add `"relevance": "direct|related|unrelated"` to each `top` entry. When nothing scores above 0, say so in `phase_signal` and rank as if no focus was given. With a focus, the critical-priority floor below applies within each band, never across them: an unrelated critical issue goes to `critical_outside_top`, not above focused work.
 
 Critical/high-priority issues still float on raw score — tilt nudges the long tail, never buries urgent items. Any group containing a `priority:critical` issue ranks at least as high as the top tilted group. If multiple groups contain critical issues, rank them against each other by raw score (no tilt applied between them).
 

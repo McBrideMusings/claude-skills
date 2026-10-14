@@ -1,117 +1,126 @@
 #!/usr/bin/env bash
-# swarm — run several dispatched workers at once and wait for all of them.
+# swarm — launch one bead as an unattended Claude implement pass in its own worktree.
 #
-#   swarm check <manifest>     validate the manifest and gate each agent with `dispatch check`
-#   swarm run   <manifest>     start every worker in parallel, block until all have finished
+#   swarm check
+#   swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason "<text>"] [--dry-run]
 #
-# Each worker is one `dispatch exec` call, with CLAUDE_DISPATCH_AGENT (and, for claude,
-# CLAUDE_DISPATCH_MODEL) set for that worker alone. So a worker gets exactly what a single
-# dispatch gets — its own herdr space inside herdr, a Terminal.app window outside it, the
-# outfile contract, the 40-minute ceiling — and swarm owns only the fan-out and the index.
+# Run from the repo's main checkout. `launch` makes the worktree and branch swarm/<bead-id>
+# under ~/.worktrees/<repo>/, links its local files, marks it SELF-LAND, writes the brief to
+# the worktree's git dir, and runs `dispatch exec` there with CLAUDE_DISPATCH_AGENT=claude and
+# CLAUDE_DISPATCH_MODEL=<model>. The worker runs `implement <bead-id> auto`, which lands its own
+# branch and closes the bead. `launch` blocks until the worker is idle or done; the lead runs
+# one per slot in the background and refills a slot when its launch exits.
 #
-# Manifest: one worker per line, whitespace-separated, `#` starts a comment.
-#
-#   <label>  <agent>[:<model>]  <brief-file>  [<dir>]
-#
-#   label       [a-z0-9_-]+, unique; names the worker's outfile and log
-#   agent       codex | reasonix | claude (dispatch's vendors); :<model> is claude-only
-#   brief-file  the prompt, a file path
-#   dir         where the worker runs (default: $PWD). Implementing workers need a worktree each.
-#
-# Output goes in a run directory (printed first): <label>.md is the worker's answer,
-# <label>.log its dispatch/herdr-agent stderr (space, pane, blocked-on-prompt notices),
-# index.tsv one row per worker: label, agent, exit code, outfile, log.
-# Exits 0 only when every worker exited 0.
+# stdout: one line, "<bead-id>\t<exit>\t<outfile>\t<worktree>". Everything else goes to stderr.
+# --dry-run validates and prints the brief without creating anything.
 set -eu
 
 D="$HOME/.claude/skills/dispatch/dispatch"
 
 die() { echo "swarm: $*" >&2; exit 1; }
+need() { command -v "$1" >/dev/null 2>&1 || die "missing '$1'"; }
 
-# Parse <manifest> into the parallel arrays L A M B W (label, agent, model, brief, dir).
-parse() {
-  local manifest="$1" n=0 line label spec brief dir extra
-  [ -f "$manifest" ] || die "manifest not found: $manifest"
-  L=(); A=(); M=(); B=(); W=()
-  while IFS= read -r line || [ -n "$line" ]; do
-    n=$((n + 1))
-    line="${line%%#*}"
-    read -r label spec brief dir extra <<<"$line" || true
-    [ -z "${label:-}" ] && continue
-    [ -n "${extra:-}" ] && die "line $n: too many fields"
-    [ -n "${brief:-}" ] || die "line $n: expected <label> <agent>[:<model>] <brief-file> [<dir>]"
-    [[ "$label" =~ ^[a-z0-9_-]+$ ]] || die "line $n: label '$label' must match [a-z0-9_-]+"
-    local i; for i in "${L[@]+"${L[@]}"}"; do [ "$i" = "$label" ] && die "line $n: duplicate label '$label'"; done
-    local agent="${spec%%:*}" model=""
-    [ "$spec" != "$agent" ] && model="${spec#*:}"
-    case "$agent" in codex|reasonix|claude) ;; *) die "line $n: unknown agent '$agent' (codex|reasonix|claude)" ;; esac
-    [ -n "$model" ] && [ "$agent" != claude ] && die "line $n: a model is only accepted for claude"
-    [ -f "$brief" ] || die "line $n: brief not found: $brief"
-    dir="${dir:-$PWD}"
-    [ -d "$dir" ] || die "line $n: dir not found: $dir"
-    L+=("$label"); A+=("$agent"); M+=("$model")
-    B+=("$(cd "$(dirname "$brief")" && pwd -P)/$(basename "$brief")")
-    W+=("$(cd "$dir" && pwd -P)")
-  done < "$manifest"
-  [ "${#L[@]}" -gt 0 ] || die "manifest has no workers: $manifest"
+# The repo's main checkout, from $PWD. A swarm is led from the main checkout, never a worktree.
+main_checkout() {
+  local gitdir common
+  gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null)" || die "not in a git repo: $PWD"
+  common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir)"
+  [ "$gitdir" = "$common" ] || die "run swarm from the repo's main checkout, not a linked worktree"
+  git -C "$PWD" rev-parse --show-toplevel
 }
 
+# The herdr space of the repo's main checkout, or empty. Workers nest under it as child spaces;
+# without it herdr-agent puts each one at the top level.
+repo_space() { "$HOME/.claude/skills/dispatch/herdr-agent" repo-space "$1"; }
+
 cmd_check() {
-  parse "${1:-}"
-  local seen=" " i rc=0
-  for i in "${!L[@]}"; do
-    case "$seen" in *" ${A[$i]} "*) ;; *)
-      seen="$seen${A[$i]} "
-      CLAUDE_DISPATCH_AGENT="${A[$i]}" "$D" check || rc=1 ;;
+  need git; need jq; need bd; need herdr
+  [ "${HERDR_ENV:-}" = "1" ] || die "not inside herdr (HERDR_ENV != 1) — swarm workers need herdr spaces"
+  local repo tier
+  repo="$(main_checkout)"
+  tier="$("$HOME/.claude/tools/repo-tier" "$repo")"
+  [ "$tier" = owned ] || die "repo-tier says '$tier' for $repo — swarm workers land themselves, which only an owned repo allows"
+  bd -C "$repo" ready --limit 1 --json >/dev/null 2>&1 || die "bd cannot read the tracker in $repo"
+  CLAUDE_DISPATCH_AGENT=claude "$D" check >&2
+  # Open the repo's space once, here, so parallel launches never race to create it.
+  local ws; ws="$(repo_space "$repo")"
+  if [ -z "$ws" ]; then
+    ws="$(herdr workspace create --cwd "$repo" --label "$(basename "$repo")" --no-focus | jq -r '.result.workspace.workspace_id')"
+    echo "swarm: opened herdr space $ws for $repo — workers nest under it" >&2
+  fi
+  echo "swarm: ready in $repo; workers open as child spaces of $ws" >&2
+}
+
+cmd_launch() {
+  local id="${1:-}" model="${2:-}" reason="" dry=0
+  [ -n "$id" ] && [ -n "$model" ] || die "usage: swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run]"
+  shift 2
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --opus-reason) reason="${2:-}"; shift 2 ;;
+      --dry-run) dry=1; shift ;;
+      *) die "unknown flag: $1" ;;
     esac
   done
-  for i in "${!L[@]}"; do
-    printf '%s\t%s%s\t%s\t%s\n' "${L[$i]}" "${A[$i]}" "${M[$i]:+:${M[$i]}}" \
-      "$( cd "${W[$i]}" && CLAUDE_DISPATCH_AGENT="${A[$i]}" "$D" transport 2>&1 )" "${W[$i]}"
-  done
+  case "$model" in haiku|sonnet) ;; opus) [ -n "$reason" ] || die "opus needs --opus-reason" ;; *) die "model must be haiku, sonnet or opus" ;; esac
+  [ "$model" = opus ] || [ -z "$reason" ] || die "--opus-reason is only for opus"
+
+  local repo; repo="$(main_checkout)"
+  local bead status
+  bead="$(bd -C "$repo" show "$id" --json 2>/dev/null)" || die "no bead '$id' in $repo"
+  status="$(printf '%s' "$bead" | jq -r 'if type == "array" then .[0] else . end | .status')"
+  [ "$status" = open ] || die "bead $id is '$status', not open"
+  printf '%s' "$bead" | jq -e 'if type == "array" then .[0] else . end | (.labels // []) | index("human")' >/dev/null \
+    && die "bead $id is labelled human — it is a question for iron-out, not work"
+
+  local name base wt branch outdir outfile
+  name="$(basename "$repo")"
+  branch="swarm/$id"
+  wt="$HOME/.worktrees/$name/$id"
+  base="$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')" || true
+  base="${base:-$(git -C "$repo" branch --show-current)}"
+  outdir="$( cd "$repo" && "$HOME/.claude/tools/repo-slug" --path )/swarm"
+  outfile="$outdir/$id.md"
+
+  local brief
+  brief="Call \`Skill(implement)\` first, then run \`implement $id auto\` in this worktree.
+
+This is one worker in a swarm. Nobody is watching this pane: take every decision the way auto
+mode says, record it as an \`auto decided\` note on the bead, and park the bead rather than wait.
+Land through \`wrap-up\` as auto mode does — this worktree carries a SELF-LAND marker.
+
+Model: $model.${reason:+
+Opus reason: $reason}
+
+Mode: report-back. Also write your report, the same text, to \`$outfile\`; the swarm lead reads
+it. Say in its first line whether the bead landed (with the commit sha on $base) or was parked
+(with the reason)."
+
+  if [ "$dry" -eq 1 ]; then
+    echo "swarm: dry run — would create $wt on branch $branch from $base, outfile $outfile" >&2
+    printf '%s\n' "$brief"
+    return 0
+  fi
+
+  [ -n "$(repo_space "$repo")" ] || die "no herdr space open for $repo — run 'swarm check' first so workers nest under it"
+  [ -e "$wt" ] && die "worktree path already exists: $wt — a previous launch of $id left it; land or remove it first"
+  git -C "$repo" show-ref --verify --quiet "refs/heads/$branch" && die "branch $branch already exists"
+  mkdir -p "$outdir" "$(dirname "$wt")"
+  git -C "$repo" worktree add -q -b "$branch" "$wt" "$base" >&2
+  CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
+  local gd; gd="$(git -C "$wt" rev-parse --absolute-git-dir)"
+  touch "$gd/SELF-LAND"
+  printf '%s\n' "$brief" > "$gd/DISPATCH-BRIEF.md"
+  echo "swarm: $id ($model) in $wt" >&2
+
+  local rc=0
+  ( cd "$wt" && CLAUDE_DISPATCH_AGENT=claude CLAUDE_DISPATCH_MODEL="$model" "$D" exec "$gd/DISPATCH-BRIEF.md" "$outfile" ) >&2 || rc=$?
+  printf '%s\t%s\t%s\t%s\n' "$id" "$rc" "$outfile" "$wt"
   return "$rc"
 }
 
-cmd_run() {
-  parse "${1:-}"
-  cmd_check "$1" >/dev/null || die "an agent failed its health check — run 'swarm check $1'"
-
-  local base run
-  base="$("$HOME/.claude/tools/repo-slug" --path 2>/dev/null || echo /private/tmp/claude/swarm)"
-  run="$base/swarm-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-  mkdir -p "$run"
-  echo "swarm: ${#L[@]} workers, run dir $run" >&2
-
-  local -a pids=()
-  local i
-  for i in "${!L[@]}"; do
-    (
-      cd "${W[$i]}"
-      export CLAUDE_DISPATCH_AGENT="${A[$i]}"
-      if [ -n "${M[$i]}" ]; then export CLAUDE_DISPATCH_MODEL="${M[$i]}"; fi
-      exec "$D" exec "${B[$i]}" "$run/${L[$i]}.md"
-    ) > "$run/${L[$i]}.log" 2>&1 &
-    pids+=("$!")
-    echo "swarm: started ${L[$i]} (${A[$i]}${M[$i]:+:${M[$i]}}) in ${W[$i]}, log $run/${L[$i]}.log" >&2
-  done
-
-  local failed=0 code
-  printf 'label\tagent\texit\toutfile\tlog\n' > "$run/index.tsv"
-  for i in "${!L[@]}"; do
-    code=0; wait "${pids[$i]}" || code=$?
-    [ "$code" -eq 0 ] || failed=$((failed + 1))
-    [ -s "$run/${L[$i]}.md" ] || echo "swarm: ${L[$i]} left no answer in $run/${L[$i]}.md" >&2
-    printf '%s\t%s\t%s\t%s\t%s\n' "${L[$i]}" "${A[$i]}" "$code" "$run/${L[$i]}.md" "$run/${L[$i]}.log" >> "$run/index.tsv"
-    echo "swarm: ${L[$i]} finished, exit $code" >&2
-  done
-
-  echo "swarm: done, $failed of ${#L[@]} failed — index $run/index.tsv" >&2
-  cat "$run/index.tsv"
-  [ "$failed" -eq 0 ]
-}
-
 case "${1:-}" in
-  check) shift; cmd_check "$@" ;;
-  run)   shift; cmd_run "$@" ;;
-  *) echo "usage: swarm {check|run} <manifest>" >&2; exit 2 ;;
+  check)  shift; cmd_check ;;
+  launch) shift; cmd_launch "$@" ;;
+  *) echo "usage: swarm check | swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run]" >&2; exit 2 ;;
 esac

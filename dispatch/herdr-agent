@@ -54,6 +54,24 @@ new_space() {
   [ -n "$pane" ] || { echo "herdr-agent: no pane id came back for $where" >&2; return 1; }
 }
 
+# The space of the repo whose git common dir is <common>, open on its main checkout, or empty.
+repo_space() {
+  local common="$1" ws id
+  ws="$(herdr workspace list | jq -r --arg key "$common" '
+    [.result.workspaces[] | select(.worktree.repo_key == $key and .worktree.is_linked_worktree == false)
+     | .workspace_id][0] // empty')"
+  # `workspace list` leaves `.worktree` off some workspaces; ask each of those which
+  # repo it is the source checkout of.
+  if [ -z "$ws" ]; then
+    for id in $(herdr workspace list | jq -r '.result.workspaces[] | select(.worktree == null) | .workspace_id'); do
+      if [ "$(herdr worktree list --workspace "$id" 2>/dev/null | jq -r '.result.source.repo_key // empty')" = "$common" ]; then
+        ws="$id"; break
+      fi
+    done
+  fi
+  printf '%s' "$ws"
+}
+
 # Pick where the agent's pane goes, and set pane/tab/ws/where for the caller. The agent
 # always gets a space of its own, never a tab of the caller's. A linked worktree of a repo
 # herdr tracks gets a child space nested under the repo's space, the same place
@@ -69,18 +87,7 @@ place_pane() {
     new_space; return
   fi
   top="$(git -C "$PWD" rev-parse --show-toplevel)"
-  repo_ws="$(herdr workspace list | jq -r --arg key "$common" '
-    [.result.workspaces[] | select(.worktree.repo_key == $key and .worktree.is_linked_worktree == false)
-     | .workspace_id][0] // empty')"
-  # `workspace list` leaves `.worktree` off some workspaces; ask each of those which
-  # repo it is the source checkout of.
-  if [ -z "$repo_ws" ]; then
-    for id in $(herdr workspace list | jq -r '.result.workspaces[] | select(.worktree == null) | .workspace_id'); do
-      if [ "$(herdr worktree list --workspace "$id" 2>/dev/null | jq -r '.result.source.repo_key // empty')" = "$common" ]; then
-        repo_ws="$id"; break
-      fi
-    done
-  fi
+  repo_ws="$(repo_space "$common")"
   [ -n "$repo_ws" ] || echo "herdr-agent: no open workspace for repo $common — the worktree's space opens at top level" >&2
   # herdr only opens a space for a worktree of a repo it tracks; one of a submodule
   # (the skills repo) is refused.
@@ -204,10 +211,12 @@ Do not summarise it there; that file IS your answer and is the only part that is
 
   # The agent may have finished without writing the file (ignored the instruction, hit a
   # permission wall, crashed). Its pane still holds the answer, so scrape rather than
-  # hand the caller an empty file — and say which one happened.
+  # hand the caller an empty file — and say which one happened. A pane dump is not an
+  # answer, so this run exits 3: the caller sees a failure, with the dump to diagnose it.
   if [ ! -s "$outfile" ]; then
-    echo "herdr-agent: $kind wrote nothing to $outfile — falling back to its pane output" >&2
+    echo "herdr-agent: $kind wrote nothing to $outfile — falling back to its pane output, exit 3" >&2
     herdr pane read "$pane" --lines 600 > "$outfile" 2>/dev/null || true
+    return 3
   fi
 
   echo "herdr-agent: $kind finished → $outfile (space $ws left open — switch to it to take over, close it when done)"
@@ -215,5 +224,8 @@ Do not summarise it there; that file IS your answer and is the only part that is
 
 case "${1:-}" in
   run) shift; cmd_run "$@" ;;
-  *) echo "usage: herdr-agent run <kind> <prompt-file> <outfile> [-- <agent-arg>...]" >&2; exit 2 ;;
+  # repo-space <dir>: print the space open on <dir>'s repo's main checkout, or nothing.
+  repo-space) need herdr; need jq
+              repo_space "$(git -C "${2:?usage: herdr-agent repo-space <dir>}" rev-parse --path-format=absolute --git-common-dir)"; echo ;;
+  *) echo "usage: herdr-agent {run <kind> <prompt-file> <outfile> [-- <agent-arg>...] | repo-space <dir>}" >&2; exit 2 ;;
 esac

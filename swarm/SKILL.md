@@ -1,89 +1,115 @@
 ---
 name: swarm
-description: "Run several coding agents at once, each in its own herdr space (Terminal.app window outside herdr), wait for all of them, and report one combined summary. Workers can mix vendors and models — claude:sonnet beside codex. Use for 'open N panes and do X, Y, Z, then report back', 'have one agent review while another writes a status update', 'run these in parallel and summarize'."
+description: "Burn down a repo's beads with several unattended Claude workers at once, each an `implement <id> auto` pass in its own worktree and herdr space, refilling a slot whenever one finishes. Optional focus steers what it picks: `swarm the web browser feature`, `swarm epic:cc-12`, `swarm label:client 4`. Use for 'run a swarm', 'burn down the backlog in parallel', 'have agents work through the client issues'."
 ---
 
 # Swarm
 
-`swarm` fans one request out to several workers and folds their answers into one reply in
-this pane. Each worker is a plain `dispatch exec` — the [`dispatch`](../dispatch/SKILL.md)
-skill owns the surface, the outfile contract and the waiting. `swarm` owns only three
-things: the manifest, starting the workers together, and the combined summary.
+`swarm [<focus>] [<n>]` keeps `<n>` workers (default 3) running against the repo's ready
+beads until the scope runs dry. This session is the **lead**: it picks, launches, verifies,
+re-picks. Each **worker** is a whole Claude session running `implement <id> auto` in its own
+worktree, which lands its own branch and closes the bead
+([`../implement/AUTO.md`](../implement/AUTO.md)).
 
-A swarm is always **report-back** ([TARGETS.md](../dispatch/TARGETS.md) § Who feeds the
-result back): the user asked for the combined answer, so this session waits, reads every
-outfile, and reports. Name that mode, the worker count and the surfaces in the first status
-line.
+What `swarm` reuses rather than owns:
 
-## When a swarm is the right call
+| Job | Owner |
+| --- | --- |
+| Ranking ready beads, grouping related ones, applying a focus | [`issues next`](../issues/next.md), autonomous-caller mode |
+| `epic:` / `label:` / bare-id scopes | [`../implement/SELECTORS.md`](../implement/SELECTORS.md) |
+| An epic's parallel waves | `bd swarm validate <epic>` |
+| The worker's whole pass, its landing and its parking | `implement <id> auto` |
+| The herdr space, the outfile, the wait | `dispatch exec`, via the `swarm launch` script |
 
-- Two or more briefs that do not depend on each other's results.
-- At least one reason from TARGETS.md § The order applies: a non-Claude model, a run the
-  user wants to watch or steer, or work that must outlive this session. Parallel Claude-only
-  work that needs none of those is the in-session `Agent` tool, several calls in one message.
-- Briefs that depend on each other are a sequence, not a swarm. Run them one after another.
+A swarm is **report-back** ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) § Who feeds the
+result back): the lead waits for each worker, reads its outfile and verifies what it claims.
 
-## Steps
+## 1. Gate
 
-**1. Write one brief per worker** to `<scratch>/swarm/<label>.md`, where `<scratch>` is
-`~/.claude/tools/repo-slug --path`. Each brief stands alone: the worker has none of this
-conversation. Name the repo, the files, the question, and the shape of the answer you want
-back. Rules from dispatch carry over:
-
-- Never write `/<skill>` — the worker receives plain text. Write "call `Skill(<name>)`
-  first, then …".
-- A read-only worker (status, review, research) can share the checkout. **A worker that
-  edits files gets its own linked worktree**, named in the manifest's `dir` column. Two
-  workers editing one checkout corrupt each other's work. Worktree and `SELF-LAND` rules are
-  in TARGETS.md.
-- Say "Mode: report-back" in each brief, so the worker ends at its answer (and, for an
-  implementing worker, at a commit), not at a line for a human reader.
-
-**2. Write the manifest** to `<scratch>/swarm/manifest`, one worker per line:
-
-```
-# label     agent[:model]   brief-file                         [dir]
-status      claude:sonnet   /private/tmp/claude/x/swarm/status.md
-review      codex           /private/tmp/claude/x/swarm/review.md
-```
-
-`agent` is one of dispatch's vendors: `claude`, `codex`, `reasonix`. `:model` is
-claude-only. `reasonix` is not in herdr's `--kind` list, so it always opens a Terminal.app
-window, even inside herdr. Pick the model per the global Sonnet/Opus/Haiku rule and state
-it per worker in the status line.
-
-**3. Gate it.** `swarm check <manifest>` runs `dispatch check` once per distinct vendor and
-prints one row per worker: label, agent, the surface `dispatch` will use, the directory. Any
-non-zero exit stops the swarm. Report the failing check, don't route around it.
-
-**4. Run it in the background:**
+From the repo's main checkout:
 
 ```bash
-"$HOME/.claude/skills/swarm/swarm" run <manifest>     # Bash run_in_background: true
+"$HOME/.claude/skills/swarm/swarm" check
 ```
 
-It prints the run directory first on stderr, then starts every worker at once. Each
-worker's log is `<run>/<label>.log`: the space and pane it opened, and a line every time it
-stops on a permission prompt. When it exits, the harness notifies you. Never poll it with
-`ScheduleWakeup`. A worker stuck on a prompt waits for a person; if the user asks how it is
-going, read the logs and name any blocked worker and its pane.
+It refuses outside herdr, on a repo `repo-tier` does not call `owned` (workers land themselves),
+and when `bd` or the Claude login is broken. A refusal ends the run; report it. It opens the
+repo's herdr space when none is open, so every worker nests under it as a child space;
+`launch` refuses until that space exists.
 
-Each worker has dispatch's 40-minute ceiling, so the run ends within 40 minutes of its last
-start.
+A worker in a repo Claude has never been trusted in stops at the "trust this folder" dialog,
+and its launch fails with `agent_not_ready`. A worktree inherits its main checkout's trust, so
+the fix is one interactive `claude` in the main checkout, answered by the user.
 
-**5. Read every answer and report.** stdout ends with `index.tsv`: label, agent, exit code,
-outfile, log. Read every outfile — a non-zero exit or an empty answer is a finding, not
-something to skip. Then reply in this pane:
+## 2. Resolve the scope
 
-- One section per worker, headed `label — agent:model`, with what it found in your own
-  words and the numbers and paths it gave.
-- A closing section with what the answers say together: where they agree, where they
-  conflict, and what follows from both.
-- Any worker that failed, timed out or wrote nothing, with the last lines of its log.
+| Focus | Scope |
+| --- | --- |
+| none | `issues next`, autonomous-caller mode: every ready group and singleton, ranked |
+| `epic:<id>`, `label:<name>`, bead ids | SELECTORS.md, intersected with `bd ready --limit 0 --json`. For an epic, also run `bd swarm validate <epic>` and cap `<n>` at its maximum parallelism |
+| free text — "the client", "the web browser feature" | `issues next focus="<text>"`, autonomous-caller mode |
 
-Verify what you can before repeating it. A worker's claim about a file or a test result
-is checked against the file or test, the same as any report-back result.
+Drop every bead whose notes carry `auto parked`. Print the frozen queue in the first status
+line: mode (report-back), `<n>`, the focus, and the first `<n>` beads with titles. That line is
+the user's chance to redirect a focus that resolved wrong.
 
-**6. Clean up.** The workers' spaces stay open so the user can take one over. After the
-summary, list them (from the logs) and close each with `herdr workspace close <id>` unless
-the user wants one kept. Implementing workers' worktrees land or are removed per TARGETS.md.
+**Related work first.** Take the top-ranked group's members before moving to the next group.
+Never run two beads at once when one blocks the other, even transitively; the blocked one waits
+for the blocker to land and turns up in a later re-pick.
+
+## 3. Pick each worker's model
+
+State it per bead in the status line.
+
+- **haiku** — mechanical: a rename, a string, a bounds check, a config value.
+- **sonnet** — the default. A bead whose body names the files and the change is Sonnet's.
+- **opus** — only with an `Opus reason:` from the global list: the change's shape is unsettled
+  and must be designed; the cause is still unlocated after a Sonnet pass looked; a
+  cross-cutting refactor whose structure is open. Pass it as `--opus-reason "<text>"`. A
+  Sonnet worker that parked with "cause not found" is the usual way a bead earns Opus on its
+  next launch.
+
+## 4. Launch
+
+One Bash call per slot, **each with `run_in_background: true`**:
+
+```bash
+"$HOME/.claude/skills/swarm/swarm" launch <bead-id> <model> [--opus-reason "<text>"]
+```
+
+It creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
+SELF-LAND, writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
+worker is idle or done. stdout is one line: bead, exit code, outfile, worktree. `--dry-run`
+prints the brief and creates nothing.
+
+The harness notifies you when a launch exits. Never poll with `ScheduleWakeup`. A worker stuck
+on a permission prompt shows in herdr's sidebar as blocked and in its launch log; if the user
+asks how the run is going, name blocked workers and their panes.
+
+## 5. When a worker finishes
+
+1. Read its outfile. A non-zero exit, or an outfile that is a pane dump rather than a report,
+   is a failed worker: record it with the last lines of its output and don't relaunch that bead
+   this run.
+2. Verify its claim: `bd show <id> --json` shows the bead closed, and
+   `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch. A
+   parked bead has an `auto parked` note; record the reason.
+3. Close its space: `herdr workspace list`, find the one whose cwd is the worker's worktree,
+   `herdr worktree remove --workspace <id> --force` when it landed (git-sweep reaps any left),
+   `herdr workspace close <id>` when it parked so the branch stays for the user.
+4. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
+   free slot.
+
+The run ends when no ready bead in scope remains unlaunched and every slot is empty.
+
+## 6. Report
+
+One section, in chat:
+
+- **Landed** — bead, title, model, commit sha.
+- **Parked** — bead, the reason from its note, the branch holding the work.
+- **Decided without you** — every `auto decided` note the workers wrote, one line each.
+- **Failed** — bead, exit code, the last lines of its output.
+- **Left in scope** — beads still blocked, and what blocks each.
+
+Close with `swarm: <landed> landed, <parked> parked, <failed> failed, focus <focus or none>`.
