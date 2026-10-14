@@ -1,6 +1,6 @@
 # React Native: Metro is a second singleton
 
-Part of [`orchestrate.md`](../orchestrate.md) — the per-worker simulator and UDID pinning rules are there.
+Part of [`swarm.md`](../swarm.md) — the per-worker simulator and UDID pinning rules are there.
 
 A React Native app loads its JS bundle from a Metro server, and the port is per-machine. Two
 workers on two simulators still fetch from one Metro, so each can be running the other's bundle —
@@ -46,5 +46,5 @@ nothing about the wrong one looks wrong:
 xcrun simctl spawn <udid> log stream --style compact --predicate 'eventMessage CONTAINS "8081"'
 ```
 
-Give each worker a port at least 10 apart from its siblings, state it in `constraints` alongside
+Give each worker a port at least 10 apart from its siblings — the project's swarm-worker skill says how a worker derives its own from `$SWARM_WORKER`, alongside
 the UDID, and treat "my change is not on screen" as a Metro question before it is a code question.

@@ -1,8 +1,8 @@
 # macOS-app workers: find the singletons
 
-Part of [`orchestrate.md`](../orchestrate.md) — the per-worker simulator and UDID pinning rules are there.
+Part of [`swarm.md`](../swarm.md) — the per-worker simulator and UDID pinning rules are there.
 
-Everything in [`../orchestrate.md`](../orchestrate.md) is iOS. A **macOS-app** worker builds and runs on the host itself, so there is no
+Everything in [`../swarm.md`](../swarm.md) is iOS. A **macOS-app** worker builds and runs on the host itself, so there is no
 device to hand out. What it collides on instead is every per-machine singleton the app binds by a
 fixed name:
 
@@ -12,8 +12,8 @@ fixed name:
 | `UserDefaults` | one domain per bundle id | a build setting suffixing the bundle id |
 | the installed app | one `/Applications/<App>.app` | run from the build directory, never install |
 
-Ask what the app opens by a fixed name and give each worker its own. Create them in **step 3**
-beside the worktree; state them in the brief; remove them in **step 7**.
+Ask what the app opens by a fixed name and give each worker its own. Each worker creates its own, named from `$SWARM_WORKER`, before its first run
+and removes them before it ends its pass.
 
 **Before handing out a bundle-id suffix, check what the entitlements key off it.** A suffix is the
 obvious way to split `UserDefaults` and an app group, and it is silently unusable whenever the
@@ -44,10 +44,10 @@ verification lost to an isolation scheme that had no working build behind it.
 concurrently:
 
 ```bash
-# step 3, per worker
+# per worker, before its first run
 WHEELHOUSE_DEBUG_SOCKET=/tmp/orch-<slug>.sock      # DebugStateServer.socketPath honours it
 WHEELHOUSE_BUNDLE_ID_SUFFIX=.orch-<slug>           # project.yml builds PRODUCT_BUNDLE_IDENTIFIER from it
-# step 7, per worker
+# per worker, before it ends
 rm -f /tmp/orch-<slug>.sock
 defaults delete <bundle-id>.orch-<slug>
 ```
@@ -58,9 +58,9 @@ defaults delete <bundle-id>.orch-<slug>
 `+ 100`:
 
 ```bash
-# step 3, per worker
+# per worker, before its first run
 IPTV_PORT_BASE=49100        # DebugPorts.base; DemoServer and DebugControlChannel derive from it
-# step 7: nothing to remove — the temp directories are namespaced by the same base
+# at the end: nothing to remove — the temp directories are namespaced by the same base
 ```
 
 **Finding the second shared thing is the part that takes the time.** On `iptv-mac` the ports were
@@ -71,7 +71,7 @@ timeout that read as a starved encoder. **After isolating the obvious resource, 
 at once and check they both pass before dispatching a round** — one measured run is worth more than
 any amount of reading, and it is how both of that repo's collisions were found.
 
-**The symptom of getting this wrong is the same one the simulator rules in `../orchestrate.md` warn about, and it is
+**The symptom of getting this wrong is the same one the simulator rules in `../swarm.md` warn about, and it is
 worse here because the theft is silent.** A Unix-socket server typically calls `unlink(path)` before
 binding, to clear a socket a crashed run left behind — so the second app does not fail to bind, it
 *takes over*. Both workers then read the second app's state through what each believes is its own

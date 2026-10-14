@@ -17,3 +17,4 @@
 | Open | When |
 | --- | --- |
 | [`review.md`](review.md) | Reviewing a Rust change — `cargo audit`, `cargo udeps`, `cargo machete`, `cargo clippy`. |
+| [`swarm.md`](swarm.md) | A `swarm` worker building or testing this runtime beside other workers: shared caches, turn-taking, per-worker ports. |

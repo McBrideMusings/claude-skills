@@ -30,6 +30,8 @@
 # (default auto — the auto-mode classifier approves or refuses each call, so a
 # session nobody is watching does not stop on a prompt; hooks and deny rules
 # still apply).
+# $CLAUDE_DISPATCH_SETTINGS=<file-or-json> passes `--settings` to a claude worker — how
+# swarm turns off a plugin, such as rust-analyzer, for its workers.
 set -eu
 
 KNOWN="codex reasonix claude"
@@ -148,7 +150,7 @@ cmd_exec() {
   local promptfile="${1:-}" outfile="${2:-}"
   if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
     echo "usage: dispatch exec [--headless] <prompt-file> <outfile>" >&2
-    echo "  env: CLAUDE_DISPATCH_AGENT (codex|reasonix|claude), CLAUDE_DISPATCH_MODEL, CLAUDE_DISPATCH_PERMISSION_MODE, DISPATCH_TRANSPORT (terminal|herdr)" >&2
+    echo "  env: CLAUDE_DISPATCH_AGENT (codex|reasonix|claude), CLAUDE_DISPATCH_MODEL, CLAUDE_DISPATCH_PERMISSION_MODE, CLAUDE_DISPATCH_SETTINGS, DISPATCH_TRANSPORT (terminal|herdr)" >&2
     return 2
   fi
   [ -f "$promptfile" ] || { echo "dispatch: prompt file not found: $promptfile" >&2; return 1; }
@@ -172,7 +174,8 @@ cmd_exec() {
     local -a iargs=()
     case "$a" in
       claude) iargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
-              [ -n "${CLAUDE_DISPATCH_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DISPATCH_MODEL") ;;
+              [ -n "${CLAUDE_DISPATCH_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DISPATCH_MODEL")
+              [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && iargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS") ;;
       codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac
     "$(cd "$(dirname "$0")" && pwd -P)/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
@@ -186,7 +189,7 @@ cmd_exec() {
   case "$a" in
     codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
     reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
-    claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${CLAUDE_DISPATCH_MODEL:+ --model $CLAUDE_DISPATCH_MODEL}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
+    claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${CLAUDE_DISPATCH_MODEL:+ --model $CLAUDE_DISPATCH_MODEL}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
   esac
 
   local terminal; terminal="$(cd "$(dirname "$0")" && pwd -P)/terminal"

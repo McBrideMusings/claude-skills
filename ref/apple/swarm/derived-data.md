@@ -1,6 +1,6 @@
 # DerivedData across parallel workers
 
-Part of [`orchestrate.md`](../orchestrate.md) — the per-worker simulator and UDID pinning rules are there.
+Part of [`swarm.md`](../swarm.md) — the per-worker simulator and UDID pinning rules are there.
 
 Each worker's git worktree is a different absolute path, so Xcode builds it a DerivedData tree of
 its own — 6.2–6.9 GB on iptv-mac. Worktree teardown removes the worktree; nothing removes the tree.

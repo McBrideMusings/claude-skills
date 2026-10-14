@@ -1,6 +1,6 @@
 # A sleeping display blinds a macOS GUI worker
 
-Part of [`orchestrate.md`](../orchestrate.md) — the per-worker simulator and UDID pinning rules are there.
+Part of [`swarm.md`](../swarm.md) — the per-worker simulator and UDID pinning rules are there.
 
 An unattended run happens late, on an idle machine, which is exactly when the display sleeps. A
 Metal-backed view has no drawable then, so anything read *out of the rendered surface* comes back

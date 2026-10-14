@@ -27,5 +27,6 @@ platform half.
 | [`images.md`](images.md) | Adding or reviewing images, backgrounds or animated media: format, size, `srcset`, metadata. |
 | [`push.md`](push.md) | Writing or reviewing a service worker's push handler, notifications or offline cache. |
 | [`links.md`](links.md) | Links, relative-URL resolution, referrer policy, and the no-JavaScript basics. |
+| [`swarm.md`](swarm.md) | A `swarm` worker building or testing this runtime beside other workers: shared caches, turn-taking, per-worker ports. |
 
 Visual craft is [`ref/gui`](../gui/context.md). React specifics are [`ref/react`](../react/context.md).

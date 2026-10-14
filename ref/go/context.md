@@ -17,3 +17,4 @@
 | Open | When |
 | --- | --- |
 | [`review.md`](review.md) | Reviewing a Go change — `govulncheck`, `go vet`, `staticcheck`, `golangci-lint`. |
+| [`swarm.md`](swarm.md) | A `swarm` worker building or testing this runtime beside other workers: shared caches, turn-taking, per-worker ports. |

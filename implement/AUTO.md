@@ -18,7 +18,7 @@ across the clear (§Run state).
 
 `implement <id> auto` is what a lead dispatches into a worktree. It lands its own branch through
 `wrap-up` — bare when standing in that worktree, `wrap-up <worktree>` when not — which closes the
-bead. A worker that cannot remove its own worktree leaves it for the harness to reap. It never
+bead. A worker never removes its own worktree; its dispatcher or `git-sweep` does. It never
 runs `git push origin --delete` for a branch it never pushed: a hook stops that command for a
 person's yes, which nobody is there to give. On an item whose notes already carry `auto parked`,
 it prints that note and ends: a parked item waits for the user.

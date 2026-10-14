@@ -24,6 +24,37 @@ What `swarm` reuses rather than owns:
 A swarm is **report-back** ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) § Who feeds the
 result back): the lead waits for each worker, reads its outfile and verifies what it claims.
 
+## Workers share one machine
+
+Worktrees isolate source and nothing else. Several workers on one machine compete for CPU,
+memory and disk, and collide on anything with a fixed name. Three rules, in every runtime:
+
+- **Heavy work takes turns.** Every build, test run, lint and other CPU-heavy command runs
+  through `swarm heavy -- <command>`: one lock per repo, shared by all its worktrees. One build
+  using every core finishes sooner than three splitting them, and the user's machine stays usable.
+  The kernel releases the lock when its holder dies.
+- **Build once, share the output.** Caches that are safe to share are shared — compiled
+  dependencies, package stores, downloads — so no worker starts cold.
+- **Isolate what has a fixed name.** Ports, sockets, simulators, temp paths and databases get one
+  per worker, derived from `$SWARM_WORKER` (the bead id), and are removed when the pass ends.
+
+How each rule applies depends on the runtime and the project, in two layers that `swarm check`
+names and every worker's brief points at:
+
+| Layer | Where | Holds |
+| --- | --- | --- |
+| Runtime | `skills/ref/<runtime>/swarm.md`, picked by marker files (`Cargo.toml` → rust, `go.mod` → go, `pyproject.toml` → python, `package.json` → web, `Package.swift` or an Xcode project → apple) | what is true of every project in that runtime, plus the defaults `swarm launch` sets — for rust, one shared `CARGO_TARGET_DIR` and rust-analyzer off |
+| Project | `<repo>/.claude/skills/swarm-worker/` | this project's heavy commands, cheap check, shared caches, per-worker resources, queues, slot cap. Wins over the runtime layer |
+
+## Project support
+
+Every project with a build or test step keeps a `swarm-worker` skill. `swarm check` exits 4
+without one. Write it then, before any worker starts, from
+[`PROJECT-SKILL.md`](PROJECT-SKILL.md): read the repo's build files, test setup, `admin.toml`
+and verify skill, and answer each section with real commands. Commit it on a branch and land it
+with the swarm's results; `swarm launch` reads it from the main checkout, so workers see it
+before it lands.
+
 ## 1. Gate
 
 From the repo's main checkout:
@@ -33,9 +64,14 @@ From the repo's main checkout:
 ```
 
 It refuses outside herdr, on a repo `repo-tier` does not call `owned` (workers land themselves),
-and when `bd` or the Claude login is broken. A refusal ends the run; report it. It opens the
-repo's herdr space when none is open, so every worker nests under it as a child space;
-`launch` refuses until that space exists.
+and when `bd` or the Claude login is broken. A refusal ends the run; report it. Exit 4 is the
+one exception: write the project's `swarm-worker` skill (§ Project support) and check again.
+It opens the repo's herdr space when none is open, so every worker nests under it as a child
+space; `launch` refuses until that space exists. It prints the runtimes it found, their pages,
+and the environment and settings every worker gets — put those in the first status line.
+
+**Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project's `swarm-worker/env` caps
+it; say so when it lowers the user's number.
 
 A worker in a repo Claude has never been trusted in stops at the "trust this folder" dialog,
 and its launch fails with `agent_not_ready`. A worktree inherits its main checkout's trust, so
@@ -79,8 +115,11 @@ One Bash call per slot, **each with `run_in_background: true`**:
 
 It creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
 SELF-LAND, writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
-worker is idle or done. stdout is one line: bead, exit code, outfile, worktree. `--dry-run`
-prints the brief and creates nothing.
+worker is idle or done. The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
+environment, and the merged `--settings`. Its brief tells it to read the project's
+`swarm-worker` skill and the runtime pages before its first build, and to run every heavy
+command through `swarm heavy`. stdout is one line: bead, exit code, outfile, worktree.
+`--dry-run` prints the environment, settings and brief and creates nothing.
 
 The harness notifies you when a launch exits. Never poll with `ScheduleWakeup`. A worker stuck
 on a permission prompt shows in herdr's sidebar as blocked and in its launch log; if the user

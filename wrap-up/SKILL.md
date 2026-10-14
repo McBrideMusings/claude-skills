@@ -207,7 +207,7 @@ rather than leaving a string of in-progress commits to push.
    - **Any other branch:** `git log <upstream-or-fork-point>..HEAD --oneline` names what is already committed and unpushed. More than one commit there → `git reset --soft <upstream-or-fork-point>` and recommit as one, folding in this phase's own changes; exactly one commit already, with nothing new to add → leave it as is. On a first push the fork point is `git merge-base HEAD origin/main`, never `origin/main` itself: once `main` has moved, a soft reset onto its tip commits this branch's older tree on top of it and silently reverts every commit `main` gained since the fork.
    - Use the project's commit conventions (check its CLAUDE.md), then the global rule in `~/.claude/CLAUDE.md` §Git & GitHub, which requires **Conventional Commits** — `type(scope): message`, ≤72 chars, imperative, no trailing period.   - **In the `~/.claude` primary, name every path.** Its index is shared by every session on the machine, so stage and commit by path — `git add <paths> && git commit -m … -- <paths>` — never a bare `git commit` or `git add -A`, which ship whatever another session left behind. Step 2's clean check there covers only your own paths. Edits under `skills/` commit in a claude-skills worktree and land with `~/.claude/tools/land <skills-worktree>`, which re-pins `~/.claude`'s skills pointer itself. Step C then lands it with `tools/land`. Full mechanics in `~/.claude/CONTRIBUTING.md`; do not re-derive them.
 2. Confirm `git status` is clean.
-3. Push: `git push origin $(git branch --show-current)`. First push on a new branch: `git push -u origin $(git branch --show-current)` (match the branch's own name — never `main`).
+3. Push: `git push origin $(git branch --show-current)`. First push on a new branch: `git push -u origin $(git branch --show-current)` (match the branch's own name — never `main`). **Skip this push in a worktree whose git dir carries `SELF-LAND`**: Step C's `land` pushes the commits straight to the default branch, and a feature branch pushed here leaves a remote branch whose deletion waits on a person's yes.
 4. Do NOT land here — the merge/PR is Phase 6 Step C, after follow-ups and the summary settle. Leave the branch pushed.
 
 ---
@@ -322,7 +322,7 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 
 **Landing an `implement` pass — Step C's teardown, when `wrap-up` was given an explicit `<worktree>` argument.** This is the only caller that hands wrap-up a worktree it is not standing in, and it is the one case where Step C removes it. Run this after the merge or PR above has landed:
 
-9. **Verify teardown is safe, then retire the worktree:**
+9. **Verify teardown is safe, then retire the worktree** — only when this session stands outside it. A dispatched worker landing its own worktree skips this step and goes to step 10; its dispatcher or `git-sweep` removes the worktree.
     ```bash
     git -C <worktree> status --short                                        # must be empty
     git log <default>..<branch>                                             # must be empty — fully merged
