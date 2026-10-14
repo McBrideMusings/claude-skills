@@ -125,6 +125,12 @@ State it per bead in the status line.
 
 ## 4. Launch
 
+**Declare the run on the work board** (the work-board mod's `work_set` tool) before the first
+launch and after every change: `goal` the epic or focus bead, `lanes` `<n>`, every bead in scope
+as an item, each launched one with its `lane` (the slot number, 1 to `<n>`) and `model`, queued
+ones with no lane, landed ones kept. Each worker declares its own stage; the board shows it in
+its lane.
+
 One Bash call per slot, **each with `run_in_background: true`**:
 
 ```bash
