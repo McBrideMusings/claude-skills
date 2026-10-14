@@ -5,6 +5,17 @@
 #   swarm check
 #   swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason "<text>"] [--dry-run]
 #   swarm heavy -- <command> [<arg>...]
+#   swarm quota                       the repo's profile's 5-hour and weekly usage, and the gate
+#   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log
+#   swarm status                      the run log, plus which launched beads are still in flight
+#
+# The run log, <scratch>/swarm/run.tsv, is the run's state on disk: launch writes `launched`
+# and `finished`, the lead writes `run`, `landed`, `parked`, `failed` and `applied`. A lead that
+# was compacted, relayed or restarted reads `swarm status` first and carries on from there.
+#
+# launch claims the bead (`bd update --claim`, status in_progress) before anything else, so no
+# other picker offers it, and refuses while the profile's usage is at or over SWARM_QUOTA_SESSION
+# (5-hour, default 90) or SWARM_QUOTA_WEEKLY (default 90) percent, exiting 5.
 #
 # Run check and launch from the repo's main checkout. `launch` makes the worktree and branch
 # swarm/<bead-id> under ~/.worktrees/<repo>/, links its local files, marks it SELF-LAND, writes
@@ -60,6 +71,48 @@ runtimes() {
 
 project_skill() { printf '%s/.claude/skills/swarm-worker' "$1"; }
 
+# <scratch>/swarm for the repo, where outfiles and the run log live.
+run_dir() { printf '%s/swarm' "$( cd "$1" && "$HOME/.claude/tools/repo-slug" --path )"; }
+
+# Append "<utc time>\t<event>\t<bead-id>\t<detail>" to the run log.
+log_event() {
+  local dir; dir="$(run_dir "$1")"; mkdir -p "$dir"
+  printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$2" "${3:-}" "${4:-}" >> "$dir/run.tsv"
+}
+
+# The Claude config dir the repo's sessions use. The shell's own router decides it, from the
+# main checkout, so swarm asks it rather than keeping a second copy of the routing rules.
+profile_dir() {
+  ( cd "$1" && zsh -ic '_claude_apply_profile; print -r -- "PROFILE_DIR=${CLAUDE_CONFIG_DIR:-$HOME/.claude}"' 2>/dev/null ) \
+    | sed -n 's/^PROFILE_DIR=//p' | tail -1
+}
+
+# Prints "<session%> <weekly%> <age-seconds> <profile-dir>" from the status line's usage cache,
+# or exits 1 with the reason when there is no fresh reading.
+quota_read() {
+  local dir f ts
+  dir="$(profile_dir "$1")"; [ -n "$dir" ] || { echo "cannot resolve the Claude profile for $1" >&2; return 1; }
+  f="$dir/statusline-cache/usage"
+  [ -f "$f" ] || { echo "no usage cache at $f" >&2; return 1; }
+  grep -q '^ERROR=' "$f" && { echo "usage cache at $f holds an error: $(sed -n 's/^ERROR=//p' "$f")" >&2; return 1; }
+  ts="$(sed -n 's/^TIMESTAMP=//p' "$f")"
+  [ -n "$ts" ] && [ $(( $(date +%s) - ts )) -le 1800 ] || { echo "usage cache at $f is older than 30 minutes" >&2; return 1; }
+  printf '%s %s %s %s\n' "$(sed -n 's/^UTILIZATION=//p' "$f")" "$(sed -n 's/^WEEKLY_UTILIZATION=//p' "$f")" \
+    "$(( $(date +%s) - ts ))" "$dir"
+}
+
+# Exit 0 when a new worker may start; otherwise print why and exit 5. An unreadable quota
+# stops launches too: a missing reading is not room to spend.
+quota_gate() {
+  local r s w age dir
+  r="$(quota_read "$1")" || { echo "swarm: quota unknown — not launching" >&2; return 5; }
+  read -r s w age dir <<<"$r"
+  if [ "${s:-0}" -ge "${SWARM_QUOTA_SESSION:-90}" ] || [ "${w:-0}" -ge "${SWARM_QUOTA_WEEKLY:-90}" ]; then
+    echo "swarm: quota $dir at ${s}% of the 5-hour window, ${w}% of the week (limits ${SWARM_QUOTA_SESSION:-90}%, ${SWARM_QUOTA_WEEKLY:-90}%) — not launching" >&2
+    return 5
+  fi
+}
+
 # KEY=VALUE lines for a worker's environment.
 worker_env() {
   local repo="$1" f
@@ -106,6 +159,8 @@ cmd_check() {
     echo "swarm: no $(project_skill "$repo")/SKILL.md — write the project's swarm-worker skill (swarm SKILL.md § Project support), then check again" >&2
     exit 4
   fi
+  local q; q="$(quota_read "$repo")" && echo "swarm: quota (5-hour weekly age dir): $q" >&2
+  quota_gate "$repo" || exit 5
   echo "swarm: ready in $repo; workers open as child spaces of $ws" >&2
 }
 
@@ -138,7 +193,7 @@ cmd_launch() {
   wt="$HOME/.worktrees/$name/$id"
   base="$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')" || true
   base="${base:-$(git -C "$repo" branch --show-current)}"
-  outdir="$( cd "$repo" && "$HOME/.claude/tools/repo-slug" --path )/swarm"
+  outdir="$(run_dir "$repo")"
   outfile="$outdir/$id.md"
 
   local pages="" r
@@ -149,6 +204,7 @@ cmd_launch() {
 
   local brief
   brief="Call \`Skill(implement)\` first, then run \`implement $id auto\` in this worktree.
+The swarm lead claimed $id for you, so it reads \`in_progress\` (AUTO.md § Swarm workers).
 
 This is one worker in a swarm. Nobody is watching this pane: take every decision the way auto
 mode says, record it as an \`auto decided\` note on the bead, and park the bead rather than wait.
@@ -186,21 +242,27 @@ it. Say in its first line whether the bead landed (with the commit sha on $base)
   if [ "$dry" -eq 1 ]; then
     echo "swarm: dry run — would create $wt on branch $branch from $base, outfile $outfile" >&2
     echo "swarm: settings: $settings" >&2
+    quota_gate "$repo" && echo "swarm: quota allows a launch" >&2
     printf '%s\n' "$brief"
     return 0
   fi
 
+  quota_gate "$repo" || exit 5
   [ -n "$(repo_space "$repo")" ] || die "no herdr space open for $repo — run 'swarm check' first so workers nest under it"
   [ -e "$wt" ] && die "worktree path already exists: $wt — a previous launch of $id left it; land or remove it first"
   git -C "$repo" show-ref --verify --quiet "refs/heads/$branch" && die "branch $branch already exists"
+  bd -C "$repo" update "$id" --claim >/dev/null || die "could not claim $id"
   mkdir -p "$outdir" "$(dirname "$wt")"
-  git -C "$repo" worktree add -q -b "$branch" "$wt" "$base" >&2
+  git -C "$repo" worktree add -q -b "$branch" "$wt" "$base" >&2 || {
+    bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
+    die "could not create $wt — released the claim on $id"; }
   CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
   local gd; gd="$(git -C "$wt" rev-parse --absolute-git-dir)"
   touch "$gd/SELF-LAND"
   printf '%s\n' "$brief" > "$gd/DISPATCH-BRIEF.md"
   printf '%s\n' "$settings" > "$gd/swarm-settings.json"
   echo "swarm: $id ($model) in $wt" >&2
+  log_event "$repo" launched "$id" "$model $wt"
 
   local rc=0
   (
@@ -209,6 +271,7 @@ it. Say in its first line whether the bead landed (with the commit sha on $base)
            CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json"
     exec "$D" exec "$gd/DISPATCH-BRIEF.md" "$outfile"
   ) >&2 || rc=$?
+  log_event "$repo" finished "$id" "exit $rc"
   printf '%s\t%s\t%s\t%s\n' "$id" "$rc" "$outfile" "$wt"
   return "$rc"
 }
@@ -232,9 +295,43 @@ cmd_heavy() {
   return "$rc"
 }
 
+cmd_quota() {
+  local repo r s w age dir; repo="$(main_checkout)"
+  r="$(quota_read "$repo")" || exit 1
+  read -r s w age dir <<<"$r"
+  printf '5-hour %s%%\tweekly %s%%\treading %ss old\t%s\n' "$s" "$w" "$age" "$dir"
+  quota_gate "$repo" || exit 5
+}
+
+cmd_log() {
+  local repo; repo="$(main_checkout)"
+  case "${1:-}" in
+    run|landed|parked|failed|applied) ;;
+    *) die "usage: swarm log <run|landed|parked|failed|applied> [<bead-id>] [<detail>]" ;;
+  esac
+  log_event "$repo" "$1" "${2:-}" "${3:-}"
+}
+
+# The run log, then one line per bead launched in the latest run with no `finished` yet.
+cmd_status() {
+  local repo f; repo="$(main_checkout)"; f="$(run_dir "$repo")/run.tsv"
+  [ -f "$f" ] || { echo "swarm: no run log at $f" >&2; exit 1; }
+  local start; start="$(awk -F'\t' '$2 == "run" { n = NR } END { print n + 0 }' "$f")"
+  awk -F'\t' -v s="$start" 'NR >= s' "$f"
+  echo "--- in flight"
+  awk -F'\t' -v s="$start" 'NR >= s && $2 == "launched" { l[$3] = $4 } NR >= s && $2 == "finished" { delete l[$3] }
+    END { for (k in l) print k "\t" l[k] }' "$f" | while IFS="$(printf '\t')" read -r id detail; do
+      printf '%s\t%s\tagent %s\n' "$id" "$detail" \
+        "$(herdr workspace list 2>/dev/null | jq -r --arg l "$id" '[.result.workspaces[] | select(.label == $l) | .agent_status][0] // "no space"')"
+    done
+}
+
 case "${1:-}" in
   check)  shift; cmd_check ;;
   launch) shift; cmd_launch "$@" ;;
   heavy)  shift; cmd_heavy "$@" ;;
-  *) echo "usage: swarm check | swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | swarm heavy -- <command>" >&2; exit 2 ;;
+  quota)  shift; cmd_quota ;;
+  log)    shift; cmd_log "$@" ;;
+  status) shift; cmd_status ;;
+  *) echo "usage: swarm check | launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | heavy -- <command> | quota | log <event> [<bead-id>] [<detail>] | status" >&2; exit 2 ;;
 esac

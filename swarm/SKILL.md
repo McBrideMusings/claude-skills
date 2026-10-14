@@ -73,6 +73,19 @@ and the environment and settings every worker gets — put those in the first st
 **Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project's `swarm-worker/env` caps
 it; say so when it lowers the user's number.
 
+**Quota.** `check` and every `launch` read the repo's Claude profile's usage from the status
+line's cache and refuse, exit 5, at 90% of the 5-hour window or of the week
+(`SWARM_QUOTA_SESSION`, `SWARM_QUOTA_WEEKLY` override). An unreadable or stale reading refuses
+too. `swarm quota` prints the reading. A refused launch is not a failed worker: let the running
+workers finish, launch nothing more, and say in the report how far the run got and why it stopped.
+
+**The run log.** Start every run with `swarm log run "" "focus=<focus> n=<n>"`. `launch` logs
+`launched` and `finished` itself; the lead logs `landed`, `parked`, `failed` and `applied` as it
+records each one in step 5. **A lead that starts without this run's context — after a
+compaction, a relay or a restart — runs `swarm status` before anything else**: it prints the
+current run's events and every bead launched but not finished, with its herdr agent state. Those
+workers are still running; wait for them as step 4 says, and never launch their beads again.
+
 A worker in a repo Claude has never been trusted in stops at the "trust this folder" dialog,
 and its launch fails with `agent_not_ready`. A worktree inherits its main checkout's trust, so
 the fix is one interactive `claude` in the main checkout, answered by the user.
@@ -85,7 +98,12 @@ the fix is one interactive `claude` in the main checkout, answered by the user.
 | `epic:<id>`, `label:<name>`, bead ids | SELECTORS.md, intersected with `bd ready --limit 0 --json`. For an epic, also run `bd swarm validate <epic>` and cap `<n>` at its maximum parallelism |
 | free text — "the client", "the web browser feature" | `issues next focus="<text>"`, autonomous-caller mode |
 
-Drop every bead whose notes carry `auto parked`. Print the frozen queue in the first status
+**A failed read is not an empty backlog.** A `bd` command that exits non-zero, prints an error,
+or returns output that does not parse is an error: stop launching, keep the running workers, and
+report the command and its output. Only a successful read that lists nothing ends the run.
+
+Drop every bead whose notes carry `auto parked`, and every bead the run log shows `failed` this
+run. A bead `launch` has claimed reads `in_progress`, so `bd ready` already leaves it out. Print the frozen queue in the first status
 line: mode (report-back), `<n>`, the focus, and the first `<n>` beads with titles. That line is
 the user's chance to redirect a focus that resolved wrong.
 
@@ -113,7 +131,9 @@ One Bash call per slot, **each with `run_in_background: true`**:
 "$HOME/.claude/skills/swarm/swarm" launch <bead-id> <model> [--opus-reason "<text>"]
 ```
 
-It creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
+It checks the quota, claims the bead (`bd update --claim`, which sets it `in_progress` so no
+other picker offers it; [`../implement/AUTO.md`](../implement/AUTO.md) § Swarm workers lets the
+worker's gate accept that), creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
 SELF-LAND, writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
 worker is idle or done. The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
 environment, and the merged `--settings`. Its brief tells it to read the project's
@@ -128,23 +148,26 @@ asks how the run is going, name blocked workers and their panes.
 ## 5. When a worker finishes
 
 1. Read its outfile. A non-zero exit, or an outfile that is a pane dump rather than a report,
-   is a failed worker: record it with the last lines of its output and don't relaunch that bead
-   this run.
-2. Verify its claim: `bd show <id> --json` shows the bead closed, and
-   `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch. A
-   parked bead has an `auto parked` note; record the reason.
+   is a failed worker: `swarm log failed <id> "<exit and last line>"`, release the claim with
+   `bd update <id> --status open --assignee ""` and a `bd update <id> --append-notes "swarm failed:
+   <reason>"`, and don't relaunch it this run.
+2. Verify what it says: `bd show <id> --json` shows the bead closed, and
+   `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch; then
+   `swarm log landed <id> <sha>`. A parked bead has an `auto parked` note: `swarm log parked
+   <id> "<reason>"`. A report that says landed but fails either check is a failed worker.
 3. Apply its `## Shared-file changes`, if the report has any. Workers never edit a file under
    `.claude/` that is a symlink to the main checkout — `verify-project` and other untracked local
    skills — because every worker shares it. Make each change in the main checkout, where the
    path points, after checking it still fits what landed. Two workers' changes to one file are
-   merged here, by hand, in landing order.
+   merged here, by hand, in landing order. `swarm log applied <id> "<path>"` for each.
 4. Close its space: `herdr workspace list`, find the one whose cwd is the worker's worktree,
    `herdr worktree remove --workspace <id> --force` when it landed (git-sweep reaps any left),
    `herdr workspace close <id>` when it parked so the branch stays for the user.
 5. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
    free slot.
 
-The run ends when no ready bead in scope remains unlaunched and every slot is empty.
+The run ends when a successful read finds no ready bead in scope left unlaunched and every slot
+is empty — or early, on a failed read or a quota refusal, which the report names.
 
 ## 6. Report
 

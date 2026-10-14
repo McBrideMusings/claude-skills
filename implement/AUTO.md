@@ -23,6 +23,15 @@ runs `git push origin --delete` for a branch it never pushed: a hook stops that 
 person's yes, which nobody is there to give. On an item whose notes already carry `auto parked`,
 it prints that note and ends: a parked item waits for the user.
 
+### Swarm workers
+
+A `swarm` lead claims the bead before it starts the worker (`bd update <id> --claim`), so the
+bead reads `in_progress` and `bd ready` no longer lists it. In a session whose environment
+carries `SWARM_WORKER=<id>`, that claim satisfies [`HANDOFF.md`](HANDOFF.md) §1's **Open** and
+**Listed by `bd ready`** checks for bead `<id>`: check instead that its status is `in_progress`
+and that `bd show <id> --json` lists no open blocker. Every other check, and the readiness gate,
+runs as written.
+
 ## Every wait point, and what auto does instead
 
 | Where a pass waits | What auto does |
