@@ -31,6 +31,7 @@ a sibling, and most of this does not apply there.
 | [`critique.md`](critique.md) | Judging whether an existing interface is well designed — every pass, run against a screenshot. |
 | [`heuristics.md`](heuristics.md) | Running Nielsen's ten usability heuristics over an interface, or rating how severe a usability problem is. |
 | [`states.md`](states.md) | Enumerating empty, loading, error, partial, too-much and one-item cases. |
+| [`selection.md`](selection.md) | Building or reviewing anything a person selects to inspect — a row, a graph node, a map point, a card — and its deselect. |
 | [`design.md`](design.md) | Composing a new screen or component. |
 | [`design/motion.md`](design/motion.md) | Deciding whether a press, transition, drag, toast or modal animates, and why. |
 | [`design/typography.md`](design/typography.md) | Setting type on a screen: sizes, tracking, leading, font pairing, line length, numerals. |

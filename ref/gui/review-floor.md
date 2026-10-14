@@ -17,9 +17,10 @@ Adapted from `jakubkrehel/skills` `better-interface` (MIT). Once confirmed prese
 - An error that names no way to recover; a semantic colour used against its meaning.
 - A state change carried by motion alone — no colour, icon, or label when the animation doesn't run.
 - A misbinding — a label, price, status or warning that the layout binds to the wrong object.
+- A selection with no deselect — no empty-click, Esc or close that returns to the unselected state.
 
 These set the P-level, not new rules — the owning cell (`a11y.md`, `design.md`, `design/grouping.md`,
-`states.md`) decides
+`states.md`, `selection.md`) decides
 whether the symptom is present; this list decides what it costs.
 
 **Prefer the cheaper fix.** When more than one fix would work, propose the earliest that does:
