@@ -249,8 +249,8 @@ Classes: `.wf-region` (labelled box), `.wf-label` (caps region name), `.wf-ph` (
    overlap, or a blank variant is invisible in source.
 3. **Run the critique pass** — [`CRITIQUE.md`](CRITIQUE.md). One batched round; fix what it finds
    in one batch and stop; it is a pass, not a loop.
-4. For a prototype, `open <absolute-path>`, printed on its own line with no trailing punctuation,
-   and say how to drive it: every control is a button in the Tweaks card, which closes to a pill.
+4. Hand it over in Canvas per rule 10 — a prototype as an artifact, the screenshots as a post — and
+   say how to drive it: every control is a button in the Tweaks card, which closes to a pill.
    **State the concrete result of steps 2 and 3 in the hand-off message** — the printed sentence
    is the artifact, since nothing downstream reads the screenshot or the critique pass otherwise:
    e.g. "Critique: 2 found, 2 fixed."
@@ -290,7 +290,7 @@ Variant names stay descriptive — "Quiet", "Editorial", "Dense". They name dire
 7. **Every control is live.** Every tab switches, every toggle toggles, every row opens something, every destructive button shows what it would do — the reject path as much as the approve path. A dead control reads as a bug and derails the conversation the prototype exists to have. A control with nowhere to go does not go in.
 8. **Name the platform deliberately** (UI shape). Phone, desktop and TV are different designs; decide which this one is before the first line, and never draw device chrome by hand — a status bar, notch or title bar in a fragment is a guess the screenshot then judges.
 9. **Promotion is a rewrite.** Variant and spike code was written under these constraints — when a direction wins, implement it properly in the project's stack and conventions, then delete the prototype. Never move the file into the codebase.
-10. **Show the result as files.** Give the screenshot files by absolute path, one image per variant and state, side by side where comparing, with the questions and decisions in chat. A prototype that needs interaction is a local file the user opens: name its absolute path. A worktree route has no HTML file, so give its screenshots and name the dev-server URL. `/private/tmp` is emptied after three untouched days and a spike is not kept: the answer is recorded ([LIFECYCLE.md](LIFECYCLE.md)).
+10. **Show the result in Canvas, never as paths in chat.** A prototype that needs interaction is a Canvas artifact: `canvas artifact new --title "<Title>"`, `canvas artifact put <id> <built file copied to index.html>`, `canvas focus <id>`, and check `canvas artifact show <id>` for `scriptErrors`. Screenshots, comparisons and findings are one timeline post (`canvas post`), one image per variant and state, side by side where comparing; check it with `canvas snapshot`. Chat carries the questions and decisions and names the artifact or post, never a screenshot path or a file to open. A worktree route has no HTML file: post its screenshots and name the dev-server URL. `/private/tmp` is emptied after three untouched days and a spike is not kept: the answer is recorded ([LIFECYCLE.md](LIFECYCLE.md)).
 11. **Variants diverge on one named axis** — structure, density, emphasis, type, or voice. Secondary
     choices follow from the primary position (a dense variant may take a smaller type step — that's
     coherence, not a second axis). Three variants that differ in accent colour teach nothing, and
