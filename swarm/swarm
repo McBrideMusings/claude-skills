@@ -156,6 +156,12 @@ Land through \`wrap-up\` as auto mode does — this worktree carries a SELF-LAND
 remove this worktree, push its branch or delete a remote branch: \`land\` pushes your commits
 to $base, and the swarm lead tears the worktree down after reading your report.
 
+Files under \`.claude/\` that are symlinks (check with \`ls -la\`) belong to the main checkout and
+are shared by every worker — \`verify-project\` and other local skills usually are. Never edit
+one. When your pass would extend it, put the change in your report under a heading
+\`## Shared-file changes\`: the file's main-checkout path and the exact text to add or replace.
+The lead applies it after your bead lands.
+
 Other workers are building and testing this repo on the same machine right now. Before your
 first build or test, read:
   - $(project_skill "$repo")/SKILL.md — this project's swarm rules; they win over the pages below${pages}

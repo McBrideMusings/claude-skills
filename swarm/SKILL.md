@@ -133,10 +133,15 @@ asks how the run is going, name blocked workers and their panes.
 2. Verify its claim: `bd show <id> --json` shows the bead closed, and
    `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch. A
    parked bead has an `auto parked` note; record the reason.
-3. Close its space: `herdr workspace list`, find the one whose cwd is the worker's worktree,
+3. Apply its `## Shared-file changes`, if the report has any. Workers never edit a file under
+   `.claude/` that is a symlink to the main checkout — `verify-project` and other untracked local
+   skills — because every worker shares it. Make each change in the main checkout, where the
+   path points, after checking it still fits what landed. Two workers' changes to one file are
+   merged here, by hand, in landing order.
+4. Close its space: `herdr workspace list`, find the one whose cwd is the worker's worktree,
    `herdr worktree remove --workspace <id> --force` when it landed (git-sweep reaps any left),
    `herdr workspace close <id>` when it parked so the branch stays for the user.
-4. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
+5. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
    free slot.
 
 The run ends when no ready bead in scope remains unlaunched and every slot is empty.
@@ -148,6 +153,7 @@ One section, in chat:
 - **Landed** — bead, title, model, commit sha.
 - **Parked** — bead, the reason from its note, the branch holding the work.
 - **Decided without you** — every `auto decided` note the workers wrote, one line each.
+- **Shared files updated** — each main-checkout file the lead changed from a worker's report.
 - **Failed** — bead, exit code, the last lines of its output.
 - **Left in scope** — beads still blocked, and what blocks each.
 
