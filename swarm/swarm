@@ -267,8 +267,9 @@ it. Say in its first line whether the bead landed (with the commit sha on $base)
   local rc=0
   (
     cd "$wt"
+    # An implement pass routinely outlasts dispatch's 40-minute ceiling.
     export CLAUDE_DISPATCH_AGENT=claude CLAUDE_DISPATCH_MODEL="$model" \
-           CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json"
+           CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000
     exec "$D" exec "$gd/DISPATCH-BRIEF.md" "$outfile"
   ) >&2 || rc=$?
   log_event "$repo" finished "$id" "exit $rc"

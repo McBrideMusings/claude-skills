@@ -21,7 +21,8 @@
 # to take over. Whoever owns the worker closes it.
 set -eu
 
-TIMEOUT_MS=2400000   # 40m, matching `terminal run`'s ceiling
+TIMEOUT_MS="${HERDR_AGENT_TIMEOUT_MS:-2400000}"   # 40m, matching `terminal run`'s ceiling
+REGISTER_MS=60000    # how long a submitted prompt has to move the agent off idle
 READY_MS=120000      # how long to wait for the agent TUI to come up in the pane
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "herdr-agent: missing '$1'" >&2; exit 1; }; }
@@ -188,11 +189,18 @@ Do not summarise it there; that file IS your answer and is the only part that is
 ────────────────────────────────────────────────────────────'
 
   # --wait blocks on the agent's own lifecycle state, matching only states seen after the
-  # submission. Right after start, the TUI can report ready while still dropping input:
-  # the prompt then shows up in the input box seconds later, unsent, or not at all.
+  # submission, so any state at all means the prompt registered; wait_finished then waits
+  # for the run to end. Right after start, the TUI can report ready while still dropping
+  # input: the prompt then shows up in the input box seconds later, unsent, or not at all.
   local first reply
-  reply="$(herdr agent prompt "$slug" "$text" --wait --until idle --until 'done' --until blocked --timeout "$TIMEOUT_MS" 2>&1)" || true
+  reply="$(herdr agent prompt "$slug" "$text" --wait --until working --until blocked --until idle --until 'done' --timeout "$REGISTER_MS" 2>&1)" || true
   first="$(printf '%s' "$reply" | jq -r '.result.agent.agent_status // empty' 2>/dev/null)" || first=""
+  # The agent's own state settles whether it took the prompt; a working or blocked agent
+  # did, and sending the prompt again would queue a second copy of the brief behind the first.
+  if [ -z "$first" ]; then
+    first="$(herdr pane get "$pane" 2>/dev/null | jq -r '.result.pane.agent_status // empty')" || first=""
+    case "$first" in working|blocked) ;; *) first="" ;; esac
+  fi
   if [ -z "$first" ]; then
     echo "herdr-agent: prompt to $slug did not register: $(printf '%s' "$reply" | head -c 200)" >&2
     local line attempt
