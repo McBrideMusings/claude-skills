@@ -84,6 +84,10 @@ the decision in the report and reverts the one commit, or replies with the other
 A fact is not a decision. A credential, a device, a measurement only the user can take, or a
 value the item needs that nothing in the repo states goes to `Needs you`.
 
+A new host dependency is never auto decided. A pass that needs one — a binary, app, service, OS
+permission or network layout the build doesn't ship — parks with the reason `host dependency:
+<what>, for <why>`.
+
 ## Human verification parks the item too
 
 When verification reports `BLOCKED` because only a person can check the result — a device, a
