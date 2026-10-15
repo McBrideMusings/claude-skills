@@ -149,7 +149,7 @@ challenger deal, the comp discipline, and the single path to image generation vi
 `amplitude.md` (volume changes on a shipped surface — bolder, quieter, distill, overdrive) +
 `states.md` (empty/error/loading/permission states, i18n, overflow, onboarding, interface copy) +
 `fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
-`prototype.md` (the craft bar and divergence axes for `spike`'s UI shape) + `vocabulary.md` (a
+`prototype.md` (the craft bar and divergence axes for `spike`'s UI shape) + `motion-vocabulary.md` (a
 reference — the reverse motion-term glossary, read by `explain`, not an engine cell) +
 `libraries.md` (a reference — curated web/React library picks, read by `implement`) +
 `sketch.md` (ASCII layouts in chat, the lowest rung of `spike`'s fidelity ladder, with the

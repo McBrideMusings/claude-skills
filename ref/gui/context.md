@@ -43,7 +43,7 @@ a sibling, and most of this does not apply there.
 | [`design/polish.md`](design/polish.md) | Finishing a built UI: shadows, scrollbars, selection, focus rings, press feedback, theme switching. |
 | [`direction.md`](direction.md) | Choosing the visual world for something new. |
 | [`fidelity.md`](fidelity.md) | Deciding how finished a mockup needs to be. |
-| [`vocabulary.md`](vocabulary.md) | Naming what you are looking at before critiquing it. |
+| [`motion-vocabulary.md`](motion-vocabulary.md) | Naming a motion or animation effect someone describes loosely. |
 | [`slop.md`](slop.md) | Judging whether an interface reads as AI-generated. |
 | [`slop/stand-ins.md`](slop/stand-ins.md) | Checking a screen for stand-ins: emoji icons, a system display font, mono as costume, fake charts, an unneeded modal. |
 | [`slop/structure.md`](slop/structure.md) | Laying out a landing or marketing page: hero, bento grid, logo wall, spec table, zigzag sections. |

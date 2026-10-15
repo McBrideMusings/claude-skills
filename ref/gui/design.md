@@ -94,7 +94,7 @@ Each is a page in [`design/`](design/), read through the register above. A full 
 
 Exact curves, durations, spring parameters, and the GPU-property rules are **implementation** — they
 live in `ref/web/review.md` and `ref/apple/review.md`, loaded by the `review` engine.
-The reverse glossary of motion terms is `vocabulary.md` in this directory.
+The reverse glossary of motion terms is `motion-vocabulary.md` in this directory.
 
 ## Room for more lenses
 
