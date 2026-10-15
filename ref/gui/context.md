@@ -38,6 +38,7 @@ a sibling, and most of this does not apply there.
 | [`design/layout.md`](design/layout.md) | Setting spacing, alignment, hierarchy, cards, radii or touch targets on a screen. |
 | [`design/grouping.md`](design/grouping.md) | Checking whether a label, price, status or action sits with the object it belongs to. |
 | [`design/gestalt.md`](design/gestalt.md) | Checking proximity, enclosure, alignment, connectors or figure-ground on a screen. |
+| [`design/tangents.md`](design/tangents.md) | Two edges or shapes that almost align, almost touch, or leave a sliver of gap — and the critique words for it. |
 | [`design/colour.md`](design/colour.md) | Choosing a palette, a colour ramp, dark mode or a gradient, or checking contrast. |
 | [`design/polish.md`](design/polish.md) | Finishing a built UI: shadows, scrollbars, selection, focus rings, press feedback, theme switching. |
 | [`direction.md`](direction.md) | Choosing the visual world for something new. |

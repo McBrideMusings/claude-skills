@@ -57,4 +57,5 @@ touch targets.
 - **Cross-element alignment is an audit axis** (Taste Skill redesign checks) — this is good continuation
   (`grouping.md`): across a row of cards, CTAs must share a baseline (bottom-align them, don't let copy
   length float them); in pricing columns, feature lists must start at the same Y; where the maths looks
-  aligned but the eye disagrees, nudge 1–2px **optically**, not mathematically.
+  aligned but the eye disagrees, nudge 1–2px **optically**, not mathematically. Edges a few pixels off
+  from lining up or touching are tangents: [`tangents.md`](tangents.md).

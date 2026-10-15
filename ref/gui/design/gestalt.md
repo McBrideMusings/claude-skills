@@ -34,7 +34,8 @@ Part of [`grouping.md`](grouping.md), the lens that judges what the eye binds to
    of a column of fields and the eye reads them as one list tracking down a shared invisible line.
    Knock one out of alignment and it visually defects from the group — useful when you meant to
    single it out, damaging when you didn't. This is the mechanism behind `layout.md`'s cross-element
-   alignment bullet.
+   alignment bullet. Edges that *almost* line up or *almost* touch are tangents —
+   [`tangents.md`](tangents.md) names each kind and its fix.
 6. **Common fate** — elements that move or change together read as related, and it's the only
    principle with no static form: it doesn't exist until the interface runs. The change doesn't have
    to be motion — rows that dim in unison imply a shared disabled state, cards that lift together
