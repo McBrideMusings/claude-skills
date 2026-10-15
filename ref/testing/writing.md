@@ -22,6 +22,17 @@ use the project's existing test setup.
 Mock at system boundaries only — external APIs, time, randomness, sometimes the filesystem and
 databases. Never internal collaborators. Patterns: [`mocking.md`](mocking.md).
 
+## Example IP addresses
+
+**A made-up IP address in a test, fixture, doc or example comes from a range reserved for
+documentation.** For IPv4 that is one of the three [RFC 5737](https://www.rfc-editor.org/rfc/rfc5737)
+blocks, `192.0.2.0/24`, `198.51.100.0/24` and `203.0.113.0/24`; for IPv6 it is `2001:db8::/32`
+([RFC 3849](https://www.rfc-editor.org/rfc/rfc3849)). These are never assigned to anyone, so
+they can never turn out to be a real host. An address that merely looks unused — `11.0.9.1`,
+`1.2.3.4` — is real, routable space with an owner, and secret and infrastructure scanners flag
+it. A test that needs a private address uses the private ranges (`10.0.0.0/8`,
+`172.16.0.0/12`, `192.168.0.0/16`) for that reason, not as a stand-in for a public one.
+
 ## Tests that pass for broken code
 
 **A golden or comparison test proves nothing until a bug would change its output.** An all-zero
