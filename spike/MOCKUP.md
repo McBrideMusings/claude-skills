@@ -59,7 +59,9 @@ reached by clicking, or a real component's response. That climbs to [UI.md](UI.m
    some cells. `--scale 2` doubles the pixel density. `--dir <abs-dir>` names the spike
    directory when the scratch root differs.
 6. **Open every PNG and look at it** ([CRITIQUE.md](CRITIQUE.md)), then show the result per
-   [CONTRACT.md](CONTRACT.md) rule 10 and stop: the choice is the user's.
+   [CONTRACT.md](CONTRACT.md) rule 10 and stop: the choice is the user's. Where Canvas is
+   running, the hand-off is a `canvas post` of the screenshots, grouped by screen with each
+   state captioned; chat names the card and the decision, never a bare list of PNG paths.
 
 ## Recording motion
 
