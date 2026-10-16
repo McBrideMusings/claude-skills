@@ -5,32 +5,31 @@ build one Rust workspace on one machine, and what `swarm launch` already sets up
 
 ## What swarm sets for you
 
-- **`CARGO_TARGET_DIR=<main checkout>/target`.** Every worker builds into the main checkout's
-  target directory instead of a fresh `target/` per worktree. Dependencies are compiled once and
-  reused; a new worktree otherwise rebuilds the whole dependency graph from nothing.
+- **`CARGO_TARGET_DIR=<worktree>/target`, cloned from the main checkout's `target/`.** `launch`
+  copies the main target with an APFS clone (`cp -c`; `cp --reflink=auto` elsewhere), so
+  dependencies start built and the copy shares disk blocks until a build rewrites them. Your
+  first build recompiles only the workspace's own crates.
 - **The `rust-analyzer-lsp` plugin is off** in workers. Each rust-analyzer runs its own
   `cargo check --workspace`, a second compile per worker that nobody reads.
 
-Do not override either. A worker that sets its own `CARGO_TARGET_DIR` goes back to a cold build.
+Do not override either.
+
+## Why not one shared target
+
+A target directory shared across worktrees holds one `debug/<binary>` per name, so a worker that
+runs a binary it just built can run the one another worker wrote a second later. Cargo also
+names a path crate's artifacts without its path, so worktrees on different branches overwrite
+each other's build of the same workspace crate, and a fingerprint that misses the change leaves
+a worker linking another branch's code.
 
 ## Builds take turns
 
-- Cargo takes a file lock on the target directory, so two workers building into the shared one
-  run one after the other; the second prints `Blocking waiting for file lock on build directory`.
-  That is the intended behaviour, not a hang.
-- Still run `cargo build`, `cargo test`, `cargo clippy` and `cargo check` through
-  `swarm heavy -- <command>`. The heavy lock also covers what cargo's lock does not: a test
-  binary running after the build finished, a `cargo run`, a benchmark.
+- Run `cargo build`, `cargo test`, `cargo clippy` and `cargo check` through
+  `swarm heavy -- <command>`. The lock also covers what a build alone does not: a test binary
+  running after the build finished, a `cargo run`, a benchmark.
 - Each build uses every core by default (`--jobs` is the CPU count). Turn-taking keeps that
   right; two at once would each get half and both take longer.
-
-## What a shared target costs
-
-- Workers on different branches rebuild the workspace's own crates when they take their turn,
-  because the sources differ. Dependencies stay built. Expect a turn to recompile your crates,
-  not the world.
-- The main checkout's own `cargo` waits on the same lock while a worker builds.
-- `cargo clean` in a worker deletes every worker's build. Never run it in a swarm.
+- `cargo clean` in a worker empties only its own target; the next build starts cold.
 
 ## Tests that need more than CPU
 

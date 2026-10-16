@@ -29,7 +29,8 @@
 # kernel drops the lock when its holder exits, so a crashed worker cannot leave it held.
 #
 # Worker environment, applied in this order (later wins):
-#   1. runtime defaults: rust → CARGO_TARGET_DIR=<main>/target, rust-analyzer plugin off
+#   1. runtime defaults: rust → CARGO_TARGET_DIR=<worktree>/target (cloned from <main>/target),
+#      rust-analyzer plugin off
 #   2. <main>/.claude/skills/swarm-worker/env — KEY=VALUE lines, $MAIN is the main checkout.
 #      SWARM_MAX_WORKERS=<n> there caps the lead's slots.
 #   3. <main>/.claude/skills/swarm-worker/settings.json — merged into the worker's --settings
@@ -113,10 +114,24 @@ quota_gate() {
   fi
 }
 
+# Where a worker's worktree lives.
+worktree_path() { printf '%s/.worktrees/%s/%s\n' "$HOME" "$(basename "$1")" "$2"; }
+
+# Give a rust worktree its own target/, cloned from the main checkout's so dependencies start
+# built. A target shared across worktrees hands one worker another's binaries and, when cargo's
+# fingerprints miss a source change between worktrees, another's build of a workspace crate.
+clone_target() {
+  local repo="$1" wt="$2"
+  [ -d "$repo/target" ] || return 0
+  if [ "$(uname)" = Darwin ]; then cp -c -R "$repo/target" "$wt/target"
+  else cp --reflink=auto -R "$repo/target" "$wt/target"; fi \
+    || echo "swarm: could not clone $repo/target into $wt — the worker's first build starts cold" >&2
+}
+
 # KEY=VALUE lines for a worker's environment.
 worker_env() {
-  local repo="$1" f
-  runtimes "$repo" | grep -qx rust && printf 'CARGO_TARGET_DIR=%s/target\n' "$repo"
+  local repo="$1" id="$2" f
+  runtimes "$repo" | grep -qx rust && printf 'CARGO_TARGET_DIR=%s/target\n' "$(worktree_path "$repo" "$id")"
   f="$(project_skill "$repo")/env"
   [ -f "$f" ] && grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$f" | sed "s#\\\$MAIN#$repo#g"
   return 0
@@ -126,7 +141,7 @@ worker_env() {
 # spawns the worker's shell, so nothing exported here reaches it any other way.
 worker_settings() {
   local repo="$1" id="$2" base f env
-  env="$( { worker_env "$repo"; printf 'SWARM_WORKER=%s\n' "$id"; } \
+  env="$( { worker_env "$repo" "$id"; printf 'SWARM_WORKER=%s\n' "$id"; } \
     | jq -Rn '[inputs | capture("^(?<k>[^=]+)=(?<v>.*)$")] | map({(.k): .v}) | add')"
   base="$(jq -cn --argjson env "$env" '{env: $env}')"
   runtimes "$repo" | grep -qx rust && base="$(jq -c --arg p "$RA_PLUGIN" '. * {enabledPlugins: {($p): false}}' <<<"$base")"
@@ -187,10 +202,9 @@ cmd_launch() {
     && die "bead $id is labelled human — it is a question for iron-out, not work"
   [ -f "$(project_skill "$repo")/SKILL.md" ] || die "no swarm-worker skill in $repo — run 'swarm check'"
 
-  local name base wt branch outdir outfile
-  name="$(basename "$repo")"
+  local base wt branch outdir outfile
   branch="swarm/$id"
-  wt="$HOME/.worktrees/$name/$id"
+  wt="$(worktree_path "$repo" "$id")"
   base="$(git -C "$repo" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')" || true
   base="${base:-$(git -C "$repo" branch --show-current)}"
   outdir="$(run_dir "$repo")"
@@ -257,6 +271,7 @@ it. Say in its first line whether the bead landed (with the commit sha on $base)
     bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
     die "could not create $wt — released the claim on $id"; }
   CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
+  runtimes "$repo" | grep -qx rust && clone_target "$repo" "$wt"
   local gd; gd="$(git -C "$wt" rev-parse --absolute-git-dir)"
   touch "$gd/SELF-LAND"
   printf '%s\n' "$brief" > "$gd/DISPATCH-BRIEF.md"
