@@ -44,9 +44,22 @@ runs as written.
 | Step 1's "if you cannot plan, stop" | Same split: a decision is decided, a missing fact goes to `Needs you`. |
 | The gate | Prints it in full, `Run:` and `Look for:` included, as the record. Drops the closing sentence and goes straight to `wrap-up`. |
 | `wrap-up`'s follow-up slate | Prints every row with its bracketed default and applies the defaults ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step A). |
-| `wrap-up`'s next-work ask | Relays into the next item ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto). |
+| `wrap-up`'s next-work ask | Runs `next-work --auto` and follows its verdict (§Routing each hop): `implement` relays into the next bead, `swarm` relays into `swarm <focus>`, `iron-out` ends the run. |
 | `wrap-up`'s PR offer on a repo that is not `owned` | Opens no PR. Parks the branch with `needs a PR` and adds it to `Needs you`. |
 | A step that needs a person's yes | Records it and moves on (§A step only a person can take). |
+
+## Routing each hop
+
+After a pass lands or parks, `next-work --auto` ([`../relay/SKILL.md`](../relay/SKILL.md) §Ending)
+returns one of three verdicts for the run's focus, and auto follows it without asking:
+
+| Verdict | What auto does |
+| --- | --- |
+| `implement <id>` | Relays into `implement auto` for that bead, carrying the run-state block ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto). |
+| `swarm <focus>` | Relays this pane into `swarm <focus>` with the run-state block at the top of the brief. The swarm reads `Limit` and `Used` from it, counts each bead it lands or parks, and launches nothing once `Used` reaches `Limit` ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget). |
+| `iron-out <focus>` | Ends the run. The report's first line names `issues iron-out <focus>` as the next command, because only the user can answer a `human` bead. |
+
+`focus finished` and `none` end the run with the report; auto never widens the focus.
 
 ## Parking an item
 
