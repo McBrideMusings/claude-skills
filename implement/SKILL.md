@@ -26,6 +26,8 @@ list clears, the run ends: name the first item that reached the gate and the tes
 or, when every item was dropped before the gate, each item and the check that dropped it —
 and stop.
 
+**An argument that is not a bead id, `auto` or a count is a focus** — `implement the web browser feature`, `implement label:client`. Resolve it through [`SELECTORS.md`](SELECTORS.md), the one selector table, then run the bare-`implement` walk over the resolved set: the top ready bead in the focus is the pass.
+
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
 the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
 (`../wrap-up/SKILL.md`).

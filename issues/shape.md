@@ -14,7 +14,7 @@ Every issue has a title. In everything the user reads — the slate, the roadmap
 
 ## Scope
 
-Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `issues shape` = every open issue in the current repo.
+Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `epic:X`, `ready`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `issues shape` = every open issue in the current repo.
 
 **Dependencies are real edges, never prose.** On beads: `bd dep add <id> <blocker-id> -t blocks`, read back with `bd dep tree`, `bd blocked` and `bd ready --limit 0`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is a **finding** — an edge someone never wired — and Phase 0 offers to convert it. An item is unblocked when every blocker is closed.
 

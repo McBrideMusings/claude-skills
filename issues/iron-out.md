@@ -45,7 +45,7 @@ bd list --status open,in_progress,blocked --type decision --limit 0 --json   # t
 bd list --status open,in_progress,blocked --limit 0 --json                   # everything else, judged by Phase 1's gate
 ```
 
-Selector forms are shared with `implement` — one table, in [`../implement/SELECTORS.md`](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `epic:X`, `followups`, `papercuts`; union multiple selectors). Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
+A scope argument resolves through [`../implement/SELECTORS.md`](../implement/SELECTORS.md), the one table for `#133-140`, `label:X`, `milestone:X`, `epic:X`, free text, `followups` and `papercuts` (union multiple selectors); iron-out then keeps the human, decision and Phase 1-failing items of the resolved set, blocked ones included, so `issues iron-out label:client` scans only that label's. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
 
 **Dependencies are real edges, never prose.** On beads: read with `bd dep tree`, `bd blocked` and `bd ready --limit 0`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is an edge nobody wired; report it and leave the wiring to `issues shape`.
 

@@ -16,7 +16,7 @@ What `swarm` reuses rather than owns:
 | Job | Owner |
 | --- | --- |
 | Ranking ready beads, grouping related ones, applying a focus | [`issues next`](../issues/next.md), autonomous-caller mode |
-| `epic:` / `label:` / bare-id scopes | [`../implement/SELECTORS.md`](../implement/SELECTORS.md) |
+| `epic:` / `label:` / bare-id / free-text scopes | [`../implement/SELECTORS.md`](../implement/SELECTORS.md) |
 | An epic's parallel waves | `bd swarm validate <epic>` |
 | The worker's whole pass, its landing and its parking | `implement <id> auto` |
 | The herdr space, the outfile, the wait | `dispatch exec`, via the `swarm launch` script |
@@ -92,11 +92,13 @@ the fix is one interactive `claude` in the main checkout, answered by the user.
 
 ## 2. Resolve the scope
 
+A focus resolves through [`../implement/SELECTORS.md`](../implement/SELECTORS.md), the one table
+for `epic:`, `label:`, bead ids and free text. Swarm adds only this:
+
 | Focus | Scope |
 | --- | --- |
 | none | `issues next`, autonomous-caller mode: every ready group and singleton, ranked |
-| `epic:<id>`, `label:<name>`, bead ids | SELECTORS.md, intersected with `bd ready --limit 0 --json`. For an epic, also run `bd swarm validate <epic>` and cap `<n>` at its maximum parallelism |
-| free text — "the client", "the web browser feature" | `issues next focus="<text>"`, autonomous-caller mode |
+| any other focus | SELECTORS.md's resolution, intersected with `bd ready --limit 0 --json`. For `epic:<id>`, also run `bd swarm validate <epic>` and cap `<n>` at its maximum parallelism |
 
 **A failed read is not an empty backlog.** A `bd` command that exits non-zero, prints an error,
 or returns output that does not parse is an error: stop launching, keep the running workers, and
