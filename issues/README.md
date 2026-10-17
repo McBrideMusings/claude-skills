@@ -47,7 +47,7 @@ and never invents one. A repo without the file gets a proposed labeling session,
 | `issues next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
 | `issues shape` | list, create, dep, label | types, labels, epics, wires blockers; selector resolution lives in `implement/SELECTORS.md` |
-| `issues iron-out` | human, list, update, label, close | answers and closes questions, rewrites work items until AFK, flags unlabelled ones `human` |
+| `issues iron-out` | human, list, update, label, close | answers and closes questions, rewrites work items until AFK, flags unlabelled ones `human`; files new work through `issues spec` / `issues file` into the run's focus, then ends through `relay` §Ending |
 | `issues file` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |
 | `wrap-up` | close, comment, list | plus PR work, which is always `gh` |

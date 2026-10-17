@@ -27,7 +27,7 @@ Six verbs route to a sibling file loaded on demand — read that file, not this 
 | `issues spec` | Synthesize a spec from conversation, get it approved, slice it into vertical-slice tickets, publish to the tracker. | [`spec.md`](spec.md) |
 | `issues next` | Pick the next work item from the tracker and recommend one concrete starting point. | [`next.md`](next.md) |
 | `issues shape` | Structure a backlog: type and label every issue from `.beads/labels.toml`, group into epics, infer edges, print the roadmap. Also charts a foggy effort from scratch. | [`shape.md`](shape.md) |
-| `issues iron-out` | Resolve every item waiting on a person, one at a time: answer and close questions, rewrite work items until an agent can run them, flag unlabelled ones `human`. | [`iron-out.md`](iron-out.md) |
+| `issues iron-out` | Resolve every item waiting on a person, one at a time: answer and close questions, rewrite work items until an agent can run them, flag unlabelled ones `human`. New work a resolution implies is filed through `issues spec` / `issues file` into the run's focus; the verb ends through `relay` §Ending. | [`iron-out.md`](iron-out.md) |
 | `issues reconcile` | Close beads a merged PR already shipped: closes every PR-linked bead whose PR merged, then matches unlinked open beads against merged PRs and closes the matches you accept. Run when an open bead looks done. | [`reconcile.md`](reconcile.md) |
 
 A request to read, create, close or label an item with no verb is [`REFERENCE.md`](REFERENCE.md)

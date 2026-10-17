@@ -9,8 +9,9 @@ concrete plan is statable, and "done" is verifiable without a judgment call the 
 **Worth doing on its own.** An item that cannot state its own plan or its own definition of
 done is a bad item whether or not an agent ever touches it — you re-derive the missing decision
 every time you read it. These are the items `implement`'s readiness gate turns away; this verb does
-not need `implement` to run, but its exit reaches back: a cleared item is offered to
-`implement` per [`../implement/HANDOFF.md`](../implement/HANDOFF.md), from Phase 3 onward.
+not need `implement` to run. Its exit is [`../relay/SKILL.md`](../relay/SKILL.md) §Ending (Phase 4), which
+runs `next-work` on the run's focus and prints the one `Next:` line; no phase before it offers
+work to `implement`.
 
 **Structure is [`shape.md`](shape.md)'s job.** This verb never builds epics, wires inferred
 edges or relabels a backlog wholesale. It reads the graph as it stands. A backlog with no types
@@ -130,7 +131,12 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 
   Run `bd recompute-blocked` after the write; whether the item is the next pass is `next-work`'s verdict at Phase 4, never a row offered here.
 - **Question** → `bd human respond <id> -r "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue is typed `decision`.** If it is not, refuse the close with a one-line error — it is a work item, and work items never close here, whatever labels it carries (Phase 1 flags work items `human` too).
-- **New work the resolution implies** → file it now, before Phase 3c. Several beads go through [`spec.md`](spec.md) (`issues spec`); one goes through [`file.md`](file.md) (`issues file`). Each new bead is parented under the focus epic when the run has one (`--parent <focus-epic-id>`); when the focus is a label selector, each carries those labels instead (`-l <labels>`). A bead filed with neither falls outside the focus and the next `next-work` hop never sees it.
+- **New work the resolution implies** → file it now, before Phase 3c. Several beads go through [`spec.md`](spec.md) (`issues spec`); one goes through [`file.md`](file.md) (`issues file`). Both take the destination from this run, so the filing procedure stays theirs and iron-out never runs `bd create` itself:
+  - **Focus is an `epic:` selector** → pass the epic id. `issues spec` reuses it as the run epic ([`spec.md`](spec.md) § Caller-supplied destination) and parents every slice under it; `issues file` passes `--parent <epic-id>`.
+  - **Focus is a `label:` selector** → pass the labels. Both create each bead with those labels, which must already be in `.beads/labels.toml`.
+  - **No focus epic or label** (bare `issues iron-out`, an id list, free text) → pass the id of the item being resolved. Each new bead is created with `--deps discovered-from:<that-id>` and joins no focus: the next `next-work` hop does not count it, and Phase 4 names every such bead.
+  - **Offers** → neither verb prints a next-work or implement offer when called from here. [`../relay/SKILL.md`](../relay/SKILL.md) §Ending is the only one.
+  - **Bodies** → each filed body is a plan, so the `show-shape` load above covers it.
 
 Assets are linked, never pasted.
 
@@ -166,7 +172,7 @@ The pattern for `fact` and `artifact` items. The subagent does the expensive bui
 
 ## Phase 4 — Report and end
 
-Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, items flagged `human` by the scan, fog graduated, new beads filed by Phase 3b, items still held, ADRs written.
+Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, items flagged `human` by the scan, fog graduated, new beads filed by Phase 3b (name each one that joined no focus, with the item it was discovered from), items still held, ADRs written.
 
 Then end through [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, which runs `next-work` on the run's focus, prints its verdict and the `Next:` line, and closes with the hatch. Phase 3b has already filed the work a decision implies, so the verdict sees it.
 
