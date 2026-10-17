@@ -65,7 +65,7 @@ Auto follows it without asking, and never routes through a hatch. In a linked wo
 | --- | --- |
 | `Next: implement <id> — …` | Relays into `implement <id> auto`, carrying the run-state block and focus ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto). The bead is the verdict's; nobody re-picks it. |
 | `Next: swarm <focus> — …` | Relays this pane into `swarm <focus>` with the run-state block at the top of the brief. The swarm reads `Limit` and `Used` from it, writes the block back when it ends ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget, §6), and follows this table itself. A session that is not in the main checkout (a linked worktree) cannot launch a swarm: it continues in this context as `implement <id> auto` for the top bead `next-work` ranked and says why in one line. |
-| `Next: issues iron-out <focus> — …` | Ends the run. The report's `Next:` line is `issues iron-out <focus>`, because only the user can answer a `human` bead. |
+| `Next: issues iron-out <focus> — …` | Ends the run. `next-work --auto` prints it only when no agent-ready bead is left in the focus; an attended run prints it whenever a focus-blocking `human` bead is ready. The report's `Next:` line is `issues iron-out <focus>`, because only the user can answer a `human` bead. |
 | `Next: none — swarm <focus> running[ in <space>] (<ids>)` | Ends the run. The report's `Needs you` names the space and the beads the live swarm holds. |
 | `Next: none — <N> open in <focus>, none ready (blocked or in progress)` | Ends the run. The report lists each open bead with what blocks it. |
 | `Next: none — focus finished` | Ends the run. Auto never widens the focus. |
