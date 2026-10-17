@@ -11,10 +11,13 @@ out of work, and then prints one report of everything only a person can finish.
 | `implement auto` | items `issues next` discovers | 5 |
 | `implement auto <n>` / `implement auto all` | items `issues next` discovers | `<n>` / no limit |
 | `implement <epic> auto [n\|all]` | the epic's slices, or for a milestone everything its `blocks` edges reach (each parent standing for its children), in `epic-plan` order | all of them unless `<n>` is given |
+| `implement <focus> auto [n\|all]` for a focus that is not an epic: `label:<x>`, `followups`, `papercuts`, a list of bare ids, free text such as `the web browser feature` (every form [`SELECTORS.md`](SELECTORS.md) resolves; `epic:` and `milestone:` take the row above) | the focus's ready beads, ranked by `issues next focus=` | 5 unless `<n>` or `all` is given |
 | `implement <id> auto` | that one item | 1 |
 
 The mode lives in the argument, which `/clear` drops. The relay brief carries the run's state
-across the clear (§Run state).
+across the clear (§Run state), and the block's `Focus:` line carries the focus exactly as typed
+(`label:client`, `the web browser feature`, an epic id), so every hop, relayed or swarmed, resolves
+the same scope.
 
 `implement <id> auto` is what a lead dispatches into a worktree. It lands its own branch through
 `wrap-up` — bare when standing in that worktree, `wrap-up <worktree>` when not — which closes the
@@ -32,6 +35,10 @@ carries `SWARM_WORKER=<id>`, that claim satisfies [`HANDOFF.md`](HANDOFF.md) §1
 and that `bd show <id> --json` lists no open blocker. Every other check, and the readiness gate,
 runs as written.
 
+**A pass with `SWARM_WORKER` set never routes.** It ends after its one bead: no `next-work`, no
+`relay`, no `swarm`, whatever the §Routing each hop table says. Its `Used` is 1 of 1. The swarm
+lead owns the run state and the routing; the worker's report goes to its outfile.
+
 ## Every wait point, and what auto does instead
 
 | Where a pass waits | What auto does |
@@ -44,22 +51,27 @@ runs as written.
 | Step 1's "if you cannot plan, stop" | Same split: a decision is decided, a missing fact goes to `Needs you`. |
 | The gate | Prints it in full, `Run:` and `Look for:` included, as the record. Drops the closing sentence and goes straight to `wrap-up`. |
 | `wrap-up`'s follow-up slate | Prints every row with its bracketed default and applies the defaults ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step A). |
-| `wrap-up`'s next-work ask | Runs `next-work --auto` and follows its verdict (§Routing each hop): `implement` relays into the next bead, `swarm` relays into `swarm <focus>`, `iron-out` ends the run. |
+| `wrap-up`'s next-work ask | Runs `next-work --auto` and follows its verdict (§Routing each hop). A pass with `SWARM_WORKER` set skips it. |
 | `wrap-up`'s PR offer on a repo that is not `owned` | Opens no PR. Parks the branch with `needs a PR` and adds it to `Needs you`. |
 | A step that needs a person's yes | Records it and moves on (§A step only a person can take). |
 
 ## Routing each hop
 
-After a pass lands or parks, `next-work --auto` ([`../relay/SKILL.md`](../relay/SKILL.md) §Ending)
-returns one of three verdicts for the run's focus, and auto follows it without asking:
+After a pass lands or parks, and after a swarm ends, `next-work --auto`
+([`../relay/SKILL.md`](../relay/SKILL.md) §Ending) prints one `Next:` line for the run's `Focus:`.
+Auto follows it without asking, and never routes through a hatch. These are the lines it prints:
 
-| Verdict | What auto does |
+| `Next:` line | What auto does |
 | --- | --- |
-| `implement <id>` | Relays into `implement auto` for that bead, carrying the run-state block ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto). |
-| `swarm <focus>` | Relays this pane into `swarm <focus>` with the run-state block at the top of the brief. The swarm reads `Limit` and `Used` from it, counts each bead it lands or parks, and launches nothing once `Used` reaches `Limit` ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget). |
-| `iron-out <focus>` | Ends the run. The report's first line names `issues iron-out <focus>` as the next command, because only the user can answer a `human` bead. |
+| `Next: implement <id> — …` | Relays into `implement <id> auto`, carrying the run-state block and focus ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto). The bead is the verdict's; nobody re-picks it. |
+| `Next: swarm <focus> — …` | Relays this pane into `swarm <focus>` with the run-state block at the top of the brief. The swarm reads `Limit` and `Used` from it, writes the block back when it ends ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget, §6), and follows this table itself. A session that is not in the main checkout (a linked worktree) cannot launch a swarm: it continues in this context as `implement <top ranked bead> auto` and says why in one line. |
+| `Next: issues iron-out <focus> — …` | Ends the run. The report's `Next:` line is `issues iron-out <focus>`, because only the user can answer a `human` bead. |
+| `Next: none — swarm <focus> running in <space> (<ids>)` | Ends the run. The report's `Needs you` names the space and the beads the live swarm holds. |
+| `Next: none — <N> open in <focus>, none ready (blocked or in progress)` | Ends the run. The report lists each open bead with what blocks it. |
+| `Next: none — focus finished` | Ends the run. Auto never widens the focus. |
+| `Next: none — nothing open in <focus>` | Ends the run. |
 
-`focus finished` and `none` end the run with the report; auto never widens the focus.
+Every `none` ends the run; only `iron-out` names a command for the user.
 
 ## Parking an item
 
@@ -141,7 +153,7 @@ top of every relay brief ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto):
 
 ```markdown
 IMPLEMENT AUTO — nobody is at the keyboard; never wait for a reply.
-Run: implement [<epic-id>] auto in <repo>. Limit: <n | all>. Used: <landed + parked so far>
+Run: implement [<epic-id>] auto in <repo>. Focus: <selector as typed, or `ready`>. Limit: <n | all>. Used: <landed + parked so far>
 Landed: <id> (<sha>[, decided: question -> answer]), …
 Parked: <id> <branch> (<needs eyes: what | blocked: command | needs a PR | failed: reason>), …
 Needs you: <id or step> — <the exact thing to supply or command to run>, …
@@ -149,10 +161,14 @@ Needs you: <id or step> — <the exact thing to supply or command to run>, …
 
 The first session writes `Limit` from its command: `5` for bare `implement auto`, `all` for an
 epic run with no `<n>`. Every pass, landed or parked, adds one to `Used`. Before taking the next
-item, a session compares `Used` with `Limit`: equal ends the run with the report. A session
+item, a session compares `Used` with `Limit`: `Used >= Limit` ends the run with the report. A session
 started by relay reads `Limit` and `Used` from the block, never from its own command line.
 
 ## The report
+
+One report ends every auto run, whichever skill ends it: `implement`, `relay` §Auto or `swarm`
+§6 print this and nothing else (`swarm` adds its own `Failed` and `Left in scope` lines under
+**Needs you**, below).
 
 The run ends when `Used` reaches `Limit`, when no item on the list clears the gate or can be
 decided, or on a halt above. It always prints this report from the run-state block. One line
@@ -167,11 +183,14 @@ through `implement <id>` with the other answer when it is wrong.
 `implement <id>` to resume at the gate.
 
 **Needs you** — the `Needs you` line, plus `Parked` rows with `blocked:`, `needs a PR` or
-`failed:`. Next action: the exact thing to supply or the exact command to run.
+`failed:`, and a swarm's failed workers (bead, exit code, last line) and the beads left in scope
+with what blocks each. Next action: the exact thing to supply or the exact command to run.
 
 **Landed** — each landed pass with its sha.
 
 **Unblocks** — on a parent run, `epic-plan`'s `unblocks` line verbatim: the items waiting on the
 parent to close. They are not children and the run never works them.
 
-Close with `auto: <landed> landed, <parked> parked, limit <Limit>`.
+Close with `auto: <landed> landed, <parked> parked, limit <Limit>`, then, as the last line of the
+report, `Next: <the verdict's command, or none — reason>`: the `Next:` line `next-work --auto`
+printed, or `none — <halt reason>` after a halt.

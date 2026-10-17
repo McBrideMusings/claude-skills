@@ -57,7 +57,8 @@ before it lands.
 
 ## 1. Gate
 
-From the repo's main checkout:
+From the repo's main checkout. A session in a linked worktree cannot run a swarm: in an auto run it
+continues as `implement <top ready bead of the focus> auto` and says why; attended, it refuses.
 
 ```bash
 "$HOME/.claude/skills/swarm/swarm" check
@@ -99,11 +100,14 @@ before step 1; a swarm started by hand has no block and no budget.
 
 - Every bead a worker lands or parks adds one to `Used` (step 5, when the lead logs `landed` or
   `parked`). A failed worker adds nothing.
-- Before every launch, compare `Used` plus the beads currently running with `Limit`. Equal means
-  launch nothing more: let the running workers finish, count them, and end the run. `all` never
-  runs out.
-- The report (§6) copies the block, with `Landed` and `Parked` rows extended, and closes with
-  `auto: <landed> landed, <parked> parked, limit <Limit>` so the run's own report carries the count.
+- Before every launch, compare `Used` plus the beads currently running with `Limit`. `Used +
+  running >= Limit` means launch nothing more: let the running workers finish, count them, and end
+  the run. `all` never runs out. A block whose `Used` is already at or past `Limit` launches
+  nothing.
+- At the end (§6) the lead writes the block back: every landed, parked and failed bead added to
+  `Landed`, `Parked` and `Needs you`, `Used` raised by the landed and parked count, and each
+  worker's `Needs you` and `decided:` lines folded in. That updated block is what the next hop
+  receives.
 
 ## 2. Resolve the scope
 
@@ -196,10 +200,20 @@ is empty — or early, on a failed read or a quota refusal, which the report nam
 
 First `swarm log end "" "<landed> landed, <parked> parked, <failed> failed"`: `next-work` counts
 the run live until that line exists, so it comes before anything routes onward. Then print the
-report below, and end the run through `relay` §Ending ([`../relay/SKILL.md`](../relay/SKILL.md)),
-which runs `next-work` for the focus and prints the verdict.
+report below, and end the run.
 
-One section, in chat:
+**An attended swarm** (no run-state block) ends through `relay` §Ending
+([`../relay/SKILL.md`](../relay/SKILL.md)), which runs `next-work` for the focus, prints the verdict
+and waits at its hatch.
+
+**A swarm inside an auto run** (it has a run-state block) never prints §Ending's hatch. It
+writes the block back (§Run budget), runs `next-work --auto` for the block's `Focus:`, and follows
+the `Next:` line the way [`../implement/AUTO.md`](../implement/AUTO.md) §Routing each hop says,
+through `relay` §Auto. It prints [`../implement/AUTO.md`](../implement/AUTO.md) §The report instead
+of the report below, with its failed workers and left-in-scope beads under **Needs you**, and the
+`Next:` line last.
+
+The attended report is one section, in chat:
 
 - **Landed** — bead, title, model, commit sha.
 - **Parked** — bead, the reason from its note, the branch holding the work.
