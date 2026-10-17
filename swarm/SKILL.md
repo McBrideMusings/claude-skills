@@ -91,6 +91,20 @@ A worker in a repo Claude has never been trusted in stops at the "trust this fol
 and its launch fails with `agent_not_ready`. A worktree inherits its main checkout's trust, so
 the fix is one interactive `claude` in the main checkout, answered by the user.
 
+## Run budget
+
+A swarm relayed from an `implement … auto` run starts with a run-state block at the top of its
+brief ([`../implement/AUTO.md`](../implement/AUTO.md) §Run state). Read `Limit` and `Used` from it
+before step 1; a swarm started by hand has no block and no budget.
+
+- Every bead a worker lands or parks adds one to `Used` (step 5, when the lead logs `landed` or
+  `parked`). A failed worker adds nothing.
+- Before every launch, compare `Used` plus the beads currently running with `Limit`. Equal means
+  launch nothing more: let the running workers finish, count them, and end the run. `all` never
+  runs out.
+- The report (§6) copies the block, with `Landed` and `Parked` rows extended, and closes with
+  `auto: <landed> landed, <parked> parked, limit <Limit>` so the run's own report carries the count.
+
 ## 2. Resolve the scope
 
 A focus resolves through [`../implement/SELECTORS.md`](../implement/SELECTORS.md), the one table

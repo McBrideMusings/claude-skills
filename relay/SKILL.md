@@ -188,7 +188,16 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
 ([`../implement/AUTO.md`](../implement/AUTO.md)). There is no proposal and no halt, and
 `wrap-up` already settled the follow-ups (Step 3 does not run again).
 
-0. **Run `next-work` with `--auto`** per §Ending step 1; the brief carries the `Focus:` line and its `Start by:` is the verdict's command.
+0. **Run `next-work` with `--auto`** per §Ending step 1 and follow its verdict:
+   - `implement <id>`: continue with steps 1–3 below; `Start by:` is `implement auto`
+     (`implement <epic-id> auto` for an epic run).
+   - `swarm <focus>`: continue with steps 1 and 3, but `Start by:` is `swarm <focus>`, the focus as
+     the run typed it. The brief's run-state block is what the swarm reads its budget from
+     ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget).
+   - `iron-out <focus>`: the run ends here, not relayed. Print the auto report
+     ([`../implement/AUTO.md`](../implement/AUTO.md) §The report) with `next: issues iron-out
+     <focus>` as its first line.
+   - `none` or `focus finished`: the run ends with the report.
 1. **Stop when the count is spent.** The run-state block's `Used` equal to its `Limit` ends the
    run: decline the relay, stop this session's subagents as Step 4 says, and print the auto report
    ([`../implement/AUTO.md`](../implement/AUTO.md) §The report). `all` never runs out.
@@ -199,11 +208,11 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
    than ending it. A remainder that needs the user ends the run with the report, not a
    declined relay.
 3. **Write the marker per Step 4, with the run-state block first in the brief**, copied as it
-   stands ([`../implement/AUTO.md`](../implement/AUTO.md) §Run state), then a `Next: <id>
-   "<title>"` line. Then the usual brief: task, where it lives, constraints not in the code,
-   and `Start by: implement auto` (`implement <epic-id> auto` for an epic run), ending with
-   `When it's done and landed, run /wrap-up.` The next session reads `Limit` and `Used` from
-   the block, so the count survives the clear.
+   stands ([`../implement/AUTO.md`](../implement/AUTO.md) §Run state), then a `Next:` line (`Next: <id>
+   "<title>"` for an implement verdict, `Next: swarm <focus>` for a swarm verdict). Then the usual
+   brief: task, where it lives, constraints not in the code, and the `Start by:` above, ending
+   with `When it's done and landed, run /wrap-up.` for an implement verdict. The next session
+   reads `Limit` and `Used` from the block, so the count survives the clear.
 4. **End the turn** per Step 5.
 
 Outside herdr, or in a linked worktree, there is no pane to clear: the run continues in this
