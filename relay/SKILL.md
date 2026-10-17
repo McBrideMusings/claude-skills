@@ -185,7 +185,7 @@ the work, and logs why to `/private/tmp/claude/<repo-slug>/relay/relay.log`.
 ## Auto
 
 Invoked by `wrap-up` Step D inside an `implement … auto` run
-([`../implement/AUTO.md`](../implement/AUTO.md)). There is no proposal and no halt, and
+([`../implement/AUTO.md`](../implement/AUTO.md)), and by `swarm` §6 when the swarm ends an auto run. There is no proposal and no halt, and
 `wrap-up` already settled the follow-ups (Step 3 does not run again).
 
 0. **Run `next-work` with `--auto`** per §Ending step 1 and follow its `Next:` line
@@ -198,7 +198,7 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
      verdict's own command. The brief's run-state block is what the swarm reads its budget from
      ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget). In a linked worktree no swarm can
      start ([`../swarm/SKILL.md`](../swarm/SKILL.md) §1): continue in this context as
-     `implement <top ranked bead of the focus> auto`, and say why in one line.
+     `implement <id> auto` for the top bead `next-work` ranked, and say why in one line.
    - `Next: issues iron-out <focus>`: the run ends here, not relayed. Print the auto report
      ([`../implement/AUTO.md`](../implement/AUTO.md) §The report); its last line is `Next: issues
      iron-out <focus>`.

@@ -11,7 +11,7 @@ out of work, and then prints one report of everything only a person can finish.
 | `implement auto` | items `issues next` discovers | 5 |
 | `implement auto <n>` / `implement auto all` | items `issues next` discovers | `<n>` / no limit |
 | `implement <epic> auto [n\|all]` | the epic's slices, or for a milestone everything its `blocks` edges reach (each parent standing for its children), in `epic-plan` order | all of them unless `<n>` is given |
-| `implement <focus> auto [n\|all]` for a focus that is not an epic: `label:<x>`, `followups`, `papercuts`, a list of bare ids, free text such as `the web browser feature` (every form [`SELECTORS.md`](SELECTORS.md) resolves; `epic:` and `milestone:` take the row above) | the focus's ready beads, ranked by `issues next focus=` | 5 unless `<n>` or `all` is given |
+| `implement <focus> auto [n\|all]` for a focus that is not an epic: `label:<x>`, `followups`, `papercuts`, free text such as `the web browser feature` (every form [`SELECTORS.md`](SELECTORS.md) resolves; `epic:` and `milestone:` take the row above) | the focus's ready beads, ranked by `issues next focus=` | 5 unless `<n>` or `all` is given |
 | `implement <id> auto` | that one item | 1 |
 
 The mode lives in the argument, which `/clear` drops. The relay brief carries the run's state
@@ -59,14 +59,14 @@ lead owns the run state and the routing; the worker's report goes to its outfile
 
 After a pass lands or parks, and after a swarm ends, `next-work --auto`
 ([`../relay/SKILL.md`](../relay/SKILL.md) §Ending) prints one `Next:` line for the run's `Focus:`.
-Auto follows it without asking, and never routes through a hatch. These are the lines it prints:
+Auto follows it without asking, and never routes through a hatch. In a linked worktree the label reads `Next (informational, no go):` instead of `Next:`; auto reads the command after it the same way. These are the forms it prints:
 
 | `Next:` line | What auto does |
 | --- | --- |
 | `Next: implement <id> — …` | Relays into `implement <id> auto`, carrying the run-state block and focus ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto). The bead is the verdict's; nobody re-picks it. |
-| `Next: swarm <focus> — …` | Relays this pane into `swarm <focus>` with the run-state block at the top of the brief. The swarm reads `Limit` and `Used` from it, writes the block back when it ends ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget, §6), and follows this table itself. A session that is not in the main checkout (a linked worktree) cannot launch a swarm: it continues in this context as `implement <top ranked bead> auto` and says why in one line. |
+| `Next: swarm <focus> — …` | Relays this pane into `swarm <focus>` with the run-state block at the top of the brief. The swarm reads `Limit` and `Used` from it, writes the block back when it ends ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget, §6), and follows this table itself. A session that is not in the main checkout (a linked worktree) cannot launch a swarm: it continues in this context as `implement <id> auto` for the top bead `next-work` ranked and says why in one line. |
 | `Next: issues iron-out <focus> — …` | Ends the run. The report's `Next:` line is `issues iron-out <focus>`, because only the user can answer a `human` bead. |
-| `Next: none — swarm <focus> running in <space> (<ids>)` | Ends the run. The report's `Needs you` names the space and the beads the live swarm holds. |
+| `Next: none — swarm <focus> running[ in <space>] (<ids>)` | Ends the run. The report's `Needs you` names the space and the beads the live swarm holds. |
 | `Next: none — <N> open in <focus>, none ready (blocked or in progress)` | Ends the run. The report lists each open bead with what blocks it. |
 | `Next: none — focus finished` | Ends the run. Auto never widens the focus. |
 | `Next: none — nothing open in <focus>` | Ends the run. |
@@ -192,5 +192,5 @@ with what blocks each. Next action: the exact thing to supply or the exact comma
 parent to close. They are not children and the run never works them.
 
 Close with `auto: <landed> landed, <parked> parked, limit <Limit>`, then, as the last line of the
-report, `Next: <the verdict's command, or none — reason>`: the `Next:` line `next-work --auto`
+report, `Next: <the verdict's command, or none — reason>`: the command or reason from the `Next:` line `next-work --auto`
 printed, or `none — <halt reason>` after a halt.

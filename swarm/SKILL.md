@@ -58,7 +58,7 @@ before it lands.
 ## 1. Gate
 
 From the repo's main checkout. A session in a linked worktree cannot run a swarm: in an auto run it
-continues as `implement <top ready bead of the focus> auto` and says why; attended, it refuses.
+continues as `implement <id> auto` for the top bead `next-work` ranked and says why; attended, it refuses.
 
 ```bash
 "$HOME/.claude/skills/swarm/swarm" check
