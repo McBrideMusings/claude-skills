@@ -128,8 +128,9 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, any legacy `Type: HITL` marker deleted from the body. Show the new body, then write it: `bd update <id> --body-file <path> --acceptance "<check>"` plus `bd label remove <id> human` on beads, `gh issue edit <n> --body --remove-label human` on GitHub. Removing `human` is what makes it AFK — there is no positive AFK label to add. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
 
-  The item is now runnable as an implement pass — don't wait for Phase 4 to say so. Check it against [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1 (open, `human` gone, listed by `bd ready --limit 0 --json` after `bd recompute-blocked`), and if it clears, add a row to this item's slate in HANDOFF.md §3's shape (`N. Run <id> as an implement pass — AFK, nothing blocks it. My pick: run.`). `go`, `N skip`, and `N hold` are the only words — never a new one, never `AskUserQuestion`. The row is offered, not automatic: declining leaves the item open, AFK, and waiting. Running inside an `Agent` call rather than the chat session, skip the row — HANDOFF.md's pre-flight notes `Workflow` is unavailable there, so the offer can't be taken.
+  Run `bd recompute-blocked` after the write; whether the item is the next pass is `next-work`'s verdict at Phase 4, never a row offered here.
 - **Question** → `bd human respond <id> -r "<answer>"`, which posts the comment and closes in one call; `bd human dismiss <id>` when the answer is that the question no longer applies. On GitHub: `gh issue comment <n>` + `gh issue close <n>`. **Before any close call, verify the issue is typed `decision`.** If it is not, refuse the close with a one-line error — it is a work item, and work items never close here, whatever labels it carries (Phase 1 flags work items `human` too).
+- **New work the resolution implies** → file it now, before Phase 3c. Several beads go through [`spec.md`](spec.md) (`issues spec`); one goes through [`file.md`](file.md) (`issues file`). Each new bead is parented under the focus epic when the run has one (`--parent <focus-epic-id>`); when the focus is a label selector, each carries those labels instead (`-l <labels>`). A bead filed with neither falls outside the focus and the next `next-work` hop never sees it.
 
 Assets are linked, never pasted.
 
@@ -163,27 +164,16 @@ The pattern for `fact` and `artifact` items. The subagent does the expensive bui
 
 **Never stand in for the user's side of an `artifact` item.** A subagent that builds a prototype *and* decides whether it feels right has broken the whole point — the same guard `grill-me` carries.
 
-## Phase 4 — Report and invoke implement
+## Phase 4 — Report and end
 
-Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, items flagged `human` by the scan, fog graduated, items still held, ADRs written.
+Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, items flagged `human` by the scan, fog graduated, new beads filed by Phase 3b, items still held, ADRs written.
 
-Then offer next steps in plain chat — never via the `AskUserQuestion` tool. Recompute the graph per [`../implement/HANDOFF.md`](../implement/HANDOFF.md) §2 (`bd recompute-blocked`, `bd ready --limit 0 --json`, edges from `bd blocked` / `bd swarm validate`) and present what it computed as slate rows — one row per ready item, since `implement` runs one item at a time:
-
-```
-Scope is clear. Reply with a number, or tell me something else.
-
-1. Cut the tickets — invoke issues spec on the decisions made. (Answered questions, nothing implementable yet.)
-2. Run cc-105 as an implement pass — AFK, nothing blocks it.
-3. Run cc-140 as an implement pass — AFK, nothing blocks it.
-4. Stop here.
-```
-
-Already offered from Phase 3 (cc-111) is not offered again — name it in a line above the rows instead. The per-item rows appear only when the graph has a front left to offer; a scope with nothing left to run drops straight to row 1 and the stop row. Name the next step and stop — never auto-chain into it.
+Then end through [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, which runs `next-work` on the run's focus, prints its verdict and the `Next:` line, and closes with the hatch. Phase 3b has already filed the work a decision implies, so the verdict sees it.
 
 ## Rules
 
 - **Never invent an answer.** Every resolution comes from the interview or a dispatched agent's cited findings. If the user declines to decide, the issue stays flagged and is reported as such.
-- **Don't implement, don't commit code.** Body edits, posted answers, closing answered questions, the `human` flag on unlabelled items, and grill-me's ADRs are the only writes this verb makes. Offering a cleared item to `implement`, and running it on `go`, is this verb's exit, not implementing.
+- **Don't implement, don't commit code.** Body edits, posted answers, closing answered questions, the `human` flag on unlabelled items, beads filed by Phase 3b, and grill-me's ADRs are the only writes this verb makes. Ending through relay §Ending is this verb's exit, not implementing.
 - **Never close a work item.** Only a question — an issue typed `decision` — closes here; the `human` label alone does not make an item a question.
 - **Interview one issue at a time** — never batch questions across issues into one message.
 - **Never re-implement what `bd` computes.** Ready fronts, transitive blocking, staleness — `bd ready --limit 0`, `bd blocked`, `bd dep tree`, `bd stale`.
