@@ -342,7 +342,7 @@ cmd_log() {
   esac
   if [ "$1" = run ]; then
     local pid; pid="$(lead_pid)"
-    detail="${detail:+$detail }${pid:+pid=$pid }space=$(basename "$repo")"
+    detail="${detail:+$detail }${pid:+pid=$pid }space=$(basename "$repo" | tr -s ' ' _)"
   fi
   log_event "$repo" "$1" "${2:-}" "$detail"
 }
