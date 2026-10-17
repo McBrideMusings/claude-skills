@@ -242,7 +242,7 @@ Print the numbered list with each row's chosen disposition as a record, not a qu
 
 *Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work, which the closing sentence names. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive (an `auto` run relays through Step D instead); the session's own checkout (the directory this session stands in, not the `<worktree>` being wrapped) is the repo's primary checkout, not a linked worktree — a session in the primary that wraps a pass's worktree can relay; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now, as the first action of the ask pass and before any slate is written: run `~/.claude/tools/next-work <repo> --focus "<focus>"` (`<focus>` is the selector the run started with, as typed, or `ready` when none was given; add `--auto` in an `auto` run; for free-text focus resolve it with `issues next focus=` and pass the ids as `--scope-ids`; on GitHub run `gh issue list --state open` beside `test "${HERDR_ENV:-}" = 1`), print its output in chat; its `Next:` line is the pick the closing sentence names. A slate written without that output printed is not ready to send. When relay is unavailable (a linked worktree included: drop the Next-work line, keep the follow-up slate), or no candidate is worth doing, use the no-next-work sentence from §Hatch (`go` alone, no `park`).
+The next work comes from [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work procedure: run it as the first action of the ask pass, before any slate is written. It runs `next-work`, prints its output, and defines the `Next:` line, the closing sentence, and what `go` does outside herdr or in a linked worktree (the session's own checkout — the directory this session stands in, not the `<worktree>` being wrapped — decides that; a session in the primary that wraps a pass's worktree can relay). `<focus>` is the selector the run started with, as typed, or `ready` when none was given.
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
@@ -251,13 +251,11 @@ Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive (an `
 Shape — the follow-up slate, then one closing sentence. There is no second question and no lettered options: `go` and `park` are the two answers, and the row numbers already use every number in the message.
 
 - **Follow-ups** — the numbered candidate list, one row per item, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row. Each row ends with its default in brackets: `[fix]`, `[file]`, `[skip]`.
-- **Next work** — only when relay is available: at most one plain line under the slate saying what the pick is and why (its cost included). No number, no letters.
+- **Next work** — the `Next:` line `next-work` printed, last under the slate, per §Ending. No number, no letters.
 
-Then exactly one sentence, no block-quote, no heading, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch:
+Then exactly one sentence, no block-quote, no heading: the hatch §Ending step 4 selects from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch.
 
-> Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`).
-
-`go` accepts every default and relays into the named next work. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition. Drop `park` from the sentence when relay is unavailable: with no next work named there is nothing for it to decline.
+`go` accepts every default and relays into the `Next:` command; a typed override such as `go iron-out label:client` relays into that command instead. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition.
 
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
