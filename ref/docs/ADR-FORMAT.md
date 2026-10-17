@@ -110,3 +110,9 @@ What qualifies: architectural shape (monorepo, event-sourced writes), integratio
 between contexts, technology choices carrying lock-in, ownership and scope boundaries,
 deliberate deviations from the obvious path, and constraints invisible in the code
 (compliance, a partner API's latency ceiling).
+
+**Never an ADR: a requirement a build tool reads.** An OS deployment target, a language or
+runtime version, a toolchain or dependency pin lives in the manifest that enforces it
+(`project.yml`, `Package.swift`, `go.mod`, `package.json` `engines`, `Cargo.toml`
+`rust-version`), where the code and the build use it. It never gets an ADR, even when it passes
+all three tests above. A manifest change is the record, and its commit message holds the reason.
