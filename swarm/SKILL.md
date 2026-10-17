@@ -79,9 +79,10 @@ line's cache and refuse, exit 5, at 90% of the 5-hour window or of the week
 too. `swarm quota` prints the reading. A refused launch is not a failed worker: let the running
 workers finish, launch nothing more, and say in the report how far the run got and why it stopped.
 
-**The run log.** Start every run with `swarm log run "" "focus=<focus> n=<n>"`. `launch` logs
+**The run log.** Start every run with `swarm log run "" "focus=<focus> n=<n>"`. `log run`
+adds the lead's pid and the herdr space's label to the line. `launch` logs
 `launched` and `finished` itself; the lead logs `landed`, `parked`, `failed` and `applied` as it
-records each one in step 5. **A lead that starts without this run's context — after a
+records each one in step 5, and `end` when the run is over (§6). **A lead that starts without this run's context — after a
 compaction, a relay or a restart — runs `swarm status` before anything else**: it prints the
 current run's events and every bead launched but not finished, with its herdr agent state. Those
 workers are still running; wait for them as step 4 says, and never launch their beads again.
@@ -178,6 +179,11 @@ The run ends when a successful read finds no ready bead in scope left unlaunched
 is empty — or early, on a failed read or a quota refusal, which the report names.
 
 ## 6. Report
+
+First `swarm log end "" "<landed> landed, <parked> parked, <failed> failed"`: `next-work` counts
+the run live until that line exists, so it comes before anything routes onward. Then print the
+report below, and end the run through `relay` §Ending ([`../relay/SKILL.md`](../relay/SKILL.md)),
+which runs `next-work` for the focus and prints the verdict.
 
 One section, in chat:
 

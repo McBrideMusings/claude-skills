@@ -6,12 +6,15 @@
 #   swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason "<text>"] [--dry-run]
 #   swarm heavy -- <command> [<arg>...]
 #   swarm quota                       the repo's profile's 5-hour and weekly usage, and the gate
-#   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log
+#   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log (run, landed,
+#                                     parked, failed, applied, end)
 #   swarm status                      the run log, plus which launched beads are still in flight
 #
 # The run log, <scratch>/swarm/run.tsv, is the run's state on disk: launch writes `launched`
-# and `finished`, the lead writes `run`, `landed`, `parked`, `failed` and `applied`. A lead that
-# was compacted, relayed or restarted reads `swarm status` first and carries on from there.
+# and `finished`, the lead writes `run`, `landed`, `parked`, `failed`, `applied` and, last, `end`.
+# `run` records the lead's pid and the herdr space's label (`pid=<n> space=<label>`); `end` marks
+# the run finished. next-work counts a run live while it has no `end` and its lead pid is alive.
+# A lead that was compacted, relayed or restarted reads `swarm status` first and carries on.
 #
 # launch claims the bead (`bd update --claim`, status in_progress) before anything else, so no
 # other picker offers it, and refuses while the profile's usage is at or over SWARM_QUOTA_SESSION
@@ -319,13 +322,29 @@ cmd_quota() {
   quota_gate "$repo" || exit 5
 }
 
+# The pid of the Claude session leading the run: the nearest ancestor whose command is claude.
+# SWARM_LEAD_PID overrides it. Empty when no ancestor is one.
+lead_pid() {
+  [ -z "${SWARM_LEAD_PID:-}" ] || { printf '%s' "$SWARM_LEAD_PID"; return; }
+  local p=$PPID comm
+  while [ "${p:-0}" -gt 1 ]; do
+    comm="$(ps -o comm= -p "$p" 2>/dev/null | sed 's#.*/##')" || break
+    case "$comm" in claude|claude-*) printf '%s' "$p"; return ;; esac
+    p="$(ps -o ppid= -p "$p" 2>/dev/null | tr -d ' ')" || break
+  done
+}
+
 cmd_log() {
-  local repo; repo="$(main_checkout)"
+  local repo detail="${3:-}"; repo="$(main_checkout)"
   case "${1:-}" in
-    run|landed|parked|failed|applied) ;;
-    *) die "usage: swarm log <run|landed|parked|failed|applied> [<bead-id>] [<detail>]" ;;
+    run|landed|parked|failed|applied|end) ;;
+    *) die "usage: swarm log <run|landed|parked|failed|applied|end> [<bead-id>] [<detail>]" ;;
   esac
-  log_event "$repo" "$1" "${2:-}" "${3:-}"
+  if [ "$1" = run ]; then
+    local pid; pid="$(lead_pid)"
+    detail="${detail:+$detail }${pid:+pid=$pid }space=$(basename "$repo")"
+  fi
+  log_event "$repo" "$1" "${2:-}" "$detail"
 }
 
 # The run log, then one line per bead launched in the latest run with no `finished` yet.
