@@ -152,14 +152,16 @@ Iterate until approved.
 
 ### Caller-supplied destination
 
-A caller that has already decided where the tickets go (`issues iron-out` Phase 3b) passes it in, and this run takes it as given:
+Beads only. A caller that has already decided where the tickets go (`issues iron-out` Phase 3b) passes it in, and this run takes it as given. Phases 06 and 07 point back here. The caller's resolved decisions are the structured source, so Phase 03 is skipped and there is no spec text to store; the caller's destination wins over `beads.md` § Grouping.
 
-- **Target epic id** → Phase 06 reuses that epic as the run epic: no lookup, no create, and its body is left as it is (the spec is not written over it). Every slice gets `--parent <that id>` in Phase 07, a one-slice slate included, and the one-slice `## Spec` prepend is skipped.
-- **Labels** → every slice is created with them, each taken from `.beads/labels.toml`; Phase 06 and 07's own label choice applies only to labels the caller did not supply.
-- **Item being resolved, no epic or labels** → Phases 06 and 07 run as written, and Phase 07 adds `--deps discovered-from:<id>` to each slice.
-- **No offers** → the post-publish dispatch offer below is skipped. The caller ends through [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work offer.
+- **Target epic id** → Phase 06 reuses that epic as the run epic: no lookup, no create, body untouched. Every slice gets `--parent <that id>` in Phase 07, a one-slice slate included.
+- **Labels** → every slice, and the run epic when Phase 06 creates one, is created with them, each taken from `.beads/labels.toml`.
+- **Item being resolved, no epic or labels** → Phases 06 and 07 run as written, and every bead they create, run epic included, gets `--deps discovered-from:<id>`.
+- **No offers** → the post-publish dispatch offer in Phase 07 is skipped. The caller ends through [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work offer.
 
 ### Phase 06 — Run epic (spec's durable home)
+
+A caller that supplied a destination changes this phase: see § Caller-supplied destination.
 
 **Runs whenever the slate has two or more slices.** This is where the approved spec gets its
 durable home: one run epic per `issues spec` run, titled from the spec's `# {Project} Spec`
@@ -225,7 +227,7 @@ be written for whichever backend is in play.
 
 ### Phase 07 — Publish
 
-Publish in **dependency order** (blockers first) so blockers can reference real issue IDs. Use the body template from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md).
+Publish in **dependency order** (blockers first) so blockers can reference real issue IDs. Use the body template from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md). A caller-supplied epic, labels or `discovered-from` id overrides the parent and label rules below ([§ Caller-supplied destination](#caller-supplied-destination)).
 
 Per slice:
 
