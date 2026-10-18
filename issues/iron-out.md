@@ -1,8 +1,8 @@
 # Iron out
 
-Resolve every item that is waiting on a person, one at a time, so what is left can be worked
-without one. A question gets its answer recorded and closes; a work item gets its body
-rewritten until an agent can run it. The goal state is **AFK**: every item in scope passes
+Resolve the items waiting on a person that hold other work back, one at a time, so what they
+block can be worked without one. A question gets its answer recorded and closes; a work item gets its body
+rewritten until an agent can run it. The goal state is **AFK**: every queued item passes
 `implement`'s readiness gate ([`../implement/HANDOFF.md`](../implement/HANDOFF.md) §1) — a
 concrete plan is statable, and "done" is verifiable without a judgment call the user owns.
 
@@ -48,6 +48,14 @@ bd list --status open,in_progress,blocked --limit 0 --json                   # e
 
 A scope argument resolves through [`../implement/SELECTORS.md`](../implement/SELECTORS.md), the one table for `#133-140`, `label:X`, `milestone:X`, `epic:X`, free text, `followups` and `papercuts` (union multiple selectors); iron-out then keeps the human, decision and Phase 1-failing items of the resolved set, blocked ones included, so `issues iron-out label:client` scans only that label's. Papercuts are local items judged like issues; a papercut's "body" is the entry line, and resolving one rewrites that line in `.claude/papercuts.md`.
 
+**The queue is the leverage calls, not every flagged item.** Phase 1 scans and flags the whole
+scope, but Phase 2 queues only the failing items that block at least one other open item. A
+failing leaf blocks nothing, so Phase 1's `human` flag already keeps it out of `issues next`, and
+it waits for a later pass. Two arguments widen the queue:
+- **`all`** (`issues iron-out all`, or `all` beside a selector) queues every failing item, leaves
+  included.
+- **An explicit id list** queues exactly those ids, whatever they block.
+
 **Dependencies are real edges, never prose.** On beads: read with `bd dep tree`, `bd blocked` and `bd ready --limit 0`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is an edge nobody wired; report it and leave the wiring to `issues shape`.
 
 **`bd ready` trusts a denormalized `is_blocked` flag that can go stale** after a pull whose scoped recompute was skipped, or a merge conflict resolved by hand. Run `bd recompute-blocked` before any read that orders work.
@@ -92,11 +100,11 @@ If nothing fails, report that the scope is already AFK-workable and go to Phase 
 
 ## Phase 2 — Order the queue
 
-Order the **failing** issues by unblock leverage: how many in-scope issues each transitively blocks. Highest first — a decision gating three issues outranks a leaf.
+Order the **failing** issues by unblock leverage: how many open items each transitively blocks through `blocks` edges. Highest first — a decision gating three issues outranks a leaf. Children reached only through a `parent-child` edge do not count. An epic or umbrella task is not leverage just for having children. Drop every item whose leverage is zero unless the run is `all` or an id list ([Scope](#scope)), and print the count dropped: `61 leaves stay flagged human for a later pass.`
 
 **Read the leverage off the graph; never recompute it.** `bd dep tree <id>` gives the transitive closure, `bd blocked` the blocked set, `bd ready --limit 0` the unblocked one. A second traversal written here would be free to disagree with the one beads runs. Run `bd recompute-blocked` first.
 
-Tiebreak on the native `priority` field (`0-4`), then ascending ID. Print the queue with each issue's name, URL, one-line question, and what it needs, so the user sees the whole shape before the first interview.
+Tiebreak on the native `priority` field (`0-4`), then ascending ID. Print the queue with each issue's name, URL, one-line question, and what it needs, so the user sees the whole shape before the first interview. When many queued items wait on one root, print the root once with the count it gates, not every member.
 
 ## Phase 3 — The loop
 
@@ -152,7 +160,7 @@ Re-run the two tests on the resolved item. Fail → the interview missed somethi
 
 Re-order what remains by leverage and continue at 3a.
 
-**Completion criterion:** the flagged queue is empty, no held item is still outstanding, and **Not yet specified** is empty — every scoped issue passes the gate.
+**Completion criterion:** the queue is empty, no held item is still outstanding, and **Not yet specified** is empty — every queued issue passes the gate. Leaves Phase 2 dropped stay flagged `human`.
 
 ## Dispatching a subagent
 
@@ -172,7 +180,7 @@ The pattern for `fact` and `artifact` items. The subagent does the expensive bui
 
 ## Phase 4 — Report and end
 
-Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, items flagged `human` by the scan, fog graduated, new beads filed by Phase 3b (name each one that joined no focus, with the item it was discovered from), items still held, ADRs written.
+Report: issues ironed out (with what was decided), questions answered and closed, issues auto-settled by cascade, items flagged `human` by the scan, fog graduated, leaves left flagged for a later pass (the count), new beads filed by Phase 3b (name each one that joined no focus, with the item it was discovered from), items still held, ADRs written.
 
 Then end through [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, which runs `next-work` on the run's focus, prints its verdict and the `Next:` line, and closes with the hatch. Phase 3b has already filed the work a decision implies, so the verdict sees it.
 
