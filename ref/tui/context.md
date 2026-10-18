@@ -21,5 +21,6 @@ and it is a sibling, not a parent. Depth: [design.md](design.md).
 | --- | --- |
 | [`design.md`](design.md) | Laying out a full-screen terminal interface. |
 | [`review.md`](review.md) | Reviewing a TUI change. |
+| [`screenshots.md`](screenshots.md) | Rasterizing a headless Textual SVG screenshot to look at it. |
 
 A non-interactive command that prints and exits is [`ref/cli`](../cli/context.md). Graphical interfaces are [`ref/gui`](../gui/context.md).
