@@ -11,7 +11,7 @@ Audit the disk, clear what's regenerable, and confirm before touching anything t
 ## Ground rules
 
 - **Delete with `trash`, never `rm -rf`.** Everything accumulates in the Trash and stays recoverable; ask the user to empty it once at the end.
-- **Prefer a tool's own cleanup command** over deleting its directories: `go clean -cache`, `brew cleanup --prune=all`, `pnpm store prune`, `npm cache clean --force`, `cargo clean`.
+- **Prefer a tool's own cleanup command** over deleting its directories: `cargo clean`, and every command `clear-build-caches` runs. A cache that tool doesn't cover yet gets a step in it, not a one-off command here.
 - **Measure with `df -h /System/Volumes/Data`**, not plain `df /` — APFS counts the read-only system volume separately and plain `df /` reports the wrong number.
 - **Never clear GUI app data.** `~/Library/Caches/<App>` and `~/Library/Application Support/<App>` hold logins, cookies, and history. Report their sizes and stop. Only touch one when the user names that app and accepts losing its state.
 - **Never write a drive name or `/Volumes/…` path into this file or any committed file.** Discover mounted drives at run time with `ls /Volumes` and use what's actually there.
@@ -35,14 +35,19 @@ A cache that regenerates isn't worth deleting on its own — find what regenerat
 
 `df -h /System/Volumes/Data; ls /Volumes`. Note free space and whether an external drive is mounted.
 
-### 2. Survey
+### 2. Clear the safe tier first
+
+The safe tier is the caches a tool rebuilds on demand, and `~/.claude/tools/clear-build-caches` owns all of it — its `--help` names each cache it clears.
+
+Run `~/.claude/tools/clear-build-caches --dry-run` before surveying anything else, show the user its table and the free-space line, and take one yes for the whole tier. On a yes, run it without the flag and report its before/after line; on a no, go on to the survey. A `skip: daemon not running` row means Docker's build cache is still there — say so rather than counting it as cleared. Exit status 1 means a row says `FAILED:`; quote that row.
+
+### 3. Survey what's left
 
 Targeted `du -sh … | sort -hr` — not a full scan of `~`. The usual big ones:
 
-- **Build artifacts** — `target/` (every worktree too), `node_modules/`, Xcode DerivedData
-  - For DerivedData, `~/.claude/tools/prune-derived-data` first. Xcode keys each tree by the project's absolute path, so every git worktree leaves one behind and worktree teardown never removes it. The tool reads each tree's `info.plist` `WorkspacePath` and names the ones whose checkout is gone — exact, not a heuristic. Add `--delete` once the user has said yes to the tier.
+- **Build artifacts** — `target/` (every worktree too), `node_modules/`
   - In `~/.worktrees`, size every folder that has no `.git` file. A linked worktree has one, so the rest are shared build output parked beside the worktrees — a `CARGO_TARGET_DIR` (it holds a `CACHEDIR.TAG`) or a DerivedData tree (it holds an `info.plist`) — and a worktree-by-worktree count never sees them.
-- **Package-manager caches** — go-build, Homebrew, pnpm/npm/pip stores
+  - In `~/Library/pnpm/store`, every `v<N>` folder other than the one `pnpm store path` names belongs to a pnpm version that is not the installed one, and `pnpm store prune` never touches it. Size each and ask.
 - **Large media** — CapCut, Screen Studio, `~/Movies`, `~/Downloads`
 - **App caches / Application Support** — size only, never a delete candidate
 
@@ -50,15 +55,11 @@ Done when every category above has a number next to it or an explicit "nothing h
 
 Then show the survey in the standing `Disk` artifact: find it with `canvas artifact list` (title `Disk`), run `canvas focus <its id>`, and read the measured folders off its page. Never create, replace or delete it. When no artifact titled `Disk` exists, say so in chat and carry on with the survey as text; do not recreate a monitor.
 
-### 3. Confirm the safe tier, then clear it
-
-The safe tier is build artifacts and package-manager caches — things a tool rebuilds on demand. Show the user the survey list with sizes and the total it would reclaim, and take one yes for the whole tier before deleting anything. On a no, skip to step 4.
-
-On a yes, clear it with the tools' own commands. Everything else — app data, media, model weights, toolchains — is never in this tier: summarize sizes and ask, or propose offload in step 5.
+Everything the survey finds — app data, media, model weights, toolchains — is outside the safe tier: summarize sizes and ask, or propose offload in step 5.
 
 ### 4. Audit git worktrees
 
-For each worktree: is it dirty, and does it hold commits that aren't pushed anywhere? List the clean-and-merged ones with their sizes and take one yes for the batch — same shape as step 3's tier confirm — before removing anything. On a yes: `git worktree remove` and `git branch -d` per worktree. In a repo with submodules the plain remove refuses (`fatal: working trees containing submodules cannot be moved or removed`) and takes `branch -d` down with it — `git worktree remove --force` gets past that, and the dirty/ahead check above is what makes forcing safe here. A repo that is itself a submodule keeps its git dir under the parent's `.git/modules/<name>`, so the parent of `--git-common-dir` is not the repo and the remove fails with `is not a working tree`: run `git --git-dir=<common-dir> worktree remove` and `branch -d` instead. Never `branch -D` — the safe delete refusing is the signal that work would be lost. Keep and report anything dirty or ahead.
+For each worktree: is it dirty, and does it hold commits that aren't pushed anywhere? List the clean-and-merged ones with their sizes and take one yes for the batch — same shape as step 2's tier confirm — before removing anything. On a yes: `git worktree remove` and `git branch -d` per worktree. In a repo with submodules the plain remove refuses (`fatal: working trees containing submodules cannot be moved or removed`) and takes `branch -d` down with it — `git worktree remove --force` gets past that, and the dirty/ahead check above is what makes forcing safe here. A repo that is itself a submodule keeps its git dir under the parent's `.git/modules/<name>`, so the parent of `--git-common-dir` is not the repo and the remove fails with `is not a working tree`: run `git --git-dir=<common-dir> worktree remove` and `branch -d` instead. Never `branch -D` — the safe delete refusing is the signal that work would be lost. Keep and report anything dirty or ahead.
 
 **Clean and merged is not the whole test — ask what is standing in the directory too.** `pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=` must come back empty before the remove; `lsof +D <worktree>` answers for certain when you still suspect a hold. A process can still hold a path after removal even when git's dirty/merged checks pass — check `pgrep`/`lsof` before removing. Keep and report a held worktree, naming the pid, exactly as for a dirty one. Never `pgrep -fl` — one npm-exec match is ~10,000 characters of inherited environment.
 
