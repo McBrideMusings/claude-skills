@@ -41,8 +41,9 @@ Inside an `implement … auto` run nothing halts for a reply
 ([`../implement/AUTO.md`](../implement/AUTO.md)). Phase 6 Step A picks its own dispositions,
 and any step that needs a person's yes after landing — a deploy, a restart, a publish — is
 skipped and added to the run's `Needs you` line with its exact command, never asked. On a
-repo that is not `owned`, Step C's PR offer never runs: the branch is parked with `needs a PR`
-(AUTO.md §Parking an item).
+repo that is not `owned`, Step C's PR offer does not run mid-run: the branch is pushed and
+parked with `needs a PR` (AUTO.md §Parking an item), and the run's report offers the PR as a
+slate row `go` accepts (AUTO.md §The report).
 
 ---
 

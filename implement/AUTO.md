@@ -52,7 +52,7 @@ lead owns the run state and the routing; the worker's report goes to its outfile
 | The gate | Prints it in full, `Run:` and `Look for:` included, as the record. Drops the closing sentence and goes straight to `wrap-up`. |
 | `wrap-up`'s follow-up slate | Prints every row with its bracketed default and applies the defaults ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step A). |
 | `wrap-up`'s next-work ask | Runs `next-work --auto` and follows its verdict (§Routing each hop). A pass with `SWARM_WORKER` set skips it. |
-| `wrap-up`'s PR offer on a repo that is not `owned` | Opens no PR. Parks the branch with `needs a PR` and adds it to `Needs you`. |
+| `wrap-up`'s PR offer on a repo that is not `owned` | Opens no PR during the run. Pushes the branch, parks it with `needs a PR`, and the report offers the PR (§The report). |
 | A step that needs a person's yes | Records it and moves on (§A step only a person can take). |
 
 ## Routing each hop
@@ -182,15 +182,23 @@ through `implement <id>` with the other answer when it is wrong.
 **Needs your eyes** — `Parked` rows with `needs eyes:`. Next action: what to look at, then
 `implement <id>` to resume at the gate.
 
-**Needs you** — the `Needs you` line, plus `Parked` rows with `blocked:`, `needs a PR` or
-`failed:`, and a swarm's failed workers (bead, exit code, last line) and the beads left in scope
-with what blocks each. Next action: the exact thing to supply or the exact command to run.
+**Needs you** — the `Needs you` line, plus `Parked` rows with `blocked:` or `failed:`, and a
+swarm's failed workers (bead, exit code, last line) and the beads left in scope with what blocks
+each. Next action: the exact thing to supply or the exact command to run.
 
 **Landed** — each landed pass with its sha.
 
 **Unblocks** — on a parent run, `epic-plan`'s `unblocks` line verbatim: the items waiting on the
 parent to close. They are not children and the run never works them.
 
+**Open a PR** — the report is the first moment a person can answer, so every `needs a PR` row
+becomes a numbered slate row ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row), never a
+command for the user to run: `**Open a PR from <pushed branch> into <default>**`, then one line
+naming the title, assignee, reviewers and labels, resolved the way `wrap-up` Step C resolves them
+(the repo's own PR rules, labels from `gh label list`), ending `[post]`. `go` opens each PR with
+that Step C call and `bead-pr link`s its bead; it does not start the `Next:` work.
+
 Close with `auto: <landed> landed, <parked> parked, limit <Limit>`, then, as the last line of the
 report, `Next: <the verdict's command, or none — reason>`: the command or reason from the `Next:` line `next-work --auto`
-printed, or `none — <halt reason>` after a halt.
+printed, or `none — <halt reason>` after a halt. When **Open a PR** has rows, the slate hatch for
+no next work follows that line ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch).
