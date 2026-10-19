@@ -103,11 +103,18 @@ Clear the marker (`~/.claude/tools/wrapup-mark clear`) as the last action of
 Phase 6, once Step C has landed the branch and Step D has resolved — fired, declined, or
 skipped — not before. Until it is cleared, the hook blocks the turn from ending.
 
-**One exception: a turn that ends to wait for the user.** Step A's ask ends the turn on
-purpose, and the hook cannot tell that from an abandoned pass. `wrapup-mark clear`
-immediately before sending the Step A slate, and `wrapup-mark set` again as the first
-action of the Act pass once the user replies. The hook then guards only turns that run,
-never a turn that waits.
+**Two exceptions: a turn that ends to wait.** The hook cannot tell a deliberate wait from
+an abandoned pass, so clear the marker before each wait and set it again as the first
+action after it:
+
+- **Waiting for the user.** Step A's ask ends the turn on purpose. `wrapup-mark clear`
+  immediately before sending the Step A slate, and `wrapup-mark set` again as the first
+  action of the Act pass once the user replies.
+- **Waiting for the staged workflow.** Phases 1–4 run as a background `Workflow`, and the
+  turn ends until its notification arrives. `wrapup-mark clear` immediately before ending
+  that turn, and `wrapup-mark set` again as the first action on the notification.
+
+The hook then guards only turns that run, never a turn that waits.
 
 ---
 
@@ -222,7 +229,7 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 **Never write "no next work" from memory.** The sentence is earned by the `next-work` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. Outside an `auto` run, the turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
 
-Invoke the `issues file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
+Run `papercut review` over the session first: each friction it finds that was not logged as it happened becomes a candidate here. Then invoke the `issues file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
 
 **In an `implement … auto` run ([`../implement/AUTO.md`](../implement/AUTO.md)) there is no halt and no ask.** Choose every candidate's disposition yourself, then run the Act pass:
 
