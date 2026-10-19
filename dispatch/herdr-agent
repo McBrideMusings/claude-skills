@@ -169,7 +169,17 @@ cmd_run() {
   # `agent_pane_busy`. The pane is ready when the only foreground process IS the shell.
   wait_pane_ready "$pane" || { echo "herdr-agent: pane $pane never reached a shell prompt — leaving space $ws open" >&2; return 1; }
 
-  if ! herdr agent start "$slug" --kind "$kind" --pane "$pane" --timeout "$READY_MS" -- "$@" >/dev/null; then
+  # The foreground check above passes while the shell is still running its startup files,
+  # and `agent start` then answers `agent_pane_busy`. Retry that one answer for up to 15s.
+  local started="" tries=0 err
+  while [ "$tries" -lt 10 ]; do
+    if err="$(herdr agent start "$slug" --kind "$kind" --pane "$pane" --timeout "$READY_MS" -- "$@" 2>&1)"; then
+      started=1; break
+    fi
+    printf '%s' "$err" | grep -q agent_pane_busy || { printf '%s\n' "$err" >&2; break; }
+    sleep 1.5; tries=$((tries + 1))
+  done
+  if [ -z "$started" ]; then
     echo "herdr-agent: '$kind' did not come up in pane $pane — leaving space $ws open to inspect" >&2
     return 1
   fi
