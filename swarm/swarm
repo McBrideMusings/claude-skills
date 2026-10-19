@@ -183,12 +183,13 @@ cmd_check() {
 }
 
 cmd_launch() {
-  local id="${1:-}" model="${2:-}" reason="" dry=0
-  [ -n "$id" ] && [ -n "$model" ] || die "usage: swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run]"
+  local id="${1:-}" model="${2:-}" reason="" dry=0 resume=0
+  [ -n "$id" ] && [ -n "$model" ] || die "usage: swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--resume] [--dry-run]"
   shift 2
   while [ $# -gt 0 ]; do
     case "$1" in
       --opus-reason) reason="${2:-}"; shift 2 ;;
+      --resume) resume=1; shift ;;
       --dry-run) dry=1; shift ;;
       *) die "unknown flag: $1" ;;
     esac
@@ -200,7 +201,11 @@ cmd_launch() {
   local bead status
   bead="$(bd -C "$repo" show "$id" --json 2>/dev/null)" || die "no bead '$id' in $repo"
   status="$(printf '%s' "$bead" | jq -r 'if type == "array" then .[0] else . end | .status')"
-  [ "$status" = open ] || die "bead $id is '$status', not open"
+  if [ "$resume" -eq 1 ]; then
+    [ "$status" = in_progress ] || die "bead $id is '$status'; --resume picks up a claimed bead"
+  else
+    [ "$status" = open ] || die "bead $id is '$status', not open"
+  fi
   printf '%s' "$bead" | jq -e 'if type == "array" then .[0] else . end | (.labels // []) | index("human")' >/dev/null \
     && die "bead $id is labelled human — it is a question for iron-out, not work"
   [ -f "$(project_skill "$repo")/SKILL.md" ] || die "no swarm-worker skill in $repo — run 'swarm check'"
@@ -254,6 +259,11 @@ Opus reason: $reason}
 Mode: report-back. Also write your report, the same text, to \`$outfile\`; the swarm lead reads
 it. Say in its first line whether the bead landed (with the commit sha on $base) or was parked
 (with the reason)."
+  [ "$resume" -eq 1 ] && brief="$brief
+
+Resumed: an earlier worker on $id stopped before finishing (its session ended with the
+machine). Its uncommitted changes and any commits on $branch are still in this worktree. Read
+\`git status\` and \`git diff\` first, keep what fits the bead, and carry on from there."
 
   local settings; settings="$(worker_settings "$repo" "$id")"
   if [ "$dry" -eq 1 ]; then
@@ -266,15 +276,21 @@ it. Say in its first line whether the bead landed (with the commit sha on $base)
 
   quota_gate "$repo" || exit 5
   [ -n "$(repo_space "$repo")" ] || die "no herdr space open for $repo — run 'swarm check' first so workers nest under it"
-  [ -e "$wt" ] && die "worktree path already exists: $wt — a previous launch of $id left it; land or remove it first"
-  git -C "$repo" show-ref --verify --quiet "refs/heads/$branch" && die "branch $branch already exists"
-  bd -C "$repo" update "$id" --claim >/dev/null || die "could not claim $id"
-  mkdir -p "$outdir" "$(dirname "$wt")"
-  git -C "$repo" worktree add -q -b "$branch" "$wt" "$base" >&2 || {
-    bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
-    die "could not create $wt — released the claim on $id"; }
-  CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
-  runtimes "$repo" | grep -qx rust && clone_target "$repo" "$wt"
+  if [ "$resume" -eq 1 ]; then
+    [ "$(git -C "$wt" branch --show-current 2>/dev/null)" = "$branch" ] || die "--resume needs $wt on branch $branch"
+    mkdir -p "$outdir"
+    [ -d "$wt/target" ] || ! runtimes "$repo" | grep -qx rust || clone_target "$repo" "$wt"
+  else
+    [ -e "$wt" ] && die "worktree path already exists: $wt — a previous launch of $id left it; land it, remove it, or pass --resume"
+    git -C "$repo" show-ref --verify --quiet "refs/heads/$branch" && die "branch $branch already exists"
+    bd -C "$repo" update "$id" --claim >/dev/null || die "could not claim $id"
+    mkdir -p "$outdir" "$(dirname "$wt")"
+    git -C "$repo" worktree add -q -b "$branch" "$wt" "$base" >&2 || {
+      bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
+      die "could not create $wt — released the claim on $id"; }
+    CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
+    runtimes "$repo" | grep -qx rust && clone_target "$repo" "$wt"
+  fi
   local gd; gd="$(git -C "$wt" rev-parse --absolute-git-dir)"
   touch "$gd/SELF-LAND"
   printf '%s\n' "$brief" > "$gd/DISPATCH-BRIEF.md"

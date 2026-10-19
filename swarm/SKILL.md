@@ -90,6 +90,9 @@ records each one in step 5, and `end` when the run is over (§6). **A lead that 
 compaction, a relay or a restart — runs `swarm status` before anything else**: it prints the
 current run's events and every bead launched but not finished, with its herdr agent state. Those
 workers are still running; wait for them as step 4 says, and never launch their beads again.
+After a reboot their agents read `no space` and are gone, but their worktrees keep the work:
+relaunch each with `swarm launch <id> <model> --resume`, which reuses the worktree and the
+claim and tells the new worker to carry on from what is there.
 
 A worker in a repo Claude has never been trusted in stops at the "trust this folder" dialog,
 and its launch fails with `agent_not_ready`. A worktree inherits its main checkout's trust, so
