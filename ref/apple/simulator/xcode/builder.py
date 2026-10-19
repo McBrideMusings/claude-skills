@@ -10,7 +10,6 @@ import sys
 from pathlib import Path
 
 from .cache import XCResultCache
-from .config import Config
 
 
 class BuildRunner:
@@ -26,7 +25,6 @@ class BuildRunner:
         workspace_path: str | None = None,
         scheme: str | None = None,
         configuration: str = "Debug",
-        simulator: str | None = None,
         cache: XCResultCache | None = None,
     ):
         """
@@ -37,14 +35,12 @@ class BuildRunner:
             workspace_path: Path to .xcworkspace
             scheme: Build scheme (auto-detected if not provided)
             configuration: Build configuration (Debug/Release)
-            simulator: Simulator name
             cache: XCResult cache (creates default if not provided)
         """
         self.project_path = project_path
         self.workspace_path = workspace_path
         self.scheme = scheme
         self.configuration = configuration
-        self.simulator = simulator
         self.cache = cache or XCResultCache()
 
     def auto_detect_scheme(self) -> str | None:
@@ -84,125 +80,25 @@ class BuildRunner:
 
         return None
 
-    def get_simulator_destination(self) -> str:
+    def get_simulator_destination(self, needs_device: bool) -> str:
         """
         Get xcodebuild destination string.
 
-        Uses config preferences with fallback to auto-detection.
-
-        Priority:
-            1. --simulator CLI flag (self.simulator)
-            2. Config preferred_simulator
-            3. Config last_used_simulator
-            4. Auto-detect first iPhone
-            5. Generic iOS Simulator
+        A build needs no device, so it targets the generic simulator platform and boots
+        nothing. A test run needs one, and every simulator on this machine comes from the
+        machine-wide pool: `~/.claude/tools/sim acquire` waits for a free slot and prints the
+        UDID of a device this session leases (the same one on every call).
 
         Returns:
             Destination string for -destination flag
         """
-        # Priority 1: CLI flag
-        if self.simulator:
-            return f"platform=iOS Simulator,name={self.simulator}"
-
-        # Priority 2-3: Config preferences
-        try:
-            # Determine project directory from project/workspace path
-            project_dir = None
-            if self.project_path:
-                project_dir = Path(self.project_path).parent
-            elif self.workspace_path:
-                project_dir = Path(self.workspace_path).parent
-
-            config = Config.load(project_dir=project_dir)
-            preferred = config.get_preferred_simulator()
-
-            if preferred:
-                # Check if preferred simulator exists
-                if self._simulator_exists(preferred):
-                    return f"platform=iOS Simulator,name={preferred}"
-                print(f"Warning: Preferred simulator '{preferred}' not available", file=sys.stderr)
-                if config.should_fallback_to_any_iphone():
-                    print("Falling back to auto-detection...", file=sys.stderr)
-                else:
-                    # Strict mode: don't fallback
-                    return f"platform=iOS Simulator,name={preferred}"
-
-        except Exception as e:
-            print(f"Warning: Could not load config: {e}", file=sys.stderr)
-
-        # Priority 4-5: Auto-detect
-        return self._auto_detect_simulator()
-
-    def _simulator_exists(self, name: str) -> bool:
-        """
-        Check if simulator with given name exists and is available.
-
-        Args:
-            name: Simulator name (e.g., "iPhone 16 Pro")
-
-        Returns:
-            True if simulator exists and is available
-        """
-        try:
-            result = subprocess.run(
-                ["xcrun", "simctl", "list", "devices", "available", "iOS"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            # Check if simulator name appears in available devices
-            return any(name in line and "(" in line for line in result.stdout.split("\n"))
-
-        except subprocess.CalledProcessError:
-            return False
-
-    def _extract_simulator_name_from_destination(self, destination: str) -> str | None:
-        """
-        Extract simulator name from destination string.
-
-        Args:
-            destination: Destination string (e.g., "platform=iOS Simulator,name=iPhone 16 Pro")
-
-        Returns:
-            Simulator name or None
-        """
-        # Pattern: name=<simulator name>
-        match = re.search(r"name=([^,]+)", destination)
-        if match:
-            return match.group(1).strip()
-        return None
-
-    def _auto_detect_simulator(self) -> str:
-        """
-        Auto-detect best available iOS simulator.
-
-        Returns:
-            Destination string for -destination flag
-        """
-        try:
-            result = subprocess.run(
-                ["xcrun", "simctl", "list", "devices", "available", "iOS"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            # Parse available simulators, prefer latest iPhone
-            # Looking for lines like: "iPhone 16 Pro (12345678-1234-1234-1234-123456789012) (Shutdown)"
-            for line in result.stdout.split("\n"):
-                if "iPhone" in line and "(" in line:
-                    # Extract device name
-                    name = line.split("(")[0].strip()
-                    if name:
-                        return f"platform=iOS Simulator,name={name}"
-
-            # Fallback to generic iOS Simulator if no iPhone found
+        if not needs_device:
             return "generic/platform=iOS Simulator"
-
-        except subprocess.CalledProcessError as e:
-            print(f"Warning: Could not auto-detect simulator: {e}", file=sys.stderr)
-            return "generic/platform=iOS Simulator"
+        sim = Path.home() / ".claude" / "tools" / "sim"
+        result = subprocess.run([str(sim), "acquire"], capture_output=True, text=True, check=False)
+        if result.returncode != 0:
+            raise RuntimeError(f"sim acquire failed (exit {result.returncode}): {result.stderr.strip()}")
+        return f"id={result.stdout.strip()}"
 
     def build(self, clean: bool = False) -> tuple[bool, str, str]:
         """
@@ -248,7 +144,7 @@ class BuildRunner:
                 "-configuration",
                 self.configuration,
                 "-destination",
-                self.get_simulator_destination(),
+                self.get_simulator_destination(needs_device=False),
                 "-resultBundlePath",
                 str(xcresult_path),
             ]
@@ -267,27 +163,6 @@ class BuildRunner:
                 print("Warning: xcresult bundle was not created", file=sys.stderr)
                 return (success, "", result.stderr)
 
-            # Auto-update config with last used simulator (on success only)
-            if success:
-                try:
-                    # Determine project directory from project/workspace path
-                    project_dir = None
-                    if self.project_path:
-                        project_dir = Path(self.project_path).parent
-                    elif self.workspace_path:
-                        project_dir = Path(self.workspace_path).parent
-
-                    config = Config.load(project_dir=project_dir)
-                    destination = self.get_simulator_destination()
-                    simulator_name = self._extract_simulator_name_from_destination(destination)
-
-                    if simulator_name:
-                        config.update_last_used_simulator(simulator_name)
-                        config.save()
-
-                except Exception as e:
-                    # Don't fail build if config update fails
-                    print(f"Warning: Could not update config: {e}", file=sys.stderr)
 
             return (success, xcresult_id, result.stderr)
 
@@ -327,12 +202,21 @@ class BuildRunner:
             print("Error: No project or workspace specified", file=sys.stderr)
             return (False, "", "")
 
+        try:
+            destination = self.get_simulator_destination(needs_device=True)
+        except RuntimeError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return (False, "", str(e))
+
+        # Parallel testing boots stock "Clone N of" devices beside the leased one.
         cmd.extend(
             [
                 "-scheme",
                 self.scheme,
                 "-destination",
-                self.get_simulator_destination(),
+                destination,
+                "-parallel-testing-enabled",
+                "NO",
                 "-resultBundlePath",
                 str(xcresult_path),
             ]
@@ -352,27 +236,6 @@ class BuildRunner:
                 print("Warning: xcresult bundle was not created", file=sys.stderr)
                 return (success, "", result.stderr)
 
-            # Auto-update config with last used simulator (on success only)
-            if success:
-                try:
-                    # Determine project directory from project/workspace path
-                    project_dir = None
-                    if self.project_path:
-                        project_dir = Path(self.project_path).parent
-                    elif self.workspace_path:
-                        project_dir = Path(self.workspace_path).parent
-
-                    config = Config.load(project_dir=project_dir)
-                    destination = self.get_simulator_destination()
-                    simulator_name = self._extract_simulator_name_from_destination(destination)
-
-                    if simulator_name:
-                        config.update_last_used_simulator(simulator_name)
-                        config.save()
-
-                except Exception as e:
-                    # Don't fail test if config update fails
-                    print(f"Warning: Could not update config: {e}", file=sys.stderr)
 
             return (success, xcresult_id, result.stderr)
 

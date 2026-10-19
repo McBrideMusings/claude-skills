@@ -34,7 +34,7 @@ layer* on top: what to write, at which seam, in which framework.
 
 ## Running
 
-Use `simulator.md`'s vendored scripts for build + simulator-boot + XCUITest runs. For a plain logic-test suite,
+Use `simulator.md`'s vendored scripts for build + XCUITest runs, on a device from `~/.claude/tools/sim acquire`. For a plain logic-test suite,
 the project's admin runner (`./admin test`) or `xcodebuild test` / `swift test` is enough and
 doesn't need a booted simulator — prefer it for speed in the red→green loop ([`../testing/loop.md`](../testing/loop.md)).
 

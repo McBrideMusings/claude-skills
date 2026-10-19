@@ -5,7 +5,7 @@ behind swarm's runtime-neutral rule: *a worktree isolates source and nothing els
 verification touches beyond it, each worker gets its own and pins every command to it by id*.
 
 Only relevant when more than one worker builds and verifies at once. A single `implement` pass
-needs none of this; it is alone on the machine.
+needs none of this except the simulator pool, which every session on the machine goes through.
 
 ## Builds take turns
 
@@ -13,21 +13,34 @@ Run every `xcodebuild` and `swift build`/`swift test` through `swarm heavy -- <c
 Xcode build already uses every core; two at once each take twice as long and starve the
 simulators. Each worker keeps its own DerivedData tree ([`swarm/derived-data.md`](swarm/derived-data.md)).
 
-## One simulator per worker
+## A simulator comes from the machine-wide pool
 
-Each worker creates its own before its first run, named after its bead, and keeps the UDID it
-prints for every later command.
+Every session on the machine, swarm worker or not, gets a simulator from `~/.claude/tools/sim`,
+which caps how many run at once (`cap` in `~/.claude/tools/sim-pool.toml`). Each booted iOS 26.5
+device runs about 270 processes, so this cap, not the worker count, decides the machine's load.
 
 ```bash
-xcrun simctl create "swarm-$SWARM_WORKER" \
-  com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro \
-  com.apple.CoreSimulator.SimRuntime.iOS-26-5      # returns the UDID
-xcrun simctl boot <udid>
+udid=$(~/.claude/tools/sim acquire)    # Bash timeout 600000; waits up to 9 min for a slot, prints the UDID
+…                                      # every command pinned to $udid
+~/.claude/tools/sim release            # shuts it down and frees the slot
 ```
 
-Pick a device type and runtime the machine actually has — `xcrun simctl list devicetypes` and
-`xcrun simctl list runtimes`. The identifiers above are examples, not constants; a missing runtime
-fails the create with a message that reads like a permissions problem.
+`hooks/sim-pool-guard.sh` denies `simctl boot`/`create`/`clone`, and any simulator command naming
+a UDID the session does not lease, so there is no other route. The lease belongs to the session:
+`sim acquire` again prints the same UDID, and the lease ends on its own when the session exits or
+its device sits unused for `idle_minutes`. With the default cap of 1, a worker that reaches its
+verification step while another holds the slot waits; `sim status` names the holder.
+
+`sim acquire --device <type> --runtime <id>` gives an iPad, an Apple TV or another iOS version from
+the same pool.
+
+Pool devices are slimmed with simslim, which turns off about 170 iOS background services. When a
+check fails because a service is off (push, StoreKit, universal links, Keychain), confirm it with
+`simslim doctor <udid> --requires <feature>`, then `sim release` and
+`sim acquire --full --reason "<what slim broke>"` for a stock device.
+
+Pool devices are reused and never deleted, so a device carries the previous holder's apps.
+`xcrun simctl uninstall <udid> <bundle-id>` before installing when stale app state would matter.
 
 ## Pin every command to the UDID, never a device name
 
@@ -51,7 +64,7 @@ test. Suspect the shared device before the diff whenever a worker reports its ow
 
 ## The iCloud key-value store is not a second sharing problem
 
-**One device per worker also isolates the app's stored state, including
+**A separate device also isolates the app's stored state, including
 `NSUbiquitousKeyValueStore`.** It persists inside the device's own data directory
 (`Devices/<udid>/data/Containers/Data/InternalDaemon/…/com.apple.kvs/…/<team>.<identifier>`),
 simulators carry no iCloud account, and there is no host-side store they proxy into. Checked
@@ -59,14 +72,14 @@ simulators carry no iCloud account, and there is no host-side store they proxy i
 checksums. So workers that appeared to overwrite each other's seeded state were doing it *through
 the shared device*, not through iCloud, and separating the devices separates the stores.
 
-## Retire the simulator before the pass ends
+## Release the simulator before the pass ends
 
 ```bash
-xcrun simctl shutdown <udid> && xcrun simctl delete <udid>
+~/.claude/tools/sim release
 ```
 
-Skip it and a long run ends with one booted simulator per issue, each holding memory. It survives
-its worker; nothing else cleans it up.
+A worker that skips it holds the slot until its session exits or the idle timeout runs out, and
+every other session waits that long.
 
 ## Signing
 

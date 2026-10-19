@@ -20,15 +20,30 @@ Every script takes `--help` and speaks JSON on `--json`. Run them with `python3 
 
 ### Getting a simulator ready
 
+**Every simulator comes from the machine-wide pool.** `~/.claude/tools/sim acquire` waits for a
+free slot of the cap in `~/.claude/tools/sim-pool.toml`, boots that slot's device, waits until it
+can take input, and prints its UDID. `sim release` shuts it down and frees the slot; `sim status`
+shows every slot's holder. `hooks/sim-pool-guard.sh` denies `simctl boot`, `create` and `clone`,
+`booted`, and any command naming a UDID outside this session's lease. Pin every command below to the leased UDID.
+
+The default device is set in `sim-pool.toml`. For another one — an iPad, an Apple TV, an older
+iOS — pass the identifiers `xcrun simctl list devicetypes` and `runtimes` print:
+`sim acquire --device com.apple.CoreSimulator.SimDeviceType.Apple-TV-4K-3rd-generation-4K --runtime com.apple.CoreSimulator.SimRuntime.tvOS-26-5`.
+It counts against the same cap; a session holding one device releases it before taking another.
+
+Pool devices are slimmed with simslim: about 170 iOS background services are off, including push,
+StoreKit, universal links and Keychain sync. When a check fails because one of those is off,
+confirm it with `simslim doctor <udid> --requires <feature>`, then `sim release` and
+`sim acquire --full --reason "<what slim broke>"` for a stock device.
+
 | want | script |
 |---|---|
-| pick the right device without listing 200 of them | `simulator_selector.py` |
 | list devices with progressive disclosure | `sim_list.py` |
-| boot and **wait until actually ready** | `simctl_boot.py` |
-| create / erase / delete / shut down | `simctl_create.py`, `simctl_erase.py`, `simctl_delete.py`, `simctl_shutdown.py` |
+| erase / shut down a device you lease | `simctl_erase.py`, `simctl_shutdown.py` |
 | check the whole toolchain is healthy | `sim_health_check.sh` |
 
-`simctl_boot.py` waiting for readiness is the important one. A bare `simctl boot` returns before the device can accept input, and every "the tap did nothing" mystery starts there.
+`simctl_erase.py` wipes the device's slimming along with its data; `sim acquire` re-slims it on
+the next lease, which takes about a minute.
 
 ### Building and testing
 
@@ -36,7 +51,7 @@ Every script takes `--help` and speaks JSON on `--json`. Run them with `python3 
 |---|---|
 | build or test an Xcode project and get a parsed result | `build_and_test.py` |
 
-It parses the `.xcresult` bundle (`xcode/xcresult.py`) rather than scraping stdout, which is why its failure list is trustworthy where a `grep` over raw `xcodebuild` output is not.
+A build targets `generic/platform=iOS Simulator` and boots nothing; `--test` takes this session's leased device from `sim acquire` and turns parallel testing off. It parses the `.xcresult` bundle (`xcode/xcresult.py`) rather than scraping stdout, which is why its failure list is trustworthy where a `grep` over raw `xcodebuild` output is not.
 
 **Still prefer the `build-runner` subagent** (unless the session forbids subagents — see `implement`'s stage rules). `build_and_test.py` returns a parsed summary, but a full build's output is large enough that it should not land in a pass's context regardless.
 

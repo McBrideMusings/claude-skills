@@ -20,7 +20,7 @@
 | [`diagnose.md`](diagnose.md) | A crash, a hang, or a build failure to track down. |
 | [`review.md`](review.md) | Reviewing Apple-platform code. |
 | [`react-native-navigation.md`](react-native-navigation.md) | React Native native-stack headers on iOS 26. |
-| [`swarm.md`](swarm.md) | A `swarm` worker building or testing an Apple app beside other workers: turn-taking, one simulator each. |
+| [`swarm.md`](swarm.md) | A `swarm` worker building or testing an Apple app beside other workers: turn-taking, the simulator pool, UDID pinning. |
 | [`swarm/react-native-metro.md`](swarm/react-native-metro.md) | Running parallel React Native workers on iOS simulators, each with its own Metro port. |
 | [`swarm/macos-singletons.md`](swarm/macos-singletons.md) | Running parallel macOS-app workers: debug sockets, UserDefaults, bundle-id suffixes, entitlements, ports. |
 | [`swarm/derived-data.md`](swarm/derived-data.md) | Parallel Xcode builds filling the disk, or sharing DerivedData or SwiftPM clones between workers. |

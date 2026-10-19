@@ -1,6 +1,6 @@
 # macOS-app workers: find the singletons
 
-Part of [`swarm.md`](../swarm.md) — the per-worker simulator and UDID pinning rules are there.
+Part of [`swarm.md`](../swarm.md) — the simulator pool and UDID pinning rules are there.
 
 Everything in [`../swarm.md`](../swarm.md) is iOS. A **macOS-app** worker builds and runs on the host itself, so there is no
 device to hand out. What it collides on instead is every per-machine singleton the app binds by a

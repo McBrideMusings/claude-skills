@@ -1,6 +1,6 @@
 # React Native: Metro is a second singleton
 
-Part of [`swarm.md`](../swarm.md) — the per-worker simulator and UDID pinning rules are there.
+Part of [`swarm.md`](../swarm.md) — the simulator pool and UDID pinning rules are there.
 
 A React Native app loads its JS bundle from a Metro server, and the port is per-machine. Two
 workers on two simulators still fetch from one Metro, so each can be running the other's bundle —
