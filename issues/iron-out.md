@@ -133,6 +133,8 @@ On **go**, follow [Dispatching a subagent](#dispatching-a-subagent). On **mine**
 
 **`manual` — hand over a checklist and hold.** Precise, ordered steps; what proves it worked; what not to do. The issue stays open and blocked until the user reports back. Only file this once the impossibility is demonstrated — quote the error or name the missing capability, never assume.
 
+**A check you cannot drive is a missing surface, not the user's job.** Before handing a hand check over, drive it yourself through the app's programmatic surface (debug server, CLI, accessibility tree); where that surface lacks the action, the finding is a bead to build it, and only what no surface could ever do — a judgment of feel, hardware in hand — goes to the user. **A failure the user reports is the result**: take it as given, ask nothing the code can answer, and never re-ask a step they have already covered.
+
 ### 3b. Record the resolution
 
 - **Work item** → rewrite the body so the gate passes on its face: decisions baked in as statements (not options), acceptance check present, any legacy `Type: HITL` marker deleted from the body. Show the new body, then write it: `bd update <id> --body-file <path> --acceptance "<check>"` plus `bd label remove <id> human` on beads, `gh issue edit <n> --body --remove-label human` on GitHub. Removing `human` is what makes it AFK — there is no positive AFK label to add. Both keep history — beads in Dolt, GitHub in its edit log; nothing is lost.
