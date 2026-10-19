@@ -210,9 +210,10 @@ user's feedback one item at a time instead of resolving a scope:
    did, what happened, what should have happened, where (pane, screen, command), how often.
    Settle a question the code, the logs or the running app can answer by checking it instead of
    asking. Stop once a worker could implement it without asking anything: a type, a reproduction
-   or a location, and an acceptance line.
-3. **File the bead** through [`issues`](../issues/SKILL.md) — type, priority, labels the repo
-   already uses, plus `feedback` — and `swarm log filed <id> "<title>"`. Print its id and title
+   or a location, and an acceptance line. Feedback that already says what to do is filed at
+   once: ask only about what it leaves open, never to confirm what it said.
+3. **File the bead** through [`issues`](../issues/SKILL.md) — type, priority, labels from the
+   repo's vocabulary — and `swarm log filed <id> "<title>"`. Print its id and title
    in one line; don't wait for approval. A decision only the user can make becomes its own
    `human` bead and is grilled right then, not launched.
 4. **Queue it.** The scope is every bead `filed` this run. Launch it into a free slot (§3, §4)
