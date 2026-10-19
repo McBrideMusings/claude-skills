@@ -337,8 +337,8 @@ lead_pid() {
 cmd_log() {
   local repo detail="${3:-}"; repo="$(main_checkout)"
   case "${1:-}" in
-    run|landed|parked|failed|applied|end) ;;
-    *) die "usage: swarm log <run|landed|parked|failed|applied|end> [<bead-id>] [<detail>]" ;;
+    run|filed|landed|parked|failed|applied|end) ;;
+    *) die "usage: swarm log <run|filed|landed|parked|failed|applied|end> [<bead-id>] [<detail>]" ;;
   esac
   if [ "$1" = run ]; then
     local pid; pid="$(lead_pid)"

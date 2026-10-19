@@ -1,6 +1,6 @@
 ---
 name: swarm
-description: "Burn down a repo's beads with several unattended Claude workers at once, each an `implement <id> auto` pass in its own worktree and herdr space, refilling a slot whenever one finishes. Optional focus steers what it picks: `swarm the web browser feature`, `swarm epic:cc-12`, `swarm label:client 4`. Use for 'run a swarm', 'burn down the backlog in parallel', 'have agents work through the client issues'."
+description: "Burn down a repo's beads with several unattended Claude workers at once, each an `implement <id> auto` pass in its own worktree and herdr space, refilling a slot whenever one finishes. Optional focus steers what it picks: `swarm the web browser feature`, `swarm epic:cc-12`, `swarm label:client 4`. `swarm feedback` grills the user's feedback one item at a time, files each as a bead and swarms it while intake continues. Use for 'run a swarm', 'burn down the backlog in parallel', 'have agents work through the client issues', 'a feedback session'."
 ---
 
 # Swarm
@@ -23,6 +23,9 @@ What `swarm` reuses rather than owns:
 
 A swarm is **report-back** ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) § Who feeds the
 result back): the lead waits for each worker, reads its outfile and verifies what it claims.
+
+`swarm feedback [<n>]` is the one focus this table does not resolve: the scope starts empty and
+the user fills it while workers run (§ Feedback session).
 
 ## Workers share one machine
 
@@ -195,6 +198,33 @@ asks how the run is going, name blocked workers and their panes.
 
 The run ends when a successful read finds no ready bead in scope left unlaunched and every slot
 is empty — or early, on a failed read or a quota refusal, which the report names.
+
+## Feedback session
+
+`swarm feedback [<n>]` runs the gate and the run log as usual (`focus=feedback`), then takes the
+user's feedback one item at a time instead of resolving a scope:
+
+1. **Take one item.** A bug, a UX problem, a missing feature, anything. Ask for the first one;
+   never ask for a list.
+2. **Grill it** one question per message ([`grill-me`](../grill-me/SKILL.md) rules): what they
+   did, what happened, what should have happened, where (pane, screen, command), how often.
+   Settle a question the code, the logs or the running app can answer by checking it instead of
+   asking. Stop once a worker could implement it without asking anything: a type, a reproduction
+   or a location, and an acceptance line.
+3. **File the bead** through [`issues`](../issues/SKILL.md) — type, priority, labels the repo
+   already uses, plus `feedback` — and `swarm log filed <id> "<title>"`. Print its id and title
+   in one line; don't wait for approval. A decision only the user can make becomes its own
+   `human` bead and is grilled right then, not launched.
+4. **Queue it.** The scope is every bead `filed` this run. Launch it into a free slot (§3, §4)
+   when `bd ready` lists it; otherwise it waits for its blocker, as in § 2. Then ask for the next
+   item.
+5. **Workers finishing mid-grill** are handled per § 5 between the user's answers, in one status
+   line, and the grilling continues where it was.
+
+The user ends intake by saying so ("that's all", "done"). From then the run is a normal swarm
+over the filed beads: refill slots until none is left unlaunched, report (§6), then run
+`wrap-up` in the main checkout instead of § 6's relay ending. A lead restarted mid-session
+rebuilds its scope from the `filed` lines `swarm status` prints.
 
 ## 6. Report
 
