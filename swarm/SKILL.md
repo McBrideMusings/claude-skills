@@ -83,6 +83,12 @@ line's cache and refuse, exit 5, at 90% of the 5-hour window or of the week
 too. `swarm quota` prints the reading. A refused launch is not a failed worker: let the running
 workers finish, launch nothing more, and say in the report how far the run got and why it stopped.
 
+**Memory.** Every `launch` reads the machine's free memory (`memory_pressure -Q`) and refuses,
+exit 6, under 25% free (`SWARM_MEMORY_FLOOR` overrides), because every worker is a whole Claude
+session with its MCP servers and builds, beside every other session on the machine. Unlike a
+quota refusal, this one holds the queue rather than ending the run: launch nothing until a
+running worker finishes, then try that slot's launch again.
+
 **The run log.** Start every run with `swarm log run "" "focus=<focus> n=<n>"`. `log run`
 adds the lead's pid and the herdr space's label to the line. `launch` logs
 `launched` and `finished` itself; the lead logs `landed`, `parked`, `failed` and `applied` as it

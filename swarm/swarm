@@ -117,6 +117,19 @@ quota_gate() {
   fi
 }
 
+# Refuse a launch while the machine's free memory is under the floor: every worker is a whole
+# Claude session plus its MCP servers and builds, and other sessions share the same memory.
+memory_gate() {
+  local floor="${SWARM_MEMORY_FLOOR:-25}" free
+  free="$(memory_pressure -Q 2>/dev/null | sed -n 's/.*free percentage: \([0-9]*\)%.*/\1/p')"
+  [ -n "$free" ] || { echo "swarm: free memory unknown — not launching" >&2; return 6; }
+  if [ "$free" -lt "$floor" ]; then
+    echo "swarm: ${free}% of memory free, under the ${floor}% floor — not launching" >&2
+    return 6
+  fi
+  echo "swarm: ${free}% of memory free (floor ${floor}%)" >&2
+}
+
 # Where a worker's worktree lives.
 worktree_path() { printf '%s/.worktrees/%s/%s\n' "$HOME" "$(basename "$1")" "$2"; }
 
@@ -270,11 +283,13 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     echo "swarm: dry run — would create $wt on branch $branch from $base, outfile $outfile" >&2
     echo "swarm: settings: $settings" >&2
     quota_gate "$repo" && echo "swarm: quota allows a launch" >&2
+    memory_gate || true
     printf '%s\n' "$brief"
     return 0
   fi
 
   quota_gate "$repo" || exit 5
+  memory_gate || exit 6
   [ -n "$(repo_space "$repo")" ] || die "no herdr space open for $repo — run 'swarm check' first so workers nest under it"
   if [ "$resume" -eq 1 ]; then
     [ "$(git -C "$wt" branch --show-current 2>/dev/null)" = "$branch" ] || die "--resume needs $wt on branch $branch"
