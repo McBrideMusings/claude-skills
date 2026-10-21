@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """lens-gate — decide which review lenses run, skip, or are offered.
 
-Every lens file (review/axes/*.md, ref/<label>/review.md, ref/local/<label>/review.md) opens
+Every lens file (review/axes/*.md, ref-cells/<label>/review.md, ref-cells/local/<label>/review.md) opens
 with frontmatter:
 
     run: always | gated | offered
@@ -60,7 +60,10 @@ def git(repo, *args):
 def lens_files():
     for f in sorted((SKILLS / "review/axes").glob("*.md")):
         yield f.stem, f
-    for root in (SKILLS / "ref", SKILLS / "ref/local"):
+    # The cells, through skills/ref-cells (the symlink into the knowledge repo) where it exists;
+    # the public skills repo alone has only the published copy in skills/ref.
+    cells = SKILLS / "ref-cells" if (SKILLS / "ref-cells").is_dir() else SKILLS / "ref"
+    for root in (cells, cells / "local"):
         for f in sorted(root.glob("*/review.md")):
             yield f.parent.name, f
 

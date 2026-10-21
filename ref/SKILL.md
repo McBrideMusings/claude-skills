@@ -37,8 +37,13 @@ used them; run it before and after rewriting a Covers or When entry.
 
 Every label's root file is `context.md`: a `> ` headline, a short body, and a **Files** map.
 Everything else in the directory is content, named for what it holds. There is no `SKILL.md`
-below this directory. Private labels live under `ref/local/<label>/`, gitignored, and are
-reached by the same hooks; they are never listed here.
+below this directory.
+
+The cells are written in a private knowledge repo and published here: each `ref/<label>/`
+directory in this repo is a generated copy, so edit a cell where it is written, never here.
+On the author's machine the private repo is read through `skills/ref-cells/`, a gitignored
+symlink at the same depth as `ref/`, which also holds the private labels under
+`ref-cells/local/<label>/`. Those are reached by the same hooks and never listed here.
 
 | Label | Covers |
 | --- | --- |

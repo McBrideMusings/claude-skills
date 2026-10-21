@@ -117,11 +117,11 @@ Plus private labels, which are not listed here.
 
 ## Adding a label
 
-Create `ref/<name>/context.md` (headline, body, Files map) and the engine cells that apply (a
-`review.md` opens with the `run:`/`when:` frontmatter `review/tool/lens-gate` reads), add
-the label's row to `ref/SKILL.md` (a private label goes under `ref/local/<name>/` and gets no
-row), then add the label to the repos it applies to. No code change — the engines already read
-`ref/<resolved>/<engine>.md` and no-op when absent.
+Create `ref-cells/<name>/context.md` (headline, body, Files map) and the engine cells that
+apply (a `review.md` opens with the `run:`/`when:` frontmatter `review/tool/lens-gate` reads),
+add the label's row to `ref/SKILL.md` (a private label goes under `ref-cells/local/<name>/` and
+gets no row), then add the label to the repos it applies to. No code change — the engines
+already read `ref-cells/<resolved>/<engine>.md` and no-op when absent.
 
 ## Classifier heuristic
 

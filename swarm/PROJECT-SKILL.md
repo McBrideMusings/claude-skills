@@ -2,7 +2,7 @@
 
 `<repo>/.claude/skills/swarm-worker/` tells swarm workers how this one project behaves when
 several of them build and test it at once. It wins over the runtime pages in
-`skills/ref/<runtime>/swarm.md`, which hold what is true of every project in that runtime.
+`skills/ref-cells/<runtime>/swarm.md`, which hold what is true of every project in that runtime.
 Every project with a build or test step keeps one (global CLAUDE.md, Finishing work), and it
 grows when a new heavy process or shared resource lands.
 

@@ -354,9 +354,14 @@ def content_injections(c, base, labels, hook_event):
 
 
 def files_table(label, skills=SKILLS):
-    """Every page a label's Files table names, as a path under skills/ (public and private)."""
+    """Every page a label's Files table names, as a path under skills/ (public and private).
+
+    The cells are read through skills/ref-cells, the symlink into the knowledge repo; a skills
+    tree without it (the public repo alone) has only the published copy in skills/ref.
+    """
     pages = []
-    for cell in (skills / "ref" / label / "context.md", skills / "ref" / "local" / label / "context.md"):
+    home = "ref-cells" if (skills / "ref-cells").is_dir() else "ref"
+    for cell in (skills / home / label / "context.md", skills / home / "local" / label / "context.md"):
         try:
             text = cell.read_text(errors="replace")
         except OSError:
@@ -379,7 +384,13 @@ def follow_through(inj, actions, pages):
     after = [a for a in actions if a[0] > inj["pos"]]
 
     def touched(kind, p):
-        return any(what == kind and text.endswith("skills/" + p) for _, what, text in after)
+        # A page is one file under two names: ref-cells/<page> since the cells moved to the
+        # knowledge repo, ref/<page> in sessions from before.
+        names = {"skills/" + p}
+        for old, new in (("ref-cells/", "ref/"), ("ref/", "ref-cells/")):
+            if p.startswith(old):
+                names.add("skills/" + new + p[len(old):])
+        return any(what == kind and text.endswith(tuple(names)) for _, what, text in after)
     return {p for p in pages if touched("read", p) and not touched("edit", p)}
 
 
