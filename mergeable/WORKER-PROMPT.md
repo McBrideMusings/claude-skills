@@ -160,6 +160,12 @@ lines — which paths regenerate rather than merge, which lockfile has a command
 belong in the repo's `CLAUDE.local.md`, already in context. Read what is there before assuming
 the generic path is right. Only write a project skill when the resolution is a real procedure.
 
+**A hook that blocks the merge commit is a conflict to resolve, not a wall to report.** When it
+flags content that arrived from the base, search the base for how the repo already handled it
+(`git log origin/<base> -S<flagged value>`, `--grep` on the topic, the repo's testing docs)
+and apply that convention in the merge commit. Never propose editing the guard. Report what you
+searched; "main has no fix" is a claim about every path you did not read.
+
 Neither file pushes. Phase U5 decides whether the push waits on a `go` or goes ahead.
 
 ## Phase U3 — Gate 2: failing checks
