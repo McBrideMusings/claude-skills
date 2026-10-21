@@ -109,7 +109,8 @@ quota_read() {
 # stops launches too: a missing reading is not room to spend.
 quota_gate() {
   local r s w age dir
-  r="$(quota_read "$1")" || { echo "swarm: quota unknown — not launching" >&2; return 5; }
+  [ -n "${SWARM_SKIP_QUOTA:-}" ] && { echo "swarm: quota check skipped (SWARM_SKIP_QUOTA)" >&2; return 0; }
+  r="$(quota_read "$1")" || { echo "swarm: quota unknown — not launching (SWARM_SKIP_QUOTA=1 skips the check)" >&2; return 5; }
   read -r s w age dir <<<"$r"
   if [ "${s:-0}" -ge "${SWARM_QUOTA_SESSION:-90}" ] || [ "${w:-0}" -ge "${SWARM_QUOTA_WEEKLY:-90}" ]; then
     echo "swarm: quota $dir at ${s}% of the 5-hour window, ${w}% of the week (limits ${SWARM_QUOTA_SESSION:-90}%, ${SWARM_QUOTA_WEEKLY:-90}%) — not launching" >&2

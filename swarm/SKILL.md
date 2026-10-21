@@ -80,7 +80,8 @@ it; say so when it lowers the user's number.
 **Quota.** `check` and every `launch` read the repo's Claude profile's usage from the status
 line's cache and refuse, exit 5, at 90% of the 5-hour window or of the week
 (`SWARM_QUOTA_SESSION`, `SWARM_QUOTA_WEEKLY` override). An unreadable or stale reading refuses
-too. `swarm quota` prints the reading. A refused launch is not a failed worker: let the running
+too. `swarm quota` prints the reading. When the user tells you to skip the quota check, set
+`SWARM_SKIP_QUOTA=1` on `check` and every `launch` for the rest of the run, without asking. A refused launch is not a failed worker: let the running
 workers finish, launch nothing more, and say in the report how far the run got and why it stopped.
 
 **Memory.** Every `launch` reads the machine's free memory (`memory_pressure -Q`) and refuses,
