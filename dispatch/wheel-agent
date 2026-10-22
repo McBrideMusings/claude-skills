@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# wheel-agent — run one dispatched task as a LIVE interactive claude in a Wheel terminal pane.
+#
+#   wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]
+#
+# The Wheel counterpart to `herdr-agent run`. Same caller contract — prompt in a file,
+# response in <outfile>, blocks until done — and the worker is the claude TUI in a pane you
+# can watch, type at, or take over.
+#
+# Placement: the pane is split off inside the caller's own space ($WHEEL_SPACE), never a new
+# space. The first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one
+# splits the newest live worker pane downward, so workers stack in one column.
+#
+# The pane is a terminal running your shell, so `claude` goes through the shell's profile
+# router and gets every flag herdr would pass it (--permission-mode, --model, --settings).
+# Wheel does not track a terminal claude's state, so the worker reports its own through hooks
+# merged into its --settings: UserPromptSubmit and PostToolUse write `working`, a
+# permission-prompt Notification writes `blocked`, Stop writes `idle`. This script waits on
+# that file the way herdr-agent waits on herdr's agent state.
+#
+# $WHEEL_AGENT_DIR (default: a new temp dir) receives `pane` (the worker's pane id) and
+# `state`. The pane is LEFT OPEN; whoever owns the worker closes it (`wheel pane close`).
+set -eu
+
+TIMEOUT_MS="${WHEEL_AGENT_TIMEOUT_MS:-2400000}"   # 40m, matching `terminal run`'s ceiling
+READY_S=120          # how long the worker has to report its first state
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "wheel-agent: missing '$1'" >&2; exit 1; }; }
+
+# Panes split off for workers in this space, oldest first, one per line.
+ledger() { printf '%s/wheel-agent-%s.panes' "${TMPDIR:-/tmp}" "$WHEEL_SPACE"; }
+
+# Split a new pane for the worker and print its id. Serialised, so parallel launches each
+# stack under the previous worker instead of all splitting the same pane.
+split_pane() {
+  local l; l="$(ledger)"; touch "$l"
+  lockf -k -t 60 "$l.lock" /bin/bash -c '
+    l="$1"; lead="$2"; space="$3"
+    live="$(wheel pane ls --json | jq -r --arg s "$space" ".[] | select(.space == \$s) | .pane")"
+    from=""; dir=right
+    for p in $(tail -r "$l"); do
+      printf "%s\n" "$live" | grep -qx "$p" && { from="$p"; dir=down; break; }
+    done
+    new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
+    new="$(printf "%s" "$new" | grep -o "p[0-9][0-9]*" | head -1)"
+    [ -n "$new" ] || exit 1
+    printf "%s\n" "$new" >> "$l"
+    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE"
+}
+
+# The worker's --settings: the caller's (a file or inline JSON, if any) plus the state hooks.
+merged_settings() {
+  local given="$1" state="$2" base
+  if [ -z "$given" ]; then base='{}'
+  elif [ -f "$given" ]; then base="$(cat "$given")"
+  else base="$given"; fi
+  jq -c --arg f "$state" '
+    def put($s): [{hooks: [{type: "command", command: ("printf " + $s + " > " + ($f | @sh))}]}];
+    .hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + put("working"))
+    | .hooks.PostToolUse    = ((.hooks.PostToolUse // []) + put("working"))
+    | .hooks.Stop           = ((.hooks.Stop // []) + put("idle"))
+    | .hooks.Notification   = ((.hooks.Notification // [])
+        + [put("blocked")[0] + {matcher: "permission_prompt"}])' <<<"$base"
+}
+
+state() { cat "$dir/state" 2>/dev/null || true; }
+
+cmd_run() {
+  local promptfile="${1:-}" outfile="${2:-}"
+  if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
+    echo "usage: wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]" >&2; return 2
+  fi
+  shift 2
+  [ "${1:-}" = "--" ] && shift || true
+  [ -f "$promptfile" ] || { echo "wheel-agent: prompt file not found: $promptfile" >&2; return 1; }
+  [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_SPACE:-}" ] && [ -n "${WHEEL_PANE:-}" ] \
+    || { echo "wheel-agent: not running inside a Wheel pane (WHEEL_ENV, WHEEL_SPACE, WHEEL_PANE)" >&2; return 1; }
+  need wheel; need jq
+
+  local dir="${WHEEL_AGENT_DIR:-}"
+  [ -n "$dir" ] || dir="$(mktemp -d -t wheel-agent)"
+  mkdir -p "$dir"; rm -f "$dir/state" "$dir/pane"
+  : > "$outfile"
+
+  # Pull the caller's --settings out of the args; the merged file replaces it.
+  local -a args=(); local given=""
+  while [ $# -gt 0 ]; do
+    if [ "$1" = "--settings" ]; then given="${2:-}"; shift 2; else args+=("$1"); shift; fi
+  done
+  merged_settings "$given" "$dir/state" > "$dir/settings.json"
+  args+=(--settings "$dir/settings.json")
+
+  # An interactive agent prints to a TUI, so there is nothing to tee. Tell it where to
+  # put the answer; the caller reads that file exactly as it reads `terminal run`'s.
+  { cat "$promptfile"; printf '%s\n' '
+────────────────────────────────────────────────────────────
+HOW TO RETURN YOUR ANSWER — required, do this last:
+Write your complete response to the file below, as a whole file, in Markdown.
+Do not summarise it there; that file IS your answer and is the only part that is read.
+' "  $outfile" '────────────────────────────────────────────────────────────'; } > "$dir/prompt.md"
+
+  local pane
+  pane="$(split_pane)" || { echo "wheel-agent: could not split a pane in space $WHEEL_SPACE" >&2; return 1; }
+  printf '%s\n' "$pane" > "$dir/pane"
+  wheel pane start "$pane" terminal >/dev/null || { echo "wheel-agent: could not start a terminal in pane $pane" >&2; return 1; }
+
+  # Wait for the shell to draw its prompt before typing at it.
+  local i=0
+  until wheel term read "$pane" --timeout 0 2>/dev/null | grep -q '[^[:space:]]'; do
+    i=$((i + 1)); [ "$i" -lt 60 ] || { echo "wheel-agent: pane $pane never drew a shell prompt — leaving it open" >&2; return 1; }
+    sleep 0.5
+  done
+
+  local cmd a
+  cmd="cd $(printf '%q' "$PWD") && claude"
+  for a in "${args[@]}"; do cmd="$cmd $(printf '%q' "$a")"; done
+  cmd="$cmd \"\$(cat $(printf '%q' "$dir/prompt.md"))\""
+  wheel term send "$pane" "$cmd" --enter >/dev/null
+  echo "wheel-agent: claude started in pane $pane of space $WHEEL_SPACE (state in $dir)" >&2
+
+  i=0
+  while [ -z "$(state)" ]; do
+    i=$((i + 2)); [ "$i" -lt "$READY_S" ] || { echo "wheel-agent: claude in pane $pane reported no state in ${READY_S}s — leaving it open" >&2; return 1; }
+    sleep 2
+  done
+
+  local deadline=$(( $(date +%s) + TIMEOUT_MS / 1000 )) s told=""
+  while :; do
+    s="$(state)"
+    case "$s" in
+      idle) break ;;
+      blocked) [ -n "$told" ] || echo "wheel-agent: the worker in pane $pane is blocked on a prompt — answer it there" >&2; told=1 ;;
+      *) told="" ;;
+    esac
+    [ "$(date +%s)" -lt "$deadline" ] || { echo "wheel-agent: stopped waiting on pane $pane after $((TIMEOUT_MS / 60000))m" >&2; break; }
+    # A closed pane takes the worker with it and no hook fires, so stop waiting on its state.
+    wheel pane ls --json 2>/dev/null | jq -e --arg p "$pane" 'any(.[]; .pane == $p)' >/dev/null \
+      || { echo "wheel-agent: pane $pane is gone — the worker ended with state '$s'" >&2; [ -s "$outfile" ] && return 0 || return 3; }
+    sleep 3
+  done
+
+  # The agent may have finished without writing the file. Its pane still holds the answer,
+  # so scrape it — but a pane dump is not an answer, so exit 3.
+  if [ ! -s "$outfile" ]; then
+    echo "wheel-agent: claude wrote nothing to $outfile — falling back to its pane output, exit 3" >&2
+    wheel term read "$pane" --timeout 0 > "$outfile" 2>/dev/null || true
+    return 3
+  fi
+  echo "wheel-agent: claude finished → $outfile (pane $pane left open — close it with 'wheel pane close $pane')"
+}
+
+case "${1:-}" in
+  run) shift; cmd_run "$@" ;;
+  *) echo "usage: wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]" >&2; exit 2 ;;
+esac

@@ -5,6 +5,8 @@
 #   swarm check
 #   swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason "<text>"] [--dry-run]
 #   swarm heavy -- <command> [<arg>...]
+#   swarm close <bead-id> landed|parked   close a finished worker's space or pane; landed also
+#                                     removes its worktree
 #   swarm quota                       the repo's profile's 5-hour and weekly usage, and the gate
 #   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log (run, landed,
 #                                     parked, failed, applied, end)
@@ -57,9 +59,20 @@ main_checkout() {
   git -C "$PWD" rev-parse --show-toplevel
 }
 
+# Which multiplexer holds the workers: herdr (a child space per worker) or wheel (a pane per
+# worker, split off the lead's pane in the lead's space). Empty outside both.
+surface() {
+  if [ "${HERDR_ENV:-}" = "1" ]; then echo herdr
+  elif [ "${WHEEL_ENV:-}" = "1" ]; then echo wheel
+  fi
+}
+
 # The herdr space of the repo's main checkout, or empty. Workers nest under it as child spaces;
 # without it herdr-agent puts each one at the top level.
 repo_space() { "$HOME/.claude/skills/dispatch/herdr-agent" repo-space "$1"; }
+
+# Where wheel-agent records a worker's pane id and state: <worktree git dir>/wheel-agent.
+wheel_dir() { printf '%s/wheel-agent' "$(git -C "$(worktree_path "$1" "$2")" rev-parse --absolute-git-dir 2>/dev/null)"; }
 
 # Runtimes the repo builds with, one per line, from tracked marker files up to two levels deep.
 # Each name is a skills/ref/<name>/ directory whose swarm.md the worker reads.
@@ -97,8 +110,12 @@ quota_read() {
   local dir f ts
   dir="$(profile_dir "$1")"; [ -n "$dir" ] || { echo "cannot resolve the Claude profile for $1" >&2; return 1; }
   f="$dir/statusline-cache/usage"
-  [ -f "$f" ] || { echo "no usage cache at $f" >&2; return 1; }
-  grep -q '^ERROR=' "$f" && { echo "usage cache at $f holds an error: $(sed -n 's/^ERROR=//p' "$f")" >&2; return 1; }
+  # The status line owns the fetch (swarm never calls the usage API). While its cache holds an
+  # error, such as a 429, gate on the last good reading it kept, subject to the same age limit.
+  if [ ! -f "$f" ] || grep -q '^ERROR=' "$f"; then
+    [ -f "$f.good" ] || { echo "no usable usage cache at $f ($(sed -n 's/^ERROR=//p' "$f" 2>/dev/null))" >&2; return 1; }
+    f="$f.good"
+  fi
   ts="$(sed -n 's/^TIMESTAMP=//p' "$f")"
   [ -n "$ts" ] && [ $(( $(date +%s) - ts )) -le 1800 ] || { echo "usage cache at $f is older than 30 minutes" >&2; return 1; }
   printf '%s %s %s %s\n' "$(sed -n 's/^UTILIZATION=//p' "$f")" "$(sed -n 's/^WEEKLY_UTILIZATION=//p' "$f")" \
@@ -167,19 +184,28 @@ worker_settings() {
 }
 
 cmd_check() {
-  need git; need jq; need bd; need herdr
-  [ "${HERDR_ENV:-}" = "1" ] || die "not inside herdr (HERDR_ENV != 1) — swarm workers need herdr spaces"
+  need git; need jq; need bd
+  local surf; surf="$(surface)"
+  [ -n "$surf" ] || die "not inside herdr or Wheel (HERDR_ENV, WHEEL_ENV) — swarm workers need one to run in"
+  need "$surf"
   local repo tier
   repo="$(main_checkout)"
   tier="$("$HOME/.claude/tools/repo-tier" "$repo")"
   [ "$tier" = owned ] || die "repo-tier says '$tier' for $repo — swarm workers land themselves, which only an owned repo allows"
   bd -C "$repo" ready --limit 1 --json >/dev/null 2>&1 || die "bd cannot read the tracker in $repo"
   CLAUDE_DISPATCH_AGENT=claude "$D" check >&2
-  # Open the repo's space once, here, so parallel launches never race to create it.
-  local ws; ws="$(repo_space "$repo")"
-  if [ -z "$ws" ]; then
-    ws="$(herdr workspace create --cwd "$repo" --label "$(basename "$repo")" --no-focus | jq -r '.result.workspace.workspace_id')"
-    echo "swarm: opened herdr space $ws for $repo — workers nest under it" >&2
+  # Open the repo's herdr space once, here, so parallel launches never race to create it.
+  local ws where
+  if [ "$surf" = herdr ]; then
+    ws="$(repo_space "$repo")"
+    if [ -z "$ws" ]; then
+      ws="$(herdr workspace create --cwd "$repo" --label "$(basename "$repo")" --no-focus | jq -r '.result.workspace.workspace_id')"
+      echo "swarm: opened herdr space $ws for $repo — workers nest under it" >&2
+    fi
+    where="workers open as child spaces of $ws"
+  else
+    [ -n "${WHEEL_SPACE:-}" ] && [ -n "${WHEEL_PANE:-}" ] || die "inside Wheel but WHEEL_SPACE or WHEEL_PANE is unset"
+    where="workers open as panes split off $WHEEL_PANE in Wheel space $WHEEL_SPACE"
   fi
   local rts; rts="$(runtimes "$repo" | paste -sd' ' -)"
   echo "swarm: runtimes: ${rts:-none detected}" >&2
@@ -193,7 +219,7 @@ cmd_check() {
   fi
   local q; q="$(quota_read "$repo")" && echo "swarm: quota (5-hour weekly age dir): $q" >&2
   quota_gate "$repo" || exit 5
-  echo "swarm: ready in $repo; workers open as child spaces of $ws" >&2
+  echo "swarm: ready in $repo; $where" >&2
 }
 
 cmd_launch() {
@@ -291,7 +317,9 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
 
   quota_gate "$repo" || exit 5
   memory_gate || exit 6
-  [ -n "$(repo_space "$repo")" ] || die "no herdr space open for $repo — run 'swarm check' first so workers nest under it"
+  local surf; surf="$(surface)"
+  [ -n "$surf" ] || die "not inside herdr or Wheel — run 'swarm check'"
+  [ "$surf" != herdr ] || [ -n "$(repo_space "$repo")" ] || die "no herdr space open for $repo — run 'swarm check' first so workers nest under it"
   if [ "$resume" -eq 1 ]; then
     [ "$(git -C "$wt" branch --show-current 2>/dev/null)" = "$branch" ] || die "--resume needs $wt on branch $branch"
     mkdir -p "$outdir"
@@ -323,7 +351,8 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     cd "$wt"
     # An implement pass routinely outlasts dispatch's 40-minute ceiling.
     export CLAUDE_DISPATCH_AGENT=claude CLAUDE_DISPATCH_MODEL="$model" \
-           CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000
+           CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000 \
+           WHEEL_AGENT_TIMEOUT_MS=14400000 WHEEL_AGENT_DIR="$gd/wheel-agent" DISPATCH_TRANSPORT="$surf"
     exec "$D" exec --name "$name" "$gd/DISPATCH-BRIEF.md" "$outfile"
   ) >&2 || rc=$?
   log_event "$repo" finished "$id" "exit $rc"
@@ -392,17 +421,53 @@ cmd_status() {
   echo "--- in flight"
   awk -F'\t' -v s="$start" 'NR >= s && $2 == "launched" { l[$3] = $4 } NR >= s && $2 == "finished" { delete l[$3] }
     END { for (k in l) print k "\t" l[k] }' "$f" | while IFS="$(printf '\t')" read -r id detail; do
-      printf '%s\t%s\tagent %s\n' "$id" "$detail" \
-        "$(herdr workspace list 2>/dev/null | jq -r --arg l "$id" '[.result.workspaces[] | select(.label == $l) | .agent_status][0] // "no space"')"
+      printf '%s\t%s\tagent %s\n' "$id" "$detail" "$(worker_state "$repo" "$id")"
     done
+}
+
+# A launched worker's agent state: herdr's for its space, or wheel-agent's state file while
+# its pane is still open. "no space" / "no pane" means the worker is gone.
+worker_state() {
+  local repo="$1" id="$2" d p
+  case "$(surface)" in
+    herdr) herdr workspace list 2>/dev/null | jq -r --arg l "$id" '[.result.workspaces[] | select(.label == $l) | .agent_status][0] // "no space"' ;;
+    wheel)
+      d="$(wheel_dir "$repo" "$id")"; p="$(cat "$d/pane" 2>/dev/null || true)"
+      if [ -n "$p" ] && wheel pane ls --json 2>/dev/null | jq -e --arg p "$p" 'any(.[]; .pane == $p)' >/dev/null; then
+        printf '%s (pane %s)' "$(cat "$d/state" 2>/dev/null || echo starting)" "$p"
+      else echo "no pane"; fi ;;
+    *) echo "unknown (not inside herdr or Wheel)" ;;
+  esac
+}
+
+# Close a finished worker's surface. landed: also remove its worktree (git-sweep reaps any left).
+# parked: keep the worktree and branch for the user.
+cmd_close() {
+  local id="${1:-}" how="${2:-}" repo wt ws p
+  case "$how" in landed|parked) ;; *) die "usage: swarm close <bead-id> landed|parked" ;; esac
+  repo="$(main_checkout)"; wt="$(worktree_path "$repo" "$id")"
+  case "$(surface)" in
+    herdr)
+      ws="$(herdr workspace list | jq -r --arg w "$wt" '[.result.workspaces[] | select(.cwd == $w) | .workspace_id][0] // empty')"
+      [ -n "$ws" ] || die "no herdr space open on $wt"
+      if [ "$how" = landed ]; then herdr worktree remove --workspace "$ws" --force
+      else herdr workspace close "$ws"; fi ;;
+    wheel)
+      p="$(cat "$(wheel_dir "$repo" "$id")/pane" 2>/dev/null || true)"
+      [ -n "$p" ] && wheel pane close "$p" >/dev/null 2>&1 && echo "swarm: closed pane $p" >&2
+      [ "$how" = landed ] && [ -d "$wt" ] && git -C "$repo" worktree remove --force "$wt" && echo "swarm: removed $wt" >&2
+      return 0 ;;
+    *) die "not inside herdr or Wheel" ;;
+  esac
 }
 
 case "${1:-}" in
   check)  shift; cmd_check ;;
+  close)  shift; cmd_close "$@" ;;
   launch) shift; cmd_launch "$@" ;;
   heavy)  shift; cmd_heavy "$@" ;;
   quota)  shift; cmd_quota ;;
   log)    shift; cmd_log "$@" ;;
   status) shift; cmd_status ;;
-  *) echo "usage: swarm check | launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | heavy -- <command> | quota | log <event> [<bead-id>] [<detail>] | status" >&2; exit 2 ;;
+  *) echo "usage: swarm check | close <bead-id> landed|parked | launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | heavy -- <command> | quota | log <event> [<bead-id>] [<detail>] | status" >&2; exit 2 ;;
 esac

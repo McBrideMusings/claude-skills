@@ -109,6 +109,7 @@ Run `dispatch exec` with the Bash tool's **background** mode: the agent can take
 Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. Two optional env knobs, set alongside `CLAUDE_DISPATCH_AGENT`:
 
 - **`CLAUDE_DISPATCH_MODEL`** — the target's model (`sonnet`, `haiku`, `opus`, or a full model id). Unset → the CLI's default. This is the point of the vendor: a cheap plan-follower or a heavyweight, chosen per profile or per repo.
+- **`CLAUDE_DISPATCH_REMOTE_CONTROL`** — a session name; a herdr-hosted worker starts with `--remote-control <name>`, so the user can follow and steer it from the Claude app. Set it whenever the user asks for the worker to have Remote Control on. A Terminal.app one-shot (`-p`) ignores it.
 - **`CLAUDE_DISPATCH_PERMISSION_MODE`** — defaults to `auto`: the auto-mode classifier approves or refuses each tool call, so a dispatched session nobody is watching does not stop on a permission prompt. Hooks and deny rules still apply. Set a narrower mode here (`acceptEdits`, `manual`) for a task that should ask before running commands.
 
 The dispatched agent is a full Claude Code session: it reads the repo's CLAUDE.md, skills, and settings from whatever profile `CLAUDE_CONFIG_DIR` routing gives the spawned shell (the Terminal window inherits the cwd, so profile routing behaves exactly as if the user opened a terminal there).
@@ -135,8 +136,9 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 |---|---|
 | `--headless` | plain subprocess, no surface at all |
 | `HERDR_ENV=1` **and** the vendor is in herdr's `--kind` enum | **`workspace`** (a herdr space) |
+| `WHEEL_ENV=1` (and not herdr) **and** the vendor is `claude` | **`wheel`** (a pane in the caller's Wheel space) |
 | anything else | **Terminal.app window** |
-| `DISPATCH_TRANSPORT=terminal\|herdr` | forces one; forcing `herdr` where it can't run is an error, not a fallback |
+| `DISPATCH_TRANSPORT=terminal\|herdr\|wheel` | forces one; forcing `herdr` or `wheel` where it can't run is an error, not a fallback |
 
 `dispatch exec` prints the resolved transport and its reason as its first line, and `dispatch transport` prints the same without running anything. **Put that line in the status message** — a target the user is told to go watch, that was only ever a background subprocess, is the failure this exists to stop.
 
@@ -155,6 +157,12 @@ What runs is the vendor's **real interactive TUI**, not a piped one-shot. Three 
 - **It outlives us.** The space and the agent survive this Claude session dying. `herdr-agent` never closes the space and never focuses it — focusing marks it seen and collapses a `done` into `idle`. Whoever owns the result closes it (`herdr workspace close`).
 
 Completion is herdr's own agent lifecycle state, not a sentinel: herdr already tracks whether the agent is `working`, so there is nothing to poll a file for.
+
+### Wheel — a live claude in a pane of the caller's space (`wheel-agent` in this directory)
+
+Inside Wheel the worker stays in the caller's own space. `wheel-agent` splits a terminal pane off the caller's pane (`$WHEEL_PANE`) to the right for the first worker, and under the newest live worker for each later one, so workers stack in one column beside the caller. It types `claude --permission-mode … --model … --settings … "<brief>"` at that pane's shell, so the shell's profile router and every flag herdr would pass still apply.
+
+Wheel does not track the state of a claude running in a terminal, so the worker reports its own: `wheel-agent` merges hooks into its `--settings` (`UserPromptSubmit` and `PostToolUse` write `working`, a `permission_prompt` Notification writes `blocked`, `Stop` writes `idle`) and waits on that file. Only `claude` has those hooks, so a codex or reasonix dispatch inside Wheel goes to Terminal.app. `$WHEEL_AGENT_DIR` (default a temp dir) receives `pane` and `state`. The outfile contract and the pane-scrape fallback (exit 3) are the same as herdr's. The pane is left open; whoever owns the result closes it (`wheel pane close <pane>`).
 
 ### Terminal.app — a one-shot in a window (the `terminal` skill)
 

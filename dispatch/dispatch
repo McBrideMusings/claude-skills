@@ -14,13 +14,16 @@
 #                                          The herdr space (or tab) carries it as its label; without it
 #                                          the label is the directory's name.
 #                                          default: in whichever watchable surface this session lives in —
-#                                          a herdr space when we're inside herdr, else a Terminal.app window.
+#                                          a herdr space when we're inside herdr, a pane split off this one
+#                                          inside Wheel, else a Terminal.app window.
 #                                          --headless: no surface — run as a plain subprocess (backend-only,
 #                                          for cron / SSH / no-GUI where AppleScript can't open a window).
 #
 # Transport is resolved, never asked: inside herdr (HERDR_ENV=1) with a vendor herdr can
 # start, the worker is a LIVE agent in its own herdr space you can take over; otherwise it is a
-# one-shot piped into a Terminal.app window. $DISPATCH_TRANSPORT=terminal|herdr forces one.
+# one-shot piped into a Terminal.app window. Inside Wheel (WHEEL_ENV=1) a claude worker is a
+# LIVE claude in a terminal pane split off this session's pane, in this session's space
+# (`wheel-agent`). $DISPATCH_TRANSPORT=terminal|herdr|wheel forces one.
 # Either way the caller's contract is identical — prompt in a file, answer in <outfile>.
 #
 # Selection: $CLAUDE_DISPATCH_AGENT, set per-profile in settings.local.json
@@ -33,6 +36,9 @@
 # (default auto — the auto-mode classifier approves or refuses each call, so a
 # session nobody is watching does not stop on a prompt; hooks and deny rules
 # still apply).
+# $CLAUDE_DISPATCH_REMOTE_CONTROL=<name> starts a herdr-hosted claude worker with
+# Remote Control on under that session name (interactive only; a one-shot -p run
+# in Terminal.app ignores it).
 # $CLAUDE_DISPATCH_SETTINGS=<file-or-json> passes `--settings` to a claude worker — how
 # swarm turns off a plugin, such as rust-analyzer, for its workers.
 set -eu
@@ -95,12 +101,29 @@ resolve_transport() {
           echo "dispatch: DISPATCH_TRANSPORT=herdr but '$a' is not in herdr's --kind enum" >&2; return 1
         fi
         printf 'herdr\tforced by DISPATCH_TRANSPORT; it gets %s\n' "$(space_kind)"; return 0 ;;
-      *) echo "dispatch: unknown DISPATCH_TRANSPORT '$forced' (expected terminal|herdr)" >&2; return 1 ;;
+      wheel)
+        if [ "${WHEEL_ENV:-}" != "1" ]; then
+          echo "dispatch: DISPATCH_TRANSPORT=wheel but this session is not inside Wheel (WHEEL_ENV != 1)" >&2; return 1
+        fi
+        if [ "$a" != claude ]; then
+          echo "dispatch: DISPATCH_TRANSPORT=wheel runs only claude workers, not '$a'" >&2; return 1
+        fi
+        printf 'wheel\tforced by DISPATCH_TRANSPORT; it gets a pane in space %s\n' "${WHEEL_SPACE:-?}"; return 0 ;;
+      *) echo "dispatch: unknown DISPATCH_TRANSPORT '$forced' (expected terminal|herdr|wheel)" >&2; return 1 ;;
     esac
   fi
 
-  if [ "${HERDR_ENV:-}" != "1" ]; then
-    printf 'terminal\tnot inside herdr\n'
+  # wheel-agent learns a worker's state from Claude Code hooks, so it runs only claude.
+  if [ "${HERDR_ENV:-}" != "1" ] && [ "${WHEEL_ENV:-}" = "1" ]; then
+    if [ "$a" != claude ]; then
+      printf "terminal\tinside Wheel, but wheel-agent runs only claude, not '%s'\n" "$a"
+    elif ! command -v wheel >/dev/null 2>&1; then
+      printf 'terminal\tinside Wheel, but the wheel CLI is not on PATH\n'
+    else
+      printf 'wheel\tinside Wheel; it gets a pane split off %s in space %s\n' "${WHEEL_PANE:-?}" "${WHEEL_SPACE:-?}"
+    fi
+  elif [ "${HERDR_ENV:-}" != "1" ]; then
+    printf 'terminal\tnot inside herdr or Wheel\n'
   elif [ -z "$kind" ]; then
     printf "terminal\tinside herdr, but '%s' is not in herdr's --kind enum\n" "$a"
   elif ! command -v herdr >/dev/null 2>&1; then
@@ -160,7 +183,7 @@ cmd_exec() {
   local promptfile="${1:-}" outfile="${2:-}"
   if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
     echo "usage: dispatch exec [--headless] [--name <name>] <prompt-file> <outfile>" >&2
-    echo "  env: CLAUDE_DISPATCH_AGENT (codex|reasonix|claude), CLAUDE_DISPATCH_MODEL, CLAUDE_DISPATCH_PERMISSION_MODE, CLAUDE_DISPATCH_SETTINGS, DISPATCH_TRANSPORT (terminal|herdr)" >&2
+    echo "  env: CLAUDE_DISPATCH_AGENT (codex|reasonix|claude), CLAUDE_DISPATCH_MODEL, CLAUDE_DISPATCH_PERMISSION_MODE, CLAUDE_DISPATCH_REMOTE_CONTROL, CLAUDE_DISPATCH_SETTINGS, DISPATCH_TRANSPORT (terminal|herdr|wheel)" >&2
     return 2
   fi
   [ -f "$promptfile" ] || { echo "dispatch: prompt file not found: $promptfile" >&2; return 1; }
@@ -177,6 +200,15 @@ cmd_exec() {
 
   local rc=0
 
+  if [ "$transport" = "wheel" ]; then
+    local -a wargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
+    [ -n "${CLAUDE_DISPATCH_MODEL:-}" ] && wargs+=(--model "$CLAUDE_DISPATCH_MODEL")
+    [ -n "${CLAUDE_DISPATCH_REMOTE_CONTROL:-}" ] && wargs+=(--remote-control "$CLAUDE_DISPATCH_REMOTE_CONTROL")
+    [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && wargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS")
+    "$(cd "$(dirname "$0")" && pwd -P)/wheel-agent" run "$promptfile" "$outfile" -- "${wargs[@]}" || rc=$?
+    return "$rc"
+  fi
+
   if [ "$transport" = "herdr" ]; then
     # A live interactive agent in its own herdr space — the user can watch it, type at it, and
     # keep it after this session ends. It is the agent's own TUI, so there are no
@@ -185,6 +217,7 @@ cmd_exec() {
     case "$a" in
       claude) iargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
               [ -n "${CLAUDE_DISPATCH_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DISPATCH_MODEL")
+              [ -n "${CLAUDE_DISPATCH_REMOTE_CONTROL:-}" ] && iargs+=(--remote-control "$CLAUDE_DISPATCH_REMOTE_CONTROL")
               [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && iargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS") ;;
       codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac

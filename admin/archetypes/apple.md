@@ -220,7 +220,7 @@ mac_asset_dir = "App/Assets.xcassets/AppIcon.appiconset"
 ```
 
 - Refresh production icons: `admin icons regenerate`
-- The dev build auto-gets: DEV banner (overlaid → flattened to RGB → restored
+- `dev_mac` and `deploy_mac_dev` (the dev variant installed at `mac_install_path_dev` and launched, then done) both get: DEV banner (overlaid → flattened to RGB → restored
   after build) and the renamed `.app`.
 
 ### Warnings as errors belongs in the project spec, not in `admin.toml`

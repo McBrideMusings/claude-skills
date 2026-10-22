@@ -1,6 +1,6 @@
 ---
 name: swarm
-description: "Burn down a repo's beads with several unattended Claude workers at once, each an `implement <id> auto` pass in its own worktree and herdr space, refilling a slot whenever one finishes. Optional focus steers what it picks: `swarm the web browser feature`, `swarm epic:cc-12`, `swarm label:client 4`. `swarm feedback` grills the user's feedback one item at a time, files each as a bead and swarms it while intake continues. Use for 'run a swarm', 'burn down the backlog in parallel', 'have agents work through the client issues', 'a feedback session'."
+description: "Burn down a repo's beads with several unattended Claude workers at once, each an `implement <id> auto` pass in its own worktree and its own herdr space or Wheel pane, refilling a slot whenever one finishes. Optional focus steers what it picks: `swarm the web browser feature`, `swarm epic:cc-12`, `swarm label:client 4`. `swarm feedback` grills the user's feedback one item at a time, files each as a bead and swarms it while intake continues. Use for 'run a swarm', 'burn down the backlog in parallel', 'have agents work through the client issues', 'a feedback session'."
 ---
 
 # Swarm
@@ -19,7 +19,7 @@ What `swarm` reuses rather than owns:
 | `epic:` / `label:` / bare-id / free-text scopes | [`../implement/SELECTORS.md`](../implement/SELECTORS.md) |
 | An epic's parallel waves | `bd swarm validate <epic>` |
 | The worker's whole pass, its landing and its parking | `implement <id> auto` |
-| The herdr space, the outfile, the wait | `dispatch exec`, via the `swarm launch` script |
+| The herdr space or Wheel pane, the outfile, the wait | `dispatch exec`, via the `swarm launch` script |
 
 A swarm is **report-back** ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) § Who feeds the
 result back): the lead waits for each worker, reads its outfile and verifies what it claims.
@@ -66,12 +66,18 @@ continues as `implement <id> auto` for the top bead `next-work` ranked and says 
 "$HOME/.claude/skills/swarm/swarm" check
 ```
 
-It refuses outside herdr, on a repo `repo-tier` does not call `owned` (workers land themselves),
-and when `bd` or the Claude login is broken. A refusal ends the run; report it. Exit 4 is the
-one exception: write the project skill's `swarm.md` (§ Project support) and check again.
-It opens the repo's herdr space when none is open, so every worker nests under it as a child
-space; `launch` refuses until that space exists. It prints the runtimes it found, their pages,
-and the environment and settings every worker gets — put those in the first status line.
+It refuses outside herdr and Wheel, on a repo `repo-tier` does not call `owned` (workers land
+themselves), and when `bd` or the Claude login is broken. A refusal ends the run; report it.
+Exit 4 is the one exception: write the project skill's `swarm.md` (§ Project support) and check
+again. It prints the runtimes it found, their pages, and the environment and settings every
+worker gets — put those in the first status line.
+
+Where workers run depends on the multiplexer the lead is in (herdr wins when both are set):
+
+| Lead in | Each worker | Set up by `check` |
+| --- | --- | --- |
+| herdr | a child space nested under the repo's space | opens the repo's space when none is open; `launch` refuses until it exists |
+| Wheel | a terminal pane in the lead's own space: the first splits off the lead's pane to the right, each later one stacks under the newest worker | nothing; Wheel tracks no terminal agent's state, so `dispatch/wheel-agent` merges hooks into the worker's `--settings` that write `working`, `blocked` or `idle` to `<worktree git dir>/wheel-agent/state` |
 
 **Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project skill's `swarm.env` caps
 it; say so when it lowers the user's number.
@@ -90,13 +96,13 @@ quota refusal, this one holds the queue rather than ending the run: launch nothi
 running worker finishes, then try that slot's launch again.
 
 **The run log.** Start every run with `swarm log run "" "focus=<focus> n=<n>"`. `log run`
-adds the lead's pid and the herdr space's label to the line. `launch` logs
+adds the lead's pid and the repo's name to the line. `launch` logs
 `launched` and `finished` itself; the lead logs `landed`, `parked`, `failed` and `applied` as it
 records each one in step 5, and `end` when the run is over (§6). **A lead that starts without this run's context — after a
 compaction, a relay or a restart — runs `swarm status` before anything else**: it prints the
-current run's events and every bead launched but not finished, with its herdr agent state. Those
+current run's events and every bead launched but not finished, with its agent state. Those
 workers are still running; wait for them as step 4 says, and never launch their beads again.
-After a reboot their agents read `no space` and are gone, but their worktrees keep the work:
+After a reboot their agents read `no space` (herdr) or `no pane` (Wheel) and are gone, but their worktrees keep the work:
 relaunch each with `swarm launch <id> <model> --resume`, which reuses the worktree and the
 claim and tells the new worker to carry on from what is there.
 
@@ -181,8 +187,9 @@ command through `swarm heavy`. stdout is one line: bead, exit code, outfile, wor
 `--dry-run` prints the environment, settings and brief and creates nothing.
 
 The harness notifies you when a launch exits. Never poll with `ScheduleWakeup`. A worker stuck
-on a permission prompt shows in herdr's sidebar as blocked and in its launch log; if the user
-asks how the run is going, name blocked workers and their panes.
+on a permission prompt shows as blocked in herdr's sidebar, or as `blocked (pane <id>)` in
+`swarm status` under Wheel, and in its launch log; if the user asks how the run is going, name
+blocked workers and their panes.
 
 ## 5. When a worker finishes
 
@@ -199,9 +206,8 @@ asks how the run is going, name blocked workers and their panes.
    skills — because every worker shares it. Make each change in the main checkout, where the
    path points, after checking it still fits what landed. Two workers' changes to one file are
    merged here, by hand, in landing order. `swarm log applied <id> "<path>"` for each.
-4. Close its space: `herdr workspace list`, find the one whose cwd is the worker's worktree,
-   `herdr worktree remove --workspace <id> --force` when it landed (git-sweep reaps any left),
-   `herdr workspace close <id>` when it parked so the branch stays for the user.
+4. Close its space or pane: `swarm close <id> landed` also removes the worktree (git-sweep
+   reaps any left); `swarm close <id> parked` keeps the worktree and branch for the user.
 5. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
    free slot.
 

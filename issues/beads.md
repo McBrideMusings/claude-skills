@@ -296,9 +296,11 @@ the wiser:
 
 ```bash
 bd init --stealth --skip-agents --skip-hooks
-bd setup claude --stealth
 ```
 
+- **Never run `bd setup claude` here, `--stealth` included.** It appends a beads block to the
+  tracked `CLAUDE.md` and adds a `bd prime` hook to the tracked `.claude/settings.json`
+  (reformatting it), so both show up in `git status`.
 - `--stealth` configures git so beads files are never committed (`.git/info/exclude`, which is
   never pushed). No `.gitignore` diff appears.
 - `--skip-agents` is not stealth-specific — it is the default everywhere, for the reasons above.

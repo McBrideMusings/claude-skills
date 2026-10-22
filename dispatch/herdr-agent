@@ -234,8 +234,15 @@ Do not summarise it there; that file IS your answer and is the only part that is
     done
     if pane_shows "$line"; then
       herdr agent send-keys "$slug" enter >/dev/null 2>&1 || true
-      first="$(herdr agent wait "$slug" --until working --until blocked --timeout 15000 2>/dev/null \
+      first="$(herdr agent wait "$slug" --until working --until blocked --timeout "$REGISTER_MS" 2>/dev/null \
         | jq -r '.result.agent.agent_status // empty')" || first=""
+    fi
+    # herdr gives up on a prompt after 5s of idle (`agent_prompt_stalled`) whatever
+    # --timeout says, and a brief that opens with a skill load can sit that long before
+    # the pane reports working. Read the pane once more before calling the run lost.
+    if [ -z "$first" ]; then
+      first="$(herdr pane get "$pane" 2>/dev/null | jq -r '.result.pane.agent_status // empty')" || first=""
+      case "$first" in working|blocked) ;; *) first="" ;; esac
     fi
   fi
   wait_finished "$first" || echo "herdr-agent: stopped waiting on $slug — its pane is $pane" >&2
