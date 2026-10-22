@@ -46,12 +46,12 @@ wait_pane_ready() {
 # `herdr workspace create` has no parent option, so this space sits at the top of the sidebar.
 new_space() {
   local created
-  created="$(herdr workspace create --cwd "$PWD" --label "$slug" --no-focus)" || {
+  created="$(herdr workspace create --cwd "$PWD" --label "$label" --no-focus)" || {
     echo "herdr-agent: could not create a space in $PWD" >&2; return 1; }
   pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
   tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
   ws="$(printf '%s' "$created" | jq -r '.result.workspace.workspace_id // empty')"
-  where="standalone space $slug ($ws)"
+  where="standalone space $label ($ws)"
   [ -n "$pane" ] || { echo "herdr-agent: no pane id came back for $where" >&2; return 1; }
 }
 
@@ -78,8 +78,9 @@ repo_space() {
 # herdr tracks gets a child space nested under the repo's space, the same place
 # `herdr worktree create --workspace` puts one. Everything else gets a standalone top-level
 # space: the main checkout, a worktree herdr refuses (one of the skills submodule), a
-# directory that is not a repo. The only tab ever added is `dispatch-<pid>`, in a child
-# space that was already open when we got here.
+# directory that is not a repo. The only tab ever added is one labelled with the dispatch's
+# name, in a child space that was already open when we got here; a child space this call
+# opens is renamed to the name.
 place_pane() {
   local gitdir common top repo_ws opened already created id
   gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null || true)"
@@ -99,15 +100,22 @@ place_pane() {
   ws="$(printf '%s' "$opened" | jq -r '.result.workspace.workspace_id // empty')"
   already="$(printf '%s' "$opened" | jq -r '.result.already_open')"
   if [ "$already" = "true" ]; then
-    created="$(herdr tab create --workspace "$ws" --cwd "$PWD" --label "$slug" --no-focus)" || {
+    created="$(herdr tab create --workspace "$ws" --cwd "$PWD" --label "$label" --no-focus)" || {
       echo "herdr-agent: could not create a tab in space $ws" >&2; return 1; }
     pane="$(printf '%s' "$created" | jq -r '.result.root_pane.pane_id // empty')"
     tab="$(printf '%s' "$created" | jq -r '.result.tab.tab_id // empty')"
+    where="child space $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)${repo_ws:+ of $repo_ws}"
   else
     pane="$(printf '%s' "$opened" | jq -r '.result.root_pane.pane_id // empty')"
     tab="$(printf '%s' "$opened" | jq -r '.result.tab.tab_id // empty')"
+    if [ -n "${DISPATCH_NAME:-}" ]; then
+      herdr workspace rename "$ws" "$label" >/dev/null 2>&1 \
+        || echo "herdr-agent: could not rename space $ws to '$label'" >&2
+      where="child space $label ($ws)${repo_ws:+ of $repo_ws}"
+    else
+      where="child space $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)${repo_ws:+ of $repo_ws}"
+    fi
   fi
-  where="child space $(printf '%s' "$opened" | jq -r '.result.workspace.label // empty') ($ws)${repo_ws:+ of $repo_ws}"
   [ -n "$pane" ] || { echo "herdr-agent: no pane id came back for $where" >&2; return 1; }
 }
 
@@ -156,8 +164,13 @@ cmd_run() {
   [ "${HERDR_ENV:-}" = "1" ] || { echo "herdr-agent: not running inside herdr (HERDR_ENV != 1)" >&2; return 1; }
   need herdr; need jq
 
-  # Agent names must match [a-z][a-z0-9_-]{0,31} and be unique among live agents.
-  local slug="dispatch-$$"
+  # The space's label is the dispatch's name ($DISPATCH_NAME, from `dispatch exec --name`),
+  # else the directory's name. The agent's own name must match [a-z][a-z0-9_-]{0,31} and be
+  # unique among live agents, so it is the label made legal plus this process id.
+  local label="${DISPATCH_NAME:-$(basename "$PWD")}"
+  local stem
+  stem="$(printf '%s' "$label" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_-' '-' | tr -s '-' | sed 's/^[^a-z]*//; s/-*$//' | cut -c1-24)"
+  local slug="${stem:-dispatch}-$$"
 
   : > "$outfile"
 

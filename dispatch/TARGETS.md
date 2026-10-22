@@ -38,11 +38,12 @@ pane the user is reading. The sidebar shape depends on the directory `dispatch e
   create` takes `--cwd`, `--label`, `--env` and `--focus`/`--no-focus`, and has no parent option.
 - **Standalone space.** Run from anywhere else — read-only work in the main checkout, a worktree
   herdr refuses to open (one of the skills submodule), a directory that is not a repo — it runs
-  `herdr workspace create --cwd <dir> --label <slug> --no-focus`, a top-level space of its own.
+  `herdr workspace create --cwd <dir> --label <name> --no-focus`, a top-level space of its own.
   It never falls back to `herdr tab create` in the caller's space.
 
-The one tab `herdr-agent` still adds is `dispatch-<pid>`, when the child space was already open;
-otherwise the agent runs in the first tab of the space it started. Its stderr names the space
+The one tab `herdr-agent` still adds is labelled with the dispatch's name, when the child space
+was already open; otherwise the agent runs in the first tab of the space it started, and a child
+space it opened is renamed to the name (`herdr workspace rename`). Its stderr names the space
 (and whether it is a child) and the pane, and prints again each time the agent stops on a
 permission prompt.
 
@@ -124,15 +125,20 @@ For `workspace`, make the worktree with plain git, link its local files, and run
 ```
 git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
 CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
-( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec <brief> <outfile> )
+( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec --name "<what the work is>" <brief> <outfile> )
 ```
+
+**Always pass `--name`**: two to five words saying what the worker does ("profile-first spike",
+"fix login redirect"). It becomes the space's label in the sidebar, so the user can tell the
+spaces apart; without it the label is the directory's name.
 
 `herdr-agent` then opens the worktree's child space under the repo's
 (`herdr worktree open --workspace <repo-workspace-id>`), and it starts the agent in that
 space's first tab. **Never open the space yourself before `dispatch exec`**, whether with
 `herdr worktree create` or `herdr worktree open`. `herdr-agent` finds the space already open,
-adds a `dispatch-<pid>` tab for the agent, and leaves the first tab as an empty shell. For the
-same reason, never `herdr workspace create --cwd <worktree-path>` and never a custom `--label`.
+adds a tab for the agent, and leaves the first tab as an empty shell. For the same reason, never
+`herdr workspace create --cwd <worktree-path>`; the name goes through `--name`, never a
+`--label` of your own.
 Worktrees go under `~/.worktrees/<repo>/<branch>`, the `[worktrees] directory` in
 `~/.config/herdr/config.toml`.
 

@@ -8,8 +8,11 @@
 #   dispatch agent                       print the resolved agent (codex|reasonix|claude), or fail
 #   dispatch transport                   print the transport `exec` would use, and why
 #   dispatch check                       is the resolved agent authed & reachable? (exit 0/1)
-#   dispatch exec [--headless] <prompt-file> <outfile>
+#   dispatch exec [--headless] [--name <name>] <prompt-file> <outfile>
 #                                          run the agent with the prompt; output to <outfile>.
+#                                          --name: what the work is, a few words ("profile-first spike").
+#                                          The herdr space (or tab) carries it as its label; without it
+#                                          the label is the directory's name.
 #                                          default: in whichever watchable surface this session lives in —
 #                                          a herdr space when we're inside herdr, else a Terminal.app window.
 #                                          --headless: no surface — run as a plain subprocess (backend-only,
@@ -146,10 +149,17 @@ cmd_check() {
 cmd_exec() {
   local a; a="$(resolve_agent)" || return 1
   local headless=0
-  if [ "${1:-}" = "--headless" ]; then headless=1; shift; fi
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --headless) headless=1; shift ;;
+      --name) [ -n "${2:-}" ] || { echo "dispatch: --name needs a value" >&2; return 2; }
+              export DISPATCH_NAME="$2"; shift 2 ;;
+      *) break ;;
+    esac
+  done
   local promptfile="${1:-}" outfile="${2:-}"
   if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
-    echo "usage: dispatch exec [--headless] <prompt-file> <outfile>" >&2
+    echo "usage: dispatch exec [--headless] [--name <name>] <prompt-file> <outfile>" >&2
     echo "  env: CLAUDE_DISPATCH_AGENT (codex|reasonix|claude), CLAUDE_DISPATCH_MODEL, CLAUDE_DISPATCH_PERMISSION_MODE, CLAUDE_DISPATCH_SETTINGS, DISPATCH_TRANSPORT (terminal|herdr)" >&2
     return 2
   fi
@@ -214,5 +224,5 @@ case "${1:-}" in
   transport) cmd_transport ;;
   check)     cmd_check ;;
   exec)      shift; cmd_exec "$@" ;;
-  *) echo "usage: dispatch {agent|transport|check|exec [--headless] <prompt-file> <outfile>}" >&2; exit 2 ;;
+  *) echo "usage: dispatch {agent|transport|check|exec [--headless] [--name <name>] <prompt-file> <outfile>}" >&2; exit 2 ;;
 esac

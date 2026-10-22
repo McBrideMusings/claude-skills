@@ -61,7 +61,7 @@ dispatch check
     → is the resolved agent authenticated & reachable? exit 0 = ready, nonzero + message.
     → this IS the health gate — run it first; halt the skill on nonzero.
 
-dispatch exec [--headless] <prompt-file> <outfile>
+dispatch exec [--headless] [--name <name>] <prompt-file> <outfile>
     → run the resolved agent with the prompt in <prompt-file>; its answer lands in
       <outfile>. Blocks until the agent finishes, then returns. There is no "review" verb —
       a review is just an exec whose prompt asks for a review.
@@ -144,7 +144,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 ### herdr — a live agent in its own space (`herdr-agent` in this directory)
 
-`herdr-agent` gives the worker a **space** (herdr's workspace), never a tab of the caller's. Run from a linked worktree of a repo herdr tracks, it runs `herdr worktree open --workspace <repo-workspace-id>`: a child space nested under the repo's space, with the agent in its first tab. Anywhere else — read-only work in the main checkout, a worktree herdr refuses (one of the skills submodule), a directory that is not a repo — it runs `herdr workspace create --cwd <dir> --label <slug> --no-focus`: a standalone top-level space, because `herdr workspace create` has no parent option. It never runs `herdr tab create` as a fallback and never `herdr pane split`, which would squeeze the caller's own pane, the one the user is reading. The one tab it still adds is `dispatch-<pid>`, when the child space was already open: never open the space yourself first. Then it waits for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`.
+`herdr-agent` gives the worker a **space** (herdr's workspace), never a tab of the caller's. Run from a linked worktree of a repo herdr tracks, it runs `herdr worktree open --workspace <repo-workspace-id>`: a child space nested under the repo's space, with the agent in its first tab. Anywhere else — read-only work in the main checkout, a worktree herdr refuses (one of the skills submodule), a directory that is not a repo — it runs `herdr workspace create --cwd <dir> --label <name> --no-focus`: a standalone top-level space, because `herdr workspace create` has no parent option. It never runs `herdr tab create` as a fallback and never `herdr pane split`, which would squeeze the caller's own pane, the one the user is reading. The one tab it still adds carries the dispatch's name, when the child space was already open: never open the space yourself first. **The name is `dispatch exec --name "<what the work is>"`** — a few words the user can read in herdr's sidebar; the space (a child space it opened is renamed with `herdr workspace rename`) and its tab carry it, and the agent's own name is that text made legal plus the process id. Always pass it; without it the label falls back to the directory's name. Then it waits for the pane to reach its shell prompt → `herdr agent start <slug> --kind <kind> --pane <id>` → `herdr agent prompt … --wait --until idle --until done`.
 
 **Never write `/<skill>` into a dispatched prompt** — slash expansion is an interactive-input feature; text delivered by herdr agent prompt, `--exec`, or a relay arrives as plain user text and is never expanded. Write "call `Skill(<name>)` first, then …" instead.
 
