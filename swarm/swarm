@@ -8,12 +8,16 @@
 #   swarm close <bead-id> landed|parked   close a finished worker's space or pane; landed also
 #                                     removes its worktree
 #   swarm quota                       the repo's profile's 5-hour and weekly usage, and the gate
-#   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log (run, landed,
-#                                     parked, failed, applied, end)
-#   swarm status                      the run log, plus which launched beads are still in flight
+#   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log (run, filed,
+#                                     landed, parked, failed, ready, signed, declined, applied, end)
+#   swarm status                      the run log, the launched beads still in flight, and the
+#                                     sign-off inbox
 #
 # The run log, <scratch>/swarm/run.tsv, is the run's state on disk: launch writes `launched`
 # and `finished`, the lead writes `run`, `landed`, `parked`, `failed`, `applied` and, last, `end`.
+# In sign-off mode the lead writes `ready` when a worker's committed branch checks out, and
+# `signed` or `declined` when the user answers its package; a `ready` with neither after it is
+# in the sign-off inbox.
 # `run` records the lead's pid and the herdr space's label (`pid=<n> space=<label>`); `end` marks
 # the run finished. next-work counts a run live while it has no `end` and its lead pid is alive.
 # A lead that was compacted, relayed or restarted reads `swarm status` first and carries on.
@@ -23,11 +27,14 @@
 # (5-hour, default 90) or SWARM_QUOTA_WEEKLY (default 90) percent, exiting 5.
 #
 # Run check and launch from the repo's main checkout. `launch` makes the worktree and branch
-# swarm/<bead-id> under ~/.worktrees/<repo>/, links its local files, marks it SELF-LAND, writes
-# the brief to the worktree's git dir, and runs `dispatch exec` there as a claude worker with
-# the runtime's and the project's worker environment. The worker runs `implement <bead-id>
-# auto`, which lands its own branch and closes the bead. `launch` blocks until the worker is
-# idle or done; the lead runs one per slot in the background.
+# swarm/<bead-id> under ~/.worktrees/<repo>/, links its local files, writes the brief to the
+# worktree's git dir, and runs `dispatch exec` there as a claude worker with the runtime's and
+# the project's worker environment. The worker runs `implement <bead-id> auto`. The repo's tier
+# sets the landing mode: `owned` is self-land (the worktree is marked SELF-LAND; the worker lands
+# its branch and closes the bead), `collaborative` is sign-off (SWARM_SIGNOFF=1; the worker
+# commits, pushes nothing, and writes a sign-off package for the lead to bring to the user),
+# `unlisted` is refused. `launch` blocks until the worker is idle or done; the lead runs one per
+# slot in the background.
 #
 # `heavy` runs <command> holding one lock per repo, shared by every worktree of it
 # (<git common dir>/swarm-heavy.lock), so the swarm's builds and test runs take turns. The
@@ -87,6 +94,16 @@ runtimes() {
 }
 
 project_skill() { printf '%s/.claude/skills/project' "$1"; }
+
+# selfland (owned) or signoff (collaborative); dies on any other tier.
+landing_mode() {
+  local tier; tier="$("$HOME/.claude/tools/repo-tier" "$1")"
+  case "$tier" in
+    owned) echo selfland ;;
+    collaborative) echo signoff ;;
+    *) die "repo-tier says '$tier' for $1 — a swarm runs only on an owned or collaborative repo" ;;
+  esac
+}
 
 # <scratch>/swarm for the repo, where outfiles and the run log live.
 run_dir() { printf '%s/swarm' "$( cd "$1" && "$HOME/.claude/tools/repo-slug" --path )"; }
@@ -175,7 +192,8 @@ worker_env() {
 # spawns the worker's shell, so nothing exported here reaches it any other way.
 worker_settings() {
   local repo="$1" id="$2" base f env
-  env="$( { worker_env "$repo" "$id"; printf 'SWARM_WORKER=%s\n' "$id"; } \
+  env="$( { worker_env "$repo" "$id"; printf 'SWARM_WORKER=%s\n' "$id"
+            if [ "$(landing_mode "$repo")" = signoff ]; then echo SWARM_SIGNOFF=1; fi; } \
     | jq -Rn '[inputs | capture("^(?<k>[^=]+)=(?<v>.*)$")] | map({(.k): .v}) | add')"
   base="$(jq -cn --argjson env "$env" '{env: $env}')"
   runtimes "$repo" | grep -qx rust && base="$(jq -c --arg p "$RA_PLUGIN" '. * {enabledPlugins: {($p): false}}' <<<"$base")"
@@ -188,10 +206,9 @@ cmd_check() {
   local surf; surf="$(surface)"
   [ -n "$surf" ] || die "not inside herdr or Wheel (HERDR_ENV, WHEEL_ENV) — swarm workers need one to run in"
   need "$surf"
-  local repo tier
+  local repo mode
   repo="$(main_checkout)"
-  tier="$("$HOME/.claude/tools/repo-tier" "$repo")"
-  [ "$tier" = owned ] || die "repo-tier says '$tier' for $repo — swarm workers land themselves, which only an owned repo allows"
+  mode="$(landing_mode "$repo")"
   bd -C "$repo" ready --limit 1 --json >/dev/null 2>&1 || die "bd cannot read the tracker in $repo"
   CLAUDE_DISPATCH_AGENT=claude "$D" check >&2
   # Open the repo's herdr space once, here, so parallel launches never race to create it.
@@ -219,6 +236,7 @@ cmd_check() {
   fi
   local q; q="$(quota_read "$repo")" && echo "swarm: quota (5-hour weekly age dir): $q" >&2
   quota_gate "$repo" || exit 5
+  echo "swarm: landing mode: $mode" >&2
   echo "swarm: ready in $repo; $where" >&2
 }
 
@@ -258,21 +276,40 @@ cmd_launch() {
   outdir="$(run_dir "$repo")"
   outfile="$outdir/$id.md"
 
+  local mode; mode="$(landing_mode "$repo")"
   local pages="" r
   for r in $(runtimes "$repo"); do
     [ -f "$HOME/.claude/skills/ref/$r/swarm.md" ] && pages="$pages
   - $HOME/.claude/skills/ref/$r/swarm.md"
   done
 
+  local landing outcome
+  if [ "$mode" = selfland ]; then
+    landing="Land through \`wrap-up\` as auto mode does — this worktree carries a SELF-LAND marker. Never
+remove this worktree, push its branch or delete a remote branch: \`land\` pushes your commits
+to $base, and the swarm lead tears the worktree down after reading your report."
+    outcome="Say in its first line whether the bead landed (with the commit sha on $base) or was parked
+(with the reason)."
+  else
+    landing="This repo is collaborative, so this pass ends at sign-off (AUTO.md § Swarm workers,
+SWARM_SIGNOFF=1): run \`wrap-up\` through Phase 5's commit and stop. Push nothing, open no PR,
+close no bead, file no follow-up and fix none from the slate — the user signs each of those off
+through the lead. Leave the worktree clean, with every change committed on $branch."
+    outcome="Say in its first line whether the bead is ready for sign-off or was parked (with the
+reason). A ready report carries a section headed exactly \`## Sign-off package\` with:
+  - Branch: \`<type>/<descriptive-name>\` to push as — no bead id anywhere in it
+  - PR title: Conventional Commits, no bead id
+  - PR body: wrap-up's PR body format, no bead id
+  - Follow-ups: every candidate wrap-up Phase 6 Step A would have shown, one line each with its
+    proposed disposition [fix], [file] or [skip] and the file:line it refers to"
+  fi
   local brief
   brief="Call \`Skill(implement)\` first, then run \`implement $id auto\` in this worktree.
 The swarm lead claimed $id for you, so it reads \`in_progress\` (AUTO.md § Swarm workers).
 
 This is one worker in a swarm. Nobody is watching this pane: take every decision the way auto
 mode says, record it as an \`auto decided\` note on the bead, and park the bead rather than wait.
-Land through \`wrap-up\` as auto mode does — this worktree carries a SELF-LAND marker. Never
-remove this worktree, push its branch or delete a remote branch: \`land\` pushes your commits
-to $base, and the swarm lead tears the worktree down after reading your report.
+$landing
 
 Files under \`.claude/\` that are symlinks (check with \`ls -la\`) belong to the main checkout and
 are shared by every worker — the \`project\` skill and other local skills usually are. Never edit
@@ -297,8 +334,7 @@ Model: $model.${reason:+
 Opus reason: $reason}
 
 Mode: report-back. Also write your report, the same text, to \`$outfile\`; the swarm lead reads
-it. Say in its first line whether the bead landed (with the commit sha on $base) or was parked
-(with the reason)."
+it. $outcome"
   [ "$resume" -eq 1 ] && brief="$brief
 
 Resumed: an earlier worker on $id stopped before finishing (its session ended with the
@@ -307,7 +343,7 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
 
   local settings; settings="$(worker_settings "$repo" "$id")"
   if [ "$dry" -eq 1 ]; then
-    echo "swarm: dry run — would create $wt on branch $branch from $base, outfile $outfile" >&2
+    echo "swarm: dry run — would create $wt on branch $branch from $base, outfile $outfile, landing mode $mode" >&2
     echo "swarm: settings: $settings" >&2
     quota_gate "$repo" && echo "swarm: quota allows a launch" >&2
     memory_gate || true
@@ -336,7 +372,7 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     runtimes "$repo" | grep -qx rust && clone_target "$repo" "$wt"
   fi
   local gd; gd="$(git -C "$wt" rev-parse --absolute-git-dir)"
-  touch "$gd/SELF-LAND"
+  [ "$mode" = selfland ] && touch "$gd/SELF-LAND"
   printf '%s\n' "$brief" > "$gd/DISPATCH-BRIEF.md"
   printf '%s\n' "$settings" > "$gd/swarm-settings.json"
   echo "swarm: $id ($model) in $wt" >&2
@@ -402,8 +438,8 @@ lead_pid() {
 cmd_log() {
   local repo detail="${3:-}"; repo="$(main_checkout)"
   case "${1:-}" in
-    run|filed|landed|parked|failed|applied|end) ;;
-    *) die "usage: swarm log <run|filed|landed|parked|failed|applied|end> [<bead-id>] [<detail>]" ;;
+    run|filed|landed|parked|failed|ready|signed|declined|applied|end) ;;
+    *) die "usage: swarm log <run|filed|landed|parked|failed|ready|signed|declined|applied|end> [<bead-id>] [<detail>]" ;;
   esac
   if [ "$1" = run ]; then
     local pid; pid="$(lead_pid)"
@@ -423,6 +459,10 @@ cmd_status() {
     END { for (k in l) print k "\t" l[k] }' "$f" | while IFS="$(printf '\t')" read -r id detail; do
       printf '%s\t%s\tagent %s\n' "$id" "$detail" "$(worker_state "$repo" "$id")"
     done
+  echo "--- sign-off inbox (oldest first)"
+  awk -F'\t' -v s="$start" 'NR >= s && $2 == "ready" { o[++n] = $3; d[$3] = $1 "\t" $4 }
+    NR >= s && ($2 == "signed" || $2 == "declined") { delete d[$3] }
+    END { for (i = 1; i <= n; i++) if (o[i] in d) { print o[i] "\t" d[o[i]]; delete d[o[i]] } }' "$f"
 }
 
 # A launched worker's agent state: herdr's for its space, or wheel-agent's state file while

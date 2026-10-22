@@ -39,6 +39,14 @@ runs as written.
 `relay`, no `swarm`, whatever the §Routing each hop table says. Its `Used` is 1 of 1. The swarm
 lead owns the run state and the routing; the worker's report goes to its outfile.
 
+**A pass with `SWARM_SIGNOFF=1` set ends at its commit.** The swarm sets it on a collaborative
+repo, where the user signs off every outward step through the lead. `wrap-up` runs through
+Phase 5's commit and stops: no push, no PR, no `bd close`, no `bead-pr link`, and Phase 6 Step
+A's follow-up slate is neither applied nor filed — not even its defaults, overriding the
+follow-up and PR rows of §Every wait point. The candidates, the branch name to push as, and the
+PR title and body go in the report's `## Sign-off package` instead, none of them carrying a bead
+id; the brief gives its shape. A parked pass parks as usual.
+
 ## Every wait point, and what auto does instead
 
 | Where a pass waits | What auto does |
