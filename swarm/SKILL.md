@@ -47,16 +47,15 @@ names and every worker's brief points at:
 | Layer | Where | Holds |
 | --- | --- | --- |
 | Runtime | `skills/ref-cells/<runtime>/swarm.md`, picked by marker files (`Cargo.toml` → rust, `go.mod` → go, `pyproject.toml` → python, `package.json` → web, `Package.swift` or an Xcode project → apple) | what is true of every project in that runtime, plus the defaults `swarm launch` sets — for rust, a `CARGO_TARGET_DIR` per worktree cloned from the main checkout's, and rust-analyzer off |
-| Project | `<repo>/.claude/skills/swarm-worker/` | this project's heavy commands, cheap check, shared caches, per-worker resources, queues, slot cap. Wins over the runtime layer |
+| Project | `<repo>/.claude/skills/project/swarm.md` | this project's heavy commands, cheap check, shared caches, per-worker resources, queues, slot cap. Wins over the runtime layer |
 
 ## Project support
 
-Every project with a build or test step keeps a `swarm-worker` skill. `swarm check` exits 4
-without one. Write it then, before any worker starts, from
-[`PROJECT-SKILL.md`](PROJECT-SKILL.md): read the repo's build files, test setup, `admin.toml`
-and verify skill, and answer each section with real commands. Commit it on a branch and land it
-with the swarm's results; `swarm launch` reads it from the main checkout, so workers see it
-before it lands.
+Every project with a build or test step keeps a project skill, and its `swarm.md` is this
+layer. `swarm check` exits 4 without one. Write it then, before any worker starts, with the
+[`project-skills`](../project-skills/SKILL.md) skill ([`swarm.md`](../project-skills/swarm.md)
+says what the section answers). Commit it on a branch and land it with the swarm's results;
+`swarm launch` reads it from the main checkout, so workers see it before it lands.
 
 ## 1. Gate
 
@@ -69,12 +68,12 @@ continues as `implement <id> auto` for the top bead `next-work` ranked and says 
 
 It refuses outside herdr, on a repo `repo-tier` does not call `owned` (workers land themselves),
 and when `bd` or the Claude login is broken. A refusal ends the run; report it. Exit 4 is the
-one exception: write the project's `swarm-worker` skill (§ Project support) and check again.
+one exception: write the project skill's `swarm.md` (§ Project support) and check again.
 It opens the repo's herdr space when none is open, so every worker nests under it as a child
 space; `launch` refuses until that space exists. It prints the runtimes it found, their pages,
 and the environment and settings every worker gets — put those in the first status line.
 
-**Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project's `swarm-worker/env` caps
+**Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project skill's `swarm.env` caps
 it; say so when it lowers the user's number.
 
 **Quota.** `check` and every `launch` read the repo's Claude profile's usage from the status
@@ -176,8 +175,8 @@ other picker offers it; [`../implement/AUTO.md`](../implement/AUTO.md) § Swarm 
 worker's gate accept that), creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
 SELF-LAND, writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
 worker is idle or done. The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
-environment, and the merged `--settings`. Its brief tells it to read the project's
-`swarm-worker` skill and the runtime pages before its first build, and to run every heavy
+environment, and the merged `--settings`. Its brief tells it to read the project
+skill's `swarm.md` and the runtime pages before its first build, and to run every heavy
 command through `swarm heavy`. stdout is one line: bead, exit code, outfile, worktree.
 `--dry-run` prints the environment, settings and brief and creates nothing.
 
@@ -196,7 +195,7 @@ asks how the run is going, name blocked workers and their panes.
    `swarm log landed <id> <sha>`. A parked bead has an `auto parked` note: `swarm log parked
    <id> "<reason>"`. A report that says landed but fails either check is a failed worker.
 3. Apply its `## Shared-file changes`, if the report has any. Workers never edit a file under
-   `.claude/` that is a symlink to the main checkout — `verify-project` and other untracked local
+   `.claude/` that is a symlink to the main checkout — the `project` skill and other untracked local
    skills — because every worker shares it. Make each change in the main checkout, where the
    path points, after checking it still fits what landed. Two workers' changes to one file are
    merged here, by hand, in landing order. `swarm log applied <id> "<path>"` for each.

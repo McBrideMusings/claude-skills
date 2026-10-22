@@ -34,12 +34,12 @@
 # Worker environment, applied in this order (later wins):
 #   1. runtime defaults: rust → CARGO_TARGET_DIR=<worktree>/target (cloned from <main>/target),
 #      rust-analyzer plugin off
-#   2. <main>/.claude/skills/swarm-worker/env — KEY=VALUE lines, $MAIN is the main checkout.
+#   2. <main>/.claude/skills/project/swarm.env — KEY=VALUE lines, $MAIN is the main checkout.
 #      SWARM_MAX_WORKERS=<n> there caps the lead's slots.
-#   3. <main>/.claude/skills/swarm-worker/settings.json — merged into the worker's --settings
+#   3. <main>/.claude/skills/project/swarm-settings.json — merged into the worker's --settings
 #
 # launch's stdout: one line, "<bead-id>\t<exit>\t<outfile>\t<worktree>". Diagnostics go to stderr.
-# check exits 4 when the repo has no swarm-worker skill: the lead writes one, then re-checks.
+# check exits 4 when the repo's project skill has no swarm.md: the lead writes it, then re-checks.
 set -eu
 
 D="$HOME/.claude/skills/dispatch/dispatch"
@@ -73,7 +73,7 @@ runtimes() {
     END { for (k in r) print k }' | sort
 }
 
-project_skill() { printf '%s/.claude/skills/swarm-worker' "$1"; }
+project_skill() { printf '%s/.claude/skills/project' "$1"; }
 
 # <scratch>/swarm for the repo, where outfiles and the run log live.
 run_dir() { printf '%s/swarm' "$( cd "$1" && "$HOME/.claude/tools/repo-slug" --path )"; }
@@ -149,7 +149,7 @@ clone_target() {
 worker_env() {
   local repo="$1" id="$2" f
   runtimes "$repo" | grep -qx rust && printf 'CARGO_TARGET_DIR=%s/target\n' "$(worktree_path "$repo" "$id")"
-  f="$(project_skill "$repo")/env"
+  f="$(project_skill "$repo")/swarm.env"
   [ -f "$f" ] && grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$f" | sed "s#\\\$MAIN#$repo#g"
   return 0
 }
@@ -162,7 +162,7 @@ worker_settings() {
     | jq -Rn '[inputs | capture("^(?<k>[^=]+)=(?<v>.*)$")] | map({(.k): .v}) | add')"
   base="$(jq -cn --argjson env "$env" '{env: $env}')"
   runtimes "$repo" | grep -qx rust && base="$(jq -c --arg p "$RA_PLUGIN" '. * {enabledPlugins: {($p): false}}' <<<"$base")"
-  f="$(project_skill "$repo")/settings.json"
+  f="$(project_skill "$repo")/swarm-settings.json"
   if [ -f "$f" ]; then jq -c --argjson base "$base" '$base * .' "$f"; else printf '%s\n' "$base"; fi
 }
 
@@ -187,8 +187,8 @@ cmd_check() {
     [ -f "$HOME/.claude/skills/ref/$r/swarm.md" ] && echo "swarm:   $HOME/.claude/skills/ref/$r/swarm.md" >&2
   done
   echo "swarm: worker settings: $(worker_settings "$repo" '<bead-id>')" >&2
-  if [ ! -f "$(project_skill "$repo")/SKILL.md" ]; then
-    echo "swarm: no $(project_skill "$repo")/SKILL.md — write the project's swarm-worker skill (swarm SKILL.md § Project support), then check again" >&2
+  if [ ! -f "$(project_skill "$repo")/swarm.md" ]; then
+    echo "swarm: no $(project_skill "$repo")/swarm.md — write the project skill's swarm section (the project-skills skill), then check again" >&2
     exit 4
   fi
   local q; q="$(quota_read "$repo")" && echo "swarm: quota (5-hour weekly age dir): $q" >&2
@@ -222,7 +222,7 @@ cmd_launch() {
   fi
   printf '%s' "$bead" | jq -e 'if type == "array" then .[0] else . end | (.labels // []) | index("human")' >/dev/null \
     && die "bead $id is labelled human — it is a question for iron-out, not work"
-  [ -f "$(project_skill "$repo")/SKILL.md" ] || die "no swarm-worker skill in $repo — run 'swarm check'"
+  [ -f "$(project_skill "$repo")/swarm.md" ] || die "no project skill swarm.md in $repo — run 'swarm check'"
 
   local base wt branch outdir outfile
   branch="swarm/$id"
@@ -249,14 +249,14 @@ remove this worktree, push its branch or delete a remote branch: \`land\` pushes
 to $base, and the swarm lead tears the worktree down after reading your report.
 
 Files under \`.claude/\` that are symlinks (check with \`ls -la\`) belong to the main checkout and
-are shared by every worker — \`verify-project\` and other local skills usually are. Never edit
+are shared by every worker — the \`project\` skill and other local skills usually are. Never edit
 one. When your pass would extend it, put the change in your report under a heading
 \`## Shared-file changes\`: the file's main-checkout path and the exact text to add or replace.
 The lead applies it after your bead lands.
 
 Other workers are building and testing this repo on the same machine right now. Before your
 first build or test, read:
-  - $(project_skill "$repo")/SKILL.md — this project's swarm rules; they win over the pages below${pages}
+  - $(project_skill "$repo")/swarm.md — this project's swarm rules; they win over the pages below${pages}
 
 Run every build, test, lint or other CPU-heavy command through the swarm's lock, so workers
 take turns instead of starving each other:

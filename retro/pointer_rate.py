@@ -57,7 +57,7 @@ Measurement traps this script already avoids -- do not hand-roll around them:
      (trap 9).
   6. A skill loads three ways: a Skill call (`"skill":"name"`, or `"plugin:name"`
      for a scoped one), a typed `/name`, and a Read of its SKILL.md -- `implement`
-     reads a project's verify-project as a file. `--fires` counts all three with
+     reads a project skill as a file. `--fires` counts all three with
      load-pattern.ere, the file hooks/ref-picker.sh reads to decide a skill is
      already loaded.
   7. `--ref`: an edit hook's injection also arrives as a hook_success record carrying the
@@ -95,7 +95,7 @@ MIN_FIRES = 20          # below this a warm rate is noise
 MIN_BYTES = 2000
 # Skills every project carries in its own .claude/skills/ (CLAUDE.md requires them), so
 # model_invoked_skills, which reads only the global catalog, never sees them.
-PROJECT_SKILLS = ("verify-project",)
+PROJECT_SKILLS = ("project",)
 
 # Cold targets: what CLAUDE.md's Knowledge map points at.
 COLD = {

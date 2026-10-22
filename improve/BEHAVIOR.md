@@ -57,7 +57,7 @@ Two kinds, both grounded in a `file:line` and — for anything verified — the 
 ## Where the output lands
 
 - Findings → Phase 08 tickets, like every aspect.
-- Durable prose earned by the pass — the vocabulary and load-bearing numbers → `docs/CONTEXT.md`; a per-surface behavior doc (an automation dictionary, a lifecycle account) → `<repo>/docs/`; verification rows worth keeping → the project's `verify-project` surface or tracked `docs/`.
+- Durable prose earned by the pass — the vocabulary and load-bearing numbers → `docs/CONTEXT.md`; a per-surface behavior doc (an automation dictionary, a lifecycle account) → `<repo>/docs/`; verification rows worth keeping → the project skill's `verify.md` surface or tracked `docs/`.
 - Everything else is scratch under `/private/tmp/claude/<repo-slug>/`. No sibling repo, no coverage table, no standing description artifact.
 
 ## Grilling loop (interactive follow-up)

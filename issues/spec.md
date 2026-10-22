@@ -106,7 +106,7 @@ Slice rules:
 - A slice names at least three files it creates or edits, or it delivers a complete user-visible path on its own. A step below that floor merges into the slice it feeds or the slice that consumes it. Slice by the block of code that merges, per [`./breakdown.md`](./breakdown.md) § How fine to break it down: in a `collaborative` repo whose run becomes one PR, a slice is a chunk a reviewer reads together, so the run gets few; in an `owned` repo a slice may be a small iterative merge, but only with an outcome a test or screenshot can check, and a step without one bundles. Never pick a number first. Two exceptions, each named in the slice's body: a step that several later slices fan out from (a scaffold, a shared module) may stand alone so those slices can run independently of each other once it lands; and an expand–contract stage of a wide refactor keeps its own ticket, as the Wide refactors section below already says. The reason: every pass runs the fixed sequence of steps in `implement/SKILL.md` and pays their cost once per slice, so a slice smaller than that cost is slower to run than to fold in.
 
 **A slice set has no verify ticket and no land ticket.** Landing is `wrap-up`, and
-`verify-project` runs after the last slice. File one `human` verify ticket for the run only when
+The project skill's `verify.md` runs after the last slice. File one `human` verify ticket for the run only when
 a person has to look at something a session cannot stand in for (a real account, a device, a
 visual sign-off); its `--acceptance` says what to look at and what a pass looks like. Backend or
 text work the tests cover gets none. The shape is in [`./breakdown.md`](./breakdown.md).

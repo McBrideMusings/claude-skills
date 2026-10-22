@@ -97,7 +97,7 @@ A verify method — randomized input.
 A verify method — the user operates it; what "Manual testing steps" hands them.
 
 **harness**:
-The Claude Code runtime, never a test rig; a project's test rig is its `verify-project`.
+The Claude Code runtime, never a test rig; a project's test rig is its project skill's `verify.md`.
 
 ### Dispositions
 

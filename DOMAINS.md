@@ -97,11 +97,11 @@ rather than staying silent, because silence there is indistinguishable from "no 
 | `diagnose` | `ref/<label>/diagnose.md`, `ref/<label>/profiling.md` (perf) | Phase 04 (Instrument) |
 | `profiling` | `ref/<label>/profiling.md` | after label detect |
 | `ref/testing/writing.md` | `ref/<label>/testing.md` | choosing the seam and harness for a test |
-| project `verify` | `ref/<label>/testing.md` | when a repo's own `.claude/skills/verify-project/` drives the change |
+| project `verify.md` | `ref/<label>/testing.md` | when a repo's own `.claude/skills/project/verify.md` drives the change |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
 store directly. The testing axis reaches verification two ways instead: `ref/testing/writing.md` points at it
-when writing tests, and a **project-local** `verify` skill (which built-in `verify` bootstraps per repo) can read
+when writing tests, and a repo's own `project` skill (written by `project-skills`) can read, in its `verify.md`,
 `ref/<label>/testing.md` for stack-specific drive/harness knowledge.
 
 The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique

@@ -1,18 +1,10 @@
----
-name: verify-skill
-description: "Generate or audit a project's `verify-project` skill — the scripted, evidence-based proof that the real app or tooling works. Load before writing `.claude/skills/verify-project` for a repo that has none, or when auditing an existing one for drift. Covers UI/CLI/service apps and dev-tooling-only repos (hooks, libraries, CLIs with no live app) alike."
----
+# The project skill's `verify.md`
 
-# Generate or audit a `verify-project` skill
-
-Every project keeps `.claude/skills/verify-project` — the scripted way to prove the real
-thing works, never "it built" or "the diff looks right." This skill is how that gets
-written and kept honest. One skill, two modes, chosen by what's on disk:
-
-- **No `.claude/skills/verify-project` yet → Create.**
-- **One exists → Audit.**
-
-Never ask which mode; `test -d .claude/skills/verify-project` answers it.
+`<repo>/.claude/skills/project/verify.md` is the scripted way to prove the real thing works,
+never "it built" or "the diff looks right." This page is how that section gets written and
+kept honest; [`SKILL.md`](SKILL.md) decides Create or Audit for the whole project skill.
+Covers UI/CLI/service apps and dev-tooling-only repos (hooks, libraries, CLIs with no live
+app) alike.
 
 ## Before either mode: pick the template
 
@@ -58,10 +50,9 @@ Answer these by reading the codebase; only ask what you can't observe:
 If the repo doesn't build or start as-is, fix that first (or report precisely) before
 generating — a skill written against a broken base teaches wrong steps.
 
-### 2. Write `.claude/skills/verify-project/SKILL.md`
+### 2. Write `.claude/skills/project/verify.md`
 
-Frontmatter: `name: verify-project`, `description:` naming the app/tooling, the surface,
-and when to reach for it.
+No frontmatter: the project skill's `SKILL.md` carries it and names this section's surface.
 
 **Feature-map template body:**
 
@@ -86,7 +77,7 @@ and when to reach for it.
 - **Helpers** — any shipped script is executable and its invocation is shown in the
   skill body.
 
-**Suite-driven template body** — model this repo's own `.claude/skills/verify-project`
+**Suite-driven template body** — model `~/.claude/.claude/skills/project/verify.md`
 (`~/.claude`'s), adapted to the target repo's actual test tooling:
 
 - Run the whole suite, then the narrowed suite for one change, then one suite directly —
@@ -103,7 +94,7 @@ and when to reach for it.
 
 ### 3. Seed the feature map (feature-map template only)
 
-`.claude/skills/verify-project/features/README.md` plus one file per user-facing feature
+`.claude/skills/project/features/README.md` plus one file per user-facing feature
 (top 3-5 to start, from routes/commands/menus/docs). Each feature file: one H1 + one
 paragraph, then exactly four H2s in order:
 
@@ -127,7 +118,7 @@ step. A generated skill that was never executed is a draft, not a deliverable.
 
 ## Audit mode
 
-Keeps a `verify-project` honest as the app changes. The unit of rigor is the feature (or
+Keeps `verify.md` honest as the app changes. The unit of rigor is the feature (or
 section), not every sentence. For each feature, drive it and confirm the log lines and state
 fields its map entry names still appear; one that names none is a gap against
 [`../ref/observability/checklist.md`](../ref/observability/checklist.md).
@@ -139,8 +130,8 @@ fields its map entry names still appear; one that names none is a gap against
 - **blocked** — coverage couldn't finish or a proven fix couldn't ship safely. Say
   exactly what blocked it.
 
-**Edit scope:** only the verify-project skill's own directory (`SKILL.md`, `features/`,
-its harness scripts). Never edit product code during a run — behavior the map describes
+**Edit scope:** only the project skill's `verify.md`, `features/` and the harness scripts
+in `tools/`. Never edit product code during a run — behavior the map describes
 that the app no longer does is either doc drift (fix the map) or a product regression
 (report it, don't paper over it in docs).
 

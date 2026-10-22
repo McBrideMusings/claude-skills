@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs `verify-project` over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and recorded — and reports what only a person can finish."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs the project skill's `verify.md` over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and recorded — and reports what only a person can finish."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -65,7 +65,7 @@ by `bd epic close-eligible`.
 A pass takes **one slice child** — `myproj-25.1`. A `human` child is never worked as a pass
 from a parent run or a discovered list: it waits for a person. **pierce naming a `human` slice
 directly — `implement <id>`, or "do <id>" in chat — is that person taking it**: remove the
-label (`bd label remove <id> human`) and run the pass. Verification over the epic is this session's, via `verify-project`, and
+label (`bd label remove <id> human`) and run the pass. Verification over the epic is this session's, via the project skill's `verify.md`, and
 landing is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
@@ -82,17 +82,17 @@ slate, one row per step, in plan order:
   a slice that fails the gate  -> what is missing, and who supplies it               [hold]
   every later slice            -> "<id>, after <ids>"                                 [hold]
   `human` slices               -> what pierce has to do or decide                     [hold]
-  after the last slice         -> "verify-project over the epic, then the gate"       [hold]
+  after the last slice         -> "project verify.md over the epic, then the gate"     [hold]
 go -> `implement <epic> auto`: work every [run] row here, one pass per context
 ```
 
 `go` on an epic plan is the ask for every ready slice: it runs `implement <epic> auto`
 ([`AUTO.md`](AUTO.md)), which works the slices one at a time in plan order. After the last slice,
-auto runs `verify-project` over the epic here and stops at the gate.
+auto runs the project skill's `verify.md` over the epic here and stops at the gate.
 
 - **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
   still works them one after another.
-- **An epic with no open slice** still gets a plan: run `verify-project` here, then the gate.
+- **An epic with no open slice** still gets a plan: run the project skill's `verify.md` here, then the gate.
   Never answer "nothing remains" with no next step. Close the epic through `wrap-up` even when
   the tree is clean, never with a hand-run `bd close`.
 - **An epic with no children** is not ready for `implement`; offer `issues spec` to break it
@@ -128,7 +128,7 @@ those two are exempt, both session bookkeeping rather than work in progress:
 In the primary `~/.claude` checkout, a dirty file there belongs to another concurrent session
 sharing that index, not to this pass — not a halt.
 
-**Resolve the verification skill now.** `ls` the absolute path of `<repo>/.claude/skills/verify-project/SKILL.md` and print it. Step 4 reads that file; a pass that verified with its own ad hoc check without reading it has not verified.
+**Resolve the verification skill now.** `ls` the absolute path of `<repo>/.claude/skills/project/verify.md` and print it. Step 4 reads that file; a pass that verified with its own ad hoc check without reading it has not verified.
 
 **No commit-count guard.** One commit on the default branch; as many as the work needs
 elsewhere, squashed by `wrap-up`.
@@ -155,8 +155,8 @@ elsewhere, squashed by `wrap-up`.
    `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green: a `dsys
    check` record the diff added, or an ESLint error, fails the step; a record in the step-1
    baseline does not ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
-4. **Verify at the surface.** The project's own `verify-project` skill owns what verification
-   means here — read `<repo>/.claude/skills/verify-project/SKILL.md` as a file and follow it
+4. **Verify at the surface.** The project skill's `verify.md` owns what verification
+   means here — read `<repo>/.claude/skills/project/verify.md` as a file and follow it
    (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). For a
    feature, the proof includes checklist §4: the state query shows the planned field with raw
    values, and the log file at the path the control surface reports holds the planned lines

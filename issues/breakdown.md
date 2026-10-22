@@ -2,7 +2,7 @@
 
 **Every issue you actually work gets broken down in beads, into the fewest children that each
 end at something a reviewer or a test can check.** There is no verify bead and no land bead by
-default: landing is `wrap-up`, and verification is `verify-project` run after the last slice. How
+default: landing is `wrap-up`, and verification is the project skill's `verify.md`, run after the last slice. How
 many children, and how big, is a judgement about the block of code that merges, set out below.
 
 ## ⛔ Create the children when work starts. Never in advance.
@@ -102,7 +102,7 @@ multi-issue effort with no upstream parent. Type those `-t epic` freely.
 
 ## When a person has to look: one `human` bead, made when it is known
 
-A verify bead is not part of the skeleton. After the last slice, `verify-project` runs inline and
+A verify bead is not part of the skeleton. After the last slice, the project skill's `verify.md` runs inline and
 its result goes in the gate. Create **one** `human` bead for the epic only when something needs
 a person that a session cannot stand in for: a real account, a device, a production surface, a
 visual sign-off. Write what to look at, and what a pass looks like, in `--acceptance`

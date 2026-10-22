@@ -1,31 +1,31 @@
 # Verification
 
-**The project's own `verify-project` skill owns what verification means; do not re-derive its
+**The project skill's `verify.md` owns what verification means; do not re-derive its
 method.** Driving a surface is never generic — a TUI needs a headless frame dump, an iOS app a
 simulator, a Worker a request against a dev server — so the recipe lives per repo, in
-`<repo>/.claude/skills/verify-project/SKILL.md`, and this session reads it as a file and
+`<repo>/.claude/skills/project/verify.md`, and this session reads it as a file and
 follows it.
 
 **Where the recipe comes from, and why it's read as a file rather than invoked as a skill.**
 The bundled `verify` skill is `disable-model-invocation`, so no agent can load it:
 `Skill(verify)` returns `Skill verify cannot be used with Skill tool ... Ask the user to run
-/verify themselves`. So this session reads `verify-project/SKILL.md` as a file and follows it,
+/verify themselves`. So this session reads `project/verify.md` as a file and follows it,
 and writes one when the repo has none. Do not hand-roll the check, do not substitute a test
 run, and do not log a papercut about the bundled skill being unreachable — that is the tool
 working as designed.
 
-- If `<repo>/.claude/skills/verify-project/SKILL.md` exists, that is the recipe running. Trust
+- If `<repo>/.claude/skills/project/verify.md` exists, that is the recipe running. Trust
   it over anything generic.
 - If not, write it — from this repo's `README.md`, `CLAUDE.md` and `admin.toml`, naming *this*
   repo's real surface and commands. A recipe that would read the same in any repo is the weak
   check to avoid, not a bootstrap.
 - **Never name it `verify`.** That collides with the bundled skill, which is why the project
   skill has its own name.
-- **Keep it out of git.** Add `.claude/skills/verify-project` to `<repo>/.git/info/exclude` —
+- **Keep it out of git.** Add `.claude/skills/project` to `<repo>/.git/info/exclude` —
   never `.gitignore`, which is committed. If you find it tracked, untrack it.
 
 **A surface the item names, and that is not listening, is `BLOCKED`, not `SKIP`.** Before
-reading `verify-project/SKILL.md`, check every `host:port` and `http(s)://` URL named in the
+reading `project/verify.md`, check every `host:port` and `http(s)://` URL named in the
 item body, its acceptance criteria, and that file. A closed one halts immediately rather than
 being discovered partway through. `SKIP` reads like a soft pass and nothing forces the
 environment up before the next attempt, so it is the wrong verdict here. `SKIP` remains only
