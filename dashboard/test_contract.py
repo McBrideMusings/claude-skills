@@ -73,8 +73,12 @@ class TestScriptBehaviour(unittest.TestCase):
         self.old_home = os.environ.get("HOME")
         os.environ["HOME"] = self.home.name
         (self.dir / "slug" / "dashboard").mkdir(parents=True)
+        # Inside a Wheel pane the script drives Wheel; these tests cover the Canvas path.
+        self.old_wheel = os.environ.pop("WHEEL_ENV", None)
 
     def tearDown(self):
+        if self.old_wheel is not None:
+            os.environ["WHEEL_ENV"] = self.old_wheel
         os.environ["HOME"] = self.old_home
         self.home.cleanup()
         self.tmp.cleanup()

@@ -20,6 +20,11 @@ the state file:
   dashboard push <slot>                    data | canvas data <artifact_id> -
   dashboard end <slot>                     canvas artifact delete <artifact_id>
 
+Inside a Wheel pane (WHEEL_ENV=1) the slot maps to a machine-scope Wheel artifact shown in a
+pane split to the right of this agent's, instead of a Canvas artifact: post writes its
+index.html and shows it, push is `wheel artifact data <pane>`, end closes the pane and removes
+the artifact. Wheel runs no unattended refresh, so --every and --card do nothing there.
+
 Failures exit 1 with one line on stderr. Log: every verb appends a timestamped line to
 <scratch>/dashboard/dashboard.log.
 """
@@ -39,7 +44,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose"]
+KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose", "swarm"]
 MERMAID_KINDS = {"diagram", "diagnose"}
 MERMAID_SRC = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
 MERMAID_SRI = "sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
@@ -243,8 +248,12 @@ def scripts_for(kind: str) -> str:
     return "\n".join((HERE / f).read_text() for f in files)
 
 
-def shell(state: dict, mode: str) -> str:
+def shell(state: dict, mode: str, host: str = "canvas") -> str:
     kind = state["kind"]
+    # Canvas paints the page's ground in its own theme; a Wheel pane paints nothing, so the page
+    # takes the system's light or dark ground itself.
+    wheel_client = ('<style>:root{color-scheme:light dark}body{background:Canvas;color:CanvasText}</style>'
+                    '<script src=".wheel/client.js"></script>') if host == "wheel" else ""
     data = json.dumps(state).replace("<", "\\u003c")   # no "<" at all, so no </script> or <!-- inside the script
     mermaid = (f'<script src="{MERMAID_SRC}" integrity="{MERMAID_SRI}" crossorigin="anonymous"></script>'
                if mode == "page" and kind in MERMAID_KINDS else "")
@@ -254,6 +263,7 @@ def shell(state: dict, mode: str) -> str:
 <style>{(HERE / "card.css").read_text()}</style>
 <body{body_class}><div id="root"></div>{static}
 {mermaid}
+{wheel_client}
 <script>
 {scripts_for(kind)}
 const MODE = {json.dumps(mode)};
@@ -270,6 +280,7 @@ draw({data});
 addEventListener("message", e => {{
   if (e.source === parent && e.data && e.data.type === "canvas-data" && e.data.value && e.data.value.kind) draw(e.data.value);
 }});
+if (window.wheel) wheel.onData(v => {{ if (v && v.kind) draw(v); }});
 </script></body>
 """
 
@@ -323,8 +334,68 @@ def artifact_id(slot: str) -> str | None:
     fail(f"canvas artifact show {aid} failed: {first_line(out)}")
 
 
+def in_wheel() -> bool:
+    return os.environ.get("WHEEL_ENV") == "1" and bool(os.environ.get("WHEEL_PANE"))
+
+
+def wheel(args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
+    try:
+        out = subprocess.run(["wheel", *args], input=stdin, capture_output=True, text=True, timeout=60)
+    except FileNotFoundError:
+        fail("wheel is not on PATH inside this Wheel pane")
+    except subprocess.TimeoutExpired:
+        fail(f"wheel {' '.join(args[:2])} did not answer within 60s")
+    log(f"wheel {' '.join(args)} -> exit {out.returncode} {out.stderr.strip()[:200]}")
+    return out
+
+
+def wheel_record(slot: str) -> dict | None:
+    """The Wheel artifact recorded for this slot: {"name", "dir", "pane"}, or None."""
+    p = artifact_record(slot)
+    if not p.exists():
+        return None
+    try:
+        rec = json.loads(p.read_text())
+    except json.JSONDecodeError:
+        return None   # a Canvas id from outside Wheel
+    return rec if isinstance(rec, dict) and rec.get("host") == "wheel" else None
+
+
+def wheel_post(slot: str, state: dict) -> None:
+    rec = wheel_record(slot)
+    if not rec:
+        name = re.sub(r"[^a-z0-9]+", "-", f"dash-{scratch_dir().parent.name}-{slot}".lower()).strip("-")
+        # A terminal pane running claude is not a Wheel agent pane, so --ends-with-session
+        # is refused there; a week's expiry clears a dashboard whose `end` never ran.
+        out = wheel(["artifact", "new", name, "--scope", "machine", "--expires", "7d"])
+        if out.returncode != 0:
+            fail(f"wheel artifact new failed: {first_line(out)}")
+        rec = {"host": "wheel", "name": name, "dir": out.stdout.strip().splitlines()[-1], "pane": ""}
+    page = Path(rec["dir"]) / "index.html"
+    page.write_text(shell(state, "page", "wheel"))
+    # Re-pointing a live pane at the artifact reloads it, which picks up links and screenshots.
+    shown = rec["pane"] and wheel(["pane", "kind", rec["pane"], "web", "--artifact", rec["name"],
+                                   "--scope", "machine"]).returncode == 0
+    if not shown:
+        out = wheel(["pane", "split", os.environ["WHEEL_PANE"], "right"])
+        if out.returncode != 0:
+            fail(f"wheel pane split failed: {first_line(out)}; the page is at {page}")
+        rec["pane"] = out.stdout.strip().splitlines()[-1]
+        out = wheel(["pane", "kind", rec["pane"], "web", "--artifact", rec["name"], "--scope", "machine"])
+        if out.returncode != 0:
+            fail(f"wheel pane kind failed: {first_line(out)}; the page is at {page}")
+    artifact_record(slot).write_text(json.dumps(rec))
+    print(json.dumps({"slot": slot, "artifact": rec["name"], "pane": rec["pane"]}))
+
+
 def cmd_post(a) -> None:
     state = build_data(a.slot)
+    if in_wheel():
+        if a.every or a.card:
+            print("dashboard: Wheel runs no unattended refresh and has no feed; push to update",
+                  file=sys.stderr)
+        wheel_post(a.slot, state)
+        return
     site, widget = slot_file(a.slot, "+site"), slot_file(a.slot, "+widget.html")
     site.mkdir(exist_ok=True)
     page = site / "index.html"
@@ -358,6 +429,15 @@ def cmd_post(a) -> None:
 
 def cmd_push(a) -> None:
     state = build_data(a.slot)
+    if in_wheel():
+        rec = wheel_record(a.slot)
+        if not rec:
+            fail(f"no Wheel artifact for slot {a.slot!r}: run `dashboard post {a.slot}` first")
+        out = wheel(["artifact", "data", rec["pane"], "-"], stdin=json.dumps(state))
+        if out.returncode != 0:
+            fail(f"wheel artifact data failed: {first_line(out)}")
+        print(f"pushed {a.slot} to pane {rec['pane']}")
+        return
     aid = artifact_id(a.slot)
     if not aid:
         fail(f"no artifact for slot {a.slot!r}: run `dashboard post {a.slot}` first")
@@ -368,6 +448,17 @@ def cmd_push(a) -> None:
 
 
 def cmd_end(a) -> None:
+    if in_wheel():
+        rec = wheel_record(a.slot)
+        if not rec:
+            fail(f"no Wheel artifact for slot {a.slot!r}: nothing to end")
+        wheel(["pane", "close", rec["pane"]])   # already closed by hand is fine
+        out = wheel(["artifact", "remove", rec["name"], "--scope", "machine"])
+        if out.returncode != 0:
+            fail(f"wheel artifact remove {rec['name']} failed: {first_line(out)}")
+        artifact_record(a.slot).unlink(missing_ok=True)
+        print(f"closed pane {rec['pane']} and removed {rec['name']} for {a.slot}")
+        return
     aid = artifact_id(a.slot)
     if not aid:
         fail(f"no artifact for slot {a.slot!r}: nothing to end")
