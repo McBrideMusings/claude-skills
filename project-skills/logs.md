@@ -34,6 +34,9 @@ user's machines, an iOS app on a phone, a server process, a Docker container, a 
    and that the path from there is `diagnose`, then an `implement` pass, then shipping as the
    project ships.
 
+A container counts as shipped only when a Loki query for its label returns its lines: a collector
+running on the host is not proof, because its allowlist may omit the container.
+
 A runtime that cannot ship its lines anywhere a session can read is a gap: write the shipping
 code (Create step 4 in [`SKILL.md`](SKILL.md)), never leave the section saying "ask the user".
 A library with no process of its own has one line here saying so.
