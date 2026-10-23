@@ -85,7 +85,7 @@ Where workers run depends on the multiplexer the lead is in (herdr wins when bot
 | Lead in | Each worker | Set up by `check` |
 | --- | --- | --- |
 | herdr | a child space nested under the repo's space | opens the repo's space when none is open; `launch` refuses until it exists |
-| Wheel | a terminal pane in the lead's own space: the first splits off the lead's pane to the right, each later one stacks under the newest worker | nothing; Wheel tracks no terminal agent's state, so `dispatch/wheel-agent` merges hooks into the worker's `--settings` that write `working`, `blocked` or `idle` to `<worktree git dir>/wheel-agent/state` |
+| Wheel | a terminal pane in the background space `<repo> swarm`, rooted at the main checkout, which runs with no window, so the lead's screen never moves: the first launch makes it (`wheel space new --background`) and its first worker fills it, the second goes to its right, later ones stack under the newest. The Mac app closes the space when its last worker pane closes, and the next launch makes it again. Bring it forward from the menu bar's Background card to watch the workers | nothing; Wheel tracks no terminal agent's state, so `dispatch/wheel-agent` merges hooks into the worker's `--settings` that write `working`, `blocked` or `idle` to `<worktree git dir>/wheel-agent/state` |
 
 **Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project skill's `swarm.env` caps
 it; say so when it lowers the user's number.

@@ -7,9 +7,15 @@
 # response in <outfile>, blocks until done — and the worker is the claude TUI in a pane you
 # can watch, type at, or take over.
 #
-# Placement: the pane is split off inside the caller's own space ($WHEEL_SPACE), never a new
-# space. The first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one
-# splits the newest live worker pane downward, so workers stack in one column.
+# Placement: by default the pane is split off inside the caller's own space ($WHEEL_SPACE). The
+# first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one splits the
+# newest live worker pane downward, so workers stack in one column.
+#
+# With $WHEEL_AGENT_SPACE set (a space name), workers go to that space instead, made with
+# `wheel space new $WHEEL_AGENT_SPACE_DIR --background` when it is not open: it runs with no
+# window and leaves the caller's screen alone. The first worker takes its empty pane, the second
+# splits it to the right, later ones stack under the newest. The Mac app closes the space once
+# its last pane closes, so the next worker after that makes it again.
 #
 # The pane is a terminal running your shell, so `claude` goes through the shell's profile
 # router and gets every flag herdr would pass it (--permission-mode, --model, --settings).
@@ -27,25 +33,45 @@ READY_S=120          # how long the worker has to report its first state
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "wheel-agent: missing '$1'" >&2; exit 1; }; }
 
-# Panes split off for workers in this space, oldest first, one per line.
-ledger() { printf '%s/wheel-agent-%s.panes' "${TMPDIR:-/tmp}" "$WHEEL_SPACE"; }
+# Panes split off for workers in the target space, oldest first, one per line.
+ledger() { printf '%s/wheel-agent-%s.panes' "${TMPDIR:-/tmp}" "$(printf '%s' "${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" | tr -c 'A-Za-z0-9._-' _)"; }
 
-# Split a new pane for the worker and print its id. Serialised, so parallel launches each
-# stack under the previous worker instead of all splitting the same pane.
-split_pane() {
+# Make or split a pane for the worker, start its terminal, and print its id. Serialised and
+# claimed inside the lock (the terminal starts before the lock is let go), so parallel launches
+# never take the same pane, each stacks under the previous worker, and only one of them makes the
+# background space. A pane start that fails because the Mac app closed the emptied background
+# space in the meantime tries once more, which makes the space again.
+claim_pane() {
   local l; l="$(ledger)"; touch "$l"
   lockf -k -t 60 "$l.lock" /bin/bash -c '
-    l="$1"; lead="$2"; space="$3"
+    set -o pipefail
+    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"
+    if [ -n "$named" ]; then
+      space="$(wheel status | jq -er --arg n "$named" "[.spaces[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
+      if [ -z "$space" ]; then
+        space="$(wheel space new "$home" --name "$named" --background)" || exit 1
+        echo "wheel-agent: opened background space $space ($named) for $home" >&2
+      fi
+      panes="$(wheel pane ls --json | jq -c --arg s "$space" "[.[] | select(.space == \$s)]")"
+      only="$(printf "%s" "$panes" | jq -r "if length == 1 and .[0].kind == \"empty\" then .[0].pane else empty end")"
+      if [ -n "$only" ]; then
+        wheel pane start "$only" terminal >/dev/null || exit 1
+        printf "%s\n" "$only" >> "$l"; printf "%s\n" "$only"; exit 0
+      fi
+      lead="$(printf "%s" "$panes" | jq -r ".[0].pane")"
+    fi
     live="$(wheel pane ls --json | jq -r --arg s "$space" ".[] | select(.space == \$s) | .pane")"
     from=""; dir=right
     for p in $(tail -r "$l"); do
       printf "%s\n" "$live" | grep -qx "$p" && { from="$p"; dir=down; break; }
     done
-    new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
-    new="$(printf "%s" "$new" | grep -o "p[0-9][0-9]*" | head -1)"
-    [ -n "$new" ] || exit 1
+    # In a space of its own the first worker fills it, so the second goes beside it.
+    [ -n "$named" ] && [ "$(printf "%s\n" "$live" | grep -c .)" -eq 1 ] && dir=right
+    new="$(wheel pane split "${from:-$lead}" "$dir" ${named:+--background})" || exit 1
+    wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
-    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE"
+    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" \
+    || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
 }
 
 # The worker's --settings: the caller's (a file or inline JSON, if any) plus the state hooks.
@@ -100,9 +126,8 @@ Do not summarise it there; that file IS your answer and is the only part that is
 ' "  $outfile" '────────────────────────────────────────────────────────────'; } > "$dir/prompt.md"
 
   local pane
-  pane="$(split_pane)" || { echo "wheel-agent: could not split a pane in space $WHEEL_SPACE" >&2; return 1; }
+  pane="$(claim_pane)" || { echo "wheel-agent: could not make and start a pane in space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" >&2; return 1; }
   printf '%s\n' "$pane" > "$dir/pane"
-  wheel pane start "$pane" terminal >/dev/null || { echo "wheel-agent: could not start a terminal in pane $pane" >&2; return 1; }
 
   # Wait for the shell to draw its prompt before typing at it.
   local i=0
@@ -116,7 +141,7 @@ Do not summarise it there; that file IS your answer and is the only part that is
   for a in "${args[@]}"; do cmd="$cmd $(printf '%q' "$a")"; done
   cmd="$cmd \"\$(cat $(printf '%q' "$dir/prompt.md"))\""
   wheel term send "$pane" "$cmd" --enter >/dev/null
-  echo "wheel-agent: claude started in pane $pane of space $WHEEL_SPACE (state in $dir)" >&2
+  echo "wheel-agent: claude started in pane $pane of space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE} (state in $dir)" >&2
 
   i=0
   while [ -z "$(state)" ]; do

@@ -67,7 +67,7 @@ main_checkout() {
 }
 
 # Which multiplexer holds the workers: herdr (a child space per worker) or wheel (a pane per
-# worker, split off the lead's pane in the lead's space). Empty outside both.
+# worker in the repo's background swarm space). Empty outside both.
 surface() {
   if [ "${HERDR_ENV:-}" = "1" ]; then echo herdr
   elif [ "${WHEEL_ENV:-}" = "1" ]; then echo wheel
@@ -77,6 +77,10 @@ surface() {
 # The herdr space of the repo's main checkout, or empty. Workers nest under it as child spaces;
 # without it herdr-agent puts each one at the top level.
 repo_space() { "$HOME/.claude/skills/dispatch/herdr-agent" repo-space "$1"; }
+
+# The background Wheel space a repo's workers run in, by name: one per repo, rooted at its main
+# checkout, so removing a worktree never pulls a space out from under the others.
+wheel_space() { printf '%s swarm' "$(basename "$1")"; }
 
 # Where wheel-agent records a worker's pane id and state: <worktree git dir>/wheel-agent.
 wheel_dir() { printf '%s/wheel-agent' "$(git -C "$(worktree_path "$1" "$2")" rev-parse --absolute-git-dir 2>/dev/null)"; }
@@ -222,7 +226,7 @@ cmd_check() {
     where="workers open as child spaces of $ws"
   else
     [ -n "${WHEEL_SPACE:-}" ] && [ -n "${WHEEL_PANE:-}" ] || die "inside Wheel but WHEEL_SPACE or WHEEL_PANE is unset"
-    where="workers open as panes split off $WHEEL_PANE in Wheel space $WHEEL_SPACE"
+    where="workers open as panes in the background Wheel space '$(wheel_space "$repo")', rooted at $repo; it opens with the first worker and closes with the last"
   fi
   local rts; rts="$(runtimes "$repo" | paste -sd' ' -)"
   echo "swarm: runtimes: ${rts:-none detected}" >&2
@@ -388,7 +392,8 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     # An implement pass routinely outlasts dispatch's 40-minute ceiling.
     export CLAUDE_DISPATCH_AGENT=claude CLAUDE_DISPATCH_MODEL="$model" \
            CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000 \
-           WHEEL_AGENT_TIMEOUT_MS=14400000 WHEEL_AGENT_DIR="$gd/wheel-agent" DISPATCH_TRANSPORT="$surf"
+           WHEEL_AGENT_TIMEOUT_MS=14400000 WHEEL_AGENT_DIR="$gd/wheel-agent" DISPATCH_TRANSPORT="$surf" \
+           WHEEL_AGENT_SPACE="$(wheel_space "$repo")" WHEEL_AGENT_SPACE_DIR="$repo"
     exec "$D" exec --name "$name" "$gd/DISPATCH-BRIEF.md" "$outfile"
   ) >&2 || rc=$?
   log_event "$repo" finished "$id" "exit $rc"
