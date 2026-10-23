@@ -250,7 +250,7 @@ Print the numbered list with each row's chosen disposition as a record, not a qu
 
 *Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work, which the closing sentence names. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-The next work comes from [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work procedure: run it as the first action of the ask pass, before any slate is written. It runs `next-work`, prints its output, and defines the `Next:` line, the closing sentence, and what `go` does outside herdr or in a linked worktree (the session's own checkout — the directory this session stands in, not the `<worktree>` being wrapped — decides that; a session in the primary that wraps a pass's worktree can relay). `<focus>` is the selector the run started with, as typed, or `ready` when none was given.
+The next work comes from [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work procedure: run it as the first action of the ask pass, before any slate is written. It runs `next-work`, prints its output, and defines the `Next:` line, the closing sentence, and what `go` does outside herdr and Wheel or in a linked worktree (the session's own checkout — the directory this session stands in, not the `<worktree>` being wrapped — decides that; a session in the primary that wraps a pass's worktree can relay). `<focus>` is the selector the run started with, as typed, or `ready` when none was given.
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
@@ -366,9 +366,9 @@ precondition, not a nicety.
   or relay was unavailable → stop here as normal.
 - **In an `auto` run** there is no ask to read: invoke `relay` §Auto, which relays or prints
   the run's report. When relay is unavailable, continue the run in this context.
-- **Outside herdr** (`HERDR_ENV` unset) — skip silently. There is no pane to clear.
+- **Outside herdr and Wheel** (`HERDR_ENV` and `WHEEL_ENV` both unset) — skip silently. There is no pane to clear.
 
-Do not clear the pane, send keys, or call `herdr` yourself. `relay` writes a marker;
+Do not clear the pane, send keys, or call `herdr` or `wheel` yourself. `relay` writes a marker;
 the `Stop` hook does the rest after your turn ends. Doing it inline sends input into a
 session that is still busy and Claude Code drops it.
 

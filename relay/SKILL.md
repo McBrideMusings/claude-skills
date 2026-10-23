@@ -1,6 +1,6 @@
 ---
 name: relay
-description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`. Requires HERDR_ENV=1."
+description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`. Requires a herdr pane (HERDR_ENV=1) or a Wheel terminal pane (WHEEL_ENV=1)."
 ---
 
 # Relay
@@ -24,9 +24,10 @@ pane to the orchestration/watch role.
 
 ## Preconditions — check these before writing the marker
 
-1. `test "${HERDR_ENV:-}" = 1`. Outside herdr there is no pane to clear. Say so and
-   stop — today there is no mechanism for carrying work forward outside herdr, so the session
-   keeps its context and either pushes on or ends normally. Do not invent a substitute.
+1. `test "${HERDR_ENV:-}" = 1 || test "${WHEEL_ENV:-}" = 1`. Outside herdr and Wheel there is
+   no pane to clear. Say so and stop — there is no mechanism for carrying work forward outside
+   them, so the session keeps its context and either pushes on or ends normally. Do not invent
+   a substitute.
 2. This pane's own checkout is **finished and landed** — `wrap-up` has committed,
    pushed and landed. A relay clears the context; anything uncommitted in *this*
    checkout is gone. Never relay over a dirty working tree — see §Relaying mid-pass
@@ -71,7 +72,7 @@ next-work options: the tracker's answer is `next-work`'s verdict.
    `issues iron-out label:client` and carries that selector as the new focus. `no relay` stays
    this skill's redirect word: apply the follow-up dispositions, end the turn, clear nothing.
 5. **Session limits change what `go` does, never the output.**
-   - Outside herdr (`test "${HERDR_ENV:-}" = 1` fails) there is no pane to clear: `go`
+   - Outside herdr and Wheel (Precondition 1 fails) there is no pane to clear: `go`
      continues in this context. The tool already replaces a `swarm` verdict with the top bead's
      `implement` pass.
    - In a linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`), print the
@@ -82,7 +83,7 @@ next-work options: the tracker's answer is `next-work`'s verdict.
    `Next:` command, carrying the `Focus:` line.
 
 Preconditions 2 and the worktree seam gate the marker, never the printed output. Precondition 1
-stops only the pane clear: outside herdr, §Ending still prints the verdict and `go` continues in
+stops only the pane clear: outside herdr and Wheel, §Ending still prints the verdict and `go` continues in
 this context. When the user asked for a relay by name and the verdict is `none`, name that in
 one line and let them choose: relay anyway, `dispatch`, or end here.
 
@@ -175,7 +176,7 @@ work on. Nothing else — no recap, no summary, no "let me know if".
 The Stop hook (`~/.claude/hooks/relay-stop.sh`) sees the marker, consumes it, and
 detaches `~/.claude/hooks/relay-send.sh`, which waits for this agent to go idle,
 clears the pane, waits for the session id to change, and delivers the prompt to the
-new session. You do not do any of that yourself, and you never call `herdr` for it —
+new session. You do not do any of that yourself, and you never call `herdr` or `wheel` for it —
 doing it inline sends input into a session that is still busy, and Claude Code drops
 it.
 
@@ -208,7 +209,7 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
    ([`../implement/AUTO.md`](../implement/AUTO.md) §The report). `all` never runs out.
 2. **The next item is the verdict's.** Never re-rank: `Start by:` carries the bead or focus
    `next-work` named, with `auto parked` items already dropped by its scope. Of the checks above,
-   only Preconditions #1 (`HERDR_ENV`) and §Ending's linked-worktree condition apply, and either
+   only Preconditions #1 (`HERDR_ENV` or `WHEEL_ENV`) and §Ending's linked-worktree condition apply, and either
    one continues the run in this context rather than ending it. A remainder that needs the user
    ends the run with the report, not a declined relay.
 3. **Write the marker per Step 4, with the run-state block first in the brief**, copied as it
@@ -220,5 +221,5 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
    reads `Limit` and `Used` from the block, so the count survives the clear.
 4. **End the turn** per Step 5.
 
-Outside herdr, or in a linked worktree, there is no pane to clear: the run continues in this
+Outside herdr and Wheel, or in a linked worktree, there is no pane to clear: the run continues in this
 context, keeping the same block current.
