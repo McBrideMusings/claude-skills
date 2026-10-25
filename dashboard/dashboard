@@ -23,7 +23,9 @@ the state file:
 Inside a Wheel pane (WHEEL_ENV=1) the slot maps to a machine-scope Wheel artifact shown in a
 pane split to the right of this agent's, instead of a Canvas artifact: post writes its
 index.html and shows it, push is `wheel artifact data <pane>`, end closes the pane and removes
-the artifact. Wheel runs no unattended refresh, so --every and --card do nothing there.
+the artifact. --every registers `dashboard data <slot> --out` as the artifact's refresh command,
+which the daemon runs on that interval once the person approves it, writing the pane's
+data/state.json; the pane reloads when it changes. --card does nothing there.
 
 Failures exit 1 with one line on stderr. Log: every verb appends a timestamped line to
 <scratch>/dashboard/dashboard.log.
@@ -38,6 +40,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -192,6 +195,53 @@ def probe_monitor(state: dict, slot: str, record: bool) -> dict:
     return {"readings": readings, "history": history}
 
 
+SWARM = Path.home() / ".claude/skills/swarm/swarm"
+WORK_SNAPSHOT = Path.home() / ".local/bin/work-snapshot"
+
+
+def probe_swarm(state: dict) -> None:
+    """Rows from the lead's work-board declaration (`work-snapshot session`: lanes, models,
+    stages, landed), each running one's agent state and pane from `swarm status`. A failed read
+    keeps the lead's own rows and says why in `live.error`."""
+    sid = state.get("session")
+    if not sid:
+        return
+    try:
+        out = subprocess.run([str(WORK_SNAPSHOT), "session", str(sid)], capture_output=True, text=True,
+                             timeout=30)
+        if out.returncode != 0:
+            raise ValueError(f"exit {out.returncode}: {(out.stderr.strip().splitlines() or [''])[-1]}")
+        snap = json.loads(out.stdout)
+    except (OSError, subprocess.TimeoutExpired, ValueError) as e:   # JSONDecodeError is a ValueError
+        state["live"] = {"error": f"work-snapshot: {e}"}
+        return
+    # "<bead>\t<model> <worktree>\tagent <working|blocked|idle|no pane> (pane <id>)"
+    agents = {}
+    for line in sh(["env", "WHEEL_ENV=1", str(SWARM), "status"]).split("--- in flight\n", 1)[-1].splitlines():
+        if line.startswith("---"):
+            break
+        m = re.match(r"(\S+)\t.*\tagent (\S+(?: \S+)?)(?: \(pane (\w+)\))?$", line)
+        if m:
+            agents[m[1]] = (m[2], m[3] or "")
+    workers, queued = [], []
+    for it in snap.get("items", []):
+        row = {"bead": it["id"], "title": it.get("title") or "", "model": it.get("model") or ""}
+        stage = " · ".join(x for x in (it.get("stage"), it.get("note")) if x)
+        if it.get("state") == "landed":
+            workers.append({**row, "state": "landed", "note": f"landed {it.get('landedAs') or ''}".strip()})
+        elif it.get("state") == "parked":
+            workers.append({**row, "state": "failed", "note": "parked"})
+        elif it.get("lane"):
+            agent, pane = agents.get(it["id"], ("starting", ""))
+            workers.append({**row, "state": "blocked" if agent == "blocked" else "working", "pane": pane,
+                            "note": stage or f"agent {agent}"})
+        else:
+            queued.append({"bead": it["id"], "title": row["title"]})
+    order = {"blocked": 0, "working": 1, "failed": 2, "landed": 3}
+    state["workers"] = sorted(workers, key=lambda w: order[w["state"]])
+    state["queued"] = queued
+
+
 def build_data(slot: str, record: bool = True) -> dict:
     state = load_state(slot)
     kind = state["kind"]
@@ -199,6 +249,8 @@ def build_data(slot: str, record: bool = True) -> dict:
         state["live"] = probe_implement(state)
     elif kind == "monitor":
         state["live"] = probe_monitor(state, slot, record)
+    elif kind == "swarm":
+        probe_swarm(state)
     state["updated"] = now()
     return state
 
@@ -281,6 +333,9 @@ addEventListener("message", e => {{
   if (e.source === parent && e.data && e.data.type === "canvas-data" && e.data.value && e.data.value.kind) draw(e.data.value);
 }});
 if (window.wheel) wheel.onData(v => {{ if (v && v.kind) draw(v); }});
+// A Wheel refresh writes the newest state here; the pane reloads each time it changes.
+if (window.wheel) fetch("data/state.json?t=" + Date.now(), {{ cache: "no-store" }})
+  .then(r => r.ok ? r.json() : null).then(v => {{ if (v && v.kind) draw(v); }}).catch(() => {{}});
 </script></body>
 """
 
@@ -302,10 +357,11 @@ def first_line(out: subprocess.CompletedProcess) -> str:
     return ((out.stderr.strip() or out.stdout.strip()).splitlines() or [f"exit {out.returncode}"])[0]
 
 
-def refresh_command(slot: str) -> str:
+def refresh_command(slot: str, out: str = "") -> str:
     # The host runs this from its own directory; cd back here so `data` finds this
     # checkout's state files and probes this checkout's git.
-    return f"cd {shlex.quote(os.getcwd())} && {shlex.quote(str(HERE / 'dashboard'))} data {shlex.quote(slot)}"
+    return (f"cd {shlex.quote(os.getcwd())} && {shlex.quote(str(HERE / 'dashboard'))} data {shlex.quote(slot)}"
+            + (f" --out {out}" if out else ""))
 
 
 def artifact_record(slot: str) -> Path:
@@ -361,7 +417,7 @@ def wheel_record(slot: str) -> dict | None:
     return rec if isinstance(rec, dict) and rec.get("host") == "wheel" else None
 
 
-def wheel_post(slot: str, state: dict) -> None:
+def wheel_post(slot: str, state: dict, every: int | None) -> None:
     rec = wheel_record(slot)
     if not rec:
         name = re.sub(r"[^a-z0-9]+", "-", f"dash-{scratch_dir().parent.name}-{slot}".lower()).strip("-")
@@ -371,6 +427,18 @@ def wheel_post(slot: str, state: dict) -> None:
         if out.returncode != 0:
             fail(f"wheel artifact new failed: {first_line(out)}")
         rec = {"host": "wheel", "name": name, "dir": out.stdout.strip().splitlines()[-1], "pane": ""}
+    # The daemon runs the refresh with its own PATH; `data` takes this agent's from the record.
+    # Wheel's approval hashes every file in every directory the command names, so a PATH written
+    # into the command would ask again on every package upgrade.
+    rec["path"] = os.environ.get("PATH", "")
+    if every:
+        # `artifact new` takes no refresh, so re-register the folder with one. The daemon runs it
+        # every `every` seconds once the person approves it, into the pane's data directory.
+        wheel(["artifact", "remove", rec["name"], "--scope", "machine"])
+        out = wheel(["artifact", "add", rec["dir"], "--name", rec["name"], "--scope", "machine",
+                     "--command", refresh_command(slot, '"$WHEEL_DATA_DIR/state.json"'), "--every", str(every)])
+        if out.returncode != 0:
+            fail(f"wheel artifact add failed: {first_line(out)}")
     page = Path(rec["dir"]) / "index.html"
     page.write_text(shell(state, "page", "wheel"))
     # Re-pointing a live pane at the artifact reloads it, which picks up links and screenshots.
@@ -391,10 +459,9 @@ def wheel_post(slot: str, state: dict) -> None:
 def cmd_post(a) -> None:
     state = build_data(a.slot)
     if in_wheel():
-        if a.every or a.card:
-            print("dashboard: Wheel runs no unattended refresh and has no feed; push to update",
-                  file=sys.stderr)
-        wheel_post(a.slot, state)
+        if a.card:
+            print("dashboard: Wheel has no feed; --card does nothing there", file=sys.stderr)
+        wheel_post(a.slot, state, a.every)
         return
     site, widget = slot_file(a.slot, "+site"), slot_file(a.slot, "+widget.html")
     site.mkdir(exist_ok=True)
@@ -456,6 +523,8 @@ def cmd_end(a) -> None:
         out = wheel(["artifact", "remove", rec["name"], "--scope", "machine"])
         if out.returncode != 0:
             fail(f"wheel artifact remove {rec['name']} failed: {first_line(out)}")
+        # remove leaves the folder, and a leftover folder makes the slot's next `artifact new` fail.
+        shutil.rmtree(rec["dir"], ignore_errors=True)
         artifact_record(a.slot).unlink(missing_ok=True)
         print(f"closed pane {rec['pane']} and removed {rec['name']} for {a.slot}")
         return
@@ -472,8 +541,11 @@ def cmd_end(a) -> None:
 def main() -> None:
     p = argparse.ArgumentParser(prog="dashboard", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="verb", required=True)
-    for verb in ("path", "page", "widget", "data", "push", "end"):
+    for verb in ("path", "page", "widget", "push", "end"):
         sub.add_parser(verb).add_argument("slot")
+    data = sub.add_parser("data")
+    data.add_argument("slot")
+    data.add_argument("--out", help="write the JSON to this file, only when more than `updated` changed")
     post = sub.add_parser("post")
     post.add_argument("slot")
     post.add_argument("--every", type=int, help="seconds between host-run refreshes; omit to push by hand")
@@ -485,7 +557,24 @@ def main() -> None:
     elif a.verb in ("page", "widget"):
         print(shell(build_data(a.slot, record=False), a.verb))
     elif a.verb == "data":
-        print(json.dumps(build_data(a.slot)))
+        if (rec := wheel_record(a.slot)) and rec.get("path"):
+            os.environ["PATH"] = rec["path"]
+        data = build_data(a.slot)
+        if not a.out:
+            print(json.dumps(data))
+            return
+        # A Wheel pane reloads whenever its data directory changes, so write only a real change,
+        # not a new `updated` stamp alone.
+        out = Path(a.out)
+        try:
+            old = json.loads(out.read_text())
+        except (OSError, ValueError):
+            old = None
+        if isinstance(old, dict) and {**old, "updated": None} == {**data, "updated": None}:
+            return
+        tmp = out.with_name(f"{out.name}.{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(data))
+        tmp.replace(out)
     else:
         {"post": cmd_post, "push": cmd_push, "end": cmd_end}[a.verb](a)
 

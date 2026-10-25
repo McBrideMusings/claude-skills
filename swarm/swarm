@@ -321,6 +321,10 @@ This is one worker in a swarm. Nobody is watching this pane: take every decision
 mode says, record it as an \`auto decided\` note on the bead, and park the bead rather than wait.
 $landing
 
+The lead's dashboard shows each worker's stage from the work board. As each implement step
+starts (plan, edit, build, verify, review, gate), call the \`work_set\` tool with
+\`{kind: \"bead\", id: \"$id\", stage: <the step>, note: <one line: what you are doing>}\`.
+
 Files under \`.claude/\` that are symlinks (check with \`ls -la\`) belong to the main checkout and
 are shared by every worker — the \`project\` skill and other local skills usually are. Never edit
 one. When your pass would extend it, put the change in your report under a heading

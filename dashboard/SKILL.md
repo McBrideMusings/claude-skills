@@ -28,8 +28,9 @@ goes in the state, when to post, when to push, and when the artifact is deleted:
 
 **Inside a Wheel pane** (`WHEEL_ENV=1`) the same verbs drive a Wheel artifact instead of a
 Canvas one: `post` shows the page in a pane split to the right of this agent's, `push` updates
-it in place, `end` closes the pane. Wheel runs no unattended refresh, so `--every` does
-nothing there; push at each change instead.
+it in place, `end` closes the pane. `--every SECS` registers `dashboard data <slot> --out` as the
+artifact's refresh command: once the person approves it, Wheel's daemon runs it on that interval
+and the pane reloads whenever the result changes.
 
 ## The lifecycle
 
