@@ -118,11 +118,17 @@ log_event() {
   printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$2" "${3:-}" "${4:-}" >> "$dir/run.tsv"
 }
 
-# The Claude config dir the repo's sessions use. The shell's own router decides it, from the
-# main checkout, so swarm asks it rather than keeping a second copy of the routing rules.
+# The Claude config dir a worker's `claude` will run under, resolved the way its launch does:
+# the interactive shell in the main checkout (and its profile router, when one is defined), then
+# under Wheel the wrapper's `agent.claude.home` setting, which it applies when the shell set none.
 profile_dir() {
-  ( cd "$1" && zsh -ic '_claude_apply_profile; print -r -- "PROFILE_DIR=${CLAUDE_CONFIG_DIR:-$HOME/.claude}"' 2>/dev/null ) \
-    | sed -n 's/^PROFILE_DIR=//p' | tail -1
+  local dir
+  dir="$( ( cd "$1" && zsh -ic '(( $+functions[_claude_apply_profile] )) && _claude_apply_profile; print -r -- "PROFILE_DIR=${CLAUDE_CONFIG_DIR:-}"' 2>/dev/null ) \
+    | sed -n 's/^PROFILE_DIR=//p' | tail -1)"
+  if [ -z "$dir" ] && [ -n "${WHEEL_ENV:-}" ]; then
+    dir="$(wheel config get agent.claude.home 2>/dev/null)"
+  fi
+  printf '%s\n' "${dir:-$HOME/.claude}"
 }
 
 # Prints "<session%> <weekly%> <age-seconds> <profile-dir>" from the status line's usage cache,

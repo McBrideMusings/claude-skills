@@ -90,8 +90,9 @@ Where workers run depends on the multiplexer the lead is in (herdr wins when bot
 **Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project skill's `swarm.env` caps
 it; say so when it lowers the user's number.
 
-**Quota.** `check` and every `launch` read the repo's Claude profile's usage from the status
-line's cache and refuse, exit 5, at 90% of the 5-hour window or of the week
+**Quota.** `check` and every `launch` read the usage of the Claude profile a worker will run
+under — the shell's `CLAUDE_CONFIG_DIR` in the main checkout, else Wheel's
+`agent.claude.home` under Wheel, else `~/.claude` — from the status line's cache and refuse, exit 5, at 90% of the 5-hour window or of the week
 (`SWARM_QUOTA_SESSION`, `SWARM_QUOTA_WEEKLY` override). An unreadable or stale reading refuses
 too. `swarm quota` prints the reading. When the user tells you to skip the quota check, set
 `SWARM_SKIP_QUOTA=1` on `check` and every `launch` for the rest of the run, without asking. A refused launch is not a failed worker: let the running
