@@ -54,8 +54,9 @@ next-work options: the tracker's answer is `next-work`'s verdict.
    the ids go in `--scope-ids`. On a GitHub-tracked repo, run `gh issue list --state open`
    beside it. The focus is resolved again at every hop, so beads filed mid-run join it.
 2. **Print its output in chat**, unedited: the session line, the scope, the ranked rows and the
-   `Next: <command> — <reason>` line. The `Next:` line is the pick. A message written without
-   this output printed is not ready to send.
+   `Next: <command> — <reason>` line with the epic and beads indented under it. The `Next:` line
+   is the pick. Never cut the output down to the `Next:` line: the bead list under it is what the
+   user approves. A message written without this output printed is not ready to send.
 3. **Slate, then `Next:`.** When the caller has a follow-up slate (`wrap-up` Step A, a swarm's
    or iron-out's own), it goes under the output as slate rows per
    [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row, and the `Next:` line comes last.
