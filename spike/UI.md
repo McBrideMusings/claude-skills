@@ -113,7 +113,9 @@ different motion story). Sharing the project's tokens is *not* convergence; ever
 like it could ship in this product tomorrow.
 
 **When the set collapses** — you cannot fill three real axis positions, or the replacement you just
-wrote is the same idea again — the problem is that every direction came from the same place. Invoke
+wrote is the same idea again — the problem is that every direction came from the same place. For a new
+surface, run `redesign` step 4: it assigns one direction with a roll outside the model
+([`../redesign/SKILL.md`](../redesign/SKILL.md)). For any other collapse, invoke
 `lateral <technique>` with the one that matches, and run its workflow to generate the missing
 directions. **Name the technique** — that skips `lateral`'s own diagnosis, which would otherwise
 re-decide something you have already worked out here. Run one, not both:
