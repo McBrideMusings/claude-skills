@@ -10,18 +10,22 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The carrier.** An option set is written in chat. When the options are visual or structural — UI states, layouts, diagrams, renders — it goes out as one Canvas card (`canvas post`) instead: the decision in prose, then each option under its letter (`1A`, `1B`) with its best argument and its cost in the same block, rendered. Chat then carries only the closing reply line below, never the card's URL. A short decision whose options read fine as text stays in chat.
 
+An option set is plain chat text, never wrapped in a `>` block quote: a quote inside an option would nest, and a chat view draws each level as its own panel.
+
 **Worked example:**
 
-> **1. Where does the retry count live?**
-> **1A. Add a `retry_count` column to `jobs` in `queue.db`, incremented in the worker's catch block** — *my pick*
-> - Survives a process restart — the count is durable, not in-memory
-> - Cost: one migration, plus a backfill for in-flight rows
->
-> **1B. Track it in a `Map<jobId, count>` inside the worker process**
-> - No schema change, ships in one file
-> - Cost: resets to zero on every worker restart, so a flaky deploy silently un-caps retries
->
-> Answer `1A`, or type `go` to take every pick.
+```markdown
+**1. Where does the retry count live?**
+**1A. Add a `retry_count` column to `jobs` in `queue.db`, incremented in the worker's catch block** — *my pick*
+- Survives a process restart — the count is durable, not in-memory
+- Cost: one migration, plus a backfill for in-flight rows
+
+**1B. Track it in a `Map<jobId, count>` inside the worker process**
+- No schema change, ships in one file
+- Cost: resets to zero on every worker restart, so a flaky deploy silently un-caps retries
+
+Answer `1A`, or type `go` to take every pick.
+```
 
 ## Slate row
 
