@@ -37,13 +37,17 @@ A row that confirms one outward action carries no lettered alternatives: the use
 
 Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
 
+A slate is plain chat text, never wrapped in a `>` block quote: a body quoted under a row would nest, and a chat view draws each level as its own panel.
+
 **Worked example:**
 
-> 1. **File slices 1–6 as beads issues** under a new epic, dependencies wired 1→2→3 and 4→5 `[file]`
-> 2. **Add three terms to `docs/CONTEXT.md`** — Archive, Savings Band, Potential Savings, bodies quoted below `[write]`
-> 3. **Write `docs/adr/0004`** — savings estimated per band from each Pipeline's own history, body quoted below `[write]`
->
-> Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
+```markdown
+1. **File slices 1–6 as beads issues** under a new epic, dependencies wired 1→2→3 and 4→5 `[file]`
+2. **Add three terms to `docs/CONTEXT.md`** — Archive, Savings Band, Potential Savings, bodies quoted below `[write]`
+3. **Write `docs/adr/0004`** — savings estimated per band from each Pipeline's own history, body quoted below `[write]`
+
+Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
+```
 
 ## Proposed body
 
@@ -53,13 +57,17 @@ Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `
 
 **Worked example:**
 
-> 1. **Write `docs/adr/0012-queue-backend.md`** `[write]`
+```markdown
+1. **Write `docs/adr/0012-queue-backend.md`** `[write]`
+
+> ## Queue backend: Redis, not Postgres LISTEN/NOTIFY
 >
-> > ## Queue backend: Redis, not Postgres LISTEN/NOTIFY
-> >
-> > Job volume crossed 500/s; Postgres NOTIFY drops payloads over 8KB silently. Redis gives us reliable delivery and native retry counters.
->
-> Type `go` to apply my picks as described, or answer per row (`1 write`).
+> Job volume crossed 500/s; Postgres NOTIFY drops payloads over 8KB silently. Redis gives us reliable delivery and native retry counters.
+
+Type `go` to apply my picks as described, or answer per row (`1 write`).
+```
+
+The body is the one block quote in the message, so it never nests.
 
 ## Finding
 
