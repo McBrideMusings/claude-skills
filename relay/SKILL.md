@@ -56,7 +56,9 @@ next-work options: the tracker's answer is `next-work`'s verdict.
 2. **Print its output in chat**, unedited: the session line, the scope, the ranked rows and the
    `Next: <command> — <reason>` line with the epic and beads indented under it. The `Next:` line
    is the pick. Never cut the output down to the `Next:` line: the bead list under it is what the
-   user approves. A message written without this output printed is not ready to send.
+   user approves. Under it, in plain words, say what the epic is for in one sentence and what
+   each listed bead would change in one line apiece; a title is not that description. A message
+   written without this output and those lines is not ready to send.
 3. **Slate, then `Next:`.** When the caller has a follow-up slate (`wrap-up` Step A, a swarm's
    or iron-out's own), it goes under the output as slate rows per
    [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row, and the `Next:` line comes last.
