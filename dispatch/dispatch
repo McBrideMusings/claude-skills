@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # dispatch — worker resolver (cross-vendor or Claude-to-Claude).
 #
-# Resolves a coding agent from $CLAUDE_DISPATCH_AGENT and runs it as a worker.
-# The skills that dispatch (review dual, implement dispatch) call only these verbs
+# Picks a coding agent for a job (mechanical, execute or decide) and runs it as a worker.
+# The skills that dispatch (review dual, implement dispatch, swarm) call only these verbs
 # and never name a specific vendor:
 #
-#   dispatch agent                       print the resolved agent (codex|reasonix|claude), or fail
-#   dispatch transport                   print the transport `exec` would use, and why
-#   dispatch check                       is the resolved agent authed & reachable? (exit 0/1)
-#   dispatch exec [--headless] [--name <name>] <prompt-file> <outfile>
+#   dispatch config                      print each job list and SPILL_AT, and the file that set it
+#   dispatch agent     <sel>             print the picked agent:model and why, or fail
+#   dispatch transport <sel>             print the transport `exec` would use, and why
+#   dispatch check     [<sel>]           every job list names known agents, and the agent <sel>
+#                                          picks (every listed agent, with no <sel>) is authed (exit 0/1)
+#   dispatch exec <sel> [--headless] [--name <name>] <prompt-file> <outfile>
 #                                          run the agent with the prompt; output to <outfile>.
 #                                          --name: what the work is, a few words ("profile-first spike").
 #                                          The herdr space (or tab) carries it as its label; without it
@@ -26,13 +28,22 @@
 # (`wheel-agent`). $DISPATCH_TRANSPORT=terminal|herdr|wheel forces one.
 # Either way the caller's contract is identical — prompt in a file, answer in <outfile>.
 #
-# Selection: $CLAUDE_DISPATCH_AGENT, set per-profile in settings.local.json
-# (reasonix on personal, codex on work; claude for Claude-to-Claude). A repo can
-# override it in its own .claude/settings.local.json. Unset/unknown is a hard
-# error — never guess a vendor.
-# claude extras (both optional): $CLAUDE_DISPATCH_MODEL picks the worker's
-# model (e.g. sonnet, haiku, opus); unset uses the CLI's default.
-# $CLAUDE_DISPATCH_PERMISSION_MODE sets the worker's permission mode
+# <sel> is `--job mechanical|execute|decide`, or `--agent <name>[:<model>]` to name the
+# agent outright (swarm, which picks each lane's model itself).
+#
+# Selection: four keys in the `env` block of the settings files below, read by this
+# script itself, highest layer last, so `dispatch config` can name the file behind
+# each value:
+#   CLAUDE_DISPATCH_MECHANICAL / _EXECUTE / _DECIDE   ordered agent:model lists
+#   CLAUDE_DISPATCH_SPILL_AT                          usage percent that spills to the next agent
+#   layers: $CLAUDE_CONFIG_DIR/settings.json, $CLAUDE_CONFIG_DIR/settings.local.json (the
+#   profile's own file; Claude Code does not read it), <repo>/.claude/settings.json,
+#   <main checkout>/.claude/settings.local.json. A repo restates a whole job list to change it.
+# The first agent in a list wins unless its fullest usage window is at or over SPILL_AT and
+# the next agent's is under it. Usage: claude from tools/fetch-claude-usage.py (or the
+# command in $DISPATCH_CLAUDE_USAGE), codex from the newest rate_limits record under
+# $CODEX_HOME/sessions. An unset list or an unknown agent is a hard error — never guess a vendor.
+# claude extras: $CLAUDE_DISPATCH_PERMISSION_MODE sets the worker's permission mode
 # (default auto — the auto-mode classifier approves or refuses each call, so a
 # session nobody is watching does not stop on a prompt; hooks and deny rules
 # still apply).
@@ -43,21 +54,169 @@
 # swarm turns off a plugin, such as rust-analyzer, for its workers.
 set -eu
 
-KNOWN="codex reasonix claude"
+KNOWN="claude codex reasonix"
+JOBS="mechanical execute decide"
 
-resolve_agent() {
-  local a="${CLAUDE_DISPATCH_AGENT:-}"
-  if [ -z "$a" ]; then
-    echo "dispatch: no agent configured — set CLAUDE_DISPATCH_AGENT (codex|reasonix|claude) in settings.local.json" >&2
-    return 1
-  fi
-  case " $KNOWN " in
-    *" $a "*) printf '%s\n' "$a" ;;
-    *) echo "dispatch: unknown agent '$a' (expected one of: $KNOWN)" >&2; return 1 ;;
+# The settings files that can set a dispatch key, lowest precedence first.
+settings_layers() {
+  local home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" top main
+  printf '%s\n' "$home/settings.json" "$home/settings.local.json"
+  top="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || return 0
+  [ "$top" = "$HOME" ] && return 0
+  # A worktree's local file lives at its main checkout, as Claude Code reads it.
+  main="$(git -C "$PWD" worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')"
+  printf '%s\n' "$top/.claude/settings.json" "${main:-$top}/.claude/settings.local.json"
+}
+
+# setting <KEY> -> "<value>\t<file>" from the highest layer that sets it; nothing when none does.
+setting() {
+  local key="$1" f v val="" src=""
+  while IFS= read -r f; do
+    [ -f "$f" ] || continue
+    if ! v="$(jq -r --arg k "$key" '.env[$k] // empty' "$f" 2>/dev/null)"; then
+      echo "dispatch: skipping $f — not valid JSON" >&2; continue
+    fi
+    [ -n "$v" ] && { val="$v"; src="$f"; }
+  done < <(settings_layers)
+  [ -z "$src" ] || printf '%s\t%s\n' "$val" "$src"
+}
+
+job_key() {
+  case "$1" in
+    mechanical|execute|decide) printf 'CLAUDE_DISPATCH_%s\n' "$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')" ;;
+    *) echo "dispatch: unknown job '$1' (expected one of: $JOBS)" >&2; return 1 ;;
   esac
 }
 
-cmd_agent() { resolve_agent; }
+# read_entries <list> — splits a job list on commas into the caller's `entries` array, spaces dropped.
+read_entries() { IFS=',' read -ra entries <<<"${1//[[:space:]]/}"; }
+
+# known_entry <name[:model]> — fails, naming the launchers there are, for an agent dispatch cannot start.
+known_entry() {
+  local name="${1%%:*}"
+  case " $KNOWN " in
+    *" $name "*) [ -n "$name" ] ;;
+    *) echo "dispatch: ${name:-(empty)}: no launcher in dispatch; known: ${KNOWN// /, }" >&2; return 1 ;;
+  esac
+}
+
+# The usage readers. Each prints "<percent>\t<window>" for the agent's fullest window, or
+# fails with the reason on stderr.
+usage_claude() {
+  local out h5 d7
+  out="$("${DISPATCH_CLAUDE_USAGE:-$HOME/.claude/tools/fetch-claude-usage.py}" 2>/dev/null || true)"
+  case "$out" in ""|ERROR:*) echo "claude usage unreadable: ${out:-no output}" >&2; return 1 ;; esac
+  IFS='|' read -r h5 _ d7 _ <<<"$out"
+  awk -v h="$h5" -v d="$d7" 'BEGIN { if (d + 0 >= h + 0) printf "%g\t7d\n", d; else printf "%g\t5h\n", h }'
+}
+
+usage_codex() {
+  local home="${CODEX_HOME:-$HOME/.codex}" f rec
+  [ -d "$home/sessions" ] || { echo "codex usage unreadable: no $home/sessions" >&2; return 1; }
+  while IFS= read -r f; do
+    rec="$(grep -h '"rate_limits":{' "$f" 2>/dev/null | tail -1)"
+    [ -n "$rec" ] || continue
+    # A window whose reset time has passed is empty, whatever the record last said.
+    local u
+    u="$(printf '%s' "$rec" | jq -r --argjson now "$(date +%s)" '
+      [.payload.rate_limits.primary, .payload.rate_limits.secondary]
+      | map(select(. != null)
+            | {p: (if (.resets_at // 0) < $now then 0 else .used_percent + 0 end),
+               w: (if .window_minutes == 10080 then "7d" elif .window_minutes == 300 then "5h"
+                   else "\(.window_minutes)m" end)})
+      | max_by(.p) // empty | "\(.p)\t\(.w)"' 2>/dev/null)" || true
+    [ -n "$u" ] || { echo "codex usage unreadable: the newest rate_limits record in $f has no window" >&2; return 1; }
+    printf '%s\n' "$u"
+    return 0
+  done < <(find "$home/sessions" -name '*.jsonl' -type f -exec stat -f '%m %N' {} + 2>/dev/null | sort -rn | cut -d' ' -f2-)
+  echo "codex usage unreadable: no rate_limits record under $home/sessions" >&2; return 1
+}
+
+usage() {
+  case "$1" in
+    claude) usage_claude ;;
+    codex)  usage_codex ;;
+    *) echo "$1 usage unreadable: dispatch has no usage reader for it" >&2; return 1 ;;
+  esac
+}
+
+at_or_over() { awk -v u="$1" -v s="$2" 'BEGIN { exit !(u + 0 >= s + 0) }'; }
+
+# pick -> "<name>\t<model>\t<reason>" from $SEL_AGENT, or else the $SEL_JOB list and usage.
+pick() {
+  local entry reason
+  if [ -n "$SEL_AGENT" ]; then
+    known_entry "$SEL_AGENT" || return 1
+    entry="$SEL_AGENT"; reason="named by --agent"
+  else
+    [ -n "$SEL_JOB" ] || { echo "dispatch: name the job with --job ($JOBS) or the agent with --agent <name>[:<model>]" >&2; return 1; }
+    local key list spill first next u1 u2
+    key="$(job_key "$SEL_JOB")" || return 1
+    list="$(setting "$key" | cut -f1)"
+    [ -n "$list" ] || { echo "dispatch: $key is not set in any settings file — \`dispatch config\` lists where it looks" >&2; return 1; }
+    local -a entries; read_entries "$list"
+    for entry in "${entries[@]}"; do known_entry "$entry" || return 1; done
+    first="${entries[0]}"; next="${entries[1]:-}"
+    entry="$first"
+    if [ -z "$next" ]; then
+      reason="only agent in $key"
+    else
+      spill="$(setting CLAUDE_DISPATCH_SPILL_AT | cut -f1)"
+      case "$spill" in ''|*[!0-9]*) echo "dispatch: CLAUDE_DISPATCH_SPILL_AT must be a whole percent when $key lists two agents (got '${spill}')" >&2; return 1 ;; esac
+      local err; err="$(mktemp -t dispatch-usage.XXXXXX)"
+      if ! u1="$(usage "${first%%:*}" 2>"$err")"; then
+        reason="$(cat "$err"); staying on ${first%%:*}"
+      elif ! at_or_over "$(cut -f1 <<<"$u1")" "$spill"; then
+        reason="${first%%:*} $(cut -f2 <<<"$u1") at $(cut -f1 <<<"$u1")%, under $spill%"
+      elif ! u2="$(usage "${next%%:*}" 2>"$err")"; then
+        reason="${first%%:*} $(cut -f2 <<<"$u1") at $(cut -f1 <<<"$u1")%, but $(cat "$err"); staying on ${first%%:*}"
+      elif at_or_over "$(cut -f1 <<<"$u2")" "$spill"; then
+        reason="${first%%:*} $(cut -f2 <<<"$u1") at $(cut -f1 <<<"$u1")% and ${next%%:*} $(cut -f2 <<<"$u2") at $(cut -f1 <<<"$u2")%, both at or over $spill%; staying on ${first%%:*}"
+      else
+        entry="$next"; reason="${first%%:*} $(cut -f2 <<<"$u1") at $(cut -f1 <<<"$u1")%"
+      fi
+      rm -f "$err"
+    fi
+  fi
+  local model=""
+  [ "${entry#*:}" = "$entry" ] || model="${entry#*:}"
+  printf '%s\t%s\t%s\n' "${entry%%:*}" "$model" "$reason"
+}
+
+# label <name> <model> -> "codex:gpt-6.1-terra", or "reasonix" with no model.
+label() { printf '%s%s' "$1" "${2:+:$2}"; }
+
+# Reads --job/--agent off the front of the arguments into SEL_JOB/SEL_AGENT; NARGS says how many it took.
+SEL_JOB="" SEL_AGENT="" NARGS=0
+parse_sel() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --job)   [ -n "${2:-}" ] || { echo "dispatch: --job needs a value ($JOBS)" >&2; return 2; }
+               SEL_JOB="$2"; shift 2; NARGS=$((NARGS + 2)) ;;
+      --agent) [ -n "${2:-}" ] || { echo "dispatch: --agent needs <name>[:<model>]" >&2; return 2; }
+               SEL_AGENT="$2"; shift 2; NARGS=$((NARGS + 2)) ;;
+      *) return 0 ;;
+    esac
+  done
+}
+
+cmd_config() {
+  local key row
+  for key in CLAUDE_DISPATCH_MECHANICAL CLAUDE_DISPATCH_EXECUTE CLAUDE_DISPATCH_DECIDE CLAUDE_DISPATCH_SPILL_AT; do
+    row="$(setting "$key")"
+    if [ -n "$row" ]; then printf '%s=%s\t%s\n' "$key" "$(cut -f1 <<<"$row")" "$(cut -f2 <<<"$row")"
+    else printf '%s\t(unset)\n' "$key"; fi
+  done
+  echo "layers, lowest first:"
+  settings_layers | while IFS= read -r f; do
+    if [ -f "$f" ]; then printf '  %s\n' "$f"; else printf '  %s (missing)\n' "$f"; fi
+  done
+}
+
+cmd_agent() {
+  local p; p="$(pick)" || return 1
+  printf '%s (%s)\n' "$(label "$(cut -f1 <<<"$p")" "$(cut -f2 <<<"$p")")" "$(cut -f3 <<<"$p")"
+}
 
 # The herdr `agent start --kind` value for a vendor, or empty if herdr cannot start it.
 # reasonix is absent from herdr's fixed --kind enum, so a reasonix worker can only ever
@@ -134,14 +293,40 @@ resolve_transport() {
 }
 
 cmd_transport() {
-  local a; a="$(resolve_agent)" || return 1
-  local r; r="$(resolve_transport "$a")" || return 1
+  local p; p="$(pick)" || return 1
+  local r; r="$(resolve_transport "$(cut -f1 <<<"$p")")" || return 1
   printf '%s (%s)\n' "$(printf '%s' "$r" | cut -f1)" "$(printf '%s' "$r" | cut -f2)"
 }
 
+# Every job list that is set names only agents dispatch can start; then the picked agent, or
+# with no selection every listed one, is logged in.
 cmd_check() {
-  local a out; a="$(resolve_agent)" || return 1
-  case "$a" in
+  local key list entry names="" bad=0 any=0
+  for key in CLAUDE_DISPATCH_MECHANICAL CLAUDE_DISPATCH_EXECUTE CLAUDE_DISPATCH_DECIDE; do
+    list="$(setting "$key" | cut -f1)"
+    [ -n "$list" ] || continue
+    any=1
+    local -a entries; read_entries "$list"
+    for entry in "${entries[@]}"; do
+      known_entry "$entry" || { bad=1; continue; }
+      case " $names " in *" ${entry%%:*} "*) ;; *) names="$names ${entry%%:*}" ;; esac
+    done
+  done
+  [ "$bad" -eq 0 ] || return 1
+  if [ -n "$SEL_JOB$SEL_AGENT" ]; then
+    local p; p="$(pick)" || return 1
+    names="$(cut -f1 <<<"$p")"
+  elif [ "$any" -eq 0 ]; then
+    echo "dispatch: no job list is set — \`dispatch config\` lists where it looks" >&2; return 1
+  fi
+  local n rc=0
+  for n in $names; do auth_check "$n" || rc=1; done
+  return "$rc"
+}
+
+auth_check() {
+  local out
+  case "$1" in
     codex)
       out="$(codex login status 2>&1 || true)"
       if printf '%s' "$out" | grep -qi "logged in"; then
@@ -170,10 +355,10 @@ cmd_check() {
 }
 
 cmd_exec() {
-  local a; a="$(resolve_agent)" || return 1
   local headless=0
   while [ $# -gt 0 ]; do
     case "$1" in
+      --job|--agent) NARGS=0; parse_sel "$1" "${2:-}" || return 2; shift 2 ;;
       --headless) headless=1; shift ;;
       --name) [ -n "${2:-}" ] || { echo "dispatch: --name needs a value" >&2; return 2; }
               export DISPATCH_NAME="$2"; shift 2 ;;
@@ -182,11 +367,14 @@ cmd_exec() {
   done
   local promptfile="${1:-}" outfile="${2:-}"
   if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
-    echo "usage: dispatch exec [--headless] [--name <name>] <prompt-file> <outfile>" >&2
-    echo "  env: CLAUDE_DISPATCH_AGENT (codex|reasonix|claude), CLAUDE_DISPATCH_MODEL, CLAUDE_DISPATCH_PERMISSION_MODE, CLAUDE_DISPATCH_REMOTE_CONTROL, CLAUDE_DISPATCH_SETTINGS, DISPATCH_TRANSPORT (terminal|herdr|wheel)" >&2
+    echo "usage: dispatch exec --job <job>|--agent <name>[:<model>] [--headless] [--name <name>] <prompt-file> <outfile>" >&2
+    echo "  env: CLAUDE_DISPATCH_PERMISSION_MODE, CLAUDE_DISPATCH_REMOTE_CONTROL, CLAUDE_DISPATCH_SETTINGS, DISPATCH_TRANSPORT (terminal|herdr|wheel)" >&2
     return 2
   fi
   [ -f "$promptfile" ] || { echo "dispatch: prompt file not found: $promptfile" >&2; return 1; }
+  local p; p="$(pick)" || return 1
+  local a model why
+  a="$(cut -f1 <<<"$p")"; model="$(cut -f2 <<<"$p")"; why="$(cut -f3 <<<"$p")"
 
   # --headless has no surface to pick, so it never consults the transport resolver.
   local transport reason
@@ -196,13 +384,13 @@ cmd_exec() {
     local r; r="$(resolve_transport "$a")" || return 1
     transport="$(printf '%s' "$r" | cut -f1)"; reason="$(printf '%s' "$r" | cut -f2)"
   fi
-  echo "dispatch: $a via $transport ($reason)"
+  echo "dispatch: $(label "$a" "$model") ($why) via $transport ($reason)"
 
   local rc=0
 
   if [ "$transport" = "wheel" ]; then
     local -a wargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
-    [ -n "${CLAUDE_DISPATCH_MODEL:-}" ] && wargs+=(--model "$CLAUDE_DISPATCH_MODEL")
+    [ -n "$model" ] && wargs+=(--model "$model")
     [ -n "${CLAUDE_DISPATCH_REMOTE_CONTROL:-}" ] && wargs+=(--remote-control "$CLAUDE_DISPATCH_REMOTE_CONTROL")
     [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && wargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS")
     "$(cd "$(dirname "$0")" && pwd -P)/wheel-agent" run "$promptfile" "$outfile" -- "${wargs[@]}" || rc=$?
@@ -216,10 +404,10 @@ cmd_exec() {
     local -a iargs=()
     case "$a" in
       claude) iargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
-              [ -n "${CLAUDE_DISPATCH_MODEL:-}" ] && iargs+=(--model "$CLAUDE_DISPATCH_MODEL")
+              [ -n "$model" ] && iargs+=(--model "$model")
               [ -n "${CLAUDE_DISPATCH_REMOTE_CONTROL:-}" ] && iargs+=(--remote-control "$CLAUDE_DISPATCH_REMOTE_CONTROL")
               [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && iargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS") ;;
-      codex)  iargs=() ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
+      codex)  [ -n "$model" ] && iargs=(--model "$model") ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac
     "$(cd "$(dirname "$0")" && pwd -P)/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
     return "$rc"
@@ -230,9 +418,9 @@ cmd_exec() {
   # polling, the cold-start guard, and the window-left-open behavior.
   local runner
   case "$a" in
-    codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
-    reasonix) runner="reasonix run" ;; # non-interactive; prompt on stdin
-    claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${CLAUDE_DISPATCH_MODEL:+ --model $CLAUDE_DISPATCH_MODEL}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
+    codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true${model:+ --model $(printf %q "$model")}" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
+    reasonix) runner="reasonix run${model:+ -model $(printf %q "$model")}" ;; # non-interactive; prompt on stdin
+    claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${model:+ --model $(printf %q "$model")}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
   esac
 
   local terminal; terminal="$(cd "$(dirname "$0")" && pwd -P)/terminal"
@@ -252,10 +440,16 @@ cmd_exec() {
   return "$rc"
 }
 
-case "${1:-}" in
+command -v jq >/dev/null 2>&1 || { echo "dispatch: jq is not on PATH — it reads the job lists from the settings files (brew install jq)" >&2; exit 1; }
+verb="${1:-}"; [ $# -gt 0 ] && shift
+parse_sel "$@" || exit 2
+shift "$NARGS"
+case "$verb" in
+  config)    cmd_config ;;
   agent)     cmd_agent ;;
   transport) cmd_transport ;;
   check)     cmd_check ;;
-  exec)      shift; cmd_exec "$@" ;;
-  *) echo "usage: dispatch {agent|transport|check|exec [--headless] [--name <name>] <prompt-file> <outfile>}" >&2; exit 2 ;;
+  exec)      cmd_exec "$@" ;;
+  *) echo "usage: dispatch {config | agent <sel> | transport <sel> | check [<sel>] | exec <sel> [--headless] [--name <name>] <prompt-file> <outfile>}" >&2
+     echo "  <sel>: --job mechanical|execute|decide, or --agent <name>[:<model>]" >&2; exit 2 ;;
 esac

@@ -17,7 +17,7 @@ difference in the prompt the consuming skill writes.
 
 > ## Every vendor-target call runs through `dispatch exec`
 >
-> `"$HOME/.claude/skills/dispatch/dispatch" exec [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind `CLAUDE_DISPATCH_AGENT` so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
+> `"$HOME/.claude/skills/dispatch/dispatch" exec --job <job> [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind the job's agent list so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
 >
 > **Who reads the outfile depends on the mode.** In a **fire-and-forget** dispatch (the user asked for the `workspace` or `window` run) the caller never reads the outfile or watches the run. In a **report-back** dispatch the caller waits, reads the outfile and verifies the result (see [TARGETS.md](TARGETS.md) § Who feeds the result back). The check and the read-back below apply to report-back calls, such as `review dual`.
 >
@@ -31,7 +31,7 @@ difference in the prompt the consuming skill writes.
 
 Three layers, kept separate on purpose:
 
-1. **The `dispatch` resolver** (`dispatch` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind four verbs.
+1. **The `dispatch` resolver** (`dispatch` script in this directory) — the interface the skills actually call. It hides *which* vendor is in use behind five verbs.
 2. **The transport choice** — `workspace` (herdr) or `window` (Terminal.app). Resolved by `dispatch`, never asked (see below). `dispatch transport` prints the answer and its reason.
 3. **The transports themselves** — `herdr-agent` in this directory for the live herdr pane/workspace, and the separate `terminal` skill for the Terminal.app window. Skills never touch a transport directly.
 
@@ -46,23 +46,34 @@ $HOME/.claude/skills/dispatch/dispatch <verb>
 ```
 
 ```
-dispatch agent
-    → prints the resolved agent: "codex" | "reasonix" | "claude"
-    → exits nonzero if unset/unknown. Skills use it only to label output.
+<sel> = --job mechanical|execute|decide      pick from that job's agent list (below)
+      | --agent <name>[:<model>]              name the agent outright (swarm's lanes)
 
-dispatch transport
+dispatch config
+    → each job list and SPILL_AT with the settings file that set it, then every layer
+      read, lowest first. Start here when a pick surprises you.
+
+dispatch agent <sel>
+    → prints the picked agent and why: "codex:gpt-6.1-terra (claude 7d at 74%)",
+      "claude:sonnet (claude 7d at 7%, under 70%)".
+    → exits nonzero if the list is unset or names an unknown agent. Skills use it only to
+      label output, by the name before the colon.
+
+dispatch transport <sel>
     → prints the surface `exec` would use and why: "herdr (inside herdr and herdr can
       start claude; it gets a child space of the repo's space)" (or "a standalone space"),
       "terminal (inside herdr, but 'reasonix' is not in herdr's --kind enum)",
       "terminal (not inside herdr)".
     → use it to name the target in a status line without running anything.
 
-dispatch check
-    → is the resolved agent authenticated & reachable? exit 0 = ready, nonzero + message.
+dispatch check [<sel>]
+    → every job list names only agents dispatch can launch ("gemini: no launcher in
+      dispatch; known: claude, codex, reasonix"), and the agent <sel> picks — every listed
+      agent, with no <sel> — is authenticated. exit 0 = ready, nonzero + message.
     → this IS the health gate — run it first; halt the skill on nonzero.
 
-dispatch exec [--headless] [--name <name>] <prompt-file> <outfile>
-    → run the resolved agent with the prompt in <prompt-file>; its answer lands in
+dispatch exec <sel> [--headless] [--name <name>] <prompt-file> <outfile>
+    → run the picked agent with the prompt in <prompt-file>; its answer lands in
       <outfile>. Blocks until the agent finishes, then returns. There is no "review" verb —
       a review is just an exec whose prompt asks for a review.
     → the surface is resolved, not chosen: a live agent as a `workspace` when we're
@@ -80,7 +91,7 @@ The review prompt, the verdict format (e.g. `MERGEABLE / BLOCK`), and any follow
 
 ```bash
 D="$HOME/.claude/skills/dispatch/dispatch"
-"$D" check || { echo "Cannot dispatch — see message above"; halt; }   # hard gate
+"$D" check --job decide || { echo "Cannot dispatch — see message above"; halt; }   # hard gate
 # write the prompt (review instructions + the diff command to run) to a temp file
 prompt="$(mktemp -t dispatch-prompt.XXXXXX)"
 cat > "$prompt" <<'PROMPT'
@@ -88,7 +99,7 @@ Review the diff produced by `<diff-cmd>` for correctness, security, regressions,
 architecture fit. Output prioritized findings and a MERGEABLE/BLOCK verdict.
 PROMPT
 out="/tmp/<slug>-dispatch.md"
-"$D" exec "$prompt" "$out"        # run this verb in the BACKGROUND (Bash run_in_background)
+"$D" exec --job decide "$prompt" "$out"        # run this verb in the BACKGROUND (Bash run_in_background)
 # when it returns, read "$out" for the findings
 ```
 
@@ -98,17 +109,26 @@ Run `dispatch exec` with the Bash tool's **background** mode: the agent can take
 
 ## Selecting the vendor
 
-`dispatch` resolves the agent from **`$CLAUDE_DISPATCH_AGENT`** (`codex` | `reasonix` | `claude`):
+Every dispatch names a **job**, and each job has an ordered list of `agent:model` entries in a settings file's `env` block:
 
-- Set it per-profile in **`settings.local.json`**'s `env` block — the only per-profile spot, since `settings.json` is symlinked/shared. Personal → `reasonix`, work → `codex`. It's gitignored and holds only the agent *name*, never a key.
-- A single repo can override it in its own `.claude/settings.local.json`; Claude Code's settings merge gives project scope precedence over user scope, so the override is free.
-- **Unset or unknown is a hard error** — `dispatch` never guesses a vendor (guessing means the wrong billing account). The error from `dispatch check`/`agent` is the first line of the health gate.
+```sh
+CLAUDE_DISPATCH_MECHANICAL=claude:haiku,codex:gpt-6-luna      # a rename, a string, a bounds check
+CLAUDE_DISPATCH_EXECUTE=claude:sonnet,codex:gpt-6.1-terra     # follow a plan that names the files
+CLAUDE_DISPATCH_DECIDE=claude:opus,codex:gpt-6-astra          # judgment: review, design
+CLAUDE_DISPATCH_SPILL_AT=70                                   # usage percent that spills to the next agent
+```
+
+- **Order is preference.** `dispatch` takes the first entry, unless that agent's fullest usage window (5-hour or 7-day) is at or over `SPILL_AT` and the next entry's is under it — then the next one, and the launch line says why: `codex:gpt-6.1-terra (claude 7d at 74%)`. Only the first two entries are ever compared. When either agent's usage cannot be read, `dispatch` stays on the first and the reason says which reader failed.
+- **Usage readers.** Claude: `~/.claude/tools/fetch-claude-usage.py`, for the profile `CLAUDE_CONFIG_DIR` names (`$DISPATCH_CLAUDE_USAGE` replaces the command, for a test). Codex: the newest `rate_limits` record in `$CODEX_HOME/sessions/**/*.jsonl` — a window whose `resets_at` has passed reads 0. Reasonix has no reader.
+- **Where the lists live.** `dispatch` reads the files itself, lowest layer first, and the higher layer wins: `$CLAUDE_CONFIG_DIR/settings.json` (shared by both profiles), **`$CLAUDE_CONFIG_DIR/settings.local.json`** (the profile's own file — Claude Code does not read it, so `dispatch` does), the repo's `.claude/settings.json`, then the main checkout's `.claude/settings.local.json`. A repo changes a job by restating its whole list: `CLAUDE_DISPATCH_EXECUTE=claude:sonnet` there keeps Codex out of that repo. Exported environment variables do not count; `dispatch config` prints which file set each value. Reading them needs `jq` on PATH; without it every verb stops and says so. Spaces around the commas are ignored.
+- **Profiles.** The work profile lists Codex second in each job; the personal profile lists `claude:` only.
+- **The part after the colon** goes to the vendor's model flag: `claude --model`, `codex --model`, and `reasonix run -model`, which takes a provider name from Reasonix's own config (`reasonix doctor` lists them, e.g. `deepseek-pro`).
+- **An unset list or an unknown name is a hard error** — `dispatch` never guesses a vendor (guessing means the wrong billing account). `--agent <name>[:<model>]` skips the list and the usage check, for a caller that already chose, such as `swarm` picking each lane's model.
 
 ### The `claude` vendor (Claude-to-Claude)
 
-Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. Two optional env knobs, set alongside `CLAUDE_DISPATCH_AGENT`:
+Runner: `claude -p --permission-mode <mode> [--model <model>]`, prompt on stdin, same windowed/headless transport as the other vendors. The model is the part after the colon in the picked entry. Optional env knobs:
 
-- **`CLAUDE_DISPATCH_MODEL`** — the target's model (`sonnet`, `haiku`, `opus`, or a full model id). Unset → the CLI's default. This is the point of the vendor: a cheap plan-follower or a heavyweight, chosen per profile or per repo.
 - **`CLAUDE_DISPATCH_REMOTE_CONTROL`** — a session name; a herdr-hosted worker starts with `--remote-control <name>`, so the user can follow and steer it from the Claude app. Set it whenever the user asks for the worker to have Remote Control on. A Terminal.app one-shot (`-p`) ignores it.
 - **`CLAUDE_DISPATCH_PERMISSION_MODE`** — defaults to `auto`: the auto-mode classifier approves or refuses each tool call, so a dispatched session nobody is watching does not stop on a permission prompt. Hooks and deny rules still apply. Set a narrower mode here (`acceptEdits`, `manual`) for a task that should ask before running commands.
 
@@ -142,7 +162,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 `dispatch exec` prints the resolved transport and its reason as its first line, and `dispatch transport` prints the same without running anything. **Put that line in the status message** — a target the user is told to go watch, that was only ever a background subprocess, is the failure this exists to stop.
 
-**`reasonix` is not in herdr's `--kind` enum**, so a `dispatch reasonix` always lands in Terminal.app even inside herdr. On the personal profile (`CLAUDE_DISPATCH_AGENT=reasonix`) that is the normal case, not an edge.
+**`reasonix` is not in herdr's `--kind` enum**, so a `dispatch reasonix` always lands in Terminal.app even inside herdr.
 
 ### herdr — a live agent in its own space (`herdr-agent` in this directory)
 
@@ -176,4 +196,4 @@ That skill owns the whole Terminal.app transport — the visible window, the col
 
 ### Adding another agent
 
-Edit one place — the `case "$a"` blocks in `dispatch` (its `KNOWN` list, the `check` command, and the `runner` string). Skills and this doc don't change.
+Edit one place — `dispatch` itself: its `KNOWN` list, the `auth_check` case, a `usage_<name>` reader if the agent reports usage, and the `runner` string. Then name it in a job list.

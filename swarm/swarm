@@ -220,7 +220,7 @@ cmd_check() {
   repo="$(main_checkout)"
   mode="$(landing_mode "$repo")"
   bd -C "$repo" ready --limit 1 --json >/dev/null 2>&1 || die "bd cannot read the tracker in $repo"
-  CLAUDE_DISPATCH_AGENT=claude "$D" check >&2
+  "$D" check --agent claude >&2
   # Open the repo's herdr space once, here, so parallel launches never race to create it.
   local ws where
   if [ "$surf" = herdr ]; then
@@ -409,11 +409,10 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
   (
     cd "$wt"
     # An implement pass routinely outlasts dispatch's 40-minute ceiling.
-    export CLAUDE_DISPATCH_AGENT=claude CLAUDE_DISPATCH_MODEL="$model" \
-           CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000 \
+    export CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000 \
            WHEEL_AGENT_TIMEOUT_MS=14400000 WHEEL_AGENT_DIR="$gd/wheel-agent" DISPATCH_TRANSPORT="$surf" \
            WHEEL_AGENT_SPACE="$(wheel_space "$repo")" WHEEL_AGENT_SPACE_DIR="$repo"
-    exec "$D" exec --name "$name" "$gd/DISPATCH-BRIEF.md" "$outfile"
+    exec "$D" exec --agent "claude:$model" --name "$name" "$gd/DISPATCH-BRIEF.md" "$outfile"
   ) >&2 || rc=$?
   log_event "$repo" finished "$id" "exit $rc"
   printf '%s\t%s\t%s\t%s\n' "$id" "$rc" "$outfile" "$wt"
