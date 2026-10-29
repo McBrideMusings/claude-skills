@@ -8,19 +8,24 @@
 #   swarm close <bead-id> landed|parked   close a finished worker's space or pane; landed also
 #                                     removes its worktree
 #   swarm quota                       the repo's profile's 5-hour and weekly usage, and the gate
-#   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log (run, filed,
-#                                     landed, parked, failed, ready, signed, declined, applied, end)
+#   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log (run, lead, filed,
+#                                     landed, reopened, parked, failed, ready, signed, declined,
+#                                     applied, end)
 #   swarm status                      the run log, the launched beads still in flight, and the
 #                                     sign-off inbox
 #
 # The run log, <scratch>/swarm/run.tsv, is the run's state on disk: launch writes `launched`
-# and `finished`, the lead writes `run`, `landed`, `parked`, `failed`, `applied` and, last, `end`.
+# and `finished`, the lead writes `run`, `landed`, `reopened`, `parked`, `failed`, `applied` and,
+# last, `end`. `reopened` is a bead the lead found not verified and reopened; `failed` is only a
+# worker that died or handed back no usable report.
 # In sign-off mode the lead writes `ready` when a worker's committed branch checks out, and
 # `signed` or `declined` when the user answers its package; a `ready` with neither after it is
 # in the sign-off inbox.
 # `run` records the lead's pid and the herdr space's label (`pid=<n> space=<label>`); `end` marks
-# the run finished. next-work counts a run live while it has no `end` and its lead pid is alive.
-# A lead that was compacted, relayed or restarted reads `swarm status` first and carries on.
+# the run finished. A lead that was compacted, relayed or restarted reads `swarm status` first,
+# writes `lead` (its own pid, `pid=<n>`) and carries on. next-work and the swarm page take the
+# newest pid of the `run` and `lead` lines, and count the run live while it has no `end` and that
+# pid is alive.
 #
 # launch claims the bead (`bd update --claim`, status in_progress) before anything else, so no
 # other picker offers it, and refuses while the profile's usage is at or over SWARM_QUOTA_SESSION
@@ -461,8 +466,8 @@ lead_pid() {
 cmd_log() {
   local repo detail="${3:-}"; repo="$(main_checkout)"
   case "${1:-}" in
-    run|filed|landed|parked|failed|ready|rejected|signed|declined|applied|end) ;;
-    *) die "usage: swarm log <run|filed|landed|parked|failed|ready|rejected|signed|declined|applied|end> [<bead-id>] [<detail>]" ;;
+    run|lead|filed|landed|reopened|parked|failed|ready|rejected|signed|declined|applied|end) ;;
+    *) die "usage: swarm log <run|lead|filed|landed|reopened|parked|failed|ready|rejected|signed|declined|applied|end> [<bead-id>] [<detail>]" ;;
   esac
   if [ "$1" = landed ] || [ "$1" = ready ]; then
     # A report counts only when it carries the gate's Run: and Look for: lines; a refusal is logged.
@@ -493,6 +498,10 @@ cmd_log() {
   if [ "$1" = run ]; then
     local pid; pid="$(lead_pid)"
     detail="${detail:+$detail }${pid:+pid=$pid }space=$(basename "$repo" | tr -s ' ' _)"
+  fi
+  if [ "$1" = lead ] && ! printf '%s' "$detail" | grep -q 'pid='; then
+    local lpid; lpid="$(lead_pid)"
+    detail="${detail:+$detail }${lpid:+pid=$lpid}"
   fi
   log_event "$repo" "$1" "${2:-}" "$detail"
 }

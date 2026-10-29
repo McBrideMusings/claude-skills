@@ -106,10 +106,11 @@ running worker finishes, then try that slot's launch again.
 
 **The run log.** Start every run with `swarm log run "" "focus=<focus> n=<n>"`. `log run`
 adds the lead's pid and the repo's name to the line. `launch` logs
-`launched` and `finished` itself; the lead logs `landed`, `parked`, `failed`, `ready` and `applied` as it
+`launched` and `finished` itself; the lead logs `landed`, `reopened`, `parked`, `failed`, `ready` and `applied` as it
 records each one in step 5, `signed` and `declined` as the user answers each package (§ Sign-off
 inbox), and `end` when the run is over (§6). **A lead that starts without this run's context — after a
-compaction, a relay or a restart — runs `swarm status` before anything else**: it prints the
+compaction, a relay or a restart — runs `swarm status` before anything else, then `swarm log lead`**,
+which records its own pid so `next-work` and the swarm page read the run as live: `swarm status` prints the
 current run's events, every bead launched but not finished, with its agent state, and the
 sign-off inbox — every `ready` bead with no `signed` or `declined` yet. Those
 workers are still running; wait for them as step 4 says, and never launch their beads again.
@@ -128,7 +129,7 @@ brief ([`../implement/AUTO.md`](../implement/AUTO.md) §Run state). Read `Limit`
 before step 1; a swarm started by hand has no block and no budget.
 
 - Every bead a worker lands or parks adds one to `Used` (step 5, when the lead logs `landed` or
-  `parked`). A failed worker adds nothing.
+  `parked`). A failed worker or a reopened bead adds nothing.
 - Before every launch, compare `Used` plus the beads currently running with `Limit`. `Used +
   running >= Limit` means launch nothing more: let the running workers finish, count them, and end
   the run. `all` never runs out. A block whose `Used` is already at or past `Limit` launches
@@ -152,8 +153,8 @@ for `epic:`, `label:`, bead ids and free text. Swarm adds only this:
 or returns output that does not parse is an error: stop launching, keep the running workers, and
 report the command and its output. Only a successful read that lists nothing ends the run.
 
-Drop every bead whose notes carry `auto parked`, and every bead the run log shows `failed` this
-run. A bead `launch` has claimed reads `in_progress`, so `bd ready` already leaves it out. Print the frozen queue in the first status
+Drop every bead whose notes carry `auto parked`, and every bead the run log shows `failed` or
+`reopened` this run. A bead `launch` has claimed reads `in_progress`, so `bd ready` already leaves it out. Print the frozen queue in the first status
 line: mode (report-back), `<n>`, the focus, and the first `<n>` beads with titles. That line is
 the user's chance to redirect a focus that resolved wrong.
 
@@ -235,13 +236,14 @@ away unread.
 2. Verify what it says, against the bead and not the report: read the bead's quoted request and its
    case list, then read what the worker's check drove (its outfile's gate and the check script). A
    listed case the check did not drive means the bead is not done: reopen it with `bd update <id>
-   --status open --append-notes "not verified: <cases>"` and log it `failed`, even when the
-   worker says landed. Then: `bd show <id> --json` shows the bead closed, and
+   --status open --append-notes "not verified: <cases>"` and `swarm log reopened <id> "not
+   verified: <cases>"`, even when the worker says landed. `failed` is only for a worker that died
+   or handed back no usable report (step 1, and a report that fails the checks below). Then: `bd show <id> --json` shows the bead closed, and
    `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch; then
    `swarm log landed <id> <sha>`. That command runs `cases-check` on the bead and the outfile and
    refuses unless the outfile's `## Cases` table ([`../implement/AUTO.md`](../implement/AUTO.md)
    § A case not driven parks the item) has a driven row for every numbered case in the bead; a
-   refusal is the reopen-and-fail above. Read the table against the bead's words all the same: the
+   refusal is the reopen above. Read the table against the bead's words all the same: the
    script checks that each row says what drove it, not that what drove it was the real input path. Every status line about a landing says what ran — the
    product, the command, what it showed — and, when the check stopped short of running the
    product with its real inputs (data, assets, account), says `not run` in that same line, never
@@ -345,7 +347,7 @@ rebuilds its scope from the `filed` lines `swarm status` prints.
 
 ## 6. Report
 
-First `swarm log end "" "<landed> landed, <parked> parked, <failed> failed"`: `next-work` counts
+First `swarm log end "" "<landed> landed, <reopened> reopened, <parked> parked, <failed> failed"`: `next-work` counts
 the run live until that line exists, so it comes before anything routes onward. Then print the
 report below, and end the run.
 
