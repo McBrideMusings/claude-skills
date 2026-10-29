@@ -181,6 +181,17 @@ as an item, each launched one with its `lane` (the slot number, 1 to `<n>`) and 
 ones with no lane, landed ones kept. Each worker declares its own stage; the board shows it in
 its lane.
 
+**Show the run** under Wheel before the first launch, unless a pane in the lead's space already
+shows it: the machine artifact `swarm` is the one page for every run. Opened in a space, it reads
+that space's repo's run (`swarm status`, the work-board declarations, each worker's Claude
+transcript) every 15 seconds, logs each worker's latest actions with times, and flags a worker
+whose transcript has not been written for the threshold the person picks (10 minutes by default)
+as stuck, whatever its agent state says. There is nothing to post, push or end.
+
+```bash
+p=$(wheel pane split "$WHEEL_PANE" right --background) && wheel pane kind "$p" web --artifact swarm --scope machine
+```
+
 One Bash call per slot, **each with `run_in_background: true`**:
 
 ```bash

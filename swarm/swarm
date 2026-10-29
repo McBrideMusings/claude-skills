@@ -321,7 +321,7 @@ This is one worker in a swarm. Nobody is watching this pane: take every decision
 mode says, record it as an \`auto decided\` note on the bead, and park the bead rather than wait.
 $landing
 
-The lead's dashboard shows each worker's stage from the work board. As each implement step
+The swarm artifact shows each worker's stage from the work board. As each implement step
 starts (plan, edit, build, verify, review, gate), call the \`work_set\` tool with
 \`{kind: \"bead\", id: \"$id\", stage: <the step>, note: <one line: what you are doing>}\`.
 
