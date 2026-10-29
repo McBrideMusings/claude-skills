@@ -299,7 +299,8 @@ cmd_launch() {
 remove this worktree, push its branch or delete a remote branch: \`land\` pushes your commits
 to $base, and the swarm lead tears the worktree down after reading your report."
     outcome="Say in its first line whether the bead landed (with the commit sha on $base) or was parked
-(with the reason)."
+(with the reason). The report carries the \`## Cases\` table AUTO.md § A case not driven parks the
+item describes, one row per case in the bead; a case you could not drive parks the bead."
   else
     landing="This repo is collaborative, so this pass ends at sign-off (AUTO.md § Swarm workers,
 SWARM_SIGNOFF=1): run \`wrap-up\` through Phase 5's commit and stop. Push nothing, open no PR,
@@ -460,6 +461,20 @@ cmd_log() {
     run|filed|landed|parked|failed|ready|signed|declined|applied|end) ;;
     *) die "usage: swarm log <run|filed|landed|parked|failed|ready|signed|declined|applied|end> [<bead-id>] [<detail>]" ;;
   esac
+  if [ "$1" = landed ]; then
+    # A landing counts only when the worker's report drove every case the bead lists.
+    local id="${2:-}" out bead
+    [ -n "$id" ] || die "usage: swarm log landed <bead-id> <sha>"
+    out="$(run_dir "$repo")/$id.md"
+    [ -s "$out" ] || die "no report at $out, so nothing shows the cases were driven: log it failed"
+    bead="$(mktemp)"
+    ( cd "$repo" && bd show "$id" --json ) > "$bead" || { rm -f "$bead"; die "bd show $id failed"; }
+    if ! python3 "$(dirname "$0")/cases-check" "$bead" "$out" >&2; then
+      rm -f "$bead"
+      die "$id is not landed: reopen it (bd update $id --status open --append-notes \"not verified: <cases>\") and log it failed"
+    fi
+    rm -f "$bead"
+  fi
   if [ "$1" = run ]; then
     local pid; pid="$(lead_pid)"
     detail="${detail:+$detail }${pid:+pid=$pid }space=$(basename "$repo" | tr -s ' ' _)"

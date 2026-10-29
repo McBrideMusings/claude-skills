@@ -238,7 +238,11 @@ away unread.
    --status open --append-notes "not verified: <cases>"` and log it `failed`, even when the
    worker says landed. Then: `bd show <id> --json` shows the bead closed, and
    `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch; then
-   `swarm log landed <id> <sha>`. Every status line about a landing says what ran — the
+   `swarm log landed <id> <sha>`. That command runs `cases-check` on the bead and the outfile and
+   refuses unless the outfile's `## Cases` table ([`../implement/AUTO.md`](../implement/AUTO.md)
+   § A case not driven parks the item) has a driven row for every numbered case in the bead; a
+   refusal is the reopen-and-fail above. Read the table against the bead's words all the same: the
+   script checks that each row says what drove it, not that what drove it was the real input path. Every status line about a landing says what ran — the
    product, the command, what it showed — and, when the check stopped short of running the
    product with its real inputs (data, assets, account), says `not run` in that same line, never
    later. A parked bead has an `auto parked` note: `swarm log parked
