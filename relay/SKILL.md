@@ -1,6 +1,6 @@
 ---
 name: relay
-description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`. Requires a herdr pane (HERDR_ENV=1) or a Wheel terminal pane (WHEEL_ENV=1)."
+description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`, and by the user typing 'relay', 'relay into a new session' or 'relay and <task>'. Requires a herdr pane (HERDR_ENV=1) or a Wheel terminal pane (WHEEL_ENV=1)."
 ---
 
 # Relay

@@ -59,9 +59,9 @@ reached by clicking, or a real component's response. That climbs to [UI.md](UI.m
    some cells. `--scale 2` doubles the pixel density. `--dir <abs-dir>` names the spike
    directory when the scratch root differs.
 6. **Open every PNG and look at it** ([CRITIQUE.md](CRITIQUE.md)), then show the result per
-   [CONTRACT.md](CONTRACT.md) rule 10 and stop: the choice is the user's. Where Canvas is
-   running, the hand-off is a `canvas post` of the screenshots, grouped by screen with each
-   state captioned; chat names the card and the decision, never a bare list of PNG paths.
+   [CONTRACT.md](CONTRACT.md) rule 10 and stop: the choice is the user's. The hand-off is the
+   page itself under Wheel (below), with the screenshots grouped by screen and each state
+   captioned; chat names the pane and the decision, never a bare list of PNG paths.
 
 ## Showing the page under Wheel
 
@@ -83,7 +83,7 @@ The page's Send writes the pick, a note and a summary to the post's state and ty
 into the pane named by `--reply-to`. To read it without waiting for the typed reply, run
 `wheel artifact state <pane> submitted --wait`; its JSON holds `answers.pick`, the chosen
 variant.
-Without `WHEEL_ENV`, the Canvas hand-off above applies.
+Without `WHEEL_ENV`, chat names the absolute path of the built page and of each screenshot.
 
 ## Recording motion
 

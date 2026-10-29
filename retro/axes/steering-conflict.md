@@ -74,26 +74,28 @@ Report the count and the canonical home: "stated in N sources, should live in on
 
 ## Worked example — the one that motivated this lens
 
-Filed as `cc-d4w`. Four sources arrived before the user's first message. Three gave
-incompatible instructions for reading a file:
+Filed as `cc-d4w`. Several sources arrived before the user's first message and gave
+incompatible instructions for using Bash:
 
 > the auto-mode reminder: "read files with cat, head, or sed -n"
-> `hooks/slice-read-guard.sh`: denies `sed -n 'N,Mp' <file>` outright
 > context-mode: "Bash is ONLY for git/mkdir/rm/mv/navigation"
 
-No legal route. The same set collided a second time on subagents: the harness
-injects "Do not call the AgentTool unless the user requested it" while `wrap-up`
-mandates `build-runner` and `retro` Phase 4 spawns one sub-agent per lens.
+The same set collided a second time on subagents: the harness injects "Do not call
+the AgentTool unless the user requested it" while `wrap-up` mandates `build-runner`
+and `retro` Phase 4 spawns one sub-agent per lens.
 
 Nothing detected either. A human read the sources, worked out the precedence by
-hand, and wrote `hooks/steering-precedence.sh` — 71 lines that now print at
-SessionStart in every repo, corrected twice after landing.
+hand, and wrote `hooks/steering-precedence.sh`, which prints at SessionStart in every
+repo.
 
 **Read that hook as the shape of the fix, and as the warning.** Arbitration is the
 *fallback*: it leaves the conflict in place and pays for it every session forever.
-Prefer removing the condition — delete the losing clause, narrow one source's scope
-so the overlap cannot arise. Reach for a precedence note only when a source is
-vendored and cannot be edited, which is exactly why that hook exists.
+Measure it before trusting it — a guard that denies what another source recommends
+keeps firing with the precedence note loaded, and every denial is a wasted turn.
+Prefer removing the condition — delete the losing clause or guard, narrow one
+source's scope so the overlap cannot arise. Reach for a precedence note only when
+both sources are vendored or harness-injected and neither can be edited, which is
+why that hook's remaining paragraphs exist.
 
 ## What is not a finding here
 
@@ -108,11 +110,11 @@ vendored and cannot be edited, which is exactly why that hook exists.
 ## Finding format
 
 > **`<the two clauses, quoted, each ≤15 words>`**
-> Source A: `hooks/slice-read-guard.sh` · Source B: auto-mode reminder
+> Source A: `hooks/<guard>.sh` · Source B: auto-mode reminder
 > Co-loaded in **7 of 7** sessions since 2026-08-21. **No legal route.**
 > Evidence: `<session>:<timestamp>` — call blocked, retried under the other rule.
-> **Fix (design call):** narrow A's scope to the pure-slice case so B's recommendation
-> stays legal. Rejected: a precedence note, which leaves the conflict and bills every
+> **Fix (design call):** delete A, or narrow its scope so B's recommendation stays
+> legal. Rejected: a precedence note, which leaves the conflict and bills every
 > session for the arbitration.
 
 Axis tag: `steering-conflict`. Every finding carries the co-load count — "3 of 12

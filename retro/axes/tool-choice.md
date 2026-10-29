@@ -19,9 +19,10 @@ Checks worth running every time:
 - **Does the harness already report this?** `claude plugin details <name>` prints per-plugin
   token cost; several rounds of custom probing have been spent rediscovering it.
 - **Should this have been a sub-agent?** Large raw output landing in the main context —
-  builds, test runs, greps over many files, screenshots — has dedicated agents
-  (`build-runner`, `Explore`, `screenshot-checker`) whose entire purpose is to keep it out.
-  Long `Bash` waits in `analyze.py`'s slow-tool table are the tell.
+  builds, test runs, greps over many files — has dedicated agents (`build-runner`, `Explore`)
+  whose entire purpose is to keep it out. Long `Bash` waits in `analyze.py`'s slow-tool table
+  are the tell. A screenshot Read to verify a UI change is not a miss: `CLAUDE.md` requires
+  looking at it. Only a plain yes/no about an image belongs to `screenshot-checker`.
 - **Was a bespoke script written where a flag existed?**
 
 ## Rank by recurrence, then by cost

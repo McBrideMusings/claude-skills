@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out a body of work: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Runs in the current checkout, or in `wrap-up <worktree>` — how `implement` lands a pass, at the gate's `go`."
+description: "Close out a body of work: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Use when the user says 'wrap up', 'wrap this up', 'commit and push', 'land it' or 'ship it'. Runs in the current checkout, or in `wrap-up <worktree>` — how `implement` lands a pass, at the gate's `go`."
 ---
 
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in

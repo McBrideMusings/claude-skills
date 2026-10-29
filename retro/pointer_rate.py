@@ -74,6 +74,12 @@ Measurement traps this script already avoids -- do not hand-roll around them:
      2KB preview and the path of the full text under `<session>/tool-results/`. The model
      saw only the preview, so an injection there is reported as cut, and its headers are read
      from the saved file. Matching the preview alone misses every page after the first.
+ 11. A cold target counts only when a Read, Grep or Glob call names it, or a Bash command
+     does. Matched against the whole transcript, it hits hook-injected text and tool output
+     that merely name the path, and reports 99% for a pointer real reads reach 1% of the time.
+ 12. `--since` keeps sessions whose first record is on or after the date. File mtime is
+     useless: one late append or a sync touches nearly every transcript, so an mtime window
+     keeps 4,306 of 4,537 sessions.
 """
 import argparse
 import datetime
@@ -106,15 +112,18 @@ COLD = {
 }
 
 
+FIRST_TS = re.compile(r'"timestamp"\s*:\s*"(\d{4}-\d{2}-\d{2})')
+
+
 def transcripts(since=None):
     """Yield (path, text) for every transcript with real work in it.
 
-    `since` is a YYYY-MM-DD string; files modified before it are skipped. Use it
-    to measure a window that starts the day a trigger changed.
+    `since` is a YYYY-MM-DD string; a session counts when its first record is on or after
+    it (trap 12). Use it to measure a window that starts the day a trigger changed. A file
+    not modified since the date cannot have started after it, so mtime only skips reads.
     """
     cutoff = None
     if since:
-        import datetime
         cutoff = datetime.datetime.strptime(since, "%Y-%m-%d").timestamp()
     for jf in ROOT.rglob("*.jsonl"):
         if "subagents" in jf.parts:
@@ -127,10 +136,35 @@ def transcripts(since=None):
             continue
         if len(raw) < MIN_BYTES:
             continue
+        if since:
+            first = FIRST_TS.search(raw)
+            if not first or first.group(1) < since:
+                continue
         turns = raw.count('"type":"assistant"') + raw.count('"type": "assistant"')
         if turns < MIN_TURNS:
             continue
         yield jf, raw
+
+
+def actions(raw):
+    """The paths and commands a session's tool calls named -- what a cold target is matched
+    against (trap 11)."""
+    out = []
+    for line in raw.splitlines():
+        if '"tool_use"' not in line:
+            continue
+        try:
+            content = json.loads(line).get("message", {}).get("content")
+        except Exception:
+            continue
+        if not isinstance(content, list):
+            continue
+        for c in content:
+            if isinstance(c, dict) and c.get("type") == "tool_use":
+                inp = c.get("input") or {}
+                if c.get("name") in ("Read", "Grep", "Glob", "Bash"):
+                    out.extend(str(inp.get(k, "")) for k in ("file_path", "path", "pattern", "command"))
+    return "\n".join(out)
 
 
 def model_invoked_skills():
@@ -725,7 +759,7 @@ def main():
     ap.add_argument("--fires", action="store_true",
                     help="per-skill fire rate -- the misfire instrument")
     ap.add_argument("--since", metavar="YYYY-MM-DD",
-                    help="only sessions modified on or after this date")
+                    help="only sessions that started on or after this date")
     ap.add_argument("--target", metavar="SUBSTRING",
                     help="measure one custom path substring as a cold target")
     ap.add_argument("--ref", action="store_true",
@@ -754,11 +788,12 @@ def main():
     cold_hits = Counter()
     fired, warm_hits = Counter(), Counter()
 
-    for _, raw in transcripts():
+    for _, raw in transcripts(args.since):
         sessions += 1
         if do_cold:
+            acted = actions(raw)
             for name, pat in cold.items():
-                if pat.search(raw):
+                if pat.search(acted):
                     cold_hits[name] += 1
         for name, (fire_pat, sib_pat, _) in warm.items():
             if fire_pat.search(raw):

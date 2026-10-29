@@ -205,11 +205,13 @@ shapes appears in a command this process runs:
    /absolute/path <cmd>`.
 6. **`cat <file> || echo "not found"` existence-check compounds** — use the Read tool instead.
 
-**Never read a screenshot into this context.** Prove a visual result from text instead — logs,
-exit codes, a DOM or text dump the app already emits. If an image must be captured, save it to
-a path, assert on it via text or exit code, and name the path in the summary; the one other
-subagent this process may reach for is `screenshot-checker`, for a genuine human-eyes-only
-check, which keeps the image out of context and returns words.
+**A UI change is verified by looking at it, as `CLAUDE.md` § Finishing work requires.** Drive the
+change, save a screenshot of every variant and theme it touches to an absolute path, Read each
+image and write down every difference from what the change should show; the text checks — logs,
+exit codes, a DOM or text dump — come first and add to the look, never replace it. Name each
+image's absolute path in the summary. `screenshot-checker` answers a plain yes/no about an image
+("did the row render") without bringing it into this context; it never stands in for the look
+at a change's design.
 
 **Commit messages never attribute the work to Claude, an AI, or any tool** — no
 `Co-Authored-By`, no session link, no trailer naming a model; sign as the repo's user and

@@ -50,8 +50,8 @@ Make it look native to the product without importing anything from it:
 - **Type realistic content by hand** — real product copy, plausible names and numbers, a row count
   close to the real one.
 
-**Show the result** per [CONTRACT.md](CONTRACT.md) rule 10: the prototype as a Canvas artifact, since
-it needs interaction, and the screenshots of each variant as a Canvas post.
+**Show the result** per [CONTRACT.md](CONTRACT.md) rule 10: the prototype as a Wheel artifact, since
+it needs interaction, and the screenshots of each variant as a markdown post beside it.
 
 Two things this costs, both accepted: a variant cannot use the project's actual components, and
 density can't be judged against genuinely live data. When the whole question is "does our real
@@ -209,7 +209,7 @@ Then present the set and **stop — the choice is the user's**:
 | 1 | Quiet | Minimal motion, borders over shadows | A daily-use tool | Least memorable |
 | 2 | Editorial | Large type, generous whitespace | The moment deserves weight | Eats vertical space |
 
-Close by naming the Canvas artifact and how to drive it: every control is a button in the Tweaks
+Close by naming the pane showing the artifact and how to drive it: every control is a button in the Tweaks
 panel, which closes to a pill — no keys, because the design under judgement owns the keyboard. On a
 rebuild, add one line naming what changed since they last looked.
 

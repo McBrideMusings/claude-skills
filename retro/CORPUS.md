@@ -46,6 +46,11 @@ python3 ~/.claude/skills/retro/analyze.py <corpus> --dump-user-messages
 
 `<corpus>` is a `.jsonl`, a project dir, or the literal `ALL`.
 
+The extractor prints nothing until it has read the whole corpus, and over `ALL` that takes
+minutes. Redirect it to a file with a Bash timeout of 600000 ms or `run_in_background`; under
+the default 2-minute timeout the call is killed and the file is left empty, which reads as a
+broken `--json`.
+
 `--dump-user-messages` is the steering corpus: what the user actually asked for, in order.
 `negative-space`, `restatement`, and `decision-quality` all read it. It is the only lens
 input that is raw text, and it is still far smaller than the transcript.
