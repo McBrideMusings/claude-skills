@@ -82,7 +82,7 @@ wheel pane kind <new-pane> web --artifact <slug>
 The page's Send writes the pick, a note and a summary to the post's state and types the answer
 into the pane named by `--reply-to`. To read it without waiting for the typed reply, run
 `wheel artifact state <pane> submitted --wait`; its JSON holds `answers.pick`, the chosen
-variant. Rebuilding to the same `--out` and copying to `mockup.html` again reloads the pane.
+variant.
 Without `WHEEL_ENV`, the Canvas hand-off above applies.
 
 ## Recording motion
