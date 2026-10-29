@@ -34,7 +34,7 @@ where `source` is the screenshot an edit started from. The command prints the re
 `dsys refs get <ref>` writes the PNG back to scratch for whoever builds against it.
 
 The PNG lives in `/private/tmp`, which is emptied after three untouched days. When the winner is
-picked, say it is in the Canvas post and that the file expires; if no ticket has been cut by then, the comp is
+picked, say it is in the Wheel post and that the file expires; if no ticket has been cut by then, the comp is
 regenerated from its prompt, since nothing else holds it. A repo tracked on GitHub issues has no
 bead id, so its comps are not stored; `issues spec` puts the layout and copy in the ticket text.
 

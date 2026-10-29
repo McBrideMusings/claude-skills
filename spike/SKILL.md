@@ -1,6 +1,6 @@
 ---
 name: spike
-description: "Build a throwaway to settle a design or technical question — an ASCII layout sketch or greybox wireframe, an image comp, an HTML mockup screenshotted per variant and state, a throwaway interactive prototype, competing TUI designs, or competing approaches measured against one fixture. 'Artifact' means a prototype built here, never a hosted page. Use to sketch a layout, mock up, wireframe, prototype, spike, or 'let me see it working first'."
+description: "Build a throwaway to settle a design or technical question — an ASCII layout sketch or greybox wireframe, an image comp, an HTML mockup screenshotted per variant and state, a throwaway interactive prototype, competing TUI designs, or competing approaches measured against one fixture. 'Artifact' means a prototype built here, never a hosted page. Use to sketch a layout, mock up, wireframe, prototype, spike, 'I need to see a mockup of…', 'show me what it looks like', or 'let me see it working first'."
 ---
 
 # spike — throwaway builds that settle a question
@@ -35,7 +35,7 @@ result the way [CONTRACT.md](CONTRACT.md) rule 10 says.
 
 | Rung | Answers | Start here when | Build |
 | --- | --- | --- | --- |
-| 1. ASCII sketch | Where the regions sit | Arrangement is the open question | In chat, per [`../ref/gui/sketch.md`](../ref/gui/sketch.md) — no build. When the answer depends on proportion, a greybox: `--kind wireframe` |
+| 1. ASCII sketch | Where the regions sit | The user asked for a sketch, or arrangement is the only open question. Never for a request to see, show or mock up what something looks like, which starts at rung 2 or 3 | In chat, per [`../ref/gui/sketch.md`](../ref/gui/sketch.md) — no build. When the answer depends on proportion, a greybox: `--kind wireframe` |
 | 2. Image comp | What it looks like | A new screen whose look is open, with no CSS to build from. **The default for a UI question** | [COMP.md](COMP.md) |
 | 3. HTML mockup | What it looks like, and how its motion plays (`spike video`), in the project's real CSS, across variants and states | The project has tokens and components to render, or the answer needs exact type, spacing and every state side by side | [MOCKUP.md](MOCKUP.md) |
 | 4. Interactive prototype | How it behaves | Behaviour only visible under interaction, or a mockup that settled nothing | [UI.md](UI.md) |

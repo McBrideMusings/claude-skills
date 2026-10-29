@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""cases-check <bead-json-file> <report.md>
+
+Exit 0 when the worker's report drove every case the bead lists; exit 1 naming what is missing.
+
+The bead's cases are the numbered lines under a `## Cases` heading (or a `Cases:` line) in its
+description, then its notes. The report's cases are the rows of the table under its `## Cases`
+heading: `| # | Case | Drove it with | Showed |`. A row with an empty "Drove it with" or "Showed",
+or one reading `not driven`, `not run` or `n/a`, is undriven.
+"""
+import json, re, sys
+
+UNDRIVEN = re.compile(r"^\s*(?:$|not driven|not run|not exercised|n/?a\s*$|-\s*$|—\s*$)", re.I)
+
+
+def bead_cases(bead):
+    nums = set()
+    for text in (bead.get("description") or "", bead.get("notes") or ""):
+        lines = text.splitlines()
+        inside = False
+        for line in lines:
+            if re.match(r"^\s*(#+\s*Cases\b|Cases\b[^:]*:)", line, re.I):
+                inside = True
+                # "Cases (each driven by the check): 1. … 2. …" on one line
+                nums.update(int(n) for n in re.findall(r"(?:^|\s)(\d+)\.\s", line.split(":", 1)[-1]))
+                continue
+            if inside:
+                if re.match(r"^\s*#+\s", line):
+                    inside = False
+                    continue
+                m = re.match(r"^\s*(\d+)[.)]\s", line)
+                if m:
+                    nums.add(int(m.group(1)))
+    return nums
+
+
+def report_rows(text):
+    m = re.search(r"^## Cases\s*$(.*?)(?=^## |\Z)", text, re.M | re.S)
+    if not m:
+        return None
+    rows = {}
+    unnumbered = 0
+    for line in m.group(1).splitlines():
+        if not line.strip().startswith("|") or re.match(r"^\s*\|[\s:|-]+\|\s*$", line):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if re.match(r"^\d+$", cells[0]) and len(cells) >= 4:
+            rows[int(cells[0])] = (cells[2], cells[3])
+        elif len(cells) >= 3 and not re.match(r"^#?$|^case$", cells[0], re.I):
+            # A table without a # column: number its rows in order, after any numbered ones.
+            unnumbered += 1
+            rows[1000 + unnumbered] = (cells[-2], cells[-1])
+    return rows
+
+
+def main():
+    bead = json.load(open(sys.argv[1]))
+    if isinstance(bead, list):
+        bead = bead[0]
+    rows = report_rows(open(sys.argv[2]).read())
+    if rows is None:
+        print("cases-check: the report has no `## Cases` table")
+        return 1
+    if not rows:
+        print("cases-check: the `## Cases` table has no rows")
+        return 1
+    wanted = bead_cases(bead)
+    problems = []
+    for n in sorted(wanted - rows.keys()):
+        problems.append(f"case {n} has no row")
+    for n, (drove, showed) in sorted(rows.items()):
+        if UNDRIVEN.match(drove) or UNDRIVEN.match(showed):
+            problems.append(f"case {n} not driven" if n < 1000 else f"row {n - 1000} not driven")
+    if not wanted:
+        print("cases-check: the bead lists no numbered cases; checked the report's rows only")
+    if problems:
+        print("cases-check: " + "; ".join(problems))
+        return 1
+    print(f"cases-check: {len(rows)} case(s) driven")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

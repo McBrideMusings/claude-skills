@@ -157,6 +157,12 @@ run. A bead `launch` has claimed reads `in_progress`, so `bd ready` already leav
 line: mode (report-back), `<n>`, the focus, and the first `<n>` beads with titles. That line is
 the user's chance to redirect a focus that resolved wrong.
 
+**Splitting a bead mid-run** follows [`../issues/spec.md`](../issues/spec.md) Phase 04's vertical
+slices: every child's acceptance runs the product the way its user would and reads what it
+shows — a launch, a screen, a reply on its control surface. "Builds", "links", "compiles" or a
+scratch probe outside the product is never the whole of a child's acceptance; a layer that cannot
+run on its own stays inside the first slice that runs it.
+
 **Related work first.** Take the top-ranked group's members before moving to the next group.
 Never run two beads at once when one blocks the other, even transitively; the blocked one waits
 for the blocker to land and turns up in a later re-pick.
@@ -181,6 +187,16 @@ as an item, each launched one with its `lane` (the slot number, 1 to `<n>`) and 
 ones with no lane, landed ones kept. Each worker declares its own stage; the board shows it in
 its lane.
 
+**Show the run** under Wheel before the first launch, unless a pane in the lead's space already
+shows it: the machine artifact `swarm` is the one page for every run. Opened in a space, it reads
+that space's repo's run (`swarm status`, the work-board declarations, each worker's Claude
+transcript) every 15 seconds, logs each worker's latest actions with times, and flags a worker
+whose transcript has not been written for 10 minutes as stuck, whatever its agent state says. There is nothing to post, push or end.
+
+```bash
+p=$(wheel pane split "$WHEEL_PANE" right --background) && wheel pane kind "$p" web --artifact swarm --scope machine
+```
+
 One Bash call per slot, **each with `run_in_background: true`**:
 
 ```bash
@@ -192,7 +208,8 @@ other picker offers it; [`../implement/AUTO.md`](../implement/AUTO.md) § Swarm 
 worker's gate accept that), creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
 SELF-LAND in self-land mode (sign-off mode sets `SWARM_SIGNOFF=1` in the worker's environment
 instead), writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
-worker is idle or done. The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
+worker is idle or done (under Wheel, until it is idle with its outfile written: a worker waiting
+on its own subagent reads idle too). The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
 environment, and the merged `--settings`. Its brief tells it to read the project
 skill's `swarm.md` and the runtime pages before its first build, and to run every heavy
 command through `swarm heavy`. stdout is one line: bead, exit code, outfile, worktree.
@@ -203,34 +220,69 @@ on a permission prompt shows as blocked in herdr's sidebar, or as `blocked (pane
 `swarm status` under Wheel, and in its launch log; if the user asks how the run is going, name
 blocked workers and their panes.
 
+**A question for the user gets its own message.** When the lead needs a decision — an ADR slate
+row, a worker's open question, a design choice — it posts the status update first and the
+question after it, alone, in the option template, never as the last lines of a status update.
+Status updates arrive every few minutes during a run, and a question at the end of one scrolls
+away unread.
+
 ## 5. When a worker finishes
 
 1. Read its outfile. A non-zero exit, or an outfile that is a pane dump rather than a report,
    is a failed worker: `swarm log failed <id> "<exit and last line>"`, release the claim with
    `bd update <id> --status open --assignee ""` and a `bd update <id> --append-notes "swarm failed:
    <reason>"`, and don't relaunch it this run.
-2. Verify what it says: `bd show <id> --json` shows the bead closed, and
+2. Verify what it says, against the bead and not the report: read the bead's quoted request and its
+   case list, then read what the worker's check drove (its outfile's gate and the check script). A
+   listed case the check did not drive means the bead is not done: reopen it with `bd update <id>
+   --status open --append-notes "not verified: <cases>"` and log it `failed`, even when the
+   worker says landed. Then: `bd show <id> --json` shows the bead closed, and
    `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch; then
-   `swarm log landed <id> <sha>`. A parked bead has an `auto parked` note: `swarm log parked
+   `swarm log landed <id> <sha>`. That command runs `cases-check` on the bead and the outfile and
+   refuses unless the outfile's `## Cases` table ([`../implement/AUTO.md`](../implement/AUTO.md)
+   § A case not driven parks the item) has a driven row for every numbered case in the bead; a
+   refusal is the reopen-and-fail above. Read the table against the bead's words all the same: the
+   script checks that each row says what drove it, not that what drove it was the real input path. Every status line about a landing says what ran — the
+   product, the command, what it showed — and, when the check stopped short of running the
+   product with its real inputs (data, assets, account), says `not run` in that same line, never
+   later. A parked bead has an `auto parked` note: `swarm log parked
    <id> "<reason>"`. A report that says landed but fails either check is a failed worker.
+   `swarm log landed` and `swarm log ready` also run `gate-check` on the outfile and refuse a
+   report with no `Run:` line or no `Look for:` line, writing a `rejected` event to the run log.
+   On a refusal, send the report back to the worker (`SendMessage`, naming the missing lines)
+   and log the landing once the rewritten outfile passes.
    **In sign-off mode** the checks are: `git -C <worktree> log --oneline <base>..swarm/<id>`
    lists the worker's commits, `git -C <worktree> status --short` is empty, and the outfile has a
    `## Sign-off package`; then `swarm log ready <id> "<first commit subject>"`. The bead stays
    `in_progress`. A report missing any of the three is a failed worker. Leave its space or pane
-   open until the user answers its package; skip step 4 for it.
+   open until the user answers its package; skip steps 4 and 5 for it.
 3. Apply its `## Shared-file changes`, if the report has any. Workers never edit a file under
    `.claude/` that is a symlink to the main checkout — the `project` skill and other untracked local
    skills — because every worker shares it. Make each change in the main checkout, where the
    path points, after checking it still fits what landed. Two workers' changes to one file are
    merged here, by hand, in landing order. `swarm log applied <id> "<path>"` for each.
-4. Close its space or pane: `swarm close <id> landed` also removes the worktree (git-sweep
+4. Measure what landed. When the repo's project skill has a `perf.md`, run each scenario it
+   names for the landed diff (`git -C <repo> show --stat <sha>`), in the main checkout, and
+   print its table. A limit over, after `perf.md`'s one rerun, is a P1 bug filed with
+   `issues file` naming `<sha>`, the bead and the table, in scope so the next pick takes it. A
+   cost note the worker's report left unfixed (work per redraw, keystroke, frame or request; a
+   retry or poll; work that grows with rows, spaces or accounts) is filed the same way at P2,
+   never relayed as minor.
+5. Close its space or pane: `swarm close <id> landed` also removes the worktree (git-sweep
    reaps any left); `swarm close <id> parked` keeps the worktree and branch for the user.
-5. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
+6. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
    free slot.
 
 The run ends when a successful read finds no ready bead in scope left unlaunched, every slot
 is empty and the sign-off inbox is empty — or early, on a failed read or a quota refusal, which
 the report names.
+
+**The lead hands off to a fresh context past 300k tokens.** A run lasts hours, and every
+worker's notification is re-read on each turn after it. At a launch boundary — right after a
+slot's launch went out — once the lead's context is past 300k tokens, it hands itself on through
+[`relay`](../relay/SKILL.md) with a prompt naming the focus, `<n>`, the user's open questions and
+any accepted picks still to run. The fresh lead starts with `swarm status`, as after a compaction,
+which lists every running worker; it waits on those, never relaunching them.
 
 ## Sign-off inbox
 
@@ -310,7 +362,8 @@ of the report below, with its failed workers and left-in-scope beads under **Nee
 
 The attended report is one section, in chat:
 
-- **Landed** — bead, title, model, commit sha.
+- **Landed** — bead, title, model, commit sha, and what ran: the product's run and what it
+  showed, or `not run` when the check stopped at a build or a probe.
 - **Signed off** — bead, title, model, PR number (sign-off mode); **Declined** — bead and reason.
 - **Parked** — bead, the reason from its note, the branch holding the work.
 - **Decided without you** — every `auto decided` note the workers wrote, one line each.

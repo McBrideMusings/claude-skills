@@ -33,9 +33,11 @@ and the **conversation** leaves unmet.
    ```
 
    A rule is a `(trigger, compliance, since)` entry in that file's `RULES` dict — auditing a
-   new clause means adding one entry, not writing a scanner. It already carries the four
+   new clause means adding one entry, not writing a scanner. It already carries the seven
    exclusions that each produced a published wrong number: subagent transcripts, machine
-   payloads, turns predating the wording, and tool-result records that look like user turns.
+   payloads, turns predating the wording, tool-result records that look like user turns,
+   slash-command bodies, unattended swarm or dispatch sessions, and fixture prompts repeated
+   across sessions.
    A hand-rolled count misses at least one of them; every previous one did.
 
    **It measures shape, not judgement.** Its miss list is the input to hand-labelling, never

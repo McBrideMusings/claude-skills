@@ -299,14 +299,19 @@ cmd_launch() {
 remove this worktree, push its branch or delete a remote branch: \`land\` pushes your commits
 to $base, and the swarm lead tears the worktree down after reading your report."
     outcome="Say in its first line whether the bead landed (with the commit sha on $base) or was parked
-(with the reason)."
+(with the reason). The report carries the \`## Cases\` table AUTO.md § A case not driven parks the
+item describes, one row per case in the bead; a case you could not drive parks the bead. It also
+carries the gate (CHAT-FORMAT.md § Gate): a \`Run:\` line with the commands you ran and a \`Look
+for:\` line with the output you saw. The lead rejects a landed report without both."
   else
     landing="This repo is collaborative, so this pass ends at sign-off (AUTO.md § Swarm workers,
 SWARM_SIGNOFF=1): run \`wrap-up\` through Phase 5's commit and stop. Push nothing, open no PR,
 close no bead, file no follow-up and fix none from the slate — the user signs each of those off
 through the lead. Leave the worktree clean, with every change committed on $branch."
     outcome="Say in its first line whether the bead is ready for sign-off or was parked (with the
-reason). A ready report carries a section headed exactly \`## Sign-off package\` with:
+reason). A ready report carries the gate (CHAT-FORMAT.md § Gate), a \`Run:\` line with the commands
+you ran and a \`Look for:\` line with the output you saw; the lead rejects it without both. It also
+carries a section headed exactly \`## Sign-off package\` with:
   - Branch: \`<type>/<descriptive-name>\` to push as — no bead id anywhere in it
   - PR title: Conventional Commits, no bead id
   - PR body: wrap-up's PR body format, no bead id
@@ -321,7 +326,7 @@ This is one worker in a swarm. Nobody is watching this pane: take every decision
 mode says, record it as an \`auto decided\` note on the bead, and park the bead rather than wait.
 $landing
 
-The lead's dashboard shows each worker's stage from the work board. As each implement step
+The swarm artifact shows each worker's stage from the work board. As each implement step
 starts (plan, edit, build, verify, review, gate), call the \`work_set\` tool with
 \`{kind: \"bead\", id: \"$id\", stage: <the step>, note: <one line: what you are doing>}\`.
 
@@ -379,7 +384,11 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     git -C "$repo" show-ref --verify --quiet "refs/heads/$branch" && die "branch $branch already exists"
     bd -C "$repo" update "$id" --claim >/dev/null || die "could not claim $id"
     mkdir -p "$outdir" "$(dirname "$wt")"
-    git -C "$repo" worktree add -q -b "$branch" "$wt" "$base" >&2 || {
+    # Workers start from the remote's tip: the main checkout's local branch can sit behind it,
+    # and a worker cut from there lacks every bead landed since.
+    local start="$base"
+    git -C "$repo" fetch -q origin "$base" >&2 && start="origin/$base"
+    git -C "$repo" worktree add -q -b "$branch" "$wt" "$start" >&2 || {
       bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
       die "could not create $wt — released the claim on $id"; }
     CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
@@ -452,9 +461,35 @@ lead_pid() {
 cmd_log() {
   local repo detail="${3:-}"; repo="$(main_checkout)"
   case "${1:-}" in
-    run|filed|landed|parked|failed|ready|signed|declined|applied|end) ;;
-    *) die "usage: swarm log <run|filed|landed|parked|failed|ready|signed|declined|applied|end> [<bead-id>] [<detail>]" ;;
+    run|filed|landed|parked|failed|ready|rejected|signed|declined|applied|end) ;;
+    *) die "usage: swarm log <run|filed|landed|parked|failed|ready|rejected|signed|declined|applied|end> [<bead-id>] [<detail>]" ;;
   esac
+  if [ "$1" = landed ] || [ "$1" = ready ]; then
+    # A report counts only when it carries the gate's Run: and Look for: lines; a refusal is logged.
+    local gid="${2:-}" gout gmsg
+    [ -n "$gid" ] || die "usage: swarm log $1 <bead-id> <detail>"
+    gout="$(run_dir "$repo")/$gid.md"
+    [ -s "$gout" ] || die "no report at $gout: log it failed"
+    if ! gmsg="$(python3 "$(dirname "$0")/gate-check" "$gout")"; then
+      log_event "$repo" rejected "$gid" "$gmsg"
+      echo "$gmsg" >&2
+      die "$gid is not accepted: send the report back to the worker to add the gate's Run: and Look for: lines"
+    fi
+  fi
+  if [ "$1" = landed ]; then
+    # A landing counts only when the worker's report drove every case the bead lists.
+    local id="${2:-}" out bead
+    [ -n "$id" ] || die "usage: swarm log landed <bead-id> <sha>"
+    out="$(run_dir "$repo")/$id.md"
+    [ -s "$out" ] || die "no report at $out, so nothing shows the cases were driven: log it failed"
+    bead="$(mktemp)"
+    ( cd "$repo" && bd show "$id" --json ) > "$bead" || { rm -f "$bead"; die "bd show $id failed"; }
+    if ! python3 "$(dirname "$0")/cases-check" "$bead" "$out" >&2; then
+      rm -f "$bead"
+      die "$id is not landed: reopen it (bd update $id --status open --append-notes \"not verified: <cases>\") and log it failed"
+    fi
+    rm -f "$bead"
+  fi
   if [ "$1" = run ]; then
     local pid; pid="$(lead_pid)"
     detail="${detail:+$detail }${pid:+pid=$pid }space=$(basename "$repo" | tr -s ' ' _)"

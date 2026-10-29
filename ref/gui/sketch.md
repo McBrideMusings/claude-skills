@@ -1,18 +1,17 @@
 # Sketch — an ASCII layout in chat
 
-The default medium for UI design discussions in this account. Use ASCII art in chat to communicate
-layout decisions; emit a sibling empty Monodraw stub on disk so the user can draw an alternative
-visually if the ASCII proposal isn't quite right.
+An ASCII layout in chat, for when the user asks for a sketch or the only open question is where
+regions sit. A request to see, show or mock up what something looks like gets a rendered image or
+mockup in a pane instead (`spike` rungs 2 and 3). Emit a sibling empty Monodraw stub on disk so the
+user can draw an alternative visually if the ASCII proposal isn't quite right.
 
 This is the lowest rung of `spike`'s fidelity ladder ([`../../spike/SKILL.md`](../../spike/SKILL.md)):
 ASCII here (a greybox `wireframe` when proportion matters), then an image comp, then an interactive prototype.
 
 ## When to reach for sketch
 
-- The user describes a UI change, layout, modal, panel, dialog, form, or component.
-- A plan file is being written and design decisions came up in conversation.
-- The user says "sketch this", "design this", "lay this out".
-- A code change is touching layout-relevant code (CSS grid, flexbox, modal markup, dialog components).
+- The user says "sketch this" or "lay this out".
+- Arrangement is the only open question: which region goes where in a modal, panel, dialog or form.
 
 ## What to produce
 

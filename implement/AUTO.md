@@ -130,6 +130,31 @@ eyes: <what to look at>`.
 `BLOCKED` on a fixture that contradicts the item ([`VERDICTS.md`](VERDICTS.md)) is a decision
 about the item's model. Decide it per §A decision nobody made.
 
+## A case not driven parks the item
+
+An auto pass lands and closes its item only when the check drove every case step 1 listed, on
+the person's real setup, and each one passed. A case checked through a stand-in is not driven: a
+different input path than the one the case names, a proxy field instead of the thing the person
+sees, the default single setup instead of theirs. When the project has no way to drive a case —
+a real pointer, a real key into a focused field — building that driver is part of the pass,
+never a reason to skip the case. A pass that still cannot drive every case does not land and
+does not close the bead: it parks (§Parking an item) with the reason `undriven: <case numbers,
+and what each one needs>`.
+
+Every report carries a section headed exactly `## Cases`, a table with one row per case in the
+item's numbered **Cases** list, in its order:
+
+```markdown
+| # | Case | Drove it with | Showed |
+| --- | --- | --- | --- |
+| 1 | typing from the pane header lands in the draft | type-to-composer.sh step 3 (real key, header focused) | draft "hello" |
+```
+
+**Drove it with** names the command or check step; **Showed** is the output it printed. A row
+with either cell empty, or reading `not driven`, `not run` or `n/a`, is an undriven case. The
+swarm lead's `swarm log landed` refuses a landing whose table is missing a case or has an
+undriven row.
+
 ## A step only a person can take
 
 A permission prompt nobody can answer, a classifier denial, a deploy, an upstream issue to file,

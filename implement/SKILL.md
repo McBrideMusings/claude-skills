@@ -135,7 +135,14 @@ elsewhere, squashed by `wrap-up`.
 
 ## The steps
 
-1. **Plan.** State the files to touch and an objective acceptance check — for a changed value,
+1. **Plan.** Quote the person's request word for word from the item, and list every case its words
+   cover: each place an "anywhere" reaches, each item an "every" or "all" names, each state
+   (the empty one included). Add the setup the person really runs, read from their machine and
+   logs: each account or config directory in use, the real number of spaces, panes and windows,
+   real transcript lengths. A check on the default single setup is a check on nobody's setup.
+   A bead that paraphrases the request narrower than its words gets the
+   person's words back from the conversation or the bead's history before the plan goes on. Then
+   state the files to touch and an objective acceptance check — for a changed value,
    one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
    — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
    gate, and it should not have been offered. When the change adds or alters a feature of
@@ -167,6 +174,14 @@ elsewhere, squashed by `wrap-up`.
    repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
    `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:
    [`VERDICTS.md`](VERDICTS.md).
+   **Then measure.** When the project skill has a `perf.md`, run every scenario its table names
+   for this diff and print each table; a limit over, after its one rerun, fails this step like a
+   failed check. A diff that adds work per redraw, keystroke, frame or request, or work that grows
+   with what a person accumulates, adds a measure to `perf.md` in the same change, and proves the
+   limit fails on the broken version by running the scenario against it once.
+   **Every case step 1 listed is driven**, each by its own step in the check, and the gate names
+   each case with what it showed; a case not driven is an unverified case, said so on its line,
+   never a pass.
    **A diff that adds or changes a test** runs [`VERDICTS.md`](VERDICTS.md)'s keep check
    before the commit.
 5. **Blind review.** Once the build is green, spawn `code-reviewer` once — the one subagent
@@ -174,7 +189,9 @@ elsewhere, squashed by `wrap-up`.
    otherwise carries a standing instruction not to call the `Agent` tool unasked. It gets the
    diff and the repo's standards,
    never this session's own reasoning about why the diff is correct. Fix every
-   `blocking`/`major` finding it returns,
+   `blocking`/`major` finding it returns, and every finding about cost (work per redraw,
+   keystroke, frame or request; a retry or poll; work that grows with rows, spaces or accounts)
+   whatever its grade,
    then re-verify whatever the fix touched — one cycle, not two. `minor` findings, and anything
    still open after that cycle, go to `wrap-up`'s follow-up step rather than a second review
    round.
@@ -198,11 +215,13 @@ shapes appears in a command this process runs:
    /absolute/path <cmd>`.
 6. **`cat <file> || echo "not found"` existence-check compounds** — use the Read tool instead.
 
-**Never read a screenshot into this context.** Prove a visual result from text instead — logs,
-exit codes, a DOM or text dump the app already emits. If an image must be captured, save it to
-a path, assert on it via text or exit code, and name the path in the summary; the one other
-subagent this process may reach for is `screenshot-checker`, for a genuine human-eyes-only
-check, which keeps the image out of context and returns words.
+**A UI change is verified by looking at it, as `CLAUDE.md` § Finishing work requires.** Drive the
+change, save a screenshot of every variant and theme it touches to an absolute path, Read each
+image and write down every difference from what the change should show; the text checks — logs,
+exit codes, a DOM or text dump — come first and add to the look, never replace it. Name each
+image's absolute path in the summary. `screenshot-checker` answers a plain yes/no about an image
+("did the row render") without bringing it into this context; it never stands in for the look
+at a change's design.
 
 **Commit messages never attribute the work to Claude, an AI, or any tool** — no
 `Co-Authored-By`, no session link, no trailer naming a model; sign as the repo's user and

@@ -1,6 +1,6 @@
 ---
 name: wrap-up
-description: "Close out a body of work: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Runs in the current checkout, or in `wrap-up <worktree>` — how `implement` lands a pass, at the gate's `go`."
+description: "Close out a body of work: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Use when the user says 'wrap up', 'wrap this up', 'commit and push', 'land it' or 'ship it'. Runs in the current checkout, or in `wrap-up <worktree>` — how `implement` lands a pass, at the gate's `go`."
 ---
 
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
@@ -352,6 +352,8 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 **Offer** the PR (only on a confirmation in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines), then `bead-pr link` each Completed bead to the new PR number. If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
 
 Landing an `implement` pass here still runs steps 9–10 above after the merge into the feature branch (or the PR, on the feature branch itself): retire the worktree, and close the tracked item only when it is an epic slice whose commit is on the epic's branch. Every other item ships when its PR merges, so it gets `bead-pr link` instead of `bd close`.
+
+**Deploy what landed — part of landing, never a follow-up.** Once the work is on the default branch of an `owned` repo, run the project's deploy unasked from the primary checkout: the project skill's deploy step, or `admin deploy` when `admin.toml` has one. A change that is on `main` but not yet running where it is used is not finished. It never becomes a Step A slate row, and nobody is asked about it. What only a person can do afterwards, such as reloading a browser extension, goes in the landing report as one line. The only deploys that wait for a yes are the exceptions `~/.claude/CLAUDE.md` §Finishing work names: an always-on service someone may be using right now, and production or a work environment. In an `auto` run one of those is skipped and added to `Needs you` with its exact command; every other deploy runs in `auto` too. A repo with a build step and no deploy route gets one written in this step, through `admin`.
 
 Once an `implement` pass has landed, by either route, end its dashboard: `~/.claude/skills/dashboard/dashboard end implement:<id>`. For a pass that never started one it exits 1 with one line, which is fine to ignore.
 

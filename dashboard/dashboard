@@ -47,7 +47,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose", "swarm"]
+KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose"]
 MERMAID_KINDS = {"diagram", "diagnose"}
 MERMAID_SRC = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
 MERMAID_SRI = "sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
@@ -195,53 +195,6 @@ def probe_monitor(state: dict, slot: str, record: bool) -> dict:
     return {"readings": readings, "history": history}
 
 
-SWARM = Path.home() / ".claude/skills/swarm/swarm"
-WORK_SNAPSHOT = Path.home() / ".local/bin/work-snapshot"
-
-
-def probe_swarm(state: dict) -> None:
-    """Rows from the lead's work-board declaration (`work-snapshot session`: lanes, models,
-    stages, landed), each running one's agent state and pane from `swarm status`. A failed read
-    keeps the lead's own rows and says why in `live.error`."""
-    sid = state.get("session")
-    if not sid:
-        return
-    try:
-        out = subprocess.run([str(WORK_SNAPSHOT), "session", str(sid)], capture_output=True, text=True,
-                             timeout=30)
-        if out.returncode != 0:
-            raise ValueError(f"exit {out.returncode}: {(out.stderr.strip().splitlines() or [''])[-1]}")
-        snap = json.loads(out.stdout)
-    except (OSError, subprocess.TimeoutExpired, ValueError) as e:   # JSONDecodeError is a ValueError
-        state["live"] = {"error": f"work-snapshot: {e}"}
-        return
-    # "<bead>\t<model> <worktree>\tagent <working|blocked|idle|no pane> (pane <id>)"
-    agents = {}
-    for line in sh(["env", "WHEEL_ENV=1", str(SWARM), "status"]).split("--- in flight\n", 1)[-1].splitlines():
-        if line.startswith("---"):
-            break
-        m = re.match(r"(\S+)\t.*\tagent (\S+(?: \S+)?)(?: \(pane (\w+)\))?$", line)
-        if m:
-            agents[m[1]] = (m[2], m[3] or "")
-    workers, queued = [], []
-    for it in snap.get("items", []):
-        row = {"bead": it["id"], "title": it.get("title") or "", "model": it.get("model") or ""}
-        stage = " · ".join(x for x in (it.get("stage"), it.get("note")) if x)
-        if it.get("state") == "landed":
-            workers.append({**row, "state": "landed", "note": f"landed {it.get('landedAs') or ''}".strip()})
-        elif it.get("state") == "parked":
-            workers.append({**row, "state": "failed", "note": "parked"})
-        elif it.get("lane"):
-            agent, pane = agents.get(it["id"], ("starting", ""))
-            workers.append({**row, "state": "blocked" if agent == "blocked" else "working", "pane": pane,
-                            "note": stage or f"agent {agent}"})
-        else:
-            queued.append({"bead": it["id"], "title": row["title"]})
-    order = {"blocked": 0, "working": 1, "failed": 2, "landed": 3}
-    state["workers"] = sorted(workers, key=lambda w: order[w["state"]])
-    state["queued"] = queued
-
-
 def build_data(slot: str, record: bool = True) -> dict:
     state = load_state(slot)
     kind = state["kind"]
@@ -249,8 +202,6 @@ def build_data(slot: str, record: bool = True) -> dict:
         state["live"] = probe_implement(state)
     elif kind == "monitor":
         state["live"] = probe_monitor(state, slot, record)
-    elif kind == "swarm":
-        probe_swarm(state)
     state["updated"] = now()
     return state
 

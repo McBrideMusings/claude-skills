@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: "`dispatch <target>` — give a brief to another executor and take its result back. Targets: `agent` (the in-session Claude Agent tool, the default), `workspace` (a herdr space, nested under the repo's space where a worktree allows it), `window` (a Terminal.app window), or a vendor (`codex`, `reasonix`). Read this when wiring, debugging, or extending dispatched work."
+description: "`dispatch <target>` — give a brief to another executor and take its result back. Targets: `agent` (the in-session Claude Agent tool, the default), `workspace` (a herdr space or a Wheel pane, nested under the repo's space where a worktree allows it), `window` (a Terminal.app window), or a vendor (`codex`, `reasonix`). Load before starting any other session: 'dispatch a session/worker/space', 'open a new space and tell it to…', 'spin up an agent for each of these'; and when wiring, debugging, or extending dispatched work."
 ---
 
 # Dispatch

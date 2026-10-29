@@ -16,7 +16,7 @@ rule means adding one entry to RULES below — not writing a new scanner.
 ## Why the denominator is most of the work
 
 Every wrong adherence number this tool exists to prevent came from counting turns that
-could never comply. Four exclusions, each of which produced a published error:
+could never comply. Seven exclusions, each of which produced a published error:
 
 1. **Subagent transcripts** (`<session-id>/subagents/**.jsonl`) are not chat with the user.
    Including them put 23 swarm-worker replies into a 122-turn sample on 2026-08-20.
@@ -29,8 +29,16 @@ could never comply. Four exclusions, each of which produced a published error:
 4. **Tool-result records carry `role: "user"` with no text.** They do NOT open a new turn.
    Treating one as a turn boundary drops every reply that involved a tool call — that bug
    reported n=32 when the true n was 122.
+5. **A slash-command body is not the ask** — the `<command-name>` wrapper before it is.
+6. **Unattended sessions.** A session opened by a dispatch brief that runs `implement <id>
+   auto`, or that says nobody is watching, has no user to read a gate or type `go`. Its
+   turns are dropped whole. On 2026-10-29, 867 of 1,334 coding-task turns since 2026-10-14
+   were swarm workers, which read `escape-hatch` at 16.1%.
+7. **A fixture prompt repeated across sessions.** The same user text in 3 or more sessions
+   on one day is a harness probe, not a person asking. Seven of 25 sampled options-format
+   misses on 2026-10-14 were one such prompt.
 
-Exclusions 1, 2 and 4 are unconditional. 3 is the `since` field on each rule.
+Exclusions 1, 2, 4, 5, 6 and 7 are unconditional. 3 is the `since` field on each rule.
 
 ## What this tool cannot do
 
@@ -170,6 +178,14 @@ MAX_ASK   = 3000  # chars; above this the user message is a pasted brief, not a 
 COMMAND_WRAPPER = re.compile(r"<command-name>")
 COMMAND_BODY    = re.compile(r"\A(?:Base directory for this skill:|# /\w[\w-]*\s)")
 
+# Exclusion 6: the first user message of an unattended session — a swarm or dispatch brief.
+UNATTENDED = re.compile(r"\bimplement\s+\S+\s+auto\b|\bimplement auto\b|nobody is watching", re.I)
+# A dispatch brief states it in its opening lines; a person who only mentions auto mode
+# further into a message is still an attended session.
+UNATTENDED_SPAN = 300
+# Exclusion 7: identical user text in this many sessions on one day.
+FIXTURE_SESSIONS = 3
+
 # ----------------------------------------------------------------------- extraction
 
 def is_machine_payload(text):
@@ -197,6 +213,7 @@ def iter_turns():
             proj = os.path.relpath(path, ROOT).split(os.sep)[0]
             cur_user, last_asst, out = None, None, []
             prev_wrapper = False
+            first_ask = True
             try:
                 fh = open(path, errors="replace")
             except OSError:
@@ -235,6 +252,11 @@ def iter_turns():
                             prev_wrapper = False
                             continue
                         prev_wrapper = bool(COMMAND_WRAPPER.search(t))
+                        if first_ask:                        # exclusion 6
+                            first_ask = False
+                            if UNATTENDED.search(t[:UNATTENDED_SPAN]):
+                                out = None
+                                break
                         if cur_user and last_asst and len(last_asst) > MIN_REPLY:
                             out.append((cur_user[0], proj, path, cur_user[1], last_asst))
                         cur_user = (date, t) if len(t) < MAX_ASK else None
@@ -244,15 +266,24 @@ def iter_turns():
                                      if isinstance(c, dict) and c.get("type") == "text")
                         if t.strip():
                             last_asst = t
+            if out is None:
+                continue
             if cur_user and last_asst and len(last_asst) > MIN_REPLY:
                 out.append((cur_user[0], proj, path, cur_user[1], last_asst))
             yield from out
 
+def drop_fixtures(turns):
+    """Exclusion 7: drop user text that recurs verbatim in FIXTURE_SESSIONS+ sessions a day."""
+    paths = collections.defaultdict(set)
+    for t in turns:
+        paths[(t[0], t[3].strip())].add(t[2])
+    return [t for t in turns if len(paths[(t[0], t[3].strip())]) < FIXTURE_SESSIONS]
+
 # -------------------------------------------------------------------------- report
 
 def run(name, rule, since, dump, dump_hits):
-    turns = [t for t in iter_turns()
-             if rule["trigger"].search(t[3]) and not is_machine_payload(t[4])]  # exclusion 2
+    turns = drop_fixtures([t for t in iter_turns()
+                           if rule["trigger"].search(t[3]) and not is_machine_payload(t[4])])  # exclusions 2, 7
     turns.sort()
     scoped = [t for t in turns if t[0] >= since] if since else turns
     if not scoped:

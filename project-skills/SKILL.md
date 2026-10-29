@@ -1,18 +1,19 @@
 ---
 name: project-skills
-description: "Generate or audit a repo's own `project` skill — `<repo>/.claude/skills/project/`, holding how to verify the real app works (verify.md), where its dev and production logs live and how to fetch them by device and time (logs.md), how swarm workers build and test it side by side (swarm.md), and the project's scripts (tools/). Load when a repo has no project skill, when a commit is refused for lacking one, or when auditing one for drift."
+description: "Generate or audit a repo's own `project` skill — `<repo>/.claude/skills/project/`, holding how to verify the real app works (verify.md), what it may cost (perf.md), where its dev and production logs live and how to fetch them by device and time (logs.md), how swarm workers build and test it side by side (swarm.md), and the project's scripts (tools/). Load when a repo has no project skill, when a commit is refused for lacking one, or when auditing one for drift."
 ---
 
 # Generate or audit a repo's `project` skill
 
 Every repo with a build or test step keeps one skill of its own, `<repo>/.claude/skills/project/`.
-It answers three questions about this one repo, each in its own section file, and this skill
-writes and audits all three the same way.
+It answers four questions about this one repo, each in its own section file, and this skill
+writes and audits all four the same way.
 
 ```text
 <repo>/.claude/skills/project/
 ├── SKILL.md      # frontmatter + one paragraph per section, saying when to read it
 ├── verify.md     # prove the real thing works: launch, doctor, drive, evidence, cleanup
+├── perf.md       # what it may cost: scenarios, their scripts, the limits a pass fails on
 ├── logs.md       # where logs live in dev and production, the fetch command, line → fix
 ├── swarm.md      # heavy commands, cheap check, shared caches, per-worker resources
 ├── swarm.env     # KEY=VALUE lines `swarm launch` exports into each worker (optional)
@@ -41,6 +42,7 @@ Never ask which mode. `test -f <repo>/.claude/skills/project/SKILL.md` decides: 
    | Section | Page | Answers |
    | --- | --- | --- |
    | `verify.md` | [`verify.md`](verify.md) | How a program proves the real app or tooling works |
+   | `perf.md` | [`perf.md`](perf.md) | What it may cost while it runs, as scenarios with limits |
    | `logs.md` | [`logs.md`](logs.md) | Where every log of every runtime lives, and how to read one without the user passing it in |
    | `swarm.md` | [`swarm.md`](swarm.md) | How several workers build and test it at once |
 
@@ -48,7 +50,8 @@ Never ask which mode. `test -f <repo>/.claude/skills/project/SKILL.md` decides: 
 4. **Write the code support a section names** in the same change: a log file the app does not
    write yet, a push to Loki an app lacks, a configurable port, an `admin` task. A section the
    project cannot follow is not support.
-5. **Prove it.** Run each section once: one verify drive end to end, one `logs.md` fetch that
+5. **Prove it.** Run each section once: one verify drive end to end, every `perf.md` scenario
+   (once on the current code and once on the broken version its limit is set against), one `logs.md` fetch that
    returns real lines from each runtime it names, and `swarm check` for `swarm.md`. A section
    never executed is a draft.
 
@@ -67,6 +70,8 @@ description: "<Project>: how to verify it works (<surface>), where its logs live
 # <Project>
 
 - **Verify** — read [verify.md](verify.md) before reporting any change works.
+- **Performance** — read [perf.md](perf.md) after `verify.md`: the scenarios a diff must run and
+  the limits that fail it.
 - **Logs** — read [logs.md](logs.md) when something happened while it ran: on a device, a
   server, a container, at a time. It fetches the lines itself; never ask the user to paste them.
 - **Swarm** — read [swarm.md](swarm.md) before the first build or test in a swarm worktree.
