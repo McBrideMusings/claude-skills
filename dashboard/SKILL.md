@@ -24,7 +24,10 @@ goes in the state, when to post, when to push, and when the artifact is deleted:
 | [`kinds/chart.md`](kinds/chart.md) | Numbers read better as a line or bar chart, on their own or inside another job. |
 | [`kinds/diagram.md`](kinds/diagram.md) | A structure reads better drawn: a flowchart, a call graph, a dependency graph. |
 | [`kinds/diagnose.md`](kinds/diagnose.md) | A `diagnose` loop has its first hypotheses. |
-| [`kinds/swarm.md`](kinds/swarm.md) | A `swarm` run is about to launch its first worker. |
+
+A `swarm` run has no kind here: under Wheel every run shows in the one machine artifact `swarm`
+(`wheel pane kind <pane> web --artifact swarm --scope machine`), which reads the run from disk
+and needs no slot, state or push. See the `swarm` skill § 4.
 
 **Inside a Wheel pane** (`WHEEL_ENV=1`) the same verbs drive a Wheel artifact instead of a
 Canvas one: `post` shows the page in a pane split to the right of this agent's, `push` updates
