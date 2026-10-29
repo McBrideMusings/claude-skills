@@ -192,7 +192,8 @@ other picker offers it; [`../implement/AUTO.md`](../implement/AUTO.md) § Swarm 
 worker's gate accept that), creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
 SELF-LAND in self-land mode (sign-off mode sets `SWARM_SIGNOFF=1` in the worker's environment
 instead), writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
-worker is idle or done. The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
+worker is idle or done (under Wheel, until it is idle with its outfile written: a worker waiting
+on its own subagent reads idle too). The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
 environment, and the merged `--settings`. Its brief tells it to read the project
 skill's `swarm.md` and the runtime pages before its first build, and to run every heavy
 command through `swarm heavy`. stdout is one line: bead, exit code, outfile, worktree.
@@ -202,6 +203,12 @@ The harness notifies you when a launch exits. Never poll with `ScheduleWakeup`. 
 on a permission prompt shows as blocked in herdr's sidebar, or as `blocked (pane <id>)` in
 `swarm status` under Wheel, and in its launch log; if the user asks how the run is going, name
 blocked workers and their panes.
+
+**A question for the user gets its own message.** When the lead needs a decision — an ADR slate
+row, a worker's open question, a design choice — it posts the status update first and the
+question after it, alone, in the option template, never as the last lines of a status update.
+Status updates arrive every few minutes during a run, and a question at the end of one scrolls
+away unread.
 
 ## 5. When a worker finishes
 
@@ -231,6 +238,13 @@ blocked workers and their panes.
 The run ends when a successful read finds no ready bead in scope left unlaunched, every slot
 is empty and the sign-off inbox is empty — or early, on a failed read or a quota refusal, which
 the report names.
+
+**The lead hands off to a fresh context past 300k tokens.** A run lasts hours, and every
+worker's notification is re-read on each turn after it. At a launch boundary — right after a
+slot's launch went out — once the lead's context is past 300k tokens, it hands itself on through
+[`relay`](../relay/SKILL.md) with a prompt naming the focus, `<n>`, the user's open questions and
+any accepted picks still to run. The fresh lead starts with `swarm status`, as after a compaction,
+which lists every running worker; it waits on those, never relaunching them.
 
 ## Sign-off inbox
 

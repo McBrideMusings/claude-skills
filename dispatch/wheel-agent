@@ -149,13 +149,19 @@ Do not summarise it there; that file IS your answer and is the only part that is
     sleep 2
   done
 
-  local deadline=$(( $(date +%s) + TIMEOUT_MS / 1000 )) s told=""
+  # Idle alone is not done: a worker waiting on its own background agent or job reports idle
+  # and wakes when that finishes. Only an idle worker that has written its answer is done; one
+  # idle with nothing written is waited on until the timeout.
+  local deadline=$(( $(date +%s) + TIMEOUT_MS / 1000 )) s told="" waiting=""
   while :; do
     s="$(state)"
     case "$s" in
-      idle) break ;;
+      idle)
+        [ -s "$outfile" ] && break
+        [ -n "$waiting" ] || echo "wheel-agent: the worker in pane $pane is idle with no answer written — waiting for it to resume" >&2
+        waiting=1 ;;
       blocked) [ -n "$told" ] || echo "wheel-agent: the worker in pane $pane is blocked on a prompt — answer it there" >&2; told=1 ;;
-      *) told="" ;;
+      *) told=""; waiting="" ;;
     esac
     [ "$(date +%s)" -lt "$deadline" ] || { echo "wheel-agent: stopped waiting on pane $pane after $((TIMEOUT_MS / 60000))m" >&2; break; }
     # A closed pane takes the worker with it and no hook fires, so stop waiting on its state.
