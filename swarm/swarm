@@ -491,7 +491,7 @@ cmd_log() {
     ( cd "$repo" && bd show "$id" --json ) > "$bead" || { rm -f "$bead"; die "bd show $id failed"; }
     if ! python3 "$(dirname "$0")/cases-check" "$bead" "$out" >&2; then
       rm -f "$bead"
-      die "$id is not landed: reopen it (bd update $id --status open --append-notes \"not verified: <cases>\") and log it failed"
+      die "$id is not landed: reopen it (bd update $id --status open --append-notes \"not verified: <cases>\") and log it with swarm log reopened $id \"not verified: <cases>\""
     fi
     rm -f "$bead"
   fi

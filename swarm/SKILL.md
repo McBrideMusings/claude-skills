@@ -134,7 +134,7 @@ before step 1; a swarm started by hand has no block and no budget.
   running >= Limit` means launch nothing more: let the running workers finish, count them, and end
   the run. `all` never runs out. A block whose `Used` is already at or past `Limit` launches
   nothing.
-- At the end (§6) the lead writes the block back: every landed, parked and failed bead added to
+- At the end (§6) the lead writes the block back: every landed, parked, reopened and failed bead added to
   `Landed`, `Parked` and `Needs you`, `Used` raised by the landed and parked count, and each
   worker's `Needs you` and `decided:` lines folded in. That updated block is what the next hop
   receives.
@@ -359,7 +359,7 @@ and waits at its hatch.
 writes the block back (§Run budget), runs `next-work --auto` for the block's `Focus:`, and follows
 the `Next:` line the way [`../implement/AUTO.md`](../implement/AUTO.md) §Routing each hop says,
 through `relay` §Auto. It prints [`../implement/AUTO.md`](../implement/AUTO.md) §The report instead
-of the report below, with its failed workers and left-in-scope beads under **Needs you**, and the
+of the report below, with its reopened beads, failed workers and left-in-scope beads under **Needs you**, and the
 `Next:` line last.
 
 The attended report is one section, in chat:
@@ -370,7 +370,8 @@ The attended report is one section, in chat:
 - **Parked** — bead, the reason from its note, the branch holding the work.
 - **Decided without you** — every `auto decided` note the workers wrote, one line each.
 - **Shared files updated** — each main-checkout file the lead changed from a worker's report.
+- **Reopened** — bead, title, the cases its report did not show (the `not verified:` note), and whether it is queued again.
 - **Failed** — bead, exit code, the last lines of its output.
 - **Left in scope** — beads still blocked, and what blocks each.
 
-Close with `swarm: <landed> landed, <parked> parked, <failed> failed, focus <focus or none>`.
+Close with `swarm: <landed> landed, <parked> parked, <reopened> reopened, <failed> failed, focus <focus or none>`.
