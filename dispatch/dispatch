@@ -108,7 +108,7 @@ resolve_transport() {
         if [ "$a" != claude ]; then
           echo "dispatch: DISPATCH_TRANSPORT=wheel runs only claude workers, not '$a'" >&2; return 1
         fi
-        printf 'wheel\tforced by DISPATCH_TRANSPORT; it gets a pane in space %s\n' "${WHEEL_SPACE:-?}"; return 0 ;;
+        printf 'wheel\tforced by DISPATCH_TRANSPORT; it gets a pane in space %s\n' "$("$HOME/.claude/tools/wheel-space" 2>/dev/null || echo '?')"; return 0 ;;
       *) echo "dispatch: unknown DISPATCH_TRANSPORT '$forced' (expected terminal|herdr|wheel)" >&2; return 1 ;;
     esac
   fi
@@ -120,7 +120,7 @@ resolve_transport() {
     elif ! command -v wheel >/dev/null 2>&1; then
       printf 'terminal\tinside Wheel, but the wheel CLI is not on PATH\n'
     else
-      printf 'wheel\tinside Wheel; it gets a pane split off %s in space %s\n' "${WHEEL_PANE:-?}" "${WHEEL_SPACE:-?}"
+      printf 'wheel\tinside Wheel; it gets a pane split off %s in space %s\n' "${WHEEL_PANE:-?}" "$("$HOME/.claude/tools/wheel-space" 2>/dev/null || echo '?')"
     fi
   elif [ "${HERDR_ENV:-}" != "1" ]; then
     printf 'terminal\tnot inside herdr or Wheel\n'

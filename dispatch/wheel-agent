@@ -7,7 +7,8 @@
 # response in <outfile>, blocks until done — and the worker is the claude TUI in a pane you
 # can watch, type at, or take over.
 #
-# Placement: by default the pane is split off inside the caller's own space ($WHEEL_SPACE). The
+# Placement: by default the pane is split off inside the caller's own space, which
+# ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives panes no WHEEL_SPACE. The
 # first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one splits the
 # newest live worker pane downward, so workers stack in one column.
 #
@@ -99,8 +100,9 @@ cmd_run() {
   shift 2
   [ "${1:-}" = "--" ] && shift || true
   [ -f "$promptfile" ] || { echo "wheel-agent: prompt file not found: $promptfile" >&2; return 1; }
-  [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_SPACE:-}" ] && [ -n "${WHEEL_PANE:-}" ] \
-    || { echo "wheel-agent: not running inside a Wheel pane (WHEEL_ENV, WHEEL_SPACE, WHEEL_PANE)" >&2; return 1; }
+  [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_PANE:-}" ] \
+    || { echo "wheel-agent: not running inside a Wheel pane (WHEEL_ENV, WHEEL_PANE)" >&2; return 1; }
+  WHEEL_SPACE="$("$HOME/.claude/tools/wheel-space")" || return 1
   need wheel; need jq
 
   local dir="${WHEEL_AGENT_DIR:-}"

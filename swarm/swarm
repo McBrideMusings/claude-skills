@@ -231,7 +231,7 @@ cmd_check() {
     fi
     where="workers open as child spaces of $ws"
   else
-    [ -n "${WHEEL_SPACE:-}" ] && [ -n "${WHEEL_PANE:-}" ] || die "inside Wheel but WHEEL_SPACE or WHEEL_PANE is unset"
+    "$HOME/.claude/tools/wheel-space" >/dev/null || die "inside Wheel but this pane's space cannot be resolved"
     where="workers open as panes in the background Wheel space '$(wheel_space "$repo")', rooted at $repo; it opens with the first worker and closes with the last"
   fi
   local rts; rts="$(runtimes "$repo" | paste -sd' ' -)"
