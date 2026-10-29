@@ -107,6 +107,9 @@ pick. The only accept word; `yes`,
 `approve`, `ok`, `confirm`, `send` are never accepts. At the gate, `go` means run wrap-up now —
 land the standing branch (or, for already-committed work, run wrap-up from that commit). `go`
 at the gate also means the owner has tested the change or chose not to; nothing asks again.
+A new request that arrives before every accepted pick has run pauses the rest; it never cancels
+them. The reply to that request names the paused picks in one line, the work board lists them,
+and they run once the new request is done.
 
 **park**:
 Apply every stated pick and end the turn. Slate-level only, never on a row, and never offered
