@@ -137,7 +137,10 @@ elsewhere, squashed by `wrap-up`.
 
 1. **Plan.** Quote the person's request word for word from the item, and list every case its words
    cover: each place an "anywhere" reaches, each item an "every" or "all" names, each state
-   (the empty one included). A bead that paraphrases the request narrower than its words gets the
+   (the empty one included). Add the setup the person really runs, read from their machine and
+   logs: each account or config directory in use, the real number of spaces, panes and windows,
+   real transcript lengths. A check on the default single setup is a check on nobody's setup.
+   A bead that paraphrases the request narrower than its words gets the
    person's words back from the conversation or the bead's history before the plan goes on. Then
    state the files to touch and an objective acceptance check — for a changed value,
    one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
