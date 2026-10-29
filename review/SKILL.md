@@ -159,7 +159,7 @@ are `issues shape`'s job, not this review's. The rules are [`../issues/labels.md
 
 When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor `dispatch codex`/`dispatch reasonix` target on the **same** diff, then reconcile.
 
-**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check`; if it fails (no target configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
+**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check --job decide`, then `dispatch agent --job decide`. If the check fails (no list set, not authenticated, Terminal automation not permitted), or the picked agent's name is `claude` (the decide list names no other vendor, or none was picked), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
 **Dual is the one flavor whose escalation is automatic.** `dispatch` — invoke it for the ladder — defaults all dispatching to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
 
@@ -167,17 +167,18 @@ When `dual` is in the arguments, after the review core produces Claude's own fin
 
 ```bash
 D="$HOME/.claude/skills/dispatch/dispatch"
-"$D" check || { echo "Dispatch target unavailable — running solo review only"; }
-"$D" transport      # name the surface in the status line before you start it
+"$D" check --job decide || { echo "Dispatch target unavailable — running solo review only"; }
+"$D" agent --job decide          # a picked name of "claude" means no cross-vendor target: solo review only
+"$D" transport --job decide      # name the surface in the status line before you start it
 ```
 
 1. Write the review prompt to a temp file — review instructions + the **literal** diff command the core used (`gh pr diff`, the merge-safe diff, or `git diff HEAD`). Let the target run that command itself; don't paste a huge diff into the prompt.
-2. Run `"$D" exec "$prompt" "/tmp/<slug>-dispatch.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
+2. Run `"$D" exec --job decide "$prompt" "/tmp/<slug>-dispatch.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
 3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the **name of the model, harness, or vendor that found it** — `[claude]` for Claude's own findings, the **resolved target's name** for the target's, or `[both]` when both flagged it.
 
    **A source tag NEVER carries the name of a skill, a lens, an axis, or a process.** The tag answers "which reviewer said this," and the only valid answers are things a person could point at and name: a model (`[claude]`, `[codex]`, `[gpt-5]`), a harness or vendor (`[reasonix]`), or `[both]`. **`[review]` is wrong and is the specific mistake this rule exists to stop** — `review` is this skill's own name, it identifies no reviewer, and it has shipped to a real PR that way. Same ban on `[lens]`, `[bug-lens]`, `[self]`, `[internal]`, `[dual]`, and `[dispatch]`.
 
-   Get the target's name at runtime — `dispatch agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[dispatch]`). "Both flagged it" is a strong signal; "only the target flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
+   Get the target's name at runtime — `dispatch agent --job decide` prints the picked agent as `<name>:<model> (<why>)` — and use the literal name before the colon in the tag (`[codex]`, never `[dispatch]`). "Both flagged it" is a strong signal; "only the target flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
 
    **Before posting or writing any source-tagged report, scan the body for a tag that isn't a model/harness/vendor name or `both`.** One found means the tagging is wrong throughout, not in one spot — fix every tag, not the one you noticed.
 4. Fold the target's findings into the matching axis sections of the report and carry the source tag through to the file format. Dual is still **read-only** — it reviews, never edits.
@@ -194,7 +195,7 @@ Report two dimensions separately:
 Rate each finding P0–P3 by the scale below, terse, no praise.
 <paste REVIEW-CORE.md §Axis tags: the P-level table and the two paragraphs beneath it>
 PROMPT
-"$D" exec "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
+"$D" exec --job decide "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
 ```
 
 ## Sweep mode — `review` on the default branch

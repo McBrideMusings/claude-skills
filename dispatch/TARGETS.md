@@ -125,7 +125,7 @@ For `workspace`, make the worktree with plain git, link its local files, and run
 ```
 git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
 CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
-( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec --name "<what the work is>" <brief> <outfile> )
+( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec --job execute --name "<what the work is>" <brief> <outfile> )
 ```
 
 **Always pass `--name`**: two to five words saying what the worker does ("profile-first spike",
@@ -234,9 +234,7 @@ standalone space.
 `herdr agent start --kind` takes a fixed enum (`pi, claude, codex, gemini, cursor, devin,
 agy, cline, omp, mastracode, opencode, copilot, kimi, kiro, droid, amp, grok, hermes, kilo,
 qodercli, maki`). **`reasonix` is not in it**, so `dispatch reasonix` can only ever run as
-`window`, in Terminal.app. That is herdr's limitation, not a preference — and on the personal
-profile, where `CLAUDE_DISPATCH_AGENT=reasonix`, it is the common case. `dispatch transport`
-says so in as many words.
+`window`, in Terminal.app. That is herdr's limitation, not a preference. `dispatch transport` says so in as many words.
 
 herdr also refuses to open a space for a worktree of a repo it does not track, such as the
 skills submodule. `herdr-agent` then starts a standalone space with the worktree as its
