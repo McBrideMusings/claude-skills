@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""gate-check <report.md>
+
+Exit 0 when the worker's report carries the gate's two record lines, `Run:` and `Look for:`
+(bold or plain, at the start of a line, each followed by text on the same line); exit 1 naming
+the missing ones.
+"""
+import re, sys
+
+LINES = {n: rf"^\s*(?:[-*]\s*)?(?:\*\*{n}\*\*|{n})[ \t]*\S" for n in ("Run:", "Look for:")}
+
+
+def main():
+    text = open(sys.argv[1]).read()
+    missing = [name for name, pat in LINES.items() if not re.search(pat, text, re.M)]
+    if missing:
+        print("gate-check: the report has no " + " or ".join(f"`{m}`" for m in missing) + " line with text after it")
+        return 1
+    print("gate-check: Run: and Look for: present")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

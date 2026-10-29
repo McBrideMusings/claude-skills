@@ -247,6 +247,10 @@ away unread.
    product with its real inputs (data, assets, account), says `not run` in that same line, never
    later. A parked bead has an `auto parked` note: `swarm log parked
    <id> "<reason>"`. A report that says landed but fails either check is a failed worker.
+   `swarm log landed` and `swarm log ready` also run `gate-check` on the outfile and refuse a
+   report with no `Run:` line or no `Look for:` line, writing a `rejected` event to the run log.
+   On a refusal, send the report back to the worker (`SendMessage`, naming the missing lines)
+   and log the landing once the rewritten outfile passes.
    **In sign-off mode** the checks are: `git -C <worktree> log --oneline <base>..swarm/<id>`
    lists the worker's commits, `git -C <worktree> status --short` is empty, and the outfile has a
    `## Sign-off package`; then `swarm log ready <id> "<first commit subject>"`. The bead stays
