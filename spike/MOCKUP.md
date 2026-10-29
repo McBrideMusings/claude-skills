@@ -63,6 +63,28 @@ reached by clicking, or a real component's response. That climbs to [UI.md](UI.m
    running, the hand-off is a `canvas post` of the screenshots, grouped by screen with each
    state captioned; chat names the card and the decision, never a bare list of PNG paths.
 
+## Showing the page under Wheel
+
+When `WHEEL_ENV=1`, show the built page itself, not only its screenshots. The `mockup` built-in
+(Settings › Artifacts, or `wheel artifact builtin install mockup`) draws a variant and state
+picker around it. The built-in reads a file named `mockup.html`, so copy the build under that name
+and post it; the post lives in the project's `.wheel/artifacts/<slug>` and replaces a hand-made
+artifact per spike:
+
+```bash
+cp /private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html /private/tmp/claude/<repo-slug>/spikes/<slug>/mockup.html
+wheel artifact new <slug> --renderer mockup --reply-to "$WHEEL_PANE" --expires 3d \
+  /private/tmp/claude/<repo-slug>/spikes/<slug>/mockup.html
+wheel pane split "$WHEEL_PANE" right
+wheel pane kind <new-pane> web --artifact <slug>
+```
+
+The page's Send writes the pick, a note and a summary to the post's state and types the answer
+into the pane named by `--reply-to`. To read it without waiting for the typed reply, run
+`wheel artifact state <pane> submitted --wait`; its JSON holds `answers.pick`, the chosen
+variant. Rebuilding to the same `--out` and copying to `mockup.html` again reloads the pane.
+Without `WHEEL_ENV`, the Canvas hand-off above applies.
+
 ## Recording motion
 
 When a cell's question is motion that needs no input, write it in the cell's own markup: a CSS
