@@ -216,7 +216,11 @@ away unread.
    is a failed worker: `swarm log failed <id> "<exit and last line>"`, release the claim with
    `bd update <id> --status open --assignee ""` and a `bd update <id> --append-notes "swarm failed:
    <reason>"`, and don't relaunch it this run.
-2. Verify what it says: `bd show <id> --json` shows the bead closed, and
+2. Verify what it says, against the bead and not the report: read the bead's quoted request and its
+   case list, then read what the worker's check drove (its outfile's gate and the check script). A
+   listed case the check did not drive means the bead is not done: reopen it with `bd update <id>
+   --status open --append-notes "not verified: <cases>"` and log it `failed`, even when the
+   worker says landed. Then: `bd show <id> --json` shows the bead closed, and
    `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch; then
    `swarm log landed <id> <sha>`. A parked bead has an `auto parked` note: `swarm log parked
    <id> "<reason>"`. A report that says landed but fails either check is a failed worker.

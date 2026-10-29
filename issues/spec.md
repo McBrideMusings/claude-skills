@@ -271,7 +271,7 @@ Issues from this skill go into AFK pipelines. The issue body is the contract.
 
 - **Durability over precision.** The issue may sit unstarted for days while files get renamed. Describe interfaces and contracts; don't anchor on file paths or line numbers.
 - **Behavioral, not procedural.** Describe **what** the system should do, not **how** to implement it. The agent will explore the codebase fresh and make its own implementation decisions.
-- **Complete acceptance criteria.** The agent needs to know when it's done. Concrete, testable, independently verifiable.
+- **Complete acceptance criteria.** The agent needs to know when it's done. Concrete, testable, independently verifiable. They quote the person's own words for the behavior and list every case those words cover (each place an "anywhere" reaches, each item an "every" names, the empty state); a criterion narrower than the words is a defect in the slice.
 - **Explicit scope boundaries.** State what's out of scope. Prevents gold-plating and assumption-drift.
 - **Visual work is described empirically or not at all.** A slice that renders something carries the Visual acceptance block from [TICKET-TEMPLATE.md](TICKET-TEMPLATE.md): every state named, copy verbatim, design tokens instead of raw values, one transition line per interaction, and a reference comp cited by dsys ref. An agent cannot check "matches the design"; it can check that `empty` renders the string `"No sessions yet"`.
 
