@@ -167,6 +167,11 @@ elsewhere, squashed by `wrap-up`.
    repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
    `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:
    [`VERDICTS.md`](VERDICTS.md).
+   **Then measure.** When the project skill has a `perf.md`, run every scenario its table names
+   for this diff and print each table; a limit over, after its one rerun, fails this step like a
+   failed check. A diff that adds work per redraw, keystroke, frame or request, or work that grows
+   with what a person accumulates, adds a measure to `perf.md` in the same change, and proves the
+   limit fails on the broken version by running the scenario against it once.
    **A diff that adds or changes a test** runs [`VERDICTS.md`](VERDICTS.md)'s keep check
    before the commit.
 5. **Blind review.** Once the build is green, spawn `code-reviewer` once — the one subagent
@@ -174,7 +179,9 @@ elsewhere, squashed by `wrap-up`.
    otherwise carries a standing instruction not to call the `Agent` tool unasked. It gets the
    diff and the repo's standards,
    never this session's own reasoning about why the diff is correct. Fix every
-   `blocking`/`major` finding it returns,
+   `blocking`/`major` finding it returns, and every finding about cost (work per redraw,
+   keystroke, frame or request; a retry or poll; work that grows with rows, spaces or accounts)
+   whatever its grade,
    then re-verify whatever the fix touched — one cycle, not two. `minor` findings, and anything
    still open after that cycle, go to `wrap-up`'s follow-up step rather than a second review
    round.

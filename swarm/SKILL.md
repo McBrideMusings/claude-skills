@@ -224,15 +224,22 @@ away unread.
    lists the worker's commits, `git -C <worktree> status --short` is empty, and the outfile has a
    `## Sign-off package`; then `swarm log ready <id> "<first commit subject>"`. The bead stays
    `in_progress`. A report missing any of the three is a failed worker. Leave its space or pane
-   open until the user answers its package; skip step 4 for it.
+   open until the user answers its package; skip steps 4 and 5 for it.
 3. Apply its `## Shared-file changes`, if the report has any. Workers never edit a file under
    `.claude/` that is a symlink to the main checkout — the `project` skill and other untracked local
    skills — because every worker shares it. Make each change in the main checkout, where the
    path points, after checking it still fits what landed. Two workers' changes to one file are
    merged here, by hand, in landing order. `swarm log applied <id> "<path>"` for each.
-4. Close its space or pane: `swarm close <id> landed` also removes the worktree (git-sweep
+4. Measure what landed. When the repo's project skill has a `perf.md`, run each scenario it
+   names for the landed diff (`git -C <repo> show --stat <sha>`), in the main checkout, and
+   print its table. A limit over, after `perf.md`'s one rerun, is a P1 bug filed with
+   `issues file` naming `<sha>`, the bead and the table, in scope so the next pick takes it. A
+   cost note the worker's report left unfixed (work per redraw, keystroke, frame or request; a
+   retry or poll; work that grows with rows, spaces or accounts) is filed the same way at P2,
+   never relayed as minor.
+5. Close its space or pane: `swarm close <id> landed` also removes the worktree (git-sweep
    reaps any left); `swarm close <id> parked` keeps the worktree and branch for the user.
-5. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
+6. Re-resolve the scope (step 2) — landings unblock beads — and launch the next one into the
    free slot.
 
 The run ends when a successful read finds no ready bead in scope left unlaunched, every slot
