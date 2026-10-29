@@ -10,7 +10,7 @@ or one reading `not driven`, `not run` or `n/a`, is undriven.
 """
 import json, re, sys
 
-UNDRIVEN = re.compile(r"^\s*(not driven|not run|n/?a|-|—)?\s*$", re.I)
+UNDRIVEN = re.compile(r"^\s*(?:$|not driven|not run|not exercised|n/?a\s*$|-\s*$|—\s*$)", re.I)
 
 
 def bead_cases(bead):
@@ -39,11 +39,17 @@ def report_rows(text):
     if not m:
         return None
     rows = {}
+    unnumbered = 0
     for line in m.group(1).splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 4 or not re.match(r"^\d+$", cells[0]):
+        if not line.strip().startswith("|") or re.match(r"^\s*\|[\s:|-]+\|\s*$", line):
             continue
-        rows[int(cells[0])] = (cells[2], cells[3])
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if re.match(r"^\d+$", cells[0]) and len(cells) >= 4:
+            rows[int(cells[0])] = (cells[2], cells[3])
+        elif len(cells) >= 3 and not re.match(r"^#?$|^case$", cells[0], re.I):
+            # A table without a # column: number its rows in order, after any numbered ones.
+            unnumbered += 1
+            rows[1000 + unnumbered] = (cells[-2], cells[-1])
     return rows
 
 
@@ -55,13 +61,16 @@ def main():
     if rows is None:
         print("cases-check: the report has no `## Cases` table")
         return 1
+    if not rows:
+        print("cases-check: the `## Cases` table has no rows")
+        return 1
     wanted = bead_cases(bead)
     problems = []
     for n in sorted(wanted - rows.keys()):
         problems.append(f"case {n} has no row")
     for n, (drove, showed) in sorted(rows.items()):
         if UNDRIVEN.match(drove) or UNDRIVEN.match(showed):
-            problems.append(f"case {n} not driven")
+            problems.append(f"case {n} not driven" if n < 1000 else f"row {n - 1000} not driven")
     if not wanted:
         print("cases-check: the bead lists no numbered cases; checked the report's rows only")
     if problems:
