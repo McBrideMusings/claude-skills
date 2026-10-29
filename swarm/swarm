@@ -379,7 +379,11 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     git -C "$repo" show-ref --verify --quiet "refs/heads/$branch" && die "branch $branch already exists"
     bd -C "$repo" update "$id" --claim >/dev/null || die "could not claim $id"
     mkdir -p "$outdir" "$(dirname "$wt")"
-    git -C "$repo" worktree add -q -b "$branch" "$wt" "$base" >&2 || {
+    # Workers start from the remote's tip: the main checkout's local branch can sit behind it,
+    # and a worker cut from there lacks every bead landed since.
+    local start="$base"
+    git -C "$repo" fetch -q origin "$base" >&2 && start="origin/$base"
+    git -C "$repo" worktree add -q -b "$branch" "$wt" "$start" >&2 || {
       bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
       die "could not create $wt — released the claim on $id"; }
     CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
