@@ -157,6 +157,12 @@ run. A bead `launch` has claimed reads `in_progress`, so `bd ready` already leav
 line: mode (report-back), `<n>`, the focus, and the first `<n>` beads with titles. That line is
 the user's chance to redirect a focus that resolved wrong.
 
+**Splitting a bead mid-run** follows [`../issues/spec.md`](../issues/spec.md) Phase 04's vertical
+slices: every child's acceptance runs the product the way its user would and reads what it
+shows — a launch, a screen, a reply on its control surface. "Builds", "links", "compiles" or a
+scratch probe outside the product is never the whole of a child's acceptance; a layer that cannot
+run on its own stays inside the first slice that runs it.
+
 **Related work first.** Take the top-ranked group's members before moving to the next group.
 Never run two beads at once when one blocks the other, even transitively; the blocked one waits
 for the blocker to land and turns up in a later re-pick.
@@ -232,7 +238,10 @@ away unread.
    --status open --append-notes "not verified: <cases>"` and log it `failed`, even when the
    worker says landed. Then: `bd show <id> --json` shows the bead closed, and
    `git -C <repo> log --oneline -1 <sha>` finds the landing commit on the default branch; then
-   `swarm log landed <id> <sha>`. A parked bead has an `auto parked` note: `swarm log parked
+   `swarm log landed <id> <sha>`. Every status line about a landing says what ran — the
+   product, the command, what it showed — and, when the check stopped short of running the
+   product with its real inputs (data, assets, account), says `not run` in that same line, never
+   later. A parked bead has an `auto parked` note: `swarm log parked
    <id> "<reason>"`. A report that says landed but fails either check is a failed worker.
    **In sign-off mode** the checks are: `git -C <worktree> log --oneline <base>..swarm/<id>`
    lists the worker's commits, `git -C <worktree> status --short` is empty, and the outfile has a
@@ -345,7 +354,8 @@ of the report below, with its failed workers and left-in-scope beads under **Nee
 
 The attended report is one section, in chat:
 
-- **Landed** — bead, title, model, commit sha.
+- **Landed** — bead, title, model, commit sha, and what ran: the product's run and what it
+  showed, or `not run` when the check stopped at a build or a probe.
 - **Signed off** — bead, title, model, PR number (sign-off mode); **Declined** — bead and reason.
 - **Parked** — bead, the reason from its note, the branch holding the work.
 - **Decided without you** — every `auto decided` note the workers wrote, one line each.
