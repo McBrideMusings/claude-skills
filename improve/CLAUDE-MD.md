@@ -83,6 +83,8 @@ The biggest section is almost always the one nobody defends. Lead the conversati
 
 There is one remedy, and it is the rebuild below. A file over budget is never sorted into "trim this one, rebuild that one".
 
+**The budget is a ceiling, never the target.** The target is the smallest file that still carries every behavior the user wants: every rule something else already holds is cut, every rule a hook can enforce moves to the hook, every rule that matters for one kind of task moves to the skill that runs for it, and what stays is compressed to its fewest words. A pass that stops a few hundred words under the limit has failed — the next rule added puts the file back over. Report the end size against the start, and name each rule still in the file that you judged could move but didn't, with the reason.
+
 ## Phase 3 — Inventory what already enforces behavior
 
 Before judging a single rule, count what fires with an **empty** CLAUDE.md. Any rule already covered here is a delete, not a keep — a second copy is the contradiction problem, not a safety net.
@@ -205,7 +207,7 @@ Carry the history-awareness section forward into every rebuild, or the next rebu
 
 ## Phase 10 — Report honestly
 
-- Before and after: words, tokens, percent cut.
+- Before and after: words, tokens, percent cut. A cut under 25% needs a line saying why nothing more could go.
 - The honest count: *"6,076 words in. 12 deletes, 9 compressions, 7 routed, 1 hook built."*
 - **What you could not check, marked NOT RUN.** Never a clean bill you didn't earn. In this repo that included: whether the `herdr` and `admin` skills actually contain the rules deleted on the assumption they did, and whether `<important if>` fires.
 - Duplicates now sitting in both `MEMORY.md` and `CLAUDE.md`.
