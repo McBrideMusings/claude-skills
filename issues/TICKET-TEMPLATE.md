@@ -63,8 +63,7 @@ Everything above is checkable by looking. "Matches the mockup", "feels responsiv
 2. …
 
 Every case traces to a quoted phrase in **The request**: each place an "anywhere" reaches, each
-item an "every" or "all" names, each state (the empty one included), and the person's real setup
-(each account or config directory in use, their real counts of spaces, panes and windows). A case
+item an "every" or "all" names, and each state (the empty one included). A case
 the filer thinks of that the words do not cover is not a case: it goes under **Filer's notes**.
 These numbered lines are what `implement` drives and what `swarm log landed` checks against the
 worker's `## Cases` table, so number them and keep one case per line.

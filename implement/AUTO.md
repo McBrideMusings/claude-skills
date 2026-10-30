@@ -132,10 +132,10 @@ about the item's model. Decide it per §A decision nobody made.
 
 ## A case not driven parks the item
 
-An auto pass lands and closes its item only when the check drove every case step 1 listed, on
-the person's real setup, and each one passed. A case checked through a stand-in is not driven: a
-different input path than the one the case names, a proxy field instead of the thing the person
-sees, the default single setup instead of theirs. When the project has no way to drive a case —
+An auto pass lands and closes its item only when the check drove every case step 1 listed, and
+each one passed. A case checked through a stand-in is not driven: a
+different input path than the one the case names, or a proxy field instead of the thing the person
+sees. When the project has no way to drive a case —
 a real pointer, a real key into a focused field — building that driver is part of the pass,
 never a reason to skip the case. A pass that still cannot drive every case does not land and
 does not close the bead: it parks (§Parking an item) with the reason `undriven: <case numbers,
