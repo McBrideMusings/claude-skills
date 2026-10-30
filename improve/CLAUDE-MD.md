@@ -93,11 +93,11 @@ Before judging a single rule, count what fires with an **empty** CLAUDE.md. Any 
 - **The session's own system prompt** — read it. It may already carry the rule (in this repo it already capped subagent spawning and workflow use)
 - **`docs/`** — and check whether anything actually routes to it
 
-## Phase 4 — Ask what breaks when the file is empty
+## Phase 4 — Map where else each rule lives
 
-**One question, before showing the user any old text:** *with nothing in CLAUDE.md, what are the three things I'd get wrong that would cost you a session?* From memory — not from the file.
+The user can't hold every hook and skill in their head, so never ask them what an empty file would break. Do the lookup for them: for every rule, find each other place that holds or enforces it — the hook file, the skill `file:line`, the `MEMORY.md` entry, the system prompt — or record "only here". Grep the hooks, the skills tree and `MEMORY.md` for the rule's literal nouns and commands; a match counts only once you've read the line and it states the same behavior.
 
-Attach your own prediction so they can disagree instead of starting cold. Their answer becomes the priority order, and whatever they can't name from memory is a deletion candidate: they wrote it, they live with it, and if it isn't in their head it probably wasn't paying rent.
+The result is Phase 6's **Held elsewhere** column. Nothing is asked at this phase.
 
 ## Phase 5 — Read the file's own history
 
@@ -120,7 +120,7 @@ A file with three commits yields little. Say that plainly rather than dressing u
 
 ## Phase 6 — Triage, section by section, as tables
 
-One table per section. One verdict per rule, from exactly six:
+One table per section, with columns **Rule**, **Held elsewhere** (Phase 4's answer, with the path) and **Verdict**. One verdict per rule, from exactly six:
 
 | Verdict | When |
 | --- | --- |
