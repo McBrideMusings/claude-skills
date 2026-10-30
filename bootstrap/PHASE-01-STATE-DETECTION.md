@@ -8,7 +8,8 @@ For each piece of the standard layout, classify into one of: `missing`, `standar
 |---|---|
 | `CLAUDE.md` (root) | `AGENTS.md`, `.claude/CLAUDE.md` |
 | `CLAUDE.local.md` (root) | `.claude/CLAUDE.local.md`, `.claude.local.md` |
-| `admin.toml` | (admin skill handles detection — Makefile, justfile, package.json scripts as substitutes; a bare `./admin` with no `admin.toml` is a stale artifact) |
+| a task runner: `Makefile`, `justfile`, `package.json` scripts or `admin.toml` | any one is standard; a bare `./admin` with no `admin.toml` is a stale artifact |
+| `LICENSE` (owned repos only) | `LICENSE.md`, `COPYING` |
 | `docs/` + `.vitepress/config.mts` | bare `docs/` (no VitePress), `documentation/`, `wiki/` |
 | `docs/CONTEXT.md` | `CONTEXT.md` (root), `GLOSSARY.md`, `docs/glossary.md`, `docs/terms.md`, per-context `src/*/CONTEXT.md` without a map |
 | `docs/adr/` | `adr/`, `decisions/`, `docs/decisions/`, `docs/adrs/`, `architecture/decisions/` |
@@ -37,7 +38,8 @@ Bootstrap audit — <project name>
 | CLAUDE.md              | standard / missing / non-standard at AGENTS.md |
 | CLAUDE.local.md (root) | missing / non-standard at .claude/CLAUDE.local.md|
 | .gitignore             | tmp/ not covered; .env not covered; 2 files tracked under tmp/ |
-| admin runner           | standard / missing                             |
+| task runner            | standard (justfile) / missing / n/a — no build |
+| License                | standard / missing / n/a — not owned           |
 | VitePress docs         | non-standard: bare docs/ without VitePress     |
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md                   |
 | docs/adr/              | non-standard at ./decisions/ (3 ADRs)          |

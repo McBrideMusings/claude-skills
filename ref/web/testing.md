@@ -30,5 +30,5 @@ form fills, and assertions against a running page, the same way the apple axis d
 
 ## Running
 
-Unit/component: the project's admin runner (`./admin test`) or `vitest` / `jest` — no browser, fast,
+Unit/component: the project's task runner's test task or `vitest` / `jest` — no browser, fast,
 right for the red→green loop ([`../testing/loop.md`](../testing/loop.md)). Full flows: the Playwright plugin against the dev server.
