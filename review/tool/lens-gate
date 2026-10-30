@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --quiet --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pyyaml>=6"]
+# ///
 """lens-gate — decide which review lenses run, skip, or are offered.
 
 Every lens file (review/axes/*.md, ref-cells/<label>/review.md, ref-cells/local/<label>/review.md) opens
