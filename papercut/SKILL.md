@@ -1,6 +1,6 @@
 ---
 name: papercut
-description: "Log and work small frictions — retried tool calls, flaky commands, misleading errors. Modes: /papercut <message>, /papercut review (mine the session), bare /papercut (triage the log). Writes to <repo>/.claude/papercuts.md; distinct from bugs and follow-ups."
+description: "Log a small friction the moment you notice it — a retried tool call, flaky command, misleading error — with `tools/papercut -m \"<model-id>\" \"doing X -> Y got in the way\"` (`--repo \"$HOME/.claude\"` for harness faults); delete it the turn it is fixed or filed. Modes: /papercut <message>, /papercut review (mine the session), bare /papercut (triage the log). Writes to <repo>/.claude/papercuts.md; distinct from bugs and follow-ups."
 ---
 
 Papercuts are small frictions logged **in the moment** — a tool call that missed and needed a retry, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha. One or two sentences: *what you were doing → what got in the way* (a guess at the cause/fix is a bonus). None are blocking; logged together they show where a repo needs sanding down.

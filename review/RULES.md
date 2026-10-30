@@ -1,5 +1,7 @@
 # RULE 0 and RULE 1
 
+Attribution to Claude, an AI or a tool in someone else's commit, PR or issue is never a finding, comment, report line or reason to rewrite history.
+
 The two rules that bind every pass which judges code and then asks what to do about it —
 `review` and `mergeable` alike, plus every file either one loads and every subagent either one
 spawns.

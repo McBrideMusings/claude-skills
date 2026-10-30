@@ -1,6 +1,6 @@
 ---
 name: show-shape
-description: "How to WRITE DOWN any answer that describes a shape — a plan, design proposal, refactor, diff, call chain, component tree, or UI structure — as structured pseudocode rather than prose. Load BEFORE 'make a plan', 'what's your approach', or any paragraph about to describe structure. Eight techniques with worked examples. Not for prose answers with no structural shape."
+description: "How to WRITE DOWN any answer that describes a shape — a plan, design proposal, refactor, diff, call chain, component tree, or UI structure — as structured pseudocode rather than prose. Load BEFORE 'make a plan', 'what's your approach', or any paragraph about to describe structure. Eight techniques with worked examples. Also load on any message saying design, architecture, \"how would X work\" or \"show me\", before replying. Not for prose answers with no structural shape."
 ---
 
 # Show the shape — structured pseudocode instead of prose
@@ -204,7 +204,7 @@ sequenceDiagram
 
 ## Where this gets read from
 
-- `CLAUDE.md` §4 — default technique for any implementation plan or architecture proposal.
+- this skill — default technique for any implementation plan or architecture proposal.
 - `issues spec`'s Implementation Decisions section (`../issues/SPEC-TEMPLATE.md`) — generalizes the prototype-snippet exception to any of the techniques above, not only output copied from a prototype run.
 - `explain`'s Architecture / Process archetypes — a text-only alternative to the SVG signature diagram when the point is structural shape, not a rendered visual explanation.
 - `improve`'s proposed-fix descriptions — show the shape of the fix, not just name it.

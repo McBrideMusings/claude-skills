@@ -11,6 +11,8 @@ A prototype is **throwaway code that answers a question** — the question decid
 
 When the user says **artifact**, they are asking for a prototype: this skill, a local file — not Anthropic's hosted `Artifact` tool, not a hosted page. Build it, hand back the path; don't explain the distinction or offer hosting.
 
+A mockup or preset named after a reference (an app, a comp) matches that reference's measured values, or says which it leaves out.
+
 Explaining how something already works, not what it should look like, is `explain` — same substrate, no shared code.
 
 ## Load this whenever a prototype is being built — including mid-conversation

@@ -14,6 +14,8 @@ Four things block a branch: the local checkout isn't at the branch head (checked
 
 **Brief the worker with:** the repo root, the branch, the PR (if any), and whether the branch is mine — the diagnosis-and-repair procedure itself now lives in [`agents/mergeable-worker.md`](../../agents/mergeable-worker.md) (the `~/.claude` repo), sourced from [`WORKER-PROMPT.md`](WORKER-PROMPT.md) here.
 
+**Pushing the fix** to the user's own PR branch needs no `go` once nothing is red; a reply or re-request still waits for `go`.
+
 **Presenting what it returns:** one line per gate that actually fired, then one slate — every outward action (push, reply, re-request) as numbered rows with your pick, closed with the slate hatch from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch. Never split push from the reply/re-request it enables into separate rows — except on my own branch, where the push is never a row: invoking `mergeable` is the decision to unblock it, so push the repair without asking once nothing is red, then offer `reply + re-request` as row 1 if a reviewer is owed one. A "not ready" signal on the PR is one line in the report, never a reason to hold the push.
 
 On the default branch, this is a sweep across every blocked branch you own, not a single-target run. Load [`SWEEP.md`](SWEEP.md) and follow it instead of the steps above: one full session per branch, not subagents.

@@ -70,6 +70,10 @@ The mode goes into the worker's brief, because it sets the worker's ending (see 
 happens" below): a fire-and-forget worker closes with the line the person reading its pane needs;
 a report-back worker ends at a commit and writes its report to `<outfile>` for the dispatcher.
 
+A worker's "passed" closes nothing until the dispatcher reads what its check actually drove and compares it, case by case, to the request's quoted words.
+
+A brief for another session travels in the `herdr agent prompt` / `wheel pane start --message` text itself, or a file under `/private/tmp/claude/<repo-slug>/` — never a file in a checkout the worker was not asked to change.
+
 ## The order
 
 **1. Default to `agent`, always.** It is built into the harness: no window to

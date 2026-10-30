@@ -32,6 +32,7 @@ Never ask which mode. `test -f <repo>/.claude/skills/project/SKILL.md` decides: 
 
 ## Create
 
+0. **A repo with a build or test step and no task runner gets one proposed as an option set**, per `../bootstrap/PHASE-03-TASK-RUNNER-AND-LICENSE.md` §Task runner.
 1. **Read the repo, not the user.** Its README, CLAUDE.md, `admin.toml`, build files, test
    setup, Dockerfiles and deploy scripts answer almost everything. Ask only what the code
    cannot say — usually which devices or hosts the thing runs on in production.

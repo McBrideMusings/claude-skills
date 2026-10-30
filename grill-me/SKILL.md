@@ -1,7 +1,9 @@
 ---
 name: grill-me
-description: "One-question-at-a-time design interviews — new ideas (Shape), existing plans (Grill), existing codebases (Backfill). Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work."
+description: "One-question-at-a-time design interviews — new ideas (Shape), existing plans (Grill), existing codebases (Backfill). Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work. Also: \"one at a time\" over any list."
 ---
+
+**"One at a time"** means one list member per message, in order, never reprinting the list. Out-of-order answers are struck; additions join the end. A `2 of 7` counter is welcome.
 
 Walk the decision tree one question at a time until we reach shared understanding. For every question, recommend an answer — never ask open-ended without taking a position.
 

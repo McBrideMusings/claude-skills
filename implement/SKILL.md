@@ -150,7 +150,7 @@ elsewhere, squashed by `wrap-up`.
    part of this item, never a follow-up. In a repo with a `DESIGN.md`, save the `dsys check`
    baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). A pass that
    builds a new UI surface in a repo with no `DESIGN.md` runs `redesign` step 4's roll first
-   ([`../redesign/SKILL.md`](../redesign/SKILL.md)) and plans from the assigned direction. Then start the pass's dashboard with `dashboard implement`
+   ([`../redesign/SKILL.md`](../redesign/SKILL.md)) and plans from the assigned direction. A host dependency — anything the code expects on the user's machine or network rather than in its build — is proposed in chat, named as one, before code relies on it; its duties are in `~/Knowledge/ref/architecture/host-dependencies.md`. Then start the pass's dashboard with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
    each step below.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
@@ -180,6 +180,7 @@ elsewhere, squashed by `wrap-up`.
    **Every case step 1 listed is driven**, each by its own step in the check, and the gate names
    each case with what it showed; a case not driven is an unverified case, said so on its line,
    never a pass.
+   Every feature ships, unasked, with a way for a program to drive it and read its state back; a check only a human can perform means that surface is missing, so build it in this pass. Each project-skill section (verify, perf, logs, swarm) is extended as the feature lands, and the code support it names (a log shipper, a configurable port, a task-runner task) is written in the same change.
    **A diff that adds or changes a test** runs [`VERDICTS.md`](VERDICTS.md)'s keep check
    before the commit.
 5. **Blind review.** Once the build is green, spawn `code-reviewer` once — the one subagent
@@ -213,13 +214,13 @@ shapes appears in a command this process runs:
    /absolute/path <cmd>`.
 6. **`cat <file> || echo "not found"` existence-check compounds** — use the Read tool instead.
 
-**A UI change is verified by looking at it, as `CLAUDE.md` § Finishing work requires.** Drive the
+**A UI change is verified by looking at it.** Drive the
 change, save a screenshot of every variant and theme it touches to an absolute path, Read each
 image and write down every difference from what the change should show; the text checks — logs,
 exit codes, a DOM or text dump — come first and add to the look, never replace it. Name each
 image's absolute path in the summary. `screenshot-checker` answers a plain yes/no about an image
 ("did the row render") without bringing it into this context; it never stands in for the look
-at a change's design.
+at a change's design. Accompanying material — reference frame, mockup, spec, fixture, golden file, linked doc — is compared in full too. Write down every difference; an empty list is an answer, an unwritten one means you did not look. If you cannot look, the gate says the work is unverified. A visual drive reports the absolute path of the image it inspected.
 
 **Commit messages never attribute the work to Claude, an AI, or any tool** — no
 `Co-Authored-By`, no session link, no trailer naming a model; sign as the repo's user and

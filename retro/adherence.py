@@ -95,7 +95,7 @@ RULES = {
     "plan-pseudocode": {
         "clause": "Plans are structured pseudocode, not prose — types, signatures, call "
                   "stacks, component trees, file:line labels, call-stack diffs",
-        "source": "CLAUDE.md §Deciding & designing",
+        "source": "skills/show-shape/SKILL.md",
         "since": "2026-08-20",          # the plan-format skill landed; before that, a pointer
         "trigger": re.compile(
             r"\b(make a plan|write a plan|plan (?:for|this|it|out)|what.{0,15}plan"
@@ -113,7 +113,7 @@ RULES = {
     "finishing-sections": {
         "clause": "End every coding task at the gate — what changed first, Files changed, "
                   "Unchanged, then Run:/Look for:",
-        "source": "CLAUDE.md §Finishing work",
+        "source": "CLAUDE.md §Work and dispatch; skills/CHAT-FORMAT.md §Gate",
         "since": "2026-09-24",          # the gate stopped opening with a landed-or-not line
         "trigger": CODING_TASK,
         "comply": re.compile(r"(?is)\A(?![\s>*]*(?:not landed|landed at)\b)"
@@ -127,7 +127,7 @@ RULES = {
     "manual-testing-steps": {
         "clause": "Manual testing steps, always, unasked — **Run:** the exact commands, "
                   "**Look for:** what a pass looks like",
-        "source": "CLAUDE.md §Finishing work",
+        "source": "CLAUDE.md §Work and dispatch; skills/CHAT-FORMAT.md §Gate",
         "since": "2026-08-14",          # 3a7dcd3
         "trigger": CODING_TASK,
         "comply": re.compile(r"(?is)(?=.*\*\*Run:?\*\*)(?=.*\*\*Look for:?\*\*)"),
@@ -137,7 +137,7 @@ RULES = {
         },
     },
     # The rule that binds every list ending in recommendations, including the
-    # gate §Finishing work mandates on EVERY coding task. So this trigger and
+    # gate §Gate mandates on EVERY coding task. So this trigger and
     # `finishing-sections` fire on nearly the same turns — which is the point:
     # a task-ending turn owes both shapes, and rendering the report shape alone
     # is the failure mode this measures.
@@ -145,12 +145,12 @@ RULES = {
         "clause": "Whenever a list ends in your own recommendations, close with the "
                   "one-line escape hatch — state that typing `go` applies your picks "
                   "exactly as written, and name the per-item alternative",
-        "source": "CLAUDE.md §Deciding & designing",
+        "source": "skills/CHAT-FORMAT.md §Hatch",
         "since": "2026-08-15",          # landed with the options-format rewrite
         # NOTE `run()` matches the trigger against the USER message (t[3]), never
         # the reply. So this cannot trigger on "the reply contains a gate". It
         # triggers on the same CODING_TASK opportunity `finishing-sections` uses,
-        # which is sound because §Finishing work mandates a gate on every one of
+        # which is sound because the gate rule mandates one on every one of
         # them, and the gate's own hatch sentence is what owes `go`.
         "trigger": CODING_TASK,
         "comply": re.compile(r"(?i)`go`"),
