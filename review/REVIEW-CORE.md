@@ -302,6 +302,7 @@ Rules that bind the fix author:
 
 - **It may not add, split, or re-scope a finding.** If it notices something new while reading, that observation is discarded — it did not go through a lens or the scorer. If it concludes a survivor is *not* real, it says so in one line and Phase 07 drops that finding; that direction is safe, the other is not.
 - **`architecture` and `negative-space` findings get `Fix (design call):`** and stay proposals.
+- **A doc that contradicts the code gets a mechanical Fix: the rewritten doc, read off the code.** A comment, rule file, `CLAUDE.md` or README is never a design call — the code is the truth ([POSTING.md](POSTING.md) § Default split). A spec, issue or PR description is not a doc in this sense; a mismatch with one is `spec/wrong-impl`.
 - **Omit Fix when no remediation is obvious without further investigation.** End the finding's **Why** with `Fix: needs investigation — [what to look at]`. A guessed fix on a real finding is worse than none: it is the part a reader will paste.
 - **Draft-PR `spec/missing-partial` entries get no Fix at all** — they use **Gap** and skip this phase entirely.
 

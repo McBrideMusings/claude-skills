@@ -109,6 +109,12 @@ let the user override per finding:
   **behavior-preserving** — a missing guard, a one-line bug fix, helper reuse, a typo, dead-code
   removal, a flag correction. They don't change what the author built, so applying them is safe
   and saves a round-trip.
+- **Always fix directly: a doc that contradicts the code.** A comment, docstring,
+  `.claude/rules/*.md` body, `CLAUDE.md` or README that describes the code is wrong whenever the
+  code disagrees with it — the code is what runs. Rewrite the doc to match the code (or delete it
+  when nothing worth stating remains), at any P-level. Never post it to the author as a question
+  and never mark it a design call. The exception is a spec, issue or PR description that states
+  what the code *should* do: a mismatch there is `spec/wrong-impl`, and the code is the suspect.
 - **Hand to the author:** `P0` findings, `architecture` / `negative-space` design
   calls, or **anything that would change or break the PR's intended behavior, feature, or
   outcome**. Here the author's intent is load-bearing — a direct edit risks overwriting a
