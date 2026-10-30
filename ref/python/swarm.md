@@ -12,7 +12,8 @@ wheels instead of fetching them again.
 ## Test runs take turns
 
 Run `pytest`, type checkers (`mypy`, `pyright`) and anything that trains, encodes or crunches
-data through `swarm heavy -- <command>`. `pytest -n auto` (pytest-xdist) already starts one
+data by their usual name so Turnstile queues them (a queued command is waiting, not hung; exit 125 means
+stop); a directly-run binary goes through `turnstile run --`. `pytest -n auto` (pytest-xdist) already starts one
 process per core; two runs at once oversubscribe the machine.
 
 ## Tests that need more than CPU

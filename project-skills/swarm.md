@@ -22,11 +22,12 @@ tracked; they are part of the project.
 Write each as a section, with the exact commands. Leave a section out when the answer is "none".
 
 1. **Heavy commands.** Every command that uses most of the CPU, the GPU, the disk or a lot of
-   memory: builds, test suites, encoders, model runs, asset pipelines. Each one runs through
-   `"$HOME/.claude/skills/swarm/swarm" heavy -- <command>`. Name them exactly, so a worker never
+   memory: builds, test suites, encoders, model runs, asset pipelines. Each one is called by its
+   usual name so Turnstile queues it, or run as `turnstile run -- <command>` when it is a binary
+   Turnstile does not shim. Name them exactly, so a worker never
    has to judge.
 2. **The cheap check.** The fastest command that tells a worker its edit compiles or its unit
-   passes, run often and without the heavy lock if it really is cheap. A worker runs the full
+   passes, run often and without queueing if it really is cheap. A worker runs the full
    heavy suite once per round of edits, not after each file.
 3. **Shared caches.** What every worker shares so nothing is built twice — a build directory, a
    package store, a downloaded model — and the `swarm.env` line that points workers at it.

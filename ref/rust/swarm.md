@@ -24,9 +24,10 @@ a worker linking another branch's code.
 
 ## Builds take turns
 
-- Run `cargo build`, `cargo test`, `cargo clippy` and `cargo check` through
-  `swarm heavy -- <command>`. The lock also covers what a build alone does not: a test binary
-  running after the build finished, a `cargo run`, a benchmark.
+- Run `cargo build`, `cargo test`, `cargo clippy` and `cargo check` by
+  their usual name so Turnstile queues them. Run what a build alone does not cover — a test binary
+  after the build finished, a benchmark — as `turnstile run -- <command>`. A queued command is
+  waiting, not hung; exit 125 means stop.
 - Each build uses every core by default (`--jobs` is the CPU count). Turn-taking keeps that
   right; two at once would each get half and both take longer.
 - `cargo clean` in a worker empties only its own target; the next build starts cold.

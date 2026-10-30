@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # swarm — launch one bead as an unattended Claude implement pass in its own worktree, and
-# keep the swarm's heavy work (builds, tests) to one at a time.
+# leave the swarm's builds and tests to Turnstile.
 #
 #   swarm check
 #   swarm launch <bead-id> <haiku|sonnet|opus> [--opus-reason "<text>"] [--dry-run]
-#   swarm heavy -- <command> [<arg>...]
 #   swarm close <bead-id> landed|parked   close a finished worker's space or pane; landed also
 #                                     removes its worktree
 #   swarm quota                       the repo's profile's 5-hour and weekly usage, and the gate
@@ -40,10 +39,6 @@
 # commits, pushes nothing, and writes a sign-off package for the lead to bring to the user),
 # `unlisted` is refused. `launch` blocks until the worker is idle or done; the lead runs one per
 # slot in the background.
-#
-# `heavy` runs <command> holding one lock per repo, shared by every worktree of it
-# (<git common dir>/swarm-heavy.lock), so the swarm's builds and test runs take turns. The
-# kernel drops the lock when its holder exits, so a crashed worker cannot leave it held.
 #
 # Worker environment, applied in this order (later wins):
 #   1. runtime defaults: rust → CARGO_TARGET_DIR=<worktree>/target (cloned from <main>/target),
@@ -345,12 +340,13 @@ Other workers are building and testing this repo on the same machine right now. 
 first build or test, read:
   - $(project_skill "$repo")/swarm.md — this project's swarm rules; they win over the pages below${pages}
 
-Run every build, test, lint or other CPU-heavy command through the swarm's lock, so workers
-take turns instead of starving each other:
+Turnstile gates builds and tests across the machine, so workers take turns instead of
+starving each other. Call tools by their usual name (\`npm test\`, \`cargo test\`, \`pytest\`), never by
+absolute path or through \`./node_modules/.bin\`, which skips the gate. Run any other heavy
+command with \`turnstile run -- <command>\`. A command that prints why it is queued is waiting, not
+hung; wait for it. Exit 125 \"cancelled by you\" means stop, don't retry.
 
-  \"\$HOME/.claude/skills/swarm/swarm\" heavy -- <command>
-
-It waits while another worker holds the lock and says who. Batch your heavy work — one build
+Batch your heavy work — one build
 and test run per round of edits, not one per file. Your environment already carries the
 project's shared build settings; do not override them.
 
@@ -421,25 +417,6 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
   ) >&2 || rc=$?
   log_event "$repo" finished "$id" "exit $rc"
   printf '%s\t%s\t%s\t%s\n' "$id" "$rc" "$outfile" "$wt"
-  return "$rc"
-}
-
-cmd_heavy() {
-  [ "${1:-}" = "--" ] && shift
-  [ $# -gt 0 ] || die "usage: swarm heavy -- <command> [<arg>...]"
-  local common lock holder
-  common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || die "not in a git repo: $PWD"
-  lock="$common/swarm-heavy.lock"; holder="$common/swarm-heavy.holder"
-  # -k on every call: unlinking the lock file while another process waits on it would let
-  # a third take a fresh lock beside it.
-  if ! lockf -k -s -t 0 "$lock" true; then
-    echo "swarm: waiting for the heavy lock, held by $(cat "$holder" 2>/dev/null || echo 'an unknown process')" >&2
-  fi
-  local rc=0
-  lockf -k -s -t 3600 "$lock" /bin/sh -c '
-    printf "%s since %s: %s\n" "${SWARM_WORKER:-$(basename "$PWD")}" "$(date -u +%H:%M:%SZ)" "$*" > "$0"
-    exec "$@"' "$holder" "$@" || rc=$?
-  [ "$rc" -eq 75 ] && echo "swarm: exit 75 — either an hour passed without the heavy lock, or the command itself exited 75" >&2
   return "$rc"
 }
 
@@ -563,9 +540,8 @@ case "${1:-}" in
   check)  shift; cmd_check ;;
   close)  shift; cmd_close "$@" ;;
   launch) shift; cmd_launch "$@" ;;
-  heavy)  shift; cmd_heavy "$@" ;;
   quota)  shift; cmd_quota ;;
   log)    shift; cmd_log "$@" ;;
   status) shift; cmd_status ;;
-  *) echo "usage: swarm check | close <bead-id> landed|parked | launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | heavy -- <command> | quota | log <event> [<bead-id>] [<detail>] | status" >&2; exit 2 ;;
+  *) echo "usage: swarm check | close <bead-id> landed|parked | launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | quota | log <event> [<bead-id>] [<detail>] | status" >&2; exit 2 ;;
 esac

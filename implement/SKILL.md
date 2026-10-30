@@ -158,7 +158,7 @@ elsewhere, squashed by `wrap-up`.
    the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
 3. **Build green.** Run the build, test, lint or typecheck yourself, in the foreground,
    bounded — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the
-   runner is chatty). Explicit `timeout`, up to 600000; never background it. In a repo with a
+   runner is chatty). Explicit `timeout`, up to 600000; never background it. A Turnstile queue wait counts toward the timeout and is not a hang: a command that prints why it is queued is waiting. In a repo with a
    `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green: a `dsys
    check` record the diff added, or an ESLint error, fails the step; a record in the step-1
    baseline does not ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).

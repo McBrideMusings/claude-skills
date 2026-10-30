@@ -33,10 +33,13 @@ the user fills it while workers run (§ Feedback session).
 Worktrees isolate source and nothing else. Several workers on one machine compete for CPU,
 memory and disk, and collide on anything with a fixed name. Three rules, in every runtime:
 
-- **Heavy work takes turns.** Every build, test run, lint and other CPU-heavy command runs
-  through `swarm heavy -- <command>`: one lock per repo, shared by all its worktrees. One build
-  using every core finishes sooner than three splitting them, and the user's machine stays usable.
-  The kernel releases the lock when its holder dies.
+- **Heavy work takes turns, through Turnstile.** Turnstile queues builds and tests across the
+  whole machine through PATH shims (`turnstile shims` lists the gated tools). Call a tool by its
+  usual name (`npm test`, `cargo test`, `pytest`), never by absolute path or `./node_modules/.bin`,
+  which skip the shim. Run a directly-run binary as `turnstile run -- <command>`. A queued command
+  prints why it waits: that is not a hang, so wait. Exit 125 "cancelled by you" means stop.
+  One build using every core finishes sooner than three splitting them, and the user's machine
+  stays usable.
 - **Build once, share the output.** Caches that are safe to share are shared — compiled
   dependencies, package stores, downloads — so no worker starts cold.
 - **Isolate what has a fixed name.** Ports, sockets, simulators, temp paths and databases get one
@@ -212,8 +215,8 @@ instead), writes the brief to the worktree's git dir, and blocks on `dispatch ex
 worker is idle or done (under Wheel, until it is idle with its outfile written: a worker waiting
 on its own subagent reads idle too). The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
 environment, and the merged `--settings`. Its brief tells it to read the project
-skill's `swarm.md` and the runtime pages before its first build, and to run every heavy
-command through `swarm heavy`. stdout is one line: bead, exit code, outfile, worktree.
+skill's `swarm.md` and the runtime pages before its first build, and to call builds and
+tests by their usual name so Turnstile queues them. stdout is one line: bead, exit code, outfile, worktree.
 `--dry-run` prints the environment, settings and brief and creates nothing.
 
 The harness notifies you when a launch exits. Never poll with `ScheduleWakeup`. A worker stuck

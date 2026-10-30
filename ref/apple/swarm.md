@@ -9,7 +9,7 @@ needs none of this except the simulator pool, which every session on the machine
 
 ## Builds take turns
 
-Run every `xcodebuild` and `swift build`/`swift test` through `swarm heavy -- <command>`. One
+Call `xcodebuild` and `swift build`/`swift test` by their usual name, never by absolute path, so Turnstile queues them (a queued command is waiting, not hung; exit 125 means stop). One
 Xcode build already uses every core; two at once each take twice as long and starve the
 simulators. Each worker keeps its own DerivedData tree ([`swarm/derived-data.md`](swarm/derived-data.md)).
 

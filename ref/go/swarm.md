@@ -10,8 +10,9 @@ setting up. Do not point `GOCACHE` at the worktree.
 
 ## Builds and tests take turns
 
-Run `go build ./...`, `go test ./...`, `go vet` and linters such as `golangci-lint` through
-`swarm heavy -- <command>`. `go test ./...` runs packages in parallel up to `GOMAXPROCS`, so two
+Run `go build ./...`, `go test ./...`, `go vet` and linters such as `golangci-lint` by
+their usual name so Turnstile queues them (a queued command is waiting, not hung; exit 125 means
+stop). `go test ./...` runs packages in parallel up to `GOMAXPROCS`, so two
 at once oversubscribe the machine.
 
 ## Tests that need more than CPU

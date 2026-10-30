@@ -6,12 +6,13 @@ Read by every `swarm` worker in a repo with a `package.json`.
 
 Each worktree needs its own `node_modules`. `pnpm` links packages from one store per machine, so
 a second worktree's install is fast; `npm` copies everything into each worktree. Run the install
-through `swarm heavy -- <command>` too: several installs at once saturate the disk.
+by its usual name too, so Turnstile queues it: several installs at once saturate the disk.
 
 ## Builds and tests take turns
 
-Run type checks (`tsc`), bundler builds, unit test runs and browser test runs through
-`swarm heavy -- <command>`. Test runners such as Vitest, Jest and Playwright start one worker
+Run type checks (`tsc`), bundler builds, unit test runs and browser test runs by
+their usual name, never from `./node_modules/.bin`, so Turnstile queues them (a queued command is waiting,
+not hung; exit 125 means stop). Test runners such as Vitest, Jest and Playwright start one worker
 process per core by default, and Playwright launches a browser per worker on top, so two runs at
 once oversubscribe the machine.
 
