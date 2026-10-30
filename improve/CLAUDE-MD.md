@@ -83,7 +83,7 @@ The biggest section is almost always the one nobody defends. Lead the conversati
 
 There is one remedy, and it is the rebuild below. A file over budget is never sorted into "trim this one, rebuild that one".
 
-**The budget is a ceiling, never the target.** The target is the smallest file that still carries every behavior the user wants: every rule something else already holds is cut, every rule a hook can enforce moves to the hook, every rule that matters for one kind of task moves to the skill that runs for it, and what stays is compressed to its fewest words. A pass that stops a few hundred words under the limit has failed — the next rule added puts the file back over. Report the end size against the start, and name each rule still in the file that you judged could move but didn't, with the reason.
+**Cut as aggressively as possible; the budget is only a reference point.** Getting under it is not the goal and never ends the pass. Aim for the smallest file that still carries every behavior the user wants: every rule something else already holds is cut, every rule a hook can enforce moves to the hook, every rule that matters for one kind of task moves to the skill that runs for it, and what stays is compressed to its fewest words. A pass that stops a few hundred words under the limit has failed — the next rule added puts the file back over. Report the end size against the start, and name each rule still in the file that you judged could move but didn't, with the reason.
 
 ## Phase 3 — Inventory what already enforces behavior
 
