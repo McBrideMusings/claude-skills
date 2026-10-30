@@ -100,15 +100,17 @@ picks per finding:
    push to the PR's own branch (`git push origin <headRefName>`).
 2. **Post it for the author** — leave the code alone, hand the finding back via the formal review
    verdict or a comment.
-3. **Neither** — drop it. It stays in the chat report above; nothing goes to GitHub or the branch.
+3. **Neither** — drop it. It stays in the chat report above; nothing goes to GitHub or the branch. Append it to the considered-and-rejected ledger ([REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r) so the next pass on this PR does not raise it again.
 
-**Default split — fix the small stuff, hand the rest back.** Propose this stance up front, then
+**Default split — fix what is broken, note the rest, approve.** Propose this stance up front, then
 let the user override per finding:
 
-- **Fix directly:** findings at any P-level below `P0` that are small, contained, and
-  **behavior-preserving** — a missing guard, a one-line bug fix, helper reuse, a typo, dead-code
-  removal, a flag correction. They don't change what the author built, so applying them is safe
-  and saves a round-trip.
+- **Fix directly:** `P1` findings that are small, contained, and **behavior-preserving** — a
+  missing guard, a one-line bug fix, a flag correction. They don't change what the author built,
+  so applying them is safe and saves a round-trip.
+- **Note in the Approve body, never fix:** every `P2`/`P3` finding that is not a doc contradicting
+  the code. The author decides whether it is worth doing; the review does not hold the PR or push
+  to the author's branch over it.
 - **Always fix directly: a doc that contradicts the code.** A comment, docstring,
   `.claude/rules/*.md` body, `CLAUDE.md` or README that describes the code is wrong whenever the
   code disagrees with it — the code is what runs. Rewrite the doc to match the code (or delete it
@@ -121,9 +123,8 @@ let the user override per finding:
   deliberate choice. When unsure whether a fix would alter intended behavior, treat it as
   hand-to-author.
 
-Split on "is this small, safe, and intent-neutral," **not** on the blocking verdict — a blocking
-`P1` bug can be a tiny behavior-preserving one-liner that belongs
-in the fix bucket, while a non-blocking architecture note usually belongs in the hand-back bucket.
+A blocking `P1` bug that is a tiny behavior-preserving one-liner belongs in the fix bucket; one
+that changes what the author built goes back to the author with Request changes.
 
 **Fixing on the branch — mechanics + gate.** Pushing commits to someone else's PR branch is an
 outward action on their work, held to the same **explicit-`go`-in-this-message** gate as any send.
@@ -199,33 +200,15 @@ never how confident the scorer was:
   `spec/wrong-impl`, a `contracts` violation that breaks a caller, a `negative-space` un-updated
   caller, or a `standards` correctness breach each block exactly as a `bug` does. One such
   survivor → Request changes.
-- **Non-blocking → Comment** (`gh pr review --comment`; on record, no merge gate). `P2` and `P3`:
+- **Non-blocking → Approve** (`gh pr review --approve`). No `P0`/`P1` survived. `P2` and `P3` —
   everything where behavior is *correct* but the code could be more elegant, more efficient, better
-  organized, or better documented. Pure-quality `architecture`, `best-practice`, and most
-  `contracts`/`standards` findings live here. A pre-existing bug the diff merely sits near, but
-  does not introduce or worsen, is a non-blocking note.
-- **Approve** (`gh pr review --approve`) — nothing survived (and on a draft, no expected-gap
-  entries either), **or** every survivor has just been fixed on the branch. After the fix commits
-  land, nothing broken or unaddressed remains, so Approve is the honest verdict.
-
-### Only `P2`/`P3` findings → the fix-on-branch offer is MANDATORY
-
-When the survivors are all `P2`/`P3` quality notes and nothing is broken, you
-**must** present **fix it on the branch, then Approve** as a listed option — and lead with it. Do
-**not** present "Comment / Approve as-is / Neither" as the *only* choices: an offer set with no
-fix-on-branch path buries a fixable nit or ships it unaddressed, and is the specific failure this
-rule exists to stop. The finding is small and the merge isn't gated, so the cleanest outcome is
-landing the small fix and approving clean.
-
-This holds **even when the *ideal* fix needs the author's intent.** A design-call element does
-**not** license collapsing to post-only — it changes *what* you offer to fix, not *whether* you
-offer. Before falling back, ask: is there a narrower, safe, behavior-preserving version I could
-land now (a guard, a comment clarifying the contract, a rename, a doc note) even if the fuller
-restructure is the author's call? If yes, offer *that* on-branch, then Approve. Only when there is
-genuinely **no** safe on-branch change at all may you present a post-only offer, and then you must
-**say explicitly** "no safe on-branch fix here because …" so the omission is a stated decision
-rather than a silent drop. When in doubt, list the fix-on-branch option and let the user decline
-it.
+  organized, or better documented — go in the Approve body as short notes, one line each, for the
+  author to take or leave. A pre-existing bug the diff merely sits near, but does not introduce or
+  worsen, is one of those notes. Never propose `--comment` as the verdict for a P2/P3-only pass,
+  and never hold the approval behind an offer to fix them on the author's branch; the one on-branch
+  fix a P2/P3 pass makes is a doc that contradicts the code (§ Default split).
+- **Approve** with an empty notes list — nothing survived (and on a draft, no expected-gap entries
+  either), **or** every survivor has just been fixed on the branch.
 
 ### Local work first, then the body, then the post — two confirms, in that order
 

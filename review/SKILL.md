@@ -72,7 +72,7 @@ No PR at all → the branch name decides: mine if it starts with `pierce` (case-
 |---|---|---|
 | **uncommitted changes** | review → document → offer fix | review → document → offer fix |
 | **my branch / my PR** | review → document → offer fix | review → document → offer fix (no post — GitHub blocks self-verdicts) |
-| **teammate's PR** | n/a | review → document → offer per finding: fix small behavior-preserving issues on the branch, post the rest |
+| **teammate's PR** | n/a | review → document → approve unless a `P0`/`P1` survived; `P2`/`P3` ride in the Approve body as notes, and only docs that contradict the code get fixed on the branch |
 | **not mine, no PR** | review → document, no offer | review → document, no offer |
 
 ## Phase 00.1 — Hand a blocked branch to `mergeable`, then continue
