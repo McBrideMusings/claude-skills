@@ -10,6 +10,8 @@ Two questions, both about what a caller is promised.
 
 Read code comments in modified files. Flag changes that violate documented contracts, TODOs that should be addressed, or stale comments left in. For contracts issues, quote the comment or signature being violated.
 
+Read the whole modified file, not only the hunks. A comment far from the change goes stale when it states a number or a sequence the diff changed: a worst-case timing or lease budget, a retry count, a call chain, a margin, a list of callers. For each such claim, recompute it from the code as it now stands and quote both values.
+
 ## 2. The footgun test — does the obvious call do the right thing?
 
 For every public seam the diff adds or changes — an exported function, a hook's return value, a setter, a component prop, a route body, a schema, a command — ask:
