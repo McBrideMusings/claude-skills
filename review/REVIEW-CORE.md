@@ -186,7 +186,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/negative-space.md`](axes/negative-space.md) — unmet obligations the diff itself creates
 - [`axes/slop.md`](axes/slop.md) — structure that adds no meaning (comment/helper/type/memo/effect slop, compatibility cruft, diff churn)
 - [`axes/design.md`](axes/design.md) — UI code against the repo's `DESIGN.md` Do's and Don'ts, Named Rules, tokens and `dsys check --json`
-- [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs — emits *flags* verified in Phase 04b, not findings
+- [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs, and hand-written code a library, built-in or existing repo function already provides — emits *flags* verified in Phase 04b, not findings
 - [`axes/test-debt.md`](axes/test-debt.md) — churned files with no adjacent test, tests that assert shape instead of behavior, skipped tests
 - [`axes/dependency-debt.md`](axes/dependency-debt.md) — reads the same captured language-tool output as the label lenses, scoring unused packages and duplicate-purpose packages, plus undocumented env vars
 - [`axes/docs-drift.md`](axes/docs-drift.md) — a README claim the code doesn't satisfy, a comment contradicting the code beneath it, and the architecture-paragraph-vs-README contradiction check from Phase 01r
@@ -202,6 +202,7 @@ The **best-practice** lens produces *flags*, not findings — it has no doc acce
 - Load WebSearch / WebFetch via ToolSearch if not already available, then fetch the **current** official docs for the dependency/API in question — prefer the canonical source (the project's own docs site or upstream repo, not a blog).
 - A flag survives only if (a) the diff's usage actually deviates from what current docs recommend, **and** (b) the deviation carries a concrete cost (deprecation, security, perf, correctness). **Cite the source URL inline and mark confidence.**
 - Drop any flag that is idiom-only, that current docs actually endorse, or that you cannot corroborate against a real source — an unverified flag is not a finding (the "no phantom authority" rule).
+- A **hand-rolled** flag survives only if the named replacement is real and maintained — its repo or registry page shows the maintainer and a release or commit in the last year (`gh api`, `npm view`, the registry) — and covers what the flagged code does. Cite that page and its last release date.
 - Surviving flags become `best-practice` findings carrying their citation + confidence, and flow into Phase 05 scoring like any other issue.
 
 ### Phase 05 — Score Every Issue

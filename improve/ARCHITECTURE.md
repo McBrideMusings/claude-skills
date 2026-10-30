@@ -91,6 +91,15 @@ Then use the Agent tool with `subagent_type=Explore` to walk the codebase (in a 
 
 Apply the **deletion test** to anything you suspect is shallow.
 
+**Ask what standard architecture this code should have been.** For each subsystem you walk, name the standard architecture or off-the-shelf tool for that kind of problem — a library, a framework's own pattern, a maintained project that does the whole job — and compare. Verify each candidate is real and maintained (repo, maintainer, last release) before naming it.
+
+A partial fit is the important case. When a candidate covers most of the need — 75%, 85% — don't drop it for the gap. Decide what the gap is:
+
+- **A gap the code can fill around the tool** — an adapter, a plugin, a thin layer behind the tool's own extension points. The candidate is "adopt X and fill the gap with Y".
+- **A gap made by this codebase's own architecture** — features accreted without a plan, so the shape no longer matches how the tool expects to be used. Check for this one first; the candidate is the architecture change: restructure to the standard shape, then adopt the tool. Name the modules that move.
+
+Only when the gap is a real requirement the tool can't meet, and the code's shape isn't the cause, is custom code the right answer — and the card says which requirement.
+
 **Grounding rule — every candidate must cite evidence from this codebase.** A deepening you propose has to point at real modules, real friction you hit while exploring, real callers that bounce between small pieces — named files, named seams. A suggestion that could apply to *any* project in this language ("add a service layer", "introduce dependency injection", "split into smaller modules") with nothing anchoring it to code you actually read is slop — drop it, don't pad the card list with it. If you can't name the modules and the friction, you don't have a candidate yet.
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface when the friction is real enough to warrant revisiting. Mark clearly: *"contradicts ADR-0007 — but worth reopening because…"*. Don't list every theoretical refactor an ADR forbids.
