@@ -10,8 +10,8 @@ Control words (`go`, `park`, `implement`, `verify` …) are defined in
 
 One **pass** is one tracked item, worked end to end by this session, in the checkout it
 already stands in, ending at a commit. **No subagent runs the pass.** This session plans,
-edits, builds, and verifies directly — the one subagent it spawns is a blind `code-reviewer`
-pass over the diff, once the build is green.
+edits, builds, and verifies directly — the subagents it spawns are a blind `plan-reviewer` pass over
+the plan (step 1b) and a blind `code-reviewer` pass over the diff, once the build is green.
 
 `implement <issue>` works that item here, in this session and this checkout, and nowhere
 else. It never launches another session, pane or agent to do the work.
@@ -153,6 +153,11 @@ elsewhere, squashed by `wrap-up`.
    ([`../redesign/SKILL.md`](../redesign/SKILL.md)) and plans from the assigned direction. A host dependency — anything the code expects on the user's machine or network rather than in its build — is proposed in chat, named as one, before code relies on it; its duties are in `~/Knowledge/ref/architecture/host-dependencies.md`. Then start the pass's dashboard with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
    each step below.
+1b. **Blind plan review.** Once the plan stands, spawn `plan-reviewer` once, with the quoted
+   request and the plan only — never this session's reasoning for it. It applies six review
+   axes (spec, best-practice, architecture, negative-space, history, standards) to the plan and
+   returns findings tied to plan steps. Revise the plan once from its findings, recording any
+   finding you decline and why, then edit. One cycle, not two.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
    feature that needs a design token or component `DESIGN.md` lacks adds it to `DESIGN.md` in
    the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
@@ -183,8 +188,8 @@ elsewhere, squashed by `wrap-up`.
    Every feature ships, unasked, with a way for a program to drive it and read its state back; a check only a human can perform means that surface is missing, so build it in this pass. Each project-skill section (verify, perf, logs, swarm) is extended as the feature lands, and the code support it names (a log shipper, a configurable port, a task-runner task) is written in the same change.
    **A diff that adds or changes a test** runs [`VERDICTS.md`](VERDICTS.md)'s keep check
    before the commit.
-5. **Blind review.** Once the build is green, spawn `code-reviewer` once — the one subagent
-   this process spawns as a matter of course, and this step is what clears a session that
+5. **Blind review.** Once the build is green, spawn `code-reviewer` once — with step 1b's `plan-reviewer`, the
+   only subagents this process spawns as a matter of course, and this step is what clears a session that
    otherwise carries a standing instruction not to call the `Agent` tool unasked. It gets the
    diff and the repo's standards,
    never this session's own reasoning about why the diff is correct. Fix every
