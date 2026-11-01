@@ -121,7 +121,14 @@ The hook then guards only turns that run, never a turn that waits.
 
 ## Phase 1: Assess what was done
 
-Summarize the work completed this session by reviewing:
+**First, in this context and before the staged workflow: was everything asked for done?** Only
+this context has the request. List each outcome it named — in the user's words and in the
+brief or notes it pointed at — and beside each, whether this session saw it happen and where.
+An outcome not seen stops wrap-up: do it, then start wrap-up again. It is never filed as a
+follow-up, labelled `human`, or passed over by a relay, unless it needs something only the user
+can give, and then it is the one question the turn ends on.
+
+Then summarize the work completed this session by reviewing:
 - Recent conversation history
 - `git diff` and `git status` for uncommitted changes
 - Recent commits on the current branch (`git log --oneline -20`)

@@ -29,6 +29,15 @@ not this and is always fine.
 
 `bd create … --deps blocks:<id>` records that the **new** item blocks `<id>` — afterwards `<id>` drops out of `bd ready` and the new item stays in it. A new item that must wait on an existing one gets `bd dep add <new> <existing>` after creation instead.
 
+## Closing means every case passed where the issue says it happens
+
+An issue closes only when each of its Cases was seen to pass on every machine, device or
+environment its description names. Evidence from one of them does not close it for the others:
+a bug reported on two machines and checked on one stays open, with the unchecked one as its
+remaining work, and that work is done before the close rather than filed as a follow-up. This
+holds when the fix turns out to exist already: getting that fix onto the named machine and
+checking it there is still the issue's work.
+
 ## Which tracker — decide before you file, not after
 
 **The tracker is chosen by the code that has to change, never by the directory you are standing
