@@ -12,6 +12,10 @@
 # first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one splits the
 # newest live worker pane downward, so workers stack in one column.
 #
+# The worker's claude starts in $WHEEL_AGENT_SPACE_DIR (else the caller's folder) with its own
+# --session-id, and once it reports in, its process's working directory is read back and checked
+# against that folder (exit 4 when they differ).
+#
 # With $WHEEL_AGENT_SPACE set (a space name), workers go to that space instead, made with
 # `wheel space new $WHEEL_AGENT_SPACE_DIR --background` when it is not open: it runs with no
 # window and leaves the caller's screen alone. The first worker takes its empty pane, the second
@@ -118,6 +122,17 @@ cmd_run() {
   merged_settings "$given" "$dir/state" > "$dir/settings.json"
   args+=(--settings "$dir/settings.json")
 
+  # The worker runs in the folder its space was made for, never the caller's: a worker sharing
+  # the caller's folder shares its transcript directory, and Wheel's guess of which conversation
+  # a terminal holds then picks the caller's. Its own --session-id names the conversation on
+  # the command line, so nothing has to guess it.
+  local workdir sid
+  workdir="$(cd "${WHEEL_AGENT_SPACE_DIR:-$PWD}" && pwd -P)" \
+    || { echo "wheel-agent: no such folder: ${WHEEL_AGENT_SPACE_DIR:-$PWD}" >&2; return 1; }
+  sid="$(uuidgen | tr 'A-Z' 'a-z')"
+  args+=(--session-id "$sid")
+  printf '%s\n' "$sid" > "$dir/session"
+
   # An interactive agent prints to a TUI, so there is nothing to tee. Tell it where to
   # put the answer; the caller reads that file exactly as it reads `terminal run`'s.
   { cat "$promptfile"; printf '%s\n' '
@@ -139,7 +154,7 @@ Do not summarise it there; that file IS your answer and is the only part that is
   done
 
   local cmd a
-  cmd="cd $(printf '%q' "$PWD") && claude"
+  cmd="cd $(printf '%q' "$workdir") && claude"
   for a in "${args[@]}"; do cmd="$cmd $(printf '%q' "$a")"; done
   cmd="$cmd \"\$(cat $(printf '%q' "$dir/prompt.md"))\""
   wheel term send "$pane" "$cmd" --enter >/dev/null
@@ -150,6 +165,19 @@ Do not summarise it there; that file IS your answer and is the only part that is
     i=$((i + 2)); [ "$i" -lt "$READY_S" ] || { echo "wheel-agent: claude in pane $pane reported no state in ${READY_S}s — leaving it open" >&2; return 1; }
     sleep 2
   done
+
+  # Read back where the worker really runs, so the caller reports a checked fact: the claude
+  # whose command line carries this --session-id, and that process's working directory.
+  local wpid wcwd
+  wpid="$(pgrep -f -- "--session-id $sid" | head -1)"
+  wcwd="$([ -n "$wpid" ] && lsof -a -p "$wpid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -1)"
+  if [ -z "$wcwd" ]; then
+    echo "wheel-agent: cannot find the worker for conversation $sid in pane $pane — leaving it open" >&2; return 4
+  fi
+  if [ "$(cd "$wcwd" && pwd -P)" != "$workdir" ]; then
+    echo "wheel-agent: the worker in pane $pane runs in $wcwd, not $workdir — leaving it open" >&2; return 4
+  fi
+  echo "wheel-agent: checked: pane $pane runs conversation $sid in $wcwd" >&2
 
   # Idle alone is not done: a worker waiting on its own background agent or job reports idle
   # and wakes when that finishes. Only an idle worker that has written its answer is done; one

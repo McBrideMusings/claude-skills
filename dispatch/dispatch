@@ -372,6 +372,16 @@ cmd_exec() {
     return 2
   fi
   [ -f "$promptfile" ] || { echo "dispatch: prompt file not found: $promptfile" >&2; return 1; }
+  # Provenance: every brief opens with the chat that sent it, so a worker's conversation can be
+  # traced back to its sender. Claude Code sets CLAUDE_CODE_SESSION_ID; a caller outside a Claude
+  # session names itself with DISPATCH_FROM. With neither, nothing is dispatched.
+  local from="${CLAUDE_CODE_SESSION_ID:-${DISPATCH_FROM:-}}"
+  [ -n "$from" ] || { echo "dispatch: no sender id: run from a Claude session (CLAUDE_CODE_SESSION_ID) or set DISPATCH_FROM" >&2; return 2; }
+  local where="cwd $PWD"
+  if [ -n "${WHEEL_PANE:-}" ]; then where="Wheel pane $WHEEL_PANE, $where"; fi
+  local stamped; stamped="$(mktemp -t dispatch-prompt.XXXXXX)"
+  { printf 'Dispatched by chat %s (%s) at %s.\n\n' "$from" "$where" "$(date -u +%FT%TZ)"; cat "$promptfile"; } > "$stamped"
+  promptfile="$stamped"
   local p; p="$(pick)" || return 1
   local a model why
   a="$(cut -f1 <<<"$p")"; model="$(cut -f2 <<<"$p")"; why="$(cut -f3 <<<"$p")"
