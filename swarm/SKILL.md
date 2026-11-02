@@ -201,7 +201,7 @@ whose transcript has not been written for 10 minutes as stuck, whatever its agen
 p=$(wheel pane split "$WHEEL_PANE" right) && wheel pane kind "$p" web --artifact swarm --scope machine
 ```
 
-One Bash call per slot, **each with `run_in_background: true`**:
+One Bash call per slot, **each with `run_in_background: true` and `timeout: 7200000`** (the default background limit, 30 minutes, kills the wait while the worker keeps running):
 
 ```bash
 "$HOME/.claude/skills/swarm/swarm" launch <bead-id> <model> [--opus-reason "<text>"]
