@@ -198,7 +198,7 @@ transcript) every 15 seconds, logs each worker's latest actions with times, and 
 whose transcript has not been written for 10 minutes as stuck, whatever its agent state says. There is nothing to post, push or end.
 
 ```bash
-p=$(wheel pane split "$WHEEL_PANE" right --background) && wheel pane kind "$p" web --artifact swarm --scope machine
+p=$(wheel pane split "$WHEEL_PANE" right) && wheel pane kind "$p" web --artifact swarm --scope machine
 ```
 
 One Bash call per slot, **each with `run_in_background: true`**:

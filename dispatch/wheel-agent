@@ -72,7 +72,7 @@ claim_pane() {
     done
     # In a space of its own the first worker fills it, so the second goes beside it.
     [ -n "$named" ] && [ "$(printf "%s\n" "$live" | grep -c .)" -eq 1 ] && dir=right
-    new="$(wheel pane split "${from:-$lead}" "$dir" ${named:+--background})" || exit 1
+    new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
     printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" \
