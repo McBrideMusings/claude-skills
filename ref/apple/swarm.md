@@ -55,7 +55,7 @@ sibling workers corrupts their runs as well as its own. A worker that cannot rea
 skips that check and says so rather than routing around it.
 
 Never write the UDID into the worktree's `CLAUDE.local.md`. That file is symlinked back to the
-primary checkout by `worktree-link-locals.sh`, so appending to it edits the *shared* file every
+primary checkout by `admin populate`, so appending to it edits the *shared* file every
 sibling worker reads.
 
 **The symptom of getting this wrong does not look like a collision.** A worker reports its own new

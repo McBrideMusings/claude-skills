@@ -17,9 +17,9 @@ beside its worktree: those trees carry the same plist and leak the same way, but
 near `~/Library/Developer/Xcode/DerivedData` and nothing else would ever find them. Two such trees,
 8.1 GB, sat under `~/.worktrees/iptv-mac/` for two days after their worktrees were gone.
 
-A worker that builds through `admin` needs nothing extra: `hooks/worktree-link-locals.sh` symlinks
-`admin.toml` back to the main checkout (its patterns live in `~/.config/wtree/config.toml`), so the
-worktree runs the same manifest and gets the shared clone directory for free. Verified 2026-08-20 on
+A worker that builds through `admin` needs nothing extra once `admin populate` has run in its
+worktree: it symlinks `admin.toml` back to the main checkout, so the worktree runs the same manifest
+and gets the shared clone directory for free. Verified 2026-08-20 on
 a fresh iptv-mac worktree.
 
 A worker that calls `xcodebuild` directly bypasses all of that and has to pass the flag itself:

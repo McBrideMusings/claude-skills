@@ -392,7 +392,10 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     git -C "$repo" worktree add -q -b "$branch" "$wt" "$start" >&2 || {
       bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
       die "could not create $wt — released the claim on $id"; }
-    CLAUDE_PROJECT_DIR="$wt" bash "$HOME/.claude/hooks/worktree-link-locals.sh" >&2 || true
+    # Bring the primary's gitignored local files in, check out submodules, and allow the .envrc.
+    ( cd "$wt" && "$HOME/.admin/admin" populate ) >&2 || true
+    git -C "$wt" submodule update --init --recursive >&2 || true
+    [ -e "$wt/.envrc" ] && direnv allow "$wt" >&2 || true
     runtimes "$repo" | grep -qx rust && clone_target "$repo" "$wt"
   fi
   local gd; gd="$(git -C "$wt" rev-parse --absolute-git-dir)"

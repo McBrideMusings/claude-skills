@@ -128,7 +128,7 @@ For `workspace`, make the worktree with plain git, link its local files, and run
 
 ```
 git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
-CLAUDE_PROJECT_DIR=~/.worktrees/<repo-name>/<slug> bash ~/.claude/hooks/worktree-link-locals.sh
+( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.admin/admin" populate )
 ( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec --job execute --name "<what the work is>" <brief> <outfile> )
 ```
 
