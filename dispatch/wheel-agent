@@ -12,9 +12,10 @@
 # first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one splits the
 # newest live worker pane downward, so workers stack in one column.
 #
-# The worker's claude starts in $WHEEL_AGENT_SPACE_DIR (else the caller's folder) with its own
-# --session-id, and once it reports in, its process's working directory is read back and checked
-# against that folder (exit 4 when they differ).
+# The worker's claude starts in $WHEEL_AGENT_WORKDIR (else $WHEEL_AGENT_SPACE_DIR, else the
+# caller's folder) with its own --session-id, and once it reports in, its process's working
+# directory is read back and checked against that folder (exit 4 when they differ). A swarm sets
+# WHEEL_AGENT_WORKDIR to the worker's worktree, since its space is rooted at the main checkout.
 #
 # With $WHEEL_AGENT_SPACE set (a space name), workers go to that space instead, made with
 # `wheel space new $WHEEL_AGENT_SPACE_DIR --background` when it is not open: it runs with no
@@ -127,8 +128,9 @@ cmd_run() {
   # a terminal holds then picks the caller's. Its own --session-id names the conversation on
   # the command line, so nothing has to guess it.
   local workdir sid
-  workdir="$(cd "${WHEEL_AGENT_SPACE_DIR:-$PWD}" && pwd -P)" \
-    || { echo "wheel-agent: no such folder: ${WHEEL_AGENT_SPACE_DIR:-$PWD}" >&2; return 1; }
+  local want="${WHEEL_AGENT_WORKDIR:-${WHEEL_AGENT_SPACE_DIR:-$PWD}}"
+  workdir="$(cd "$want" && pwd -P)" \
+    || { echo "wheel-agent: no such folder: $want" >&2; return 1; }
   sid="$(uuidgen | tr 'A-Z' 'a-z')"
   args+=(--session-id "$sid")
   printf '%s\n' "$sid" > "$dir/session"

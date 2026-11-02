@@ -412,7 +412,7 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     # An implement pass routinely outlasts dispatch's 40-minute ceiling.
     export CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000 \
            WHEEL_AGENT_TIMEOUT_MS=14400000 WHEEL_AGENT_DIR="$gd/wheel-agent" DISPATCH_TRANSPORT="$surf" \
-           WHEEL_AGENT_SPACE="$(wheel_space "$repo")" WHEEL_AGENT_SPACE_DIR="$repo"
+           WHEEL_AGENT_SPACE="$(wheel_space "$repo")" WHEEL_AGENT_SPACE_DIR="$repo" WHEEL_AGENT_WORKDIR="$wt"
     exec "$D" exec --agent "claude:$model" --name "$name" "$gd/DISPATCH-BRIEF.md" "$outfile"
   ) >&2 || rc=$?
   log_event "$repo" finished "$id" "exit $rc"
