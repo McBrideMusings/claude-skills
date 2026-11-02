@@ -483,14 +483,16 @@ cmd_log() {
   log_event "$repo" "$1" "${2:-}" "$detail"
 }
 
-# The run log, then one line per bead launched in the latest run with no `finished` yet.
+# The run log, then one line per bead launched in the latest run with no `finished` or lead
+# verdict after it: a landed, parked, failed or reopened bead is out of flight even when its
+# launch wait was cut short before it could log `finished`.
 cmd_status() {
   local repo f; repo="$(main_checkout)"; f="$(run_dir "$repo")/run.tsv"
   [ -f "$f" ] || { echo "swarm: no run log at $f" >&2; exit 1; }
   local start; start="$(awk -F'\t' '$2 == "run" { n = NR } END { print n + 0 }' "$f")"
   awk -F'\t' -v s="$start" 'NR >= s' "$f"
   echo "--- in flight"
-  awk -F'\t' -v s="$start" 'NR >= s && $2 == "launched" { l[$3] = $4 } NR >= s && $2 == "finished" { delete l[$3] }
+  awk -F'\t' -v s="$start" 'NR >= s && $2 == "launched" { l[$3] = $4 } NR >= s && $2 ~ /^(finished|landed|parked|failed|reopened)$/ { delete l[$3] }
     END { for (k in l) print k "\t" l[k] }' "$f" | while IFS="$(printf '\t')" read -r id detail; do
       printf '%s\t%s\tagent %s\n' "$id" "$detail" "$(worker_state "$repo" "$id")"
     done
