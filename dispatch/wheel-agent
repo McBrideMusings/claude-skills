@@ -23,6 +23,10 @@
 # splits it to the right, later ones stack under the newest. The Mac app closes the space once
 # its last pane closes, so the next worker after that makes it again.
 #
+# With $WHEEL_AGENT_SHOW=1 as well, the space is one the person works in (they talk to the agent
+# there): it is made with `--focus` instead of `--background`, so it opens as a tab in the Mac
+# window they clicked last and becomes the space on their screen. Swarm workers never set it.
+#
 # The pane is a terminal running your shell, so `claude` goes through the shell's profile
 # router and gets every flag herdr would pass it (--permission-mode, --model, --settings).
 # Wheel does not track a terminal claude's state, so the worker reports its own through hooks
@@ -51,12 +55,17 @@ claim_pane() {
   local l; l="$(ledger)"; touch "$l"
   lockf -k -t 60 "$l.lock" /bin/bash -c '
     set -o pipefail
-    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"
+    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"
     if [ -n "$named" ]; then
       space="$(wheel status | jq -er --arg n "$named" "[.spaces[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
       if [ -z "$space" ]; then
-        space="$(wheel space new "$home" --name "$named" --background)" || exit 1
-        echo "wheel-agent: opened background space $space ($named) for $home" >&2
+        if [ "$show" = 1 ]; then
+          space="$(wheel space new "$home" --name "$named" --focus)" || exit 1
+          echo "wheel-agent: opened space $space ($named) for $home on the person'"'"'s screen" >&2
+        else
+          space="$(wheel space new "$home" --name "$named" --background)" || exit 1
+          echo "wheel-agent: opened background space $space ($named) for $home" >&2
+        fi
       fi
       panes="$(wheel pane ls --json | jq -c --arg s "$space" "[.[] | select(.space == \$s)]")"
       only="$(printf "%s" "$panes" | jq -r "if length == 1 and .[0].kind == \"empty\" then .[0].pane else empty end")"
@@ -76,7 +85,7 @@ claim_pane() {
     new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
-    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" \
+    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" \
     || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
 }
 
