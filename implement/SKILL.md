@@ -220,6 +220,8 @@ shapes appears in a command this process runs:
    /absolute/path <cmd>`.
 6. **`cat <file> || echo "not found"` existence-check compounds** — use the Read tool instead.
 
+**A UI change ships with before-and-after screenshots, shown without being asked.** Capture the **before** from the base commit (or the flag off) and the **after** from the change, same viewport and same crop, for every state the change touches: the resting state, the new state, and any modal or sheet it opens. Put them in the Wheel artifact (or the `canvas` card outside Wheel) and show that pane before writing the summary; wrap-up puts the same images in the PR body. Never wait for the user to ask for either.
+
 **A UI change is verified by looking at it.** Drive the
 change, save a screenshot of every variant and theme it touches to an absolute path, Read each
 image and write down every difference from what the change should show; the text checks — logs,
