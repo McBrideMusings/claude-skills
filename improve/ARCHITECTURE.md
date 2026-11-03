@@ -6,7 +6,8 @@ Surface architectural friction and propose **deepening opportunities** — refac
 
 Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component", "service", "API", or "boundary."
 
-These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../ref/docs/CONTEXT-FORMAT.md](../ref/docs/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
+These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms. If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
+*Knowledge base: search it for "CONTEXT.md term format". If you have none, skip this line and don't mention it.*
 
 - **Module** — anything with an interface and an implementation (function, class, package, slice). Scale-agnostic.
   _Avoid_: unit, component, service, layer, wrapper.
@@ -125,7 +126,9 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 Side effects happen inline as decisions crystallize:
 
-- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term as a slate row per the `ref/docs` vocabulary rule. Format per [../ref/docs/CONTEXT-FORMAT.md](../ref/docs/CONTEXT-FORMAT.md).
+- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term as a slate row; the write to `docs/CONTEXT.md` waits for `go`.
 - **Sharpening a fuzzy term?** Same rule — a row, written on `go`.
-- **User rejects the candidate with a load-bearing reason?** Apply the `ref/docs` any-session ADR rule: *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [../ref/docs/ADR-FORMAT.md](../ref/docs/ADR-FORMAT.md).
+- **User rejects the candidate with a load-bearing reason?** Offer an ADR (architecture decision record): *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones.
 - **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+
+*Knowledge base: search it for "CONTEXT.md term format and ADR format". If you have none, skip this line and don't mention it.*

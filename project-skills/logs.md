@@ -5,9 +5,8 @@ X", or "something weird just happened on my phone", by fetching the lines itself
 hand, no log pasted in. It is the project's production logging strategy, written down where
 the session that needs it will read it.
 
-The standards it applies: [`../ref/observability/checklist.md`](../ref/observability/checklist.md)
-for what a line carries and the local file, [`../ref-cells/observability/production.md`](../ref-cells/observability/production.md)
-for getting lines off the device and reading them back.
+The standards it applies: what a line carries (one line per event, an ISO 8601 timestamp, a category, raw values, never a credential), the local file in the platform's log directory, and, for getting lines off the device and reading them back, one queryable store labelled by app and device.
+*Knowledge base: search it for "observability checklist" and "production logs". If you have none, skip this line and don't mention it.*
 
 ## What logs.md answers
 

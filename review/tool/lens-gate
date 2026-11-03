@@ -5,8 +5,9 @@
 # ///
 """lens-gate — decide which review lenses run, skip, or are offered.
 
-Every lens file (review/axes/*.md, ref-cells/<label>/review.md, ref-cells/local/<label>/review.md) opens
-with frontmatter:
+Every lens file opens with frontmatter. The lens files are review/axes/*.md and, when the knowledge
+base has a ref directory (~/Knowledge/ref), <label>/review.md and local/<label>/review.md in it; with no
+knowledge base the gate evaluates the axes alone:
 
     run: always | gated | offered
     when:                        # every entry must hold; omitted for run: always
@@ -64,10 +65,11 @@ def git(repo, *args):
 def lens_files():
     for f in sorted((SKILLS / "review/axes").glob("*.md")):
         yield f.stem, f
-    # The cells, through skills/ref-cells (the symlink into the knowledge repo) where it exists;
-    # the public skills repo alone has only the published copy in skills/ref.
-    cells = SKILLS / "ref-cells" if (SKILLS / "ref-cells").is_dir() else SKILLS / "ref"
-    for root in (cells, cells / "local"):
+    # Label lenses live in the knowledge base; without it there are none and the axes run alone.
+    labels = Path.home() / "Knowledge" / "ref"
+    if not labels.is_dir():
+        return
+    for root in (labels, labels / "local"):
         for f in sorted(root.glob("*/review.md")):
             yield f.parent.name, f
 
@@ -288,7 +290,8 @@ def check(kind, val, scope):
 
 def decide(lens, path, scope):
     run, when = frontmatter(path)
-    rec = {"lens": lens, "file": str(path.relative_to(SKILLS)), "run": run}
+    shown = path.relative_to(SKILLS) if path.is_relative_to(SKILLS) else path
+    rec = {"lens": lens, "file": str(shown), "run": run}
     if run == "always":
         return {**rec, "decision": "run", "reason": "always"}
     # Deterministic entries first, so a lens that already fails never costs a Jev call.

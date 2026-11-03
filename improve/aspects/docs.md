@@ -1,6 +1,6 @@
 # Aspect brief: `docs` (routed to `bootstrap` docs-site route)
 
-Axis tag: `docs`. Applicability: always. Docs are the standing assumption ([`ref/docs/context.md`](../../ref/docs/context.md)) —
+Axis tag: `docs`. Applicability: always. Docs are the standing assumption (terms, ADRs and subsystem docs are proposed the turn they arise) —
 content organisation is this aspect's job whether or not a VitePress site exists; the site's
 own presence is `layout`'s finding.
 
@@ -8,6 +8,8 @@ own presence is `layout`'s finding.
 `../../bootstrap/docs-site/PHASE-01-STATE-DETECTION.md`. When `docs/` + `.vitepress/` both exist, also evaluate
 `../../bootstrap/docs-site/PHASE-03-AUDIT.md`'s mechanical and substantive checklists as a **report instead of applying
 them**. Skip Phases 05–06 entirely.
+
+*Knowledge base: search it for "docs terms, ADRs and subsystem docs". If you have none, skip this line and don't mention it.*
 
 ## Aspect-specific rules
 

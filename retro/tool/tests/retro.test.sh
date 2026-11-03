@@ -4,4 +4,4 @@
 set -euo pipefail
 retro=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)
 cd "$retro"
-python3 -m unittest -q test_contract test_pointer_rate
+python3 -m unittest -q test_contract

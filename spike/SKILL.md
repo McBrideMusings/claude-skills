@@ -37,7 +37,7 @@ result the way [CONTRACT.md](CONTRACT.md) rule 10 says.
 
 | Rung | Answers | Start here when | Build |
 | --- | --- | --- | --- |
-| 1. ASCII sketch | Where the regions sit | The user asked for a sketch, or arrangement is the only open question. Never for a request to see, show or mock up what something looks like, which starts at rung 2 or 3 | In chat, per [`../ref/gui/sketch.md`](../ref/gui/sketch.md) — no build. When the answer depends on proportion, a greybox: `--kind wireframe` |
+| 1. ASCII sketch | Where the regions sit | The user asked for a sketch, or arrangement is the only open question. Never for a request to see, show or mock up what something looks like, which starts at rung 2 or 3 | In chat, as box-drawing characters for the part being decided only (not the whole app), with a consistent vocabulary for controls and region labels, and layout only (no wiring or data flow) — no build. When the answer depends on proportion, a greybox: `--kind wireframe` |
 | 2. Image comp | What it looks like | A new screen whose look is open, with no CSS to build from. **The default for a UI question** | [COMP.md](COMP.md) |
 | 3. HTML mockup | What it looks like, and how its motion plays (`spike video`), in the project's real CSS, across variants and states | The project has tokens and components to render, or the answer needs exact type, spacing and every state side by side | [MOCKUP.md](MOCKUP.md) |
 | 4. Interactive prototype | How it behaves | Behaviour only visible under interaction, or a mockup that settled nothing | [UI.md](UI.md) |
@@ -57,7 +57,8 @@ Wrong shape wastes the prototype. Ambiguous and unreachable → default by subje
 
 ## Layer the domain on top
 
-The shape is the *mechanism*; the domain is the *mode of software*. Resolve per [`_detect.md`](../_detect.md), load the cell **in addition to** the shape file: `ui` → [`ref/gui/prototype.md`](../ref/gui/prototype.md); `game` → [`ref/game/prototype.md`](../ref/game/prototype.md); no marker → shape file only.
+The shape is the *mechanism*; the domain is the *mode of software*. Resolve per [`_detect.md`](../_detect.md), add the domain's rules **in addition to** the shape file. `ui`: every variant clears the craft bar on its own (a weak variant teaches nothing about its direction) and the severity floor in CONTRACT.md rule 13. `game`: pick the shape by the question — feel is built like UI.md but driven by hand, numbers go to LOGIC.md, an engine or approach choice goes to COMPARE.md. No marker → shape file only.
+*Knowledge base: search it for "gui prototype, game prototype". If you have none, skip this line and don't mention it.*
 
 ## Arguments
 
@@ -71,8 +72,9 @@ The shape is the *mechanism*; the domain is the *mode of software*. Resolve per 
 
 ## Not this skill
 
-- Judging or improving an existing interface → `improve gui` for design quality ([`ref/gui/critique.md`](../ref/gui/critique.md)), `review` for code defects.
-- Picking a library → [`ref/gui/libraries.md`](../ref/gui/libraries.md).
+- Judging or improving an existing interface → `improve gui` for design quality (every verdict names its reason: a principle, a slop tell or a measured value), `review` for code defects.
+- Picking a library → check each candidate's last release and open issues before installing it.
+  *Knowledge base: search it for "web ui library picks". If you have none, skip this line and don't mention it.*
 - Turning the mockups and prototype into a feature proposal, a document or tracker issue the build reads instead of the prototype → `proposal`.
 
 ---

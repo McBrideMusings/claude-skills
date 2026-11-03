@@ -26,13 +26,14 @@ For each item in the report, ask the user to confirm / refine / reject. Recommen
 
 > "I see `Order` used 47 times consistently across the API layer, domain types, and tests. Capture as a canonical term in `docs/CONTEXT.md`?"
 
-Default: yes. One question per term during the walk, but don't write any of them yet — collect every term that resolves during this recon pass into one slate at the end (term, one-line meaning, where it's used), and write to `docs/CONTEXT.md` on `go`, per the `ref/docs` vocabulary rule.
+Default: yes. One question per term during the walk, but don't write any of them yet — collect every term that resolves during this recon pass into one slate at the end (term, one-line meaning, where it's used), and write to `docs/CONTEXT.md` on `go`: a term is a slate row before it reaches `docs/CONTEXT.md`, never written mid-conversation.
 
 ### Divergences
 
 > "You call this both `Customer` (12 uses) and `Account` (8 uses) — `Customer` in newer code, `Account` in `legacy/`. Which is canonical going forward?"
 
-Then capture the chosen term and list the other as `_Avoid_:` per [../ref/docs/CONTEXT-FORMAT.md](../ref/docs/CONTEXT-FORMAT.md), as a row in the same end-of-pass slate.
+Then capture the chosen term and list the other as `_Avoid_:` (each `docs/CONTEXT.md` entry is a bold term, a one-sentence definition, then an `_Avoid_:` line), as a row in the same end-of-pass slate.
+*Knowledge base: search it for "CONTEXT.md format". If you have none, skip this line and don't mention it.*
 
 ### Conventions
 
@@ -44,7 +45,8 @@ Most conventions belong in `CLAUDE.md`, not `docs/CONTEXT.md`. CONTEXT is for vo
 
 > "You're using Postgres for the write model and Redis for read caching, with explicit `outbox` table for event publishing. Looks like a deliberate event-sourced-write / cached-read split — was this a real decision? Worth an ADR?"
 
-Apply the three-conditions test from [../ref/docs/ADR-FORMAT.md](../ref/docs/ADR-FORMAT.md). Don't manufacture ADRs from accidental code shapes.
+Apply the three-conditions test: the decision is hard to reverse, surprising without context, and the result of a real trade-off. Don't manufacture ADRs from accidental code shapes.
+*Knowledge base: search it for "ADR format". If you have none, skip this line and don't mention it.*
 
 ## Don't fabricate
 

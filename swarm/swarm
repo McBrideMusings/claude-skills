@@ -86,7 +86,7 @@ wheel_space() { printf '%s swarm' "$(basename "$1")"; }
 wheel_dir() { printf '%s/wheel-agent' "$(git -C "$(worktree_path "$1" "$2")" rev-parse --absolute-git-dir 2>/dev/null)"; }
 
 # Runtimes the repo builds with, one per line, from tracked marker files up to two levels deep.
-# Each name is a skills/ref/<name>/ directory whose swarm.md the worker reads.
+# Each name has a rule in runtime_rule().
 runtimes() {
   git -C "$1" ls-files | awk -F/ 'NF <= 3 { print $NF }' | awk '
     $0 == "Cargo.toml"                                        { r["rust"] = 1 }
@@ -95,6 +95,17 @@ runtimes() {
     $0 == "package.json"                                      { r["web"] = 1 }
     $0 == "Package.swift" || $0 == "project.yml" || /\.pbxproj$/ { r["apple"] = 1 }
     END { for (k in r) print k }' | sort
+}
+
+# The rule every worker in a runtime follows, as one or two sentences.
+runtime_rule() {
+  case "$1" in
+    rust) echo "Run cargo build, test, clippy and check by their usual name so Turnstile queues them; a queued command is waiting, not hung, and exit 125 means stop. Keep the CARGO_TARGET_DIR launch set per worktree, and give tests port 0 and a temp dir." ;;
+    go) echo "Run go build, test, vet and golangci-lint by their usual name so Turnstile queues them; a queued command is waiting, not hung, and exit 125 means stop. Leave GOCACHE shared, and give tests t.TempDir() and port 0." ;;
+    python) echo "Use a virtual environment inside your own worktree, never the main checkout's .venv. Run pytest and type checkers by their usual name so Turnstile queues them (exit 125 means stop), and give tests tmp_path and port 0." ;;
+    web) echo "Install into your own worktree's node_modules, and run installs, tsc, builds and test runs by their usual name (never from ./node_modules/.bin) so Turnstile queues them; exit 125 means stop. Give a dev server its own port derived from \$SWARM_WORKER and stop it before the pass ends." ;;
+    apple) echo "Run xcodebuild and swift build/test by their usual name so Turnstile queues them (exit 125 means stop), with your own DerivedData tree. Get a simulator with ~/.claude/tools/sim acquire, pin every command to its UDID (-destination 'id=<udid>', never a device name), and run ~/.claude/tools/sim release before the pass ends." ;;
+  esac
 }
 
 project_skill() { printf '%s/.claude/skills/project' "$1"; }
@@ -237,7 +248,7 @@ cmd_check() {
   local rts; rts="$(runtimes "$repo" | paste -sd' ' -)"
   echo "swarm: runtimes: ${rts:-none detected}" >&2
   local r; for r in $rts; do
-    [ -f "$HOME/.claude/skills/ref/$r/swarm.md" ] && echo "swarm:   $HOME/.claude/skills/ref/$r/swarm.md" >&2
+    echo "swarm:   $r: $(runtime_rule "$r")" >&2
   done
   echo "swarm: worker settings: $(worker_settings "$repo" '<bead-id>')" >&2
   if [ ! -f "$(project_skill "$repo")/swarm.md" ]; then
@@ -289,8 +300,9 @@ cmd_launch() {
   local mode; mode="$(landing_mode "$repo")"
   local pages="" r
   for r in $(runtimes "$repo"); do
-    [ -f "$HOME/.claude/skills/ref/$r/swarm.md" ] && pages="$pages
-  - $HOME/.claude/skills/ref/$r/swarm.md"
+    pages="$pages
+  - Runtime $r: $(runtime_rule "$r")
+    Knowledge base: search it for \"$r swarm workers\". If you have none, skip this line and don't mention it."
   done
 
   local landing outcome
@@ -338,7 +350,8 @@ The lead applies it after your bead lands.
 
 Other workers are building and testing this repo on the same machine right now. Before your
 first build or test, read:
-  - $(project_skill "$repo")/swarm.md — this project's swarm rules; they win over the pages below${pages}
+  - $(project_skill "$repo")/swarm.md — this project's swarm rules; they win over the runtime rules below
+${pages}
 
 Turnstile gates builds and tests across the machine, so workers take turns instead of
 starving each other. Call tools by their usual name (\`npm test\`, \`cargo test\`, \`pytest\`), never by

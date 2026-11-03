@@ -3,8 +3,8 @@
 One pass. Build the whole thing, inspect it once in a batch, fix everything that round shows in one
 batch, confirm with at most one more round, stop. An open-ended polish loop costs more than it finds.
 
-Adapted from `ref/gui/slop.md`, narrowed to what a hermetic single-file mockup, prototype or wireframe can actually
-get wrong.
+Narrowed to the tells of generic, machine-made interface design that a hermetic single-file mockup, prototype or wireframe can actually get wrong.
+*Knowledge base: search it for "interface slop tells". If you have none, skip this line and don't mention it.*
 
 ## Look first
 

@@ -55,7 +55,8 @@ At session start, check for these in the current repo:
 
 ### Live glossary maintenance
 
-As terms resolve during the conversation, capture them per the `ref/docs` vocabulary rule: each is a slate row (term, one-line meaning, where it's already used), and the write to `docs/CONTEXT.md` happens on `go` — never inline mid-conversation. See [../ref/docs/STANDING-RULES.md](../ref/docs/STANDING-RULES.md) and [../ref/docs/CONTEXT-FORMAT.md](../ref/docs/CONTEXT-FORMAT.md) for the format.
+As terms resolve during the conversation, capture them as follows: each is a slate row (term, one-line meaning, where it's already used), and the write to `docs/CONTEXT.md` happens on `go` — never inline mid-conversation. Each entry is a bold term, a one-sentence definition, and an `_Avoid_:` line listing the aliases it displaces, under `## Language` in `docs/CONTEXT.md`.
+*Knowledge base: search it for "CONTEXT.md format" and "docs standing rules". If you have none, skip this line and don't mention it.*
 
 **Keep `docs/CONTEXT.md` a glossary and nothing else.** It must stay totally devoid of implementation details — it is not a spec, not a scratchpad, not a home for implementation decisions. Resolved vocabulary only; decisions go to ADRs, plans go to plan files.
 
@@ -72,7 +73,8 @@ If the user states how something works and the code disagrees, surface it: *"You
 
 ### ADRs, sparingly
 
-Apply the `ref/docs` any-session ADR rule (three-conditions test; a passing decision is a slate row that turn). See [../ref/docs/ADR-FORMAT.md](../ref/docs/ADR-FORMAT.md) for the template and qualifiers.
+Apply the three-conditions test in any session: the decision is hard to reverse, surprising without context, and the result of a real trade-off. A passing decision is a slate row that turn. An ADR states the decision in a few present-tense sentences with no rejected options or justification.
+*Knowledge base: search it for "ADR format". If you have none, skip this line and don't mention it.*
 
 ## Assumption-breaking lenses
 
@@ -97,17 +99,19 @@ A third lens, distinct from the two reframers above and not subject to their "ne
 
 ## Domain design lenses
 
-If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_detect.md`](../_detect.md); if `../ref/<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
+If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_detect.md`](../_detect.md); search the knowledge base for "<domain> design" (today: `game`, `ui`) and pull in what it returns. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
 tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; the design axis carries that same hard rule. No design axis for the domain → skip silently.
+*Knowledge base: search it for "<domain> design". If you have none, skip this line and don't mention it.*
 
 ## Product-design elicitation discipline
 
-When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and butter of Shape and Backfill — pull the matching `ref/gui/layers/` cell for the discipline that keeps the questions honest, then interrogate with it:
+When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and butter of Shape and Backfill — apply the discipline that keeps the questions honest:
 
-- **User needs / job stories** → [`../ref/gui/layers/user-needs.md`](../ref/gui/layers/user-needs.md): need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark confidence (observed/inferred/assumed).
-- **Domain terminology** → [`../ref/gui/layers/domain.md`](../ref/gui/layers/domain.md): record synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/ instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
+- **User needs / job stories** → need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark confidence (observed/inferred/assumed).
+- **Domain terminology** → record synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/ instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
 
-grill-me reads the cells rather than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding), work from [`../ref/gui/working-layers.md`](../ref/gui/working-layers.md), starting with [`../ref/gui/orient.md`](../ref/gui/orient.md) to find the bottleneck layer.
+For the full seven-layer treatment (conceptual model, strategy, breadboarding), find the bottleneck layer first, then work that layer.
+*Knowledge base: search it for "user needs layer", "domain terminology layer", "working layers", "orient". If you have none, skip this line and don't mention it.*
 
 ## Terminal state
 
@@ -134,7 +138,7 @@ If a written record is useful at the end, offer it — don't assume:
 - Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
 - Durable product spec → invoke `/issues spec`, which synthesizes the spec as its Phase 03. (`/issues spec` owns spec generation; don't write the spec by hand here.)
 
-Glossary entries and ADRs are captured *as slate rows* during the session, per the `ref/docs` standing rules — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
+Glossary entries and ADRs are captured *as slate rows* during the session — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
 
 ## Never build by hand what another skill owns
 

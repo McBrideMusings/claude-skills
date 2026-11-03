@@ -93,6 +93,12 @@ $R:
   **: web
 EOF
 
+# label lenses live in the knowledge base: one fixture page per label, frontmatter as in the real pages
+for l in web react go api apple audio game gui python rust threejs tui; do
+  mkdir -p "$HOME/Knowledge/ref/$l"
+  printf -- '---\nrun: gated\nwhen:\n  - labels: [%s]\n---\n# %s review lens\n' "$l" "$l" > "$HOME/Knowledge/ref/$l/review.md"
+done
+
 # decision <json-file> <lens> -> prints run|skip|offer
 decision() { jq -r --arg l "$2" '.[] | select(.lens == $l) | .decision' "$1"; }
 expect() { # expect <fixture> <json> <lens> <want>
@@ -255,6 +261,16 @@ grep -q 'run: always takes no when' "$WORK/bare.err" \
 echo "--- every lens in this skills tree parses ---"
 "$GATE" --repo "$R" --base main --json > /dev/null 2> "$WORK/all.err" \
   && say ok "every shipped lens has valid frontmatter" || say f "shipped lens frontmatter: $(cat "$WORK/all.err")"
+
+echo "--- no Knowledge/ref directory: axis lenses only, silent ---"
+mv "$HOME/Knowledge" "$HOME/Knowledge.off"
+g checkout -q docs; owned; jev_normal
+gate "$WORK/noref.json" --base main
+for l in $ALWAYS; do expect no-ref "$WORK/noref.json" "$l" run; done
+n=$(jq -r '.[].lens' "$WORK/noref.json" | grep -cxE 'web|react|go|api|apple|audio|game|gui|python|rust|threejs|tui')
+[ "$n" = 0 ] && say ok "no label lens is listed without Knowledge/ref" || say f "$n label lenses listed without Knowledge/ref"
+[ ! -s "$WORK/noref.json.err" ] && say ok "nothing on stderr without Knowledge/ref" || say f "stderr: $(cat "$WORK/noref.json.err")"
+mv "$HOME/Knowledge.off" "$HOME/Knowledge"
 
 echo
 echo "pass=$pass fail=$fail"

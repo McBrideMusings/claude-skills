@@ -1,17 +1,21 @@
-# Domain cells — label knowledge inside the `ref` skill
+# Domain labels — label knowledge in the knowledge base
 
 A **matrix of label × engine** knowledge that the workflow-engine skills (`review`,
-`diagnose`, `profiling`, and — via `ref/testing` and `verify` — testing) read from at run time. Each
-label is one directory, `ref/<label>/`, inside the single `ref` skill. Its root file is
-always `context.md`, which carries both the injected text and the label's file map, so the
-two cannot drift apart. No label directory holds a `SKILL.md`; `ref/SKILL.md` is the one
-index across all of them.
+`diagnose`, `profiling`, and — through writing and driving tests — testing) read at run time. The
+matrix lives in the knowledge base, not in the skills: each label is one directory,
+`~/Knowledge/ref/<label>/`, and private labels live under `~/Knowledge/ref/local/<label>/`. The label
+index is `~/Knowledge/ref/INDEX.md`. Each label's root file is always `context.md`, which carries both
+the injected text and the label's file map, so the two cannot drift apart. No label directory holds
+a `SKILL.md`; `INDEX.md` is the one index across all labels.
+
+A reader with no knowledge base has no label pages. Every engine then runs its generic process, and
+label resolution (`_detect.md`) still works, because it reads the domains-map and not the pages.
 
 ## What a label is
 
 One flat store, one kind of label. A label can describe a *stack* (`apple`, `web`, `react`,
 `threejs`) or a *mode* of development (`game`); the store doesn't distinguish — every label is a
-directory of engine cells that stacks with every other label in scope, detected the same way (see
+directory of engine pages that stacks with every other label in scope, detected the same way (see
 `_detect.md`). A repo carries several labels at once — a game on an iPhone is `apple` (how you
 build/test/ship on Apple), `mobile` (what a phone app is regardless of vendor), and `game` (how
 games are built regardless of device) simultaneously.
@@ -23,31 +27,33 @@ The **issue backend** is not a label. Beads is the standing assumption for every
 the `issues` skill description, which is in context every session without a map lookup. Only a
 departure from that assumption earns a label: `beads:stealth` for a repo that carries beads and
 commits none of it, `beads:mirror` for one whose beads are copied into GitHub Issues, and
-`tracker:github` for one with no beads yet. Cells live in [`issues/`](issues/README.md).
+`tracker:github` for one with no beads yet. Their pages live in [`issues/`](issues/README.md).
 
 ## Layout
 
 ```
-_detect.md              <- at the skills root: how labels resolve, map grammar, classifier heuristic
-ref/SKILL.md            <- the index: one row per public label; the only SKILL.md under ref/
-ref/<label>/
+_detect.md                          <- in the skills: how labels resolve, map grammar, classifier heuristic
+~/Knowledge/ref/INDEX.md            <- the index: one row per public label
+~/Knowledge/ref/<label>/
   context.md            <- the root file, always this name: a `> ` headline INJECTED at session
                            start in every repo carrying this label, a short body, and the label's
                            Files map (see below). The whole file is INJECTED on the session's
                            first edit of a file in this label's domain
   review.md             <- lens the `review` engine adds; opens with `run: gated` / `when: - labels:
                            [<label>]` frontmatter, which review/tool/lens-gate evaluates
-  diagnose.md           <- what to instrument / watch, read at diagnose's instrument phase
-  profiling.md          <- profiler catalog / performance gate, read by the `profiling` engine
-  testing.md            <- frameworks/harness/idioms, read via `ref/testing/writing.md` (write test) and `verify` (drive it)
-  design.md             <- OPTIONAL: design-time critique lenses, read by PLANNING skills (not engines)
-  prototype.md          <- OPTIONAL: what a throwaway prototype answers for this label, read by `spike`
+  diagnose.md           <- what to instrument / watch, found by diagnose's instrument phase
+  profiling.md          <- profiler catalog / performance gate, found by the `profiling` engine
+  testing.md            <- frameworks/harness/idioms, found when writing a test and when driving the change
+  design.md             <- OPTIONAL: design-time critique lenses, found by PLANNING skills (not engines)
+  prototype.md          <- OPTIONAL: what a throwaway prototype answers for this label, found by `spike`
+~/Knowledge/ref/local/<label>/      <- a private label, same shape, listed nowhere public
 ```
 
-A cell may be absent — the engine then runs generic-only for that label. Any other file in a label
+A page may be absent — the engine then runs generic-only for that label. Any other file in a label
 directory is content, named for what it holds, and listed in `context.md`'s Files map. Add a label
-by adding its `ref/<label>/context.md` and its row in `ref/SKILL.md` (see `_detect.md`'s "Adding a
-label"); add an engine column by adding that filename across the labels that need it.
+by creating its `~/Knowledge/ref/<label>/context.md` and engine pages and adding its row to
+`INDEX.md` (see `_detect.md`'s "Adding a label"); add an engine column by adding that filename
+across the labels that need it.
 
 ### `context.md` has two tiers and a map
 
@@ -66,115 +72,66 @@ label"); add an engine column by adding that filename across the labels that nee
 ```
 
 The **Files** map lists every other file in the directory, one row each, and is not counted
-against the body budget. A cell with no other files has no map.
+against the body budget. A label with no other files has no map.
 
-The **headline** is the first `> ` line under the H1. It is the only part injected at session start,
-and it is injected for every label the repo carries, so its cost is paid in every session in every
-such repo. Twelve words, stating the fact whose absence would cause a wrong action.
+The **headline** is the first `> ` line under the H1: twelve words stating the fact whose absence
+would cause a wrong action. The **body** is everything between the headline and `## Files`, capped
+at 120 words.
 
-The **body** is everything between the headline and `## Files`, capped at 120 words. It reaches
-context two ways. `hooks/ref-picker.sh` asks a model, on every prompt and before every Edit,
-Write or MultiEdit, one yes/no question per label in `ref/SKILL.md`'s table, and injects the
-whole `context.md` of every label answered a confident yes, once per session. It then asks one
-yes/no question per row of those cells' `## Files` tables and injects each page answered yes,
-also once per session. On a
-prompt it also injects a load line for any skill whose yes/no trigger answers confidently yes.
-Otherwise the body is read on demand, by whichever engine has resolved this label into its
-scope.
-
-Why two tiers rather than one 120-word cell: a per-cell cap bounds nothing about the total, and the
-total is what a session actually pays. Tiering makes the cost scale with how many labels a repo carries rather than with
-how much each cell has to say, which is the only version that stays bounded as coverage fills in.
-
-A cell with a body but no headline is a broken cell: session start prints a placeholder naming it
-rather than staying silent, because silence there is indistinguishable from "no label applies".
+`~/.claude/hooks/knowledge-inject.sh` finds a label's pages through a qmd search when a prompt is
+sent or a skill loads, has a model judge each hit, and injects the pages that apply, once per
+session. Otherwise a page is read on demand, by whichever engine has resolved its label into scope.
 
 ## Who reads what
 
-| Engine | Reads | When |
+Engines reach a label's page by searching the knowledge base with a line of the form "search it for
+`<label> <engine>`" (for example "apple diagnose"); the line says to skip it when there is no
+knowledge base. `review` is the exception: `review/tool/lens-gate` reads each `review.md` directly.
+
+| Engine | Page | When |
 | --- | --- | --- |
-| `review` | `ref/<label>/review.md` | Phase 04 — added as one extra lens sub-agent per matched label |
-| `diagnose` | `ref/<label>/diagnose.md`, `ref/<label>/profiling.md` (perf) | Phase 04 (Instrument) |
-| `profiling` | `ref/<label>/profiling.md` | after label detect |
-| `ref/testing/writing.md` | `ref/<label>/testing.md` | choosing the seam and harness for a test |
-| project `verify.md` | `ref/<label>/testing.md` | when a repo's own `.claude/skills/project/verify.md` drives the change |
+| `review` | `<label>/review.md`, read by `lens-gate` | Phase 04 — added as one extra lens sub-agent per matched label |
+| `diagnose` | `<label>/diagnose.md`, `<label>/profiling.md` (perf) | Phase 04 (Instrument) |
+| `profiling` | `<label>/profiling.md` | after label detect |
+| writing a test | `<label>/testing.md` | choosing the seam and harness for a test |
+| project `verify.md` | `<label>/testing.md` | when a repo's own `.claude/skills/project/verify.md` drives the change |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
-store directly. The testing axis reaches verification two ways instead: `ref/testing/writing.md` points at it
-when writing tests, and a repo's own `project` skill (written by `project-skills`) can read, in its `verify.md`,
-`ref/<label>/testing.md` for stack-specific drive/harness knowledge.
+store directly. A repo's own `project` skill (written by `project-skills`) can search the knowledge
+base, in its `verify.md`, for `<label> testing` to get stack-specific drive/harness knowledge.
 
-The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique
+The store also feeds planning skills, not just engines. A `design.md` page holds design-time critique
 lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `issues organize`, `issues iron-out`, and
-`ref/game`'s design phase read it optionally when the label is in scope. Design cells name structure
+the `game` label's design phase search for it when the label is in scope. Design pages name structure
 and tradeoffs — they never deliver a fun/good verdict.
 
 ## No precedence
 
-Stacked cells can contradict each other — `ref/apple/review.md` and `ref/gui/review.md` both carry
-motion knowledge today. There is deliberately no precedence table: a conflict is reported as a
-finding, because ranking the cells would guard a duplication that should be removed instead. See
+Stacked pages can contradict each other — the `apple` and `gui` `review.md` pages both carry
+motion knowledge. There is deliberately no precedence table: a conflict is reported as a
+finding, because ranking the pages would guard a duplication that should be removed instead. See
 `_detect.md`'s "No precedence".
 
 ## Current state
 
 Every label in the vocabulary carries a `context.md`, except `node`. It is deliberately
-empty for the same reason `tracker:github` is: it sits on half of all repos, so a cell would
+empty for the same reason `tracker:github` is: it sits on half of all repos, so a page would
 fire constantly to say what was already assumed. Docs are a standing assumption, not a map label:
-`ref/docs/` is a cell every repo uses, reached by the picker and the edit hook rather than by `domains-map`.
+the `docs` pages in the knowledge base are used by every repo, reached by the picker and the edit
+hook rather than by `domains-map`.
 
-`ref/apple/` has all four engine cells (`review`, `diagnose`, `profiling`, `testing`);
-`ref/web/` has `profiling` + `testing` + `review`; `ref/react/` has `review`; `ref/threejs/` has
-`review` + `diagnose` + `profiling` + `testing` (WebGL stack only — game knowledge lives in
-`ref/game/`).
-
-`ref/audio/` — `review.md` (the `review` engine's lens) + `volume.md` and the other audio
-knowledge files; `improve audio` reads them through `improve/aspects/audio.md`.
-
-`ref/game/` — all four engine cells + a `design.md` planning cell + `prototype.md` (feel vs.
-numbers questions, the throwaway surface per engine, isolate-one-mechanic discipline), seeded from
-majidmanzarpour/threejs-game-skills. `build-arc.md` carries the build arc that conducts
-end-to-end game builds over this store and adds the `game` label on scaffold.
-
-`ref/gui/` — `design.md` (planning-time critique lenses: the register and the one rule, the rest
-as pages in `design/`, grouping and the Gestalt principles among them) +
-`review.md` (motion **defect** lens for the `review` engine — jank, interruptibility/state-stranding,
-accessibility) + `opportunities.md` (the **opportunity** half: the four-question gate, the hunt-seam
-sweep, and the required rejected-candidates section, read by `critique.md`) + `critique.md` (the
-design-quality passes run against a screenshot, which is what `improve`'s `gui` aspect loads) +
-`slop.md` (objective AI-slop banned-patterns catalog, with four more pages in `slop/`, read by `critique.md` and the
-`review`/`verify` engines; harvested from
-Leonxlnx/taste-skill) + `direction.md` (choosing the visual world: the external-dice mechanism, the
-challenger deal, the comp discipline, and the single path to image generation via `generate`) +
-`amplitude.md` (volume changes on a shipped surface — bolder, quieter, distill, overdrive) +
-`states.md` (empty/error/loading/permission states, i18n, overflow, onboarding, interface copy) +
-`fidelity.md` (structural surface audit, from jamiemill/layers-skills) +
-`prototype.md` (the craft bar and divergence axes for `spike`'s UI shape) + `motion-vocabulary.md` (a
-reference — the reverse motion-term glossary, read by `explain`, not an engine cell) +
-`libraries.md` (a reference — curated web/React library picks, read by `implement`) +
-`sketch.md` (ASCII layouts in chat, the lowest rung of `spike`'s fidelity ladder, with the
-`seed.monojson` blank canvas it copies). Seeded from emilkowalski/skills. The implementation-level
-values live in `ref/web/review.md` and `ref/apple/review.md`.
-
-The `review` / `improve` line inside `ref/gui/`: **`review.md` is what's broken, `opportunities.md`
-is what's missing or weak.** Craft judgements never enter a code review; defects never wait for an
-improvement pass.
-
-`ref/gui/layers/` — the six problem-space and solution-space design layers beneath the screen:
-`observed-behaviour.md`, `user-needs.md`, `domain.md`, `product-strategy.md`, `conceptual-model.md`,
-`interaction-flow.md`. Adapted from jamiemill/layers-skills (MIT). `ref/gui/working-layers.md`
-carries the seven-layer framework and how to apply a cell; `ref/gui/orient.md` names the bottleneck
-layer and is what `improve`'s `product` aspect runs. `interaction-flow.md` hands its breadboard to
-`sketch.md`, and `grill-me` pulls `user-needs.md` + `domain.md` for elicitation discipline.
+The `review` / `improve` line inside the `gui` label: **`review.md` is what's broken,
+`opportunities.md` is what's missing or weak.** Craft judgements never enter a code review; defects
+never wait for an improvement pass.
 
 Add labels as new kinds of software or new stacks appear.
 
 ## Attribution
 
 Adapted from [MengTo/Skills](https://github.com/MengTo/Skills) — see that repo's LICENSE:
-- `ref/apple/` — `swiftui-pro` (Paul Hudson), `swiftui-debugging`, `performance-profiling`.
-  `ref/apple/profiling/*.md` copied verbatim from its `performance-profiling/references/`.
-- `ref/web/profiling.md` (+ `ref/web/profiling/browser-profiling.md`) — `optimize-web-animations`.
-- `ref/web/review.md` and `ref/apple/review.md`'s motion block — emilkowalski/skills
+- the `apple` label — `swiftui-pro` (Paul Hudson), `swiftui-debugging`, `performance-profiling`.
+  Its `profiling/*.md` pages are copied verbatim from `performance-profiling/references/`.
+- the `web` label's `profiling.md` (+ `profiling/browser-profiling.md`) — `optimize-web-animations`.
+- the `web` label's `review.md` and the `apple` label's `review.md` motion block — emilkowalski/skills
   (`emil-design-eng`, `apple-design`, `review-animations`). The platform-agnostic design principles
-  behind them live in `ref/gui/`.
+  behind them live in the `gui` label.

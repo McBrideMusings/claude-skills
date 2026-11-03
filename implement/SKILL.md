@@ -146,11 +146,12 @@ elsewhere, squashed by `wrap-up`.
    gate, and it should not have been offered. When the change adds or alters a feature of
    something that runs, the plan also names each boundary the feature crosses, the log line
    each one writes, and the state-query field that shows what the feature displays
-   ([`../ref/observability/checklist.md`](../ref/observability/checklist.md)); building those is
-   part of this item, never a follow-up. In a repo with a `DESIGN.md`, save the `dsys check`
+   (log lines are one per event, with an ISO 8601 timestamp, a category and raw values rather than displayed ones, and never a credential or a whole body); building those is
+   part of this item, never a follow-up.
+   *Knowledge base: search it for "observability checklist". If you have none, skip this line and don't mention it.* In a repo with a `DESIGN.md`, save the `dsys check`
    baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). A pass that
    builds a new UI surface in a repo with no `DESIGN.md` runs `redesign` step 4's roll first
-   ([`../redesign/SKILL.md`](../redesign/SKILL.md)) and plans from the assigned direction. A host dependency — anything the code expects on the user's machine or network rather than in its build — is proposed in chat, named as one, before code relies on it; its duties are in `~/Knowledge/ref/architecture/host-dependencies.md`. Then start the pass's dashboard with `dashboard implement`
+   ([`../redesign/SKILL.md`](../redesign/SKILL.md)) and plans from the assigned direction. A host dependency — anything the code expects on the user's machine or network rather than in its build — is proposed in chat, named as one, before code relies on it; the code locates it through configuration and shows in the product whether it is present. Then start the pass's dashboard with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
    each step below.
 1b. **Blind plan review.** Once the plan stands, spawn `plan-reviewer` once, with the quoted
@@ -223,8 +224,13 @@ shapes appears in a command this process runs:
 change, save a screenshot of every variant and theme it touches to an absolute path, Read each
 image and write down every difference from what the change should show; the text checks — logs,
 exit codes, a DOM or text dump — come first and add to the look, never replace it. Name each
-image's absolute path in the summary. A set of screenshots that compares states, sizes or before/after follows
-[`../ref/gui/screenshot-series.md`](../ref/gui/screenshot-series.md): whole subject in every frame, motion locked, every frame checked. `screenshot-checker` answers a plain yes/no about an image
+image's absolute path in the summary. A set of screenshots that compares states, sizes or before/after shows the whole subject in
+every frame, cropped to its bounding box with no title bar or overlay across it; turns motion
+off with an injected `animation: none !important; transition: none !important` rule and waits
+for fonts and two animation frames rather than a timer; changes only the variable under test;
+and has every frame read, and any bad one retaken, before the set is shown.
+*Knowledge base: search it for "screenshot series". If you have none, skip this line and don't mention it.*
+`screenshot-checker` answers a plain yes/no about an image
 ("did the row render") without bringing it into this context; it never stands in for the look
 at a change's design. Accompanying material — reference frame, mockup, spec, fixture, golden file, linked doc — is compared in full too. Write down every difference; an empty list is an answer, an unwritten one means you did not look. If you cannot look, the gate says the work is unverified. A visual drive reports the absolute path of the image it inspected.
 

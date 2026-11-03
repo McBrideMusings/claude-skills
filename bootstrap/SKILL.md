@@ -51,7 +51,8 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 | `bootstrap docs site` | Only the VitePress docs site: bootstrap, audit or migrate it. Open [`docs-site/DOCS-SITE.md`](docs-site/DOCS-SITE.md); it carries its own phased flow and routes from its own state detection. |
 | `bootstrap glossary` | Audit `docs/CONTEXT.md` against the code: [`docs-site/PHASE-07-GLOSSARY-AUDIT.md`](docs-site/PHASE-07-GLOSSARY-AUDIT.md). Standalone; skips every other phase. |
 
-The standing rules for vocabulary, ADRs and subsystem docs are not part of this skill; they live in [`../ref/docs/context.md`](../ref/docs/context.md).
+The standing rules for vocabulary, ADRs and subsystem docs are not part of this skill; they apply in every session: a new term is shown as a slate row before it enters `docs/CONTEXT.md`, and a decision that is hard to reverse, surprising without context and a real trade-off becomes an ADR in `docs/adr/`.
+*Knowledge base: search it for "docs standing rules". If you have none, skip this line and don't mention it.*
 
 ## Findings-only invocation
 

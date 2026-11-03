@@ -4,9 +4,10 @@ Build **several genuinely different working versions** of one piece of UI in a s
 file, flipped through with the Tweaks panel, and let the user pick a winner.
 
 This is rung 4 of the fidelity ladder ([SKILL.md](SKILL.md)). If the open question is arrangement,
-sketch it in ASCII ([`../ref/gui/sketch.md`](../ref/gui/sketch.md)); if it is how the screen looks,
+sketch it in ASCII (box-drawing characters in chat, layout only); if it is how the screen looks,
 make an image comp ([COMP.md](COMP.md)) or an HTML mockup ([MOCKUP.md](MOCKUP.md)). Come here for
 behaviour only visible under interaction, or a mockup that settled nothing.
+*Knowledge base: search it for "ascii sketch". If you have none, skip this line and don't mention it.*
 
 If the question is logic/state → [LOGIC.md](LOGIC.md). If it's "which technical approach" →
 [COMPARE.md](COMPARE.md).
@@ -93,7 +94,8 @@ Before designing anything, map the ground the variants stand on:
   may go.
 - **Context** — what the piece renders against: background, neighbours, sizes.
 - **Frequency** — how often a user hits this. It decides how much motion is allowed at all
-  (`ref/gui/design/motion.md` Lens 1).
+  (motion lens 1).
+  *Knowledge base: search it for "interface motion frequency". If you have none, skip this line and don't mention it.*
 
 No project at all (empty directory, pure exploration)? Skip to Phase 03 with a restrained default look:
 neutral greys, one accent, system font stack.
@@ -215,9 +217,9 @@ rebuild, add one line naming what changed since they last looked.
 
 Sell each variant honestly — one line on when it wins, one on what it costs. Never pre-pick a favourite
 in the table. If the user asks which you'd choose, answer with a reason rooted in the product's
-personality and how often the piece is seen (`ref/gui/design.md` is where that
-judgement is licensed and how it must be anchored). If two variants converged while you built them, cut
+personality and how often the piece is seen (a reason anchored in the product, never a bare taste call). If two variants converged while you built them, cut
 one and say so: two truly distinct directions beat three padded ones.
+*Knowledge base: search it for "interface design judgement". If you have none, skip this line and don't mention it.*
 
 The most useful feedback is usually **"the header from Editorial with the density of Dense"** — that's
 the actual design. Treat it as a `riff`: run Phase 03 again around it and rebuild the same file over

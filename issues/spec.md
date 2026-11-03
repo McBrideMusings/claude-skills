@@ -39,7 +39,7 @@ printed ref in its design field. **If the source is an explainer**, it is commit
 
 **If the work is UI and there is no winning comp yet, stop and say so.** A UI slice needs a
 reference comp to cite, and inventing the visual target inside a ticket body is how a slate
-ends up unbuildable. Point at `/spike` to make one — an ASCII sketch (`ref/gui/sketch.md`) if the
+ends up unbuildable. Point at `/spike` to make one — an ASCII sketch if the
 question is only arrangement, then an image comp (`../spike/COMP.md`). Come back after.
 
 ### Phase 02 — Explore the codebase (if needed)

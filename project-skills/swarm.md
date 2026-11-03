@@ -1,8 +1,8 @@
 # The project skill's `swarm.md`
 
 `<repo>/.claude/skills/project/swarm.md` tells swarm workers how this one project behaves when
-several of them build and test it at once. It wins over the runtime pages in
-`skills/ref-cells/<runtime>/swarm.md`, which hold what is true of every project in that runtime.
+several of them build and test it at once. It wins over the runtime rules in the `swarm` skill's per-runtime table and the knowledge base, which hold what is true of every project in that runtime.
+*Knowledge base: search it for "<runtime> swarm workers". If you have none, skip this line and don't mention it.*
 It grows when a new heavy process or shared resource lands.
 
 ## Files

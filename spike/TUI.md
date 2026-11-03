@@ -190,7 +190,8 @@ from the prototype they claim to depict, silently, and nothing catches it.
 - **A harness key the design needed.** If a direction wants `[`, say so and change the harness; do not
   quietly drop the binding from the design.
 - **Colour carrying meaning alone.** A theme can reassign every slot — pair it with a glyph, a label,
-  or position. `ref/tui/design.md` is the standing cell.
+  or position. 
+  *Knowledge base: search it for "tui design". If you have none, skip this line and don't mention it.*
 - **Hand-written `.txt` frames.** Dump them.
 - **Measuring width with `len()`.** Box-drawing characters are three bytes each. Use `VW`.
 - **Judging at a width you never ship.** If it must survive 80 columns, dump at 80.

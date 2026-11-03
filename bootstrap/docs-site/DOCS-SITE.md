@@ -5,7 +5,8 @@ auditing/migrating an existing one. The flow is **phased**: detect state, branch
 Bootstrap / Audit / Migrate, then verify and commit.
 
 The standing rules for vocabulary, ADRs and subsystem docs apply in every session, with or
-without this flow: [`../../ref/docs/STANDING-RULES.md`](../../ref/docs/STANDING-RULES.md).
+without this flow: a new term is shown as a slate row before it enters `docs/CONTEXT.md`, and a decision that is hard to reverse, surprising without context and a real trade-off becomes an ADR in `docs/adr/`.
+*Knowledge base: search it for "docs standing rules". If you have none, skip this line and don't mention it.*
 
 ## Standard layout
 

@@ -40,7 +40,7 @@ Answer these by reading the codebase; only ask what you can't observe:
   response bodies, logs, exit codes, DB state, real output pasted from an actual run.
 - **Logs and state** — for anything that runs: where its log files are, how the control
   surface reports that path, and what its state query returns per feature. Check both
-  against [`../ref/observability/checklist.md`](../ref/observability/checklist.md); a missing
+  against the observability checklist (one log line per boundary event with raw values, a log file at the platform's log directory, a state query that returns what the feature shows); a missing
   log file or a count where items belong goes in the generated skill as a named gap, and in
   the report.
 - **Isolate** — can two instances run side by side (ports, data dirs, profiles)? If not,
@@ -121,7 +121,8 @@ step. A generated skill that was never executed is a draft, not a deliverable.
 Keeps `verify.md` honest as the app changes. The unit of rigor is the feature (or
 section), not every sentence. For each feature, drive it and confirm the log lines and state
 fields its map entry names still appear; one that names none is a gap against
-[`../ref/observability/checklist.md`](../ref/observability/checklist.md).
+the observability checklist.
+*Knowledge base: search it for "observability checklist". If you have none, skip this line and don't mention it.*
 
 **Outcomes — pick one, say which:**
 

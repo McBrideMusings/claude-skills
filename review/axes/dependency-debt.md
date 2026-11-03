@@ -8,7 +8,7 @@ when:
 
 **This lens scores tool output — it does not infer from reading.** Phase 01r captures each language
 tool's raw output once per slice and hands the same capture to both the matched label lens
-(`ref/go/review.md`, `ref/python/review.md`, `ref/rust/review.md`, `ref/web/review.md`) and this lens
+(the go, python, rust and web labels' `review.md`) and this lens
 directly — `govulncheck`/`pip-audit`/`cargo audit`/`npm audit` for vulnerabilities,
 `vulture`/`cargo udeps`/`cargo machete`/`knip`+`depcheck`/`go mod tidy -diff` for unused code and
 dependencies. The label

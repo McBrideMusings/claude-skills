@@ -115,7 +115,8 @@ One issue at a time, top of the queue. The user can stop at any point — progre
 **`decision` — resolve here, now.** Present the issue (name, URL, unresolved question), then interview:
 
 - Plan test failed (missing facts, unknown files or scope) → ask targeted clarifying questions, one at a time in plain chat, never the `AskUserQuestion` tool. Read the codebase for anything the repo can answer; only ask for what it can't.
-- Objectivity test failed, or both (a design or product call the user owns) → invoke `grill-me` via the Skill tool. If a decision crystallises into an ADR, grill-me's existing offer covers it — take it. In a domain with a design axis (`game` via [`../ref/game/design.md`](../ref/game/design.md), `gui` via [`../ref/gui/design.md`](../ref/gui/design.md)), the interview consults its lenses.
+- Objectivity test failed, or both (a design or product call the user owns) → invoke `grill-me` via the Skill tool. If a decision crystallises into an ADR, grill-me's existing offer covers it — take it. In a domain with a design axis (`game`, `gui`), the interview consults its lenses.
+*Knowledge base: search it for "<domain> design". If you have none, skip this line and don't mention it.*
 
 **Any question offering more than one path carries a recommendation and a stated reason, per CLAUDE.md's Deciding & designing rule** — a bare menu of options is a non-answer whether it's this interview or `grill-me`'s. A single-fact question ("which file holds X?") doesn't need one; a question with two or more live paths does.
 

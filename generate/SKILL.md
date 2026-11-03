@@ -52,7 +52,7 @@ the backend actually used.
 
 ## Callers
 
-`ref/gui/direction.md` is a caller, not a peer. Its comp step renders UI comps through this engine and holds
+A UI direction session is a caller, not a peer. Its comp step renders UI comps through this engine and holds
 **no** image path of its own — no API key, no direct HTTP call, no per-provider branch. That contract
 is what makes adding a cloud image backend a one-line `backends.toml` edit: change the `[image]` order
 here and a direction session picks it up with no change on its side. Preserve it. UI-comp specifics (model pick,
