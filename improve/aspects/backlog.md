@@ -1,11 +1,11 @@
-# Aspect brief: `backlog` (native; the fix is `issues shape`, or `issues iron-out` for items waiting on a person)
+# Aspect brief: `backlog` (native; the fix is `issues organize`, or `issues iron-out` for items waiting on a person)
 
 Axis tag: `backlog`. Applicability: the repo has a `.beads/` directory. A backlog whose labels,
 types and edges have drifted cannot be filtered or ordered, and every agent that files the next
 bead copies the drift it sees.
 
 **Read:** [`../../issues/labels.md`](../../issues/labels.md) for what a label may be, and
-[`../../issues/shape.md`](../../issues/shape.md) Phase 0 for what a structured backlog looks like.
+[`../../issues/organize.md`](../../issues/organize.md) Phase 0 for what a structured backlog looks like.
 Everything below is read-only: run the commands, write nothing to the tracker.
 
 ## Checks
@@ -21,8 +21,8 @@ Everything below is read-only: run the commands, write nothing to the tracker.
 
 ## Aspect-specific rules
 
-- **Every finding's fix is `issues shape`, except an open decision without `human`, which is `issues iron-out`.** Write it as the remedy line rather than
-  inventing per-finding fixes; shape's Phase 0 writes `labels.toml` when it is missing,
+- **Every finding's fix is `issues organize`, except an open decision without `human`, which is `issues iron-out`.** Write it as the remedy line rather than
+  inventing per-finding fixes; organize's Phase 0 writes `labels.toml` when it is missing,
   reconciles every label, and wires the pre-commit block.
 - Do not relabel, retype or edit any bead. The findings are the deliverable.
 - A repo with no `.beads/` is out of this aspect's scope, not a finding.

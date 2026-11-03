@@ -12,7 +12,7 @@ Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined 
 
 Every skill that hands work to another agent picks from the **same four targets**, in the
 same order. This file is the single owner of that order. `review dual`,
-`implement dispatch codex`, and `issues shape` link here rather than each inventing a menu.
+`implement dispatch codex`, and `issues organize` link here rather than each inventing a menu.
 The thing that runs the work is a **worker**; the session that hands it the brief is the
 **dispatcher**.
 

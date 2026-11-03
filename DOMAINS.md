@@ -105,7 +105,7 @@ when writing tests, and a repo's own `project` skill (written by `project-skills
 `ref/<label>/testing.md` for stack-specific drive/harness knowledge.
 
 The store also feeds planning skills, not just engines. A `design.md` cell holds design-time critique
-lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `issues shape`, `issues iron-out`, and
+lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `issues organize`, `issues iron-out`, and
 `ref/game`'s design phase read it optionally when the label is in scope. Design cells name structure
 and tradeoffs — they never deliver a fun/good verdict.
 

@@ -60,7 +60,7 @@ A new bead waits for one: the guard denies `bd create` and `bd q` in a repo with
 and lets edits to existing beads through. Do not label from a guess. Run the labeling session:
 name the repo's parts from its submodules, apps, services and open beads, put the proposed
 file to the user as a slate row, and on `go` write it, relabel every bead against it, then file
-what was waiting. `issues shape` runs the same session at backlog scale ([shape.md](shape.md)
+what was waiting. `issues organize` runs the same session at backlog scale ([organize.md](organize.md)
 Phase 0).
 
 ## `human` — keep it in every repo's file
@@ -85,7 +85,7 @@ Pair it with `-t decision` when the whole issue is an unmade call; a `decision` 
 | `hooks/beads-label-guard.sh` | Denies a `bd create`, `bd q`, `bd update --set-labels/--add-label/--remove-label`, `bd tag` or `bd label add/remove` whose result breaks the file, and prints the vocabulary. Denies a `-t decision` create without `human`, and any `bd create` or `bd q` in a repo with no file. A `bd create --parent` is judged with the labels it inherits. An edit to an existing bead is denied only for a problem it introduces, so old labels come off one at a time. It does not see `bd create -f`/`--graph`, `bd import` or `bd set-state`; the pre-commit block and `bead-labels check` catch those. |
 | `.beads/hooks/pre-commit` | One block after the `END BEADS INTEGRATION` marker runs `bead-labels check` on the staged `issues.jsonl` against the staged `labels.toml`. Beads keeps content outside its markers across `bd hooks install`, `--force` included. Stealth repos install no beads git hooks, so only the guard covers them. |
 | `bead-labels check` | Every bead in the tracker, a `decision` without `human` included; `--jsonl <file>` checks an export instead. |
-| `issues shape` | Runs the check first and fixes every finding. |
+| `issues organize` | Runs the check first and fixes every finding. |
 | `review` | Runs the check on beads the branch touched and reports drift as findings. |
 
 The block for a repo's `.beads/hooks/pre-commit`, after the `END BEADS INTEGRATION` line:

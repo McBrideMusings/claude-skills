@@ -16,7 +16,7 @@ skill holds its *process* once and stays backend-agnostic: it resolves the backe
 issues/
   SKILL.md          <- the front door: the six verbs and the pointer to REFERENCE.md
   REFERENCE.md      <- the map: which tracker file to open for which task
-  file.md spec.md next.md shape.md iron-out.md reconcile.md  <- one file per verb
+  file.md spec.md next.md organize.md iron-out.md reconcile.md  <- one file per verb
   SPEC-TEMPLATE.md TICKET-TEMPLATE.md OUT-OF-SCOPE.md  <- shapes the verbs publish and check against
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
@@ -46,7 +46,7 @@ and never invents one. A repo without the file gets a proposed labeling session,
 | `issues spec` | create, epic/parent, dep | publishes a slate of tickets, sized per `breakdown.md` |
 | `issues next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
-| `issues shape` | list, create, dep, label | types, labels, epics, wires blockers; selector resolution lives in `implement/SELECTORS.md` |
+| `issues organize` | list, create, dep, label | types, labels, epics, wires blockers; selector resolution lives in `implement/SELECTORS.md` |
 | `issues iron-out` | human, list, update, label, close | answers and closes questions, rewrites work items until AFK, flags unlabelled ones `human`; files new work through `issues spec` / `issues file` into the run's focus, then ends through `relay` §Ending |
 | `issues file` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |

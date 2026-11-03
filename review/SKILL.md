@@ -153,7 +153,7 @@ When the diff changes `.beads/issues.jsonl` and `~/.claude/tools/bead-labels pat
 `bead-labels check --jsonl <(git show HEAD:.beads/issues.jsonl)` and keep the lines whose id is
 one of them. Each kept line is a finding — the bead id, the problem the tool printed, and the
 fix (`bd update <id> --set-labels …` from the file's vocabulary). Beads the branch did not touch
-are `issues shape`'s job, not this review's. The rules are [`../issues/labels.md`](../issues/labels.md).
+are `issues organize`'s job, not this review's. The rules are [`../issues/labels.md`](../issues/labels.md).
 
 ## Dual flavor (`review dual`)
 

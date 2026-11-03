@@ -448,7 +448,7 @@ Non-negotiables:
 in its own column, so `[bug]`, `bug:`, `Bug —`, `Feature:`, `Epic:` and `Task:` in the title say
 it twice. Name the thing: "Killing a hosted worker sends SIGKILL with no grace period", not
 "[bug] Killing a hosted worker sends SIGKILL with no grace period". This applies to every
-`bd create` and `bd update --title`, including `file`, `spec` and `shape`. A title that arrives
+`bd create` and `bd update --title`, including `file`, `spec` and `organize`. A title that arrives
 with such a prefix (from a GitHub issue, a followup, a papercut) loses the prefix when it
 becomes a bead, and the type goes in `-t`.
 

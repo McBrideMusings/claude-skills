@@ -1,12 +1,12 @@
-# Shape
+# Organize
 
 Give a backlog a structure it can be ordered by: every issue typed and labelled from the repo's
 vocabulary, grouped under epics, with the blocking edges nobody wired, and a validated roadmap
 of ready fronts printed at the end. Also charts a foggy effort from scratch.
 
-**Worth doing on its own.** A backlog with no types, no grouping and no edges cannot be ordered, cannot be searched, and cannot be scoped down to something smaller than "everything". Run `issues shape` because the backlog is a heap, not because something is about to consume it.
+**Worth doing on its own.** A backlog with no types, no grouping and no edges cannot be ordered, cannot be searched, and cannot be scoped down to something smaller than "everything". Run `issues organize` because the backlog is a heap, not because something is about to consume it.
 
-**Resolving what waits on a person is [`iron-out.md`](iron-out.md)'s job.** Shape never answers an item's open question and never rewrites a body to settle a decision — charting's `grill-me` rounds find questions to file, they do not answer them; it ends by offering `issues iron-out` over the scope it just structured. The two read the same graph: shape builds it, iron-out drains the items in it that need you.
+**Resolving what waits on a person is [`iron-out.md`](iron-out.md)'s job.** Organize never answers an item's open question and never rewrites a body to settle a decision — charting's `grill-me` rounds find questions to file, they do not answer them; it ends by offering `issues iron-out` over the scope it just structured. The two read the same graph: shape builds it, iron-out drains the items in it that need you.
 
 ## Refer by name
 
@@ -14,13 +14,13 @@ Every issue has a title. In everything the user reads — the slate, the roadmap
 
 ## Scope
 
-Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `epic:X`, `ready`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `issues shape` = every open issue in the current repo.
+Selector forms are shared with `implement` — one table, in [../implement/SELECTORS.md](../implement/SELECTORS.md) (`#133-140`, `label:X`, `milestone:X`, `epic:X`, `ready`, `followups`, `papercuts`; union multiple selectors). Shared because a selector means the same thing everywhere, not because this skill runs after that one. Bare `issues organize` = every open issue in the current repo.
 
 **Dependencies are real edges, never prose.** On beads: `bd dep add <id> <blocker-id> -t blocks`, read back with `bd dep tree`, `bd blocked` and `bd ready --limit 0`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is a **finding** — an edge someone never wired — and Phase 0 offers to convert it. An item is unblocked when every blocker is closed.
 
 **`bd ready` trusts a denormalized `is_blocked` flag that can go stale** after a pull whose scoped recompute was skipped, or a merge conflict resolved by hand. Run `bd recompute-blocked` before any read that orders work, or the roadmap silently hides ready issues.
 
-**Free text that isn't a selector is a loose idea, not a scope** — `issues shape a 3D storefront browser for my Plex library`. There is no backlog to scan yet, so go to [Charting a foggy effort](#charting-a-foggy-effort) first; Phase 0 runs afterwards over the epic it creates.
+**Free text that isn't a selector is a loose idea, not a scope** — `issues organize a 3D storefront browser for my Plex library`. There is no backlog to scan yet, so go to [Charting a foggy effort](#charting-a-foggy-effort) first; Phase 0 runs afterwards over the epic it creates.
 
 ## Charting a foggy effort
 

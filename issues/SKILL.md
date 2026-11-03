@@ -1,6 +1,6 @@
 ---
 name: issues
-description: "Read, create, close or label a tracked item, and the six backlog verbs: `file` a follow-up, `spec` a conversation into tickets, `next` to pick what to work on, `shape` a heap of issues into typed, labelled epics with edges, `iron-out` the items waiting on a person (human beads, decisions, HITL) that block other work until each is answered and closed or rewritten AFK-ready (`all` widens it to every leaf), `reconcile` to close beads a merged pull request already shipped. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Read before creating, reading, closing or labelling a tracked item."
+description: "Read, create, close or label a tracked item, and the six backlog verbs: `file` a follow-up, `spec` a conversation into tickets, `next` to pick what to work on, `organize` a heap of issues into typed, labelled epics with edges, `iron-out` the items waiting on a person (human beads, decisions, HITL) that block other work until each is answered and closed or rewritten AFK-ready (`all` widens it to every leaf), `reconcile` to close beads a merged pull request already shipped. Every repo tracks work in beads — `bd`, never `gh issue` — and git can never tell you whether beads are synced, so git-side signals about `.beads/` are normal. Read before creating, reading, closing or labelling a tracked item."
 ---
 
 # Issues
@@ -26,7 +26,7 @@ Six verbs route to a sibling file loaded on demand — read that file, not this 
 | `issues file` | Capture a follow-up item — quick captures and session-end generation (also invoked by `/wrap-up`). Creates only; browsing or picking an item is `issues next`. | [`file.md`](file.md) |
 | `issues spec` | Synthesize a spec from conversation, get it approved, slice it into vertical-slice tickets, publish to the tracker. | [`spec.md`](spec.md) |
 | `issues next` | Pick the next work item from the tracker and recommend one concrete starting point. | [`next.md`](next.md) |
-| `issues shape` | Structure a backlog: type and label every issue from `.beads/labels.toml`, group into epics, infer edges, print the roadmap. Also charts a foggy effort from scratch. | [`shape.md`](shape.md) |
+| `issues organize` | Structure a backlog: type and label every issue from `.beads/labels.toml`, group into epics, infer edges, print the roadmap. Also charts a foggy effort from scratch. | [`organize.md`](organize.md) |
 | `issues iron-out` | Resolve the items waiting on a person that block other work, one at a time (`all` adds the leaves): answer and close questions, rewrite work items until an agent can run them, flag unlabelled ones `human`. New work a resolution implies is filed through `issues spec` / `issues file` into the run's focus; the verb ends through `relay` §Ending. | [`iron-out.md`](iron-out.md) |
 | `issues reconcile` | Close beads a merged PR already shipped: closes every PR-linked bead whose PR merged, then matches unlinked open beads against merged PRs and closes the matches you accept. Run when an open bead looks done. | [`reconcile.md`](reconcile.md) |
 
@@ -37,6 +37,6 @@ work. A request that names none of these and maps to neither → ask which, in p
 
 - [`TICKET-TEMPLATE.md`](TICKET-TEMPLATE.md) — the ticket body shape `spec.md` publishes.
 - [`SPEC-TEMPLATE.md`](SPEC-TEMPLATE.md) — the spec shape `spec.md` synthesizes.
-- [`OUT-OF-SCOPE.md`](OUT-OF-SCOPE.md) — the rejected-idea format `next.md` and `shape.md` check candidates against.
+- [`OUT-OF-SCOPE.md`](OUT-OF-SCOPE.md) — the rejected-idea format `next.md` and `organize.md` check candidates against.
 
 Every verb resolves the issue backend through [`_detect.md`](_detect.md) before touching a tracker.

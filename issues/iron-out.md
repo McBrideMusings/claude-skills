@@ -13,7 +13,7 @@ not need `implement` to run. Its exit is [`../relay/SKILL.md`](../relay/SKILL.md
 runs `next-work` on the run's focus and prints the one `Next:` line; no phase before it offers
 work to `implement`.
 
-**Structure is [`shape.md`](shape.md)'s job.** This verb never builds epics, wires inferred
+**Structure is [`organize.md`](organize.md)'s job.** This verb never builds epics, wires inferred
 edges or relabels a backlog wholesale. It reads the graph as it stands. A backlog with no types
 and no edges still irons out; the queue is just ordered by priority instead of leverage.
 
@@ -56,7 +56,7 @@ it waits for a later pass. Two arguments widen the queue:
   included.
 - **An explicit id list** queues exactly those ids, whatever they block.
 
-**Dependencies are real edges, never prose.** On beads: read with `bd dep tree`, `bd blocked` and `bd ready --limit 0`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is an edge nobody wired; report it and leave the wiring to `issues shape`.
+**Dependencies are real edges, never prose.** On beads: read with `bd dep tree`, `bd blocked` and `bd ready --limit 0`. On GitHub: the native `blockedBy` / `blocking` fields, reachable through GraphQL. A `Blocked by #<n>` line in a body is an edge nobody wired; report it and leave the wiring to `issues organize`.
 
 **`bd ready` trusts a denormalized `is_blocked` flag that can go stale** after a pull whose scoped recompute was skipped, or a merge conflict resolved by hand. Run `bd recompute-blocked` before any read that orders work.
 
@@ -158,7 +158,7 @@ Re-run the two tests on the resolved item. Fail → the interview missed somethi
 
 - **Cascade** — re-judge the remaining flagged issues with the decisions made so far in hand; one answer often settles siblings. Any now passing get their body edits drafted from the recorded decisions, shown, applied.
 - **Move the roadmap.** After each close, `bd recompute-blocked` then `bd ready --limit 0 --json` shows what it unblocked (`bd close --suggest-next` prints the same for a plain close). Emit **one line, only when a wave actually moved** — *"Closing `Which conflict policy for sync` unblocked 4 issues; wave 1 is now 7."* Silence otherwise.
-- **Graduate** — if the epic carries a brief from [`shape.md`](shape.md)'s charting, file whatever fog the answer just made statable as fresh issues through [`file.md`](file.md) (create, then wire edges in a second pass), and clear those patches from **Not yet specified**. If the answer reveals an issue sits past the destination, rule it Out of scope rather than resolving it. If it invalidates other issues, update or close them as questions answered.
+- **Graduate** — if the epic carries a brief from [`organize.md`](organize.md)'s charting, file whatever fog the answer just made statable as fresh issues through [`file.md`](file.md) (create, then wire edges in a second pass), and clear those patches from **Not yet specified**. If the answer reveals an issue sits past the destination, rule it Out of scope rather than resolving it. If it invalidates other issues, update or close them as questions answered.
 
 Re-order what remains by leverage and continue at 3a.
 

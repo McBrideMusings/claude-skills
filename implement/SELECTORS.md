@@ -1,7 +1,7 @@
 # Selectors — resolving a scope
 
 Shared table: any skill that needs to resolve a named scope of issues into a concrete list —
-`issues shape`'s Scope section, a batch of followups, a range of numbers — uses this table
+`issues organize`'s Scope section, a batch of followups, a range of numbers — uses this table
 rather than inventing its own syntax, because a selector means the same thing everywhere.
 
 Resolve the issue backend once — invoke `issues` and run its detection step — before resolving
@@ -21,7 +21,7 @@ Selector forms (all match against **open** work only; dedupe by issue ID / by te
 | `followups` | Issues labelled `followup` on the resolved backend. There is no local followups file. | Same. |
 | `papercuts` | Read the path `"$HOME/.claude/tools/papercut" --path` prints; each entry is one **local item**. | Same. |
 
-`implement`, `swarm` and `issues iron-out` resolve their focus argument through this table and carry no selector rows of their own. `issues shape` shares the forms except free text, which it routes to charting a foggy effort.
+`implement`, `swarm` and `issues iron-out` resolve their focus argument through this table and carry no selector rows of their own. `issues organize` shares the forms except free text, which it routes to charting a foggy effort.
 
 Multiple selectors may be combined (e.g. `label:RN followups`); union them, dedupe, preserve
 first-seen order.
