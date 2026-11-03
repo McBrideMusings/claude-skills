@@ -28,6 +28,7 @@ a sibling, and most of this does not apply there.
 | [`sketch.md`](sketch.md) | Laying out one design as ASCII in chat, before any rendered wireframe. |
 | [`sketch/greybox.md`](sketch/greybox.md) | A layout question that depends on real proportions and needs a rendered greybox wireframe. |
 | [`sketch/canvas.md`](sketch/canvas.md) | Handing the user a blank Monodraw canvas to redraw a sketch in, or reading what they drew. |
+| [`screenshot-series.md`](screenshot-series.md) | Taking screenshots to compare: before/after, one per state, size or theme. |
 | [`critique.md`](critique.md) | Judging whether an existing interface is well designed — every pass, run against a screenshot. |
 | [`heuristics.md`](heuristics.md) | Running Nielsen's ten usability heuristics over an interface, or rating how severe a usability problem is. |
 | [`states.md`](states.md) | Enumerating empty, loading, error, partial, too-much and one-item cases. |

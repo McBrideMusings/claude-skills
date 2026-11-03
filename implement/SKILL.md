@@ -223,7 +223,8 @@ shapes appears in a command this process runs:
 change, save a screenshot of every variant and theme it touches to an absolute path, Read each
 image and write down every difference from what the change should show; the text checks — logs,
 exit codes, a DOM or text dump — come first and add to the look, never replace it. Name each
-image's absolute path in the summary. `screenshot-checker` answers a plain yes/no about an image
+image's absolute path in the summary. A set of screenshots that compares states, sizes or before/after follows
+[`../ref/gui/screenshot-series.md`](../ref/gui/screenshot-series.md): whole subject in every frame, motion locked, every frame checked. `screenshot-checker` answers a plain yes/no about an image
 ("did the row render") without bringing it into this context; it never stands in for the look
 at a change's design. Accompanying material — reference frame, mockup, spec, fixture, golden file, linked doc — is compared in full too. Write down every difference; an empty list is an answer, an unwritten one means you did not look. If you cannot look, the gate says the work is unverified. A visual drive reports the absolute path of the image it inspected.
 
