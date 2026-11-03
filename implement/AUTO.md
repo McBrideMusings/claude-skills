@@ -47,6 +47,12 @@ follow-up and PR rows of §Every wait point. The candidates, the branch name to 
 PR title and body go in the report's `## Sign-off package` instead, none of them carrying a bead
 id; the brief gives its shape. A parked pass parks as usual.
 
+### Iterate passes
+
+A pass that [`iterate`](../iterate/SKILL.md) started runs in iterate's kept worktree and never
+routes on its own: whatever `next-work` prints, the next hop is `iterate <focus>`, never `swarm`
+and never a bare `implement`. Its landing keeps the worktree (iterate §Each hop step 5).
+
 ## Every wait point, and what auto does instead
 
 | Where a pass waits | What auto does |

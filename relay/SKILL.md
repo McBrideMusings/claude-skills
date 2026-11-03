@@ -196,6 +196,8 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
    ([`../implement/AUTO.md`](../implement/AUTO.md) §Routing each hop lists every form). A session
    whose environment carries `SWARM_WORKER` skips this skill entirely: its pass ends after its one
    bead.
+   - In an `iterate` run, any `implement` or `swarm` verdict continues with steps 1 and 3, and
+     `Start by:` is `iterate <focus>` ([`../iterate/SKILL.md`](../iterate/SKILL.md)).
    - `Next: implement <id>`: continue with steps 1 and 3 below; `Start by:` is
      `implement <id> auto`, the verdict's own command plus `auto`.
    - `Next: swarm <focus>`: continue with steps 1 and 3, but `Start by:` is `swarm <focus>`, the

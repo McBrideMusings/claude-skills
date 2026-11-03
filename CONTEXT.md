@@ -62,9 +62,14 @@ already stands in — no dispatched agent. Bare `implement <issue>` and `impleme
 inline` behave the same today; `inline` is reserved for when a worker-launch mode exists to
 tell it apart from.
 
+**iterate**:
+`implement <id> auto` passes over a focus, one at a time, run by this session in one kept
+worktree, each landed before the next starts. The sequential sibling of `swarm`: no worker panes,
+no swarm space.
+
 **focus**:
 The selector a run starts with — `epic:`, `label:`, bead ids, or free text — carried unchanged
-to every later hop and resolved again at each one. `implement <focus>`, `swarm <focus>` and
+to every later hop and resolved again at each one. `implement <focus>`, `swarm <focus>`, `iterate <focus>` and
 `issues iron-out <focus>` resolve it through one table, `implement/SELECTORS.md`.
 _Avoid_: scope (the beads a focus resolves to at one moment)
 
