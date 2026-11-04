@@ -1,11 +1,13 @@
 ---
 name: lateral
-description: "Lateral thinking when idea generation is stuck — every option feels the same, a constraint feels unbreakable, or the stated need is the wrong problem. Runs exactly one technique. Never for debugging, review, or implementation."
+description: "Lateral thinking when idea generation is stuck or the existing shape should be thrown out — every option feels the same (\"barely different\"), a constraint feels unbreakable, the stated need is the wrong problem, or a feature, system or repo should be redesigned nearly from scratch with the old work kept only as reference. Triggers: \"first principles\", \"from scratch\", \"ground up\", \"clean slate\", \"burdened by history\", \"rethink\", \"out-of-the-wall\". Runs exactly one technique. Never for debugging, review, or implementation."
 ---
 
 # Lateral
 
 ## What this does
+
+Fires when someone wants the existing shape of a feature, system or repo thrown out — "first principles", "from scratch", "start over", "rebuild", "out of the box", "wild ideas", "I don't want to be burdened by history", "keep the old work as reference but redo it". The old work stays on disk as reference and constrains nothing; the design starts nearly from scratch.
 
 Being stuck has shapes. Ideas that all feel the same is a different problem from a constraint that feels unbreakable, which is different again from suspecting you are solving the wrong problem. Each shape has a technique that fits it.
 
@@ -19,6 +21,7 @@ This skill diagnoses the symptom, picks exactly one technique, and runs it inlin
 | A constraint or rule feels unbreakable | `provocation` |
 | Requirements assume things nobody has questioned | `inversion` |
 | We might be solving the wrong problem | `concept-fan` |
+| The existing shape should be thrown out and redone nearly from scratch, the old work kept only as reference | `concept-fan` — climb from the current solution, fan out, and treat the old implementation as the starting rung, never as a limit on the fan |
 | The solution works but feels derivative | `analogy` |
 | We have one idea and need variations | `scamper` |
 | A decision is being made too fast / everyone agrees | `six-hats` |
@@ -60,7 +63,7 @@ Three hosts use these techniques, plus a fourth for `driver-seat` alone. Each ha
 | `improve` | the five generators — provocation, random-stimulus, analogy, scamper, worst-idea — plus `driver-seat` | [`../improve/LATERAL-LENS.md`](../improve/LATERAL-LENS.md) maps aspect → technique, forwarded to every survey aspect; `agent-ergonomics` maps to `driver-seat` |
 | `grill-me` | the two reframers — inversion, concept-fan — plus `driver-seat` as a third, distinct lens | its "Assumption-breaking lenses" section and its "Driver-seat pass" subsection |
 | `spike` | scamper, random-stimulus | UI.md Phase 03, when the variant set collapses onto one axis |
-| `backlog spec` | `driver-seat` | Phase 03, over the spec just before approval |
+| `issues spec` | `driver-seat` | Phase 03, over the spec just before approval |
 
 `six-hats` has no host: it converges a decision, and every host above diverges. It stays here.
 

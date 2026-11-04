@@ -1,0 +1,17 @@
+diff --git a/src/FileRow.tsx b/src/FileRow.tsx
+--- a/src/FileRow.tsx
++++ b/src/FileRow.tsx
+@@ -8,7 +8,11 @@ export function FileRow({ file, selected, onRename }: Props) {
+   return (
+-    <div className={styles.row} aria-selected={selected}>
++    <div
++      className={styles.row}
++      aria-selected={selected}
++      style={{ height: 32, background: selected ? "#d6e4ff" : "transparent" }}
++    >
+       <span>{file.name}</span>
+-      <button onClick={() => onRename(file)}>Rename</button>
++      <button onClick={() => openRenameModal(file)}>Rename</button>
+     </div>
+   );
+ }

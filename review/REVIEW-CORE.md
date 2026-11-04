@@ -5,7 +5,7 @@ The review engine — what runs against a **single target** (a working tree, a b
 - **`review` self-review / teammate PR** — writes the report, then offers a fix pass or a post (see [POSTING.md](POSTING.md)).
 - **`review` sweep mode** — runs this once per PR, in that PR's own worktree and session.
 - **`wrap-up` Phase 4** — runs this over the session diff, then auto-fixes 75+ findings and routes architecture findings to follow-ups.
-- **`implement` validate** — runs this in plain mode over the implementer's diff, no offers, no posting.
+- **`implement`'s blind review step** — runs this in plain mode over the pass's diff, no offers, no posting.
 
 **RULE 0 — `AskUserQuestion` is banned for this whole pass.** Every question asked while this file is running is plain chat text answered by a typed keyword; the option selector is never opened, for any decision, no matter which caller above entered the review. Full statement in [RULES.md](RULES.md) — it binds here identically, along with RULE 1.
 
@@ -14,7 +14,7 @@ The review engine — what runs against a **single target** (a working tree, a b
 - **Uncommitted changes** (default when working tree dirty): review unstaged + staged.
 - **Branch changes** (default when working tree clean): review the final-state diff of the current branch vs its base (main / master) — i.e. `git diff <merge-base>...HEAD`. This is *what would land if the branch merged right now*, not a commit-by-commit walkthrough.
 - **Fixed-point** (when argument passed): review HEAD vs the argument — a commit SHA, branch name, tag, `HEAD~N`, `origin/main`, etc.
-- **Repo mode** (explicit `review repo`, or offered when there's no diff to review): review the **whole codebase** as it stands on the current branch — not a diff. Heavy by design: gating is off, so *every* lens (including `security` and `best-practice`) runs across the full tree. Always confirm before starting — see Phase 01r.
+- **Repo mode** (explicit `review repo`, or offered when there's no diff to review): review the **whole codebase** as it stands on the current branch — not a diff. Heavy by design: with no diff to gate on, `lens-gate --repo-mode` runs every lens whose gate reads a diff (Phase 03d). Always confirm before starting — see Phase 01r.
 
 **Do not offer the user a menu of narrower scopes** ("last 5 commits", "last 10 commits") just because the diff looks large. The point of a branch review is the merged-in surface area — review it. If the diff is genuinely too large to fit in one pass, *say so* and ask whether to slice by path/subdir, not by commit count. Any such ask is a plain-chat question — never the `AskUserQuestion` tool / structured-question schema.
 
@@ -34,7 +34,7 @@ Findings are produced without a fix (Phase 04), scored by reading (Phase 05), **
 
 ### Phase 01a — Assert the checkout is at the branch head
 
-**[../unblock/SKILL.md](../unblock/SKILL.md) Phase U1 owns this** — it fetches, detects the five divergence states, repairs the safe ones, and stops on local-only work. [SKILL.md](SKILL.md) Phase 00.1 runs it before any lens is launched. This phase only asserts the result.
+**[../mergeable/SKILL.md](../mergeable/SKILL.md) Phase U1 owns this** — it fetches, detects the five divergence states, repairs the safe ones, and stops on local-only work. [SKILL.md](SKILL.md) Phase 00.1 runs it before any lens is launched. This phase only asserts the result.
 
 Why it matters enough to assert twice: a checkout is not proof of currency. A worktree left over from an earlier session, a branch the author force-pushed or rebased since you last fetched, a PR head that moved after you were assigned — each leaves a local `HEAD` that looks perfectly healthy while pointing at code that no longer exists upstream. Every lens then reviews the stale tree and reports findings about lines the author already changed. That failure is **silent and total**: the report reads normally, the file:line citations resolve locally, and nothing in the output hints that the whole pass is void.
 
@@ -45,7 +45,7 @@ git rev-parse HEAD
 gh pr view <n> --json headRefOid --jq .headRefOid       # or: git rev-parse '@{u}'
 ```
 
-Equal → continue, say nothing. **Not equal → `unblock` did not run, or ran and left the branch diverged. Stop and say which.** Do not repair it here; do not review around it.
+Equal → continue, say nothing. **Not equal → `mergeable` did not run, or ran and left the branch diverged. Stop and say which.** Do not repair it here; do not review around it.
 
 ### Phase 01r — Repo mode
 
@@ -65,15 +65,15 @@ Reached only via explicit `review repo` or an accepted offer above. The target i
 
   **Do not silently sample.** If a slice is still too big after partitioning, say so and narrow it explicitly — never review part of a slice and report as though you covered it.
 
-  **Repo mode defaults to the `workflow` transport** — the `session` token forces the session transport back. Under the workflow transport this is a `pipeline()` over slices; under the session transport it is one lens fan-out per slice, sequentially. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
-- **Gating is off.** Every scored lens runs, including the normally-gated `security` and `best-practice` lenses — forward "repo mode: gating disabled, review the code as it stands (not a diff)" into each Phase 04 sub-agent so they read whole files rather than hunting for changed lines. `best-practice` still routes its flags through Phase 04b verification. **In repo mode, the label lens runs its language tools before reading**, when a matched label has one (`ref-go/review.md`, `ref-python/review.md`, `ref-rust/review.md`, `ref-web/review.md`) — `govulncheck`, `pip-audit`, `cargo audit`, `npm audit`, `knip`, `madge --circular`, `depcheck`, `tsc --noEmit`, and the rest of each file's own tool list. Run each tool once per slice (scoped to that slice's paths where the tool supports it), capture its raw output, and pass that same capture into both the label lens's own brief and the `dependency-debt` lens's brief as evidence — each lens reads the tool output first and the source second, rather than inferring from source alone. A tool not installed is noted and skipped, never installed without asking. The `dependency-debt` axis reads the same captured output directly (see `axes/dependency-debt.md`) for the categories it owns (unused packages, duplicate-purpose packages, undocumented env vars) — it does not re-run any tool, and it does not receive findings routed from the label lens.
+  Under the workflow transport this is a `pipeline()` over slices; under the session transport it is one lens fan-out per slice, sequentially. See [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
+- **Gating comes from `lens-gate --repo-mode`** (Phase 03d). Forward "repo mode: review the code as it stands (not a diff)" into each Phase 04 sub-agent so they read whole files rather than hunting for changed lines. `best-practice` still routes its flags through Phase 04b verification. **In repo mode, the label lens runs its language tools before reading**, when a matched label's `review.md` lists one (the go, python, rust and web labels do) — `govulncheck`, `pip-audit`, `cargo audit`, `npm audit`, `knip`, `madge --circular`, `depcheck`, `tsc --noEmit`, and the rest of each file's own tool list. Run each tool once per slice (scoped to that slice's paths where the tool supports it), capture its raw output, and pass that same capture into both the label lens's own brief and the `dependency-debt` lens's brief as evidence — each lens reads the tool output first and the source second, rather than inferring from source alone. A tool not installed is noted and skipped, never installed without asking. The `dependency-debt` axis reads the same captured output directly (see `axes/dependency-debt.md`) for the categories it owns (unused packages, duplicate-purpose packages, undocumented env vars) — it does not re-run any tool, and it does not receive findings routed from the label lens.
 - **History/blame lens** still works (it reads `git blame`/`log` on the files in scope). The **Spec** lens has no single diff to check against — point it at the repo's PRD/spec from Phase 03 and let it report drift, or skip if there's no spec.
 - Everything downstream (Phase 05 scoring, Phase 06 filter, Phase 07 report) is unchanged. Expect a larger report; the ≥75 filter still applies.
 
-**Repo mode also adds two things a diff review doesn't need — both scoped to repo mode only:**
+**Repo mode also adds dependency ordering, which a diff review doesn't need. The rejected ledger after it binds every mode:**
 
-- **Dependency ordering.** A whole-codebase audit is a backlog to sequence, not a merge gate, so repo mode replaces the default severity-then-path order with **confidence-weighted impact, dependency-first**: a finding that other findings sit on top of (a structural condition several symptoms share, a contract others depend on) comes before the things it enables, and everything else falls in impact order. Forward *"note which other findings this one blocks or is blocked by, and whether it can proceed independently"* into each Phase 04 sub-agent, and carry a **Blocks / Independent** field on every finding — independent ones are the parallelizable set, so mark them as such. **Never rank by effort** — no S/M/L buckets, no hours, no `impact ÷ effort` (RULE 1 in [RULES.md](RULES.md) binds here too): ordering says what to do *first*, never what to skip, and an expensive fix outranks a cheap one whenever more depends on it. Diff mode ignores this entirely (severity-then-path stays).
-- **Considered-and-rejected ledger.** Because repo mode re-runs over the same codebase, persist deliberate rejections so a later run doesn't re-audit settled ground. The ledger lives at `<repo-root>/.claude/review-rejected.md` — **not** under `/private/tmp`, which deletes anything untouched for three days, and this ledger has to survive between runs weeks apart. Resolve `<repo-root>` absolute via `git rev-parse --show-toplevel`; append-only. *Before* Phase 05, read it if present and drop any incoming finding already listed (match on file + one-line description). *After* the report, append the findings this run deliberately rejected (not every sub-75 drop — only the ones a future run would otherwise re-surface), one line each with the rationale. The rationale must be one of RULE 1's three reasons — **by design / correct as-is**, **divergent work (name the other concern)**, or **blocked on a decision** — never "not worth doing"; a finding rejected for size is not rejected, it is unfinished, and it stays out of the ledger. Diff mode never reads or writes this ledger.
+- **Dependency ordering.** A whole-codebase audit is a backlog to sequence, not a merge gate, so repo mode replaces the default P-level-then-path order with **P-level, dependency-first**: a finding that other findings sit on top of (a structural condition several symptoms share, a contract others depend on) comes before the things it enables, and everything else falls in impact order. Forward *"note which other findings this one blocks or is blocked by, and whether it can proceed independently"* into each Phase 04 sub-agent, and carry a **Blocks / Independent** field on every finding — independent ones are the parallelizable set, so mark them as such. **Never rank by effort** — no S/M/L buckets, no hours, no `impact ÷ effort` (RULE 1 in [RULES.md](RULES.md) binds here too): ordering says what to do *first*, never what to skip, and an expensive fix outranks a cheap one whenever more depends on it. Diff mode ignores this entirely (P-level-then-path stays).
+- **Considered-and-rejected ledger — every mode, diff reviews included.** A PR gets reviewed more than once, and a branch gets re-reviewed after each push; a finding the user already rejected must not come back. The ledger lives at `<main-checkout>/.claude/review-rejected.md` — **not** under `/private/tmp`, which deletes anything untouched for three days, and **not** in a linked worktree, which is deleted when its branch lands and whose stray files block a teammate's branch. Resolve `<main-checkout>` as the parent of `git rev-parse --path-format=absolute --git-common-dir`; append-only. Each line names the scope (`PR #2427`, `branch <name>`, or `repo`), the file, the one-line finding, and the rationale. *Before* Phase 05, read it if present and drop any incoming finding already listed for this PR, this branch, or `repo` (match on file + one-line description, not on exact wording — a reworded headline about the same code and the same claim is the same finding). *After* the report, and again whenever the user rejects or overrules a finding in chat (`skip`, "that's fine", "not a big deal", "by design"), append it. The rationale must be one of RULE 1's three reasons — **by design / correct as-is**, **divergent work (name the other concern)**, or **blocked on a decision** — never "not worth doing"; a finding rejected for size is not rejected, it is unfinished, and it stays out of the ledger. A user overrule is recorded as **by design** with their words quoted.
 
 ### Phase 02 — Find CLAUDE.md Context
 
@@ -117,23 +117,44 @@ Brief the agent with the exact diff scope from Phase 01, the injection-defense d
 The agent returns two things:
 
 1. **The intent table** — the per-block Intent / Preconditions / Postconditions above. Cap it at **600 words**; on a diff too large for that, group by file and keep the postconditions, dropping restatements of intent the block name already carries.
-2. **The Summary narrative** — the plain-English "What this changes" section, 3–6 sentences, related changes grouped, jargon defined inline. This used to be a separate always-on sub-agent in Phase 04 and is folded in here: same read of the same blocks, and descriptive like the rest of this phase, so it does not reintroduce the judgment-plus-something bundling this split exists to remove.
+2. **The Summary narrative** — the plain-English "What this changes" section, 3–6 sentences, related changes grouped, jargon defined inline. It lives here rather than in Phase 04 because it comes from the same read of the same blocks and is descriptive like the rest of this phase, so it does not reintroduce the judgment-plus-something bundling this split exists to remove.
+3. **Settled decisions** — every choice the author states on purpose, quoted with its source: the PR body (`gh pr view <n> --json body`), commit messages, and every `.claude/rules/*.md`, `CLAUDE.md`, ADR or other doc the branch adds or changes (read in full, whatever its `paths:` say). One line each: the decision, the quote, where it came from.
 
-Carry both into Phase 04. The intent table also survives into Phase 06b, where the fix author checks a proposed fix against the postcondition it is supposed to restore.
+Carry all three into Phase 04. **Settled decisions go to every lens**, intent-table recipients or not, under the header `SETTLED DECISIONS (the author or a repo rule chose these on purpose — a finding that argues against one is not a finding unless the choice reaches prod data, money, or auth)`. The intent table also survives into Phase 06b, where the fix author checks a proposed fix against the postcondition it is supposed to restore.
 
 **Under `review dual`, the dispatched target extracts its own intent table** rather than receiving this one. A shared table is a shared blind spot, and independence is the only thing the second vendor is there to buy.
 
+### Phase 03d — Gate the lenses
+
+**[`tool/lens-gate`](tool/lens-gate) decides which lenses run, and nothing else in this skill restates a gate.** Each lens file opens with frontmatter — `run: always | gated | offered` and, for the last two, a `when:` list whose entries must all hold (diff path globs, `dsys status --json` fields, repo mode, a domains-map label, or a Jev yes/no question with probability and confidence floors). The script evaluates every lens in [`axes/`](axes/) and every label lens once, on the scope Phase 01 chose. A label lens is a label's `review.md` in the knowledge base's `ref` directory (`~/Knowledge/ref/<label>/review.md`, private labels under `local/`); `lens-gate` reads those files directly. A reader with no knowledge base has no label lenses, and the gate runs the axis lenses alone with no message:
+
+```
+~/.claude/skills/review/tool/lens-gate --json --base <base>      # branch or PR: <base>...HEAD
+~/.claude/skills/review/tool/lens-gate --json --uncommitted      # the working tree
+~/.claude/skills/review/tool/lens-gate --json --repo-mode        # Phase 01r
+```
+
+Add `--labels a,b` when the invocation named labels ([`../_detect.md`](../_detect.md) step 1), or after classifying a repo the domains-map does not answer for (step 3); otherwise the script resolves labels from the map for the diff's paths. A non-zero exit means a lens file's frontmatter is broken: print its stderr and stop, because a guessed gate is the thing this phase exists to remove.
+
+Each record carries `lens`, `decision`, `reason`, and `jev: {p, confidence}` when a judgment gate fired. Act on the decision:
+
+- **`run`** — Phase 04 launches the lens.
+- **`skip`** — the coverage line names it under `gated off` with its `reason`.
+- **`offer`** — an `offered` lens whose gate held, or a judgment gate Jev could not answer (a failed call or an answer below its confidence floor). **Interactive review** prints one line per offered lens as this phase runs — after the Phase 00.5 explanation, before Phase 04 fans out — then waits: `<lens>: <reason> — <lens> · skip`. Typing the lens name launches it in parallel with the rest of Phase 04; `skip` records `<lens>: offered, declined`. **Unattended review** — any run with nobody to answer in chat: a `code-reviewer` subagent, a sweep worker, `implement`'s blind review, `wrap-up`'s quality stage — never prints the offer and records `<lens>: offered, not run (unattended)`.
+
 ### Phase 04 — Launch Parallel Lens Sub-Agents
 
-**Transport fork.** Phases 04–06 run either here in the session (the default outside repo mode, or when the `session` token overrides repo mode's default) or inside a workflow script (the default for `review repo`, or when the `workflow` token was given on any other route) — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which lenses run, what each brief contains, and every forwarded directive below are identical either way*; only where the agents execute differs. Everything from Phase 07 onward is unaffected.
+**Transport fork.** Phases 04–06c run inside a workflow script by default on every route, or here in the session when the `session` token was given or `Workflow` is not in this pass's own tool list — see [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). *Which lenses run, what each brief contains, and every forwarded directive below are identical either way*; only where the agents execute differs. Everything from Phase 07 onward is unaffected.
 
-One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/) — **all of them run by default**. For each lens file, launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers, and a **Bites** line). Cap each sub-agent's response at **under 400 words** — forward that cap as part of the brief.
+One message, all sub-agents in parallel. The scored lenses live as separate briefs in [`axes/`](axes/); Phase 04 launches each one whose Phase 03d decision is `run`, plus each offered lens Pierce accepted. For each lens file, strip its frontmatter and launch one **Sonnet** sub-agent whose brief is that file's content **plus** the shared writing-style rules forwarded verbatim (the "Writing style for issue entries" rules, and — when `IS_DRAFT=true` — the "Writing style for entries on draft PRs" rules), plus `IS_DRAFT`, the spec source from Phase 03 (for the Spec lens), and the exact diff scope from Phase 01. The axis files do **not** restate the writing-style rules; the dispatch forwards them so findings arrive at Phase 05 already in the target shape (full-sentence headline naming the specific failure, backtick-quoted identifiers, and a **Bites** line). Forward this as part of the brief: *"Report every finding that survives your own check; one finding per entry, no restated diff, no preamble."*
 
 **No lens brief asks for a fix.** Forward this verbatim to every lens: *"Do not propose a fix, a patch, a rewrite, or a 'consider doing X instead'. Report the failure and stop. Fixes are written in a later phase, for findings that survive scoring."* Bundling the repair objective into the finding prompt is what biases a lens toward manufacturing a defect worth repairing — the arXiv measurement behind this is in Phase 06b, which owns fixes now.
 
 **Every finding carries a Bites line, and it opens with a concrete failing input.** Forward this verbatim too: *"For each finding, write one line in the form `<exact input or state> → <what it costs, in real units, and how often>`. The left side is real values a reader could type: `entries=[]`, `score=-1`, `user.email=None`, `two concurrent calls with the same orderId`, `a row written before the 2026-03 migration`. `an empty list` is an input; `edge cases`, `malformed input`, `certain conditions`, `race conditions` are not — a finding whose input is a category is a guess about a class of inputs, not an observation about this code. The right side is pots, dollars, seconds, rows, players, requests, plus when it fires. If you cannot name the input, write `input: none found` and drop the finding rather than describing the category."* Phase 05b feeds the left side of that arrow to the running code, so a vague left side is a finding that can never be verified.
 
-**`negative-space`, `architecture`, `test-debt`, `dependency-debt` and `docs-drift` are exempt from the input clause** and write **Bites** as impact-only. An unmet obligation the diff creates — a caller left un-updated, an error path with no handler — is real before any input reaches it, and demanding a failing input would silently suppress the whole axis. The same is true of an absence: no test file, an unused dependency, or a stale doc is true before any input reaches it.
+**Every finding carries a P-level, set by the lens.** Forward the §Axis tags P-level table and the two paragraphs beneath it verbatim, with *"Rate each finding by this scale."* Sub-agents do not inherit this file, so the table travels with the brief rather than being restated in it. The Phase 05 scorer scores confidence and never changes the rating.
+
+**`negative-space`, `architecture`, `design`, `test-debt`, `dependency-debt` and `docs-drift` are exempt from the input clause** and write **Bites** as impact-only. An unmet obligation the diff creates — a caller left un-updated, an error path with no handler — is real before any input reaches it, and demanding a failing input would silently suppress the whole axis. The same is true of an absence: no test file, an unused dependency, or a stale doc is true before any input reaches it.
 
 **The intent table from Phase 03c goes to four lenses and no others**, appended to those briefs under the header `AUTHOR INTENT (extracted separately — treat as the contract this code is measured against, not as evidence it is met)`:
 
@@ -146,6 +167,7 @@ One message, all sub-agents in parallel. The scored lenses live as separate brie
 | `architecture` | **no** | Its unit is the module and the seam, not the block. A per-block table drags it down to per-function complaints and away from the layer question. |
 | `slop` | **no** | Actively harmful — a lens handed "the intent is X" will rationalize dead structure as serving X. Slop is judged on whether the structure carries meaning *at all*, which is a question about the code alone. |
 | `standards` | **no** | Matches the diff against CLAUDE.md rules. Intent doesn't excuse a rule and doesn't create one. |
+| `design` | **no** | Measures UI against a rule the owner already wrote in `DESIGN.md`. Intent doesn't excuse a broken rule and doesn't create one. |
 | `history` | **no** | Its evidence is `git blame` and prior commits — what the code *used* to intend, which the table doesn't hold. |
 | `security` | **no** | Stated intent is exactly what an attacker ignores. Scoping this lens to the author's postconditions narrows the threat surface to the paths the author already thought about. |
 | `best-practice` | **no** | Compares dependency usage against live official docs. Author intent has no bearing on what the docs say. |
@@ -157,34 +179,36 @@ Scored lenses — each its own file in `axes/`:
 
 - [`axes/standards.md`](axes/standards.md) — CLAUDE.md compliance
 - [`axes/bug.md`](axes/bug.md) — bug scan
-- [`axes/security.md`](axes/security.md) — security vulnerabilities (**gated** — runs only when the diff touches security-relevant surface: auth, crypto, input parsing, query construction, shell/subprocess, deserialization, file I/O, network/SSRF, or dependency changes; **always on in repo mode**)
+- [`axes/security.md`](axes/security.md) — security vulnerabilities
 - [`axes/history.md`](axes/history.md) — historical context (reads `git blame`)
 - [`axes/contracts.md`](axes/contracts.md) — code comments & contracts
 - [`axes/architecture.md`](axes/architecture.md) — architecture fit
 - [`axes/spec.md`](axes/spec.md) — spec compliance (consumes the Phase 03 spec source + `IS_DRAFT`)
 - [`axes/negative-space.md`](axes/negative-space.md) — unmet obligations the diff itself creates
 - [`axes/slop.md`](axes/slop.md) — structure that adds no meaning (comment/helper/type/memo/effect slop, compatibility cruft, diff churn)
-- [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs (**gated** — most diffs skip it; emits *flags* verified in Phase 04b, not findings)
-- [`axes/test-debt.md`](axes/test-debt.md) — churned files with no adjacent test, tests that assert shape instead of behavior, skipped tests (**repo mode only** — a diff review's `negative-space` lens already covers obligations the diff itself creates; this lens does not launch outside Phase 01r)
-- [`axes/dependency-debt.md`](axes/dependency-debt.md) — reads the same captured language-tool output as the label lenses, scoring unused packages and duplicate-purpose packages, plus undocumented env vars (**repo mode only** — does not launch outside Phase 01r)
-- [`axes/docs-drift.md`](axes/docs-drift.md) — a README claim the code doesn't satisfy, a comment contradicting the code beneath it, and the architecture-paragraph-vs-README contradiction check from Phase 01r (**repo mode only** — does not launch outside Phase 01r)
+- [`axes/design.md`](axes/design.md) — UI code against the repo's `DESIGN.md` Do's and Don'ts, Named Rules, tokens and `dsys check --json`
+- [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs, and hand-written code a library, built-in or existing repo function already provides — emits *flags* verified in Phase 04b, not findings
+- [`axes/test-debt.md`](axes/test-debt.md) — churned files with no adjacent test, tests that assert shape instead of behavior, skipped tests
+- [`axes/dependency-debt.md`](axes/dependency-debt.md) — reads the same captured language-tool output as the label lenses, scoring unused packages and duplicate-purpose packages, plus undocumented env vars
+- [`axes/docs-drift.md`](axes/docs-drift.md) — a README claim the code doesn't satisfy, a comment contradicting the code beneath it, and the architecture-paragraph-vs-README contradiction check from Phase 01r
 
-The always-on **Summary** sub-agent that used to live here is gone — Phase 03c produces the "What this changes" narrative as its second output, off the same read of the same blocks. Do not launch a second one.
+Phase 03c produces the "What this changes" narrative; no Phase 04 sub-agent writes a summary.
 
-Plus one **conditional label lens per matched label.** Resolve the labels in scope using [`../_detect.md`](../_detect.md). For each matched label with a `../ref-<label>/review.md`, launch one additional Sonnet sub-agent with that file's content as its brief (plus the same forwarded writing-style rules + `IS_DRAFT` + diff scope). It emits scored, axis-tagged findings like any other lens — its axis tag is the label name (e.g. `apple`, `game`). A label with no `review.md` is skipped silently. No ordering between labels — a diff matching both a stack label and a mode label (e.g. `threejs` and `game`) launches both lenses independently; a disagreement between them is reported as a finding, not resolved by precedence. This is how label-specific review knowledge (SwiftUI idioms, game-feel, readability scorecard) enters review without living inside this skill or bloating every non-matching diff.
+Plus one **label lens per matched label.** Phase 03d resolves the labels in scope per [`../_detect.md`](../_detect.md) and decides each label's `review.md`; for each one decided `run`, launch one additional Sonnet sub-agent with that file's content as its brief and its absolute path, so a page the lens links resolves against that path (plus the same forwarded writing-style rules + `IS_DRAFT` + diff scope). It emits scored, axis-tagged findings like any other lens — its axis tag is the label name (e.g. `apple`, `game`). A label with no `review.md` has no lens, and with no knowledge base no label has one. No ordering between labels — a diff matching both a stack label and a mode label (e.g. `threejs` and `game`) launches both lenses independently; a disagreement between them is reported as a finding, not resolved by precedence. This is how label-specific review knowledge (SwiftUI idioms, game-feel, readability scorecard) enters review without living inside this skill or bloating every non-matching diff.
 
 ### Phase 04b — Verify best-practice flags against live docs
 
-The **best-practice** lens produces *flags*, not findings — it has no doc access. Run this phase only when that lens ran (it's gated) and returned at least one flag; otherwise skip straight to Phase 05. For each flag:
+The **best-practice** lens produces *flags*, not findings — it has no doc access. Run this phase only when that lens ran and returned at least one flag; otherwise skip straight to Phase 05. For each flag:
 
 - Load WebSearch / WebFetch via ToolSearch if not already available, then fetch the **current** official docs for the dependency/API in question — prefer the canonical source (the project's own docs site or upstream repo, not a blog).
 - A flag survives only if (a) the diff's usage actually deviates from what current docs recommend, **and** (b) the deviation carries a concrete cost (deprecation, security, perf, correctness). **Cite the source URL inline and mark confidence.**
 - Drop any flag that is idiom-only, that current docs actually endorse, or that you cannot corroborate against a real source — an unverified flag is not a finding (the "no phantom authority" rule).
+- A **hand-rolled** flag survives only if the named replacement is real and maintained — its repo or registry page shows the maintainer and a release or commit in the last year (`gh api`, `npm view`, the registry) — and covers what the flagged code does. Cite that page and its last release date.
 - Surviving flags become `best-practice` findings carrying their citation + confidence, and flow into Phase 05 scoring like any other issue.
 
 ### Phase 05 — Score Every Issue
 
-For each issue from any of the ten scored lenses (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive.
+For each issue from any scored lens (best-practice issues only after surviving Phase 04b), launch a parallel **Haiku** scoring sub-agent. Pass the [FALSE-POSITIVES.md](FALSE-POSITIVES.md) content as the brief — it contains the scoring scale and the criteria for what counts as a false positive — plus the Phase 03c settled decisions and the ledger lines (Phase 01r) for this PR, branch, and `repo`.
 
 ### Phase 05b — Reproduction gate
 
@@ -196,7 +220,7 @@ Run it after Phase 05 scoring and before the Phase 06 filter. It never touches t
 
 **Qualifies** — `bug`, `spec/wrong-impl`, `security`, and correctness `standards` findings whose **Bites** line names a constructible input and whose claim is behavioral: a wrong value, a crash, a missed branch, a leaked value.
 
-**Cannot be executed, and this is not a defect of the finding:** `architecture`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `spec/missing-partial`, `test-debt`, `dependency-debt`, `docs-drift`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, a deprecated-API citation, a missing test, an unused package, and a stale doc are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
+**Cannot be executed, and this is not a defect of the finding:** `architecture`, `design`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `spec/missing-partial`, `test-debt`, `dependency-debt`, `docs-drift`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, a deprecated-API citation, a missing test, an unused package, and a stale doc are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
 
 #### The scratch worktree — never the user's tree
 
@@ -237,7 +261,8 @@ Never `git stash`, never `git checkout` in `<root>`, never write inside the repo
 2. Run it against the **unmodified** worktree.
    - **Does not exhibit the claimed failure** → **`not-reproduced`**, score 0. This is the highest-yield rule in the phase: it kills the "under concurrent access this could double-count" class of finding that nobody can ever demonstrate.
    - **Exhibits it** → **`reproduced`**, floor 90. The printed values become the finding's **Verified** line.
-3. **The script is deleted with the scratch dir at Phase 06.** It is evidence for one decision, not an artifact. Do not offer to keep it and do not propose adding it to the repo's tests — a real regression test is `tdd`'s job on the fix branch.
+3. **The script is deleted with the scratch dir at Phase 06.** It is evidence for one decision, not an artifact. Do not offer to keep it and do not propose adding it to the repo's tests — a regression test belongs on the fix branch, and only if it meets all four conditions for keeping a test: it catches a failure nothing cheaper (typechecker, linter, a short manual run-through) catches; that failure is expensive (lost data, an auth or privacy hole, contract drift, a race); it asserts behavior at a stable boundary rather than internal calls or DOM structure; and no other kept test covers it.
+*Knowledge base: search it for "keeping and writing tests". If you have none, skip this line and don't mention it.*
 4. **A finding whose claimed input you cannot construct is `not-executable`.** Do not invent an input that makes the claim true; that manufactures the confirmation the gate exists to prevent.
 
 **Run the project's suite too when one exists and covers the cited file** — it catches the case where the repro passes but the finding broke something adjacent. Discover the command in this order, stopping at the first hit: `admin.toml` with a `[commands.test]` block → `admin test`; `package.json` with `scripts.test` → the runner matching the lockfile actually present (`bun.lock`/`bun.lockb` → `bun run test`, `pnpm-lock.yaml` → `pnpm test`, `yarn.lock` → `yarn test`, `package-lock.json` → `npm test`); `Cargo.toml` → `cargo test --offline`; `pyproject.toml`/`pytest.ini`/a `tests/` dir → `python3 -m pytest -q`; `Package.swift` → `swift test`; `go.mod` → `go test ./...`. Never install anything — if `node_modules` is missing in the worktree, symlink the root's rather than running a package manager, and never run a package manager with a scratch dir as cwd.
@@ -258,11 +283,11 @@ Then apply the verdict, then the cutoff:
 
 1. Every `not-reproduced` finding is **0**. Drop it. There is no appeal from a reading of the code.
 2. Every `reproduced` finding is at least **90**.
-3. Every `not-executable` finding keeps its Phase 05 score, capped at **85** if its axis was gate-qualifying — an unrun bug claim reaches the report but never as `high`.
+3. Every `not-executable` finding keeps its Phase 05 score, capped at **85** if its axis was gate-qualifying — an unrun bug claim reaches the report but never scores like a reproduced one.
 4. Keep issues scoring **≥ 75**. Drop the rest.
 5. Drop every finding classified **Tier 3** regardless of score — a Tier 3 classification *is* a sub-75 score (see [FALSE-POSITIVES.md](FALSE-POSITIVES.md)).
 
-**When review ran inline** (small diff, no Phase 05 fan-out), *you* are the scorer — apply [FALSE-POSITIVES.md](FALSE-POSITIVES.md) to each candidate yourself; skipping the fan-out does **not** skip the gate, and it does **not** skip Phase 05b either. If you claim a bug and the input is constructible, run it. The catch that leaks a non-finding through: writing a finding down and then telling the user to skip it. If your own disposition for a finding is "skip" / "FYI" / "non-blocking nit" / "not worth posting," it scored <75 — drop it before it reaches the report or the chat, don't surface it with a skip recommendation attached. A confirmed-correct, author-documented trade-off with no better alternative is a **0** (see the "Deliberate trade-offs" false-positive bullet), not a low-severity FYI.
+**When review ran inline** (small diff, no Phase 05 fan-out), *you* are the scorer — apply [FALSE-POSITIVES.md](FALSE-POSITIVES.md) to each candidate yourself; skipping the fan-out does **not** skip the gate, and it does **not** skip Phase 05b either. If you claim a bug and the input is constructible, run it. The catch that leaks a non-finding through: writing a finding down and then telling the user to skip it. If your own disposition for a finding is "skip" / "FYI" / "non-blocking nit" / "not worth posting," it scored <75 — drop it before it reaches the report or the chat, don't surface it with a skip recommendation attached. A confirmed-correct, author-documented trade-off with no better alternative is a **0** (see the "Deliberate trade-offs" false-positive bullet), not a `P3` FYI.
 
 ### Phase 06b — Propose Fixes for the Survivors
 
@@ -280,6 +305,7 @@ Rules that bind the fix author:
 
 - **It may not add, split, or re-scope a finding.** If it notices something new while reading, that observation is discarded — it did not go through a lens or the scorer. If it concludes a survivor is *not* real, it says so in one line and Phase 07 drops that finding; that direction is safe, the other is not.
 - **`architecture` and `negative-space` findings get `Fix (design call):`** and stay proposals.
+- **A doc that contradicts the code gets a mechanical Fix: the rewritten doc, read off the code.** A comment, rule file, `CLAUDE.md` or README is never a design call — the code is the truth ([POSTING.md](POSTING.md) § Default split). A spec, issue or PR description is not a doc in this sense; a mismatch with one is `spec/wrong-impl`.
 - **Omit Fix when no remediation is obvious without further investigation.** End the finding's **Why** with `Fix: needs investigation — [what to look at]`. A guessed fix on a real finding is worse than none: it is the part a reader will paste.
 - **Draft-PR `spec/missing-partial` entries get no Fix at all** — they use **Gap** and skip this phase entirely.
 
@@ -330,12 +356,13 @@ summarized. State the verdict, not the evidence for it:
 
 > Reviewed, looks good, checks passed. No issues found.
 
-**Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections for this case only.** Its
-three-section closer and its manual-testing-steps block describe a coding task; a clean
-review-only pass changed no files, so all three sections would read "none" / "everything" /
-"none" — which is what the one-liner above already says, just as three headers instead of four
-words. Skip that closer here. It comes back the moment a finding gets fixed on the branch,
-because now files actually changed and §Closing sections is answering a real question again.
+**Overrides [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate for this case only.** The gate's
+what-changed line, its Files-changed/Unchanged sections, and its Run/Look-for block describe a
+coding task that touched files; a clean review-only pass changed none, so the gate would read
+"nothing changed" / "everything" / no commands to run — which is what the one-liner above already
+says, just as an opening line and two headers instead of four words. Skip the gate here. It
+comes back the moment a finding gets fixed on the branch, because now files actually changed and
+there is something to gate.
 
 If CI needed an action, name the action in a clause, not a paragraph — `re-ran a flaky check
 (check-cloudflare-test), now green`, not an account of reproducing it locally, isolating it, and
@@ -359,13 +386,14 @@ finding entry.
 
 ### The coverage line — mandatory, every report, including clean ones
 
-One line naming **which lenses ran, which were gated off, and which failed**. Without it, a lens that never ran is indistinguishable from a lens that found nothing, and the report reads as a clean bill of health for an axis nobody looked at.
+One line naming **which lenses ran, which were gated off, which were offered, and which failed**, built from the Phase 03d records. Without it, a lens that never ran is indistinguishable from a lens that found nothing, and the report reads as a clean bill of health for an axis nobody looked at.
 
 ```
-Lenses: standards, bug, history, contracts, architecture, spec, negative-space · gated off: security, best-practice · failed: none
+Lenses: standards, bug, history, contracts, architecture, spec, negative-space · gated off: security (Jev no, p=0.02), best-practice (Jev no, p=0.00) · failed: none
 ```
 
-- **Gated off** — name every gated lens that did not run and, in three words, why (`security: no auth/crypto/input surface`). Evidence this matters: across 367 findings in 2.5 months of use, `security` produced **one**, and no report says whether that is a clean record or a gate that never opened.
+- **Gated off** — every `skip` record, with its `reason` (`design: dsys mode='non-owned'`).
+- **Offered** — every `offer` record and what happened to it: run when accepted (it joins `Lenses`), `offered, declined`, or `offered, not run (unattended)`. Evidence this matters: across 367 findings in 2.5 months of use, `security` produced **one**, and no report says whether that is a clean record or a gate that never opened.
 - **Failed** — any lens whose sub-agent errored or returned nothing. Never fold a dead lens into silence.
 - **Slices (repo mode)** — append the slice names so a reader can see the partition the review actually covered.
 - **Execution gate** — a mandatory second line whenever Phase 05b ran or was skipped. Name what was run and against what, so a reader can tell "reproduced against the real module" from "no constructible input" from "skipped". A report with no gate line is a report where nobody knows whether anything was executed.
@@ -374,7 +402,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 Execution gate: 6 qualifying · 3 reproduced · 2 not-reproduced (dropped) · 1 not-executable (input needs a live database) · repro scripts + `bun run test`, 41s baseline
 ```
 
-- **Branch state** — a third line whenever [../unblock/SKILL.md](../unblock/SKILL.md) left something unfinished: a test still red, a conflict hunk still open, a feedback point still waiting on the user. Name what the review was run against, so nobody reads the findings as applying to a merged, green branch when they don't. Omit the line entirely when `unblock` returned clean or did not need to run.
+- **Branch state** — a third line whenever [../mergeable/SKILL.md](../mergeable/SKILL.md) left something unfinished: a test still red, a conflict hunk still open, a feedback point still waiting on the user. Name what the review was run against, so nobody reads the findings as applying to a merged, green branch when they don't. Omit the line entirely when `mergeable` returned clean or did not need to run.
 
 ```
 Branch state: 12 commits behind origin/main (not merged) · 2 checks red (check-cloudflare-test (3), check-devvit-test) — reviewed anyway at user's request
@@ -437,7 +465,7 @@ Write **Why** as prose only for: a `best-practice` finding (the evidence is a do
 ```
 Six issues — one blocking spec mismatch (#1) ships a live-but-broken Discord button in prod; the other five (architecture, contracts, best-practice) are non-blocking quality notes worth folding in but break nothing.
 
-Lenses: standards, bug, history, contracts, architecture, spec, negative-space · gated off: security (no auth/crypto/input surface), best-practice (no dependency changes) · failed: none
+Lenses: standards, bug, history, contracts, architecture, spec, negative-space · gated off: security (Jev no, p=0.02), best-practice (Jev no, p=0.00) · failed: none
 
 ## Outstanding work (draft PR)
 (only when IS_DRAFT=true and the Spec agent produced `spec/missing-partial` entries — expected gaps, not issues. Draft entry style: Gap, not Why/Fix. No severity, not counted in the Issues total. Omit this whole section when not a draft.)
@@ -451,7 +479,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 
 ### Spec (1)
 
-1. **[spec/wrong-impl · T1 · high]** The Discord button in `wrangler.toml` points at the staging webhook, so production posts land in the test channel.
+1. **[spec/wrong-impl · T1 · P0]** The Discord button in `wrangler.toml` points at the staging webhook, so production posts land in the test channel.
    - **File:** `apps/cloudflare/wrangler.toml:471`
    - **Spec:** "the production worker posts to the #announcements webhook"
    - **Bites:** any announcement published from `[env.production]` → about 40 posts a day go to the staging channel, so players see none of them
@@ -469,7 +497,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 
 ### Bugs (2)
 
-2. **[bug · T1 · high]** `awardPot` pays the whole pot to one winner and never splits the side pots, so an all-in short stack collects money it cannot win.
+2. **[bug · T1 · P0]** `awardPot` pays the whole pot to one winner and never splits the side pots, so an all-in short stack collects money it cannot win.
    - **File:** `apps/devvit/src/handlers/showdown.ts:212`
    - **Bites:** any showdown where a player is all-in for less than the others' bets → about one hand in nine pays the wrong player, and the hand history records it as valid
    - **Why:** The handler credits `pot.total` in one assignment and never reads `pot.layers`.
@@ -486,7 +514,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
    - **Verified:** `fix-confirmed` · repro paid 3,200 to the short stack before the fix, 1,100 after; `bun run test` green both ways
    - **Fix:** Award each layer of `pot.layers` to the best hand among players whose contribution meets that layer's cap. A short stack then wins at most the chips it matched.
 
-3. **[bug · T2 · low]** Headline …
+3. **[bug · T2 · P2]** Headline …
    - **File:** `path:LINE`
    - **Bites:** `<exact input>` → `<cost, and how often>`
    - **Why:** caption + visual
@@ -495,17 +523,17 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 
 ### Architecture (2)
 
-4. **[architecture · T2 · medium]** Headline naming the layer/abstraction/ownership problem …
+4. **[architecture · T2 · P2]** Headline naming the layer/abstraction/ownership problem …
    - **File:** `src/api/order_controller.py:48`
    - **Bites:** impact-only on this axis — no input clause; name what the split ownership costs the next person to change an order write
    - **Why:** caption + file-tree visual showing which module should own the write
    - **Fix (design call):** Route the write through the existing seam … (architecture/design findings use **Fix (design call):**; a dedicated pass is `improve`.)
 
-5. **[architecture · T2 · medium]** Headline …
+5. **[architecture · T2 · P2]** Headline …
 
 ### Contracts (1)
 
-6. **[contracts · T2 · low]** Headline …
+6. **[contracts · T2 · P3]** Headline …
    - **File:** `path:LINE`
    - **Bites:** `<exact input>` → `<cost, and how often>`
    - **Why:** caption + visual
@@ -516,7 +544,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 
 - **The top line is the summary sentence.** Nothing — no header, no metadata — sits above it.
 - **`## Issues (N found)`** — N is the total across all axes. Draft "Outstanding work" gaps are *not* counted in N.
-- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Security`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Slop`, `Best-practice`, and — repo mode only — `Test-debt`, `Dependency-debt`, `Docs-drift`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the highest-severity finding leads); within a section, sort high → medium → low, then by file path.
+- **Group by axis** under `### <Axis> (count)` headers — `Spec`, `Bugs`, `Security`, `Standards`, `History`, `Contracts`, `Architecture`, `Negative-space`, `Slop`, `Best-practice`, `Test-debt`, `Dependency-debt`, `Docs-drift`. Show only axes that have entries; never print an empty `(0)` section. Order the sections most-important-first (the axis holding the lowest-numbered P-level leads); within a section, sort `P0` → `P3`, then by file path.
 - **Numbering is continuous across sections** — 1…N down the whole report, never restarting at 1 per axis. (Above: Spec is 1, Bugs are 2–3, Architecture are 4–5, Contracts is 6.)
 - **Indent every visual under its `- **Why:**` bullet by 5 spaces**, with a blank line above and below the fence. An un-indented fence closes the list and renumbers the rest of the report. **The blank line *below* is the one that gets dropped** — a closing fence butted straight against `- **Verified:**` runs the block into the next bullet and is hard to read. Every worked example above carries it; copy them.
 - **Small lists may stay flat.** When N is small (≈≤4) and the findings cluster in one or two axes, a single flat ordered list with no `### Axis` headers is fine. Numbering is 1…N either way.
@@ -578,12 +606,12 @@ Draft PRs use a deliberately softer entry shape for `spec/missing-partial` findi
 - **Tone.** Status note for the author, not an accusation. "Spec asks for X; the diff stops short of Y" rather than "X is broken / Y is wrong".
 - **Spec quote is mandatory.** A gap without a spec line attached is just speculation about intent — quote the actual line that asked for the missing behaviour.
 - **No Fix field.** The author already knows it's not done; prescribing a fix is noise. If you have a load-bearing implementation hint (e.g. "this depends on the `X` helper that doesn't exist yet"), put it in the Gap text.
-- **No severity tag.** `spec/missing-partial` on a draft is reported as-is — the score still filters out spurious gap-claims via the Phase 06 cutoff, but the surfaced entries aren't graded high/medium/low.
-- **Bugs in draft code are still bugs.** This softening applies *only* to the missing/partial sub-category of the Spec axis. A null-deref in code that *was* written, even on a draft PR, is a `bug/high` and reported normally. Same for scope creep and wrong implementation on Spec — wrong code is wrong regardless of draft status.
+- **No severity tag.** `spec/missing-partial` on a draft is reported as-is — the score still filters out spurious gap-claims via the Phase 06 cutoff, but the surfaced entries carry no P-level.
+- **Bugs in draft code are still bugs.** This softening applies *only* to the missing/partial sub-category of the Spec axis. A null-deref in code that *was* written, even on a draft PR, is a `bug` rated by its impact and reported normally. Same for scope creep and wrong implementation on Spec — wrong code is wrong regardless of draft status.
 
 ### Axis tags
 
-Every issue is tagged `[<axis>(/<subtype>) · T<n> · <severity>]` — axis (with an optional `/subtype`), tier, and severity, joined by a middle dot with a space either side: `[bug · T1 · high]`, `[architecture · T2 · medium]`, `[spec/wrong-impl · T1 · high]`, `[contracts · T2 · low]`. The tier is the noise classifier defined in [FALSE-POSITIVES.md](FALSE-POSITIVES.md) and it is what the posting cap ranks on ([SKILL.md](SKILL.md) — Comment budget). **A Tier 3 tag never appears in a report**, because Tier 3 is by definition sub-75; if you have written one, you have written a finding that should have been dropped. Axis values:
+Every issue is tagged `[<axis>(/<subtype>) · T<n> · <P-level>]` — axis (with an optional `/subtype`), tier, and P-level, joined by a middle dot with a space either side: `[bug · T1 · P0]`, `[architecture · T2 · P2]`, `[spec/wrong-impl · T1 · P1]`, `[contracts · T2 · P3]`. The tier is the noise classifier defined in [FALSE-POSITIVES.md](FALSE-POSITIVES.md) and it is what the posting cap ranks on ([SKILL.md](SKILL.md) — Comment budget). **A Tier 3 tag never appears in a report**, because Tier 3 is by definition sub-75; if you have written one, you have written a finding that should have been dropped. Axis values:
 
 - `spec` — from the Spec agent (missing requirement, scope creep, wrong implementation)
 - `bug` — from the Bug scan agent
@@ -592,21 +620,31 @@ Every issue is tagged `[<axis>(/<subtype>) · T<n> · <severity>]` — axis (wit
 - `contracts` — from the Code comments and contracts agent
 - `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit. Default visual: file tree with `+`/`-` gutters.
 - `negative-space` — from the Negative-space lens (an unmet obligation the diff creates: un-updated caller, unhandled failure path, missing test/validation/observability, unflagged breaking change or migration). Always a design call — surface, never auto-fix; bounded to obligations the diff itself creates. Use **Fix (design call):** framing.
-- `slop` — from the Code slop lens (structure that adds no meaning: comment/helper/type/memo/effect slop, compatibility cruft, diff churn). Never blocking — slop doesn't make behavior wrong. Most land `low`.
+- `slop` — from the Code slop lens (structure that adds no meaning: comment/helper/type/memo/effect slop, compatibility cruft, diff churn). Rated `P3` — slop doesn't make behavior wrong.
+- `design` — from the Design lens (UI code that breaks a written `DESIGN.md` rule, or a `dsys check --json` entry the diff introduced). The report entry **must quote the cited rule or name the `dsys check` kind**; a design finding with no cited rule is dropped. Never raised in a repo `dsys status --json` does not report as `owned`.
 - `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.
-- `<platform>` (e.g. `apple`) — from the conditional platform lens (Phase 04), when the diff's platform has a `ref-<platform>/review.md`. Platform-idiom findings with a concrete cost (deprecation, correctness, accessibility, perf). Scored like any other axis; group under a `### <Platform>` section.
-- `<domain>` (e.g. `game`) — from the conditional domain lens (Phase 04), when a domain marker is in scope and `ref-<domain>/review.md` exists. Mode-specific findings (game-feel, readability, difficulty) with a concrete cost. Scored like any other axis; group under a `### <Domain>` section.
+- `<platform>` (e.g. `apple`) — from the conditional platform lens (Phase 04), when the diff's platform has a label `review.md`. Platform-idiom findings with a concrete cost (deprecation, correctness, accessibility, perf). Scored like any other axis; group under a `### <Platform>` section.
+- `<domain>` (e.g. `game`) — from the conditional domain lens (Phase 04), when a domain marker is in scope and that label has a `review.md`. Mode-specific findings (game-feel, readability, difficulty) with a concrete cost. Scored like any other axis; group under a `### <Domain>` section.
 
-Severity: `low` / `medium` / `high`, derived from the confidence score (75–84 → `low`/`medium`, 85–94 → `medium`/`high`, 95+ → `high`), weighted by impact. **A `not-executable` gate-qualifying finding caps at 85, so it never reads `high`** — an unrun bug claim does not get to look like a confirmed one. No leading emphasis, emoji, or badge — the tag carries it.
+P-level: the impact rating the lens that found the finding assigns, from what the finding does to a person using the change — never from how sure anyone is:
+
+| Rating | Means | Examples |
+|---|---|---|
+| `P0` | Blocks the task: the user cannot finish what they came to do, data is lost or corrupted, or an exploitable hole opens. | a crash on the main path, a payout to the wrong player, an auth bypass |
+| `P1` | A major failure with a workaround: behavior is wrong, but the user can route around it. | a filter that drops the last row, a control reachable only by pointer |
+| `P2` | Minor: correct behavior with a real cost — a measurable slowdown, a confusing message, a contract a future caller will trip on. | an O(n²) loop on a 10k-row table, an error that names no recovery |
+| `P3` | Polish: nothing behaves wrong; the code or interface could be cleaner. | slop, naming, a palette rule |
+
+**Any new or newly-broken behavior is `P1` or worse**, whichever lens finds it. **Confidence only filters**: the ≥75 cutoff in Phase 06 decides whether a finding is reported at all, and nothing about a surviving finding's rating comes from its score. A sure-but-trivial finding is `P3`; an uncertain finding that loses rows is `P0`. No leading emphasis, emoji, or badge — the tag carries it. The tier and the P-level answer different questions — the tier whether the finding is signal worth reading, the P-level what it costs a user — so any pairing is legal: a `T2` contract breach can be `P1`, a `T1` crash in a debug path `P2`.
 
 **Source tags (dual flavor only).** When more than one tool reviewed the diff, each finding carries a second tag after the axis tag naming **who found it** — `[claude]`, the resolved target's real name (`[codex]`, `[reasonix]`), or `[both]`. It is always a **model, harness, or vendor name**, never a skill/lens/axis/process name: `[review]`, `[lens]`, `[self]`, `[dual]`, and `[dispatch]` are all wrong, and `[review]` in particular has shipped to a real PR. A solo review carries no source tag at all — with one reviewer there is nothing to attribute. Full rule in [SKILL.md](SKILL.md) **Dual flavor** step 3.
 
-**Severity is not blocking.** The `low`/`medium`/`high` tag measures confidence-weighted impact; whether a finding *blocks* is a separate, binary question answered only by the verdict rule in [SKILL.md](SKILL.md) — does the diff ship new or newly-broken behavior. A `low`-severity regression blocks; a `high`-severity "this would be cleaner" does not. Carry the severity tag for the reader, but decide the verdict on the broken-behavior test, never on the severity word.
+**`P0` and `P1` block.** Whether a finding blocks is read off its rating and nothing else: one surviving `P0` or `P1` means the verdict in [POSTING.md](POSTING.md) is Request changes; `P2` and `P3` never block. Because new or newly-broken behavior is always `P1` or worse, a regression the scorer was only 76 sure of still blocks, and a confident "this would be cleaner" never does.
 
 A change can pass one axis and fail another. Reporting axis-tagged stops one axis from masking the other — e.g. "Standards pass, Spec fail" is a real category of finding.
 
 ## Uncertain findings → grill-me hand-off
 
-A finding is **uncertain** when it survived the ≥75 cutoff but carries a `low` severity *and* its **Why** hinges on an assumption about intent the diff doesn't settle (a "did you mean X or Y here" rather than a definite defect). When the self-review path produces one or more such findings, the caller ([SKILL.md](SKILL.md)) offers a `grill-me` pass to interrogate them one question at a time. Do not offer grill-me for a clean report or one whose findings are all definite.
+A finding is **uncertain** when it survived the ≥75 cutoff with a score under 85 *and* its **Why** hinges on an assumption about intent the diff doesn't settle (a "did you mean X or Y here" rather than a definite defect). When the self-review path produces one or more such findings, the caller ([SKILL.md](SKILL.md)) offers a `grill-me` pass to interrogate them one question at a time. Do not offer grill-me for a clean report or one whose findings are all definite.
 
 **Phase 03c `intent unclear` rows join the uncertain set.** An intent-table row marked `intent unclear` names two readings of a block and picks neither; if no lens turns it into a scored finding, nothing else ever routes it to the user, and the ambiguity dies silently. So each such row counts as an uncertain item for this hand-off: the grill-me pass asks it as one question, the two readings as the options, with a recommended answer. This only widens when the offer fires — it adds no gate, so unattended callers (sweep, `implement` validate, `wrap-up`) are unaffected.

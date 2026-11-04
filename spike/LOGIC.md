@@ -15,8 +15,8 @@ approaches should we use", where you want measurements rather than something to 
 
 ## The artifact
 
-`/private/tmp/claude/<repo-slug>/prototypes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
-the path with the project's existing runtime (`bun /private/tmp/claude/<repo-slug>/prototypes/scheduler/v1/run.ts`). The
+`/private/tmp/claude/<repo-slug>/spikes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
+the path with the project's existing runtime (`bun /private/tmp/claude/<repo-slug>/spikes/scheduler/v1/run.ts`). The
 slug names what's being prototyped and never changes; each new round is the next `vN` and earlier
 rounds stay put (see SKILL.md "Naming and versions"). No production file is touched and no script is
 registered anywhere real; the whole `<slug>/` tree is deleted when the question is answered.
@@ -65,7 +65,7 @@ The whole frame fits one screen.
 ### Phase 05 — Make It Runnable in One Command
 
 One command, straight off the prototype path, using a runtime the project already has — `bun
-/private/tmp/claude/<repo-slug>/prototypes/scheduler/run.ts`, `python /private/tmp/claude/<repo-slug>/prototypes/scheduler/run.py`. Don't
+/private/tmp/claude/<repo-slug>/spikes/scheduler/v1/run.ts`, `python /private/tmp/claude/<repo-slug>/spikes/scheduler/v1/run.py`. Don't
 register it in `admin.toml`, `package.json`, a `Makefile`, or any other real file: the prototype is
 about to be deleted, and a stale task entry outlives it. Hand the user the full command; they don't
 need to remember it, they need to paste it once.
@@ -74,12 +74,12 @@ need to remember it, they need to paste it once.
 
 Give the user the run command. They'll drive it themselves. The interesting moments are "wait, that shouldn't be possible" or "huh, I assumed X would be different" — those are bugs in the *idea*, which is the whole point.
 
-**To put it in front of them without them pasting anything, use the `terminal` skill's session mode** —
-`terminal open <id>` spawns a visible Terminal.app window, `terminal send` runs the command in it, and
-`terminal read` pulls the scrollback back so you can see what state they drove it into. That's the
-right transport for a TUI: the user watches and types in a real window rather than reading a transcript
-you relay. One-shot mode is for a command that runs and finishes; this one is interactive, so it's a
-session.
+**To put it in front of them without them pasting anything, use `dispatch/terminal`'s session mode**
+(`../dispatch/TRANSPORT-TERMINAL-SESSION.md`) — `terminal open <id>` spawns a visible Terminal.app
+window, `terminal send` runs the command in it, and `terminal read` pulls the scrollback back so you
+can see what state they drove it into. That's the right transport for a TUI: the user watches and
+types in a real window rather than reading a transcript you relay. One-shot mode is for a command
+that runs and finishes; this one is interactive, so it's a session.
 
 ### Phase 07 — Capture the Answer
 

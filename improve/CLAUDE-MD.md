@@ -23,7 +23,7 @@ Which one you're rebuilding changes what belongs in it. Establish this before Ph
 | --- | --- | --- | --- |
 | Holds | Voice, judgment, permission gates, git policy, how to dispatch work, environment, a knowledge map | What the project is in two lines, the commands table, where things live, project-specific conventions, domain vocabulary, gotchas that have actually bitten | Personal calibration for this one checkout — what the user doesn't know here (`Explain until removed`), pointers into a local doc cache |
 | Never holds | Anything about one project | **Anything the global file already says** | Anything a teammate needs — shared conventions belong in the tracked project file |
-| Size threshold | 4,000 words, watched by `hooks/claude-md-size-check.sh` | ~1,200 words, watched by nothing | No fixed budget — the explain algorithm lives once in the global file; this file holds only variable data (concept, symbols, doc cache path), so it stays short by construction |
+| Size threshold | `limit=` in `hooks/claude-md-size-check.sh`, which watches it | ~1,200 words, watched by nothing | No fixed budget — the explain algorithm lives once in the global file; this file holds only variable data (concept, symbols, doc cache path), so it stays short by construction |
 | Audience | Just the user | On a collaborative repo, teammates and their agents too — so no personal preferences | Just the user, this checkout only |
 | Structure owner | This file | `bootstrap` — defer to its layout rather than inventing a competing one | This file — see "The local file has no git safety net" below |
 
@@ -79,9 +79,11 @@ for p in re.split(r'\n(?=## )', t):
 
 The biggest section is almost always the one nobody defends. Lead the conversation with the table.
 
-**Thresholds.** The global file's budget is 4,000 words, enforced by `~/.claude/hooks/claude-md-size-check.sh`, which fires at SessionStart and routes here. That hook is the only place the number lives — don't restate it. A project `CLAUDE.md` has no hook watching it; treat ~1,200 words as its ceiling and raise it unprompted.
+**Thresholds.** The global file's budget is the `limit=` line in `~/.claude/hooks/claude-md-size-check.sh`, which fires at SessionStart and routes here. That hook is the only place the number lives — read it there, never restate it. A project `CLAUDE.md` has no hook watching it; treat ~1,200 words as its ceiling and raise it unprompted.
 
-There is one remedy, and it is the rebuild below. A file over budget is not sorted into "trim this one, rebuild that one" — that fork existed in the hook until 2026-08-23 and disagreed with this file on the number, the remedy, and which direction was the dangerous one.
+There is one remedy, and it is the rebuild below. A file over budget is never sorted into "trim this one, rebuild that one".
+
+**Cut as aggressively as possible; the budget is only a reference point.** Getting under it is not the goal and never ends the pass. Aim for the smallest file that still carries every behavior the user wants: every rule something else already holds is cut, every rule a hook can enforce moves to the hook, every rule that matters for one kind of task moves to the skill that runs for it, and what stays is compressed to its fewest words. A pass that stops a few hundred words under the limit has failed — the next rule added puts the file back over. Report the end size against the start, and name each rule still in the file that you judged could move but didn't, with the reason.
 
 ## Phase 3 — Inventory what already enforces behavior
 
@@ -93,11 +95,11 @@ Before judging a single rule, count what fires with an **empty** CLAUDE.md. Any 
 - **The session's own system prompt** — read it. It may already carry the rule (in this repo it already capped subagent spawning and workflow use)
 - **`docs/`** — and check whether anything actually routes to it
 
-## Phase 4 — Ask what breaks when the file is empty
+## Phase 4 — Map where else each rule lives
 
-**One question, before showing the user any old text:** *with nothing in CLAUDE.md, what are the three things I'd get wrong that would cost you a session?* From memory — not from the file.
+The user can't hold every hook and skill in their head, so never ask them what an empty file would break. Do the lookup for them: for every rule, find each other place that holds or enforces it — the hook file, the skill `file:line`, the `MEMORY.md` entry, the system prompt — or record "only here". Grep the hooks, the skills tree and `MEMORY.md` for the rule's literal nouns and commands; a match counts only once you've read the line and it states the same behavior.
 
-Attach your own prediction so they can disagree instead of starting cold. Their answer becomes the priority order, and whatever they can't name from memory is a deletion candidate: they wrote it, they live with it, and if it isn't in their head it probably wasn't paying rent.
+The result is Phase 6's **Held elsewhere** column. Nothing is asked at this phase.
 
 ## Phase 5 — Read the file's own history
 
@@ -120,7 +122,7 @@ A file with three commits yields little. Say that plainly rather than dressing u
 
 ## Phase 6 — Triage, section by section, as tables
 
-One table per section. One verdict per rule, from exactly six:
+One table per section, with columns **Rule**, **Held elsewhere** (Phase 4's answer, with the path) and **Verdict**. One verdict per rule, from exactly six:
 
 | Verdict | When |
 | --- | --- |
@@ -205,7 +207,7 @@ Carry the history-awareness section forward into every rebuild, or the next rebu
 
 ## Phase 10 — Report honestly
 
-- Before and after: words, tokens, percent cut.
+- Before and after: words, tokens, percent cut. A cut under 25% needs a line saying why nothing more could go.
 - The honest count: *"6,076 words in. 12 deletes, 9 compressions, 7 routed, 1 hook built."*
 - **What you could not check, marked NOT RUN.** Never a clean bill you didn't earn. In this repo that included: whether the `herdr` and `admin` skills actually contain the rules deleted on the assumption they did, and whether `<important if>` fires.
 - Duplicates now sitting in both `MEMORY.md` and `CLAUDE.md`.
@@ -219,6 +221,6 @@ If most of the file should go, say so plainly. The scaffolding the user is proud
 
 For `improve`'s survey fan-out: no writes, no commits, no questions. Run phases 1b (project file only), 2, 3, 5, and 6 read-only and return findings. Never audit a `CLAUDE.local.md` — it's append-only per "The local file has no git safety net" above, and a survey pass has no standing to propose cuts to it.
 
-Each finding: the **gap** (what's flat, duplicated, guard-shaped, stale, or vague), **evidence** (the actual line quoted — never a generic complaint), **fix** (the concrete rewrite: narrowed condition, the hook to write, the path to substitute), **strength** (`Strong` / `Worth exploring` / `Speculative`). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
+Each finding: the **gap** (what's flat, duplicated, guard-shaped, stale, or vague), **evidence** (the actual line quoted — never a generic complaint), **fix** (the concrete rewrite: narrowed condition, the hook to write, the path to substitute), **impact** (`P0`–`P3`, the scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags). Card fields per [HTML-REPORT.md](HTML-REPORT.md).
 
 Read the file in full before judging it. A finding that doesn't quote the repo's own `CLAUDE.md` isn't a finding.

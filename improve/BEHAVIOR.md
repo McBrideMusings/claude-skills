@@ -52,12 +52,12 @@ Drafting reads the code; verification watches the product. Both halves are the a
 Two kinds, both grounded in a `file:line` and — for anything verified — the recorded evidence:
 
 - **Opportunities** — behavior that works but is undocumented, undiscoverable, inconsistent between features (the interrupt tables disagree), or unreachable from the product's automation surface. Normal improve cards.
-- **Defects.** **Override of RULE 2, stated here on purpose:** a defect this lens *verifies against the running product* is reported as a full finding with its evidence and a severity (high: loses work or traps the user; medium: wrong but recoverable; low: cosmetic) — there is no diff for `review` to run on, so a one-line pointer would drop the reproduction this pass already paid for. A *suspected* defect the pass did not verify remains a `review-territory` line.
+- **Defects.** **Override of RULE 2, stated here on purpose:** a defect this lens *verifies against the running product* is reported as a full finding with its evidence and a P-level ([`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags — `P0`: loses work or traps the user; `P1`: wrong but recoverable; `P2`: minor; `P3`: cosmetic) — there is no diff for `review` to run on, so a one-line pointer would drop the reproduction this pass already paid for. A *suspected* defect the pass did not verify remains a `review-territory` line.
 
 ## Where the output lands
 
 - Findings → Phase 08 tickets, like every aspect.
-- Durable prose earned by the pass — the vocabulary and load-bearing numbers → `docs/CONTEXT.md`; a per-surface behavior doc (an automation dictionary, a lifecycle account) → `<repo>/docs/`; verification rows worth keeping → the project's `verify-project` surface or tracked `docs/`.
+- Durable prose earned by the pass — the vocabulary and load-bearing numbers → `docs/CONTEXT.md`; a per-surface behavior doc (an automation dictionary, a lifecycle account) → `<repo>/docs/`; verification rows worth keeping → the project skill's `verify.md` surface or tracked `docs/`.
 - Everything else is scratch under `/private/tmp/claude/<repo-slug>/`. No sibling repo, no coverage table, no standing description artifact.
 
 ## Grilling loop (interactive follow-up)

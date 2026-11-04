@@ -1,42 +1,53 @@
 #!/usr/bin/env python3
-"""spike — assemble a hermetic single-file HTML prototype from a body fragment.
+"""spike — assemble a hermetic single-file HTML build from a body fragment, and screenshot it.
 
 The point of this tool is that the stylesheets and harness JS never enter the model's
 context: it writes content, the tool supplies everything else. See
 ~/.claude/skills/spike/CONTRACT.md for the fragment contract.
 
-Two fidelities of the same question — what should this look like:
+Three fidelities of the same question — what should this look like:
 
   wireframe  greybox structure, colour withheld on purpose
-  prototype  working versions of one UI behind a picker, in the project's own tokens
+  mockup     static HTML in the project's real CSS: variants x states, no harness chrome,
+             screenshotted by `spike shot`
+  prototype  working versions of one UI behind the Tweaks panel, in the project's own tokens
 
 A TERMINAL screen is `spike tui`, not a --kind: its output is a Go program, because 80
 columns, 16 theme-assigned colours and a keyboard the design owns are the whole question
 and none of them exist in an HTML mock. See ~/.claude/skills/spike/TUI.md.
 
-Explainers are a separate kind of document with their own tool, `explainer` — one look,
-no variants, none of the panel/device machinery here.
+Explainers are a separate kind of document with their own tool, `explainer`.
 
-  spike build --kind wireframe|prototype --title <t>
+  spike build --kind wireframe|mockup|prototype --title <t>
               --fragment <abs.html> --out <abs.html>
-              [--picker switch|list] [--subtitle <s>]
-              --device phone|tablet|desktop|panel|web|tv|fill
-              [--backdrop desktop|desktop-bare]
-              [--lang en] [--extra-css <abs.css>]
-              [--with w1,w2] [--without w1,w2]
+              [--subtitle <s>] [--lang en] [--extra-css <abs.css>]
+  spike shot  <slug> (--platform phone|tablet|desktop | --size WxH) [--partial]
+              [--dir <abs-dir>] [--scale N] [--theme light|dark|both] [--cell id,id] [--query q]
+  spike video  <slug> [--dir <abs-dir>] [--size WxH] [--scale N] [--theme light|dark|both]
+              [--cell id,id] [--query q] [--reduced] [--fps N] [--duration ms] [--hold ms]
+              [--strip N] [--quality Q]
   spike tui   --out <abs-dir> --title <t> [--force] [--force-gomod]
   spike kinds
   spike serve <abs-path> [--port 8000]
 """
 
 import argparse
-import collections
+import base64
+import glob
 import hashlib
 import html
+import json
 import os
 import re
+import shutil
+import signal
+import socket
+import struct
+import subprocess
 import sys
+import tempfile
 import time
+import urllib.parse
 
 STORE = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 KINDS_DIR = os.path.join(STORE, "kinds")
@@ -46,134 +57,45 @@ HARNESS_DIR = os.path.join(STORE, "harness")
 CONTRACT_PATH = os.path.join(os.path.dirname(STORE), "CONTRACT.md")
 
 KINDS = {
-    "prototype": "Several genuinely different working versions of one UI, behind a picker. "
-                 "No palette — the fragment carries the host project's tokens.",
+    "mockup": "Static HTML in the project's real CSS: variants x states, no harness chrome. "
+              "`spike shot` screenshots every cell.",
+    "prototype": "Several genuinely different working versions of one UI behind the Tweaks "
+                 "panel. No palette — the fragment carries the host project's tokens.",
     "wireframe": "Greybox layout: structure and hierarchy only. Colour withheld on purpose.",
 }
 
-PICKER_KINDS = {"prototype"}
-ALL_KINDS = frozenset(KINDS)
+CHROME_TIMEOUT = 60
 
-# Device frames viewport.js can render. Naming them is the AGENT'S job, per spike:
-# a phone-only chat prototype and a desktop-only pane-tree prototype are different
-# questions, and offering a frame the design was never meant for invites a judgement
-# about a layout nobody designed. The list is honoured exactly, `fit` included: naming
-# `desktop,phone` opens on desktop and offers no unframed view.
-# ONE device per folio, named at build time and required. A platform is an interaction
-# model — touch, pointer, remote focus — not a width, so a design that ships on two of
-# them is two prototypes, and the answer to "which one is this" belongs in the filename
-# rather than in a row of chips the reader flips through. There is no `fit`: an unframed
-# view is a size nobody drew for, and it was what the harness opened on.
-DEVICES = collections.OrderedDict([
-    ("phone",   "390x844, iOS status bar + notch + home indicator, rotates"),
-    ("tablet",  "834x1194, iOS status bar, thin bezel, rotates"),
-    ("desktop", "1440x900 macOS window: title bar + traffic lights. --window changes it"),
-    ("panel",   "380x520 macOS menu bar extra, hanging under a lit status item"),
-    ("web",     "1440x900 inside browser chrome (tab + URL bar outside the viewport)"),
-    ("tv",      "1920x1080, no chrome drawn; publishes tvOS overscan as --at-safe-*"),
-    ("fill",    "the window itself: no frame, no chrome, no scaling — a page at whatever "
-                "size the reader's browser is"),
-])
-
-# Window chrome for the `desktop` frame. A build-time decision, not a runtime toggle:
-# whether the design owns its title area is a property of the thing being prototyped, and
-# a switch would invite a verdict on a window nobody drew.
-#
-# The default is a real window — `bar,lights`. A desktop app IS a window; a frame with no
-# title bar at all was the shape of a full-screen viewport, which is what `fill` is for, and
-# it made the one device that most needed drawing look like the one that needed none.
-# `--window none` is the opt-out, for a design that draws its own top area edge to edge.
-WINDOW_DEFAULT = "bar,lights"
-WINDOW_PARTS = collections.OrderedDict([
-    ("bar",    "macOS title bar above the viewport (drawn outside it, as a real one is)"),
-    ("lights", "traffic lights. With `bar`, they sit in it. Without, they float INSIDE "
-               "the viewport over the app's own top area — the full-size-content-view "
-               "shape — and the frame publishes --at-lights-w / --at-lights-h to reserve"),
-    ("none",   "no window chrome at all: a bare viewport in a bezel. On its own, never "
-               "beside `bar` or `lights`"),
-])
-
-# What sits BEHIND a macOS frame. Default is nothing — the host's own neutral ground,
-# which is the right answer for an opaque app: a wallpaper behind it is scenery that
-# competes with the design.
-#
-# It stops being scenery the moment the design is translucent. A glass panel, a vibrancy
-# material, a floating utility window — none of them can be judged over a flat ground,
-# because what they look like IS what shows through them. Before this flag every such
-# prototype hand-drew its own desktop in the fragment, which spent the fragment's whole
-# budget on furniture and drew a different Mac every time.
-#
-# `desktop` also moves the menu bar: a `panel` frame normally hangs from a strip attached
-# to its own shell, but once there is a screen to hang from, the strip belongs to the
-# screen and the panel hangs off THAT — which is where a real menu bar extra hangs.
-BACKDROPS = collections.OrderedDict([
-    ("none",         "the host's own ground. The default"),
-    ("desktop",      "a macOS desktop: wallpaper, menu bar, and one inactive window "
-                     "behind the frame so translucency has something to reveal"),
-    ("desktop-bare", "the same wallpaper and menu bar with no window behind it"),
-])
-BACKDROP_DEVICES = ("desktop", "panel")
-
-THEME_TOGGLE_HTML = (
-    '<button class="at-theme" type="button" aria-label="Toggle light or dark theme" '
-    'title="Toggle theme">&#9681;</button>'
+# chrome-headless-shell first: it honours any window width, where full Chrome's headless
+# mode lays pages out at 500px or wider whatever --window-size says. Playwright installs one
+# (`npx playwright install chromium-headless-shell`) and no Playwright code is used.
+HEADLESS_SHELL_GLOB = "~/Library/Caches/ms-playwright/chromium_headless_shell-*/*/chrome-headless-shell"
+CHROME_CANDIDATES = (
+    "chrome-headless-shell",
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    "google-chrome", "chromium", "chromium-browser",
 )
 
-# --- harness widgets --------------------------------------------------------
-#
-# One table entry per generic widget the tool can add to any spike. Everything a
-# widget needs — where it applies, its stylesheet, its script, any static markup — is
-# declared here, so adding one is a row rather than three new branches in cmd_build.
-# (The picker is not in this table: it restructures the body rather than adding
-# chrome to it, so it keeps its own path below.)
-#
-# `kinds` is where the widget is on by DEFAULT. --with turns one on anywhere, --without
-# turns one off. Dormant widgets — the ones that render nothing until a key is pressed —
-# are on for every kind, because invisible chrome costs a reader nothing.
+# The queueing stub. A fragment's <script> sits in the BODY and therefore runs before the
+# script block at the end of the document, so `atTweaks` has to exist first. This is the
+# whole of it: record the call, hand back a handle, and let tweaks.js drain the queue in
+# declaration order and fill the handles in.
+TWEAKS_STUB = """window.atTweaks=(function(){var q=[];var api={__queue:q};
+function val(m){return function(){var h={get:function(){},set:function(){}};
+q.push({method:m,args:[].slice.call(arguments),handle:h});return h;};}
+function act(m){return function(){q.push({method:m,args:[].slice.call(arguments)});return api;};}
+['add','pick','select','slider','stepper','toggle','color','text'].forEach(function(m){api[m]=val(m);});
+['section','action','set'].forEach(function(m){api[m]=act(m);});
+api.get=function(){};return api;})();"""
 
-Widget = collections.namedtuple("Widget", "kinds css js html stamp desc")
+TWEAKS_PILL = ('<button class="at-twk-pill" type="button" '
+               'title="Show the controls" aria-label="Show the controls">Tweaks</button>')
 
-WIDGETS = collections.OrderedDict([
-    # The theme toggle writes data-theme on :root, which only means something for kinds
-    # whose colours come from the base tokens. A prototype's colours come from the host
-    # project's tokens in the fragment, so the toggle would be a control that declares an
-    # effect it does not have — and in list mode it collides with the sticky variant header.
-    ("theme", Widget(
-        kinds=ALL_KINDS - {"prototype"}, css=None, js="theme.js", html=THEME_TOGGLE_HTML,
-        stamp=False, desc="light/dark toggle button")),
-    ("annotate", Widget(
-        kinds=ALL_KINDS, css="annotate.css", js="annotate.js", html=None,
-        stamp=True, desc="press `a`: comment on elements, export the comments as markdown")),
-    ("contrast", Widget(
-        kinds=ALL_KINDS, css="contrast.css", js="contrast.js", html=None,
-        stamp=False, desc="flag text that fails WCAG AA against its backdrop. On a kind "
-                          "with a Tweaks panel the Checks group's Contrast row is it; "
-                          "elsewhere it is a floating button and the `c` key")),
-    # On for prototype, off elsewhere; other kinds opt in with --with viewport. WHICH
-    # device is per-spike and required (--device): a prototype always has a device answer
-    # worth declaring, and it is the agent's to declare at build time rather than the
-    # reader's to flip through.
-    # The standing verdicts. Needs the Tweaks panel to put them in, so prototype only; and it
-    # reads contrast.js's result rather than recomputing it, so it must load after.
-    ("checks", Widget(
-        kinds=frozenset({"prototype"}), css="checks.css", js="checks.js",
-        html=None, stamp=False,
-        desc="always-on pass/fail checks in the panel: contrast, overflow, tap "
-             "targets, text size, dead links, alt text, duplicate ids, hermetic")),
-    ("viewport", Widget(
-        kinds=frozenset({"prototype"}), css="viewport.css", js="viewport.js",
-        html=None, stamp=False,
-        desc="one device frame with real chrome; named by --device")),
-    # Loads after tweaks.js so the fragment's registrations have drained and the key list
-    # is real; renders nothing for a spike that declared no tweaks. On for every kind that
-    # can have a panel, because a spike you tuned and cannot get the numbers out of is a
-    # spike whose finding died with the tab.
-    ("settings", Widget(
-        kinds=ALL_KINDS, css=None, js="settings.js", html=None, stamp=False,
-        desc="Settings group in the panel: copy every tweak value to the clipboard, "
-             "paste them back, reset to defaults. Reads ./tweaks.json at load when the "
-             "page is served, so an edited file sets every control's starting value")),
-])
+# Three segments is the most that stays readable across the panel's width; a fourth leaves
+# each of them four characters. Above it, the same choice is a dropdown. The variant chooser
+# obeys the same rule as a tweak's — it is the same control asking the same kind of question.
+SEG_MAX = 3
 
 
 def die(msg):
@@ -213,80 +135,10 @@ def parse_attrs(s):
     return {m.group("name").lower(): m.group("val") for m in ATTR_RE.finditer(s)}
 
 
-# --- source stamping --------------------------------------------------------
-#
-# annotate.js needs a pin to name a line of the fragment, not a CSS path. The tool is
-# the only place that knows both the element and the line it came from, so it stamps
-# data-src="<fragment basename>:<line>" on every element worth commenting on.
-
-VOID_TAGS = frozenset("area base br col embed hr img input link meta param source track wbr".split())
-# `template` is the variant wrapper, never a visible thing to comment on; its children
-# are stamped normally. SVG internals are stamped as one unit at the <svg> element.
-NO_STAMP_TAGS = VOID_TAGS | frozenset({"template", "script", "style", "title"})
-
-BLOCK_RE = re.compile(
-    r"<!--.*?-->"
-    r"|<script\b[^>]*>.*?</script\s*>"
-    r"|<style\b[^>]*>.*?</style\s*>"
-    r"|<svg\b[^>]*>.*?</svg\s*>",
-    re.DOTALL | re.IGNORECASE,
-)
-OPEN_TAG_RE = re.compile(
-    r"""<(?P<name>[a-zA-Z][a-zA-Z0-9-]*)(?P<attrs>(?:'[^']*'|"[^"]*"|[^>'"])*)>"""
-)
-
-
-def stamp_sources(fragment, label):
-    """Add data-src="<label>:<line>" to each annotatable element. Returns (html, count)."""
-    blocked = []
-    for m in BLOCK_RE.finditer(fragment):
-        # An <svg> is one annotatable unit: stamp its opening tag, skip everything inside.
-        blocked.append((m.start(), m.end(), m.group(0).lower().startswith("<svg")))
-
-    def inside(pos):
-        for start, end, svg in blocked:
-            if start <= pos < end:
-                return "svg-open" if (svg and pos == start) else "skip"
-        return None
-
-    edits = []
-    for m in OPEN_TAG_RE.finditer(fragment):
-        where = inside(m.start())
-        if where == "skip":
-            continue
-        name = m.group("name").lower()
-        if where != "svg-open" and name in NO_STAMP_TAGS:
-            continue
-        if re.search(r"\bdata-src\s*=", m.group("attrs")):
-            continue
-        line = fragment.count("\n", 0, m.start()) + 1
-        edits.append((m.start() + 1 + len(m.group("name")),
-                      ' data-src="%s:%d"' % (html.escape(label, quote=True), line)))
-
-    out = fragment
-    for pos, text in reversed(edits):
-        out = out[:pos] + text + out[pos:]
-    return out, len(edits)
-
-
-def resolve_widgets(kind, with_, without):
-    unknown = (with_ | without) - set(WIDGETS)
-    if unknown:
-        die("unknown widget %s. Known widgets: %s"
-            % (", ".join(sorted(unknown)), ", ".join(WIDGETS)))
-    both = with_ & without
-    if both:
-        die("%s is in both --with and --without" % ", ".join(sorted(both)))
-    return collections.OrderedDict(
-        (name, w) for name, w in WIDGETS.items()
-        if (kind in w.kinds or name in with_) and name not in without
-    )
-
-
 def extract_variants(fragment):
     """Pull <template data-variant="..."> blocks out of the fragment.
 
-    Returns (variants, remainder). Each variant is a dict with name/caption/body/raw.
+    Returns (variants, remainder). Each variant is a dict with name/state/motion/video_duration/body/raw.
     """
     variants = []
     for m in TEMPLATE_RE.finditer(fragment):
@@ -295,11 +147,9 @@ def extract_variants(fragment):
             continue
         variants.append({
             "name": attrs["data-variant"],
-            # A caption is one line describing a variant's direction, printed under the
-            # heading in list mode. It is not a control and never appears in the panel.
-            "caption": attrs.get("data-caption", ""),
+            "state": attrs.get("data-state", ""),
             "motion": "data-motion" in m.group("attrs").lower(),
-            "position": attrs.get("data-picker-position", ""),
+            "video_duration": attrs.get("data-video-duration"),
             "body": m.group("body"),
             "raw": m.group(0),
         })
@@ -309,39 +159,14 @@ def extract_variants(fragment):
     return variants, remainder
 
 
-# --- assembly ---# --- assembly ---------------------------------------------------------------
-
-# The queueing stub. A fragment's <script> sits in the BODY and therefore runs before the
-# harness script block at the end of the document, so `atTweaks` has to exist first. This is
-# the whole of it: record the call, hand back a handle, and let tweaks.js drain the queue in
-# declaration order and fill the handles in.
-TWEAKS_STUB = """window.atTweaks=(function(){var q=[];var api={__queue:q};
-function val(m){return function(){var h={get:function(){},set:function(){}};
-q.push({method:m,args:[].slice.call(arguments),handle:h});return h;};}
-function act(m){return function(){q.push({method:m,args:[].slice.call(arguments)});return api;};}
-['add','pick','select','slider','stepper','toggle','color','text'].forEach(function(m){api[m]=val(m);});
-['section','note','action','set'].forEach(function(m){api[m]=act(m);});
-api.get=function(){};return api;})();"""
-
-TWEAKS_PILL = ('<button class="at-twk-pill" type="button" '
-               'title="Show the controls" aria-label="Show the controls">Tweaks</button>')
-
-
-# Three segments is the most that stays readable across the panel's width; a fourth leaves
-# each of them four characters. Above it, the same choice is a dropdown. The variant chooser
-# obeys the same rule as a tweak's — it is the same control asking the same kind of question.
-SEG_MAX = 3
-
+# --- assembly ---------------------------------------------------------------
 
 def build_panel(variants, title, subtitle):
-    """The panel: one card holding Tweaks, Checks and Comments behind three tabs.
+    """The Tweaks card: a header, the variant chooser, and whatever the fragment registers.
 
-    Variant and whatever the fragment registers, plus the device readout, the checks and the
-    comment list added at runtime. They were five separate surfaces — a bottom pill, a corner
-    ticker, a floating size bar, a 272px rail down the left and a full-height comments column
-    down the right — which is four sides of the window spent on chrome, and gave a
-    once-a-session choice the same weight as a constant one. Now it is one card that floats
-    over the folio and is dragged out of the way, and closing it leaves the pill.
+    The variant group appears only when there is a choice to make. A single-variant
+    prototype is one design, and a chooser offering one option answers nothing. Closing the
+    card leaves the pill.
     """
     has_motion = any(v["motion"] for v in variants)
 
@@ -355,54 +180,68 @@ def build_panel(variants, title, subtitle):
               '    <button class="at-twk-x" type="button" title="Hide the controls" '
               'aria-label="Hide the controls">&#215;</button>',
               '  </div>',
-              '  <div class="at-twk-meta" hidden></div>',
-              '  <div class="at-twk-tabs" role="tablist" aria-label="Panel tabs" hidden></div>',
-              '  <div class="at-twk-body">',
-              '    <div class="at-twk-pane" data-pane="tweaks">']
+              '  <div class="at-twk-body">']
 
-    # One variant group, and only when there is a choice to make. A single-variant prototype
-    # is one design, and a picker offering one option is a control that answers nothing.
     if len(variants) > 1 or has_motion:
         replay = ('<button class="at-twk-replay" type="button" title="Replay animation" '
                   'aria-label="Replay animation">&#8635;</button>' if has_motion else "")
-        parts.append('      <div class="at-twk-group">')
-        parts.append('        <div class="at-twk-label"><span>Variant</span>%s</div>' % replay)
+        parts.append('    <div class="at-twk-group">')
+        parts.append('      <div class="at-twk-label"><span>Variant</span>%s</div>' % replay)
         if len(variants) > SEG_MAX:
-            parts.append('        <select class="at-twk-field at-twk-variant-select" '
+            parts.append('      <select class="at-twk-field at-twk-variant-select" '
                          'aria-label="Variant">')
             for i, v in enumerate(variants):
                 sel = " selected" if i == 0 else ""
-                parts.append('          <option value="%d"%s>%s</option>'
+                parts.append('        <option value="%d"%s>%s</option>'
                              % (i, sel, html.escape(v["name"])))
-            parts.append('        </select>')
+            parts.append('      </select>')
         else:
-            parts.append('        <div class="at-twk-seg">')
+            parts.append('      <div class="at-twk-seg">')
             for i, v in enumerate(variants):
                 attrs = ' data-active aria-current="true"' if i == 0 else ""
-                parts.append('          <button class="at-twk-opt at-twk-variant" '
+                parts.append('        <button class="at-twk-opt at-twk-variant" '
                              'type="button"%s>%s</button>' % (attrs, html.escape(v["name"])))
-            parts.append('        </div>')
-        parts.append('      </div>')
+            parts.append('      </div>')
+        parts.append('    </div>')
 
-    parts += ['    </div>', '  </div>', '</nav>', TWEAKS_PILL]
+    parts += ['  </div>', '</nav>', TWEAKS_PILL]
     return "\n".join(parts)
 
 
-def build_list_body(variants):
-    """List mode: each variant isolated, stacked, full size. Never thumbnails."""
-    out = []
-    for i, v in enumerate(variants):
-        caption = ('<span class="at-list-axis">%s</span>' % html.escape(v["caption"])) \
-            if v["caption"] else ""
-        out.append(
-            '<section class="at-list-item">\n'
-            '  <header class="at-list-head">'
-            '<span class="at-list-n">%d</span>'
-            '<span class="at-list-name">%s</span>%s</header>\n'
-            '  <div class="at-list-body">%s</div>\n'
-            '</section>' % (i + 1, html.escape(v["name"]), caption, v["body"])
-        )
-    return "\n".join(out)
+def kebab(text):
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def video_duration_attr(variant):
+    """The cell's `data-video-duration="MS"`: how long `spike video` records it."""
+    raw = variant["video_duration"]
+    if raw is None:
+        return ""
+    try:
+        ok = 0 < float(raw) < 600000
+    except ValueError:
+        ok = False
+    if not ok:
+        die("data-video-duration on %r must be a number of milliseconds above 0 and below 600000 (got %r)"
+            % (variant["name"], raw))
+    return ' data-video-duration="%s"' % html.escape(raw, quote=True)
+
+
+def mockup_cells(variants):
+    """One cell per <template data-variant data-state>. The cell id is variant-state."""
+    cells, seen = [], set()
+    for v in variants:
+        name = kebab(v["name"])
+        state = kebab(v["state"]) or "default"
+        if not name:
+            die("a <template data-variant> has a name with no letters or digits: %r" % v["name"])
+        cid = "%s-%s" % (name, state)
+        if cid in seen:
+            die("two cells are both %r — each variant x state pair appears once. Give the "
+                "second a different data-variant or data-state." % cid)
+        seen.add(cid)
+        cells.append((cid, v))
+    return cells
 
 
 def cmd_build(args):
@@ -429,7 +268,7 @@ def cmd_build(args):
                 % (shown, why))
 
     # Matches a literal absolute or protocol-relative URL, never a relative fetch of a
-    # sibling file the build itself writes (settings.js's own './tweaks.json' is exempt).
+    # sibling file.
     net = re.search(r"""<link\b[^>]*\bhref\s*=|@import\s+url\(|"""
                     r"""src\s*=\s*["'](?:https?:|//)|"""
                     r"""\bfetch\s*\(\s*["'](?:https?:|//)|"""
@@ -437,138 +276,58 @@ def cmd_build(args):
                     r"""\bnew\s+XMLHttpRequest\b""",
                     fragment, re.IGNORECASE)
     if net:
-        die("fragment makes a network request (%r). Folios are hermetic: inline the CSS, "
+        die("fragment makes a network request (%r). Builds are hermetic: inline the CSS, "
             "embed rasters as data: URIs, never link a webfont, and never fetch/XHR an "
             "absolute or protocol-relative URL. Need real user data instead of a baked "
             "fixture? Use <input type=\"file\"> + FileReader — see CONTRACT.md."
             % net.group(0).strip())
 
-    widgets = resolve_widgets(kind, set(split_list(args.with_)), set(split_list(args.without)))
-
-    stamped = 0
-    if any(w.stamp for w in widgets.values()):
-        fragment, stamped = stamp_sources(fragment, os.path.basename(fragment_path))
-
-    build_id = hashlib.sha1(("%s\n%s" % (kind, fragment)).encode("utf-8")).hexdigest()[:12]
-    # A wall-clock stamp, not the content hash above: the question it answers is "am I
-    # looking at a stale file", and a hash cannot answer that. The panel prints it.
-    built_at = time.strftime("%Y-%m-%d %H:%M")
-
-    css = [read(os.path.join(KINDS_DIR, "_base.css")),
-           read(os.path.join(KINDS_DIR, kind + ".css"))]
+    css = []
     scripts = []
-
-    picker_mode = args.picker
-    if picker_mode and kind not in PICKER_KINDS:
-        die("--picker is only meaningful for kind %s, not %r"
-            % ("/".join(sorted(PICKER_KINDS)), kind))
+    head_scripts = []
+    root_attrs = ""
     variants, remainder = extract_variants(fragment)
 
-    if kind in PICKER_KINDS and not picker_mode:
-        picker_mode = "switch" if variants else None
-
-    if picker_mode and not variants:
-        die("--picker %s was requested but the fragment has no <template data-variant=\"...\"> "
-            "blocks. See CONTRACT.md." % picker_mode)
-
-    root_attrs = ""
-
-    head_scripts = []
-
-    if picker_mode == "switch":
-        css.append(read(os.path.join(HARNESS_DIR, "tweaks.css")))
-        scripts.append(read(os.path.join(HARNESS_DIR, "tweaks.js")))
-        # The stub goes in <head>, because the fragment's own <script> is in the body and
-        # therefore runs before the harness block that defines the real registry.
-        head_scripts.append(TWEAKS_STUB)
-        root_attrs += " data-at-tweaks"
-        # A build replaces the file. There is no merge with what was there before: one
-        # prototype is one design, and the earlier attempts belong in git, not stacked
-        # inside the artifact where they double its size and go stale.
-        body = "%s\n%s\n<main id=\"at-stage\"></main>\n%s" % (
-            build_panel(variants, args.title, args.subtitle),
-            remainder.strip(),
-            "\n".join(v["raw"] for v in variants),
-        )
-    elif picker_mode == "list":
-        body = "%s\n<main>\n%s\n</main>" % (remainder.strip(), build_list_body(variants))
+    if kind == "mockup":
+        if not variants:
+            die("a mockup needs at least one <template data-variant=\"...\" "
+                "[data-state=\"...\"]> block. See CONTRACT.md.")
+        cells = mockup_cells(variants)
+        css.append(read(os.path.join(KINDS_DIR, "mockup.css")))
+        body = "%s\n<div id=\"mk\">\n%s\n</div>" % (remainder.strip(), "\n".join(
+            '<div class="mk-cell" id="%s" data-variant="%s" data-state="%s"%s>\n%s\n</div>'
+            % (cid, html.escape(v["name"], quote=True), html.escape(v["state"] or "default", quote=True),
+               video_duration_attr(v), v["body"].strip())
+            for cid, v in cells))
     else:
-        body = fragment.strip()
-        if "<main" not in body.lower():
-            body = "<main>\n%s\n</main>" % body
+        css += [read(os.path.join(KINDS_DIR, "_base.css")),
+                read(os.path.join(KINDS_DIR, kind + ".css"))]
+        if kind == "prototype":
+            if not variants:
+                die("a prototype needs at least one <template data-variant=\"...\"> block. "
+                    "See CONTRACT.md.")
+            css.append(read(os.path.join(HARNESS_DIR, "chrome.css")))
+            css.append(read(os.path.join(HARNESS_DIR, "tweaks.css")))
+            scripts.append(read(os.path.join(HARNESS_DIR, "tweaks.js")))
+            # The stub goes in <head>, because the fragment's own <script> is in the body
+            # and therefore runs before the block that defines the real registry.
+            head_scripts.append(TWEAKS_STUB)
+            root_attrs += " data-at-tweaks"
+            # The stage is a <div>, never a <main>: the design being prototyped owns the one
+            # <main> a page may have, and a second one lets each side's `main` rules hit the
+            # other.
+            body = "%s\n%s\n<div id=\"at-stage\"></div>\n%s" % (
+                build_panel(variants, args.title, args.subtitle),
+                remainder.strip(),
+                "\n".join(v["raw"] for v in variants),
+            )
+        else:
+            body = fragment.strip()
+            if "<main" not in body.lower():
+                body = "<main>\n%s\n</main>" % body
 
     if args.extra_css:
         css.append(read(require_abs(args.extra_css, "--extra-css")))
-
-    # One palette for every piece of harness chrome. Inlined before any widget stylesheet
-    # so both panels and the device frames consume the same tokens instead of each carrying
-    # its own hardcoded greys.
-    if widgets or kind == "prototype":
-        css.append(read(os.path.join(HARNESS_DIR, "chrome.css")))
-        # Every floating harness button is draggable and edge-snapping; the helper has to
-        # exist before any widget registers one, so it loads with the shared palette.
-        scripts.append(read(os.path.join(HARNESS_DIR, "dock.js")))
-
-    for name, w in widgets.items():
-        if w.css:
-            css.append(read(os.path.join(HARNESS_DIR, w.css)))
-        if w.html:
-            body = w.html + "\n" + body
-        if w.js:
-            scripts.append(read(os.path.join(HARNESS_DIR, w.js)))
-
-    if "viewport" in widgets:
-        device = (args.device or "").strip()
-        if not device:
-            die("--device is required: name the one device this prototype is for "
-                "(%s). A platform is an interaction model, not a width, so a design "
-                "that ships on two of them is two prototypes."
-                % ", ".join(DEVICES))
-        if device not in DEVICES:
-            die("unknown device %r. Known devices: %s" % (device, ", ".join(DEVICES)))
-        root_attrs += ' data-at-device-frame="%s"' % html.escape(device, quote=True)
-        if args.size:
-            m = re.match(r"^(\d{2,5})\s*[x×]\s*(\d{2,5})$", args.size.strip())
-            if not m:
-                die("--size must be WxH in CSS pixels, e.g. 420x560 (got %r)" % args.size)
-            root_attrs += ' data-at-size="%sx%s"' % (m.group(1), m.group(2))
-        window_parts = split_list(args.window)
-        unknown = [w for w in window_parts if w not in WINDOW_PARTS]
-        if unknown:
-            die("unknown --window part %s. Known parts: %s"
-                % (", ".join(unknown), ", ".join(WINDOW_PARTS)))
-        if window_parts and device != "desktop":
-            die("--window only applies to the desktop frame, and --device is %r" % device)
-        if "none" in window_parts and len(window_parts) > 1:
-            die("--window none means no chrome at all, so it cannot be combined with %s"
-                % ", ".join(w for w in window_parts if w != "none"))
-        backdrop = (args.backdrop or "none").strip()
-        if backdrop != "none":
-            if device not in BACKDROP_DEVICES:
-                die("--backdrop %s only applies to the %s frames, and --device is %r"
-                    % (backdrop, " and ".join(BACKDROP_DEVICES), device))
-            # A backdrop turns the frame into a screen, and a screen is not a window.
-            # Drawing the desktop default around it put traffic lights on the desktop
-            # itself, with the wallpaper and menu bar inside them.
-            if window_parts:
-                die("--window and --backdrop cannot be combined: with a backdrop the frame "
-                    "is a screen, not a window, and each window on it gets its chrome from "
-                    "data-at-win instead")
-            root_attrs += ' data-at-backdrop="%s"' % html.escape(backdrop, quote=True)
-        if device == "desktop" and backdrop == "none":
-            # A desktop app is a window. Saying nothing gets you one; opting out is explicit.
-            if not window_parts:
-                window_parts = split_list(WINDOW_DEFAULT)
-            if window_parts != ["none"]:
-                root_attrs += ' data-at-window="%s"' % html.escape(
-                    ",".join(window_parts), quote=True)
-    elif args.device:
-        die("--device needs the viewport widget: it is on for prototype, and elsewhere "
-            "you turn it on with --with viewport")
-    elif args.window:
-        die("--window needs the viewport widget and --device desktop")
-    elif args.size:
-        die("--size needs the viewport widget: there is no frame to resize without one")
 
     doc = [
         "<!DOCTYPE html>",
@@ -577,12 +336,6 @@ def cmd_build(args):
         '<meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         '<meta name="generator" content="spike/%s">' % kind,
-        # Read by annotate.js: the build a comment was made against, the file to edit in
-        # response to it, and the file to rebuild.
-        '<meta name="folio-build" content="%s">' % build_id,
-        '<meta name="folio-built" content="%s">' % built_at,
-        '<meta name="folio-fragment" content="%s">' % html.escape(fragment_path, quote=True),
-        '<meta name="folio-out" content="%s">' % html.escape(out_path, quote=True),
         "<title>%s</title>" % html.escape(args.title),
         "<style>",
         "\n".join(c.strip() for c in css),
@@ -590,14 +343,10 @@ def cmd_build(args):
     ]
     for sc in head_scripts:
         doc.append("<script>%s</script>" % sc)
-    doc += [
-        "</head>",
-        "<body>",
-        body,
-    ]
+    doc += ["</head>", "<body>", body]
     if scripts:
         doc.append("<script>")
-        doc.append("\n".join(s.strip() for s in scripts))
+        doc.append("\n".join(sc.strip() for sc in scripts))
         doc.append("</script>")
     doc += ["</body>", "</html>", ""]
 
@@ -609,14 +358,623 @@ def cmd_build(args):
 
     size = os.path.getsize(out_path)
     detail = "kind=%s" % kind
-    if picker_mode:
-        detail += ", picker=%s, variants=%d" % (picker_mode, len(variants))
-    if widgets:
-        detail += ", widgets=%s" % "+".join(widgets)
-    if stamped:
-        detail += ", stamped=%d" % stamped
+    if kind == "mockup":
+        detail += ", cells=%d" % len(cells)
+    elif kind == "prototype":
+        detail += ", variants=%d" % len(variants)
     print("%s  (%s, %.1f KB)" % (out_path, detail, size / 1024.0))
-    print("Screenshot it and look at it before handing it over.", file=sys.stderr)
+    if kind == "mockup":
+        print("Next: spike shot <slug> --platform phone|tablet|desktop — then open every PNG and look at it.", file=sys.stderr)
+    else:
+        print("Screenshot it and look at it before handing it over.", file=sys.stderr)
+
+
+# --- shot -------------------------------------------------------------------
+
+CELL_RE = re.compile(r'<div class="mk-cell" id="([^"]+)"')
+
+MEASURE_JS = ("<script>addEventListener('load',function(){var r=document.documentElement;"
+              "r.setAttribute('data-mk-h',String(r.scrollHeight));"
+              "r.setAttribute('data-mk-w',String(innerWidth));});</script>")
+
+
+def find_chrome():
+    override = os.environ.get("SPIKE_CHROME")
+    if override:
+        if not os.path.exists(override):
+            die("SPIKE_CHROME=%s does not exist" % override)
+        return override
+    shells = sorted(glob.glob(os.path.expanduser(HEADLESS_SHELL_GLOB)))
+    if shells:
+        return shells[-1]
+    for cand in CHROME_CANDIDATES:
+        path = cand if os.path.isabs(cand) else shutil.which(cand)
+        if path and os.path.exists(path):
+            return path
+    die("no Chrome found. Install Google Chrome, or chrome-headless-shell with "
+        "`npx playwright install chromium-headless-shell`, or set SPIKE_CHROME to a binary.")
+
+
+def spike_dir(slug, explicit):
+    if explicit:
+        return require_abs(explicit, "--dir")
+    tool = os.path.expanduser("~/.claude/tools/repo-slug")
+    proc = subprocess.run([tool, "--path"], capture_output=True, text=True)
+    if proc.returncode != 0 or not proc.stdout.strip():
+        die("cannot resolve the scratch root with %s --path; pass --dir <abs-dir>" % tool)
+    return os.path.join(proc.stdout.strip(), "spikes", slug)
+
+
+def run_chrome(chrome, profile, flags, url, done):
+    """Run headless Chrome until `done(stdout, stderr)` is true, then end it.
+
+    Chrome finishes its work (it prints the DOM, or "N bytes written to file") and then
+    keeps running instead of exiting, so waiting for the process hangs. The output is the
+    signal; the process group is killed once it appears.
+    """
+    cmd = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars",
+           "--no-first-run", "--user-data-dir=" + profile] + flags + [url]
+    with tempfile.TemporaryFile("w+") as out, tempfile.TemporaryFile("w+") as err:
+        proc = subprocess.Popen(cmd, stdout=out, stderr=err, start_new_session=True)
+        try:
+            deadline = time.time() + CHROME_TIMEOUT
+            while time.time() < deadline:
+                out.seek(0)
+                err.seek(0)
+                stdout, stderr = out.read(), err.read()
+                if done(stdout, stderr):
+                    return stdout, stderr
+                if proc.poll() is not None:
+                    return stdout, stderr
+                time.sleep(0.1)
+            die("Chrome did not finish within %ds on %s" % (CHROME_TIMEOUT, url))
+        finally:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except (ProcessLookupError, PermissionError):
+                pass
+            proc.wait()
+
+
+# A full-screen shot is exactly one size per platform, so every PNG of a slug is comparable.
+# phone and tablet are the CSS viewports of the iPhone 12/13/14 and the iPad Air 4/5 in
+# portrait; desktop is a 16:10 laptop viewport.
+PLATFORMS = {"phone": (390, 844), "tablet": (820, 1180), "desktop": (1280, 800)}
+MANIFEST = ".shots.json"
+SIZE_RE = re.compile(r"^(\d{2,5})\s*[x\u00d7]\s*(\d{2,5})$")
+
+
+def png_size(path):
+    with open(path, "rb") as f:
+        head = f.read(24)
+    if head[:8] != b"\x89PNG\r\n\x1a\n":
+        die("%s is not a PNG" % path)
+    return struct.unpack(">II", head[16:24])
+
+
+def record_shots(out_dir, entries):
+    """Merge this run's shots into the slug's manifest and return it."""
+    path = os.path.join(out_dir, MANIFEST)
+    try:
+        with open(path, encoding="utf-8") as f:
+            manifest = json.load(f)
+    except (OSError, ValueError):
+        manifest = {}
+    manifest = {n: v for n, v in manifest.items() if os.path.isfile(os.path.join(out_dir, n))}
+    manifest.update(entries)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=1, sort_keys=True)
+    return manifest
+
+
+def check_full_screen_sizes(manifest):
+    """Die when one platform has full-screen PNGs at two sizes."""
+    groups = {}
+    for name, v in manifest.items():
+        if v["mode"] == "full":
+            groups.setdefault(v["platform"], {}).setdefault(tuple(v["px"]), []).append(name)
+    bad = []
+    for platform, sizes in sorted(groups.items()):
+        if len(sizes) > 1:
+            bad.append("platform %s has full-screen PNGs at %d sizes:" % (platform, len(sizes))
+                       + "".join("\n  %dx%d: %s" % (w, h, ", ".join(sorted(names)))
+                                 for (w, h), names in sorted(sizes.items())))
+    if bad:
+        die("full-screen shots of one platform must share one size.\n" + "\n".join(bad)
+            + "\nReshoot the odd files at the platform size, or pass --partial for a shot of "
+              "part of a screen.")
+
+
+def cmd_shot(args):
+    if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", args.slug):
+        die("slug %r must be kebab-case: lowercase letters, digits and single hyphens" % args.slug)
+    if args.platform and args.size:
+        die("pass --platform or --size, not both")
+    if args.platform:
+        width, min_height = PLATFORMS[args.platform]
+        platform = args.platform
+    elif args.size:
+        m = SIZE_RE.match(args.size.strip())
+        if not m:
+            die("--size must be WxH in CSS pixels, e.g. 390x844 (got %r)" % args.size)
+        width, min_height = int(m.group(1)), int(m.group(2))
+        platform = "custom"
+    else:
+        die("name the screen size: --platform %s, or --size WxH"
+            % "|".join(sorted(PLATFORMS)))
+    mode = "partial" if args.partial else "full"
+
+    out_dir = spike_dir(args.slug, args.dir)
+    page = os.path.join(out_dir, args.slug + ".html")
+    source = read(page)
+    cell_ids = CELL_RE.findall(source)
+    query = ("?" + args.query.lstrip("?")) if args.query else ""
+    if cell_ids:
+        if args.cell:
+            want = split_list(args.cell)
+            missing = [c for c in want if c not in cell_ids]
+            if missing:
+                die("no such cell %s. Cells in %s: %s"
+                    % (", ".join(missing), page, ", ".join(cell_ids)))
+            cell_ids = want
+        targets = [(cid, query + "#" + cid) for cid in cell_ids]
+    else:
+        # A wireframe or a prototype is one page: one PNG, named for the slug and the query.
+        if args.cell:
+            die("%s has no mockup cells, so --cell has nothing to select" % page)
+        stem = args.slug + (("-" + kebab(args.query)) if args.query else "")
+        targets = [(stem, query)]
+
+    themes = ["light", "dark"] if args.theme == "both" else [args.theme]
+    chrome = find_chrome()
+    written = []
+    entries = {}
+    with tempfile.TemporaryDirectory() as profile:
+        # Measure each cell once: a design taller than the window would otherwise be
+        # cropped at the window's height without a word.
+        probe = os.path.join(out_dir, ".%s.measure.html" % args.slug)
+        try:
+            with open(probe, "w", encoding="utf-8") as f:
+                f.write(source.replace("</body>", MEASURE_JS + "</body>"))
+            for stem, suffix in targets:
+                url = "file://%s%s" % (probe, suffix)
+                stdout, stderr = run_chrome(
+                    chrome, profile,
+                    ["--window-size=%d,%d" % (width, min_height), "--dump-dom"], url,
+                    lambda o, e: "</html>" in o)
+                hm = re.search(r'data-mk-h="(\d+)"', stdout)
+                if not hm:
+                    die("could not measure %s: Chrome printed no height.\n%s"
+                        % (stem, stderr.strip()[-400:]))
+                wm = re.search(r'data-mk-w="(\d+)"', stdout)
+                if not wm or int(wm.group(1)) != width:
+                    die("%s lays pages out %s px wide when asked for %d, so the shot would show a "
+                        "different layout. Install chrome-headless-shell "
+                        "(`npx playwright install chromium-headless-shell`) or set SPIKE_CHROME."
+                        % (chrome, wm.group(1) if wm else "an unknown number of", width))
+                # A full-screen shot is exactly the platform size, cropped if the design is
+                # taller; a partial shot grows to the content.
+                height = max(min_height, int(hm.group(1))) if args.partial else min_height
+                for theme in themes:
+                    name = stem + ("-dark" if theme == "dark" else "") + ".png"
+                    out = os.path.join(out_dir, name)
+                    # Chrome numbers the schemes 0 = dark, 1 = light. Passed every time:
+                    # left unset, the shot follows the OS appearance.
+                    flags = ["--window-size=%d,%d" % (width, height),
+                             "--force-device-scale-factor=%s" % args.scale,
+                             "--blink-settings=preferredColorScheme=%d"
+                             % (0 if theme == "dark" else 1),
+                             "--screenshot=" + out]
+                    run_chrome(chrome, profile, flags, "file://%s%s" % (page, suffix),
+                               lambda o, e: "bytes written to file" in e)
+                    if not os.path.isfile(out) or os.path.getsize(out) == 0:
+                        die("Chrome wrote no screenshot for %s (%s)" % (stem, theme))
+                    got = png_size(out)
+                    want = (int(round(width * float(args.scale))),
+                            int(round(height * float(args.scale))))
+                    if got != want:
+                        die("%s is %dx%d px, expected %dx%d" % (out, got[0], got[1],
+                                                                want[0], want[1]))
+                    written.append(out)
+                    entries[os.path.basename(out)] = {"mode": mode, "platform": platform,
+                                                      "px": [width, height]}
+        finally:
+            manifest = record_shots(out_dir, entries)
+            if os.path.exists(probe):
+                os.remove(probe)
+    for path in written:
+        print(path)
+    check_full_screen_sizes(manifest)
+
+
+# --- video -------------------------------------------------------------------
+
+VIDEO_DEFAULT_FPS = 30
+VIDEO_DEFAULT_HOLD_MS = 600
+VIDEO_DEFAULT_STRIP = 6
+
+# The page's clock, installed before any page script runs. It replaces performance.now,
+# Date, setTimeout, setInterval and requestAnimationFrame with a clock that moves only when
+# the recorder says so, so a script sees the same times on every run. CSS animations and
+# transitions run on the browser's own clock, which cannot be replaced: a style sheet holds
+# every CSS animation at its start from the first style calculation, a transition is paused
+# the moment a script callback creates it, and the recorder sets each one's currentTime from
+# this clock.
+VIDEO_CLOCK_JS = """(function(){
+  var now = 0, id = 0, timers = [], frames = [], started = new WeakMap(), tracked = [];
+  var RealDate = Date, base = 1700000000000, realRaf = window.requestAnimationFrame.bind(window);
+  function FakeDate(){
+    if (!(this instanceof FakeDate)) return new RealDate(base + now).toString();
+    if (arguments.length === 0) return new RealDate(base + now);
+    return Reflect.construct(RealDate, arguments, new.target);
+  }
+  FakeDate.prototype = RealDate.prototype;
+  RealDate.prototype.constructor = FakeDate;
+  FakeDate.now = function(){ return base + now; };
+  FakeDate.parse = RealDate.parse;
+  FakeDate.UTC = RealDate.UTC;
+  window.Date = FakeDate;
+  var hold = new CSSStyleSheet();
+  hold.replaceSync("*, ::before, ::after { animation-play-state: paused !important; }");
+  document.adoptedStyleSheets = [hold];
+  performance.now = function(){ return now; };
+  function addTimer(fn, ms, args, every){
+    ms = Math.max(1, +ms || 0);
+    timers.push({id: ++id, at: now + ms, ms: ms, fn: fn, args: args, every: every});
+    return id;
+  }
+  window.setTimeout = function(fn, ms){ return addTimer(fn, ms, [].slice.call(arguments, 2), false); };
+  window.setInterval = function(fn, ms){ return addTimer(fn, ms, [].slice.call(arguments, 2), true); };
+  window.clearTimeout = window.clearInterval = function(i){
+    timers = timers.filter(function(t){ return t.id !== i; });
+  };
+  window.requestAnimationFrame = function(fn){ frames.push({id: ++id, fn: fn}); return id; };
+  window.cancelAnimationFrame = function(i){
+    frames = frames.filter(function(f){ return f.id !== i; });
+  };
+  function adopt(){
+    document.getAnimations().forEach(function(a){
+      if (started.has(a)) return;
+      started.set(a, now);
+      tracked.push(a);
+      a.pause();
+    });
+  }
+  function run(fn, args){
+    try { fn.apply(window, args); } catch (e) { console.error(e); }
+    adopt();
+  }
+  window.__video = {
+    adopt: adopt,
+    step: function(to){
+      var guard = 0;
+      for (;;) {
+        var next = null;
+        timers.forEach(function(t){ if (t.at <= to && (!next || t.at < next.at)) next = t; });
+        if (!next || ++guard > 100000) break;
+        now = Math.max(now, next.at);
+        if (next.every) next.at += next.ms; else timers.splice(timers.indexOf(next), 1);
+        run(next.fn, next.args);
+      }
+      now = Math.max(now, to);
+      var due = frames;
+      frames = [];
+      due.forEach(function(f){ run(f.fn, [now]); });
+      tracked.forEach(function(a){ a.currentTime = Math.max(0, now - started.get(a)); });
+      return new Promise(function(done){ realRaf(function(){ realRaf(function(){ done(true); }); }); });
+    }
+  };
+})()"""
+
+# Called once the page has loaded: takes over every animation already running (they start at
+# 0 ms) and reports the page's size and the longest end time among the animations under the
+# root. An animation that never ends counts for one iteration.
+VIDEO_PREPARE_JS = """(function(sel){
+  var root = sel ? document.getElementById(sel) : document.documentElement;
+  window.__video.adopt();
+  var end = 0, count = 0;
+  root.getAnimations({subtree: true}).forEach(function(a){
+    count++;
+    var t = a.effect.getComputedTiming();
+    var e = isFinite(t.endTime) ? t.endTime : t.delay + t.duration;
+    if (e > end) end = e;
+  });
+  var r = document.documentElement;
+  return {count: count, end: end, declared: root.getAttribute("data-video-duration"),
+          height: r.scrollHeight, width: innerWidth};
+})(%s)"""
+
+VIDEO_STEP_JS = "window.__video.step(%s)"
+
+
+class Cdp:
+    """A Chrome DevTools Protocol client over one WebSocket, standard library only."""
+
+    def __init__(self, ws_url):
+        u = urllib.parse.urlparse(ws_url)
+        try:
+            self.sock = socket.create_connection((u.hostname, u.port), timeout=CHROME_TIMEOUT)
+        except OSError as e:
+            die("cannot reach Chrome's DevTools port: %s" % e)
+        key = base64.b64encode(os.urandom(16)).decode()
+        self.sock.sendall(("GET %s HTTP/1.1\r\nHost: %s:%d\r\nUpgrade: websocket\r\n"
+                           "Connection: Upgrade\r\nSec-WebSocket-Key: %s\r\n"
+                           "Sec-WebSocket-Version: 13\r\n\r\n"
+                           % (u.path, u.hostname, u.port, key)).encode())
+        head = b""
+        while b"\r\n\r\n" not in head:
+            chunk = self.sock.recv(1)
+            if not chunk:
+                die("Chrome closed the DevTools connection during the handshake")
+            head += chunk
+        if b" 101 " not in head.split(b"\r\n")[0]:
+            die("Chrome refused the DevTools WebSocket: %s" % head.split(b"\r\n")[0].decode())
+        self.next_id = 0
+        self.events = []
+
+    def _read(self, n):
+        buf = b""
+        while len(buf) < n:
+            try:
+                chunk = self.sock.recv(n - len(buf))
+            except socket.timeout:
+                die("Chrome did not answer within %ds" % CHROME_TIMEOUT)
+            if not chunk:
+                die("Chrome closed the DevTools connection")
+            buf += chunk
+        return buf
+
+    def _recv(self):
+        message = b""
+        while True:
+            b1, b2 = self._read(2)
+            op, size = b1 & 0x0F, b2 & 0x7F
+            if size == 126:
+                size = struct.unpack(">H", self._read(2))[0]
+            elif size == 127:
+                size = struct.unpack(">Q", self._read(8))[0]
+            payload = self._read(size)
+            if op == 0x9:
+                continue
+            if op == 0x8:
+                die("Chrome closed the DevTools connection")
+            message += payload
+            if b1 & 0x80:
+                return json.loads(message)
+
+    def _send(self, text):
+        data = text.encode()
+        mask = os.urandom(4)
+        n = len(data)
+        head = bytes([0x81])
+        if n < 126:
+            head += bytes([0x80 | n])
+        elif n < 65536:
+            head += bytes([0x80 | 126]) + struct.pack(">H", n)
+        else:
+            head += bytes([0x80 | 127]) + struct.pack(">Q", n)
+        masked = bytes(b ^ mask[i % 4] for i, b in enumerate(data))
+        self.sock.sendall(head + mask + masked)
+
+    def call(self, method, params=None, session=None):
+        self.next_id += 1
+        msg = {"id": self.next_id, "method": method, "params": params or {}}
+        if session:
+            msg["sessionId"] = session
+        self._send(json.dumps(msg))
+        while True:
+            reply = self._recv()
+            if reply.get("id") == self.next_id:
+                if "error" in reply:
+                    die("DevTools %s failed: %s" % (method, reply["error"].get("message")))
+                return reply.get("result", {})
+            self.events.append(reply)
+
+    def wait_event(self, method, session):
+        for i, ev in enumerate(self.events):
+            if ev.get("method") == method and ev.get("sessionId") == session:
+                del self.events[i]
+                return
+        while True:
+            ev = self._recv()
+            if ev.get("method") == method and ev.get("sessionId") == session:
+                return
+            self.events.append(ev)
+
+
+def launch_chrome(chrome, profile):
+    """Start Chrome with a DevTools port; return (process, browser WebSocket URL)."""
+    cmd = [chrome, "--headless", "--disable-gpu", "--hide-scrollbars", "--no-first-run",
+           "--remote-debugging-port=0", "--user-data-dir=" + profile, "about:blank"]
+    err = tempfile.TemporaryFile("w+")
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err, start_new_session=True)
+    deadline = time.time() + CHROME_TIMEOUT
+    while time.time() < deadline:
+        err.seek(0)
+        m = re.search(r"DevTools listening on (ws://\S+)", err.read())
+        if m:
+            return proc, m.group(1)
+        if proc.poll() is not None:
+            break
+        time.sleep(0.1)
+    stop_chrome(proc)
+    die("Chrome did not open a DevTools port")
+
+
+def stop_chrome(proc):
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):
+        pass
+    proc.wait()
+
+
+def require_tool(name):
+    path = shutil.which(name) or os.path.join("/opt/homebrew/bin", name)
+    if not os.path.exists(path):
+        die("`%s` is not installed, and spike video needs it to encode frames "
+            "(macOS: `brew install webp ffmpeg`)." % name)
+    return path
+
+
+def video_times(end, fps):
+    """Frame timestamps in ms from 0 to `end` inclusive, one every 1000/fps."""
+    step = 1000.0 / fps
+    n = max(1, int(round(end / step)))
+    times = [min(end, i * step) for i in range(n)]
+    times.append(float(end))
+    return times
+
+
+def video_durations(times, hold):
+    """Per-frame display time in whole ms: the gaps between timestamps, then the hold."""
+    marks = [int(round(t)) for t in times]
+    gaps = [marks[i + 1] - marks[i] for i in range(len(marks) - 1)]
+    return [max(1, g) for g in gaps] + [max(1, hold)]
+
+
+def cmd_video(args):
+    if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", args.slug):
+        die("slug %r must be kebab-case: lowercase letters, digits and single hyphens" % args.slug)
+    m = re.match(r"^(\d{2,5})\s*[x×]\s*(\d{2,5})$", args.size.strip())
+    if not m:
+        die("--size must be WxH in CSS pixels, e.g. 390x844 (got %r)" % args.size)
+    width, min_height = int(m.group(1)), int(m.group(2))
+    if args.fps < 1 or args.fps > 60:
+        die("--fps must be between 1 and 60 (got %s)" % args.fps)
+    if args.hold < 1 or (args.duration is not None and args.duration <= 0):
+        die("--hold must be at least 1 ms and --duration above 0")
+    if not 0 <= args.quality <= 100:
+        die("--quality must be between 0 and 100 (got %s)" % args.quality)
+    try:
+        float(args.scale)
+    except ValueError:
+        die("--scale must be a number (got %r)" % args.scale)
+    if args.strip < 2:
+        die("--strip must be at least 2 frames (got %s)" % args.strip)
+
+    img2webp, ffmpeg = require_tool("img2webp"), require_tool("ffmpeg")
+    out_dir = spike_dir(args.slug, args.dir)
+    page = os.path.join(out_dir, args.slug + ".html")
+    source = read(page)
+    cell_ids = CELL_RE.findall(source)
+    query = ("?" + args.query.lstrip("?")) if args.query else ""
+    if cell_ids:
+        if args.cell:
+            want = split_list(args.cell)
+            missing = [c for c in want if c not in cell_ids]
+            if missing:
+                die("no such cell %s. Cells in %s: %s"
+                    % (", ".join(missing), page, ", ".join(cell_ids)))
+            cell_ids = want
+        targets = [(cid, query + "#" + cid, "#" + cid) for cid in cell_ids]
+    else:
+        if args.cell:
+            die("%s has no mockup cells, so --cell has nothing to select" % page)
+        stem = args.slug + (("-" + kebab(args.query)) if args.query else "")
+        targets = [(stem, query, None)]
+
+    themes = ["light", "dark"] if args.theme == "both" else [args.theme]
+    chrome = find_chrome()
+    written = []
+    with tempfile.TemporaryDirectory() as profile, tempfile.TemporaryDirectory() as frames:
+        proc, ws_url = launch_chrome(chrome, profile)
+        try:
+            cdp = Cdp(ws_url)
+            for stem, suffix, selector in targets:
+                for theme in themes:
+                    suffix_name = ("-dark" if theme == "dark" else "") + ("-reduced" if args.reduced else "")
+                    base = os.path.join(out_dir, stem + suffix_name)
+                    written += video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix,
+                                        selector, theme, width, min_height, base)
+        finally:
+            stop_chrome(proc)
+    for path in written:
+        print(path)
+
+
+def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme,
+             width, min_height, base):
+    target = cdp.call("Target.createTarget", {"url": "about:blank"})["targetId"]
+    session = cdp.call("Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
+    try:
+        send = lambda method, params=None: cdp.call(method, params, session)
+        send("Page.enable")
+        send("Emulation.setEmulatedMedia", {"features": [
+            {"name": "prefers-color-scheme", "value": theme},
+            {"name": "prefers-reduced-motion", "value": "reduce" if args.reduced else "no-preference"}]})
+        send("Emulation.setDeviceMetricsOverride", {
+            "width": width, "height": min_height, "deviceScaleFactor": float(args.scale),
+            "mobile": False})
+        send("Page.addScriptToEvaluateOnNewDocument", {"source": VIDEO_CLOCK_JS})
+        send("Page.navigate", {"url": "file://%s%s" % (page, suffix)})
+        cdp.wait_event("Page.loadEventFired", session)
+        sel = json.dumps(selector.lstrip("#") if selector else None)
+        info = send("Runtime.evaluate", {
+            "expression": VIDEO_PREPARE_JS % sel, "returnByValue": True})["result"]["value"]
+        height = max(min_height, int(info["height"]))
+        send("Emulation.setDeviceMetricsOverride", {
+            "width": width, "height": height, "deviceScaleFactor": float(args.scale),
+            "mobile": False})
+        if args.duration is not None:
+            end = float(args.duration)
+        elif info["declared"] is not None:
+            end = float(info["declared"])
+        else:
+            end = float(info["end"])
+        times = video_times(end, args.fps) if end > 0 else [0.0]
+        if end <= 0:
+            sys.stderr.write("spike video: %s has no length: no --duration, no data-video-duration "
+                             "and no animation with a length at load, so every frame is the "
+                             "resting state%s. A page whose script drives the motion needs one "
+                             "of the first two.\n" % (os.path.basename(base),
+                             " under prefers-reduced-motion" if args.reduced else ""))
+        shot_dir = tempfile.mkdtemp(dir=frames)
+        paths = []
+        for i, t in enumerate(times):
+            send("Runtime.evaluate", {"expression": VIDEO_STEP_JS % json.dumps(t),
+                                      "awaitPromise": True, "returnByValue": True})
+            data = send("Page.captureScreenshot", {"format": "png"})["data"]
+            path = os.path.join(shot_dir, "f%04d.png" % i)
+            with open(path, "wb") as f:
+                f.write(base64.b64decode(data))
+            paths.append(path)
+    finally:
+        try:
+            cdp.call("Target.closeTarget", {"targetId": target})
+        except SystemExit:
+            pass
+
+    # Animated WebP: lossy, looping forever, gaps between timestamps, a hold on the last frame.
+    durations = video_durations(times, args.hold)
+    cmd = [img2webp, "-loop", "0", "-lossy", "-q", str(args.quality), "-m", "4"]
+    for path, d in zip(paths, durations):
+        cmd += ["-d", str(d), path]
+    webp = base + ".webp"
+    cmd += ["-o", webp]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0 or not os.path.getsize(webp):
+        die("img2webp failed: %s" % proc.stderr.strip()[-400:])
+
+    # Frame strip: --strip frames spread evenly from the first to the last, side by side.
+    n = min(args.strip, len(paths))
+    picks = sorted({int(round(i * (len(paths) - 1) / max(1, n - 1))) for i in range(n)})
+    strip = base + "-strip.png"
+    cmd = [ffmpeg, "-y", "-loglevel", "error"]
+    for i in picks:
+        cmd += ["-i", paths[i]]
+    if len(picks) == 1:
+        cmd += ["-frames:v", "1", strip]
+    else:
+        cmd += ["-filter_complex", "".join("[%d:v]" % k for k in range(len(picks)))
+                + "hstack=inputs=%d" % len(picks), "-frames:v", "1", strip]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0 or not os.path.isfile(strip):
+        die("ffmpeg failed: %s" % proc.stderr.strip()[-400:])
+    sys.stderr.write("spike video: %s — %d frame(s), %d ms, strip at %s ms\n" % (
+        os.path.basename(webp), len(paths), int(times[-1]),
+        ", ".join(str(int(round(times[i]))) for i in picks)))
+    return [webp, strip]
 
 
 def cmd_kinds(_args):
@@ -624,31 +982,15 @@ def cmd_kinds(_args):
     for k in sorted(KINDS):
         print("%-*s  %s" % (width, k, KINDS[k]))
     print()
-    print("--picker switch|list applies to: %s" % ", ".join(sorted(PICKER_KINDS)))
+    print("A mockup fragment is one <template data-variant=\"Name\" [data-state=\"State\"]> per cell;")
+    print("`spike shot <slug>` writes one PNG per cell, named variant-state.png; a build with no")
+    print("cells (wireframe, prototype) gets one PNG, with --query choosing the variant and tweaks.")
     print()
-    print("Widgets (--with NAME turns one on anywhere, --without NAME turns one off):")
-    wwidth = max(len(w) for w in WIDGETS)
-    for name, w in WIDGETS.items():
-        if w.kinds == ALL_KINDS:
-            on = "all kinds"
-        elif not w.kinds:
-            on = "no kinds — opt in per spike with --with %s" % name
-        else:
-            on = ", ".join(sorted(w.kinds))
-        print("  %-*s  %s" % (wwidth, name, w.desc))
-        print("  %-*s  default: %s" % (wwidth, "", on))
+    print("`spike video <slug>` records each cell's motion (CSS animation and transition, and script")
+    print("timers and requestAnimationFrame) as an animated WebP plus a frame-strip PNG, named")
+    print("variant-state.webp and variant-state-strip.png.")
     print()
-    print("Devices (--device D — exactly one, required whenever the viewport widget is on):")
-    dwidth = max(len(d) for d in DEVICES)
-    for name, desc in DEVICES.items():
-        print("  %-*s  %s" % (dwidth, name, desc))
-    print()
-    print("Backdrops (--backdrop B — desktop and panel frames only, default none):")
-    bwidth = max(len(b) for b in BACKDROPS)
-    for name, desc in BACKDROPS.items():
-        print("  %-*s  %s" % (bwidth, name, desc))
-    print("  Reach for one when the design is translucent: what glass looks like IS what")
-    print("  shows through it, so a flat ground behind it is a different design.")
+    print("A prototype gets the Tweaks panel; a mockup and a wireframe get nothing but the fragment.")
     print()
     print("A terminal screen is not a kind: `spike tui --out <dir> --title <t>` scaffolds a Go")
     print("harness (variant picker, state axes, geometry assertion, frame dump). See TUI.md.")
@@ -749,31 +1091,61 @@ def main():
     b.add_argument("--title", required=True)
     b.add_argument("--fragment", required=True, help="absolute path to the body fragment")
     b.add_argument("--out", required=True, help="absolute path to write")
-    b.add_argument("--picker", choices=["switch", "list"])
     b.add_argument("--subtitle", default="",
-                   help="one line under the panel title: what this prototype is deciding")
-    b.add_argument("--device", metavar="D", choices=sorted(DEVICES),
-                   help="the one device this prototype is for (see `spike kinds`). "
-                        "Required wherever the viewport widget is on")
-    b.add_argument("--size", metavar="WxH",
-                   help="override the frame's dimensions, keeping its chrome. The catalog "
-                        "size is the stock hardware, which is right for a phone and wrong "
-                        "for a window: use it to draw a Mac app at the size it opens at")
-    b.add_argument("--window", metavar="bar,lights",
-                   help="window chrome for the desktop frame. Default is bar,lights — a "
-                        "desktop app is a window. --window none for a design that draws "
-                        "its own top area edge to edge")
-    b.add_argument("--backdrop", metavar="B", choices=sorted(BACKDROPS),
-                   help="what sits behind a desktop or panel frame. Default none. Use "
-                        "desktop when the design is translucent — glass, vibrancy, a "
-                        "floating panel — since what it looks like is what shows through")
+                   help="prototype only: one line under the panel title naming the question")
     b.add_argument("--lang", default="en")
-    b.add_argument("--extra-css", help="absolute path to additional CSS appended last")
-    b.add_argument("--with", dest="with_", metavar="W1,W2",
-                   help="harness widgets to add regardless of kind (see `spike kinds`)")
-    b.add_argument("--without", metavar="W1,W2",
-                   help="harness widgets to leave out")
+    b.add_argument("--extra-css", help="absolute path to additional CSS appended last. A "
+                   "mockup takes the project's real stylesheet here")
     b.set_defaults(func=cmd_build)
+
+    h = sub.add_parser("shot", help="screenshot every cell of a mockup build (or the page of "
+                                    "any other build) to PNG")
+    h.add_argument("slug", help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html")
+    h.add_argument("--dir", help="absolute spike directory, instead of the repo's scratch root")
+    h.add_argument("--platform", choices=sorted(PLATFORMS),
+                   help="full-screen size for the platform: %s"
+                   % ", ".join("%s %dx%d" % (k, w, hh) for k, (w, hh) in PLATFORMS.items()))
+    h.add_argument("--size", metavar="WxH",
+                   help="an explicit size in CSS pixels, instead of --platform")
+    h.add_argument("--partial", action="store_true",
+                   help="a shot of part of a screen or one component: the size is the width and "
+                        "the minimum height, and a taller design is captured at its full height")
+    h.add_argument("--scale", default="1", help="device scale factor (default 1)")
+    h.add_argument("--theme", default="light", choices=["light", "dark", "both"],
+                   help="prefers-color-scheme to render under (default light)")
+    h.add_argument("--cell", metavar="ID,ID", help="only these cells (default all)")
+    h.add_argument("--query", metavar="Q", help="URL query for a prototype or wireframe, e.g. "
+                   "'v=2&conn=down' (the variant and tweak params of CONTRACT.md)")
+    h.set_defaults(func=cmd_shot)
+
+    f = sub.add_parser("video", help="animated WebP and frame-strip PNG of each cell's CSS "
+                                    "animation, sampled at exact timestamps")
+    f.add_argument("slug", help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html")
+    f.add_argument("--dir", help="absolute spike directory, instead of the repo's scratch root")
+    f.add_argument("--size", default="1280x900", metavar="WxH",
+                   help="window width x minimum height in CSS pixels (default 1280x900)")
+    f.add_argument("--scale", default="1", help="device scale factor (default 1)")
+    f.add_argument("--theme", default="light", choices=["light", "dark", "both"],
+                   help="prefers-color-scheme to render under (default light)")
+    f.add_argument("--cell", metavar="ID,ID", help="only these cells (default all)")
+    f.add_argument("--query", metavar="Q", help="URL query for a build with no cells")
+    f.add_argument("--reduced", action="store_true",
+                   help="render under prefers-reduced-motion: reduce; a project that disables "
+                        "its animations there yields resting frames, which is correct")
+    f.add_argument("--fps", type=int, default=VIDEO_DEFAULT_FPS,
+                   help="frames per second, 1-60 (default %d)" % VIDEO_DEFAULT_FPS)
+    f.add_argument("--duration", type=float, metavar="MS",
+                   help="length to record in ms (default: the cell's data-video-duration, else the "
+                        "longest end time among the animations running at load)")
+    f.add_argument("--hold", type=int, default=VIDEO_DEFAULT_HOLD_MS, metavar="MS",
+                   help="how long the last frame stays before the loop restarts (default %d)"
+                        % VIDEO_DEFAULT_HOLD_MS)
+    f.add_argument("--strip", type=int, default=VIDEO_DEFAULT_STRIP, metavar="N",
+                   help="frames in the frame-strip PNG, evenly spaced (default %d)"
+                        % VIDEO_DEFAULT_STRIP)
+    f.add_argument("--quality", type=int, default=80, metavar="Q",
+                   help="lossy WebP quality 0-100 (default 80)")
+    f.set_defaults(func=cmd_video)
 
     t = sub.add_parser("tui", help="scaffold a terminal prototype (Go harness + variants stub)")
     t.add_argument("--out", required=True, help="absolute path to the prototype directory")

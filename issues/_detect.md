@@ -7,7 +7,7 @@ resolve the two things that genuinely vary — mirror mode and stealth — not t
 Resolve in this order and stop at the first that answers. This is cheap — two shell calls at
 most — run it once per invocation and reuse the answer for the rest of the run.
 
-1. **Explicit argument.** If the invocation named a backend (`backlog next beads`, `backlog spec github`),
+1. **Explicit argument.** If the invocation named a backend (`issues next beads`, `issues spec github`),
    use it. An explicit name overrides everything below — if the user said `beads` and `.beads/` is
    absent, offer `bd init` rather than silently using GitHub.
 
@@ -106,9 +106,9 @@ to fall back on. Read the label first; if it is there, it decides and nothing be
 **No label yet** → propose a default from two signals, either of which is sufficient:
 
 - **Path.** Under `~/Work/**` or `~/Freelance/**` → stealth.
-- **Owner.** `gh repo view --json owner --jq .owner.login` ≠ `gh api user --jq .login` → stealth.
-  No remote at all → stealth. Path alone is not enough: a repo can sit in `~/Projects/` and
-  belong to someone else.
+- **Owner.** `~/.claude/tools/repo-tier` prints `collaborative` or `unlisted` → stealth.
+  No remote at all → stealth, though the tool prints `owned` for it. Path alone is not
+  enough: a repo can sit in `~/Projects/` and belong to someone else.
 
 Confirm the proposal with the user, then **write the answer into `domains-map`**. The inference
 runs once; the label runs forever.
@@ -167,12 +167,12 @@ because they are detection-time decisions, not usage-time ones:
   mirrored; a hashed `neutrino-a3f2` from `bd create` is yours until you push it; a dotted
   `neutrino-7.1` is your breakdown of theirs and never leaves.
 
-- **Picking one of their issues up means breaking it down under it, at that moment.** Slices
-  plus a verify bead plus a land bead, all children of the mirrored parent, all private. That
+- **Picking one of their issues up means breaking it down under it, at that moment.** The
+  fewest slices that each end at a checkable outcome, all children of the mirrored parent, all private. That
   is standard practice, not a stealth-only trick — the shape is in
   [`breakdown.md`](breakdown.md) and it is the same in a mirror repo, where the children get
   pushed instead of kept. **An issue nobody has started has no children**, and a pull that
-  brings down 15 of their issues creates 15 beads, not 60.
+  brings down 15 of their issues creates 15 beads, not 45.
 
 - **Rename every pulled bead to its GitHub issue number, in the same breath as the pull.**
   `bd github sync --pull-only` does not assign a hash ID. It assigns the import-path form
@@ -207,7 +207,7 @@ because they are detection-time decisions, not usage-time ones:
 - **⛔ A pull also overwrites `labels`, `issue_type` and `priority` — not just title and
   description.** GitHub holds no type or priority, so a pull resets them to defaults and
   replaces the bead's label set with GitHub's. Measured on `bd 1.2.x` across seven mirrored
-  beads: after `gh issue edit` + `bd github sync --pull-only --issues <id>`, every `area:`
+  beads: after `gh issue edit` + `bd github sync --pull-only --issues <id>`, every category
   label was gone (two beads came back carrying only GitHub's stale `bug`, one carrying
   nothing), two beads had the wrong `issue_type` and three the wrong `priority`. No warning,
   no conflict. Only dependencies, parent, and beads with **no** `external_ref` survive a pull.
@@ -217,12 +217,12 @@ because they are detection-time decisions, not usage-time ones:
   path at all.
 
   When you do pull — to collect a person's GitHub-UI edit — reduce what it costs first:
-  **make GitHub carry the label set**, creating the `area:`/`human` labels there and applying
+  **make GitHub carry the label set**, creating the repo's labels and `human` there and applying
   them with `gh issue edit`, so a pull rewrites labels with the same values instead of wiping
   them. Type and priority have no GitHub representation and reset regardless, so scope the
   pull with `--issues <id>` and re-apply those two afterwards.
 
-- **⛔ A push invents `type::`/`priority::` labels in their repo and pushes no `area:` label.**
+- **⛔ A push invents `type::`/`priority::` labels in their repo and pushes none of the bead's own labels.**
   It applies both to the issue and leaves the issue's stale labels in place. That matters more
   here than in your own repos, because the labels appear in a tracker other people read.
   Reconcile GitHub labels with `gh issue edit`, never with a push, and run the repo-wide
@@ -266,10 +266,10 @@ local only*, you have made this exact mistake — stop and read [`beads.md`](bea
 
 ## Concurrent writers
 
-Beads' default embedded Dolt engine **serves one writer at a time**. a swarmed `/implement` fans out N
-worktrees, and all worktrees share the main repository's single `.beads` workspace, so N agents
-writing at once will contend. Either keep tracker writes on the orchestrator (workers report, the
-orchestrator records) or have the repo run `bd init --server`. Read paths are unaffected.
+Beads' default embedded Dolt engine **serves one writer at a time**. Every worktree of a repo
+shares that repo's single `.beads` workspace, so two sessions each running `implement` in a
+different worktree at once will contend the moment both write. Either keep tracker writes to
+one session at a time, or have the repo run `bd init --server`. Read paths are unaffected.
 
 ## Backend capability differences
 

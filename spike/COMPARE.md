@@ -10,8 +10,9 @@ If it's "does this state model hold up" → [LOGIC.md](LOGIC.md).
 transports, and picking the wrong one produces a confident answer to the wrong question:
 
 - **A number decides it** — latency, memory, rows/sec, lines of code, hard cases passed. That's this
-  file. Run it through the `terminal` skill's one-shot mode (the transport `dispatch exec` sits on) so
-  the measurement happens in a visible window and the output comes back verbatim.
+  file. Run it through `dispatch/terminal`'s one-shot mode (the transport `dispatch exec` sits on,
+  `../dispatch/TRANSPORT-TERMINAL-ONESHOT.md`) so the measurement happens in a visible window and
+  the output comes back verbatim.
 - **A look decides it** — two or three approaches whose difference the user has to *see*, not read off
   a table. That's [UI.md](UI.md) with one `<template data-variant>` per approach, named for the
   approach. Everything below about a shared fixture and a stated criterion still applies; the fixture
@@ -32,15 +33,15 @@ numbers and the shape of the code side by side.
 
 ## The artifact
 
-`/private/tmp/claude/<repo-slug>/prototypes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
-the path with the project's existing runtime (`bun /private/tmp/claude/<repo-slug>/prototypes/queue/v1/run.ts`, `python
-/private/tmp/claude/<repo-slug>/prototypes/queue/v1/run.py`). The slug names what's being compared and never changes; each
+`/private/tmp/claude/<repo-slug>/spikes/<slug>/v<N>/` — a directory per round, gitignored, run straight off
+the path with the project's existing runtime (`bun /private/tmp/claude/<repo-slug>/spikes/queue/v1/run.ts`, `python
+/private/tmp/claude/<repo-slug>/spikes/queue/v1/run.py`). The slug names what's being compared and never changes; each
 new round is the next `vN` and earlier rounds stay put (see SKILL.md "Naming and versions"). No script
 registered in `package.json` or the task runner, no production file touched, nothing in the repo
 importing it.
 
 ```
-/private/tmp/claude/<repo-slug>/prototypes/<slug>/v<N>/
+/private/tmp/claude/<repo-slug>/spikes/<slug>/v<N>/
   QUESTION.md      <- the question, the fixture, and what would settle it
   fixture.<ext>    <- the input both implementations see, identical
   a-<name>.<ext>   <- implementation A, named for the approach, not the letter

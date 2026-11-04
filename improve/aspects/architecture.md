@@ -10,7 +10,7 @@ Surface architectural friction and propose **deepening opportunities** — refac
 
 1. Read `docs/CONTEXT.md` (domain glossary + architecture vocabulary) and any ADRs in `docs/adr/` that touch the areas you walk.
 2. Walk the codebase yourself — do not spawn an Explore sub-agent, you are already the fan-out. Note where you experience friction, using the five questions in ARCHITECTURE.md's explore pass.
-3. Apply the **deletion test** to anything you suspect is shallow, and the **zero-callers** rule to any compatibility path you find.
+3. Apply the **deletion test** to anything you suspect is shallow, and the **zero-callers** rule to any compatibility path you find. For each subsystem, name the standard architecture or maintained tool for that problem and judge any partial fit by ARCHITECTURE.md's rule: a gap the code can fill around the tool, or a gap this codebase's own shape created.
 4. Return findings.
 
 ## Aspect-specific rules

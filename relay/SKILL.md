@@ -1,6 +1,6 @@
 ---
 name: relay
-description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`. Requires HERDR_ENV=1."
+description: "Hand the next body of work forward into a clean context in the SAME pane: clear this session and feed it a distilled prompt. Invoked by `wrap-up` and `implement`, and by the user typing 'relay', 'relay into a new session' or 'relay and <task>'. Requires a herdr pane (HERDR_ENV=1) or a Wheel terminal pane (WHEEL_ENV=1)."
 ---
 
 # Relay
@@ -17,76 +17,84 @@ The two share no mechanism. Relay never touches the target ladder; dispatch neve
 touches `/clear` or the Stop hook.
 
 **One seam:** when the next body of work needs a different checkout, relay cannot
-carry it — a pane's cwd is fixed for its lifetime. Call `dispatch` for that case
-instead of reimplementing it, then relay this pane to the orchestration/watch role.
+carry it — a pane's cwd is fixed for its lifetime. When the user asked for a relay, say so in
+one line and ask whether to `dispatch` it instead; never dispatch in place of a relay they
+named. When relay chose itself, call `dispatch` rather than reimplementing it, then relay this
+pane to the orchestration/watch role.
 
-## Preconditions — check these before proposing anything
+## Preconditions — check these before writing the marker
 
-1. `test "${HERDR_ENV:-}" = 1`. Outside herdr there is no pane to clear. Say so and
-   stop — today there is no mechanism for carrying work forward outside herdr, so the session
-   keeps its context and either pushes on or ends normally. Do not invent a substitute.
+1. `test "${HERDR_ENV:-}" = 1 || test "${WHEEL_ENV:-}" = 1`. Outside herdr and Wheel there is
+   no pane to clear. Say so and stop — there is no mechanism for carrying work forward outside
+   them, so the session keeps its context and either pushes on or ends normally. Do not invent
+   a substitute.
 2. This pane's own checkout is **finished and landed** — `wrap-up` has committed,
    pushed and landed. A relay clears the context; anything uncommitted in *this*
-   checkout is gone. Never relay over a dirty working tree.
-
-   This does not forbid relaying while passes dispatched from this session are still
-   running, or while a branch they returned sits unlanded in its own worktree — that
-   is live state in a different checkout, not dirty work in this one, and it is
-   carried forward by the in-flight manifest (below), not left behind.
+   checkout is gone. Never relay over a dirty working tree — see §Relaying mid-pass
+   below for the one case that is clean enough to allow.
 
 ## Never fire blind
 
-Relay always proposes and waits, with one exception: the `auto` token (passed by
-a queued `implement`), which takes every default without asking.
+Relay always proposes and waits, with one exception: an `implement … auto` run
+([§Auto](#auto)), where the user's one command already covered every hop.
 
 The proposal is **one message, plain markdown, one free-text reply**. Never
 `AskUserQuestion`, never a chip-picker — the answer is free-form (numbers, ranges,
-"go", "B skip 3", "no relay"), which a fixed-option schema cannot express.
+"go", "go iron-out label:client", "no relay"), which a fixed-option schema cannot express.
 
-## Step 1 — decide whether there is a next body of work at all
+## Ending
 
-A relay that manufactures busywork is worse than no relay. Stop conditions, checked
-in order — if any holds, **decline the relay**, say which condition fired in one
-line, and let the session end normally with the pane intact:
+The one way a run ends. `wrap-up` Phase 6 calls it; no other procedure ranks or proposes next
+work. It never ranks by hand and never offers lettered
+next-work options: the tracker's answer is `next-work`'s verdict.
 
-- The tracker (`gh` or beads, whichever the repo uses) has no open items in scope.
-- Every remaining item needs the user in the loop — an HITL-labelled ticket, an open
-  question, a decision, a credential, a device.
-- The user's stated intent for the session is complete and nothing follows from it.
+1. **Run `next-work`.** `~/.claude/tools/next-work <repo> --focus "<focus>"`, where `<focus>` is
+   the selector the run started with, exactly as typed, or `ready` when none was given. Add
+   `--auto` in an `auto` run. A free-text focus is resolved here with `issues next focus=`, and
+   the ids go in `--scope-ids`. On a GitHub-tracked repo, run `gh issue list --state open`
+   beside it. The focus is resolved again at every hop, so beads filed mid-run join it.
+2. **Print its output in chat**, unedited: the session line, the scope, the ranked rows and the
+   `Next: <command> — <reason>` line with the epic and beads indented under it. The `Next:` line
+   is the pick. Never cut the output down to the `Next:` line: the bead list under it is what the
+   user approves. Under it, in plain words, say what the epic is for in one sentence and what
+   each listed bead would change in one line apiece; a title is not that description. A message
+   written without this output and those lines is not ready to send.
+3. **Slate, then `Next:`.** When the caller has a follow-up slate (`wrap-up` Step A, a swarm's
+   or iron-out's own), it goes under the output as slate rows per
+   [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row, and the `Next:` line comes last.
+4. **Close with the hatch** from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, byte-for-byte:
+   - next work pending: "Type `go` to apply my picks and continue into <the `Next:` command>,
+     or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`)."
+   - no next work (verdict `none`, or `focus finished` in an auto run): "Type `go` to apply my
+     picks as described, or answer per row (`1 fix, 3 skip, rest file`)." — `go` alone, no
+     `park`.
 
-Otherwise, build 2–3 candidates. Rank them on all four of these, not just the tracker:
+   `go` takes every pick and relays into the `Next:` command. `park` applies the same
+   dispositions and ends the turn with the pane intact. A typed override replaces the command
+   and keeps everything else: `go iron-out label:client` relays into
+   `issues iron-out label:client` and carries that selector as the new focus. `no relay` stays
+   this skill's redirect word: apply the follow-up dispositions, end the turn, clear nothing.
+5. **Session limits change what `go` does, never the output.**
+   - Outside herdr and Wheel (Precondition 1 fails) there is no pane to clear: `go`
+     continues in this context. The tool already replaces a `swarm` verdict with the top bead's
+     `implement` pass.
+   - In a linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`), print the
+     `Next:` line as information, with no `go` into it and no `park`; follow-ups stay available
+     and close with the no-next-work sentence. A worktree is retired when its pass lands, so no
+     new work starts in it.
+6. **Apply the follow-up dispositions** (Step 3), then write the marker (Step 4) for the
+   `Next:` command, carrying the `Focus:` line.
 
-- **Stated intent** — the feature set, milestone, or goal the user named. Highest weight.
-- **What just landed** — the natural next slice of the thing that was finished.
-- **Cheap unblocker first** — a small piece of X that makes Y faster, even when Y is
-  the stated goal. Say so explicitly when you rank one of these first.
-- **Tracker state** — open issues, dependency frontier.
-
-## Step 2 — the proposal
-
-One message, same shape as [`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step A's
-follow-up-plus-next-work ask, which this skill's own proposal follows: the follow-up
-candidates as slate rows per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row, then, when
-proposing a next body of work, **question 2** per §Option set, with options `2A` / `2B` /
-`2C`, pick marked ` — my pick`, no `(default)` marker, then the canonical park hatch from §Hatch
-naming the picked next work. `no relay` is this skill's own per-row redirect word on top of that
-hatch — it declines the relay half of a `go` without changing any follow-up disposition.
-
-Plain markdown, no fenced block — a code fence renders as literal text and reads like
-output rather than a question.
-
-`go` accepts everything, including the picked next-work option, and relays into it. Anything
-else is a free-text override; apply it and, when the override changes what the next prompt
-should say, restate the resulting plan in one line before proceeding.
-
-`no relay` means: apply the follow-up dispositions, then end the turn normally. The
-pane stays. Nothing is cleared.
+Preconditions 2 and the worktree seam gate the marker, never the printed output. Precondition 1
+stops only the pane clear: outside herdr and Wheel, §Ending still prints the verdict and `go` continues in
+this context. When the user asked for a relay by name and the verdict is `none`, name that in
+one line and let them choose: relay anyway, `dispatch`, or end here.
 
 ## Step 3 — apply follow-up dispositions
 
 **fix** — do it in this session, commit, push. Do this *before* writing the
 marker, since the relay is going to erase your ability to.
-**file** — `backlog file` skill, filed to the tracker.
+**file** — `issues file` skill, filed to the tracker.
 **skip** — silent. Do not mention it again.
 
 ## Step 4 — write the marker
@@ -95,6 +103,12 @@ The prompt is the artifact. **Do not write a separate summary document** — the
 is the whole of what the next session needs, and nothing else writes one on the user's behalf.
 
 The marker is transport, not a record: written, consumed by the Stop hook, deleted.
+
+**Stop this session's subagents first.** A clear erases the memory of every subagent this
+session spawned but leaves each one registered, so the next context answers "is anything
+still running?" wrongly. Run `ListAgents`, `TaskStop` every subagent in it that is not
+`killed` (`completed` included: a subagent can hand back its report and stay open), then run
+`ListAgents` again and name any that are still open in the one line Step 5 says.
 
 **Get the directory from `~/.claude/tools/repo-slug --path`**, which prints
 `/private/tmp/claude/<repo-slug>` and creates it. Never work the slug out yourself: it and
@@ -129,95 +143,33 @@ Redact secrets, hostnames, and personal infrastructure. Never write those into a
 <task, 1–2 sentences>
 
 Repo: <absolute root>. <files / subsystem>.
+Focus: <selector as typed, or `ready`>
 
 Context you can't get from the code:
 - <decision and why>
 - <alternative ruled out and why>
 
-Start by: <exact first action>
+Start by: <the Next: command from §Ending, or the typed override>
 
 When it's done and landed, run /wrap-up.
 ```
 
-## Relaying mid-run — the in-flight manifest
+## Relaying mid-pass
 
-A session that dispatches passes also lands them — that is the architecture, and it
-makes this session the bottleneck. Relay is its only valve. But a relay that carries
-only "the next body of work" drops the state that is genuinely in flight: passes
-still running, and branches already returned but not yet landed. Neither is next
-work — both are live state, in worktrees this session alone knows about. Lose them
-and the worktrees still sit on disk, but nothing in the fresh context knows they
-exist, and `tools/git-sweep.sh` only collects branches it can prove merged — an
-unlanded branch is stranded, and its commit is the only copy of that work.
+`implement` runs a pass itself, synchronously, in one session — there is no separate
+agent it dispatched that could still be running elsewhere, so there is nothing to poll
+and no return value that could go missing. What can still be genuinely in flight is
+this session's own unfinished pass: a branch with some commits already on it (per
+`implement`'s commit-by-branch rule) but not yet through the gate.
 
-So a mid-run relay appends a manifest section to the marker, one entry per pass that
-is either running or returned-but-unlanded:
-
-```markdown
-## In-flight passes
-
-- item: <id>
-  branch: <branch>
-  worktree: <absolute path>
-  pass: running | returned
-  base: <sha the pass started from>   # when pass: running
-  run_id: <id>                 # breadcrumb for a human reading /tasks — a fresh
-                                # session cannot query it; when pass: running
-  ok: true | false              # when pass: returned
-  halted_on: <reason or ->      # when pass: returned
-  verdict: <absolute path or -> # when a verdict file was written
-  recheck: <command>            # repeat per not-yet-run recheck command
-  recheck: <command>
-```
-
-**The refusal.** A pass whose agent has not returned has no outcome this
-session can write — relay does not guess it and does not sit and wait for it either.
-A subagent belongs to the session that spawned it, so a fresh session cannot query
-one; an agent id in the manifest is a breadcrumb for a human, never an instruction to
-the fresh session. Record the pass as `pass: running` with its
-worktree and the base sha it started from, and put these four on-disk checks in the
-prompt's **First action** field (Step 4, item 4) so they are the first thing the
-fresh session does:
-
-- `git -C <worktree> log --oneline <base>..HEAD` — did a commit appear after the relay?
-- `git -C <worktree> status --short` — a dirty tree means it stopped mid-edit
-- `ls $(~/.claude/tools/repo-slug --path <worktree>)/verify/` — was a verdict written?
-- `pgrep -f <worktree>` — is anything still working in it?
-
-Those four answer whether the pass finished and whether its work is safe, but they
-cannot recover its return value — a relay loses `recheck`, `blockers`, `followups`,
-and `review` for any pass still running at relay time. A pass with a commit and a
-verdict on disk is verifiable from those artifacts; one with neither is work to redo.
-If a pass is in flight and this session cannot even name its worktree — visibility
-genuinely lost, not just still running — refuse the relay: say which pass it cannot
-account for and stop rather than clearing over it.
-
-This applies to `relay auto` too. A queued/mid-run `implement` skips Step 2's
-proposal, but the manifest is not one of the defaults it gets to skip — every running
-or unlanded pass still gets an entry.
-
-**Worked example** — one pass still running, one returned and unlanded:
-
-```markdown
-## In-flight passes
-
-- item: cc-7qz
-  branch: cc-7qz
-  worktree: /Users/pierce/.worktrees/claude-skills/cc-7qz
-  pass: running
-  base: 3f1a76d2c9e8b4a015f6d7c2e1b0a9f8d7c6b5a4
-  run_id: run_01HXYZ9K2M   # breadcrumb only — a fresh session cannot query this
-  recheck: bash /Users/pierce/.claude/tools/run-tests.sh
-
-- item: cc-8rf
-  branch: cc-8rf
-  worktree: /Users/pierce/.worktrees/claude-skills/cc-8rf
-  pass: returned
-  ok: true
-  halted_on: -
-  verdict: /private/tmp/claude/claude-skills/verify/cc-8rf.json
-  recheck: bash /Users/pierce/.claude/tools/run-tests.sh
-```
+Precondition #2 above already governs this: relay refuses over a dirty working tree.
+So a mid-pass relay is only possible when the branch is currently clean — between two
+of the pass's own commits, on a non-default branch or in a worktree, never mid-edit on
+the default branch (nothing there is committed until `wrap-up` runs). When it is
+possible, the marker's **First action** (Step 4, item 4) names the branch and worktree
+and says to resume `implement` on that item from where its own git history shows it
+left off — the fresh session re-verifies rather than trusting anything about the state
+it inherits.
 
 ## Step 5 — carry the brief forward and stop
 
@@ -227,26 +179,52 @@ work on. Nothing else — no recap, no summary, no "let me know if".
 The Stop hook (`~/.claude/hooks/relay-stop.sh`) sees the marker, consumes it, and
 detaches `~/.claude/hooks/relay-send.sh`, which waits for this agent to go idle,
 clears the pane, waits for the session id to change, and delivers the prompt to the
-new session. You do not do any of that yourself, and you never call `herdr` for it —
+new session. You do not do any of that yourself, and you never call `herdr` or `wheel` for it —
 doing it inline sends input into a session that is still busy, and Claude Code drops
 it.
 
 If the clear fails, the sender prompts into the existing context instead of losing
 the work, and logs why to `/private/tmp/claude/<repo-slug>/relay/relay.log`.
 
-## `relay auto`
+## Auto
 
-Skips Step 2 entirely: no proposal, no halt. Files every follow-up (never fix,
-never skip), writes the marker, ends the turn.
+Invoked by `wrap-up` Step D inside an `implement … auto` run
+([`../implement/AUTO.md`](../implement/AUTO.md)), and by `swarm` §6 when the swarm ends an auto run. There is no proposal and no halt, and
+`wrap-up` already settled the follow-ups (Step 3 does not run again).
 
-Two callers, and they differ in who writes the prompt:
+0. **Run `next-work` with `--auto`** per §Ending step 1 and follow its `Next:` line
+   ([`../implement/AUTO.md`](../implement/AUTO.md) §Routing each hop lists every form). A session
+   whose environment carries `SWARM_WORKER` skips this skill entirely: its pass ends after its one
+   bead.
+   - In an `iterate` run, any `implement` or `swarm` verdict continues with steps 1 and 3, and
+     `Start by:` is `iterate <focus>` ([`../iterate/SKILL.md`](../iterate/SKILL.md)).
+   - `Next: implement <id>`: continue with steps 1 and 3 below; `Start by:` is
+     `implement <id> auto`, the verdict's own command plus `auto`.
+   - `Next: swarm <focus>`: continue with steps 1 and 3, but `Start by:` is `swarm <focus>`, the
+     verdict's own command. The brief's run-state block is what the swarm reads its budget from
+     ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget). In a linked worktree no swarm can
+     start ([`../swarm/SKILL.md`](../swarm/SKILL.md) §1): continue in this context as
+     `implement <id> auto` for the top bead `next-work` ranked, and say why in one line.
+   - `Next: issues iron-out <focus>`: the run ends here, not relayed. Print the auto report
+     ([`../implement/AUTO.md`](../implement/AUTO.md) §The report); its last line is `Next: issues
+     iron-out <focus>`.
+   - `Next: none — …`: the run ends with the auto report, its last line the `none — …` verdict.
+1. **Stop when the count is spent.** The run-state block's `Used` at or past its `Limit` ends the
+   run: decline the relay, stop this session's subagents as Step 4 says, and print the auto report
+   ([`../implement/AUTO.md`](../implement/AUTO.md) §The report). `all` never runs out.
+2. **The next item is the verdict's.** Never re-rank: `Start by:` carries the bead or focus
+   `next-work` named, with `auto parked` items already dropped by its scope. Of the checks above,
+   only Preconditions #1 (`HERDR_ENV` or `WHEEL_ENV`) and §Ending's linked-worktree condition apply, and either
+   one continues the run in this context rather than ending it. A remainder that needs the user
+   ends the run with the report, not a declined relay.
+3. **Write the marker per Step 4, with the run-state block first in the brief**, copied as it
+   stands ([`../implement/AUTO.md`](../implement/AUTO.md) §Run state), then a `Next:` line (`Next: <id>
+   "<title>"` for an implement verdict, `Next: swarm <focus>` for a swarm verdict). Then the usual
+   brief: task, where it lives, constraints not in the code, and the `Start by:` above, ending
+   with `When it's done and landed, run /wrap-up.` for an implement verdict. The block's `Focus:`
+   line is the run's selector as typed. The next session
+   reads `Limit` and `Used` from the block, so the count survives the clear.
+4. **End the turn** per Step 5.
 
-- **A multi-item `implement` run hands you the brief.** It knows what the rest of the run
-  is — the remaining queue, the item count, the frontier — and none of it is
-  rediscoverable from the tracker. Write its brief through to the marker; do **not**
-  run Step 1's ranking and do not substitute your own pick.
-- **Everyone else** — run Step 1, take the top-ranked candidate, write it up per Step 4.
-
-The Step 1 stop conditions still apply either way, and they are how an `auto` chain
-terminates. An empty tracker or an all-HITL remainder ends the chain — it does not
-invent work. A caller-supplied brief that says the run is over ends it too.
+Outside herdr and Wheel, or in a linked worktree, there is no pane to clear: the run continues in this
+context, keeping the same block current.

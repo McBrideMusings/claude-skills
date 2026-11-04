@@ -1,12 +1,18 @@
+---
+run: always
+---
+
 # Architecture fit lens
 
-Evaluate whether the *diff* sits correctly in the existing structure. This is a read-only surface check on the change, not a full architecture review — for a dedicated deepening pass, the `improve` skill is the heavier tool, and this brief should point the reader there when a finding clearly warrants it. Use the architecture vocabulary from `improve`'s `ARCHITECTURE.md` (module, interface, depth, seam — not "component/service/boundary"), and judge the change on these five lenses:
+Evaluate whether the *diff* sits correctly in the existing structure. This is a read-only surface check on the change, not a full architecture review — for a dedicated deepening pass, the `improve` skill is the heavier tool, and this brief should point the reader there when a finding clearly warrants it. Use the architecture vocabulary from `improve`'s `ARCHITECTURE.md` (module, interface, depth, seam — not "component/service/boundary"), and judge the change on these six lenses:
 
 - **Fit** — does the change respect existing module/layer responsibilities, or introduce cross-layer coupling (e.g. routing domain logic through the UI layer)?
 - **Abstraction level** — are new interfaces/types at the right level of generality, or do they leak implementation detail / over-generalize for one caller?
 - **Pattern consistency** — does it follow the patterns already in use here (how errors are represented, how state is held, how side effects are isolated), or invent a one-off?
 - **Structural scalability** — is there a *structural* (not algorithmic) decision that becomes painful at 10× the code/load?
 - **Ownership clarity** — is it obvious which module owns each new piece of logic, or is responsibility ambiguous?
+- **A new host dependency** — a process spawn (`Command::new`, `exec`, `spawn`), a `PATH` lookup, or a hard-coded path under `/Applications`, `/opt`, `/usr/local` or a home folder that the diff adds. It is a finding unless the change also locates it through configuration and shows its state in the product. Name the dependency, what breaks without it, and where the product would show it. A host dependency is anything the code expects on the user's machine or network instead of in its own build; the default is none, and an optional integration passes only when the core works without it and the product detects it and shows its state.
+*Knowledge base: search it for "host dependencies". If you have none, skip this line and don't mention it.*
 
 Architecture findings are **always design calls — never style nits**, and are in scope even when the file they concern wasn't directly modified (a layer violation introduced by a single new import is still a layer violation). Tag each `[architecture · <severity>]`. Surface them separately from bug findings, and use the **Fix (design call):** framing in the report entry.
 

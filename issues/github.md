@@ -4,9 +4,12 @@ The default for any repo with a GitHub remote and an authed `gh`. IDs are issue 
 written `#42` in prose).
 
 **Which label to attach is never a GitHub question** — the vocabulary is
-[`labels.md`](labels.md) (`area:` / `mode:` / `platform:`). GitHub needs each one created with
+[`labels.md`](labels.md) (flat words, from the repo's `.beads/labels.toml`). GitHub needs each one created with
 `gh label create` before first use, and its nine default labels (`enhancement`, `bug`,
 `question`, `wontfix`, …) are duplicates of type/status and get deleted on adoption.
+
+A GitHub issue title may carry a category prefix such as `[bug]`, because GitHub has no type
+column to show it. It is optional. A bead never does; see [`beads.md`](beads.md) §Types.
 
 ## Verb table
 
@@ -60,7 +63,7 @@ blockedBy,blocking` directly.
 not compute ready fronts, detect cycles, find orphans, flag wrong-direction edges, or report
 maximum parallelism. Beads does all of that (`bd swarm validate`, `bd ready`, `bd orphans`,
 `bd doctor --check=conventions`). That gap is the whole reason beads is the default backend and
-why `backlog shape` offers `bd init` on a GitHub-only repo rather than reproducing the graph work
+why `issues organize` offers `bd init` on a GitHub-only repo rather than reproducing the graph work
 here.
 
 ## Attaching media
@@ -100,12 +103,12 @@ or write the body to a file under `/private/tmp/claude/<repo-slug>/` and pass `-
 Several skills branch on whether the repo is the user's own:
 
 ```bash
-gh repo view --json owner --jq .owner.login    # vs
-gh api user --jq .login
+~/.claude/tools/repo-tier    # owned | collaborative | unlisted
 ```
 
-Equal → owned (commit to `main`, close issues freely). Different → collaborative (feature
-branches, PRs, and **never** close issues the user doesn't own).
+`owned` → commit to `main`, close issues freely. `collaborative` or `unlisted` → feature
+branches, PRs, and **never** close issues the user doesn't own. That tool is the only place
+that decides it; never compare an owner to a login or a name here.
 
 ## Pull requests
 

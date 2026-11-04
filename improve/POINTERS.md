@@ -48,7 +48,7 @@ Pointer wording is one of the few writing rules with a real success metric. Read
 pointer target is measurable from the transcript corpus:
 
 ```
-python3 ~/.claude/skills/audit-session/pointer_rate.py
+python3 ~/.claude/skills/retro/pointer_rate.py
 ```
 
 Baselines on this machine, measured over 9,363 sessions with three or more assistant turns:
@@ -67,7 +67,7 @@ Two things follow, and both are load-bearing:
   fires, not behind a `CLAUDE.md` line.
 - **The 0–68% spread is wording and structure, not mechanism.** Read rate falls as the
   pointing document's own body grows: a 3-sibling skill 68%, a 2-sibling skill 51%
-  (measured on a skill since folded into `backlog`, whose own sibling count has changed and
+  (measured on a skill whose own sibling count has since changed and
   is not re-measured here), `review` (15) 27%, `herdr` (40) 0%. A document big enough to act
   on without opening anything gets acted on without opening anything. **Thinness is the
   forcing function** — it is why a knowledge skill's body is a file map and nothing else.

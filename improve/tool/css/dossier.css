@@ -46,10 +46,10 @@ article h3{font-weight:400;font-size:23px;line-height:1.3;margin:0 0 12px}
 /* Chips are solid fills with white text — an outlined chip in accent-on-paper reads as
    low-contrast decoration at 11px. Fill carries the label; the two fills are the only
    two colours on the page. */
-.strength{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+.impact{display:inline-block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
           background:var(--soft);border:1px solid var(--soft);color:#fff;border-radius:1px;
           padding:2px 8px;margin:0 6px 0 0;font-style:normal}
-.strength.strong{background:var(--accent);border-color:var(--accent);color:#fff}
+.impact.p0,.impact.p1{background:var(--accent);border-color:var(--accent);color:#fff}
 .files{margin:14px 0 0;padding:0;list-style:none}
 .files li{display:inline-block;font-size:12px;color:var(--ink);background:var(--paper);
           border:1px solid var(--line);border-radius:1px;padding:2px 7px;margin:0 6px 6px 0}

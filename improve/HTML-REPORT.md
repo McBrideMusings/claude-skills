@@ -15,7 +15,7 @@ Write a **body fragment** — content only, no doctype, no `<head>`, no CSS. The
   --out /private/tmp/claude/<repo-slug>/reports/<slug>.html
 ```
 
-(Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, any `<link>`, `@import url()`, CDN reference, webfont, or remote image — the hermetic rule is enforced, not remembered. Every path absolute; a relative `--out` or `--fragment` is refused. Resolve the repo root with `git rev-parse --show-toplevel` in its own Bash call.
+(Survey report: title it "Improvement survey — {repo name}".) The tool rejects any network request, any `<link>`, `@import url()`, CDN reference, webfont, or remote image — the hermetic rule is enforced, not remembered. Every path absolute; a relative `--out` or `--fragment` is refused. `/private/tmp/claude/<repo-slug>` is the directory `~/.claude/tools/repo-slug --path` prints.
 
 **Screenshot it and look at it.** Check specifically for overlapping SVG text in the before/after diagrams. Then hand it over with a bare `open <absolute-path>` on its own line.
 
@@ -45,8 +45,8 @@ Repo name, date, and a compact legend: solid box = module, dashed line = seam, c
 Each candidate is one `<article>`:
 
 - **Title** — short, names the deepening (e.g. "Collapse the Order intake pipeline").
-- **Badge row** — recommendation strength as a `.strength` chip: `Strong`, `Worth exploring`, `Speculative`. Chips are solid fills with white text, never an outline — an outlined chip at 11px reads as low-contrast decoration. `Strong` fills with the accent; the rest fill muted. Severity beyond that is carried by border style (dashed, weight), never a third hue. Optionally a dependency-category tag (`in-process`, `local-substitutable`, `ports & adapters`, `mock`), which takes the same chip.
-- **Lens** — one line naming the rule, craft lens, domain cell, or lateral technique that produced the finding, as an openable path plus the section (`ARCHITECTURE.md § deletion test`, `ref-gui/opportunities.md § motion`, `lateral/techniques/worst-idea.md`). The aspect eyebrow says which agent ran; this says which sentence fired. Never just the aspect name. **This is a citation, not a route** — the reader clicks it to check the claim, so it stays a path to the exact file and section even where the skill reaches that knowledge by invoking `ref-architecture` or `lateral <technique>`. Do not rewrite these into skill invocations.
+- **Badge row** — the finding's impact as an `.impact` chip with a `p0`–`p3` class: `<span class="impact p1">P1</span>`. Chips are solid fills with white text, never an outline — an outlined chip at 11px reads as low-contrast decoration. `P0` and `P1` fill with the accent; `P2` and `P3` fill muted. Optionally a dependency-category tag (`in-process`, `local-substitutable`, `ports & adapters`, `mock`), which takes the same chip.
+- **Lens** — one line naming the rule, craft lens, domain cell, or lateral technique that produced the finding, as an openable path plus the section (`ARCHITECTURE.md § deletion test`, `gui opportunities.md § motion`, `lateral/techniques/worst-idea.md`). The aspect eyebrow says which agent ran; this says which sentence fired. Never just the aspect name. **This is a citation, not a route** — the reader clicks it to check the claim, so it stays a path to the exact file and section even where the skill reaches that knowledge by invoking `lateral <technique>`. Do not rewrite these into skill invocations.
 - **Files** — monospaced pill list (`.files li`).
 - **Before / After diagram** — the centrepiece, a `.ba` grid of two hand-authored inline SVGs. See patterns below.
 - **Problem** — one sentence. What hurts.

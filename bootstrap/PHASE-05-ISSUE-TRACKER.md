@@ -1,8 +1,8 @@
 # Phase 05 — Issue Tracker
 
 Resolve which issue backend this repo uses, offer to set up beads if it has none, and record the
-answer so every downstream skill (`backlog spec`, `backlog next`, `implement`,
-`backlog shape`, `backlog file`, `wrap-up`) picks it up without re-deriving it.
+answer so every downstream skill (`issues spec`, `issues next`, `implement`,
+`issues organize`, `issues file`, `wrap-up`) picks it up without re-deriving it.
 
 ## Step 1 — Detect
 
@@ -16,7 +16,7 @@ Invoke `issues` and run its detection step. It gives one of:
 | **blocked** | `.beads/` exists but `bd` is not on PATH |
 
 **Blocked** → stop this phase, tell the user `brew install beads`, record nothing, move on to
-Phase 07. Don't guess at a backend when the real one is unreadable.
+Phase 08. Don't guess at a backend when the real one is unreadable.
 
 ## Step 2 — Act on the state
 
@@ -72,8 +72,8 @@ their repo. Ask once:
   bd github sync --pull-only --dry-run
   ```
   Show the dry-run result, then run it for real without `--dry-run`. Pulled issues carry their
-  GitHub number as `--external-ref gh-<n>`, so `bd show` still points back. Then apply the JSONL
-  export standard above.
+  GitHub number as `--external-ref gh-<n>`, so `bd show` still points back. Then apply the
+  no-tracked-export standard above.
 
   Then **wire the dependencies the import can't see.** GitHub has no dependency edges, so
   "Blocked by #N" lives in issue bodies as prose. Grep the imported descriptions for
@@ -93,8 +93,8 @@ Same question, shorter, since there's nothing to migrate:
 > No issue tracker here. Beads works with no remote and no account, and gives a dependency-aware
 > ready queue. Run `bd init`? (yes / no — this repo stays without a tracker)
 
-- **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`, then apply the JSONL export
-  standard above.
+- **yes** → `bd init --quiet --skip-agents --prefix <repo-name>`, then apply the
+  no-tracked-export standard above.
 - **no** → record that the repo has no tracker. Every skill that files work will halt on it
   until one exists; there is no file-based fallback.
 
@@ -130,12 +130,5 @@ even on a repo where nothing else in this phase needed changing.
 
 Step 2 of `issues`'s detection reads this section and trusts it over auto-detection, so it is how
 a repo pins a choice that detection would otherwise get wrong.
-
-## Step 4 — Concurrency note
-
-If the repo is one the user runs `/implement swarm` against, say once: beads' default embedded engine
-serves **one writer at a time**, and every worktree shares the main repository's `.beads`. Either
-keep tracker writes on the orchestrator or re-init with `bd init --server`. Don't change it for
-them — just name it.
 
 Then proceed to [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md).

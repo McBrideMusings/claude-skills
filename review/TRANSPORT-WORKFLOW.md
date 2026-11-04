@@ -2,9 +2,10 @@
 
 An override for **Phases 04 → 04b → 05 → 05b → 06 → 06b → 06c only** — the lens fan-out, the best-practice verification, the scoring, the reproduction gate, the filter, and fix authoring. Everything before and after stays exactly where it is.
 
-Selected by the `workflow` token in the arguments: `review workflow`, `review dual workflow`. **That token is the human's request for the `Workflow` tool** — do not reach for it otherwise. No token means the session transport, which is [REVIEW-CORE.md](REVIEW-CORE.md) unchanged.
+**This is the default transport on every route.** Invoking `review` is the request for the `Workflow` tool. The session transport — [REVIEW-CORE.md](REVIEW-CORE.md) Phases 04–06c run in this context — runs in exactly two cases:
 
-**Repo mode inverts the default.** `review repo` alone selects this transport — repo mode is the context-heaviest route there is, and the fan-out benefits most from findings never entering this context until the report. `workflow` is still valid there, as a redundant explicit confirmation (`review repo workflow`). The `session` token forces the session transport back: `review repo session`.
+1. **The `session` token was given:** `review session`, `review dual session`, `review repo session`.
+2. **`Workflow` is not in your tool list.** Check your own available tools, not where you think you are running. A review started from inside a workflow agent (wrap-up's quality stage) or `implement`'s own blind review step is the usual case. Run the session transport and say so in one line: *"`Workflow` isn't in this agent's tools, so the lenses run here."*
 
 ## What stays in the session, and why
 
@@ -17,12 +18,12 @@ Selected by the `workflow` token in the arguments: `review workflow`, `review du
 
 **RULE 0 is not weakened by this transport.** Nothing inside the workflow asks the user anything, because nothing inside it ever needed to — every question in a review pass happens before Phase 04 or after Phase 06. If a lens turns out to need the user, that is a Phase 03-shaped problem (find the spec, confirm the scope) and it gets resolved in the session before launching.
 
-`review dual`'s cross-vendor delegate runs in a Terminal window through the `dispatch` router, **outside** the workflow, concurrently with it. Reconcile the two afterwards exactly as REVIEW-CORE.md says.
+`review dual`'s cross-vendor worker runs in a Terminal window through the `dispatch` router, **outside** the workflow, concurrently with it. Reconcile the two afterwards exactly as REVIEW-CORE.md says.
 
 ## What it buys
 
 1. **The barrier between Phase 04 and Phase 05 disappears.** Today every lens must return before scoring starts, so the slowest lens holds up the scoring of the fastest one's findings. `pipeline()` starts scoring a lens's findings the moment *that* lens returns.
-2. **The findings never enter this context until the report.** Today nine-plus lens reports at up to 400 words each, plus a scoring result per issue, all land in the parent window before anything is filtered. Under this transport only the surviving findings come back. This is the bigger win, and it is why `review repo` — the context-heaviest mode there is — benefits most.
+2. **The findings never enter this context until the report.** Today nine-plus lens reports, plus a scoring result per issue, all land in the parent window before anything is filtered. Under this transport only the surviving findings come back. This is the bigger win, and it is why `review repo` — the context-heaviest mode there is — benefits most.
 
 ## The script
 
@@ -57,7 +58,7 @@ const fixed = await agent(FIXES(survivors, args.intent, args.scope), { label: 'f
 return survivors.map(f => ({ ...f, ...(fixed?.byId?.[f.id] ?? {}) })).filter(f => !f.retracted)
 ```
 
-- **`args.lenses`** is assembled in the session, one entry per lens that REVIEW-CORE.md Phase 04 says should run — the `axes/` files that survived gating, the always-on non-scored one, and any platform/domain lens detected. Each entry's `brief` is that file's content **plus every forwarded directive Phase 04 already requires**: the writing-style rules verbatim, `IS_DRAFT`, the spec source, the exact diff scope, the under-400-words cap, and the injection-defense directive. Pass it as real JSON, never a JSON-encoded string.
+- **`args.lenses`** is assembled in the session, one entry per lens that REVIEW-CORE.md Phase 04 says should run — every Phase 03d `run` record and every accepted offer, `axes/` and label lenses alike, plus the always-on non-scored one. Each entry's `brief` is that file's content **plus every forwarded directive Phase 04 already requires**: the writing-style rules verbatim, `IS_DRAFT`, the spec source, the exact diff scope, the under-400-words cap, and the injection-defense directive. Pass it as real JSON, never a JSON-encoded string.
 - **The injection-defense directive is not optional here either.** Workflow agents inherit no more of this skill's context than Agent-tool subagents do.
 - **Models are pinned per stage** exactly as REVIEW-CORE.md pins them — Sonnet for lenses, Haiku for scoring. `agent()`'s enum includes `fable`; it is never used.
 - **The `≥ 75` filter is Phase 06** and stays in the script so sub-75 findings never travel. Phase 06's inline-scorer clause does not apply — the fan-out ran by definition.
@@ -67,9 +68,9 @@ return survivors.map(f => ({ ...f, ...(fixed?.byId?.[f.id] ?? {}) })).filter(f =
 
 ## Phase 04b, which does not fit the pipeline
 
-The best-practice lens emits *flags* needing live doc lookups, and it is gated off for most diffs. Two options, in order of preference:
+The best-practice lens emits *flags* needing live doc lookups, and Phase 03d skips it on most diffs. Two options, in order of preference:
 
-1. **Leave it in the session.** If the best-practice lens is gated off — the common case — there is nothing to do. If it ran, hold its flags out of the workflow's return and verify them in the session against live docs, then score them there.
+1. **Leave it in the session.** If Phase 03d skipped the best-practice lens — the common case — there is nothing to do. If it ran, hold its flags out of the workflow's return and verify them in the session against live docs, then score them there.
 2. **Give it its own stage** with WebSearch/WebFetch available to the agent, between the lens stage and the score stage, for that one lens only.
 
 Do not let a flag reach the report unverified because the transport made verification awkward. An unverified flag is not a finding.

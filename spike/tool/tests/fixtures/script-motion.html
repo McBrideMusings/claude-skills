@@ -1,0 +1,33 @@
+<style>
+.sm { width: 280px; font: 16px system-ui; }
+.sm-spin { width: 24px; height: 24px; margin: 0; background: #2563eb; animation: sm-slide 1000ms linear both; }
+@keyframes sm-slide { from { transform: translateX(0); } to { transform: translateX(200px); } }
+.sm-count { height: 60px; line-height: 60px; font-size: 48px; font-variant-numeric: tabular-nums; transition: color 300ms linear, letter-spacing 300ms linear; }
+.sm-count.low { color: #dc2626; letter-spacing: 8px; animation: sm-pulse 400ms linear both; }
+@keyframes sm-pulse { from { opacity: .2; } to { opacity: 1; } }
+.sm-ticks { height: 20px; line-height: 20px; }
+.sm-bar { height: 12px; width: 280px; background: #16a34a; transform-origin: left; }
+@media (prefers-reduced-motion: reduce) { .sm-spin, .sm-count.low { animation: none; } .sm-count { transition: none; } }
+</style>
+<template data-variant="Clock" data-state="Countdown" data-video-duration="1200"><div class="sm" id="sm">
+  <div class="sm-spin"></div>
+  <div class="sm-count" id="sm-count">1.2</div>
+  <div class="sm-bar" id="sm-bar"></div>
+  <div class="sm-ticks" id="sm-ticks">t=0</div>
+  <script>
+  (function () {
+    var count = document.getElementById('sm-count'), bar = document.getElementById('sm-bar');
+    var start = performance.now(), TOTAL = 1200;
+    function tick(now) {
+      var left = Math.max(0, TOTAL - (now - start));
+      count.textContent = (left / 1000).toFixed(1);
+      bar.style.transform = 'scaleX(' + (left / TOTAL) + ')';
+      if (left < 600) count.classList.add('low');
+      if (left > 0) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    var t0 = Date.now(), ticks = document.getElementById('sm-ticks');
+    setInterval(function () { ticks.textContent = 't=' + new Date(Date.now() - t0).getTime(); }, 100);
+  })();
+  </script>
+</div></template>

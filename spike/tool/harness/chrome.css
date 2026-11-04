@@ -1,120 +1,23 @@
-/* chrome.css — the one palette every piece of harness chrome consumes.
+/* chrome.css — the palette the Tweaks panel consumes.
 
-   The Tweaks panel, the comment panel, the device bezel and the toasts are all one thing:
-   fixed-dark furniture that sits beside an folio whose own theme is none of their
-   business. They used to each carry their own hardcoded greys — the rail on #101114 /
-   #181b20 / #23272d, the panel on rgba(18,18,18,.93) with its own amber — which is how
-   the rail's labels ended up at 2.0-3.9:1 while the panel's were fine, and how a fix to
-   one silently left the other behind.
-
-   Deliberately NOT theme-aware. Chrome stays the same warm off-white beside a light folio
-   and beside a dark one, so it always reads as the harness and never as part of the design.
-
-   The device stage and the bezels are not in here: a phone's shell is a physical object,
-   not a control surface, and it stays black in viewport.css.
+   Deliberately NOT theme-aware. Chrome stays the same warm off-white beside a light
+   prototype and beside a dark one, so it always reads as the harness and never as part of
+   the design.
 
    Every ink value here clears 4.5:1 against --at-c-bg, and must keep clearing it. The
    ratios in the comments are against #faf9f7. */
 
-/* --- the space the folio gets ---
-
-   The folio's usable area, as one pair of tokens rather than each surface working it out
-   for itself: the stage, the device host and dock.js all read these, which is what keeps a
-   device frame, a floating card and a docked button describing the same layout. */
-
-:root {
-  --at-gap: 12px;
-  --at-inset-l: 0px;
-  --at-inset-r: 0px;
-}
-
-/* --- the floating buttons ---
-
-   One object with three instances: comment, check contrast, switch theme. Partially
-   opaque so they sit over the folio without competing with it, solid on hover, and
-   draggable to either edge — see dock.js. Positioned entirely from script, so nothing
-   here sets left/right/top. */
-
-.at-dock {
-  position: fixed;
-  z-index: 2147483646;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: 0.5px solid rgba(255, 255, 255, 0.6);
-  border-radius: 999px;
-  background: var(--at-c-panel);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  backdrop-filter: blur(24px) saturate(1.6);
-  color: var(--at-c-dim);
-  font: inherit;
-  font-size: 14px;
-  line-height: 1;
-  cursor: grab;
-  opacity: 0.75;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset, 0 6px 20px rgba(0, 0, 0, 0.18);
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.at-dock:hover { opacity: 1; color: var(--at-c-ink); }
-.at-dock:focus-visible { opacity: 1; outline: 2px solid var(--at-c-mark); outline-offset: 2px; }
-.at-dock[data-dragging] { opacity: 1; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28); }
-
-/* Active is the one state that overrides the resting transparency: amber, the same
-   colour the pins and the send button use, so "the review layer is on" is one signal
-   wherever it appears. Blue belongs to the Tweaks panel, where it means "this is the option
-   currently selected out of several" — a different question from "this mode is engaged",
-   and the floating buttons are never one of several. */
-.at-dock[data-active] {
-  opacity: 1;
-  background: var(--at-c-mark);
-  border-color: var(--at-c-mark);
-  color: var(--at-c-mark-ink);
-}
-
-.at-dock[data-active]:hover { background: var(--at-c-mark-hi); border-color: var(--at-c-mark-hi); }
-
-@media (prefers-reduced-motion: reduce) {
-  .at-dock { transition: none !important; }
-}
-
-/* Both insets stay 0. They were the width of the two edge-to-edge columns — the rail on
-   the left, the comments panel on the right — and both are now cards that float over the
-   folio instead of reserving a strip of the window. Nothing reassigns them today; the
-   tokens stay because the stage, the device host and dock.js all read them, and a frame
-   that ever does have to sit beside something has one place to say so. */
-
 :root {
   --at-c-bg: #faf9f7;          /* an opaque chrome ground */
-  --at-c-panel: rgba(250, 249, 247, 0.82);  /* floating surfaces, over a folio */
+  --at-c-panel: rgba(250, 249, 247, 0.82);  /* the floating card, over a prototype */
   --at-c-surface: rgba(255, 255, 255, 0.66);  /* a control at rest */
-  --at-c-surface-hi: rgba(0, 0, 0, 0.06);     /* a control under the pointer */
-  --at-c-line: rgba(0, 0, 0, 0.09);           /* divider */
   --at-c-edge: rgba(0, 0, 0, 0.12);           /* control border */
   --at-c-edge-hi: rgba(0, 0, 0, 0.24);        /* control border, hover */
 
   --at-c-ink: #29261b;         /* primary text — 14.2:1 */
   --at-c-dim: #57544c;         /* secondary text — 7.2:1 */
   --at-c-faint: #656158;       /* labels and second lines — 5.9:1 */
-  --at-c-fainter: #767165;     /* hints — 4.6:1, the floor */
 
-  --at-c-sel: #e3ecfb;         /* selected control ground */
-  --at-c-sel-edge: #3f6ac2;    /* selected control border, and the focus marker */
-  --at-c-sel-ink: #14315f;     /* selected control text — 10.8:1 on --at-c-sel */
-  --at-c-sel-dim: #3f5b85;     /* selected control second line — 6.0:1 on --at-c-sel */
-
+  --at-c-sel-edge: #3f6ac2;    /* the focus marker */
   --at-c-on: #34c759;          /* a switch that is on */
-  --at-c-danger: #a02b1c;      /* destroys something — 7.0:1 */
-  --at-c-warn: #8a4b04;        /* a failing verdict, as TEXT — 6.5:1. --at-c-mark is amber
-                                  for a fill and reads at 2:1 as ink on this ground */
-  --at-c-mark: #f5a524;        /* the annotate layer's pin colour */
-  --at-c-mark-hi: #ffb733;     /* pin colour, hover */
-  --at-c-mark-ink: #1a1204;    /* text on --at-c-mark */
-  --at-c-stale: #9a9a9a;       /* a pin whose element is gone */
-  --at-c-ok: #1f7a33;          /* a completed action */
-  --at-c-ok-ink: #ffffff;      /* text on --at-c-ok */
 }

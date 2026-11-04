@@ -1,0 +1,9 @@
+/* mockup.css — the mockup's only stylesheet. A mockup is the project's real CSS, so this
+   file holds no palette, no type and no reset beyond a zero body margin. It shows one cell
+   (a variant in a state) at a time: the one named by the URL fragment, or the first. */
+
+body { margin: 0; }
+
+#mk > .mk-cell { display: none; }
+#mk > .mk-cell:target { display: block; }
+#mk:not(:has(> .mk-cell:target)) > .mk-cell:first-child { display: block; }

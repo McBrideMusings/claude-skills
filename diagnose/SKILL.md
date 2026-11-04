@@ -1,9 +1,11 @@
 ---
 name: diagnose
-description: "Disciplined diagnosis loop for hard bugs and performance regressions. Use when something is broken, failing, throwing, or has regressed."
+description: "Disciplined diagnosis loop for hard bugs and performance regressions. Use when something is broken, failing, throwing, or has regressed — or when a running system's output looks wrong (offset, missing, mis-rendered, out of sync), including a 'why is X doing Y' question about it."
 ---
 
 # Diagnose
+
+When the user says something happened — on their phone, last night, in a container — fetch the lines with the project skill's `logs.md` command; never ask them to paste a log or hand over the device.
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 
@@ -39,9 +41,13 @@ If you can't state the prediction, it's a vibe. Discard or sharpen.
 
 **Show the ranked list to the user before testing.** They often re-rank instantly ("we just deployed a change to #3") or know hypotheses they've ruled out. Don't block — proceed with your ranking if the user is AFK.
 
+Show the list as the hypothesis board with `dashboard diagnose` ([`../dashboard/kinds/diagnose.md`](../dashboard/kinds/diagnose.md)); push each hypothesis as it is ruled in or out, and end the dashboard once Phase 05's fix is verified.
+
 ## Phase 04 — Instrument
 
 Each probe maps to a Phase 03 prediction. **Change one variable at a time.**
+
+**Choosing the probe is this skill's job, never an option set for the user.** Pick the probe that best separates the ranked hypotheses and run it. When a probe needs permission — work run on a production host, a write anywhere outside this machine — ask one yes/no naming that exact action, then carry on with every probe that needs none.
 
 Tool preference:
 
@@ -53,7 +59,8 @@ Tool preference:
 
 **Perf branch.** For perf regressions, logs are usually wrong. Establish a baseline (timing harness, `performance.now()`, profiler, query plan), then bisect. Measure first, fix second.
 
-**Domain labels.** Resolve the labels in scope via [`../_detect.md`](../_detect.md). For each matched label with a `diagnose.md` cell, read it — a stack label (e.g. `../ref-apple/diagnose.md`) for what to instrument and how to read it on this stack (SwiftUI `_printChanges`, view-identity vs re-evaluation); a mode label (e.g. `../ref-game-dev/diagnose.md`) for mode-specific failure modes — nondeterministic update order, input latency, collision/physics glitches, state-machine bugs. No ordering between them — apply every matched cell. On the perf branch, also read each matched label's `profiling.md` for its profiler catalog — the same files the `profiling` skill uses. No matching label → instrument with the stack's native tools as usual.
+**Domain labels.** Resolve the labels in scope via [`../_detect.md`](../_detect.md). For each matched label, a stack label (e.g. `apple`) supplies what to instrument and how to read it on this stack (SwiftUI `_printChanges`, view-identity vs re-evaluation); a mode label (e.g. `game`) supplies mode-specific failure modes — nondeterministic update order, input latency, collision/physics glitches, state-machine bugs. No ordering between them — apply every matched label. On the perf branch, also use each matched label's profiler catalog — the same one the `profiling` skill uses. No matching label → instrument with the stack's native tools as usual.
+*Knowledge base: search it for "<label> diagnose" and "<label> profiling" for each matched label. If you have none, skip this line and don't mention it.*
 
 ## Phase 05 — Fix + Regression Test
 

@@ -5,7 +5,7 @@ or dropped. Loaded by [SKILL.md](SKILL.md) at end of pass, after the report is w
 
 **This file formats findings you are handing *to* an author.** Answering a reviewer who has
 already read your code is the opposite job and lives in
-[../unblock/FEEDBACK.md](../unblock/FEEDBACK.md) — different shape, different caps, different
+[../mergeable/FEEDBACK.md](../mergeable/FEEDBACK.md) — different shape, different caps, different
 banned phrases. Do not read one for the other.
 
 [RULES.md](RULES.md) binds this file. RULE 0 applies hardest at exactly this point: the
@@ -54,9 +54,9 @@ bracket at the end of the line — not a paragraph, never an option menu. Shape:
 [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row.
 
 ```
-1. [bug · T1 · high] <one-line finding> — verified `reproduced` — `post` · `fix` · `skip` [post]
-2. [best-practice · T2 · low] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip` [fix]
-3. [slop · T2 · low] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`) [skip]
+1. [bug · T1 · P0] <one-line finding> — verified `reproduced` — `post` · `fix` · `skip` [post]
+2. [best-practice · T2 · P3] <one-line finding> — `fix` (land it on the branch, then Approve) · `post` · `skip` [fix]
+3. [slop · T2 · P3] <one-line finding> — over the 5-thread posting budget; `fix` · `skip` (no `post`) [skip]
 
 Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 ```
@@ -100,24 +100,31 @@ picks per finding:
    push to the PR's own branch (`git push origin <headRefName>`).
 2. **Post it for the author** — leave the code alone, hand the finding back via the formal review
    verdict or a comment.
-3. **Neither** — drop it. It stays in the chat report above; nothing goes to GitHub or the branch.
+3. **Neither** — drop it. It stays in the chat report above; nothing goes to GitHub or the branch. Append it to the considered-and-rejected ledger ([REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r) so the next pass on this PR does not raise it again.
 
-**Default split — fix the small stuff, hand the rest back.** Propose this stance up front, then
+**Default split — fix what is broken, note the rest, approve.** Propose this stance up front, then
 let the user override per finding:
 
-- **Fix directly:** `low`- or `medium`-severity findings that are small, contained, and
-  **behavior-preserving** — a missing guard, a one-line bug fix, helper reuse, a typo, dead-code
-  removal, a flag correction. They don't change what the author built, so applying them is safe
-  and saves a round-trip.
-- **Hand to the author:** `high`-severity findings, `architecture` / `negative-space` design
+- **Fix directly:** `P1` findings that are small, contained, and **behavior-preserving** — a
+  missing guard, a one-line bug fix, a flag correction. They don't change what the author built,
+  so applying them is safe and saves a round-trip.
+- **Note in the Approve body, never fix:** every `P2`/`P3` finding that is not a doc contradicting
+  the code. The author decides whether it is worth doing; the review does not hold the PR or push
+  to the author's branch over it.
+- **Always fix directly: a doc that contradicts the code.** A comment, docstring,
+  `.claude/rules/*.md` body, `CLAUDE.md` or README that describes the code is wrong whenever the
+  code disagrees with it — the code is what runs. Rewrite the doc to match the code (or delete it
+  when nothing worth stating remains), at any P-level. Never post it to the author as a question
+  and never mark it a design call. The exception is a spec, issue or PR description that states
+  what the code *should* do: a mismatch there is `spec/wrong-impl`, and the code is the suspect.
+- **Hand to the author:** `P0` findings, `architecture` / `negative-space` design
   calls, or **anything that would change or break the PR's intended behavior, feature, or
   outcome**. Here the author's intent is load-bearing — a direct edit risks overwriting a
   deliberate choice. When unsure whether a fix would alter intended behavior, treat it as
   hand-to-author.
 
-Split on "is this small, safe, and intent-neutral," **not** on the blocking verdict — severity ≠
-blocking still holds, so a blocking bug can be a tiny behavior-preserving one-liner that belongs
-in the fix bucket, while a non-blocking architecture note usually belongs in the hand-back bucket.
+A blocking `P1` bug that is a tiny behavior-preserving one-liner belongs in the fix bucket; one
+that changes what the author built goes back to the author with Request changes.
 
 **Fixing on the branch — mechanics + gate.** Pushing commits to someone else's PR branch is an
 outward action on their work, held to the same **explicit-`go`-in-this-message** gate as any send.
@@ -146,12 +153,12 @@ longer comment list — say that in chat.
 
 **Ranking for the cap**, applied after the Phase 06 filter:
 
-1. **Tier 1 with verdict `reproduced`** — post every one. **The cap does not apply to these and
-   they are never cut, at any count.** If seven reproduced Tier 1 findings survive, all seven
+1. **`P0` and `P1`** — post every one. **The cap does not apply to these and they are never cut,
+   at any count.** If seven blocking findings survive, all seven
    post, and you say in chat that blocking findings exceeded the budget. Shipping broken behavior
    to save a comment slot is not a trade this rule permits.
-2. **Tier 1, `not-executable`** — highest score first.
-3. **Tier 2** — highest score first, then by file path.
+2. **`P2`** — highest score first, then by file path.
+3. **`P3`** — highest score first, then by file path.
 
 Fill the remaining slots down that order and stop. Tier 3 never enters the list because it never
 survives Phase 06.
@@ -159,11 +166,11 @@ survives Phase 06.
 **The posted comment says nothing about what was withheld.** No "3 additional non-blocking items
 omitted", no counts, no axis summary, no offer to expand. A disclosure line is an invitation to
 ask for the rest, which reinstates exactly the round-trip the cap removes. **Tell the user
-instead**, in chat, in one line naming the count, the axes, and the report path: `3 Tier 2
+instead**, in chat, in one line naming the count, the axes, and the report path: `3 P3
 findings held back (contracts, slop) — full list in the report.` They can post any of them by
 name if they disagree.
 
-## The verdict — block on broken behavior, not on severity
+## The verdict — `P0` and `P1` block
 
 For the findings going back to the author, propose one consolidated review verdict. On a PR you
 didn't author GitHub records that verdict as your review decision (Request changes even gates the
@@ -182,43 +189,26 @@ instance of this skill telling the user their review responsibilities are not it
 to be told twice, in the same session, that finding nothing wrong on a teammate's PR **is** a
 finished review with a verdict, not a review with no ending.
 
-What separates blocking from non-blocking is *what the finding is about*, never how confident or
-how large it is:
+What separates blocking from non-blocking is the finding's P-level ([REVIEW-CORE.md](REVIEW-CORE.md) §Axis tags),
+never how confident the scorer was:
 
-- **Blocking → Request changes** (`gh pr review --request-changes`; gates the merge). Any finding
-  that the diff makes behavior *wrong*: a new bug, or existing behavior this diff breaks. **New or
-  newly-broken behavior is always blocking** — a `low`-confidence regression still blocks, because
+- **Blocking → Request changes** (`gh pr review --request-changes`; gates the merge). Any `P0` or
+  `P1` finding — which includes every case where the diff makes behavior *wrong*: a new bug, or
+  existing behavior this diff breaks. **New or
+  newly-broken behavior is always blocking** — a regression the scorer was barely sure of still blocks, because
   the question is "does this ship something broken," not "how sure am I". Axis-independent: a
   `spec/wrong-impl`, a `contracts` violation that breaks a caller, a `negative-space` un-updated
   caller, or a `standards` correctness breach each block exactly as a `bug` does. One such
   survivor → Request changes.
-- **Non-blocking → Comment** (`gh pr review --comment`; on record, no merge gate). Everything
-  where behavior is *correct* but the code could be more elegant, more efficient, better
-  organized, or better documented. Pure-quality `architecture`, `best-practice`, and most
-  `contracts`/`standards` findings live here. A pre-existing bug the diff merely sits near, but
-  does not introduce or worsen, is a non-blocking note.
-- **Approve** (`gh pr review --approve`) — nothing survived (and on a draft, no expected-gap
-  entries either), **or** every survivor has just been fixed on the branch. After the fix commits
-  land, nothing broken or unaddressed remains, so Approve is the honest verdict.
-
-### Low-severity, non-blocking finding → the fix-on-branch offer is MANDATORY
-
-When the survivors are all `low`-severity, non-blocking quality notes and nothing is broken, you
-**must** present **fix it on the branch, then Approve** as a listed option — and lead with it. Do
-**not** present "Comment / Approve as-is / Neither" as the *only* choices: an offer set with no
-fix-on-branch path buries a fixable nit or ships it unaddressed, and is the specific failure this
-rule exists to stop. The finding is small and the merge isn't gated, so the cleanest outcome is
-landing the small fix and approving clean.
-
-This holds **even when the *ideal* fix needs the author's intent.** A design-call element does
-**not** license collapsing to post-only — it changes *what* you offer to fix, not *whether* you
-offer. Before falling back, ask: is there a narrower, safe, behavior-preserving version I could
-land now (a guard, a comment clarifying the contract, a rename, a doc note) even if the fuller
-restructure is the author's call? If yes, offer *that* on-branch, then Approve. Only when there is
-genuinely **no** safe on-branch change at all may you present a post-only offer, and then you must
-**say explicitly** "no safe on-branch fix here because …" so the omission is a stated decision
-rather than a silent drop. When in doubt, list the fix-on-branch option and let the user decline
-it.
+- **Non-blocking → Approve** (`gh pr review --approve`). No `P0`/`P1` survived. `P2` and `P3` —
+  everything where behavior is *correct* but the code could be more elegant, more efficient, better
+  organized, or better documented — go in the Approve body as short notes, one line each, for the
+  author to take or leave. A pre-existing bug the diff merely sits near, but does not introduce or
+  worsen, is one of those notes. Never propose `--comment` as the verdict for a P2/P3-only pass,
+  and never hold the approval behind an offer to fix them on the author's branch; the one on-branch
+  fix a P2/P3 pass makes is a doc that contradicts the code (§ Default split).
+- **Approve** with an empty notes list — nothing survived (and on a draft, no expected-gap entries
+  either), **or** every survivor has just been fixed on the branch.
 
 ### Local work first, then the body, then the post — two confirms, in that order
 

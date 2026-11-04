@@ -8,13 +8,12 @@
 
 Creating or editing `admin.toml`, wiring standard commands (build/dev/deploy/test/docs), populating `[urls]`, or writing a thin passthrough to an existing runner (Makefile/justfile/npm) is routine — just do it and validate with `admin check`. No "shall I create it?", no "want me to wire X?", no "commit?" prompts. `admin.toml` is globally gitignored, so its edits are never a commit question anyway.
 
-## Reinstalling after a tool change
-
-Full sequence for any tool change: **edit → commit → push → install**. There is no per-project regeneration step — installing updates the one interpreter every project shares. Installing from an unpushed commit embeds a dirty SHA into `~/.admin/VERSION`.
-
 ## Instructions
 
 ### Phase 0: Update the tool (when the change needs a tool/archetype edit)
+
+Full sequence for any tool change: **edit → commit → push → install**. Installing from an
+unpushed commit embeds a dirty SHA into `~/.admin/VERSION`.
 
 ```bash
 git -C ~/projects/admin-project-tool status
@@ -103,7 +102,9 @@ desc = "Run tests"; steps = ["test"]; group = 2; priority = 10
 
 Group 1 = build/run/install. Group 2 = everything else. Defaults (`group=0, priority=0`) → alphabetical, no spacers (fine for ≤3 commands).
 
-Canonical slots — use these numbers so every project's menu lines up:
+Canonical slots — use these numbers so every project's menu lines up. This is the same
+verb→slot mapping `PLAYBOOK.md`'s "Standardized commands" table documents with each verb's
+meaning and what it ends with; keep the two in sync if a slot number ever changes.
 
 | Group | Priority | Command |
 |---|---|---|
@@ -122,7 +123,7 @@ Canonical slots — use these numbers so every project's menu lines up:
 | 2 | 60+ | project-specific (`logs`, `snapshot`, `reload`, …) |
 
 Notes:
-- `docs` = serve docs locally with hot reload. **Single command, no sub-targets** (e.g. `run = "npm run docs:dev"`). Skip docs build/preview/deploy unless the user explicitly publishes.
+- `docs` = serve docs locally with hot reload. **Single command, no sub-targets** — `steps = ["docs-dev"]` naming an `[actions.docs-dev]` with `kind = "npm"`, `run = "docs:dev"` (full shape in `bootstrap/docs-site/PHASE-02-BOOTSTRAP.md`). Skip docs build/preview/deploy unless the user explicitly publishes.
 - `kill` — standard, not project-specific, for any project whose `dev`/`build` can leave something running that outlives the command: a dev server, a Docker container, a background watcher, anything bound to a port. Force-stops it (`pkill`/`docker stop`/free the port), so a crashed or detached `admin dev` doesn't leave a zombie process squatting on a port the next `admin dev` needs. Skip it only for projects with nothing long-running to leave behind (a pure CLI, a static build). Real examples across the fleet: `steps = ["kill-dev"]` (kill stray dev processes + free ports), `steps = ["docker-down", "kill-dev"]` (stop a dev container and stray Electron/Vite), `steps = ["kill-local"]` (kill local servers only, never touch remote).
 
 Legacy `order = [...]` with `"---"` separator still works but prefer group/priority. When using explicit `order`, the first three entries must be `"build", "dev", "deploy"` — always.
@@ -143,7 +144,7 @@ The tool itself enforces almost none of this — no naming convention, no menu s
 
 **`[urls]` commonly carries `repo` beyond `dev`/`prod` — add `issues` only when the project actually uses that tracker.** `repo` pointing at the GitHub page is fine as a standard addition whenever a GitHub remote exists (`admin open repo`, no separate lookup needed). `issues` is conditional, not automatic — only add it for a project that actually files/works GitHub Issues; skip it for a project tracked some other way (beads, a local followups file, nothing at all), since a URL to an empty or unused issue tracker is worse than no entry.
 
-**A project tracked in beads gets a top-level `tracker = "beads"` in `admin.toml`, not a `[commands.issues]` shell command.** The tool renders a native backlog panel off that flag — a hand-rolled `bd list` command duplicates and fights it. Pair it with `uses_pull_requests = true`/`false` (top-level, same block as `project_name`) so the tool knows whether this repo's issues resolve via PRs or direct commits. See `admin-project-tool`'s own `admin.toml` (`tracker = "beads"`, `uses_pull_requests = false`) for the pattern.
+**A project tracked in beads gets a top-level `tracker = ["beads"]` (a list — the tool rejects the bare string) in `admin.toml`, not a `[commands.issues]` shell command.** The tool renders a native backlog panel off that flag — a hand-rolled `bd list` command duplicates and fights it. Pair it with `uses_pull_requests = true`/`false` (top-level, same block as `project_name`) so the tool knows whether this repo's issues resolve via PRs or direct commits. See `admin-project-tool`'s own `admin.toml` (`tracker = ["beads"]`, `uses_pull_requests = false`) for the pattern.
 
 **A project-specific env var (a mount source, a deploy target host, an app-specific port) is prefixed with the project's own uppercase name, not a generic shared prefix.** `ETV_STATION_APPDATA`, `PLEX_HOME_APPDATA`, `STASH_DEPLOY_TARGET` — the pattern is `<PROJECT>_<PURPOSE>`, so the var is self-documenting about which project it belongs to when it shows up in a shell history or a `.env` shared across several projects' worth of exports. Reserve the fleet-wide unprefixed names (`UNRAID_HOST`, `UNRAID_USER`, `PROD_URL`) for the handful of keys that really are shared tool convention, not project identity — don't invent a new unprefixed generic name for something that's really just this one project's concern.
 
@@ -178,7 +179,7 @@ If `admin.toml` uses `${VAR}`, run `admin env` and tell the user which vars to e
 3. **`CLAUDE.md` (committed)** — if the project has no root `CLAUDE.md`, invoke `/init` first.
 4. **`CLAUDE.local.md` (repo root)** — create/update with the dev-process section (Phase 5). Keep thin: admin-specific dev process and machine overrides only. Root, not `.claude/` — Claude Code only auto-loads a local file at the repo root.
 5. **Project `CLAUDE.md`** — note that `admin.toml` is the source of truth and commands run via `admin <cmd>` (the tool is installed on PATH; nothing about admin is committed, the manifest included).
-6. **Docs site, if present** — `admin.toml` must have a single `[commands.docs]` shell command (no sub-targets). If shaped wrong, invoke `/docs`.
+6. **Docs site, if present** — `admin.toml` must have a single `[commands.docs]` (no sub-targets) whose step is an `npm` action running `docs:dev`. If shaped wrong, run `bootstrap docs site`.
 
 **Audit checks:**
 - Committed `CLAUDE.md` exists at project root (if missing, prompt `/init`)

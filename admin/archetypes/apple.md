@@ -118,16 +118,11 @@ sign differently and only the dev one is fixed.
 
 ### `development_team` pointing at a variable nothing exports
 
-`[apple] development_team = "${SOME_VAR}"` used to resolve to `""` when `SOME_VAR`
-was unset or exported empty, and `_compose_sign_settings` dropped the empty result —
-so no `DEVELOPMENT_TEAM` reached `xcodebuild`, macOS fell back to
-`CODE_SIGN_IDENTITY = -`, and **ad-hoc signing strips every entitlement that needs a
-provisioning profile**. The build still printed `** BUILD SUCCEEDED **` and `deploy`
-still installed the app. This shipped an app with no iCloud entitlement for weeks.
-
-Since ADR-0013 the tool refuses instead: `admin check` names the key and the variable
-before a build runs, and `resolve_env` exits 2 at dispatch. Nothing to work around —
-but two habits still matter:
+`admin check` names the key and the variable when `[apple] development_team =
+"${SOME_VAR}"` points at an unset or empty variable, and `resolve_env` exits 2 at
+dispatch (ADR-0013). Without a team, macOS signs ad-hoc, and **ad-hoc signing strips
+every entitlement that needs a provisioning profile** while the build still succeeds.
+Two habits:
 
 - **Check the variable name against `~/.claude/.env` when you write the manifest.**
   The team id is exported as `IOS_DEVELOPMENT_TEAM` and shared across every Apple
@@ -225,13 +220,13 @@ mac_asset_dir = "App/Assets.xcassets/AppIcon.appiconset"
 ```
 
 - Refresh production icons: `admin icons regenerate`
-- The dev build auto-gets: DEV banner (overlaid → flattened to RGB → restored
+- `dev_mac` and `deploy_mac_dev` (the dev variant installed at `mac_install_path_dev` and launched, then done) both get: DEV banner (overlaid → flattened to RGB → restored
   after build) and the renamed `.app`.
 
 ### Warnings as errors belongs in the project spec, not in `admin.toml`
 
 Every Apple project should build with `GCC_TREAT_WARNINGS_AS_ERRORS=YES` and
-`SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` (rationale in `ref-apple/testing.md`). Put
+`SWIFT_TREAT_WARNINGS_AS_ERRORS=YES` (it turns every compiler warning into a failed build, so a warning cannot ship unnoticed). Put
 them in the XcodeGen/Tuist spec's `settings:` block, not on an `admin` action —
 the archetype has no key for extra `xcodebuild` settings, and a spec-level
 setting reaches `admin build`, `admin dev`, a plain `xcodebuild`, CI and Xcode
@@ -277,13 +272,9 @@ PIN. Before that, `devicectl` does not list the device at all, so it looks like
 
 ## Seeding the launched process's environment — `[apple] dev_env`
 
-`dev_ios` / `dev_tv` / `dev_device` build, install and launch, but nothing in
-the archetype used to let a project hand the launched app an environment
-variable — no equivalent of the shell-script pattern `SIMCTL_CHILD_FOO=...
-xcrun simctl launch`. That mattered for a project seeding its own debug
-session (Keychain, a feature flag, a fixture path) at launch time, which
-otherwise had to fall back to a hand-written `interactive-shell` action
-duplicating `install_and_launch_sim`/`dev_loop_device`.
+`dev_ios` / `dev_tv` / `dev_device` build, install and launch. `[apple] dev_env`
+hands the launched app environment variables, for a project seeding its own
+debug session (Keychain, a feature flag, a fixture path) at launch time.
 
 ```toml
 [apple]
@@ -321,7 +312,7 @@ Mac), the archetype signs and provisions with no Apple ID in Xcode:
 APP_STORE_CONNECT_KEY_PATH  APP_STORE_CONNECT_KEY_ID  APP_STORE_CONNECT_ISSUER_ID
 ```
 
-`admin appid` then covers what used to need the developer portal — `admin appid`
+`admin appid` then covers App ID work without the developer portal — `admin appid`
 alone reports on the project's identifiers, `--capability icloud` enables one,
 `--name` registers a new one.
 
@@ -337,9 +328,8 @@ in this order:
 1. **Is something forcing manual signing?** `CODE_SIGN_STYLE=Manual` with an
    empty `PROVISIONING_PROFILE_SPECIFIER` tells `xcodebuild` never to create a
    profile, so `-allowProvisioningUpdates` and the API key are both ignored and
-   it falls back to the wildcard team profile. `[apple] sign_identity` used to
-   do this unconditionally; since 2026-08-12 it only does so for apps whose
-   entitlements need no profile.
+   it falls back to the wildcard team profile. `[apple] sign_identity` does this
+   only for apps whose entitlements need no profile.
 2. **Is Xcode signed out?** It does not say so — same error. Its preferences
    lie about it too: the account row outlives the keychain credential.
 3. **Only then, the App ID.** `admin appid <bundle-id>` answers it in one call.

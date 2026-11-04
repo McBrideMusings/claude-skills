@@ -22,7 +22,7 @@ pull` / `bd github sync` (pull-only or bidirectional) and `bd rename`s each one 
 `bd`-generated slug, on every repo (not just stealth ones). See "GitHub sync" below for the
 create-then-push convention this backstops.
 
-`bd list --json` and `bd ready --json` return a bare array; each element carries
+`bd list --json` and `bd ready --limit 0 --json` return a bare array; each element carries
 `id, title, status, priority, issue_type, owner, created_at, updated_at, dependency_count,
 dependent_count, comment_count`. `bd count --json` returns `{"count": N, "schema_version": 1}`;
 without `--json` it prints the bare number. `bd where --json` returns `{database_path, path,
@@ -52,6 +52,7 @@ don't route around the allow by asking in chat first.
 | Verb | Command |
 | --- | --- |
 | **create** | `bd create "<title>" -t <type> -p <0-4> -l <l1,l2> -d "<body>"` |
+| create, labels | `-l` takes labels from the repo's `.beads/labels.toml`; run `~/.claude/tools/bead-labels list` first. The guard denies any create or quick-capture in a repo without the file, and a `-t decision` without `human` ([`labels.md`](labels.md)) |
 | create, body from file | `bd create "<title>" --body-file <path>` (`-` for stdin) |
 | create, ID only | add `--silent` — prints the ID and nothing else |
 | create as child | add `--parent <parent-id>` |
@@ -63,8 +64,8 @@ don't route around the allow by asking in chat first.
 | list by type | `bd list -t bug --json` |
 | list children | `bd list --parent <id> --json` |
 | list all incl. closed | `bd list --all --json` |
-| **ready** (unblocked) | `bd ready --json` — add `--explain` for the blocker reasoning |
-| ready under an epic | `bd ready --parent <epic-id> --json` |
+| **ready** (unblocked) | `bd ready --limit 0 --json` — add `--explain` for the blocker reasoning. Never drop `--limit 0`; see the truncation trap below |
+| ready under an epic | `bd ready --parent <epic-id> --limit 0 --json` |
 | **blocked** | `bd blocked --json` |
 | **show** | `bd show <id> --json` (`--include-comments` for full threads) |
 | **claim** | `bd update <id> --claim` — sets assignee to you + status `in_progress`, idempotent |
@@ -74,14 +75,15 @@ don't route around the allow by asking in chat first.
 | **comment** | `bd comment <id> "<text>"` (`--file <path>` / `--stdin`) |
 | **label add / remove** | `bd label add <id> <label>` / `bd label remove <id> <label>` — which label: [`labels.md`](labels.md) |
 | set labels wholesale | `bd update <id> --set-labels a,b` |
-| audit label drift | `bd label list-all` — anything that is not `human` and has no `area:`/`platform:` prefix is drift |
+| audit label drift | `~/.claude/tools/bead-labels check` — every bead against `.beads/labels.toml`; `bd label list-all` for counts |
 | **assign** | `bd update <id> -a <who>` |
 | **count open** | `bd count --status open` (`--by-label`, `--by-priority`, `--by-status`) |
 | **link** (dependency) | `bd dep add <id> <blocker-id> -t blocks` |
 | link, other kinds | `-t parent-child \| discovered-from \| related \| supersedes` |
 | unlink | `bd dep remove <id> <blocker-id>` |
 | dependency tree | `bd dep tree <id>` |
-| **epic** (milestone equivalent) | `bd create "<name>" -t epic` then `--parent <epic-id>` on members |
+| **milestone** | `bd create "<name>" -t milestone` then `bd dep add <milestone-id> <member-id>` per member; what remains, in order: `~/.claude/skills/implement/epic-plan <repo> <milestone-id>` (§Grouping) |
+| **epic** | `bd create "<name>" -t epic` then `--parent <epic-id>` on members. The type marks it an epic, so the title never says "epic" — `bd show` prints `(EPIC)` before an epic's title, and that prefix is display, not title text to copy |
 | epic progress | `bd epic status` (all epics; `--eligible-only` for those whose children are all done) |
 | **defer** | `bd defer <id> --until "+2w"` — hidden from `bd ready` until then |
 | **external ref** | `--external-ref gh-<n>` on create/update — records the GitHub issue it came from |
@@ -99,7 +101,7 @@ don't route around the allow by asking in chat first.
 | --- | --- |
 | issue number `#42` | `external_ref` + `source_system` — **not** the ID. A pulled bead's ID is a short `bd`-generated slug, never the issue number; see the rename note above |
 | labels | labels (same) |
-| milestone | epic (`-t epic` + `--parent`) |
+| milestone | epic (`-t epic` + `--parent`), the bulk import's verified path below; when the GitHub milestone was a release gate across topics, add a bd `milestone` over those epics afterwards with `bd dep add` |
 | assignee | assignee |
 | `state: open/closed` | `--status open \| in_progress \| blocked \| deferred \| closed` |
 | body | `-d/--description`, plus `--design`, `--acceptance`, `--notes` as separate fields |
@@ -167,6 +169,19 @@ or a conflicted pull resolved by hand — and the flag goes stale; a later pull 
 never refreshes it. `bd ready` reads the flag, so stale values **silently hide ready work**. Run
 `bd recompute-blocked` before any read that orders work.
 
+### ⛔ `bd ready` stops at 100, and says so only on stderr
+
+`bd ready` defaults to `--limit 100`. Past that it prints the first 100 and writes
+`Showing 100 of N ready issues. Use --limit 0 for all…` to **stderr**. A caller that pipes
+stdout — `bd ready --json | jq …`, `bd ready --json | python3 …` — never sees that line. It
+gets a well-formed array of 100 with exit 0 and no truncation field, and nothing in the data
+says it is a page rather than the whole front. Every count, wave, and "is `<id>` ready" check
+read from it is wrong the moment the backlog has more than 100 ready items.
+
+**Every `bd ready` call that lists work passes `--limit 0`**, `--parent` and `--explain` calls
+included. `bd ready --claim` takes one item and is the only exception. `bd list --json` does not
+have this cap: it returned every row in JSON mode despite its `default 50` help text.
+
 ## `human` — the native HITL surface
 
 An issue carrying the `human` label is one that needs a person. It is not a convention a skill
@@ -174,13 +189,13 @@ invents; `bd` ships the queries:
 
 ```bash
 bd human list          # every issue awaiting a human
-bd human respond <id> "<answer>"   # comments and closes in one call
+bd human respond <id> -r "<answer>"   # comments and closes in one call
 bd human dismiss <id>              # permanently, when the question stopped applying
 bd human stats
 ```
 
-Pair it with `-t decision` (`bd types` ships `decision`, plus `spike`, `story` and `milestone`).
-`human` is the only bare label the schema permits — see [`labels.md`](labels.md).
+A `-t decision` bead must also carry `human`, and `issues iron-out` resolves them ([`iron-out.md`](iron-out.md)). Pair it with `-t decision` (`bd types` ships `decision`, plus `spike`, `story` and `milestone`).
+`human` is in every repo's `.beads/labels.toml` — see [`labels.md`](labels.md).
 
 ## GitHub sync — beads and GitHub are not exclusive
 
@@ -222,11 +237,25 @@ already exists as a defined label on the target repo.** Create it there first
 label sneak in as a side effect of an issue update. This only applies to beads that actually reach
 GitHub — a bead never pushed carries whatever labels it wants.
 
-## Initialising a repo — always `--skip-agents`
+## Initialising a repo — always `--skip-agents --skip-hooks`
 
 ```bash
-bd init --skip-agents
+bd init --skip-agents --skip-hooks
+bd config set export.auto false
+bd config set export.git-add false
+printf 'issues.jsonl\ninteractions.jsonl\n' >> .beads/.gitignore
+git show --stat HEAD                   # the commit bd init just made on the current branch
 ```
+
+**`bd init` commits by itself, on whatever branch is checked out, with the message `bd init:
+initialize beads issue tracking`.** That commit is not limited to `.beads/`: it also stages the
+repo's other untracked files (an untracked `.claude/settings.json` went in with it), the empty
+`.beads/interactions.jsonl` export, and `.beads/hooks/` when hooks are installed. Read
+`git show --stat HEAD` before anything else. While it is unpushed, redo it:
+`git reset --soft HEAD~1`, unstage everything outside `.beads/` and the `.gitignore` lines it
+added, unstage any `.jsonl`, and recommit under the repo's commit convention.
+`--skip-hooks` and the two `export` settings keep the JSONL export out of every later commit;
+§ Turning it off explains why the hooks alone would bring it back.
 
 **`bd init` writes an `AGENTS.md` into the repo by default. Never take it.** What it generates is
 a worse copy of this file — the Dolt architecture note, a five-verb quick reference, a
@@ -267,9 +296,11 @@ the wiser:
 
 ```bash
 bd init --stealth --skip-agents --skip-hooks
-bd setup claude --stealth
 ```
 
+- **Never run `bd setup claude` here, `--stealth` included.** It appends a beads block to the
+  tracked `CLAUDE.md` and adds a `bd prime` hook to the tracked `.claude/settings.json`
+  (reformatting it), so both show up in `git status`.
 - `--stealth` configures git so beads files are never committed (`.git/info/exclude`, which is
   never pushed). No `.gitignore` diff appears.
 - `--skip-agents` is not stealth-specific — it is the default everywhere, for the reasons above.
@@ -281,10 +312,27 @@ bd setup claude --stealth
 **The one thing stealth does not hide:** `.beads/` still sits in the working directory. It is
 invisible to `git status`, visible to anyone with filesystem access to that checkout.
 
+**No hook catches a bead ID typed into prose.** `beads-stealth-guard.sh` blocks the `bd`
+subcommands that would push the database or file an issue; it has no view into a PR body,
+commit message, code comment, or issue comment being drafted by hand. Never write a bead ID
+(`Resolves acme-4f2`, `fixes neutrino-7.1`, etc.) into anything that reaches the
+client's GitHub — a PR title/body, a commit message, a review comment. Reference the work by
+what it does, not by its tracker ID.
+
 **In a stealth repo, a client-visible issue is created with `gh issue create` and then pulled
 down — not created in beads and pushed up.** `gh` sends one issue you wrote deliberately;
 `bd github sync` sends the whole database. See [`_detect.md`](_detect.md) § Stealth for the
 two-tier split and why no hook can enforce it.
+
+**Flatten before you publish.** `bd github push` on an `epic`-typed bead files a GitHub
+milestone plus one issue per child — not the single tracked issue "publish one" implies. If you
+want one issue, the bead must not be typed `epic` when you push it: fold the children's
+substance into the parent's description (a checklist is enough) and `bd delete` them first, or
+push a `feature`/`task` bead that was never split into children at all.
+
+**Refresh their backlog:** `GITHUB_TOKEN=$(gh auth token) bd github sync --pull-only`, then
+`bd rename <import-id> <prefix>-<n>`. A pull rewrites the beads it mirrors; private ones it
+cannot see.
 
 **In a stealth repo, pull is permitted and push never is.** `bd github sync --pull-only` seeds
 your private graph from their backlog — the reason stealth and GitHub coexist. Bare
@@ -298,28 +346,50 @@ how often their backlog actually changes, not a tight poll.** An hourly `bd gith
 --pull-only` is plenty for a human-paced client backlog; polling every few minutes just spends
 tokens re-reading a tracker that hasn't moved.
 
-## Grouping: epic or label
+## Grouping: epic, milestone or label
 
-Beads has no milestone field — `bd create` has no `--milestone`, `bd list` has no
-`--milestone` filter. Two primitives, and the choice between them is not a matter of taste:
+Three primitives, and the choice between them is not a matter of taste:
 
 - **An epic is a body of work that *completes*.** It has an end state, so `bd epic status`
   reports a fraction and `bd epic close-eligible` closes it once every child is done.
-  "M9: Native App", "Auth rewrite", a release — these are epics.
-- **A label is a cross-cutting attribute that never completes.** `area:ui`, `platform:ios`,
-  `human`. Nothing ever finishes being presentation work. The permitted vocabulary is
-  [`labels.md`](labels.md) — and note that a label restating `issue_type` (`enhancement`,
+  "Auth rewrite", "Worker agent panes": one topic's work, held as its children.
+- **A milestone is a release gate.** bd's built-in `milestone` type holds no work and has no
+  children (`bd types`: "Marks completion of a set of related issues"). Its set is its `blocks`
+  edges: `bd dep add <milestone> <item>` puts an item in it, and an epic in the set brings all
+  of its children. A milestone cuts across epics, which a parent cannot, since a bead has one
+  parent. "MVP: Mac app" and "1.0" are milestones. bd has no milestone command and `bd epic
+  status` skips them; `~/.claude/skills/implement/epic-plan <repo> <milestone>` prints what
+  remains, in dependency order, and `implement <milestone>` works it.
+- **A label is an attribute that never completes.** `client`, `mac`, `perf`, `human`.
+  Nothing ever finishes being Mac work. Each repo's vocabulary is its `.beads/labels.toml`,
+  shaped by [`labels.md`](labels.md) — and a label restating `issue_type` (`enhancement`,
   `bug`) is a duplicate field, not an attribute.
 
 Everything group-aware in `bd` keys off parent-child, not labels: `bd epic status`,
-`bd epic close-eligible`, `bd ready --parent`, `bd list --parent`, `bd children`,
+`bd epic close-eligible`, `bd ready --parent --limit 0`, `bd list --parent`, `bd children`,
 `bd list --pretty` (tree), `bd list --no-parent`, and the whole `bd swarm` family, which is
 defined as "an epic and its children". Labels only get you filtering — `-l` (AND),
 `--label-any` (OR), `--label-pattern`, `--label-regex`.
 
+**Every item filed while a milestone is open gets a yes or no: does it block the milestone?**
+This paragraph owns the rule; `issues file` and `wrap-up` apply it. A milestone's description
+says what done looks like, as a done-when list; write one when you create the milestone.
+
+- **Which milestones ask.** Every open one (`bd list -t milestone --status open`). For a
+  follow-up, `~/.claude/skills/implement/epic-plan <repo> --milestones-for <source-id>` names
+  the ones the item it came from belongs to; those are the ones the answer usually changes.
+- **Yes** when a line of that done-when list fails without the item. File it with
+  `bd dep add <milestone> <new-id>`, unless its `--parent` is already in the milestone's scope
+  (`--milestones-for <parent>` names it); then the parent carries it.
+- **No** otherwise. The item never goes under a parent in the milestone's scope, because a
+  child joins its parent's milestone; another epic, or none.
+- **Record it** in the new item's notes: `bd update <new-id> --append-notes "milestone <id>:
+  yes|no, <the done-when line, or why none fails>"`.
+
 **Children inherit their parent's labels by default** (`--no-inherit-labels` opts out). So an
-epic already gives you the label-style grouping for free. A `milestone:<name>` label *alongside*
-an epic of the same name is duplication — drop the label.
+epic already gives you the label-style grouping for free, and a milestone's edges give it for
+a milestone. A label naming an epic or a milestone (`milestone:mvp`, `post-mvp`) restates that
+grouping and drifts from it — drop the label and keep the epic or the edges.
 
 Child IDs are hierarchical: a child of `oa-4mm` is `oa-4mm.1`, then `.2`. Membership is
 readable straight off the ID, and `id.rsplit('.', 1)[0]` recovers the epic.
@@ -327,9 +397,9 @@ readable straight off the ID, and `id.rsplit('.', 1)[0]` recovers the epic.
 ```bash
 EPIC=$(bd create "M9: Native App" -t epic -d "<what done looks like>" --silent)
 bd create "Wire the settings sheet" -t task --parent "$EPIC"
-bd ready --parent "$EPIC" --json     # unblocked work inside this epic only
-bd epic status                       # rollup across every epic
-bd epic close-eligible --dry-run     # then without --dry-run
+bd ready --parent "$EPIC" --limit 0 --json  # unblocked work inside this epic only
+bd epic status                              # rollup across every epic
+bd epic close-eligible --dry-run            # then without --dry-run
 ```
 
 ## Bulk import from GitHub
@@ -338,7 +408,7 @@ For a whole tracker, not a single issue. `bd import` beats `bd github sync --pul
 sync establishes an ongoing two-way link, which is wrong when you're migrating *off* GitHub.
 Two passes, because children need their epic's real ID:
 
-1. **Epics first.** One `bd create -t epic --silent` per milestone; keep the title→ID map.
+1. **Epics first.** One `bd create -t epic --silent` per GitHub milestone; keep the title→ID map.
 2. **Issues as JSONL, one row each**, then a single `bd import file.jsonl`. Set
    `"id": "<epic-id>.<n>"` yourself and add the edge explicitly — `--parent` has no JSONL
    equivalent:
@@ -373,6 +443,14 @@ Non-negotiables:
 ## Types
 
 `bug | feature | task | epic | chore | decision`. Aliases: `feat`→`feature`, `adr`/`dec`→`decision`.
+
+**A bead's title never carries its type.** The `-t` field already holds it, and `bd list` shows it
+in its own column, so `[bug]`, `bug:`, `Bug —`, `Feature:`, `Epic:` and `Task:` in the title say
+it twice. Name the thing: "Killing a hosted worker sends SIGKILL with no grace period", not
+"[bug] Killing a hosted worker sends SIGKILL with no grace period". This applies to every
+`bd create` and `bd update --title`, including `file`, `spec` and `organize`. A title that arrives
+with such a prefix (from a GitHub issue, a followup, a papercut) loses the prefix when it
+becomes a bead, and the type goes in `-t`.
 
 ## Sync
 
@@ -489,6 +567,17 @@ and migration path — keep it on disk, gitignored. It is not a sync path: `bd i
 upsert-only, so a bead deleted on one machine never disappears on another, and `bd export --help`
 notes it "does not capture Dolt branches, commit history, working-set state, or non-issue tables."
 
+**Auto-export is throttled and says nothing about it.** With `export.auto` on, bd writes the
+file at most once per `export.interval` (60s by default; setting `0s` does not remove the
+throttle). A write inside the window succeeds, prints no export line, and leaves the file
+stale until a later write lands outside it. The only trace is under `bd -v`: `auto-export:
+throttled (last export 1s ago, interval 1s)`. When a recovery or migration needs the file
+current, write it yourself in place — it stays gitignored and unstaged:
+
+```bash
+bd export -o .beads/issues.jsonl
+```
+
 ### Turning it off in a repo that has it on
 
 ```bash
@@ -539,12 +628,12 @@ or `--prefer-local` / `--prefer-github`). Preview anything unfamiliar with `--dr
 
 ### ⛔ A push invents `::` labels in the repo. Delete them afterwards.
 
-Measured on `bd 1.2.x`: pushing one bead carrying `area:perf`, `area:reliability` created
+Measured on `bd 1.2.x`: pushing one bead carrying two category labels created
 `type::bug` and `priority::medium` **in the GitHub repo**, applied both to the issue, pushed
-none of the `area:` labels, and left the issue's stale labels in place. Those two restate
+none of the bead's own labels, and left the issue's stale labels in place. Those two restate
 `issue_type` and `priority`, which [`labels.md`](labels.md) forbids as second copies of a
-tracker field, and `::` is a third prefix scheme on top of `area:`/`platform:` and beads' own
-`mode:`/`patrol:`. **There is no config key to disable it.** After any push:
+tracker field, and `::` is a prefix scheme beside beads' own `mode:`/`patrol:` state labels.
+**There is no config key to disable it.** After any push:
 
 ```bash
 gh label list --json name --jq '.[].name' | grep -E '^(type|priority)::' \
@@ -553,4 +642,4 @@ gh label list --json name --jq '.[].name' | grep -E '^(type|priority)::' \
 
 Deleting a label removes it from every issue in one call, so this is one command however many
 issues the push touched. Reconcile GitHub's labels with `gh issue edit`, never with a push —
-`area:` and `human` do not travel outward at all.
+a bead's own labels do not travel outward at all.

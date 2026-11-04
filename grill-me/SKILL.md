@@ -1,7 +1,9 @@
 ---
 name: grill-me
-description: "One-question-at-a-time design interviews — new ideas (Shape), existing plans (Grill), existing codebases (Backfill). Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work."
+description: "One-question-at-a-time design interviews — new ideas (Shape), existing plans (Grill), existing codebases (Backfill). Use for brainstorming, thinking a design through, capturing conventions, or any pushback on starting work. Also: \"one at a time\" over any list."
 ---
+
+**"One at a time"** means one list member per message, in order, never reprinting the list. Out-of-order answers are struck; additions join the end. A `2 of 7` counter is welcome.
 
 Walk the decision tree one question at a time until we reach shared understanding. For every question, recommend an answer — never ask open-ended without taking a position.
 
@@ -27,7 +29,7 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - **2–3 approaches at real branch points.** When a decision actually has alternatives, lay them out with tradeoffs and your pick.
 - **Scope check early.** If the ask describes multiple independent subsystems, flag it before drilling in. Decompose first, grill the first piece.
 - **Stress-test with concrete scenarios.** When a domain relationship is in play, invent a specific edge-case scenario and push for a precise answer about the boundary — *"if a Shipment is cancelled after its Invoice is generated, does the Invoice still exist?"* Vague agreement collapses fast against a concrete case; that collapse is the point.
-- **Locate before you ask.** Before any question about where something should live or when it should run, name the concrete places in the actual system — file paths in the repo, the named table in the named database file, the specific process at the specific moment ("the daemon, at the point it generates a schedule"). Then write each option as what physically happens: which file gets edited, what value gets written where, which process computes it, when. An option phrased as a bare noun with no location ("the score attaches to the item", "it lives on the model", "column vs. context") is unanswerable and reads as evasion — the human cannot picture it, so they cannot judge it. If you can't write the options in located form, you haven't read enough code to ask yet. Go read it.
+- **Locate before you ask.** Before any question about where something should live or when it should run, name the concrete places in the actual system — file paths in the repo, the named table in the named database file, the specific process at the specific moment ("the daemon, at the point it generates a schedule"). Then write each option as what physically happens: which file gets edited, what value gets written where, which process computes it, when. An option phrased as a bare noun with no location ("the score attaches to the item", "it lives on the model", "column vs. context") is unanswerable and reads as evasion — the human cannot picture it, so they cannot judge it. If you can't write the options in located form, you haven't read enough code to ask yet. Go read it. When the product wraps an upstream system (an agent gateway, a framework, a vendor API), that includes the upstream: grep its handling of the same input or feature and state what already exists before writing the first option, so no option builds what the upstream already does.
 - **Never answer your own questions.** This is a live interview — every question waits for *the human*. Recommend an answer (mark one option "— my pick"), but never supply their decision yourself, never roll forward on an answer you imagined they'd give, and never fire the next question as if the last were settled when it wasn't. If the human goes quiet, stop and wait. An agent that answers its own questions has quietly turned the interview into a monologue and defeated the whole point — this is the single failure that breaks a grilling.
 
 ## Anti-patterns
@@ -53,7 +55,8 @@ At session start, check for these in the current repo:
 
 ### Live glossary maintenance
 
-As terms resolve during the conversation, capture them per the `docs` skill's vocabulary rule: each is a slate row (term, one-line meaning, where it's already used), and the write to `docs/CONTEXT.md` happens on `go` — never inline mid-conversation. See [../docs/SKILL.md](../docs/SKILL.md)'s "Standing rules" and [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md) for the format.
+As terms resolve during the conversation, capture them as follows: each is a slate row (term, one-line meaning, where it's already used), and the write to `docs/CONTEXT.md` happens on `go` — never inline mid-conversation. Each entry is a bold term, a one-sentence definition, and an `_Avoid_:` line listing the aliases it displaces, under `## Language` in `docs/CONTEXT.md`.
+*Knowledge base: search it for "CONTEXT.md format" and "docs standing rules". If you have none, skip this line and don't mention it.*
 
 **Keep `docs/CONTEXT.md` a glossary and nothing else.** It must stay totally devoid of implementation details — it is not a spec, not a scratchpad, not a home for implementation decisions. Resolved vocabulary only; decisions go to ADRs, plans go to plan files.
 
@@ -70,7 +73,8 @@ If the user states how something works and the code disagrees, surface it: *"You
 
 ### ADRs, sparingly
 
-Apply the `docs` skill's any-session ADR rule (three-conditions test; a passing decision is a slate row that turn). See [../docs/ADR-FORMAT.md](../docs/ADR-FORMAT.md) for the template and qualifiers.
+Apply the three-conditions test in any session: the decision is hard to reverse, surprising without context, and the result of a real trade-off. A passing decision is a slate row that turn. An ADR states the decision in a few present-tense sentences with no rejected options or justification.
+*Knowledge base: search it for "ADR format". If you have none, skip this line and don't mention it.*
 
 ## Assumption-breaking lenses
 
@@ -83,6 +87,8 @@ Two symptoms in an interview are not "ask a better question" problems — they a
 
 **These stay inside the interview's rules.** The output of a lens is options and a recommendation in the standard format, one question per message, waiting for the human. It is never a verdict, and it never advances on an answer you supplied yourself. `concept-fan` in particular widens the scope — if it lands somewhere the current effort doesn't cover, that is a scope-check finding to surface, not a licence to re-plan the project.
 
+**Every option on a list you wrote is the same shape** (same mechanism, differing in detail) → run `lateral random-stimulus` once on the list before presenting it, without asking. This is the default for a homogeneous list and is not counted against the one-lens-per-session limit above.
+
 **Don't reach for either on a settled question.** A human who has already justified a constraint is not stuck; inverting it there wastes a turn and reads as contrarianism.
 
 ### Driver-seat pass
@@ -93,17 +99,19 @@ A third lens, distinct from the two reframers above and not subject to their "ne
 
 ## Domain design lenses
 
-If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_detect.md`](../_detect.md); if `../ref-<domain>/design.md` exists (today: `game`, `ui`), pull it in. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
+If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_detect.md`](../_detect.md); search the knowledge base for "<domain> design" (today: `game`, `ui`) and pull in what it returns. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface
 tradeoffs, let the human judge. **Never** deliver a fun/good/engaging verdict; the design axis carries that same hard rule. No design axis for the domain → skip silently.
+*Knowledge base: search it for "<domain> design". If you have none, skip this line and don't mention it.*
 
 ## Product-design elicitation discipline
 
-When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and butter of Shape and Backfill — pull the matching `gui` cell for the discipline that keeps the questions honest, then interrogate with it:
+When the interview is eliciting *what users need* or *what the domain's vocabulary is* — the bread and butter of Shape and Backfill — apply the discipline that keeps the questions honest:
 
-- **User needs / job stories** → [`../gui/layers/user-needs.md`](../gui/layers/user-needs.md): need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark confidence (observed/inferred/assumed).
-- **Domain terminology** → [`../gui/layers/domain.md`](../gui/layers/domain.md): record synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/ instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
+- **User needs / job stories** → need-not-solution, strip-the-mechanism, the "When" must be picturable, elicit emotional/social jobs, mark confidence (observed/inferred/assumed).
+- **Domain terminology** → record synonymy vs polysemy as findings (don't resolve them here), noun harvest marked object/attribute/ instance, stay in the real world. Resolved vocabulary lands in `docs/CONTEXT.md` as usual.
 
-These are the same disciplines the `gui` orchestrator uses; grill-me reads the cells rather than duplicating them. For the full seven-layer treatment (conceptual model, strategy, breadboarding), route to `gui`.
+For the full seven-layer treatment (conceptual model, strategy, breadboarding), find the bottleneck layer first, then work that layer.
+*Knowledge base: search it for "user needs layer", "domain terminology layer", "working layers", "orient". If you have none, skip this line and don't mention it.*
 
 ## Terminal state
 
@@ -128,9 +136,9 @@ Once this skill is loaded, every later message reads as an answer to the current
 If a written record is useful at the end, offer it — don't assume:
 
 - Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
-- Durable product spec → invoke `/backlog spec`, which synthesizes the spec as its Phase 03. (`/backlog spec` owns spec generation; don't write the spec by hand here.)
+- Durable product spec → invoke `/issues spec`, which synthesizes the spec as its Phase 03. (`/issues spec` owns spec generation; don't write the spec by hand here.)
 
-Glossary entries and ADRs are captured *as slate rows* during the session, per the `docs` skill's standing rules — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
+Glossary entries and ADRs are captured *as slate rows* during the session — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
 
 ## Never build by hand what another skill owns
 
@@ -139,9 +147,9 @@ Never chain into another interview. It does not mean build things yourself. The 
 | The user asks for | Invoke |
 | --- | --- |
 | a prototype, mockup, variants, "show me a few options" | `spike` |
-| a spec or PRD, tickets, or issues from what was decided | `backlog spec` |
+| a spec or PRD, tickets, or issues from what was decided | `issues spec` |
 | a diagram or a visual explanation | `explain` |
-| an ASCII layout sketch for one arrangement | `gui` |
+| an ASCII layout sketch for one arrangement | `spike` |
 
 This is not optional and it is not a judgement call. **If a skill's description covers the artifact, that skill builds it** — even when the request is one sentence, even when you can see exactly what to write, and especially when you can, because that is when skipping it feels most reasonable.
 

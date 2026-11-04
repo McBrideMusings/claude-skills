@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+# wheel-agent — run one dispatched task as a LIVE interactive claude in a Wheel terminal pane.
+#
+#   wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]
+#
+# The Wheel counterpart to `herdr-agent run`. Same caller contract — prompt in a file,
+# response in <outfile>, blocks until done — and the worker is the claude TUI in a pane you
+# can watch, type at, or take over.
+#
+# Placement: by default the pane is split off inside the caller's own space, which
+# ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives panes no WHEEL_SPACE. The
+# first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one splits the
+# newest live worker pane downward, so workers stack in one column.
+#
+# The worker's claude starts in $WHEEL_AGENT_WORKDIR (else $WHEEL_AGENT_SPACE_DIR, else the
+# caller's folder) with its own --session-id, and once it reports in, its process's working
+# directory is read back and checked against that folder (exit 4 when they differ). A swarm sets
+# WHEEL_AGENT_WORKDIR to the worker's worktree, since its space is rooted at the main checkout.
+#
+# With $WHEEL_AGENT_SPACE set (a space name), workers go to that space instead, made with
+# `wheel space new $WHEEL_AGENT_SPACE_DIR --background` when it is not open: it runs with no
+# window and leaves the caller's screen alone. The first worker takes its empty pane, the second
+# splits it to the right, later ones stack under the newest. The Mac app closes the space once
+# its last pane closes, so the next worker after that makes it again.
+#
+# With $WHEEL_AGENT_SHOW=1 as well, the space is one the person works in (they talk to the agent
+# there): it is made with `--focus` instead of `--background`, so it opens as a tab in the Mac
+# window they clicked last and becomes the space on their screen. Swarm workers never set it.
+#
+# The pane is a terminal running your shell, so `claude` goes through the shell's profile
+# router and gets every flag herdr would pass it (--permission-mode, --model, --settings).
+# Wheel does not track a terminal claude's state, so the worker reports its own through hooks
+# merged into its --settings: UserPromptSubmit and PostToolUse write `working`, a
+# permission-prompt Notification writes `blocked`, Stop writes `idle`. This script waits on
+# that file the way herdr-agent waits on herdr's agent state.
+#
+# $WHEEL_AGENT_DIR (default: a new temp dir) receives `pane` (the worker's pane id) and
+# `state`. The pane is LEFT OPEN; whoever owns the worker closes it (`wheel pane close`).
+set -eu
+
+TIMEOUT_MS="${WHEEL_AGENT_TIMEOUT_MS:-2400000}"   # 40m, matching `terminal run`'s ceiling
+READY_S=120          # how long the worker has to report its first state
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "wheel-agent: missing '$1'" >&2; exit 1; }; }
+
+# Panes split off for workers in the target space, oldest first, one per line.
+ledger() { printf '%s/wheel-agent-%s.panes' "${TMPDIR:-/tmp}" "$(printf '%s' "${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" | tr -c 'A-Za-z0-9._-' _)"; }
+
+# Make or split a pane for the worker, start its terminal, and print its id. Serialised and
+# claimed inside the lock (the terminal starts before the lock is let go), so parallel launches
+# never take the same pane, each stacks under the previous worker, and only one of them makes the
+# background space. A pane start that fails because the Mac app closed the emptied background
+# space in the meantime tries once more, which makes the space again.
+claim_pane() {
+  local l; l="$(ledger)"; touch "$l"
+  lockf -k -t 60 "$l.lock" /bin/bash -c '
+    set -o pipefail
+    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"
+    if [ -n "$named" ]; then
+      space="$(wheel status | jq -er --arg n "$named" "[.spaces[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
+      if [ -z "$space" ]; then
+        if [ "$show" = 1 ]; then
+          space="$(wheel space new "$home" --name "$named" --focus)" || exit 1
+          echo "wheel-agent: opened space $space ($named) for $home on the person'"'"'s screen" >&2
+        else
+          space="$(wheel space new "$home" --name "$named" --background)" || exit 1
+          echo "wheel-agent: opened background space $space ($named) for $home" >&2
+        fi
+      fi
+      panes="$(wheel pane ls --json | jq -c --arg s "$space" "[.[] | select(.space == \$s)]")"
+      only="$(printf "%s" "$panes" | jq -r "if length == 1 and .[0].kind == \"empty\" then .[0].pane else empty end")"
+      if [ -n "$only" ]; then
+        wheel pane start "$only" terminal >/dev/null || exit 1
+        printf "%s\n" "$only" >> "$l"; printf "%s\n" "$only"; exit 0
+      fi
+      lead="$(printf "%s" "$panes" | jq -r ".[0].pane")"
+    fi
+    live="$(wheel pane ls --json | jq -r --arg s "$space" ".[] | select(.space == \$s) | .pane")"
+    from=""; dir=right
+    for p in $(tail -r "$l"); do
+      printf "%s\n" "$live" | grep -qx "$p" && { from="$p"; dir=down; break; }
+    done
+    # In a space of its own the first worker fills it, so the second goes beside it.
+    [ -n "$named" ] && [ "$(printf "%s\n" "$live" | grep -c .)" -eq 1 ] && dir=right
+    new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
+    wheel pane start "$new" terminal >/dev/null || exit 1
+    printf "%s\n" "$new" >> "$l"
+    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" \
+    || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
+}
+
+# The worker's --settings: the caller's (a file or inline JSON, if any) plus the state hooks.
+merged_settings() {
+  local given="$1" state="$2" base
+  if [ -z "$given" ]; then base='{}'
+  elif [ -f "$given" ]; then base="$(cat "$given")"
+  else base="$given"; fi
+  jq -c --arg f "$state" '
+    def put($s): [{hooks: [{type: "command", command: ("printf " + $s + " > " + ($f | @sh))}]}];
+    .hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + put("working"))
+    | .hooks.PostToolUse    = ((.hooks.PostToolUse // []) + put("working"))
+    | .hooks.Stop           = ((.hooks.Stop // []) + put("idle"))
+    | .hooks.Notification   = ((.hooks.Notification // [])
+        + [put("blocked")[0] + {matcher: "permission_prompt"}])' <<<"$base"
+}
+
+state() { cat "$dir/state" 2>/dev/null || true; }
+
+cmd_run() {
+  local promptfile="${1:-}" outfile="${2:-}"
+  if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
+    echo "usage: wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]" >&2; return 2
+  fi
+  shift 2
+  [ "${1:-}" = "--" ] && shift || true
+  [ -f "$promptfile" ] || { echo "wheel-agent: prompt file not found: $promptfile" >&2; return 1; }
+  [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_PANE:-}" ] \
+    || { echo "wheel-agent: not running inside a Wheel pane (WHEEL_ENV, WHEEL_PANE)" >&2; return 1; }
+  WHEEL_SPACE="$("$HOME/.claude/tools/wheel-space")" || return 1
+  need wheel; need jq
+
+  local dir="${WHEEL_AGENT_DIR:-}"
+  [ -n "$dir" ] || dir="$(mktemp -d -t wheel-agent)"
+  mkdir -p "$dir"; rm -f "$dir/state" "$dir/pane"
+  : > "$outfile"
+
+  # Pull the caller's --settings out of the args; the merged file replaces it.
+  local -a args=(); local given=""
+  while [ $# -gt 0 ]; do
+    if [ "$1" = "--settings" ]; then given="${2:-}"; shift 2; else args+=("$1"); shift; fi
+  done
+  merged_settings "$given" "$dir/state" > "$dir/settings.json"
+  args+=(--settings "$dir/settings.json")
+
+  # The worker runs in the folder its space was made for, never the caller's: a worker sharing
+  # the caller's folder shares its transcript directory, and Wheel's guess of which conversation
+  # a terminal holds then picks the caller's. Its own --session-id names the conversation on
+  # the command line, so nothing has to guess it.
+  local workdir sid
+  local want="${WHEEL_AGENT_WORKDIR:-${WHEEL_AGENT_SPACE_DIR:-$PWD}}"
+  workdir="$(cd "$want" && pwd -P)" \
+    || { echo "wheel-agent: no such folder: $want" >&2; return 1; }
+  sid="$(uuidgen | tr 'A-Z' 'a-z')"
+  args+=(--session-id "$sid")
+  printf '%s\n' "$sid" > "$dir/session"
+
+  # An interactive agent prints to a TUI, so there is nothing to tee. Tell it where to
+  # put the answer; the caller reads that file exactly as it reads `terminal run`'s.
+  { cat "$promptfile"; printf '%s\n' '
+────────────────────────────────────────────────────────────
+HOW TO RETURN YOUR ANSWER — required, do this last:
+Write your complete response to the file below, as a whole file, in Markdown.
+Do not summarise it there; that file IS your answer and is the only part that is read.
+' "  $outfile" '────────────────────────────────────────────────────────────'; } > "$dir/prompt.md"
+
+  local pane
+  pane="$(claim_pane)" || { echo "wheel-agent: could not make and start a pane in space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" >&2; return 1; }
+  printf '%s\n' "$pane" > "$dir/pane"
+
+  # Wait for the shell to draw its prompt before typing at it.
+  local i=0
+  until wheel term read "$pane" --timeout 0 2>/dev/null | grep -q '[^[:space:]]'; do
+    i=$((i + 1)); [ "$i" -lt 60 ] || { echo "wheel-agent: pane $pane never drew a shell prompt — leaving it open" >&2; return 1; }
+    sleep 0.5
+  done
+
+  local cmd a
+  cmd="cd $(printf '%q' "$workdir") && claude"
+  for a in "${args[@]}"; do cmd="$cmd $(printf '%q' "$a")"; done
+  cmd="$cmd \"\$(cat $(printf '%q' "$dir/prompt.md"))\""
+  wheel term send "$pane" "$cmd" --enter >/dev/null
+  echo "wheel-agent: claude started in pane $pane of space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE} (state in $dir)" >&2
+
+  i=0
+  while [ -z "$(state)" ]; do
+    i=$((i + 2)); [ "$i" -lt "$READY_S" ] || { echo "wheel-agent: claude in pane $pane reported no state in ${READY_S}s — leaving it open" >&2; return 1; }
+    sleep 2
+  done
+
+  # Read back where the worker really runs, so the caller reports a checked fact: the claude
+  # whose command line carries this --session-id, and that process's working directory.
+  local wpid wcwd
+  wpid="$(pgrep -f -- "--session-id $sid" | head -1)"
+  wcwd="$([ -n "$wpid" ] && lsof -a -p "$wpid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -1)"
+  if [ -z "$wcwd" ]; then
+    echo "wheel-agent: cannot find the worker for conversation $sid in pane $pane — leaving it open" >&2; return 4
+  fi
+  if [ "$(cd "$wcwd" && pwd -P)" != "$workdir" ]; then
+    echo "wheel-agent: the worker in pane $pane runs in $wcwd, not $workdir — leaving it open" >&2; return 4
+  fi
+  echo "wheel-agent: checked: pane $pane runs conversation $sid in $wcwd" >&2
+
+  # Idle alone is not done: a worker waiting on its own background agent or job reports idle
+  # and wakes when that finishes. Only an idle worker that has written its answer is done; one
+  # idle with nothing written is waited on until the timeout.
+  local deadline=$(( $(date +%s) + TIMEOUT_MS / 1000 )) s told="" waiting=""
+  while :; do
+    s="$(state)"
+    case "$s" in
+      idle)
+        [ -s "$outfile" ] && break
+        [ -n "$waiting" ] || echo "wheel-agent: the worker in pane $pane is idle with no answer written — waiting for it to resume" >&2
+        waiting=1 ;;
+      blocked) [ -n "$told" ] || echo "wheel-agent: the worker in pane $pane is blocked on a prompt — answer it there" >&2; told=1 ;;
+      *) told=""; waiting="" ;;
+    esac
+    [ "$(date +%s)" -lt "$deadline" ] || { echo "wheel-agent: stopped waiting on pane $pane after $((TIMEOUT_MS / 60000))m" >&2; break; }
+    # A closed pane takes the worker with it and no hook fires, so stop waiting on its state.
+    wheel pane ls --json 2>/dev/null | jq -e --arg p "$pane" 'any(.[]; .pane == $p)' >/dev/null \
+      || { echo "wheel-agent: pane $pane is gone — the worker ended with state '$s'" >&2; [ -s "$outfile" ] && return 0 || return 3; }
+    sleep 3
+  done
+
+  # The agent may have finished without writing the file. Its pane still holds the answer,
+  # so scrape it — but a pane dump is not an answer, so exit 3.
+  if [ ! -s "$outfile" ]; then
+    echo "wheel-agent: claude wrote nothing to $outfile — falling back to its pane output, exit 3" >&2
+    wheel term read "$pane" --timeout 0 > "$outfile" 2>/dev/null || true
+    return 3
+  fi
+  echo "wheel-agent: claude finished → $outfile (pane $pane left open — close it with 'wheel pane close $pane')"
+}
+
+case "${1:-}" in
+  run) shift; cmd_run "$@" ;;
+  *) echo "usage: wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]" >&2; exit 2 ;;
+esac

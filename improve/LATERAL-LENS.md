@@ -37,3 +37,4 @@ Invoke `lateral <technique>` with the technique named in the table below, and ru
 - **The technique may produce zero findings.** Say so. An aspect that returns three grounded findings and one line saying the provocation went nowhere is a correct result; padding the list with the scratch output is the failure this rule stops.
 - **`review-territory` still applies.** A generator that surfaces something actually broken hands it off in one line, same as any other route.
 - **Never run two techniques.** One aspect, one technique, per the table.
+- **A homogeneous option list runs `lateral random-stimulus` by default.** When every candidate fix shape on a finding, or every option in a Phase 08 question, is the same shape (same mechanism, differing in detail), run it once on that list before presenting it, without asking. It is the one exception to one technique per aspect.

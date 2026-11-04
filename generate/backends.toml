@@ -9,7 +9,7 @@
 # comfy is the local/free option; the rest are paid cloud services.
 
 [image]
-backends = ["comfy", "gemini"]
+backends = ["gemini", "openai", "comfy"]
 
 [texture]
 backends = ["comfy", "gemini"]
@@ -39,6 +39,10 @@ driver = "comfy plugin generate_image / generate_audio MCP tools"
 [providers.gemini]
 kind = "cloud"
 env = "GEMINI_API_KEY or GOOGLE_API_KEY"
+
+[providers.openai]
+kind = "cloud"
+env = "OPENAI_API_KEY"
 
 [providers.tripo]
 kind = "cloud"

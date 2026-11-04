@@ -1,10 +1,15 @@
+---
+run: gated
+when:
+  - repo-mode: true
+---
+
 # Docs-drift lens
 
-**Repo mode only.** A diff review has no standing documentation-drift check unless the diff itself
-touches public surface (`negative-space`'s "Docs" bullet covers that narrow case: surface the diff
-changes without a doc update). This lens is broader and repo-mode only because it needs the whole
-codebase to compare a doc's claim against, not a diff: if invoked outside repo mode, output
-`Skipped — docs-drift is repo-mode only.` and exit.
+A diff review has no standing documentation-drift check unless the diff itself touches public
+surface (`negative-space`'s "Docs" bullet covers that narrow case: surface the diff changes
+without a doc update). This lens is broader: it needs the whole codebase to compare a doc's claim
+against, not a diff.
 
 **Two sources feed this lens:**
 

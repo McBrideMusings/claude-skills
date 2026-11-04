@@ -1,6 +1,6 @@
 ---
 name: show-shape
-description: "How to WRITE DOWN any answer that describes a shape — a plan, design proposal, refactor, diff, call chain, component tree, or UI structure — as structured pseudocode rather than prose. Load BEFORE 'make a plan', 'what's your approach', or any paragraph about to describe structure. Eight techniques with worked examples. Not for prose answers with no structural shape."
+description: "How to WRITE DOWN any answer that describes a shape — a plan, design proposal, refactor, diff, call chain, component tree, or UI structure — as structured pseudocode rather than prose. Load BEFORE 'make a plan', 'what's your approach', or any paragraph about to describe structure. Eight techniques with worked examples. Also load on any message saying design, architecture, \"how would X work\" or \"show me\", before replying. Not for prose answers with no structural shape."
 ---
 
 # Show the shape — structured pseudocode instead of prose
@@ -40,7 +40,7 @@ You may use one of these, you may use several; you will rarely use all of them i
 
 **Measured, not asserted.** Measured across a large sample of plan-shaped replies, adherence sits under 40% — the failure mode is skipping the rule entirely, not misapplying it. It applies.
 
-Reproduce with `python3 ~/.claude/skills/audit-session/adherence.py --rule plan-pseudocode --all-history`.
+Reproduce with `python3 ~/.claude/skills/retro/adherence.py --rule plan-pseudocode --all-history`.
 
 ## When to skip it
 
@@ -204,8 +204,8 @@ sequenceDiagram
 
 ## Where this gets read from
 
-- `CLAUDE.md` §4 — default technique for any implementation plan or architecture proposal.
-- `backlog spec`'s Implementation Decisions section (`../backlog/SPEC-TEMPLATE.md`) — generalizes the prototype-snippet exception to any of the techniques above, not only output copied from a prototype run.
+- this skill — default technique for any implementation plan or architecture proposal.
+- `issues spec`'s Implementation Decisions section (`../issues/SPEC-TEMPLATE.md`) — generalizes the prototype-snippet exception to any of the techniques above, not only output copied from a prototype run.
 - `explain`'s Architecture / Process archetypes — a text-only alternative to the SVG signature diagram when the point is structural shape, not a rendered visual explanation.
 - `improve`'s proposed-fix descriptions — show the shape of the fix, not just name it.
 
@@ -214,5 +214,6 @@ sequenceDiagram
 These call `Skill(show-shape)` at the point they start writing a plan, so the format arrives without anyone remembering to ask for it:
 
 - [`grill-me`](../grill-me/SKILL.md) — when an interview resolves into a stated plan or decision. This is also `implement`'s ambiguity path: `implement`'s Phase 0.5 objectivity failure routes to `grill-me` (`../implement/SKILL.md:133`), so an autonomous pass that hits a judgment call picks up this format on the way through. `implement` itself stays uninstrumented on purpose — a pass that clears the gate is walk-away work and should not stop to format a plan for a human.
-- [`backlog shape`](../backlog/shape.md) — when writing the resolved plan onto an issue.
+- [`issues iron-out`](../issues/iron-out.md) — when writing the resolved plan onto an issue.
 - [`spike`](../spike/SKILL.md) — when writing up which approach won and what to build.
+- [`proposal`](../proposal/SKILL.md) — before a proposal's Flows and Pseudo-code sections.

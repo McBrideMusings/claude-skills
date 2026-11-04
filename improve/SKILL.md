@@ -1,6 +1,6 @@
 ---
 name: improve
-description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `backlog spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
+description: "Front door for making any aspect of a project better — routes to the aspect's owning skill (architecture, behavior, security, tests, gui, product, performance, game, docs, claude-md, skills, backlog, …) or surveys all when none is named. Every pass ENDS IN FILED TICKETS via `issues spec`; never implements. Surfaces opportunities where nothing is technically broken. Choices are typed keywords, never AskUserQuestion."
 ---
 
 # Improve
@@ -8,11 +8,11 @@ description: "Front door for making any aspect of a project better — routes to
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
-The hub for opportunity-finding: "nothing is technically broken, but this could be better." Improve holds no aspect knowledge itself except its four native lenses — every other aspect is owned by another skill, and improve **loads the owner, never reimplements its lenses**. Defect-finding is `review`'s front door, not this one.
+The hub for opportunity-finding: "nothing is technically broken, but this could be better." Improve holds no aspect knowledge itself except its native lenses — every other aspect is owned by another skill, and improve **loads the owner, never reimplements its lenses**. Defect-finding is `review`'s front door, not this one.
 
 This file is the **router**. The survey engine — phases, briefs, scoring, merge — lives in [IMPROVE-CORE.md](IMPROVE-CORE.md); load it only once routing has picked survey mode.
 
-**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `backlog spec`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
+**The endpoint is tickets.** Every route through this skill terminates the same way: surviving findings are handed to `issues spec`, which publishes them to the repo's issue backend as work to implement later. Nothing improve finds gets built in the pass that found it.
 
 ## RULE 0 — `AskUserQuestion` is BANNED for the entire lifetime of a survey
 
@@ -69,29 +69,34 @@ The one thing that reaches the tracker is a finding that **survived scoring** (P
 | `interface-safety` | [aspects/interface-safety.md](aspects/interface-safety.md) | native — [INTERFACE-SAFETY.md](INTERFACE-SAFETY.md) | always |
 | `agent-ergonomics` | [aspects/agent-ergonomics.md](aspects/agent-ergonomics.md) | native — [AGENT-ERGONOMICS.md](AGENT-ERGONOMICS.md) | always |
 | `security` | [aspects/security.md](aspects/security.md) | native — [SECURITY.md](SECURITY.md) | always |
+| `observability` | [aspects/observability.md](aspects/observability.md) | native — observability checklist | only when named: `improve observability` |
 | `claude-md` | [aspects/claude-md.md](aspects/claude-md.md) | native — [CLAUDE-MD.md](CLAUDE-MD.md) | a committed `CLAUDE.md` exists |
 | `skills` | [aspects/skills.md](aspects/skills.md) | native — [WRITING-SKILLS.md](WRITING-SKILLS.md), vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md) | a `skills/` or `.claude/skills/` directory exists |
 | `behavior` | [aspects/behavior.md](aspects/behavior.md) | native — [BEHAVIOR.md](BEHAVIOR.md) | product launchable AND drivable (scripting surface, CLI, browser tool, harness) |
 | `complexity` | [aspects/complexity.md](aspects/complexity.md) | native | a complexity tool is available for the repo's language |
-| `tests` | [aspects/tests.md](aspects/tests.md) | `tdd` audit mode | always — an absent suite is the lead finding |
-| `gui` | [aspects/gui.md](aspects/gui.md) | `gui` critique mode | UI surface exists |
-| `product` | [aspects/product.md](aspects/product.md) | `gui` orient mode | always |
+| `tests` | [aspects/tests.md](aspects/tests.md) | native — keeping and writing tests | always — an absent suite is the lead finding |
+| `gui` | [aspects/gui.md](aspects/gui.md) | design critique passes | UI surface exists |
+| `product` | [aspects/product.md](aspects/product.md) | design-layer orient audit | always |
 | `performance` | [aspects/performance.md](aspects/performance.md) | `profiling` | app launchable through an existing entry point |
-| `game` | [aspects/game.md](aspects/game.md) | `ref-game-dev/` cells | `.claude/domain` marker includes `game` |
-| `docs` | [aspects/docs.md](aspects/docs.md) | `docs` audit branch | always |
+| `game` | [aspects/game.md](aspects/game.md) | game design and review lenses | `.claude/domain` marker includes `game` |
+| `audio` | [aspects/audio.md](aspects/audio.md) | audio volume, gain and loudness rules | `.claude/domain` marker includes `audio` |
+| `docs` | [aspects/docs.md](aspects/docs.md) | [`bootstrap/docs-site/`](../bootstrap/docs-site/DOCS-SITE.md) audit branch | always |
 | `layout` | [aspects/layout.md](aspects/layout.md) | `bootstrap` audit branch | always |
+| `backlog` | [aspects/backlog.md](aspects/backlog.md) | native — fixes route to `issues organize`, or `issues iron-out` for a decision without `human` | a `.beads/` directory exists |
+
+*Knowledge base: search it for "observability checklist", "keeping and writing tests", "gui critique", "gui orient", "game design", "game review", "audio volume". If you have none, skip this line and don't mention it.*
 
 **The brief column is what a survey sub-agent gets** — a short file naming exactly what to read and what this aspect asks, so no agent burns a read of a 300-line `SKILL.md` hunting for one section. The owner column is what an *interactive* single-aspect run loads, in full, grilling loop included.
 
 **Improving a skill itself** is the `skills` aspect above — read [WRITING-SKILLS.md](WRITING-SKILLS.md) (vocabulary in [SKILL-GLOSSARY.md](SKILL-GLOSSARY.md), pointer wording in [POINTERS.md](POINTERS.md)) before proposing anything. It carries the invocation/context-load tradeoff, progressive disclosure, description discipline, and the precision pass. Folded in from the standalone `writing-skills` skill on 2026-08-20.
 
-**It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `audit-session`'s [steering-conflict](../audit-session/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `audit-session` generally, not this skill.
+**It judges one skill at a time, on purpose.** A skill that reads perfectly alone can still contradict a second skill loaded into the same session, and no single-file read will ever see it. That failure belongs to `retro`'s [steering-conflict](../retro/axes/steering-conflict.md) lens, which works from a transcript and can tell which sources actually landed together. Route it there rather than guessing; the meta-audit *pass* is `retro` generally, not this skill.
 
-Every delegated owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap`, `docs`, `profiling`, `tdd`, and `gui` (in its `SKILL.md` for critique and its `ORIENT.md` for orient). The `game` cells are knowledge files with no such section, so [aspects/game.md](aspects/game.md) *is* their contract.
+Every routed owner carries a **"Findings-only invocation"** section stating its own read-only contract — `bootstrap` (its layout and docs-site routes), `profiling`, and the `gui` and `product` aspects, whose briefs state their passes inline. The `game` and `audio` knowledge has no such section, so [aspects/game.md](aspects/game.md) and [aspects/audio.md](aspects/audio.md) are their contracts.
 
 ## Routing
 
-- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; delegated aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no HTML report. IMPROVE-CORE.md is not involved — **except its Phase 08**, which this route still runs: score the findings yourself against [GROUNDING.md](GROUNDING.md), then take the survivors to tickets. The grilling loop is what sharpens a finding into a ticket body worth handing to `implement`; it is not a licence to build the thing.
+- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; routed aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no HTML report. IMPROVE-CORE.md is not involved — **except its Phase 08**, which this route still runs: score the findings yourself against [GROUNDING.md](GROUNDING.md), then take the survivors to tickets. The grilling loop is what sharpens a finding into a ticket body worth handing to `implement`; it is not a licence to build the thing.
 - **Several aspects named** (`improve gui tests`) → survey over exactly those, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 - **Nothing named** (bare `improve`) → survey over every applicable aspect, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 

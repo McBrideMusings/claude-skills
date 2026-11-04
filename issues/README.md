@@ -14,11 +14,14 @@ skill holds its *process* once and stays backend-agnostic: it resolves the backe
 
 ```
 issues/
-  SKILL.md          <- the map: which file to open for which task
+  SKILL.md          <- the front door: the six verbs and the pointer to REFERENCE.md
+  REFERENCE.md      <- the map: which tracker file to open for which task
+  file.md spec.md next.md organize.md iron-out.md reconcile.md  <- one file per verb
+  SPEC-TEMPLATE.md TICKET-TEMPLATE.md OUT-OF-SCOPE.md  <- shapes the verbs publish and check against
   README.md         <- this file — orientation and who-reads-what
   _detect.md        <- confirms beads and resolves what varies: mirror mode, stealth
-  breakdown.md      <- standard practice at pickup: slicing one issue + verify/land bookends
-  labels.md         <- the label schema, backend-independent: area: / mode: / platform:
+  breakdown.md      <- standard practice at pickup: slicing one issue into the fewest checkable children
+  labels.md         <- how labels work: flat words, each repo's .beads/labels.toml, the checks
   beads.md          <- verb table for beads (`bd`) — dependency-aware, local Dolt DB
   beads-stealth-context.md  <- injected in a stealth repo: the posture, not the verbs
   beads-mirror-context.md   <- injected where GitHub Issues mirrors beads: read/write rules
@@ -31,21 +34,21 @@ never picked up again, and it puts a must-not-delete file inside a disposable tr
 
 ## Labels are backend-independent
 
-The verb tables say *how* to attach a label. [`labels.md`](labels.md) says *which* — one
-vocabulary across every backend and every repo, on three prefixed axes (`area:`, `mode:`,
-`platform:`). Any skill that labels an issue reads it before picking a label, and never
-invents a bare one.
+The verb tables say *how* to attach a label. [`labels.md`](labels.md) says *which*: flat
+words, as the beads docs recommend, from the repo's own `.beads/labels.toml`. Any skill that
+labels an issue reads that file (`~/.claude/tools/bead-labels list`) before picking a label,
+and never invents one. A repo without the file gets a proposed labeling session, not guesses.
 
 ## Who reads what
 
 | Skill | Uses | Notes |
 | --- | --- | --- |
-| `backlog spec` | create, epic/parent, dep | publishes a slate of tickets; every set ends in the `breakdown.md` bookends |
-| `backlog next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
+| `issues spec` | create, epic/parent, dep | publishes a slate of tickets, sized per `breakdown.md` |
+| `issues next` | list, ready, show | `bd ready` replaces hand-rolled blocker reasoning on beads |
 | `implement` | show, claim, close, comment | one item start→finish |
-| `implement` | list, ready, claim, close | selector resolution lives in `implement/SELECTORS.md` |
-| `backlog shape` | list, create, dep, label | files open questions, wires blockers |
-| `backlog file` | create, list | halts when neither backend resolves |
+| `issues organize` | list, create, dep, label | types, labels, epics, wires blockers; selector resolution lives in `implement/SELECTORS.md` |
+| `issues iron-out` | human, list, update, label, close | answers and closes questions, rewrites work items until AFK, flags unlabelled ones `human`; files new work through `issues spec` / `issues file` into the run's focus, then ends through `relay` §Ending |
+| `issues file` | create, list | halts when neither backend resolves |
 | `papercut` | create | promotes a logged papercut to a tracked item |
 | `wrap-up` | close, comment, list | plus PR work, which is always `gh` |
 | `review` | comment, create | PR review flow is always `gh` (see below) |
@@ -54,7 +57,7 @@ invents a bare one.
 ## Pull requests are always GitHub
 
 Beads has no pull-request concept. Anything touching a PR — `review`'s PR queue and
-`unblock`'s FEEDBACK.md, `wrap-up`'s landing phase, `summary`'s branch read — keeps using `gh pr …`
+`mergeable`'s FEEDBACK.md, `wrap-up`'s landing phase, `summary`'s branch read — keeps using `gh pr …`
 unchanged regardless of which issue backend resolved. Only *issues* route through this skill.
 
 ## Adding a backend

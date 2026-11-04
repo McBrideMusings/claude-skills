@@ -1,3 +1,7 @@
+---
+run: always
+---
+
 # Spec compliance lens
 
 Read the spec located in Phase 03, then read the diff. Report findings in three sub-categories, quoting the spec line for each, and tag each finding with its sub-category so Phase 07 can route them:

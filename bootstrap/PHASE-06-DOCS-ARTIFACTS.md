@@ -18,7 +18,7 @@ a PRD nor a roadmap is created here, and adding one back needs an argument that 
 
 Their owners already handle the missing-file case:
 
-- **A spec is `backlog spec`'s output**, and that skill declares itself the single owner of spec
+- **A spec is `issues spec`'s output**, and that skill declares itself the single owner of spec
   synthesis. A synthesized spec lives in the tracker's epic issue body (its Phase 06), never
   in a file — no PRD is ever written.
 - **A roadmap is the issue tracker's job.** Phase 05 runs before this one precisely so that
@@ -26,7 +26,7 @@ Their owners already handle the missing-file case:
   ordered, and closed as work lands. `bd ready` cannot go stale; a markdown list of intentions
   always does.
 
-**If the repo finished Phase 05 with no tracker at all**, say so in the Phase 07 summary and
+**If the repo finished Phase 05 with no tracker at all**, say so in the Phase 08 summary and
 name `bd init` as the fix. Do not write a roadmap as a consolation prize — that is how the
 divergence above happens.
 
@@ -53,7 +53,8 @@ source, not as a spec.
 - **Non-standard at `GLOSSARY.md` / `docs/glossary.md` / `docs/terms.md`**:
   1. Confirm: *"Found `GLOSSARY.md` — looks like project vocabulary. Rename + move to `docs/CONTEXT.md`?"* (Default: yes.)
   2. Move and update internal references.
-  3. If the file's format doesn't match `~/.claude/skills/docs/CONTEXT-FORMAT.md` (no `## Language`, `## Relationships`, etc.), leave the content but add standard headings around it. Don't reformat the user's existing entries.
+  3. If the file's format doesn't match the standard `docs/CONTEXT.md` format (a title, a description, then `## Language` with `### Domain` terms, `## Relationships`, `## Example dialogue`, `## Flagged ambiguities`), leave the content but add standard headings around it. Don't reformat the user's existing entries.
+   *Knowledge base: search it for "CONTEXT.md format". If you have none, skip this line and don't mention it.*
 - **Per-context files at `src/*/CONTEXT.md` without a CONTEXT-MAP.md**: multi-context bounded-context pattern. Don't migrate — offer to create `docs/CONTEXT-MAP.md` listing them.
 
 ### Empty-glossary template
@@ -98,7 +99,7 @@ this file describes.
 
 ### `docs-refs` reverse map (offer)
 
-ADRs (frontmatter `applies-to`) and vocab terms (`_applies-to_` marker in `docs/CONTEXT.md`) can declare the paths they scope, so a source path maps back to the decisions and terms that govern it (formats: `~/.claude/skills/docs/ADR-FORMAT.md`, `~/.claude/skills/docs/CONTEXT-FORMAT.md`). The lookup is the shared script `~/.claude/tools/docs-refs.py` — no index, scans `docs/adr/*.md` and every `CONTEXT.md` live.
+ADRs (frontmatter `applies-to`) and vocab terms (`_applies-to_` marker in `docs/CONTEXT.md`) can declare the paths they scope, so a source path maps back to the decisions and terms that govern it (an `applies-to` list of globs in the ADR frontmatter; an `_applies-to_: <globs>` line under the term). The lookup is the shared script `~/.claude/tools/docs-refs.py` — no index, scans `docs/adr/*.md` and every `CONTEXT.md` live.
 
 If the project has an `admin.toml`, offer to wire the two shell convenience commands (agents can call the script directly regardless):
 
@@ -124,4 +125,4 @@ run = "python3 ~/.claude/tools/docs-refs.py --validate"
 
 Then `admin check`. `admin docs-refs src/checkout/` lists governing refs; `admin docs-refs` dumps the full map; `admin docs-validate` exits non-zero when any `applies-to` glob points at a deleted/moved path. Don't add `applies-to`/`_applies-to_` proactively — it's opt-in per ADR or term when one is genuinely path-scoped.
 
-Then proceed to [PHASE-07-SUMMARY-AND-BACKFILL.md](PHASE-07-SUMMARY-AND-BACKFILL.md).
+Then proceed to [PHASE-07-DESIGN-SYSTEM.md](PHASE-07-DESIGN-SYSTEM.md).

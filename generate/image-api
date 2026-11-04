@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""Cloud image driver for the generate engine: gemini and openai, generate and edit.
+
+  image-api --backend gemini|openai --prompt TEXT --out FILE.png [--edit INPUT.png]
+            [--aspect 1:1|3:4|4:3|9:16|16:9]  (edit: unset keeps the input shape) [--model NAME]
+
+Reads GEMINI_API_KEY (or GOOGLE_API_KEY) / OPENAI_API_KEY from the environment.
+Prints the written path, the model, and the elapsed seconds. Exit 2 = key missing
+(dormant), exit 1 = API error. Writes a .json sidecar beside the PNG.
+"""
+import argparse, base64, json, mimetypes, os, subprocess, sys, time, urllib.error, urllib.request, uuid
+
+DEFAULT_MODEL = {"gemini": "gemini-3.1-flash-image", "openai": "gpt-image-2"}
+# gpt-image sizes for each aspect; gemini takes the aspect string directly.
+OPENAI_SIZE = {"1:1": "1024x1024", "3:4": "1024x1536", "9:16": "1024x1536",
+               "4:3": "1536x1024", "16:9": "1536x1024"}
+
+
+def post(req, timeout=600):
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        sys.exit("API error %s: %s" % (e.code, e.read().decode()[:600]))
+    except (urllib.error.URLError, OSError) as e:
+        sys.exit("request failed: %s" % e)
+
+
+def gemini(a, key):
+    parts = [{"text": a.prompt}]
+    if a.edit:
+        mime = mimetypes.guess_type(a.edit)[0] or "image/png"
+        data = base64.b64encode(open(a.edit, "rb").read()).decode()
+        parts.insert(0, {"inline_data": {"mime_type": mime, "data": data}})
+    body = {"contents": [{"parts": parts}],
+            "generationConfig": {"responseModalities": ["IMAGE"]}}
+    if a.aspect:
+        body["generationConfig"]["imageConfig"] = {"aspectRatio": a.aspect}
+    url = "https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent" % a.model
+    req = urllib.request.Request(url, json.dumps(body).encode(),
+                                 {"Content-Type": "application/json", "x-goog-api-key": key})
+    resp = post(req)
+    for c in resp.get("candidates", []):
+        for p in c.get("content", {}).get("parts", []):
+            d = p.get("inlineData") or p.get("inline_data")
+            if d:
+                return base64.b64decode(d["data"])
+    sys.exit("gemini returned no image: %s" % json.dumps(resp)[:600])
+
+
+def openai(a, key):
+    size = OPENAI_SIZE[a.aspect] if a.aspect else "auto"
+    if not a.edit:
+        body = {"model": a.model, "prompt": a.prompt, "size": size, "n": 1}
+        req = urllib.request.Request("https://api.openai.com/v1/images/generations",
+                                     json.dumps(body).encode(),
+                                     {"Content-Type": "application/json",
+                                      "Authorization": "Bearer " + key})
+    else:
+        boundary = uuid.uuid4().hex
+        fields = {"model": a.model, "prompt": a.prompt, "size": size, "n": "1"}
+        out = b""
+        for k, v in fields.items():
+            out += ('--%s\r\nContent-Disposition: form-data; name="%s"\r\n\r\n%s\r\n'
+                    % (boundary, k, v)).encode()
+        mime = mimetypes.guess_type(a.edit)[0] or "image/png"
+        out += ('--%s\r\nContent-Disposition: form-data; name="image"; filename="%s"\r\n'
+                'Content-Type: %s\r\n\r\n' % (boundary, os.path.basename(a.edit), mime)).encode()
+        out += open(a.edit, "rb").read() + ("\r\n--%s--\r\n" % boundary).encode()
+        req = urllib.request.Request("https://api.openai.com/v1/images/edits", out,
+                                     {"Content-Type": "multipart/form-data; boundary=" + boundary,
+                                      "Authorization": "Bearer " + key})
+    resp = post(req)
+    try:
+        return base64.b64decode(resp["data"][0]["b64_json"])
+    except (KeyError, IndexError):
+        sys.exit("openai returned no image: %s" % json.dumps(resp)[:600])
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--backend", required=True, choices=["gemini", "openai"])
+    p.add_argument("--prompt", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--edit", help="input image; switches to edit mode")
+    p.add_argument("--aspect", choices=list(OPENAI_SIZE),
+                   help="default 1:1 for generate; unset for edit keeps the input's shape")
+    p.add_argument("--model")
+    a = p.parse_args()
+    a.model = a.model or DEFAULT_MODEL[a.backend]
+    if not a.edit:
+        a.aspect = a.aspect or "1:1"
+    elif not os.path.isfile(a.edit):
+        sys.exit("edit input not found: %s" % a.edit)
+    if a.backend == "gemini":
+        key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    else:
+        key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        print("%s: dormant (key MISSING)" % a.backend, file=sys.stderr)
+        sys.exit(2)
+    t = time.time()
+    png = (gemini if a.backend == "gemini" else openai)(a, key)
+    out = os.path.abspath(a.out)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    if not png.startswith(b"\x89PNG"):
+        # gemini returns JPEG bytes; convert so the file matches its .png name.
+        tmp = out + ".jpg"
+        open(tmp, "wb").write(png)
+        if subprocess.run(["sips", "-s", "format", "png", tmp, "--out", out],
+                          capture_output=True).returncode != 0:
+            sys.exit("backend returned JPEG and sips could not convert it; kept " + tmp)
+        os.remove(tmp)
+    else:
+        open(out, "wb").write(png)
+    secs = round(time.time() - t, 1)
+    json.dump({"backend": a.backend, "model": a.model, "prompt": a.prompt, "edit": a.edit,
+               "aspect": a.aspect, "seconds": secs},
+              open(os.path.splitext(out)[0] + ".json", "w"), indent=2)
+    print("%s\nbackend=%s model=%s mode=%s seconds=%s"
+          % (out, a.backend, a.model, "edit" if a.edit else "generate", secs))
+
+
+main()

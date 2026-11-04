@@ -5,9 +5,9 @@ an Unraid plugin (`.plg` + package) onto an Unraid host.
 
 ## `DEPLOY_LOCAL` → `ADMIN_LOCAL`
 
-Same local-vs-remote mechanism as `docker-unraid` — shipped on `deploy`, `logs`,
+Same local-vs-remote mechanism as `docker` — shipped on `deploy`, `logs`,
 `diff`, `install-template`. Set `DEPLOY_LOCAL=true` in `.env` when on the Unraid
-host; leave unset on a remote workstation. See `archetypes/docker-unraid.md` for
+host; leave unset on a remote workstation. See `archetypes/docker.md` for
 the full setup.
 
 ## Privacy

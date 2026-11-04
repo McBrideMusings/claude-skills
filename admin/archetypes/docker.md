@@ -1,11 +1,10 @@
-# Archetype: `docker-unraid` (Docker images deployed to an Unraid host)
+# Archetype: `docker` (Docker images deployed to an Unraid host)
 
 Load when `admin.toml` has `archetypes = [… "docker" …]`. Builds a Docker image
 and deploys it to an Unraid server (over SSH, or locally when on the host).
 
-The archetype was called `docker-unraid` before it was renamed to `docker`. A
-manifest still saying `archetypes = ["docker-unraid"]` fails with `unknown
-archetype` after the tool is reinstalled — change it to `"docker"`.
+A manifest saying `archetypes = ["docker-unraid"]` fails with `unknown
+archetype` once the tool is reinstalled — change it to `"docker"`.
 
 ## Two things deploy, and they are separate sub-targets
 
@@ -160,10 +159,9 @@ owns the mount root only, not the subdirectories the sync writes into it, and it
 fires on `deploy image` while this breakage is on `deploy files`, the cheap
 deploy.
 
-> Historical note: `post_sync` was in `DEPLOY_KEYS` but unwired for a while, so a
-> manifest could declare it, pass `admin check`, and silently never run it.
-> Fixed 2026-08-09 (`admin_lib/remote.py`). If you are on an older installed
-> tool, `bash ~/projects/admin-project-tool/install.sh`.
+> Symptom of an outdated install: a manifest declares `post_sync`, passes
+> `admin check`, and it silently never runs (`admin_lib/remote.py` didn't wire
+> it into `DEPLOY_KEYS`). If you hit this, `bash ~/projects/admin-project-tool/install.sh`.
 
 ## `[docker_build]` — build on the target instead of locally
 
@@ -205,7 +203,7 @@ alone still creates it. `${VAR}` in `host` is expanded from the environment (an
 unresolved var skips that dir with a warning, same as the mount itself). Commands
 run on the deploy target — locally or over SSH, matching the rest of the deploy.
 
-### `skipping provision` on a var that the mount clearly resolved — fixed in `8266136`
+### `skipping provision` on a var that the mount clearly resolved
 
 Symptom, if you are on an older installed tool: one deploy printing both of these,
 where the second line is the very mount the first said it was skipping.
@@ -256,8 +254,36 @@ interval = 2      # seconds between polls, default 2 (floored at 1)
 
 The poll runs **on the deploy target**, so a `127.0.0.1:PORT` url resolves against
 the published port on the host rather than the machine running `admin`. Uses `curl`.
-On timeout, deploy exits non-zero and points at `docker logs <container>`. Omit the
-table to skip the check entirely. `--dry-run` prints the poll it would run.
+On timeout, deploy exits non-zero and points at `docker logs <container>` and the
+restore script. Omit the table to skip the check entirely. `--dry-run` prints the
+poll it would run.
+
+**The prune of dangling images runs only after this passes.** Before that, the
+deploy pins the outgoing image to `<repo>:previous` — `docker load` or an on-host
+build has already moved the image's own tag to the new build, so the old one is
+dangling and a prune would delete the only rollback target. The tag moves only when
+the outgoing container is healthy right now (one probe of this url, or with no
+`[docker_run.health]`, running and not restarting), so two failed deploys in a row
+still roll back to the last good build. `/tmp/<container>-restore.sh` on the target
+removes the current container and starts that tag.
+
+## `[docker_run.preflight]` — refuse a deploy the new image can't boot
+
+Runs a command from the **new** image on the target, after the image arrives and
+before the running container is touched. A non-zero exit refuses the deploy with
+the old container still serving.
+
+```toml
+[docker_run.preflight]
+entrypoint = "etv-station"                     # required; replaces the image's ENTRYPOINT
+args       = ["--config", "/config/station.yaml", "--check-config"]
+```
+
+It runs with the container's own `[docker_run]` env, devices, user and runtime, every
+bind mount forced `:ro`, and no `-p`/`--restart`/`--hostname`/`--mac-address`/`-i`/`-t`
+(those would collide with the container still running beside it). So the command must
+read the config and write only inside the container, e.g. under `/tmp`. A table with
+no `entrypoint` is an error, not a skipped check. `--dry-run` prints it masked.
 
 ## `logs` — follow by default, `--no-follow` to get an answer back
 

@@ -1,0 +1,534 @@
+#!/usr/bin/env python3
+"""dashboard: build, refresh and delete one live dashboard artifact.
+
+A dashboard is addressed by its slot ("implement:canvas-12", "status", "monitor:free").
+Its state is one JSON file the caller writes; `path` prints where it lives. The slot maps
+to one Canvas artifact, whose id is recorded in ~/.local/state/dashboard/. Every other verb reads
+the state file:
+
+  dashboard path <slot>                    where the state file for <slot> lives
+  dashboard page <slot>                    the card HTML (page shell + current values)
+  dashboard widget <slot>                  the widget HTML (196px wide, 120px tall at most)
+  dashboard data <slot>                    state + live probes as one JSON value
+  dashboard post <slot> [--every SECS] [--card]
+                                           write page and widget, then create the slot's
+                                           artifact or put them into it; --every adds a
+                                           refresh that cds into this checkout and runs
+                                           `dashboard data <slot>`, and lasts as long as
+                                           this agent; --card posts the page as a plain
+                                           feed card instead
+  dashboard push <slot>                    data | canvas data <artifact_id> -
+  dashboard end <slot>                     canvas artifact delete <artifact_id>
+
+Inside a Wheel pane (WHEEL_ENV=1) the slot maps to a machine-scope Wheel artifact shown in a
+pane split to the right of this agent's, instead of a Canvas artifact: post writes its
+index.html and shows it, push is `wheel artifact data <pane>`, end closes the pane and removes
+the artifact. --every registers `dashboard data <slot> --out` as the artifact's refresh command,
+which the daemon runs on that interval once the person approves it, writing the pane's
+data/state.json; the pane reloads when it changes. --card does nothing there.
+
+Failures exit 1 with one line on stderr. Log: every verb appends a timestamped line to
+<scratch>/dashboard/dashboard.log.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import html
+import json
+import os
+import re
+import shlex
+import shutil
+import signal
+import subprocess
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose"]
+MERMAID_KINDS = {"diagram", "diagnose"}
+MERMAID_SRC = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
+MERMAID_SRI = "sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
+HISTORY_CAP = 120
+PROBE_TIMEOUT = 10
+SLOT_RE = r"[A-Za-z0-9][A-Za-z0-9:._-]*"
+
+
+def now() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def scratch_dir() -> Path:
+    try:
+        out = subprocess.run([str(Path.home() / ".claude/tools/repo-slug"), "--path"],
+                             capture_output=True, text=True, timeout=PROBE_TIMEOUT)
+        base = Path(out.stdout.strip()) if out.returncode == 0 and out.stdout.strip() else None
+    except (OSError, subprocess.TimeoutExpired):
+        base = None
+    d = (base or Path("/private/tmp/claude/no-repo")) / "dashboard"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def log(msg: str) -> None:
+    with (scratch_dir() / "dashboard.log").open("a") as f:
+        f.write(f"{now()} {msg}\n")
+
+
+def fail(msg: str):
+    log(f"error {msg}")
+    print(f"dashboard: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+def slot_file(slot: str, suffix: str = ".json") -> Path:
+    if not re.fullmatch(SLOT_RE, slot):
+        fail(f"slot {slot!r}: use letters, digits and : . _ - (drop a leading #)")
+    # "~" and "+" are outside SLOT_RE: "~" stands in for ":", and every per-slot sidecar
+    # ("+history.json", "+page.html") starts with "+", so no slot's files can collide.
+    return scratch_dir() / (slot.replace(":", "~") + suffix)
+
+
+def load_state(slot: str) -> dict:
+    p = slot_file(slot)
+    if not p.exists():
+        fail(f"no state for slot {slot!r}: write it to {p} first")
+    try:
+        state = json.loads(p.read_text())
+    except json.JSONDecodeError as e:
+        fail(f"{p} is not JSON: {e}")
+    if not isinstance(state, dict) or state.get("kind") not in KINDS:
+        fail(f"{p}: \"kind\" must be one of {', '.join(KINDS)}")
+    state["slot"] = slot
+    return state
+
+
+def sh(cmd: list[str]) -> str:
+    """stdout of a read-only probe, or "" when it fails, is missing or hangs."""
+    try:
+        out = subprocess.run(cmd, capture_output=True, text=True, timeout=PROBE_TIMEOUT)
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return out.stdout.strip() if out.returncode == 0 else ""
+
+
+def run_probe(cmd: str) -> tuple[int, str, str]:
+    """Run a shell probe in its own process group so a timeout kills every child it started."""
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True, start_new_session=True)
+    try:
+        out, err = proc.communicate(timeout=PROBE_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate()
+        raise
+    return proc.returncode, out, err
+
+
+# ---- live probes, per kind -------------------------------------------------
+
+def probe_implement(state: dict) -> dict:
+    base = state.get("base") or next((b for b in ("origin/main", "main", "origin/master", "master")
+                                      if sh(["git", "rev-parse", "--verify", "--quiet", b])), "")
+    live = {"branch": sh(["git", "branch", "--show-current"])}
+    if base:
+        # Committed work since the fork point, plus whatever is uncommitted on top of it.
+        ranges = [[f"{base}...HEAD"], ["HEAD"]]
+        stats = " ".join(sh(["git", "diff", "--shortstat", *r]) for r in ranges)
+        files = set().union(*(sh(["git", "diff", "--name-only", *r]).splitlines() for r in ranges)) - {""}
+        added = sum(map(int, re.findall(r"(\d+) insertion", stats)))
+        removed = sum(map(int, re.findall(r"(\d+) deletion", stats)))
+        live.update(diff=f"+{added} −{removed}",
+                    filesChanged=len(files),
+                    ahead=sh(["git", "rev-list", "--count", f"{base}..HEAD"]) or "0")
+    return live
+
+
+def tone_for(p: dict, v: float) -> str | None:
+    """danger/warn when a reading crosses its threshold: *At rising, *Below falling."""
+    for level in ("danger", "warn"):
+        at, below = p.get(f"{level}At"), p.get(f"{level}Below")
+        if (at is not None and v >= at) or (below is not None and v <= below):
+            return level
+    return None
+
+
+def probe_monitor(state: dict, slot: str, record: bool) -> dict:
+    """Run every probe. Only a recording call (data, post, push) adds to the history."""
+    hist_path = slot_file(slot, "+history.json")
+    try:
+        history = json.loads(hist_path.read_text()) if hist_path.exists() else {}
+        if not isinstance(history, dict):
+            history = {}
+    except json.JSONDecodeError:
+        history = {}
+    stamp = dt.datetime.now().strftime("%H:%M:%S")
+    readings = []
+    for p in state.get("probes", []):
+        label = str(p.get("label") or p.get("cmd") or "probe")
+        r = {"label": label, "unit": p.get("unit", "")}
+        readings.append(r)
+        if not p.get("cmd"):
+            r["error"] = "probe has no cmd"
+            continue
+        try:
+            code, out, err = run_probe(p["cmd"])
+        except subprocess.TimeoutExpired:
+            r["error"] = f"timed out after {PROBE_TIMEOUT}s"
+            continue
+        m = re.search(r"-?\d+(?:\.\d+)?", out)
+        if code != 0 or not m:
+            r["error"] = (err.strip().splitlines() or [f"exit {code}, no number in output"])[0]
+            continue
+        v = float(m.group())
+        r["value"] = v
+        if tone := tone_for(p, v):
+            r["tone"] = tone
+        if record:
+            history[label] = (history.get(label, []) + [[stamp, v]])[-HISTORY_CAP:]
+    if record:
+        tmp = hist_path.with_name(f"{hist_path.name}.{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(history))
+        tmp.replace(hist_path)   # atomic, so a refresh and a push never read a half-written file
+    return {"readings": readings, "history": history}
+
+
+def build_data(slot: str, record: bool = True) -> dict:
+    state = load_state(slot)
+    kind = state["kind"]
+    if kind == "implement":
+        state["live"] = probe_implement(state)
+    elif kind == "monitor":
+        state["live"] = probe_monitor(state, slot, record)
+    state["updated"] = now()
+    return state
+
+
+# ---- HTML ------------------------------------------------------------------
+
+def num(v) -> float | None:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def static_html(state: dict) -> str:
+    """Links and images a host only honours when they are in the posted HTML.
+    Only absolute paths are written; anything else is dropped."""
+    parts = []
+    links = [l for l in state.get("links") or [] if isinstance(l, dict) and str(l.get("path", "")).startswith("/")]
+    if links:
+        top = max((num(l.get("bytes")) or 0) for l in links) or 1
+        rows = ""
+        for l in links:
+            size = num(l.get("bytes"))
+            rows += (f'<a href="{html.escape(l["path"])}"><span>{html.escape(str(l.get("label") or l["path"]))}</span>'
+                     f'<b>{html.escape(human(size)) if size is not None else ""}</b>'
+                     + (f'<i class="bar" style="width:{max(2, 100 * size / top):.0f}%"></i>' if size else "")
+                     + "</a>")
+        parts.append(f'<section><h2>{html.escape(str(state.get("linksTitle", "Open in Finder")))}</h2><div class="links">{rows}</div></section>')
+    shots = [v for v in state.get("variants") or [] if isinstance(v, dict) and str(v.get("shot", "")).startswith("/")]
+    if shots:
+        figs = "".join(f'<figure><img src="{html.escape(v["shot"])}" alt="{html.escape(str(v.get("name", "")))}">'
+                       f'<figcaption>{html.escape(str(v.get("name", "")))}</figcaption></figure>' for v in shots)
+        parts.append(f'<section><h2>Screenshots</h2><div class="shots">{figs}</div></section>')
+    return "".join(parts)
+
+
+def human(n: float) -> str:
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if abs(n) < 1024 or unit == "TB":
+            return f"{n:.0f} {unit}" if unit == "B" else f"{n:.1f} {unit}"
+        n /= 1024
+    return str(n)
+
+
+def scripts_for(kind: str) -> str:
+    files = ["lib.js"] + (["kinds/diagram.js"] if kind in MERMAID_KINDS else []) + ([f"kinds/{kind}.js"] if kind != "diagram" else [])
+    return "\n".join((HERE / f).read_text() for f in files)
+
+
+def shell(state: dict, mode: str, host: str = "canvas") -> str:
+    kind = state["kind"]
+    # Canvas paints the page's ground in its own theme; a Wheel pane paints nothing, so the page
+    # takes the system's light or dark ground itself.
+    wheel_client = ('<style>:root{color-scheme:light dark}body{background:Canvas;color:CanvasText}</style>'
+                    '<script src=".wheel/client.js"></script>') if host == "wheel" else ""
+    data = json.dumps(state).replace("<", "\\u003c")   # no "<" at all, so no </script> or <!-- inside the script
+    mermaid = (f'<script src="{MERMAID_SRC}" integrity="{MERMAID_SRI}" crossorigin="anonymous"></script>'
+               if mode == "page" and kind in MERMAID_KINDS else "")
+    body_class = ' class="widget"' if mode == "widget" else ""
+    static = static_html(state) if mode == "page" else ""
+    return f"""<!doctype html><meta charset="utf-8"><title>{html.escape(str(state.get("title", kind)))}</title>
+<style>{(HERE / "card.css").read_text()}</style>
+<body{body_class}><div id="root"></div>{static}
+{mermaid}
+{wheel_client}
+<script>
+{scripts_for(kind)}
+const MODE = {json.dumps(mode)};
+const root = document.getElementById("root");
+let drawn = 0;
+function draw(d) {{
+  const k = KINDS[d.kind];
+  if (!k) {{ root.innerHTML = `<p class="danger">Unknown dashboard kind: ${{esc(d.kind)}}</p>`; return; }}
+  const gen = ++drawn;
+  root.innerHTML = k[MODE](d);
+  if (MODE === "page" && k.after) Promise.resolve(k.after(d, root, () => gen === drawn)).catch(() => {{}});
+}}
+draw({data});
+addEventListener("message", e => {{
+  if (e.source === parent && e.data && e.data.type === "canvas-data" && e.data.value && e.data.value.kind) draw(e.data.value);
+}});
+if (window.wheel) wheel.onData(v => {{ if (v && v.kind) draw(v); }});
+// A Wheel refresh writes the newest state here; the pane reloads each time it changes.
+if (window.wheel) fetch("data/state.json?t=" + Date.now(), {{ cache: "no-store" }})
+  .then(r => r.ok ? r.json() : null).then(v => {{ if (v && v.kind) draw(v); }}).catch(() => {{}});
+</script></body>
+"""
+
+
+# ---- verbs -----------------------------------------------------------------
+
+def canvas(args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
+    try:
+        out = subprocess.run(["canvas", *args], input=stdin, capture_output=True, text=True, timeout=60)
+    except FileNotFoundError:
+        fail("canvas is not installed or not on PATH")
+    except subprocess.TimeoutExpired:
+        fail(f"canvas {args[0]} did not answer within 60s")
+    log(f"canvas {' '.join(args)} -> exit {out.returncode} {out.stderr.strip()[:200]}")
+    return out
+
+
+def first_line(out: subprocess.CompletedProcess) -> str:
+    return ((out.stderr.strip() or out.stdout.strip()).splitlines() or [f"exit {out.returncode}"])[0]
+
+
+def refresh_command(slot: str, out: str = "") -> str:
+    # The host runs this from its own directory; cd back here so `data` finds this
+    # checkout's state files and probes this checkout's git.
+    return (f"cd {shlex.quote(os.getcwd())} && {shlex.quote(str(HERE / 'dashboard'))} data {shlex.quote(slot)}"
+            + (f" --out {out}" if out else ""))
+
+
+def artifact_record(slot: str) -> Path:
+    """Where the slot's artifact id lives: outside the scratch dir, which macOS clears after
+    three days, because the artifact outlives that."""
+    if not re.fullmatch(SLOT_RE, slot):
+        fail(f"slot {slot!r}: use letters, digits and : . _ - (drop a leading #)")
+    d = Path.home() / ".local/state/dashboard" / scratch_dir().parent.name
+    d.mkdir(parents=True, exist_ok=True)
+    return d / (slot.replace(":", "~") + ".artifact")
+
+
+def artifact_id(slot: str) -> str | None:
+    """The artifact recorded for this slot, or None when none is recorded or Canvas says
+    (404) it no longer exists. Any other failure stops the verb: the artifact may still be there."""
+    p = artifact_record(slot)
+    if not p.exists():
+        return None
+    aid = p.read_text().strip()
+    out = canvas(["artifact", "show", aid])
+    if out.returncode == 0:
+        return aid
+    if "404" in out.stderr:
+        p.unlink()
+        return None
+    fail(f"canvas artifact show {aid} failed: {first_line(out)}")
+
+
+def in_wheel() -> bool:
+    return os.environ.get("WHEEL_ENV") == "1" and bool(os.environ.get("WHEEL_PANE"))
+
+
+def wheel(args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
+    try:
+        out = subprocess.run(["wheel", *args], input=stdin, capture_output=True, text=True, timeout=60)
+    except FileNotFoundError:
+        fail("wheel is not on PATH inside this Wheel pane")
+    except subprocess.TimeoutExpired:
+        fail(f"wheel {' '.join(args[:2])} did not answer within 60s")
+    log(f"wheel {' '.join(args)} -> exit {out.returncode} {out.stderr.strip()[:200]}")
+    return out
+
+
+def wheel_record(slot: str) -> dict | None:
+    """The Wheel artifact recorded for this slot: {"name", "dir", "pane"}, or None."""
+    p = artifact_record(slot)
+    if not p.exists():
+        return None
+    try:
+        rec = json.loads(p.read_text())
+    except json.JSONDecodeError:
+        return None   # a Canvas id from outside Wheel
+    return rec if isinstance(rec, dict) and rec.get("host") == "wheel" else None
+
+
+def wheel_post(slot: str, state: dict, every: int | None) -> None:
+    rec = wheel_record(slot)
+    if not rec:
+        name = re.sub(r"[^a-z0-9]+", "-", f"dash-{scratch_dir().parent.name}-{slot}".lower()).strip("-")
+        # A terminal pane running claude is not a Wheel agent pane, so --ends-with-session
+        # is refused there; a week's expiry clears a dashboard whose `end` never ran.
+        out = wheel(["artifact", "new", name, "--scope", "machine", "--expires", "7d"])
+        if out.returncode != 0:
+            fail(f"wheel artifact new failed: {first_line(out)}")
+        rec = {"host": "wheel", "name": name, "dir": out.stdout.strip().splitlines()[-1], "pane": ""}
+    # The daemon runs the refresh with its own PATH; `data` takes this agent's from the record.
+    # Wheel's approval hashes every file in every directory the command names, so a PATH written
+    # into the command would ask again on every package upgrade.
+    rec["path"] = os.environ.get("PATH", "")
+    if every:
+        # `artifact new` takes no refresh, so re-register the folder with one. The daemon runs it
+        # every `every` seconds once the person approves it, into the pane's data directory.
+        wheel(["artifact", "remove", rec["name"], "--scope", "machine"])
+        out = wheel(["artifact", "add", rec["dir"], "--name", rec["name"], "--scope", "machine",
+                     "--command", refresh_command(slot, '"$WHEEL_DATA_DIR/state.json"'), "--every", str(every)])
+        if out.returncode != 0:
+            fail(f"wheel artifact add failed: {first_line(out)}")
+    page = Path(rec["dir"]) / "index.html"
+    page.write_text(shell(state, "page", "wheel"))
+    # Re-pointing a live pane at the artifact reloads it, which picks up links and screenshots.
+    shown = rec["pane"] and wheel(["pane", "kind", rec["pane"], "web", "--artifact", rec["name"],
+                                   "--scope", "machine"]).returncode == 0
+    if not shown:
+        out = wheel(["pane", "split", os.environ["WHEEL_PANE"], "right"])
+        if out.returncode != 0:
+            fail(f"wheel pane split failed: {first_line(out)}; the page is at {page}")
+        rec["pane"] = out.stdout.strip().splitlines()[-1]
+        out = wheel(["pane", "kind", rec["pane"], "web", "--artifact", rec["name"], "--scope", "machine"])
+        if out.returncode != 0:
+            fail(f"wheel pane kind failed: {first_line(out)}; the page is at {page}")
+    artifact_record(slot).write_text(json.dumps(rec))
+    print(json.dumps({"slot": slot, "artifact": rec["name"], "pane": rec["pane"]}))
+
+
+def cmd_post(a) -> None:
+    state = build_data(a.slot)
+    if in_wheel():
+        if a.card:
+            print("dashboard: Wheel has no feed; --card does nothing there", file=sys.stderr)
+        wheel_post(a.slot, state, a.every)
+        return
+    site, widget = slot_file(a.slot, "+site"), slot_file(a.slot, "+widget.html")
+    site.mkdir(exist_ok=True)
+    page = site / "index.html"
+    page.write_text(shell(state, "page"))
+    widget.write_text(shell(state, "widget"))
+    if a.card:
+        out = canvas(["post", str(page), "--format", "html"])
+        if out.returncode != 0:
+            fail(f"canvas post failed: {first_line(out)}; the page is at {page}")
+        print(out.stdout.strip())
+        return
+    refresh = ["--refresh", refresh_command(a.slot), "--every", str(a.every)] if a.every else []
+    aid = artifact_id(a.slot)
+    if not aid:
+        out = canvas(["artifact", "new", "--title", str(state.get("title", state["kind"])),
+                      "--widget", str(widget), *refresh])
+        if out.returncode != 0:
+            fail(f"canvas artifact new failed: {first_line(out)}; the page is at {page}")
+        try:
+            aid = json.loads(out.stdout)["id"]
+        except (json.JSONDecodeError, KeyError, TypeError):
+            fail(f"canvas artifact new printed no id (an untracked artifact titled "
+                 f"{state.get('title')!r} may exist): {out.stdout.strip()[:200]}")
+        artifact_record(a.slot).write_text(aid)
+        refresh = []
+    out = canvas(["artifact", "put", aid, str(site), "--widget", str(widget), *refresh])
+    if out.returncode != 0:
+        fail(f"canvas artifact put {aid} failed: {first_line(out)}; the page is at {page}")
+    print(json.dumps({"slot": a.slot, "artifact_id": aid}))
+
+
+def cmd_push(a) -> None:
+    state = build_data(a.slot)
+    if in_wheel():
+        rec = wheel_record(a.slot)
+        if not rec:
+            fail(f"no Wheel artifact for slot {a.slot!r}: run `dashboard post {a.slot}` first")
+        out = wheel(["artifact", "data", rec["pane"], "-"], stdin=json.dumps(state))
+        if out.returncode != 0:
+            fail(f"wheel artifact data failed: {first_line(out)}")
+        print(f"pushed {a.slot} to pane {rec['pane']}")
+        return
+    aid = artifact_id(a.slot)
+    if not aid:
+        fail(f"no artifact for slot {a.slot!r}: run `dashboard post {a.slot}` first")
+    out = canvas(["data", aid, "-"], stdin=json.dumps(state))
+    if out.returncode != 0:
+        fail(f"canvas data failed: {first_line(out)}")
+    print(f"pushed {a.slot} to {aid}")
+
+
+def cmd_end(a) -> None:
+    if in_wheel():
+        rec = wheel_record(a.slot)
+        if not rec:
+            fail(f"no Wheel artifact for slot {a.slot!r}: nothing to end")
+        wheel(["pane", "close", rec["pane"]])   # already closed by hand is fine
+        out = wheel(["artifact", "remove", rec["name"], "--scope", "machine"])
+        if out.returncode != 0:
+            fail(f"wheel artifact remove {rec['name']} failed: {first_line(out)}")
+        # remove leaves the folder, and a leftover folder makes the slot's next `artifact new` fail.
+        shutil.rmtree(rec["dir"], ignore_errors=True)
+        artifact_record(a.slot).unlink(missing_ok=True)
+        print(f"closed pane {rec['pane']} and removed {rec['name']} for {a.slot}")
+        return
+    aid = artifact_id(a.slot)
+    if not aid:
+        fail(f"no artifact for slot {a.slot!r}: nothing to end")
+    out = canvas(["artifact", "delete", aid])
+    if out.returncode != 0:
+        fail(f"canvas artifact delete {aid} failed: {first_line(out)}")
+    artifact_record(a.slot).unlink(missing_ok=True)
+    print(f"deleted {aid} for {a.slot}")
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(prog="dashboard", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest="verb", required=True)
+    for verb in ("path", "page", "widget", "push", "end"):
+        sub.add_parser(verb).add_argument("slot")
+    data = sub.add_parser("data")
+    data.add_argument("slot")
+    data.add_argument("--out", help="write the JSON to this file, only when more than `updated` changed")
+    post = sub.add_parser("post")
+    post.add_argument("slot")
+    post.add_argument("--every", type=int, help="seconds between host-run refreshes; omit to push by hand")
+    post.add_argument("--card", action="store_true", help="post the page as an ordinary feed card, no artifact")
+    a = p.parse_args()
+    log(f"{a.verb} {a.slot}")
+    if a.verb == "path":
+        print(slot_file(a.slot))
+    elif a.verb in ("page", "widget"):
+        print(shell(build_data(a.slot, record=False), a.verb))
+    elif a.verb == "data":
+        if (rec := wheel_record(a.slot)) and rec.get("path"):
+            os.environ["PATH"] = rec["path"]
+        data = build_data(a.slot)
+        if not a.out:
+            print(json.dumps(data))
+            return
+        # A Wheel pane reloads whenever its data directory changes, so write only a real change,
+        # not a new `updated` stamp alone.
+        out = Path(a.out)
+        try:
+            old = json.loads(out.read_text())
+        except (OSError, ValueError):
+            old = None
+        if isinstance(old, dict) and {**old, "updated": None} == {**data, "updated": None}:
+            return
+        tmp = out.with_name(f"{out.name}.{os.getpid()}.tmp")
+        tmp.write_text(json.dumps(data))
+        tmp.replace(out)
+    else:
+        {"post": cmd_post, "push": cmd_push, "end": cmd_end}[a.verb](a)
+
+
+if __name__ == "__main__":
+    main()

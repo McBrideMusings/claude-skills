@@ -6,7 +6,7 @@ Axis tag: `skills`. Applicability: a `skills/` or `.claude/skills/` directory ex
 
 Judge whether a skill's **process** will actually run the way it is written. Distinct from `claude-md`, which judges a document that loads every turn; a skill loads on demand and is a procedure, so it fails in ways a document cannot.
 
-**Scope: one skill directory at a time.** A contradiction between two skills co-loaded into the same session is real and common, and it is not this aspect's — it belongs to `audit-session`'s [steering-conflict](../../audit-session/axes/steering-conflict.md) lens, which can see which sources actually landed together. Judge each skill as if it were the only one loaded. Say so when a finding smells cross-skill, and route it.
+**Scope: one skill directory at a time.** A contradiction between two skills co-loaded into the same session is real and common, and it is not this aspect's — it belongs to `retro`'s [steering-conflict](../../retro/axes/steering-conflict.md) lens, which can see which sources actually landed together. Judge each skill as if it were the only one loaded. Say so when a finding smells cross-skill, and route it.
 
 ## The eleven axes
 
@@ -20,7 +20,7 @@ Run every one against every skill in scope. Each finding quotes the skill's own 
 | 4 | **Ungated phase** | A phase the agent can skip with nothing noticing. Ask of every phase: what does the next phase read that only this one produces? If the answer is nothing, the phase is advisory. |
 | 5 | **Unhalted decision point** | A step that says choose, ask, or confirm, in a skill that can run unattended, with no halt and no stated default. Either it halts, or it names what happens when nobody answers. |
 | 6 | **Missing escape hatch** | A slate of recommendations that does not close with `go` — and `park` too where the slate proposes next work. Applies to every list of dispositions the skill tells the agent to present. |
-| 7 | **Contradiction** | Two lines in one skill that cannot both be obeyed. Read the whole file before judging any clause: `../../audit-session/FIX-MODE.md:19` — "a clause removed in isolation routinely contradicts one three sections down." Quote both halves or it is not a finding. |
+| 7 | **Contradiction** | Two lines in one skill that cannot both be obeyed. Read the whole file before judging any clause: `../../retro/FIX-MODE.md:19` — "a clause removed in isolation routinely contradicts one three sections down." Quote both halves or it is not a finding. |
 | 8 | **Additive drift** | A rule sitting beside the older one it should have replaced or narrowed. Before any guidance was added, one of replace / narrow / move / delete should have been considered. Two rules covering one behaviour is the condition that produces axis 7. |
 | 9 | **Retained forensics** | A sha, session id, date, count, or retold incident inside a rule. The rule stays; the evidence goes to the commit message. This is a compress, never a delete — the behaviour is fine, the proof is what costs tokens on every load. One clause of reason is allowed where the agent would otherwise choose wrong. |
 | 10 | **Size** | `SKILL.md` body past 500 lines, or a `description` carrying more than routing and constraints. Measure words per section, never line count. |
@@ -32,6 +32,7 @@ Axes 3–6 are why this aspect exists separately from `claude-md`. They are proc
 
 - **Read the skill in full before judging it, including its sibling files.** A finding that does not quote this skill's own text is not a finding.
 - **A rule stated once in `CLAUDE.md` and restated in a skill is duplication**, and duplication across two files is worse than within one — you cannot see both at once to notice they have drifted. Same test as `claude-md`'s: read the global file first.
+- **One decision or procedure has one owner, across skills, agents, hooks, tools and repos** — the audit for `CLAUDE.md`'s *One procedure, many callers*. A procedure is any multi-step process (drive an app, capture, measure, score); two copies of one, in any repo including a tool's, are a finding. A skill line that tells the agent how to sort something into kinds (whose repo this is, which tracker, which transport, primary checkout or worktree, default branch or not) is an implementation of that decision, the same as a function in a hook. For each such line, grep `skills/`, `agents/`, `hooks/`, `tools/` and `CLAUDE.md` for every other place that answers the same question. Two or more is a finding even when they agree today: list each with its path and line, name the differences that already exist, and propose one owning tool that code calls and prose names. A place that only reads the owner's verdict is not a copy.
 - **Never propose cutting a truth rule.** "Only claim what you verified", "flag uncertainty". Those stop invented facts; they are not severity filters.
 - **Coupling between these skills is deliberate, not a defect.** They name each other, hard-require each other, and assume herdr, beads and `admin.toml`. Do not file portability findings against the private set. The one carve-out: the skills repo is public, so naming a private label or a personal host anywhere in it *is* a finding.
 - **A gate proposed for axis 3 or 4 is not a finding until its shape is named.** Say what artifact proves the step ran and what reads it. "Add a gate" with no mechanism is the same advisory prose it was meant to replace.
@@ -44,4 +45,4 @@ Three things worth running before writing findings, because each answers an axis
 - Sibling `.md` files versus the ones `SKILL.md` names — axis 1. A file reached only through another file is the finding, not just a file reached through none.
 - `git log --follow -p -- <skill>/SKILL.md` — axes 8 and 9. Carry-over across rewrites is the strongest evidence available: survived every rewrite means load-bearing; removed once and added back means the removal was wrong.
 
-Card fields per [../HTML-REPORT.md](../HTML-REPORT.md). Each finding: the **gap**, **evidence** (the quoted line), **fix** (the concrete rewrite), **strength** (`Strong` / `Worth exploring` / `Speculative`).
+Card fields per [../HTML-REPORT.md](../HTML-REPORT.md). Each finding: the **gap**, **evidence** (the quoted line), **fix** (the concrete rewrite), **impact** (`P0`–`P3`, the scale in [`../../review/REVIEW-CORE.md`](../../review/REVIEW-CORE.md) §Axis tags).

@@ -29,6 +29,7 @@ root=$(git rev-parse --show-toplevel) && cd "$root" && {
 |---|---|
 | `architecture`, `interface-safety`, `agent-ergonomics` (runs `lateral driver-seat`), `security`, `product`, `layout` | always |
 | `tests` | always — an absent suite is the lead finding |
+| `observability` | never in a survey — only when named: `improve observability` |
 | `claude-md` | `claude-md=` non-empty |
 | `gui` | a UI surface in the tree — components, stylesheets, a page, or a TUI |
 | `performance` | `admin=yes` or `scripts=` names a start/dev/run entry |
@@ -69,7 +70,7 @@ One brief per confirmed aspect: the content of its [`aspects/`](aspects/) file, 
 
 **The finding shape.** Forward verbatim:
 
-> *Return each finding as: **title** (names the change, not the problem area) · **lens** (the specific rule, craft lens, domain cell, or lateral technique that produced it — `ARCHITECTURE.md deletion test`, `ref-gui/opportunities.md motion`, `worst-idea`, `PHASE-03-AUDIT.md substantive checklist` — never just the aspect name) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **strength** (`Strong` / `Worth exploring` / `Speculative`). **At most 5 findings, at most 120 words each.** If you have more than five, return the five best and say how many you dropped — the count reaches the report, the sixth finding does not.*
+> *Return each finding as: **title** (names the change, not the problem area) · **lens** (the specific rule, craft lens, domain cell, or lateral technique that produced it — `ARCHITECTURE.md deletion test`, `motion opportunities gate`, `worst-idea`, `PHASE-03-AUDIT.md substantive checklist` — never just the aspect name) · **evidence** (`file:line` you opened, or the quoted line) · **leverage** (what it buys, in this aspect's own vocabulary, in real units where a number exists) · **proposed fix** (what physically changes — which file, which signature, what moves where) · **impact** (`P0`–`P3`, the scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags). **At most 5 findings, at most 120 words each.** If you have more than five, return the five best and say how many you dropped — the count reaches the report, the sixth finding does not.*
 
 The **lens** field is what makes a finding traceable back to the knowledge that produced it. The aspect name says which agent ran; the lens says which sentence in which file fired. It travels unchanged through the report card and into the ticket body, so the reader can open the rule and judge the finding against it.
 
@@ -146,7 +147,7 @@ The ranking input is leverage and dependency order — what a change unblocks, w
 
 1. **Write the HTML report** per [HTML-REPORT.md](HTML-REPORT.md) — one `<section>` per aspect, one card per surviving finding, the Top recommendation section, and the coverage line. Title it "Improvement survey — {repo name}".
 
-   **⛔ Resolve `<root>` to an ABSOLUTE path** — run `git rev-parse --show-toplevel` in its own Bash call. Every `mkdir` / `Write` / `open` / printed path is the absolute `/private/tmp/claude/<repo-slug>/reports/…`, built with `skills/improve/tool/report`. If a path doesn't start with `/`, that's the bug. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
+   The report goes under `reports/` in the directory `~/.claude/tools/repo-slug --path` prints, built with `skills/improve/tool/report`. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
 2. **Screenshot it and look at it** before handing it over. A path is not verification.
 3. **Summarize inline** — per aspect: finding count and the top finding's title, so the user can react without opening the file. Name any aspect that returned not-applicable and any sub-agent that died. A missing aspect reads as a clean bill of health for that aspect.
 4. **Do not ask what to work on.** The report is a reading surface, not a menu; the next step is Phase 08 for every route. The only thing to ask here is whether any card is wrong, and the answer changes the ticket, not the plan.
@@ -170,10 +171,10 @@ The ranking input is leverage and dependency order — what a change unblocks, w
    | axis tag(s) | label(s) |
 
    **Never compress the shape into a name on the way in.** "Make the intake module deep" is not a ticket; the three-function collapse with its three call sites is. A ticket whose body cannot be handed to `implement` without another survey has lost everything the pass paid for.
-3. **Classify each AFK or HITL**, per `backlog spec` — AFK where the shape is settled and a worker can land it unattended, HITL where a decision the survey marked `Assumed` or `Unknown` has to be made by a human first. A finding whose fix depends on an assumption is HITL, and the assumption goes in the body as the question to answer.
+3. **Classify each AFK or HITL**, per `issues spec` — AFK where the shape is settled and a worker can land it unattended, HITL where a decision the survey marked `Assumed` or `Unknown` has to be made by a human first. A finding whose fix depends on an assumption is HITL, and the assumption goes in the body as the question to answer.
 4. **Carry the Phase 06b order in** as the dependency chain — `blocked-by` on beads, the stated prerequisite in the body on GitHub.
-5. **Hand off to `backlog spec`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. `backlog spec` writes the proposal to `/private/tmp/claude/<repo-slug>/backlog-spec.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine. The confirm itself is a slate row per ticket, closed per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
-6. **Report back**: the ticket ids and titles in Phase 06b order, then one line naming what to run next — `implement <first-id>` for one, `implement swarm <selector>` for the slate.
+5. **Hand off to `issues spec`** via the Skill tool with the drafts as input, so slicing, the proposal file, and publishing all run under the skill that owns them. Improve does not call `gh issue create` or `bd create` itself. Each finding is already one slice: `issues spec` applies its three-file floor to merge findings too small to stand alone, because each finding ships as its own PR through `wrap-up`. `issues spec` writes the proposal to `/private/tmp/claude/<repo-slug>/issues-spec.md` and confirms before publishing — **that confirm is required and never skipped**, because publishing writes to a tracker outside this machine. The confirm itself is a slate row per ticket, closed per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
+6. **Report back**: the ticket ids and titles in Phase 06b order, then one line naming what to run next — `implement <id>` per ticket, in that order.
 7. **Remove the survey-active marker**: `rm -f "$(~/.claude/tools/repo-slug --path)/.improve-active"`. This re-enables `AskUserQuestion` (RULE 0's enforcement, `hooks/improve-askuserquestion-guard.sh`). Run it even when the pass aborted before filing tickets — this step is what ends the ban, not the ticket count.
 
 Findings that scored below 75 are already gone (Phase 06) and do not get filed. `review-territory` lines are not filed either — they stay the single `/review` pointer from Phase 06 step 3.

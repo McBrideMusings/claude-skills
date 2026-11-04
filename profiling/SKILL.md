@@ -14,11 +14,12 @@ for open-ended "measure / make it faster" with no defect asserted. When a diagno
 the instrument catalog, it reads the same labels this skill uses — no duplication.
 
 The process below is stack-agnostic. **Which** profiler to run and **how to read it** comes from the
-labels in scope: resolve via `_detect.md`, then read `ref-<label>/profiling.md` for
+labels in scope: resolve via `_detect.md`, then take the profiler catalog for
 each matched label. A stack label (e.g. `apple`) supplies the profiler and how to read it; a mode
 label (e.g. `game`) sets the target the work must hit (a 16.6 ms frame budget) on top of it — no
-ordering, load every matched cell. With no matching label, run the loop with whatever profiler the
+ordering, use every matched label. With no matching label, run the loop with whatever profiler the
 stack provides.
+*Knowledge base: search it for "<label> profiling" for each matched label. If you have none, skip this line and don't mention it.*
 
 ## Phase 01 — Pick the metric and the workload
 
@@ -34,6 +35,8 @@ is judged against this. No baseline → no way to prove an improvement, so this 
 the matched label's profiler (e.g. Instruments Time Profiler, `perf`, `py-spy`, Chrome perf panel).
 
 Completion: the baseline number is stated in chat before Phase 03 begins.
+
+Then show the loop with `dashboard profile` ([`../dashboard/kinds/profile.md`](../dashboard/kinds/profile.md)), the baseline as its first run; push each Phase 05 measurement to it.
 
 ## Phase 03 — Isolate the dominant cost
 
@@ -58,7 +61,7 @@ a noted command) so the win doesn't silently regress later.
 
 ## Findings-only invocation
 
-When another skill (e.g. `improve`'s survey) invokes this for audit: run **Phases 01–03 only** and return the dominant-cost findings — Phases 04–05 belong to an interactive session; change no code. Infer the metric and workload from the project type (game → the frame budget in `ref-game-dev/profiling.md`; web → load/interaction; CLI → startup) and **name both in the findings** so the premise can be rejected. Launch only through an existing entry point (an `./admin` task or package script). If no launchable entry point or profiler exists, return "not measurable — <reason>" instead of guessing hot paths from code. No file writes, no commits, no questions.
+When another skill (e.g. `improve`'s survey) invokes this for audit: run **Phases 01–03 only** and return the dominant-cost findings — Phases 04–05 belong to an interactive session; change no code. Infer the metric and workload from the project type (game → the frame budget, 16.6 ms at 60 fps; web → load/interaction; CLI → startup) and **name both in the findings** so the premise can be rejected. Launch only through an existing entry point (an `./admin` task or package script). If no launchable entry point or profiler exists, return "not measurable — <reason>" instead of guessing hot paths from code. No file writes, no commits, no questions.
 
 ## When no label matches
 

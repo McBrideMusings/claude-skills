@@ -1,3 +1,7 @@
+---
+run: always
+---
+
 # Code comments and contracts lens
 
 Two questions, both about what a caller is promised.
@@ -5,6 +9,8 @@ Two questions, both about what a caller is promised.
 ## 1. Comments vs code
 
 Read code comments in modified files. Flag changes that violate documented contracts, TODOs that should be addressed, or stale comments left in. For contracts issues, quote the comment or signature being violated.
+
+Read the whole modified file, not only the hunks. A comment far from the change goes stale when it states a number or a sequence the diff changed: a worst-case timing or lease budget, a retry count, a call chain, a margin, a list of callers. For each such claim, recompute it from the code as it now stands and quote both values.
 
 ## 2. The footgun test — does the obvious call do the right thing?
 
@@ -25,6 +31,6 @@ Two more shapes of the same defect: a schema that accepts states the UI never wa
 
 "Add a comment warning about it" is not on the ladder. Neither is fixing only the one call site the diff touched: if the seam is wrong, the finding is about the seam.
 
-This is the read-only, diff-scoped version. The full refactor process — grep every caller, move the invariant, delete the bypasses, prove it with a test plus a grep — lives in `ref-architecture` (invoke it for `INTERFACE-SAFETY.md`); point the reader there when a finding clearly warrants the deeper pass.
+This is the read-only, diff-scoped version. The full refactor process — grep every caller, move the invariant, delete the bypasses, prove it with a test plus a grep — lives in the `improve` architecture pass; point the reader there when a finding clearly warrants the deeper pass.
 
 Axis tag: `contracts`.

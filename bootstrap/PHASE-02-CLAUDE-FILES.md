@@ -93,4 +93,4 @@ tmp/
 
 **If `tmp/` was already being tracked**, ignoring it now does not untrack it. Report the tracked paths and offer `git rm -r --cached tmp/` — that's a history-touching change, so it confirms first. Same for a committed `.env`, which additionally means the secret is already published and needs rotating, not just untracking. Say so plainly rather than filing it as a cleanup.
 
-Then proceed to [PHASE-03-ADMIN-RUNNER.md](PHASE-03-ADMIN-RUNNER.md).
+Then proceed to [PHASE-03-TASK-RUNNER-AND-LICENSE.md](PHASE-03-TASK-RUNNER-AND-LICENSE.md).

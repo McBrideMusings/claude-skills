@@ -1,0 +1,52 @@
+<style>
+  /* The host project's real CSS goes here (or in --extra-css). A mockup withholds nothing
+     and decorates nothing: it is the project's own tokens and components, rendered. */
+  :root { --brand: #2f6df6; --card: #ffffff; --page: #f4f5f8; --edge: #dfe1e7; --text: #16181d; --dim: #6a6d78; --radius-card: 10px; }
+  @media (prefers-color-scheme: dark) {
+    :root { --brand: #6c93ff; --card: #1d2026; --page: #14161a; --edge: #2c3038; --text: #eceef2; --dim: #9aa0ad; }
+  }
+  html, body { background: var(--page); }
+  .screen { min-height: 560px; box-sizing: border-box; background: var(--page); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 24px; }
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .top h1 { font-size: 20px; margin: 0; }
+  .card { background: var(--card); border: 1px solid var(--edge); border-radius: var(--radius-card); padding: 16px; margin-bottom: 12px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .name { font-weight: 600; }
+  .sub { color: var(--dim); font-size: 13px; }
+  .btn { border: 0; background: var(--brand); color: #fff; border-radius: 8px; padding: 8px 14px; font: inherit; font-size: 13px; }
+  .empty { border: 1px dashed var(--edge); border-radius: var(--radius-card); padding: 40px 24px; text-align: center; color: var(--dim); }
+  .dense .card { padding: 8px 12px; margin-bottom: 4px; border-radius: 6px; }
+  .dense .sub { font-size: 12px; }
+</style>
+
+<template data-variant="Quiet" data-state="Full">
+  <div class="screen">
+    <div class="top"><h1>Sessions</h1><button class="btn">New</button></div>
+    <div class="card"><div class="row"><div><div class="name">reddit-poker</div><div class="sub">2 minutes ago · main</div></div><button class="btn">Resume</button></div></div>
+    <div class="card"><div class="row"><div><div class="name">admin-project-tool</div><div class="sub">yesterday · fix/toml-parse</div></div><button class="btn">Resume</button></div></div>
+    <div class="card"><div class="row"><div><div class="name">.claude</div><div class="sub">3 days ago · main</div></div><button class="btn">Resume</button></div></div>
+  </div>
+</template>
+
+<template data-variant="Quiet" data-state="Empty">
+  <div class="screen">
+    <div class="top"><h1>Sessions</h1><button class="btn">New</button></div>
+    <div class="empty">Nothing running yet. Start a session and it shows up here.</div>
+  </div>
+</template>
+
+<template data-variant="Dense" data-state="Full">
+  <div class="screen dense">
+    <div class="top"><h1>Sessions</h1><button class="btn">New</button></div>
+    <div class="card"><div class="row"><div><span class="name">reddit-poker</span> <span class="sub">· 2 min · main</span></div><button class="btn">Resume</button></div></div>
+    <div class="card"><div class="row"><div><span class="name">admin-project-tool</span> <span class="sub">· 1 d · fix/toml-parse</span></div><button class="btn">Resume</button></div></div>
+    <div class="card"><div class="row"><div><span class="name">.claude</span> <span class="sub">· 3 d · main</span></div><button class="btn">Resume</button></div></div>
+  </div>
+</template>
+
+<template data-variant="Dense" data-state="Empty">
+  <div class="screen dense">
+    <div class="top"><h1>Sessions</h1><button class="btn">New</button></div>
+    <div class="empty">No sessions.</div>
+  </div>
+</template>

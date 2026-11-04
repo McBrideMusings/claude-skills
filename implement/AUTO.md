@@ -1,0 +1,243 @@
+# Auto — passes with nobody at the keyboard
+
+`auto` is implement's one unattended mode. Every place a pass would wait for a reply, it takes
+the answer `go` would have given and keeps going. It ends when it reaches its pass limit or runs
+out of work, and then prints one report of everything only a person can finish.
+
+## Tokens
+
+| Command | Works | Passes it may take, landed or parked |
+| --- | --- | --- |
+| `implement auto` | items `issues next` discovers | 5 |
+| `implement auto <n>` / `implement auto all` | items `issues next` discovers | `<n>` / no limit |
+| `implement <epic> auto [n\|all]` | the epic's slices, or for a milestone everything its `blocks` edges reach (each parent standing for its children), in `epic-plan` order | all of them unless `<n>` is given |
+| `implement <focus> auto [n\|all]` for a focus that is not an epic: `label:<x>`, `followups`, `papercuts`, free text such as `the web browser feature` (every form [`SELECTORS.md`](SELECTORS.md) resolves; `epic:` and `milestone:` take the row above) | the focus's ready beads, ranked by `issues next focus=` | 5 unless `<n>` or `all` is given |
+| `implement <id> auto` | that one item | 1 |
+
+The mode lives in the argument, which `/clear` drops. The relay brief carries the run's state
+across the clear (§Run state), and the block's `Focus:` line carries the focus exactly as typed
+(`label:client`, `the web browser feature`, an epic id), so every hop, relayed or swarmed, resolves
+the same scope.
+
+`implement <id> auto` is what a lead dispatches into a worktree. It lands its own branch through
+`wrap-up` — bare when standing in that worktree, `wrap-up <worktree>` when not — which closes the
+bead. A worker never removes its own worktree; its dispatcher or `git-sweep` does. It never
+runs `git push origin --delete` for a branch it never pushed: a hook stops that command for a
+person's yes, which nobody is there to give. On an item whose notes already carry `auto parked`,
+it prints that note and ends: a parked item waits for the user.
+
+### Swarm workers
+
+A `swarm` lead claims the bead before it starts the worker (`bd update <id> --claim`), so the
+bead reads `in_progress` and `bd ready` no longer lists it. In a session whose environment
+carries `SWARM_WORKER=<id>`, that claim satisfies [`HANDOFF.md`](HANDOFF.md) §1's **Open** and
+**Listed by `bd ready`** checks for bead `<id>`: check instead that its status is `in_progress`
+and that `bd show <id> --json` lists no open blocker. Every other check, and the readiness gate,
+runs as written.
+
+**A pass with `SWARM_WORKER` set never routes.** It ends after its one bead: no `next-work`, no
+`relay`, no `swarm`, whatever the §Routing each hop table says. Its `Used` is 1 of 1. The swarm
+lead owns the run state and the routing; the worker's report goes to its outfile.
+
+**A pass with `SWARM_SIGNOFF=1` set ends at its commit.** The swarm sets it on a collaborative
+repo, where the user signs off every outward step through the lead. `wrap-up` runs through
+Phase 5's commit and stops: no push, no PR, no `bd close`, no `bead-pr link`, and Phase 6 Step
+A's follow-up slate is neither applied nor filed — not even its defaults, overriding the
+follow-up and PR rows of §Every wait point. The candidates, the branch name to push as, and the
+PR title and body go in the report's `## Sign-off package` instead, none of them carrying a bead
+id; the brief gives its shape. A parked pass parks as usual.
+
+### Iterate passes
+
+A pass that [`iterate`](../iterate/SKILL.md) started runs in iterate's kept worktree and never
+routes on its own: whatever `next-work` prints, the next hop is `iterate <focus>`, never `swarm`
+and never a bare `implement`. Its landing keeps the worktree (iterate §Each hop step 5).
+
+## Every wait point, and what auto does instead
+
+| Where a pass waits | What auto does |
+| --- | --- |
+| Picking the item | Walks the ranked list (`issues next`, or `epic-plan`'s rows for an epic run) through the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1). Drops every candidate whose `bd show <id> --json` notes carry `auto parked`. Never asks which item. |
+| The epic plan slate | Prints the plan as one record line and works the first `[run]` row. |
+| A sizing merge ([`HANDOFF.md`](HANDOFF.md) §2) | Takes its default pick. |
+| An item that fails the readiness gate on a decision | Decides it, records it on the bead, and lands the work (§A decision nobody made). |
+| An item that fails on a fact, the `human` label, or the reachability test | Adds it to `Needs you` (§Run state) and takes the next item. |
+| Step 1's "if you cannot plan, stop" | Same split: a decision is decided, a missing fact goes to `Needs you`. |
+| The gate | Prints it in full, `Run:` and `Look for:` included, as the record. Drops the closing sentence and goes straight to `wrap-up`. |
+| `wrap-up`'s follow-up slate | Prints every row with its bracketed default and applies the defaults ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step A). |
+| `wrap-up`'s next-work ask | Runs `next-work --auto` and follows its verdict (§Routing each hop). A pass with `SWARM_WORKER` set skips it. |
+| `wrap-up`'s PR offer on a repo that is not `owned` | Opens no PR during the run. Pushes the branch, parks it with `needs a PR`, and the report offers the PR (§The report). |
+| A step that needs a person's yes | Records it and moves on (§A step only a person can take). |
+
+## Routing each hop
+
+After a pass lands or parks, and after a swarm ends, `next-work --auto`
+([`../relay/SKILL.md`](../relay/SKILL.md) §Ending) prints one `Next:` line for the run's `Focus:`.
+Auto follows it without asking, and never routes through a hatch. In a linked worktree the label reads `Next (informational, no go):` instead of `Next:`; auto reads the command after it the same way. These are the forms it prints:
+
+| `Next:` line | What auto does |
+| --- | --- |
+| `Next: implement <id> — …` | Relays into `implement <id> auto`, carrying the run-state block and focus ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto). The bead is the verdict's; nobody re-picks it. |
+| `Next: swarm <focus> — …` | Relays this pane into `swarm <focus>` with the run-state block at the top of the brief. The swarm reads `Limit` and `Used` from it, writes the block back when it ends ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget, §6), and follows this table itself. A session that is not in the main checkout (a linked worktree) cannot launch a swarm: it continues in this context as `implement <id> auto` for the top bead `next-work` ranked and says why in one line. |
+| `Next: issues iron-out <focus> — …` | Ends the run. `next-work --auto` prints it only when no agent-ready bead is left in the focus; an attended run prints it whenever a focus-blocking `human` bead is ready. The report's `Next:` line is `issues iron-out <focus>`, because only the user can answer a `human` bead. |
+| `Next: none — swarm <focus> running[ in <space>] (<ids>)` | Ends the run. The report's `Needs you` names the space and the beads the live swarm holds. |
+| `Next: none — <N> open in <focus>, none ready (blocked or in progress)` | Ends the run. The report lists each open bead with what blocks it. |
+| `Next: none — focus finished` | Ends the run. Auto never widens the focus. |
+| `Next: none — nothing open in <focus>` | Ends the run. |
+
+Every `none` ends the run; only `iron-out` names a command for the user.
+
+## Parking an item
+
+Parking leaves finished-or-partial work on a branch that never lands without the user:
+
+1. Commit the work on a branch named the way `wrap-up` reads it —
+   `<type>/<slug>-<short-title>` ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step C).
+   On the default branch, `git switch -c` it first. In a worktree, commit on the worktree's own
+   branch.
+2. `bd update <id> --append-notes "auto parked: <branch> at <sha>. <reason>"`.
+3. On the primary checkout, switch back to the default branch, add the row to the run-state
+   block, and hand the next item to `relay` §Auto, which continues in this context when it
+   cannot clear the pane. A worktree worker has only this one item, so it ends there.
+
+A parked pass counts toward the limit. `implement <id>` (attended) on a parked item resumes the
+branch at the gate ([`SKILL.md`](SKILL.md)).
+
+## A decision nobody made
+
+The readiness gate's plan and objectivity tests fail an item that hides a decision: a design
+call, a product call, which of two approaches, what "done" looks like. Auto does not skip that
+item. It decides:
+
+1. Append the question, the answer you pick, the reason, and the strongest alternative to the
+   bead: `bd update <id> --append-notes "auto decided: <question> -> <answer>. Why: <reason>.
+   Alternative: <alternative>."` Pick the answer the repo's own docs, ADRs, `CONTEXT.md` and
+   neighbouring code point to; when they are silent, pick the one that is cheapest to reverse.
+2. Work the pass: plan, edit, build green, verify, blind review. Every step holds.
+3. Land it through `wrap-up` like any other pass. The run-state `Landed` row carries the
+   decision as `decided: <question> -> <answer>`, so the report names it.
+
+The `auto decided` note and the commit are what make a wrong call cheap to undo: the user reads
+the decision in the report and reverts the one commit, or replies with the other answer.
+
+A fact is not a decision. A credential, a device, a measurement only the user can take, or a
+value the item needs that nothing in the repo states goes to `Needs you`.
+
+A new host dependency is never auto decided. A pass that needs one — a binary, app, service, OS
+permission or network layout the build doesn't ship — parks with the reason `host dependency:
+<what>, for <why>`.
+
+## Human verification parks the item too
+
+When verification reports `BLOCKED` because only a person can check the result — a device, a
+look at a screen with no program access, a judgement by eye — park it with the reason `needs
+eyes: <what to look at>`.
+
+`BLOCKED` on a fixture that contradicts the item ([`VERDICTS.md`](VERDICTS.md)) is a decision
+about the item's model. Decide it per §A decision nobody made.
+
+## A case not driven parks the item
+
+An auto pass lands and closes its item only when the check drove every case step 1 listed, and
+each one passed. A case checked through a stand-in is not driven: a
+different input path than the one the case names, or a proxy field instead of the thing the person
+sees. When the project has no way to drive a case —
+a real pointer, a real key into a focused field — building that driver is part of the pass,
+never a reason to skip the case. A pass that still cannot drive every case does not land and
+does not close the bead: it parks (§Parking an item) with the reason `undriven: <case numbers,
+and what each one needs>`.
+
+Every report carries a section headed exactly `## Cases`, a table with one row per case in the
+item's numbered **Cases** list, in its order:
+
+```markdown
+| # | Case | Drove it with | Showed |
+| --- | --- | --- | --- |
+| 1 | typing from the pane header lands in the draft | type-to-composer.sh step 3 (real key, header focused) | draft "hello" |
+```
+
+**Drove it with** names the command or check step; **Showed** is the output it printed. A row
+with either cell empty, or reading `not driven`, `not run` or `n/a`, is an undriven case. The
+swarm lead's `swarm log landed` refuses a landing whose table is missing a case or has an
+undriven row.
+
+## A step only a person can take
+
+A permission prompt nobody can answer, a classifier denial, a deploy, an upstream issue to file,
+a cable to plug in: auto never waits on one and never hands the user a `!` command mid-run.
+
+- When the step comes **after** landing — a deploy, a restart, a publish — land the pass, skip
+  the step, and add the exact command to `Needs you`.
+- When the step blocks the pass itself — a denied write the change needs — park what exists
+  with the reason `blocked: <command> — <denial text>`.
+
+## What ends the run early
+
+These can be systemic, so the run stops rather than skipping to the next item. It prints the
+report with the halt reason as its first line and does not relay:
+
+- pre-flight fails, or the item's text arrived damaged;
+- the default branch's build is red before any edit;
+- a `fix` from the follow-up slate cannot be applied;
+- `wrap-up` cannot land a branch: a merge conflict, a refusal from `land`, a red check.
+
+A pass whose own build will not go green, that produces no diff, or whose review finding
+contradicts the item is a per-item failure: park what exists with the reason, and take the next
+item.
+
+## Run state
+
+Everything the report needs lives in one block, kept current in this context and copied to the
+top of every relay brief ([`../relay/SKILL.md`](../relay/SKILL.md) §Auto):
+
+```markdown
+IMPLEMENT AUTO — nobody is at the keyboard; never wait for a reply.
+Run: implement [<epic-id>] auto in <repo>. Focus: <selector as typed, or `ready`>. Limit: <n | all>. Used: <landed + parked so far>
+Landed: <id> (<sha>[, decided: question -> answer]), …
+Parked: <id> <branch> (<needs eyes: what | blocked: command | needs a PR | failed: reason>), …
+Needs you: <id or step> — <the exact thing to supply or command to run>, …
+```
+
+The first session writes `Limit` from its command: `5` for bare `implement auto`, `all` for an
+epic run with no `<n>`. Every pass, landed or parked, adds one to `Used`. Before taking the next
+item, a session compares `Used` with `Limit`: `Used >= Limit` ends the run with the report. A session
+started by relay reads `Limit` and `Used` from the block, never from its own command line.
+
+## The report
+
+One report ends every auto run, whichever skill ends it: `implement`, `relay` §Auto or `swarm`
+§6 print this and nothing else (`swarm` adds its own `Failed` and `Left in scope` lines under
+**Needs you**, below).
+
+The run ends when `Used` reaches `Limit`, when no item on the list clears the gate or can be
+decided, or on a halt above. It always prints this report from the run-state block. One line
+per item: id, title, and the one thing the user does next. A section with nothing in it prints
+`none`.
+
+**Decided for you** — `Landed` rows with `decided:`. Each line names the decision as `question
+-> answer` and the commit. Next action: nothing when the answer is right; `git revert <sha>`
+through `implement <id>` with the other answer when it is wrong.
+
+**Needs your eyes** — `Parked` rows with `needs eyes:`. Next action: what to look at, then
+`implement <id>` to resume at the gate.
+
+**Needs you** — the `Needs you` line, plus `Parked` rows with `blocked:` or `failed:`, and a
+swarm's failed workers (bead, exit code, last line) and the beads left in scope with what blocks
+each. Next action: the exact thing to supply or the exact command to run.
+
+**Landed** — each landed pass with its sha.
+
+**Unblocks** — on a parent run, `epic-plan`'s `unblocks` line verbatim: the items waiting on the
+parent to close. They are not children and the run never works them.
+
+**Open a PR** — the report is the first moment a person can answer, so every `needs a PR` row
+becomes a numbered slate row ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row), never a
+command for the user to run: `**Open a PR from <pushed branch> into <default>**`, then one line
+naming the title, assignee, reviewers and labels, resolved the way `wrap-up` Step C resolves them
+(the repo's own PR rules, labels from `gh label list`), ending `[post]`. `go` opens each PR with
+that Step C call and `bead-pr link`s its bead; it does not start the `Next:` work.
+
+Close with `auto: <landed> landed, <parked> parked, limit <Limit>`, then, as the last line of the
+report, `Next: <the verdict's command, or none — reason>`: the command or reason from the `Next:` line `next-work --auto`
+printed, or `none — <halt reason>` after a halt. When **Open a PR** has rows, the slate hatch for
+no next work follows that line ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch).

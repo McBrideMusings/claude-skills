@@ -1,139 +1,311 @@
 ---
 name: implement
-description: "Autonomous work on tracked items, one background agent per item. `implement <issue>` works that issue; bare `implement` discovers one; `implement <selector>` walks a queue; `implement swarm <selector>` runs several at once."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs the project skill's `verify.md` over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and recorded — and reports what only a person can finish."
 ---
 
-# /implement — run passes, verify them, land them
+# /implement — plan, edit, verify, gate
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
-One **pass** is one tracked item, worked end to end by a single `implementer` agent in its own worktree, ending at a commit. This session is the orchestrator: dispatches it, re-checks it, lands it, closes it. **Arity is the only difference between these three** — a pass doesn't know which is happening.
+One **pass** is one tracked item, worked end to end by this session, in the checkout it
+already stands in, ending at a commit. **No subagent runs the pass.** This session plans,
+edits, builds, and verifies directly — the subagents it spawns are a blind `plan-reviewer` pass over
+the plan (step 1b) and a blind `code-reviewer` pass over the diff, once the build is green.
 
-| | What this session does |
-|---|---|
-| `implement <issue>` | one pass, land it, stop |
-| `implement <selector> queue` | a pass, land, next — one at a time |
-| `implement swarm <selector>` | N passes at once, landed as each returns |
+`implement <issue>` works that item here, in this session and this checkout, and nowhere
+else. It never launches another session, pane or agent to do the work.
 
-**`implement <issue> inline`** is the one escape hatch, and it is not a pass at all — it never dispatches an agent. The session works the four steps itself, directly, in whatever checkout it already sits in: this session, this checkout, no worktree. Every other arity above dispatches an `implementer` agent as a pass, and a pass always runs in a worktree, no exceptions ([`WORKTREES.md`](WORKTREES.md)) — `inline` sidesteps that rule by not being a pass, not by carving an exception into it. Reach for it only when the user says otherwise.
+**Bare `implement`, with no argument, picks the item itself and starts.** Run `issues next`
+in its autonomous mode ([`../issues/next.md`](../issues/next.md)); it returns every
+candidate it scored, ranked. Walk that list in order. Drop an item that hits `issues next`'s
+out-of-scope or redundancy check (Phase 07) without asking the user to confirm the match.
+An item with children ends the walk and continues as `implement <epic>` below. Otherwise apply the readiness gate ([`HANDOFF.md`](HANDOFF.md) §1);
+the first item that clears it is the pass. Never stop to ask which item. When nothing on the
+list clears, the run ends: name the first item that reached the gate and the test it failed —
+or, when every item was dropped before the gate, each item and the check that dropped it —
+and stop.
 
-## The unit is a slice
+**An argument that is not a bead id, `auto` or a count is a focus** — `implement the web browser feature`, `implement label:client`. Resolve it through [`SELECTORS.md`](SELECTORS.md), the one selector table, then run the bare-`implement` walk over the resolved set: the top ready bead in the focus is the pass.
 
-A pass takes **one slice child** — `myproj-25.1`, never `myproj-25`. A parent with no breakdown, or a Verify/Land child, is never dispatched. **Verify is this session's**, via `verify-project`; `human` stops it until a person looks. Item → pass: [`HANDOFF.md`](HANDOFF.md).
+**Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
+the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it
+(`../wrap-up/SKILL.md`).
 
-**"Land" names two different moves, and only one of them is gated.** Merging a pass's throwaway branch into the branch it was cut from is **automatic and ungated** — you do it yourself as each pass returns, with no row and no `go`. It moves nothing outward: the pass branch came off that branch, and merging back is how a worktree-based pass finishes. Publishing that branch outward — `git push`, a PR, a merge into the default branch — is the **Land bead**, and that one is a slate row taken with `go` ([`ARITY.md`](ARITY.md) has why). A standing instruction not to push, merge or open a PR is about the outward move; read it as blocking the intra-feature merge and a finished, verified run sits unlanded waiting for permission nobody was ever asked for. When in doubt: does this make work visible to anyone outside this checkout? No → merge it now.
+**`auto` is the one unattended mode** — `implement auto [n|all]`, `implement <epic> auto
+[n|all]`, `implement <id> auto`. Nothing waits for a reply: the gate prints as a record,
+`wrap-up` takes its bracketed defaults, `relay` carries the run's count, a decision the item
+leaves open is made, recorded on the bead and landed, and everything only a person can
+finish goes into one report at the end. Every wait point and what replaces it:
+[`AUTO.md`](AUTO.md).
 
----
+**`implement <id>` on an item whose notes carry `auto parked: <branch>` or `at gate:
+<branch>`** resumes that branch: switch to it, print the decision or verification note, re-run
+step 4 against it, and show the gate. A reply there naming a different answer to the decision is
+owner feedback (§The gate): rework the branch to that answer and update the bead's
+`auto decided` note.
 
-## ⛔ The pass is one background agent
+## The unit is a slice — a parent becomes a plan
 
-```
-Agent({
-  subagent_type: 'implementer',
-  description: '<id> <short title>',
-  prompt: <the brief — see HANDOFF.md §2>,
-})
-```
+**A parent is any item with children, whatever its `issue_type`** — an epic, or a feature that
+`issues spec` broke into slices. Everything below that says "epic" means a parent; `bd children
+<id>` decides it, never the type. A parent's children and the items it *blocks* are different
+things: `bd list`'s tree indents both under it, but only children are part of its plan.
+`epic-plan` prints the blocked items on an `unblocks` line, and every plan, slate and auto report
+repeats that line so nobody mistakes the chain for unfinished children.
 
-It runs in the background and notifies this session when it lands. **One agent per item.** Never several agents split across stages of the same item, and never an agent that dispatches its own implementer — one item, one context, start to finish.
+**A milestone plans the same way.** bd's built-in `milestone` type holds no work and has no
+children; its scope is what its `blocks` edges reach, transitively, with every parent on the way
+standing for its open children. `implement <milestone>` and `implement <milestone> auto` run
+exactly like an epic: `epic-plan` detects the type and walks the edges instead of `bd children`,
+so pierce names the milestone and the order comes out of the tracker. Everything below that
+says "epic" covers a milestone too, except that a milestone closes when its blockers do, never
+by `bd epic close-eligible`.
 
-The agent spawns exactly one subagent of its own: `code-reviewer`, blind, once the build is green.
+A pass takes **one slice child** — `myproj-25.1`. A `human` child is never worked as a pass
+from a parent run or a discovered list: it waits for a person. **pierce naming a `human` slice
+directly — `implement <id>`, or "do <id>" in chat — is that person taking it**: remove the
+label (`bd label remove <id> human`) and run the pass. Verification over the epic is this session's, via the project skill's `verify.md`, and
+landing is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
+ever offered: [`HANDOFF.md`](HANDOFF.md).
 
-`args.resolved`-equivalents go in the prompt: the item is `{id, title, body, acceptance?, branch?, files?}`, already cleared and gated in chat before dispatch ([`HANDOFF.md`](HANDOFF.md) §1). The pass never fetches or judges an item on its own. The agent definition lives at `~/.claude/agents/implementer.md`; [`WORKTREES.md`](WORKTREES.md) has where it runs.
-
----
-
-## What a pass returns
-
-Its final message is one fenced JSON block:
-
-```js
-{ ok, item, verdict, verdict_path, commit, branch, worktree,
-  recheck: [{cmd, expect}], blockers: [], review, files, followups, mutation, summary }
-```
-
-A halt returns `{ok: false, halted_on, detail, worktree}`. **Branch on `ok` first** — a halt carries no `blockers`. `followups` is work outside scope, never a diff defect. Parse the block; if the agent returned prose instead, treat the pass as halted on `report` and read the worktree yourself rather than guessing what it meant.
-
----
-
-## The verify loop — at most two launches
-
-**You re-run every `recheck` command yourself, in the worktree. Your result decides whether the branch lands, not the agent's account of it.** A pass that reports a command passed, without that command being run again here, has not been verified.
+**`implement <epic>` proposes a plan and starts nothing until pierce answers;
+`implement <epic> auto` skips the slate ([`AUTO.md`](AUTO.md)).** The order
+comes from beads, never from reading the titles:
 
 ```text
-check reachability of every named host:port/URL -> start whatever is down
-r = Agent(implementer); round = 1
-loop
-  if !r.ok && r.halted_on == 'surface'  -> start the surface, relaunch on the SAME worktree
-  if !r.ok  -> halt: report r.halted_on, r.detail
-  run r.recheck[].cmd, compare against .expect; append a rechecks entry at r.verdict_path
-  review r's diff against the pass's starting sha
-  if clear and r.blockers empty  -> merge into the branch the pass was cut from
-  TaskStop r's agent id; stop every surface this round started
-  if round == 2  -> halt: leave the worktree standing, report the path
-  if the fix would revert a hunk round 1 wrote  -> halt: the criteria contradict each other
-  r = Agent(implementer, <same worktree, failures as the brief>); round++
+~/.claude/skills/implement/epic-plan <repo> <epic-id>     # children (a milestone: its blockers), blocks edges, bd ready
+  -> open slices in dependency order (wave 1 = unblocked now), slices needing a person, done
+readiness gate (HANDOFF.md §1) on the first slice          # in chat, before the slate
+slate, one row per step, in plan order:
+  the first unblocked slice that clears the gate -> "Work <id> here"                 [run]
+  a slice that fails the gate  -> what is missing, and who supplies it               [hold]
+  every later slice            -> "<id>, after <ids>"                                 [hold]
+  `human` slices               -> what pierce has to do or decide                     [hold]
+  after the last slice         -> "project verify.md over the epic, then the gate"     [hold]
+go -> `implement <epic> auto`: work every [run] row here, one pass per context
 ```
 
-**Every start in this loop has a matching stop, and the stop is yours.** The two `start` lines above and `VERDICTS.md`'s surface restart all leave a process running that nothing else reaps — a `langgraph dev`, a static server, a simulator. Stop each one as soon as the recheck that needed it has passed, not at teardown: teardown is gated behind landing, so a run that stalls for any reason leaks every surface it opened. The same applies to the pass itself. **A returned pass is not a terminated agent** — it stays registered and resumable after its final JSON arrives, shows in the user's agent view, and holds its context until something stops it. `TaskStop` on the agent id is what ends it; the completion notification is not.
+`go` on an epic plan is the ask for every ready slice: it runs `implement <epic> auto`
+([`AUTO.md`](AUTO.md)), which works the slices one at a time in plan order. After the last slice,
+auto runs the project skill's `verify.md` over the epic here and stops at the gate.
 
-**Two launches, then stop.** A second round that still fails means the brief is wrong, and that is a judgment you hold.
+- **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
+  still works them one after another.
+- **An epic with no open slice** still gets a plan: run the project skill's `verify.md` here, then the gate.
+  Never answer "nothing remains" with no next step. Close the epic through `wrap-up` even when
+  the tree is clean, never with a hand-run `bd close`.
+- **An epic with no children** is not ready for `implement`; offer `issues spec` to break it
+  down ([`../issues/breakdown.md`](../issues/breakdown.md)). A milestone with no `blocks` edge
+  gets the same offer. Any other childless item is a slice.
+- **A parent whose every open slice is `human`** ends with each slice named, why it carries the
+  label, and the one-line way to hand it over: `implement <id>`.
+- `epic-plan` expands any child that has children of its own in place, and names blockers outside the epic as `external`
+  rather than following them; an external blocker holds its row.
 
-**Halt on oscillation before relaunching.** If the failures you are about to hand back would undo a hunk the previous round wrote, the item's own criteria contradict each other — stop and put the contradiction to the user.
+## Commit rule by branch
 
-**Check reachability yourself, before the first dispatch. On exhaustion, halt** — leave the worktree standing. Context fills mid-run → `relay`, don't push on.
+**On the default branch, commit nothing until `wrap-up` runs.** `wrap-up`'s own commit step
+makes the first commit, deliberately — it lets its review and quality checks land in the same
+commit as the change, rather than a separate housekeeping commit bolted on after.
 
-Round mechanics and the verdict-append discipline: [`VERDICTS.md`](VERDICTS.md).
-
----
+**On any other branch, or in a worktree, commit as you go.** Ordinary commits as the plan
+progresses are fine. `wrap-up` may squash the unpushed ones into one, or leave them and add a
+final commit, before it pushes and lands.
 
 ## Pre-flight
 
-On failure, print the reason and stop. **Refuse a dirty tree:** `git status --short -- . ':(exclude).beads' ':(exclude).claude'` — those two exempt, else halt ([`WORKTREES.md`](WORKTREES.md) has why). **No commit-count guard** — one commit per *pass*.
+On failure, print the reason and stop.
 
----
+**Refuse a dirty tree:** `git status --short -- . ':(exclude).beads' ':(exclude).claude'` —
+those two are exempt, both session bookkeeping rather than work in progress:
+
+- **`.claude/`** — `scheduled_tasks.lock`, `papercuts.md`, `review-rejected.md`.
+- **`.beads/`** — tracker state. Under the no-tracked-export standard its JSONL files are
+  gitignored and never show here; a repo still tracking them is converted per
+  `issues/beads.md` § Turning it off, never stashed or committed to clear the check.
+
+In the primary `~/.claude` checkout, a dirty file there belongs to another concurrent session
+sharing that index, not to this pass — not a halt.
+
+**Resolve the verification skill now.** `ls` the absolute path of `<repo>/.claude/skills/project/verify.md` and print it. Step 4 reads that file; a pass that verified with its own ad hoc check without reading it has not verified.
+
+**No commit-count guard.** One commit on the default branch; as many as the work needs
+elsewhere, squashed by `wrap-up`.
+
+## The steps
+
+1. **Plan.** Quote the person's request word for word from the item, and list every case its words
+   cover: each place an "anywhere" reaches, each item an "every" or "all" names, each state
+   (the empty one included).
+   A bead that paraphrases the request narrower than its words gets the
+   person's words back from the conversation or the bead's history before the plan goes on. Then
+   state the files to touch and an objective acceptance check — for a changed value,
+   one that compares a specific expected number ([`VERDICTS.md`](VERDICTS.md)). If you cannot, stop
+   — an item that needs this is not one that cleared [`HANDOFF.md`](HANDOFF.md) §1's readiness
+   gate, and it should not have been offered. When the change adds or alters a feature of
+   something that runs, the plan also names each boundary the feature crosses, the log line
+   each one writes, and the state-query field that shows what the feature displays
+   (log lines are one per event, with an ISO 8601 timestamp, a category and raw values rather than displayed ones, and never a credential or a whole body); building those is
+   part of this item, never a follow-up.
+   *Knowledge base: search it for "observability checklist". If you have none, skip this line and don't mention it.* In a repo with a `DESIGN.md`, save the `dsys check`
+   baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). A pass that
+   builds a new UI surface in a repo with no `DESIGN.md` runs `redesign` step 4's roll first
+   ([`../redesign/SKILL.md`](../redesign/SKILL.md)) and plans from the assigned direction. A host dependency — anything the code expects on the user's machine or network rather than in its build — is proposed in chat, named as one, before code relies on it; the code locates it through configuration and shows in the product whether it is present. Then start the pass's dashboard with `dashboard implement`
+   ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
+   each step below.
+1b. **Blind plan review.** Once the plan stands, spawn `plan-reviewer` once, with the quoted
+   request and the plan only — never this session's reasoning for it. It applies six review
+   axes (spec, best-practice, architecture, negative-space, history, standards) to the plan and
+   returns findings tied to plan steps. Revise the plan once from its findings, recording any
+   finding you decline and why, then edit. One cycle, not two.
+2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
+   feature that needs a design token or component `DESIGN.md` lacks adds it to `DESIGN.md` in
+   the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
+3. **Build green.** Run the build, test, lint or typecheck yourself, in the foreground,
+   bounded — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the
+   runner is chatty). Explicit `timeout`, up to 600000; never background it. A Turnstile queue wait counts toward the timeout and is not a hang: a command that prints why it is queued is waiting. In a repo with a
+   `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green: a `dsys
+   check` record the diff added, or an ESLint error, fails the step; a record in the step-1
+   baseline does not ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
+4. **Verify at the surface.** The project skill's `verify.md` owns what verification
+   means here — read `<repo>/.claude/skills/project/verify.md` as a file and follow it
+   (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). For a
+   feature, the proof includes checklist §4: the state query shows the planned field with raw
+   values, and the log file at the path the control surface reports holds the planned lines
+   from this run. Write one
+   from the repo's `README.md`, `CLAUDE.md` and `admin.toml` when none exists, naming this
+   repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
+   `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:
+   [`VERDICTS.md`](VERDICTS.md).
+   **Then measure.** When the project skill has a `perf.md`, run every scenario its table names
+   for this diff and print each table; a limit over, after its one rerun, fails this step like a
+   failed check. A diff that adds work per redraw, keystroke, frame or request, or work that grows
+   with what a person accumulates, adds a measure to `perf.md` in the same change, and proves the
+   limit fails on the broken version by running the scenario against it once.
+   **Every case step 1 listed is driven**, each by its own step in the check, and the gate names
+   each case with what it showed; a case not driven is an unverified case, said so on its line,
+   never a pass.
+   Every feature ships, unasked, with a way for a program to drive it and read its state back; a check only a human can perform means that surface is missing, so build it in this pass. Each project-skill section (verify, perf, logs, swarm) is extended as the feature lands, and the code support it names (a log shipper, a configurable port, a task-runner task) is written in the same change.
+   **A diff that adds or changes a test** runs [`VERDICTS.md`](VERDICTS.md)'s keep check
+   before the commit.
+5. **Blind review.** Once the build is green, spawn `code-reviewer` once — with step 1b's `plan-reviewer`, the
+   only subagents this process spawns as a matter of course, and this step is what clears a session that
+   otherwise carries a standing instruction not to call the `Agent` tool unasked. It gets the
+   diff and the repo's standards,
+   never this session's own reasoning about why the diff is correct. Fix every
+   `blocking`/`major` finding it returns, and every finding about cost (work per redraw,
+   keystroke, frame or request; a retry or poll; work that grows with rows, spaces or accounts)
+   whatever its grade,
+   then re-verify whatever the fix touched — one cycle, not two. `minor` findings, and anything
+   still open after that cycle, go to `wrap-up`'s follow-up step rather than a second review
+   round.
+6. **Commit**, per the branch rule above.
+
+## Bash command rules
+
+An unattended pass never gets a chance to retry past a permission prompt, so none of these
+shapes appears in a command this process runs:
+
+1. **`@{u}`, `@{upstream}`, `@{push}`, or any `{…}` git refspec** typed as a bare argument —
+   these trigger brace-expansion prompts unconditionally. Use `origin/$(git branch
+   --show-current)` or `origin/main` instead.
+2. **Compound commands where any sub-command is not allowlisted.** `&&`/`||`/`;` chaining is
+   only safe when every piece would individually pass. If uncertain, run the commands
+   separately.
+3. **`$(…)` or backtick subshell expansion** where the inner command is not already
+   allowlisted. Run the inner command first, capture the result, use it in a second call.
+4. **`#` comments or newlines inside a single Bash call.**
+5. **`cd /path && git <cmd>`** — triggers an "untrusted hooks" prompt. Use `git -C
+   /absolute/path <cmd>`.
+6. **`cat <file> || echo "not found"` existence-check compounds** — use the Read tool instead.
+
+**A UI change ships with before-and-after screenshots, shown without being asked.** Capture the **before** from the base commit (or the flag off) and the **after** from the change, same viewport and same crop, for every state the change touches: the resting state, the new state, and any modal or sheet it opens. Put them in the Wheel artifact (or the `canvas` card outside Wheel) and show that pane before writing the summary; wrap-up puts the same images in the PR body. Never wait for the user to ask for either.
+
+**A UI change is verified by looking at it.** Drive the
+change, save a screenshot of every variant and theme it touches to an absolute path, Read each
+image and write down every difference from what the change should show; the text checks — logs,
+exit codes, a DOM or text dump — come first and add to the look, never replace it. Name each
+image's absolute path in the summary. A set of screenshots that compares states, sizes or before/after shows the whole subject in
+every frame, cropped to its bounding box with no title bar or overlay across it; turns motion
+off with an injected `animation: none !important; transition: none !important` rule and waits
+for fonts and two animation frames rather than a timer; changes only the variable under test;
+and has every frame read, and any bad one retaken, before the set is shown.
+*Knowledge base: search it for "screenshot series". If you have none, skip this line and don't mention it.*
+`screenshot-checker` answers a plain yes/no about an image
+("did the row render") without bringing it into this context; it never stands in for the look
+at a change's design. Accompanying material — reference frame, mockup, spec, fixture, golden file, linked doc — is compared in full too. Write down every difference; an empty list is an answer, an unwritten one means you did not look. If you cannot look, the gate says the work is unverified. A visual drive reports the absolute path of the image it inspected.
+
+**Commit messages never attribute the work to Claude, an AI, or any tool** — no
+`Co-Authored-By`, no session link, no trailer naming a model; sign as the repo's user and
+nothing else. Conventional Commits, imperative, ≤72 characters of prose, item id in trailing
+parens — except in a repo labelled `beads:stealth` in `~/.claude/domains-map`, where no tracker id
+appears in any commit message, branch name or PR text.
 
 ## Halt conditions
 
-- Pre-flight failed
-- No diff; build won't go green
-- verification `BLOCKED` — a closed surface (`halted_on: 'surface'`), or a fixture that contradicts the item's own model (`halted_on: 'fixture'`)
-- The criteria contradict each other (oscillation, above)
-- This session's own verify loop exhausted two launches
+- Pre-flight failed.
+- The item's text arrived damaged — truncated, duplicated, or naming something that does not
+  exist.
+- No diff; the build won't go green.
+- Verification `BLOCKED` — a closed surface, or a fixture that contradicts the item's own
+  model.
+- A review finding and the item's own stated criteria contradict each other.
 
-**A `BLOCKED` on a fixture is not a code problem and never becomes one.** The environment's data cannot express what the criterion asks — a seed row outside the domain the item defines, a database filled from a constant the item is changing. Fix the data or fix the criterion; never let a pass edit product code to satisfy data the item's own model says should not exist.
+In `auto`, the item-level conditions park the item and the run continues; which ones stop the
+whole run is in [`AUTO.md`](AUTO.md) §What ends the run early.
 
-Verify treats doubt as `FAIL`. What "cleared" means before a pass is ever dispatched — the plan, objectivity and reachability tests — is [`HANDOFF.md`](HANDOFF.md) §1's, run in chat, before a worktree exists.
+**A `BLOCKED` on a fixture is never a code problem.** The environment's data cannot express
+what the criterion asks — a seed row outside the domain the item defines, a fixture predating
+the schema. Fix the data or fix the criterion; never edit product code to satisfy data the
+item's own model says should not exist. Verify treats doubt as `FAIL`.
 
----
+## The gate
+
+Once verification and review clear, show the gate: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
+§Gate. When the pass changed `DESIGN.md`, the gate carries its diff ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
+§Gate). The commands in **Run:**/**Look for:** are the ones already run in step 4 above — never
+re-derived, never re-run just to fill the gate. When a recheck command runs inside a worktree
+and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when this session
+stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`
+first.
+
+In `auto`, stop after the gate's **Look for:** block; the closing sentence below and its wait
+belong to an attended pass.
+
+Close a single pass's gate with exactly this sentence (from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, never reworded):
+
+> Type `go` to run wrap-up when you're ready, or reply with anything you find while testing.
+
+`go` means run `wrap-up` now, in the checkout this pass worked in — bare `wrap-up` when
+standing in it, `wrap-up <worktree>` when not. `go` also means the owner has tested the change
+or chose not to; wrap-up never asks. Before printing the gate, record
+`bd update <id> --append-notes "at gate: <worktree-or-branch>, verified at <sha>"`, so a later
+session finds the note and resumes at the gate if the owner never answers.
+
+**Owner feedback at a gate starts a new round.** If the reply names a located cause with a
+small edit, fix it directly; otherwise treat the reply as a new brief and repeat the steps
+above against it. Either way: re-verify (re-run what changed, plus anything the fix touched),
+re-show the gate.
 
 ## Output
 
-Additive to `CLAUDE.md` §Finishing work, once for the run:
+One line, once the gate above has been shown or the pass halted:
 
 ```
 Implement complete: <one-sentence summary>. Halt: <reason | none>.
-Backlog: X open issues (closed Y), Z ready.
 ```
-
-Sequential/swarm additions and the backlog snapshot: [`ARITY.md`](ARITY.md).
-
----
 
 ## Notes
 
-- One pass works **one** item; never bundle two; never invokes itself.
-- A pass never writes to the tracker — this session closes it after landing, only on `PASS` plus a commit.
-- A pass never removes its own worktree; this session does, from the main checkout.
-
----
+- One pass works **one** item; never bundle two.
+- A pass never writes to the tracker, except the `auto` notes [`AUTO.md`](AUTO.md) names — `wrap-up` closes it. A slice of an epic that ships as one PR closes at its gate's `go`, once its commit is on the epic's branch; any other item closes after landing, once the branch is merged or its PR opened.
+- A pass never removes a worktree it did not create.
 
 ## Read on demand
 
 | Open | When |
 | --- | --- |
-| [`WORKTREES.md`](WORKTREES.md) | Where a pass runs, cross-repo items, retiring a worktree. |
-| [`VERDICTS.md`](VERDICTS.md) | Verification, verify-loop round mechanics, reading a verdict. |
-| [`ARITY.md`](ARITY.md) | Model choice, sequential/swarm arity, arity reporting. |
-| [`HANDOFF.md`](HANDOFF.md) | Clearing an item, and what goes in the agent's brief. |
+| [`AUTO.md`](AUTO.md) | Any `auto` token: every wait point it replaces, parking, the end-of-run report. |
+| [`HANDOFF.md`](HANDOFF.md) | Clearing an item, the readiness gate, offering it as a slate row. |
+| [`VERDICTS.md`](VERDICTS.md) | What verification means, `BLOCKED` conditions, asserting a changed value, proving a touched test discriminates. |

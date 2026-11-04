@@ -6,20 +6,26 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **When it applies.** A decision point with two or more mutually exclusive courses of action — before significant work, and at every decision point inside it (an interview question, a skill's routing step).
 
-**The shape.** Numbered question, lettered options beneath it. Each option is a bolded line naming what physically happens — which file gets edited, what value gets written where, which process computes it, when — never a noun with no location. Bullets beneath state the strongest case for that option; the last bullet is always the cost. The option you'd pick is marked ` — my pick` on its bolded line, not with a separate marker. Options under one question are mutually exclusive; when two could sensibly combine, write the combination as its own lettered option rather than leaving it for the reader to compose.
+**The shape.** Numbered question, lettered options beneath it. Each option is a bolded line naming what physically happens — which file gets edited, what value gets written where, which process computes it, when — never a noun with no location. When the decision is about something the person will see or do (a screen, a flow, what is kept or deleted), the bolded line leads with that, and the location follows in the same line, so internals never stand in for the experience. Bullets beneath state the strongest case for that option; the last bullet is always the cost. The option you'd pick is marked ` — my pick` on its bolded line, not with a separate marker. Options under one question are mutually exclusive; when two could sensibly combine, write the combination as its own lettered option rather than leaving it for the reader to compose.
+
+**The carrier.** An option set is written in chat. When the options are visual or structural — UI states, layouts, diagrams, renders — each option is also rendered under its letter (`1A`, `1B`) in one Wheel artifact shown in a pane beside the chat (`wheel artifact new`). The lettered options with their argument and cost stay in chat, which names the pane, never the artifact's path. A short decision whose options read fine as text stays in chat.
+
+An option set is plain chat text, never wrapped in a `>` block quote: a quote inside an option would nest, and a chat view draws each level as its own panel.
 
 **Worked example:**
 
-> **1. Where does the retry count live?**
-> **1A. Add a `retry_count` column to `jobs` in `queue.db`, incremented in the worker's catch block** — *my pick*
-> - Survives a process restart — the count is durable, not in-memory
-> - Cost: one migration, plus a backfill for in-flight rows
->
-> **1B. Track it in a `Map<jobId, count>` inside the worker process**
-> - No schema change, ships in one file
-> - Cost: resets to zero on every worker restart, so a flaky deploy silently un-caps retries
->
-> Answer `1A`, or type `go` to take every pick.
+```markdown
+**1. Where does the retry count live?**
+**1A. Add a `retry_count` column to `jobs` in `queue.db`, incremented in the worker's catch block** — *my pick*
+- Survives a process restart — the count is durable, not in-memory
+- Cost: one migration, plus a backfill for in-flight rows
+
+**1B. Track it in a `Map<jobId, count>` inside the worker process**
+- No schema change, ships in one file
+- Cost: resets to zero on every worker restart, so a flaky deploy silently un-caps retries
+
+Answer `1A`, or type `go` to take every pick.
+```
 
 ## Slate row
 
@@ -27,15 +33,21 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The shape.** One numbered row per item: a **bolded action naming what physically happens and where** — which file, which tracker, which branch — optionally followed by one to three lines of specifics, with the default `[verb]` bracket at the end of the row's first line. The bracket is the default, not a separate sentence. A row with no default is malformed: `go` would have nothing to mean.
 
+A row that confirms one outward action carries no lettered alternatives: the user skips it by answering `skip`, so a "hold it" option is not a choice and never appears. Lettered options belong to a question with several real courses.
+
 Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
+
+A slate is plain chat text, never wrapped in a `>` block quote: a body quoted under a row would nest, and a chat view draws each level as its own panel.
 
 **Worked example:**
 
-> 1. **File slices 1–6 as beads issues** under a new epic, dependencies wired 1→2→3 and 4→5 `[file]`
-> 2. **Add three terms to `docs/CONTEXT.md`** — Archive, Savings Band, Potential Savings, bodies quoted below `[write]`
-> 3. **Write `docs/adr/0004`** — savings estimated per band from each Pipeline's own history, body quoted below `[write]`
->
-> Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
+```markdown
+1. **File slices 1–6 as beads issues** under a new epic, dependencies wired 1→2→3 and 4→5 `[file]`
+2. **Add three terms to `docs/CONTEXT.md`** — Archive, Savings Band, Potential Savings, bodies quoted below `[write]`
+3. **Write `docs/adr/0004`** — savings estimated per band from each Pipeline's own history, body quoted below `[write]`
+
+Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
+```
 
 ## Proposed body
 
@@ -45,13 +57,17 @@ Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `
 
 **Worked example:**
 
-> 1. **Write `docs/adr/0012-queue-backend.md`** `[write]`
+```markdown
+1. **Write `docs/adr/0012-queue-backend.md`** `[write]`
+
+> ## Queue backend: Redis, not Postgres LISTEN/NOTIFY
 >
-> > ## Queue backend: Redis, not Postgres LISTEN/NOTIFY
-> >
-> > Job volume crossed 500/s; Postgres NOTIFY drops payloads over 8KB silently. Redis gives us reliable delivery and native retry counters.
->
-> Type `go` to apply my picks as described, or answer per row (`1 write`).
+> Job volume crossed 500/s; Postgres NOTIFY drops payloads over 8KB silently. Redis gives us reliable delivery and native retry counters.
+
+Type `go` to apply my picks as described, or answer per row (`1 write`).
+```
+
+The body is the one block quote in the message, so it never nests.
 
 ## Finding
 
@@ -115,11 +131,11 @@ All three relays this session logged `agent never went idle; prompting without c
 
 ## Hatch
 
-**When it applies.** The end of every option set, slate, or findings list — anything waiting on the user closes with an escape hatch. `go` is the only accept word, whatever the shape of the ask; never `yes`, `post`, `approve`, `ok`, `confirm`, `send`, or a keyword lifted from the action itself.
+**When it applies.** The end of every option set, slate, or findings list — anything waiting on the user closes with an escape hatch. So does every turn inside an unfinished process, status answers included: a PR still conflicting, checks still pending, a reviewer not yet re-requested, a review not yet posted, a feature not yet landed. That turn names the next step as a row and closes with the slate hatch, never with a phrase for the user to type ("say 'push it'"). The slate lists every remaining step already visible — the push, the reply, the re-request, the open review point's fix — as rows with picks, in execution order, so one `go` takes the whole set; never offer only the next step and hold the rest for a later turn. Only a finished task ends without one: the PR merged and approved, no conflicts, the review posted, the feature landed through `wrap-up`. `go` is the only accept word, whatever the shape of the ask; never `yes`, `post`, `approve`, `ok`, `confirm`, `send`, or a keyword lifted from the action itself.
 
 Definitions of `go`, `park`, and the row verbs: [`CONTEXT.md`](CONTEXT.md). This file owns their shape on the page; that one owns what each word means.
 
-**The three canonical sentences, byte-for-byte up to and including the opening parenthesis of the trailing example, and ending at `).` with nothing after it on the line.** Only the parenthetical's contents vary from site to site — it names two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren.
+**The four canonical sentences, byte-for-byte.** The two slate sentences end in a trailing parenthetical example, byte-for-byte up to and including its opening parenthesis and ending at `).` with nothing after it on the line — only the parenthetical's contents vary from site to site, naming two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren. The option-set sentence varies only in its first backticked example, which names that set's own picks (`1A` for one question, `1A 2C` for two). The gate's sentence, below, carries no example at all — it is byte-for-byte in full, every time.
 
 Slates and findings, no next work pending:
 
@@ -133,6 +149,10 @@ Option sets (reply grammar is number-first — `1A 2C`, not `A1 C2`):
 
 > Answer `1A 2C`, or type `go` to take every pick.
 
+The gate (below):
+
+> Type `go` to run wrap-up when you're ready, or reply with anything you find while testing.
+
 **Worked example:**
 
 > 1. Rewrite the retry backoff to exponential `[fix]`
@@ -141,28 +161,36 @@ Option sets (reply grammar is number-first — `1A 2C`, not `A1 C2`):
 >
 > Type `go` to apply my picks and continue into the dead-letter-queue design, or `park` to apply them and stop, or answer per row (`1 fix, 2 skip, 3 hold`).
 
-## Closing sections
+## Gate
 
-**When it applies.** The end of every coding task, whatever skill produced it.
+**When it applies.** The end of every coding task, whatever skill produced it — `implement`, inline work, `mergeable`, a small fix. The hatch at the bottom is what offers `wrap-up`; nothing above it restates that the work has not landed.
 
-**The shape.** Three sections:
+**The shape.** What changed, then two sections, then testing steps, then the hatch:
 
-- **Files changed** — every file touched, one line each.
-- **Unchanged** — only files a reader would have expected touched and weren't, each with the reason. "Nothing" is a real answer.
-- **Follow-up needed** — what's left, if anything.
+- **First line** — what the change does now, in one or two plain sentences: the behavior a user sees, not the process that produced it. Never open with landing status, a branch name, or "done".
+- **Files changed** — the header names where the work sits: `**Files changed** in <worktree> (<branch>, <sha>)`, or `(<sha>)` alone for work committed in place. Then every file touched, one line each.
+- **DESIGN.md diff** — only when the pass changed `DESIGN.md`: the output of `git diff <base>...HEAD -- DESIGN.md` in a fenced `diff` block, directly under **Files changed**. A pass that left `DESIGN.md` alone omits this line.
+- **Unchanged** — only files a reader would have expected touched and weren't, with the reason. "Nothing" is a real answer.
+- **Run:** the exact commands, the ones the agent ran, one per line — written for the directory this session stands in: `admin -w <worktree-or-bead-id> <task>` when the project has `admin.toml` and this session sits outside the worktree named above, plain `admin <task>` when it sits inside it.
+- **Look for:** what a pass looks like — the output the agent saw.
 
-Then manual testing steps, always, unasked: **Run:** the exact commands, one per line. **Look for:** what a pass looks like.
+Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the worked example's closing line. `go` always means "run wrap-up now" — landing the branch, whatever that takes on this repo (merge, PR, `land`). The gate offers no second word: an owner who wants to hold the branch simply doesn't answer.
+
+**`go` at the gate settles testing.** It means the owner has tested the change or chose not to — never ask whether it was tested, never hold the landing for a manual check, and never note in wrap-up that testing went unreported.
+
+**A run of several items closes with one report naming what already landed, plus one full gate per item still unlanded** — never one gate speaking for a whole run, since `go` names a single branch and worktree. An item that landed while the run was running needs no gate at all; only what a run halted on still owes one.
 
 **Worked example:**
 
-> **Files changed**
-> - `worker.py:142` — widened the retry catch to include `ConnectionResetError`
+> A job whose connection drops with `ConnectionResetError` now retries with backoff instead of failing on the first attempt.
+>
+> **Files changed** in `/Users/you/.worktrees/queue/fix-retry` (`fix/retry-connreset`, `a1b2c3d`)
+> - `/Users/you/.worktrees/queue/fix-retry/worker.py:142` — widened the retry catch to include `ConnectionResetError`
 >
 > **Unchanged**
 > - `queue.db` schema — the fix doesn't need a new column
 >
-> **Follow-up needed**
-> - Nothing
->
 > **Run:** `pytest tests/test_worker.py -k retry`
 > **Look for:** all 4 retry tests passing, including the new `test_connection_reset_retries` case
+>
+> Type `go` to run wrap-up when you're ready, or reply with anything you find while testing.

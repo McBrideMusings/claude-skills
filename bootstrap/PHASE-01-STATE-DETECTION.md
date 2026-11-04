@@ -8,10 +8,12 @@ For each piece of the standard layout, classify into one of: `missing`, `standar
 |---|---|
 | `CLAUDE.md` (root) | `AGENTS.md`, `.claude/CLAUDE.md` |
 | `CLAUDE.local.md` (root) | `.claude/CLAUDE.local.md`, `.claude.local.md` |
-| `admin.toml` | (admin skill handles detection — Makefile, justfile, package.json scripts as substitutes; a bare `./admin` with no `admin.toml` is a stale artifact) |
+| a task runner: `Makefile`, `justfile`, `package.json` scripts or `admin.toml` | any one is standard; a bare `./admin` with no `admin.toml` is a stale artifact |
+| `LICENSE` (owned repos only) | `LICENSE.md`, `COPYING` |
 | `docs/` + `.vitepress/config.mts` | bare `docs/` (no VitePress), `documentation/`, `wiki/` |
 | `docs/CONTEXT.md` | `CONTEXT.md` (root), `GLOSSARY.md`, `docs/glossary.md`, `docs/terms.md`, per-context `src/*/CONTEXT.md` without a map |
 | `docs/adr/` | `adr/`, `decisions/`, `docs/decisions/`, `docs/adrs/`, `architecture/decisions/` |
+| `DESIGN.md` (web UI only) | run the Gate in [PHASE-07-DESIGN-SYSTEM.md](PHASE-07-DESIGN-SYSTEM.md); it alone decides whether `dsys status --json` runs |
 
 Also probe:
 
@@ -24,7 +26,7 @@ Also probe:
   git check-ignore -q CLAUDE.local.md   # local notes
   ```
   A non-zero exit means not covered. Also check whether anything already slipped through: `git ls-files tmp/ .env`
-- **Legacy planning docs** the `docs` skill knows how to clean up: `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/` — flag in summary, defer action to [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md)
+- **Legacy planning docs** the docs-site flow knows how to clean up: `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/` — flag in summary, defer action to [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md)
 
 ## Report the state table BEFORE doing anything
 
@@ -36,11 +38,13 @@ Bootstrap audit — <project name>
 | CLAUDE.md              | standard / missing / non-standard at AGENTS.md |
 | CLAUDE.local.md (root) | missing / non-standard at .claude/CLAUDE.local.md|
 | .gitignore             | tmp/ not covered; .env not covered; 2 files tracked under tmp/ |
-| admin runner           | standard / missing                             |
+| task runner            | standard (justfile) / missing / n/a — no build |
+| License                | standard / missing / n/a — not owned           |
 | VitePress docs         | non-standard: bare docs/ without VitePress     |
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md                   |
 | docs/adr/              | non-standard at ./decisions/ (3 ADRs)          |
 | Issue tracker          | gh ok                                          |
+| Design system          | missing / export stale / lint not wired / non-owned / dsys not installed / n/a — no web UI |
 ```
 
 When the table contains proposed migrations, close it with the escape hatch: *"Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)."* Then proceed to [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md); the user can still redirect any migration as the walk proceeds.

@@ -1,12 +1,16 @@
 ---
 name: wrap-up
-description: "Close out the current session: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Also how /implement lands each item it runs."
+description: "Close out a body of work: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Use when the user says 'wrap up', 'wrap this up', 'commit and push', 'land it' or 'ship it'. Runs in the current checkout, or in `wrap-up <worktree>` — how `implement` lands a pass, at the gate's `go`."
 ---
 
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
+
+**A clean tree on the default branch is not a reason to skip `wrap-up`.** With nothing to commit or land, Phase 5 and Step C do nothing, but Phase 2 still closes finished issues and epics and Phase 6 still prints the `next-work` output, takes the follow-up slate, and relays. An epic whose children all closed in earlier sessions ends here, not in a hand-run `bd close`.
+
+**A small change is not a reason to skip the follow-up round or the next-steps line.** Size only shortens Phase 4: a change of a few lines may take an inline read instead of the staged review. Phase 6 Step A still runs in full — the slate (even with every row `[skip]`, or one row saying nothing surfaced) and the next-work line from `next-work` are printed and answered before the turn ends.
 
 ---
 
@@ -16,23 +20,34 @@ The entire reason wrap-up exists is **Phase 5: commit and push.** Phases 1–4 a
 
 - **Do NOT emit a recap, summary, or "here's what I did" message and end your turn before Phase 5 has committed and pushed.** A terminal-looking output from a sub-skill (a code review, a passing test run) is not the end of the pass.
 - **Phases run in order to the end.** The only legal early exit is a genuine blocker that needs the user (a 75+ review issue you cannot auto-fix, a failed push, a merge conflict) — surface it explicitly and stop. "The review was clean" is the opposite of a blocker.
-- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run through Step D (relay proposed, then fired or declined), and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
+- **Done means:** `git status` is clean, the branch is pushed (including any follow-up fixed during Phase 6), Phase 6 has run through Step D (relay proposed then fired or declined), and the branch has **landed** — merged into the default branch with the workspace back on a clean default branch on a repo you own, or a PR opened on a collaborative one. Leaving committed work stranded on an unmerged feature branch on an owned repo is NOT done. Until all are true, you are mid-wrap-up — keep going.
 - In the primary `~/.claude` checkout specifically, the Stop hook skips the dirty-`git status` check: a dirty file there belongs to whichever other concurrent session is using the shared index, not to this pass.
 
 When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands the whole autonomous pass with uncommitted work.
 
 ---
 
-## Pass mode — default to interactive; go autonomous only on a proven `continuous` token
+## Target — this checkout, or an explicit worktree
 
-Wrap-up runs in one of two postures, and getting this wrong either stalls an unattended run (interactive prompt inside a loop) or — far worse — **acts autonomously when a human should have been in the loop** (files/skips follow-ups, or lands a branch, without the review the user wanted). The safe default makes that second direction impossible:
+Bare `/wrap-up` targets the checkout the session is already standing in. `wrap-up <worktree>` — the form `implement` uses to land a pass — names a different one: every git operation in Phases 1–5 runs as `git -C <worktree> …` against that path instead, regardless of where this session itself is standing. Phase 5's commit and push and Phase 6 Step C's teardown follow the same target; Phase 0's marker does not, since it belongs to the session.
 
-> **Assume INTERACTIVE (standalone) unless you can point to an explicit `continuous` token in this invocation's arguments.** Autonomy is opt-in and must be *proven*, never inferred — if the token isn't unambiguously present, you are in an interactive pass, and every step that could act on the user's behalf **halts for their disposition**. Ambiguity resolves to "ask the human," always.
+## Already landed — the pass's commits are on the default branch
 
-- **Interactive pass** (default; a manual `/wrap-up`, or a **standalone** `/implement`): the Phase 6 follow-up step **halts** so the user reviews what the session uncovered and chooses fix-now / file / skip per item.
-- **Continuous pass** (only when the `continuous` token is present, injected by `/implement` when it is landing one item out of a queue or a swarm): the follow-up step files **autonomously** with no prompt, so the run never stalls.
+When `wrap-up <worktree>` finds the branch's commits already on the default branch (`git log <default>..<branch>` is empty, or the worktree sits detached at the default branch), Phase 5 and Step C have nothing to commit, push or land. Run Phases 1–4 and Phase 6 Step A and Step B over the landed range (`<default>~<n>..<default>` for the pass's `n` commits), skip Phase 5 and Step C, and say "already landed at `<sha>`" in the summary. Landing by hand does not skip wrap-up; the pass still gets its review, docs check, tracker update and slate.
 
-This gate governs Phase 6 Step A (follow-ups) below. Resolve the posture once, here.
+## Pass mode — interactive, except inside `auto`
+
+Wrap-up runs interactively when a human typed `go` at `implement`'s gate or invoked
+`/wrap-up` directly: the Phase 6 follow-up step **halts** so they review what the session
+uncovered and choose fix-now / file / skip per item.
+
+Inside an `implement … auto` run nothing halts for a reply
+([`../implement/AUTO.md`](../implement/AUTO.md)). Phase 6 Step A picks its own dispositions,
+and any step that needs a person's yes after landing — a deploy, a restart, a publish — is
+skipped and added to the run's `Needs you` line with its exact command, never asked. On a
+repo that is not `owned`, Step C's PR offer does not run mid-run: the branch is pushed and
+parked with `needs a PR` (AUTO.md §Parking an item), and the run's report offers the PR as a
+slate row `go` accepts (AUTO.md §The report).
 
 ---
 
@@ -54,15 +69,15 @@ Invoking this skill grants explicit authority to auto-commit and auto-push. The 
 
 ---
 
-## ⛔ Run Phases 1–4 as a workflow — `~/.claude/workflows/wrap-up.js`
+## ⛔ Run Phases 1–4 as a workflow — [`stages.js`](stages.js)
 
 wrap-up fires at the most expensive moment there is: the end of a session, when context is at its peak and every turn re-reads all of it. Measured over 24h: 34 runs, all of them paying that.
 
-Phases 1–4 are near-pure fan-out with compact returns, so they run staged — `Workflow({ name: 'wrap-up', args: { repo, item, mode } })`. Assess runs first; tracking, docs and quality then run in parallel; each returns a small validated object.
+Phases 1–4 are near-pure fan-out with compact returns, so they run staged — `Workflow({ scriptPath: '<this skill's base directory>/stages.js', args: { repo, item, mode } })`, with the base directory written out as the absolute path the skill loaded from — `scriptPath` does not expand `~`. The script lives beside this file rather than in `~/.claude/workflows/`, so it never shows in the slash menu as a second `/wrap-up` that runs only half the close-out. Assess runs first; tracking, docs and quality then run in parallel; each returns a small validated object.
 
-**Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see.
+**Phases 5 and 6 stay in this context.** Commit, push, follow-up dispositions, summary and landing are the human-facing steps — the batched follow-up question is asked here, and landing a branch is something the user may want to see. Before Phase 5, run each call in the result's `blocked` list here: `hooks/subagent-ask-deny.sh` denied it in the subagent because it needed the user's approval.
 
-**An `implement` pass never reaches this file.** Its own Wrap stage is a plain commit — it does not land the branch and does not write to the tracker, so there is no wrap-up in it to call. `/implement` invokes this skill afterwards, from the session that owns landing, once per item it is about to land.
+**An `implement` pass never calls this skill itself.** It ends at the gate with the branch standing; landing is deliberately a separate step. `/implement` invokes this skill once, at the gate's `go`.
 
 Two rules that apply to every phase, on either path:
 
@@ -80,20 +95,44 @@ When invoked by `implement`, wrap-up runs unattended and a single permission pro
 ## Phase 0: Mark wrap-up in flight
 
 Before anything else, write the marker the `Stop` hook (`~/.claude/hooks/wrap-up-stop.sh`)
-checks: `mkdir -p` and `touch` `<that path>/wrapup/inflight`, where `<that path>` comes
-from `~/.claude/tools/repo-slug --path` (prints `/private/tmp/claude/<repo-slug>` and
-creates it). Never derive the slug by hand — see `relay`'s Step 4 for why a guessed
-slug can put the marker where the hook never looks.
+checks: `~/.claude/tools/wrapup-mark set`, run from where this session stands, even for
+`wrap-up <worktree>` — the hook looks under the session's own checkout, never the target.
+It writes `/private/tmp/claude/<repo-slug>/wrapup/inflight-<session-id>` and prints the
+path. The
+session id makes the marker this session's own: the hook reads only the marker named for
+the session whose turn is ending, so one this session abandons never blocks another. Never
+write the marker by hand — the tool takes the slug from `repo-slug` and the id from
+`CLAUDE_CODE_SESSION_ID`, and exits 1 rather than write a marker no session owns.
 
-Remove the marker (`rm -f`) as the last action of Phase 6, once Step C has landed the
-branch and Step D has resolved — fired, declined, or skipped — not before. Until it is
-removed, the hook blocks the turn from ending.
+Clear the marker (`~/.claude/tools/wrapup-mark clear`) as the last action of
+Phase 6, once Step C has landed the branch and Step D has resolved — fired, declined, or
+skipped — not before. Until it is cleared, the hook blocks the turn from ending.
+
+**Two exceptions: a turn that ends to wait.** The hook cannot tell a deliberate wait from
+an abandoned pass, so clear the marker before each wait and set it again as the first
+action after it:
+
+- **Waiting for the user.** Step A's ask ends the turn on purpose. `wrapup-mark clear`
+  immediately before sending the Step A slate, and `wrapup-mark set` again as the first
+  action of the Act pass once the user replies.
+- **Waiting for the staged workflow.** Phases 1–4 run as a background `Workflow`, and the
+  turn ends until its notification arrives. `wrapup-mark clear` immediately before ending
+  that turn, and `wrapup-mark set` again as the first action on the notification.
+
+The hook then guards only turns that run, never a turn that waits.
 
 ---
 
 ## Phase 1: Assess what was done
 
-Summarize the work completed this session by reviewing:
+**First, in this context and before the staged workflow: was everything asked for done?** Only
+this context has the request. List each outcome it named — in the user's words and in the
+brief or notes it pointed at — and beside each, whether this session saw it happen and where.
+An outcome not seen stops wrap-up: do it, then start wrap-up again. It is never filed as a
+follow-up, labelled `human`, or passed over by a relay, unless it needs something only the user
+can give, and then it is the one question the turn ends on.
+
+Then summarize the work completed this session by reviewing:
 - Recent conversation history
 - `git diff` and `git status` for uncommitted changes
 - Recent commits on the current branch (`git log --oneline -20`)
@@ -106,7 +145,7 @@ Summarize the work completed this session by reviewing:
 
 Check for and update ANY of these tracking mechanisms that exist. Do not create any that don't exist. Capture which issues closed this pass for the Phase 6 summary.
 
-**Ownership check — do this first (reused again in Phase 6 landing).** `gh repo view --json owner --jq .owner.login` vs `gh api user --jq .login`. Owner == my login (or no GitHub remote) → **owned (solo)**; else → **collaborative**. A beads-only repo with no GitHub remote is always **owned** — there is nobody else's lifecycle to respect.
+**Ownership check — do this first (reused again in Phase 6 landing).** Run `~/.claude/tools/repo-tier <repo>` and take its answer; never compare an owner to a login or a name yourself. `owned` → **owned (solo)**; `collaborative` or `unlisted` → **collaborative**. A repo with no remote prints `owned` — there is nobody else's lifecycle to respect.
 
 ### Issues and Milestones
 
@@ -126,9 +165,9 @@ Resolve the backend once — invoke `issues` and run its detection step before a
 - Close issues: `bd close <id> -r "<reason>"` on beads, `gh issue close NUMBER --comment "reason"` on GitHub (use a summary of what shipped for completed; name the reversal for obsoleted).
 - Close the milestone when 0 open issues remain: on beads, `bd close <epic-id> -r "all children complete"`; on GitHub, `gh api repos/{owner}/{repo}/milestones/NUMBER -X PATCH -f state=closed`.
 - **Always** check milestones after closing issues — if a milestone has 0 open issues, close it immediately.
-- **On beads, add `--suggest-next` to the close** and report what it unblocked. That is the one thing this session hands the next one, and it costs nothing.
-- **On beads, push at the end of the phase:** `bd dolt push`. Issue data travels over the Dolt remote, not in the git commit — skip this and the work is closed only on this machine. **Run it unconditionally, including the very first push on a repo that has never pushed.** If `sync.remote` is unset, `bd` configures the git origin as the Dolt remote and pushes the database to `refs/dolt/data` — that is beads working as designed, not a leak, and it needs no confirmation. Do not report those refs, do not unset `sync.remote`, do not delete them; they are the only off-machine copy. See [`../issues/beads.md`](../issues/beads.md) § Sync. In mirror mode (`bd github status` reports `Status: ✅ Configured`), also run `bd github sync --push-only` so the GitHub Issues copy matches — mirror mode is about the Issues tab and is unrelated to `sync.remote`.
-- **On beads, the JSONL export rides along in Phase 5's commit.** With the standard config (`export.auto` + `export.git-add`, set by `bootstrap`), the pre-commit hook refreshes `.beads/issues.jsonl` and stages it, so this session's issue changes land in the same commit as the code. Nothing to do — but check `git status` **before** Phase 5 commits: if `.beads/issues.jsonl` is missing or shows as modified-and-unstaged, the export was never seeded on this repo. Run `bd export --output .beads/issues.jsonl` and `git add` it so it rides in the same commit. **Never amend to fix this** — Phase 5 has already pushed by the time you'd notice afterwards, and amending a pushed commit on the default branch means force-pushing `main`. If it slips past, make it a normal follow-up commit. See [`../issues/beads.md`](../issues/beads.md) § JSONL export.
+- **On beads, add `--suggest-next` to the close** and report what it unblocked. That is the one thing this session hands the next one, and it costs nothing. `bd` accepts `--suggest-next` only on a single-id close, so close several issues one `bd close <id> -r "…" --suggest-next` call each.
+- **On beads, push at the end of the phase:** `bd dolt push`. Issue data travels over the Dolt remote, not in the git commit — skip this and the work is closed only on this machine. **Run it unconditionally, including the very first push on a repo that has never pushed.** If `sync.remote` is unset, `bd` configures the git origin as the Dolt remote and pushes the database to `refs/dolt/data` — that is beads working as designed, not a leak, and it needs no confirmation. Do not report those refs, do not unset `sync.remote`, do not delete them; they are the only off-machine copy. See [`../issues/beads.md`](../issues/beads.md) § Sync. In mirror mode (`bd github status` reports `Status: ✅ Configured`), also run `bd github sync --push-only --issues <ids>` naming exactly the beads this pass closed or filed, so the GitHub Issues copy matches (an unscoped sync publishes the whole graph, and `hooks/beads-github-label-guard.sh` denies it) — mirror mode is about the Issues tab and is unrelated to `sync.remote`.
+- **On beads, no JSONL export goes in Phase 5's commit.** Issue state travels only over the Dolt push above. `.beads/issues.jsonl` and `.beads/interactions.jsonl` stay gitignored; never `git add` either file. If `git ls-tree HEAD .beads/` lists a `.jsonl`, the repo still tracks its export. Turn it off per [`../issues/beads.md`](../issues/beads.md) § Turning it off in a repo that has it on, rather than refreshing and committing it.
 - Under `implement`'s overrides this is automatic (no confirmation).
 
 **Collaborative repos — report only, never close:**
@@ -157,16 +196,18 @@ Apply mechanical doc updates (file-map.md, CLAUDE.md doc-table additions) automa
 
 ## Phase 4: Quality checks
 
-Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md](../review/REVIEW-CORE.md)) over the session diff — plus code-simplifier (in parallel where possible). This is the same eight-axis engine `review` runs on a teammate's PR, turned on our own work: architecture-fit is one of its axes, so it no longer needs a separate check.
+Run a **self PR-review** — the review skill's core ([../review/REVIEW-CORE.md](../review/REVIEW-CORE.md)) over the session diff — plus code-simplifier (in parallel where possible). This is the same lens engine `review` runs on a teammate's PR, turned on our own work: architecture-fit is one of its axes, so it no longer needs a separate check.
 
 **The reviewer does not get this session's conversation.** An agent reviewing code it just wrote holds every justification it built while writing it, and grades accordingly — that is the weakest possible reviewer. Dispatch the review to a sub-agent that receives the diff and nothing else, so the standards get applied to what actually landed rather than to what we meant.
 
-1. Dispatch REVIEW-CORE.md against the session diff (uncommitted or branch-vs-base, per its Modes) to a `code-reviewer` sub-agent. It receives the diff, REVIEW-CORE.md, and the repo's standards — **not this session's transcript** — and returns findings only: score, axis, `file:line`, claim. It makes no edits. If `code-reviewer` isn't a registered subagent type, run REVIEW-CORE.md inline and continue. Same fallback for code-simplifier: if it isn't a registered subagent type, invoke the equivalent skill inline via the Skill tool.
+1. Dispatch REVIEW-CORE.md against the session diff (uncommitted or branch-vs-base, per its Modes) to a `code-reviewer` sub-agent. It receives the diff, REVIEW-CORE.md, and the repo's standards — **not this session's transcript** — and returns findings only: score, axis, P-level, `file:line`, claim. It makes no edits. If `code-reviewer` isn't a registered subagent type, run REVIEW-CORE.md inline and continue. Same fallback for code-simplifier: if it isn't a registered subagent type, invoke the equivalent skill inline via the Skill tool.
 2. Wait for both to complete.
 3. Apply simplifications from code-simplifier.
 4. Fix any issues scored 75+ from the review core before committing. This step is a judgment gate, not an auto-apply: the sub-agent reviewed the diff without the session's reasoning, so expect a minority of findings that this context can answer outright. Dismiss those explicitly, naming what the session already settled — never silently.
 5. **Architecture findings are surfaced, never auto-fixed** — they're design calls, and wrap-up often runs unattended. Collect them (the review core's `architecture` and `negative-space` axes) and carry each into Phase 6 as a follow-up titled `Architecture: <finding>`. The only exception: a finding that is *also* a 75+ correctness bug is fixed under step 4.
-6. If all found nothing actionable, proceed to Phase 5.
+6. **Permissions — optimize the allowlist, proposed never applied.** Prompts and denials this session cost stalls and, unattended, kill a run, so look for three shapes: (a) several approved or denied prompts in one command family, or one prefix prompted repeatedly ([`../retro/PERMISSIONS.md`](../retro/PERMISSIONS.md): approved prompts leave no trace, so this is inference from the commands the session ran and the denials it hit, and says so); (b) overlapping rules in `~/.claude/settings.json` and the project's `.claude/settings.json` (one family rule covering a narrower one, a bare rule beside its `:*` form, the same rule in both files); (c) rules that are one literal command where a family rule fits, scoped to the command family (`Bash(gh pr view:*)`), never a bare tool name. Each hit becomes one follow-up titled `Permissions: <change>` naming the rule, the file, and what stays denied; Phase 6 Step A carries it, and `update-config` applies it on `fix`. Nothing hit, nothing printed.
+7. If all found nothing actionable, proceed to Phase 5.
+8. **Landing through a gate means verification already happened — do not repeat it by default.** When `wrap-up <worktree>` targets a pass that already showed a gate, the pass and the orchestrator's verify loop already verified at the surface. If steps 3–4 above changed no code (nothing beyond docs, tracking, or nothing at all), that verification still holds — proceed to Phase 5 without re-running the project skill's `verify.md`. If they *did* change code, diff the worktree against the sha the gate reported and re-run the project skill's `verify.md` on that diff before Phase 5 commits — a review or simplify fix is new, unverified surface, and the gate's verification does not cover it.
 
 A clean review is a green light to Phase 5, NOT a place to end your turn. Architecture findings being open is not a blocker — they become follow-ups in Phase 6.
 
@@ -174,13 +215,19 @@ A clean review is a green light to Phase 5, NOT a place to end your turn. Archit
 
 ## Phase 5: Commit and push
 
-1. Stage and commit all remaining changes (docs, tracking, quality fixes, straggling code).
-   - Use the project's commit conventions (check its CLAUDE.md), then the global rule in `~/.claude/CLAUDE.md` §Git & GitHub, which requires **Conventional Commits** — `type(scope): message`, ≤72 chars, imperative, no trailing period.
-   - Two exceptions the global rule names: `~/.claude/` itself uses a plain one-sentence message with no prefix, and a repo whose own CLAUDE.md states a different convention wins.
-   - Use Conventional Commits per CLAUDE.md §Git & GitHub. Do not revert to a no-prefix convention.
-   - **In `~/.claude`, you cannot commit where you stand.** The primary checkout denies `git commit`, so this step runs from a linked worktree — `git -C ~/.claude worktree add -b <branch> ~/.worktrees/.claude/<slug> main`, commit there, push there. Edits under `skills/` commit and push inside the submodule first, then the worktree bumps the pointer with a `-- skills` pathspec. Step C then lands it with `tools/claude-land`. Full mechanics in `~/.claude/CONTRIBUTING.md`; do not re-derive them.
+**Commit rule by branch.** On the default branch, nothing upstream of this phase has
+committed anything — `implement` commits nothing there until `wrap-up` runs — so step 1 below
+makes the *first* commit of the work. On any other branch, or in a worktree, the session may
+already have committed as it went; squash whatever is unpushed ahead of the branch's own
+upstream (or its fork point, on a first push) into one commit before or as part of step 1,
+rather than leaving a string of in-progress commits to push.
+
+1. Stage and commit all remaining changes (docs, tracking, quality fixes, straggling code, and — on the default branch — the change itself).
+   - **Default branch:** `git add -A` (respecting the project's own ignores) and commit everything now — except in the `~/.claude` primary, which stages by path (below).
+   - **Any other branch:** `git log <upstream-or-fork-point>..HEAD --oneline` names what is already committed and unpushed. More than one commit there → `git reset --soft <upstream-or-fork-point>` and recommit as one, folding in this phase's own changes; exactly one commit already, with nothing new to add → leave it as is. On a first push the fork point is `git merge-base HEAD origin/main`, never `origin/main` itself: once `main` has moved, a soft reset onto its tip commits this branch's older tree on top of it and silently reverts every commit `main` gained since the fork.
+   - Use the project's commit conventions (check its CLAUDE.md), then **Conventional Commits** — `type(scope): message`, ≤72 chars, imperative, no trailing period. Body only when the why isn't obvious.   - **In the `~/.claude` primary, name every path.** Its index is shared by every session on the machine, so stage and commit by path — `git add <paths> && git commit -m … -- <paths>` — never a bare `git commit` or `git add -A`, which ship whatever another session left behind. Step 2's clean check there covers only your own paths. Edits under `skills/` commit in a claude-skills worktree and land with `~/.claude/tools/land <skills-worktree>`, which re-pins `~/.claude`'s skills pointer itself. Step C then lands it with `tools/land`. Full mechanics in `~/.claude/CONTRIBUTING.md`; do not re-derive them.
 2. Confirm `git status` is clean.
-3. Push: `git push origin $(git branch --show-current)`. First push on a new branch: `git push -u origin $(git branch --show-current)` (match the branch's own name — never `main`).
+3. Push: `git push origin $(git branch --show-current)`. First push on a new branch: `git push -u origin $(git branch --show-current)` (match the branch's own name — never `main`). **Skip this push in a worktree whose git dir carries `SELF-LAND`**: Step C's `land` pushes the commits straight to the default branch, and a feature branch pushed here leaves a remote branch whose deletion waits on a person's yes.
 4. Do NOT land here — the merge/PR is Phase 6 Step C, after follow-ups and the summary settle. Leave the branch pushed.
 
 ---
@@ -193,50 +240,57 @@ Open with a brief recap: what was accomplished, and what tracking/docs were upda
 
 ### Step A — Resolve follow-ups (must fully settle before summarizing)
 
-Invoke the `backlog file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff). Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
+**Never write "no next work" from memory.** The sentence is earned by the `next-work` output printed in chat: a tracker with open epics and ready children has next work, and naming none without that output is the failure this step exists to prevent. Outside an `auto` run, the turn also does not end before the follow-up slate has been shown and answered — a recap with "nothing filed" is not Step A.
 
-**Posture (from the Pass-mode gate above — prove `continuous` or you are interactive):**
+A mockup, prototype or spike page is never committed, stored, or offered as a follow-up, finding, question or slate row; its answer goes in the ADR or the tickets.
 
-- **Interactive pass — HALT here and collect dispositions from the user.** This is the default and the safe direction. Do not file, do not skip, do not proceed until the user has chosen per item. If you are not certain the pass is continuous, you are here.
-- **Continuous pass (proven token only) — file autonomously, no halt.** Items that don't clearly clear the bar are skipped silently and resurface next session.
+Run `papercut review` over the session first: each friction it finds that was not logged as it happened becomes a candidate here. Then invoke the `issues file` skill in Generate mode to surface candidates from this session — **including Phase 4 architecture findings** (one item each, titled `Architecture: <finding>`, with file and one-line tradeoff) and Phase 4 permission findings (titled `Permissions: <change>`). In a `~/Projects` repo, also run `portfolio` § Suggesting a noodle; it may add a noodle row. Every candidate ends in one of three dispositions: **fix**, **file**, or **skip**.
 
-**Presentation — interactive passes (required):**
+**In an `implement … auto` run ([`../implement/AUTO.md`](../implement/AUTO.md)) there is no halt and no ask.** Choose every candidate's disposition yourself, then run the Act pass:
+
+- **fix** — the finding sits inside this pass's diff and one edit plus the pass's own check settles it.
+- **file** — real work outside this pass, or an `Architecture:` finding. With an open milestone in the repo, the milestone yes-or-no in [`../issues/beads.md`](../issues/beads.md) §Grouping decides each item's parent and edge, and records the call on it; `bd dep tree` does not follow a parent, so use `--milestones-for` as that section says. With none, file under the run's epic where it fits, so the user sees it on return.
+- **skip** — a duplicate of an open bead, a finding the session already answered, or noise.
+
+Print the numbered list with each row's chosen disposition as a record, not a question, and no closing sentence. A `fix` that cannot be applied still halts the run. In an epic run, after Step C lands the slice, append one line to the epic's notes: `bd update <epic> --append-notes "<slice-id> landed at <sha>: fixed <n>, filed <ids>, skipped <n>"`. Step D relays per `relay` §Auto.
+
+**Otherwise, HALT here and collect dispositions from the user.** An attended wrap-up never decides for them — do not file, do not skip, do not proceed until the user has chosen per item.
+
+**Presentation (required):**
 
 > **HARD RULE — never use `AskUserQuestion` / a chip-picker / a multi-select for follow-up dispositions.** Present all candidates together as plain markdown; the user answers all of them in one free-text reply. The widget forces one-item-at-a-time stepping, caps how many items you can show, and can't express a per-item three-way choice in one answer.
 
 *Present pass* — one message, every candidate as a single numbered markdown list in a stable order. For each: title, one-line finding, and the exact slice of diff/code/PR it refers to as a `> file:line` block-quote so the user sees precisely what it is.
 
-*Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work and whether to relay into it. Halting twice in one wrap-up is the failure this merge exists to prevent.
+*Ask pass* — **one message covering everything the user still has to decide this pass.** That is the follow-up dispositions AND, when relay is available, the next body of work, which the closing sentence names. Halting twice in one wrap-up is the failure this merge exists to prevent.
 
-Relay is available when **all** of: `HERDR_ENV=1`; the pass is interactive; and `relay`'s Step 1 stop conditions do **not** fire (there is real, non-HITL work left). Resolve that now — read the tracker and rank 2–3 candidates per `relay` Step 1 — so the whole question fits in this one message. When relay is unavailable, drop question 2 and ask only the dispositions.
+The next work comes from [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work procedure: run it as the first action of the ask pass, before any slate is written. It runs `next-work`, prints its output, and defines the `Next:` line, the closing sentence, and what `go` does outside herdr and Wheel or in a linked worktree (the session's own checkout — the directory this session stands in, not the `<worktree>` being wrapped — decides that; a session in the primary that wraps a pass's worktree can relay). `<focus>` is the selector the run started with, as typed, or `ready` when none was given.
 
 **Every default is carried by the item it belongs to. The ask itself is ONE line.**
 
 > ⛔ **Do not restate the sections as a question.** A trailing block that repeats *"Follow-ups — … / Next work — … / Relay — …"* under headings the reader just read is the same content twice, and in a terminal the block-quote glyph makes it read as a pulled quote of the message it is part of. The lists already say what the choices are; the ask only has to say how to answer.
 
-Shape — the follow-up slate, then (when relay is available) a second question for next work, then one closing sentence:
+Shape — the follow-up slate, then one closing sentence. There is no second question and no lettered options: `go` and `park` are the two answers, and the row numbers already use every number in the message.
 
 - **Follow-ups** — the numbered candidate list, one row per item, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row. Each row ends with its default in brackets: `[fix]`, `[file]`, `[skip]`.
-- **What's next?** — omit entirely when relay is unavailable. Otherwise **question 2** per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set, with options `2A` / `2B` / `2C`, one line each, the recommended one marked ` — my pick`. No relay candidate ranked worth doing → this question still prints with a `No relay — stop after landing` option carrying the pick instead.
+- **Next work** — the `Next:` line `next-work` printed, last under the slate, per §Ending. No number, no letters.
 
-Then exactly one sentence, no block-quote, no heading, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch:
+Then exactly one sentence, no block-quote, no heading: the hatch §Ending step 4 selects from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch.
 
-> Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`).
-
-`go` accepts every default, including the picked next-work option, and relays into it. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition. Drop `park` from the sentence when relay is unavailable: with no question 2 there is nothing for it to decline.
+`go` accepts every default and relays into the `Next:` command; a typed override such as `go iron-out label:client` relays into that command instead. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition.
 
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
 *Act pass* — only after every disposition is recorded, execute by group:
-1. **Fix** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change.
-2. **File** — batch-file issues on the resolved backend (`bd create` or `gh issue create`); capture the new IDs/URLs for Step B. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
+1. **Fix** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change. **A `fix` that cannot be applied — a denied edit, a failing check — halts the pass.** Report the blocker and stop; never land the rest around it.
+2. **File** — batch-file through `issues file`'s Step 5 ([`../issues/file.md`](../issues/file.md)), which reads the repo's label vocabulary before the first `bd create`; never a raw `bd create` from here. Capture the new IDs/URLs for Step B. **A repo with no `.beads/labels.toml`** files nothing until it has one: the slate carries one more row proposing the file ([`../issues/labels.md`](../issues/labels.md)), and on `go` that file is written before the items are filed. Declined, or in `auto`, the items go in Step B's summary as unfiled, title and body, waiting on the labeling session. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
 3. **Skip** — drop.
 
-Do not proceed to Step B until every candidate is fixed-and-committed, filed, or skipped, and `git status` is clean.
+Do not proceed to Step B until every candidate is fixed-and-committed, filed, skipped, or listed as waiting on the labeling session, and `git status` is clean.
 
 ### Step B — Summarize
 
-**Additive to `CLAUDE.md` §Finishing work, not a replacement.** The summary file is an artifact; the turn still closes in chat per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Closing sections.
+**Additive to the gate, not a replacement.** The summary file is an artifact. It does not repeat the gate ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Gate) — that already closed the turn that led here, before wrap-up ran. Once Step C lands the branch below, this summary plus the landing report is what closes this turn instead.
 
 Write the unified summary of the branch's changes and session work, and write it to the
 branch-scoped file. Because Step A settled first, this folds in both any just-applied fixes and
@@ -257,9 +311,9 @@ Print the full summary to chat, then write the file (creating the parent directo
 
 Reuse the Phase 2 ownership verdict.
 
-**Repo I own (solo) — land it, then leave the workspace clean.** Invoking wrap-up (or implement) authorizes the landing, exactly as it authorizes commit and push — it runs in **both** interactive and continuous passes (a solo landing needs no human input). If the current branch already *is* the default branch, skip (nothing to land).
+**Repo I own (solo) — land it, then leave the workspace clean.** Invoking wrap-up (or implement) authorizes the landing, exactly as it authorizes commit and push. If the current branch already *is* the default branch, skip (nothing to land).
 
-**Route first — where are you standing?** Answer this before reading either recipe. The parent of `git rev-parse --path-format=absolute --git-common-dir` is the primary checkout; `git rev-parse --show-toplevel` is where you are. **Equal → you are in the primary → Route 1. Different → you are in a linked worktree → Route 2.** A denied `git -C <primary> …` — the harness's worktree-isolation guard — is the same answer arriving the hard way, so take Route 2 rather than retrying it. The two routes are peers, not a rule and its exception: Route 2 is not a degraded Route 1, it is the only landing a worktree-isolated session can perform.
+**Route first — where are you standing?** An explicit `wrap-up <worktree>` argument (the form `implement` calls) settles this outright, without checking where the session itself is standing: it is always Route 2, every command in it run as `git -C <worktree> …` — the orchestrator calling it is typically standing in the primary checkout, not the pass's worktree, and that is fine. Otherwise, answer this before reading either recipe: the parent of `git rev-parse --path-format=absolute --git-common-dir` is the primary checkout; `git rev-parse --show-toplevel` is where you are. **Equal → you are in the primary → Route 1. Different → you are in a linked worktree → Route 2.** A denied `git -C <primary> …` — the harness's worktree-isolation guard — is the same answer arriving the hard way, so take Route 2 rather than retrying it. The two routes are peers, not a rule and its exception: Route 2 is not a degraded Route 1, it is the only landing a worktree-isolated session can perform.
 
 **Route 1 — you are in the primary checkout: merge.** With a remote:
 1. Pre-check: `git status` clean and Phase 4 clean-or-fixed. **Never merge known-failing work** — an unresolved 75+ issue is the blocker; stop instead.
@@ -268,31 +322,56 @@ Reuse the Phase 2 ownership verdict.
 4. Merge: `git -C <repo> merge --no-ff <feature> -m "Merge <feature>"` (`--no-ff` keeps the feature as one revertable unit; plain message, no AI attribution).
 5. **On conflict:** `git -C <repo> merge --abort`, `git -C <repo> checkout <feature>`, and STOP — surface it. A merge conflict is a genuine blocker; never force or silently hand-resolve.
 6. Push: `git -C <repo> push origin main`.
-7. Delete the merged branch: local `git -C <repo> branch -d <feature>` (`-d`, not `-D` — refuses if not fully merged) and remote `git -C <repo> push origin --delete <feature>`.
-8. End state: on `main`, `git status` clean, feature branch gone. Report the merge in the summary.
+7. Sweep: `bash ~/.claude/tools/git-sweep.sh --repo <repo> --quiet`. **Do this even though step 7 already deletes the one branch you know about** — the push in step 6 is what makes ANY other already-merged, never-pushed branch (an implement pass merged locally in an earlier session, say) collectible, and nothing else will collect it if this step is skipped. The sweep carries its own vetoes (dirty tree, SELF-LAND, caller's own worktree, a branch at the tip of main); it never removes more than step 8 below would ask for by hand.
+8. Delete the merged branch: local `git -C <repo> branch -d <feature>` (`-d`, not `-D` — refuses if not fully merged) and remote `git -C <repo> push origin --delete <feature>`. (Step 7's sweep may have already done this — `branch -d` on an already-gone branch is a no-op error, not a problem.)
+9. End state: on `main`, `git status` clean, feature branch gone. Report the merge in the summary.
 
-No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push.
+No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip the pull/push/sweep — there is nothing to push and nothing on a remote for the sweep to check.
 
 **Route 2 — you are in a linked worktree: fast-forward push.** Every step runs inside the worktree; nothing reaches into the primary checkout.
 1. Pre-check: `git status` clean and Phase 4 clean-or-fixed. **Never land known-failing work** — same blocker, same stop.
 2. Bring the branch current in place: `git fetch origin main`, then `git merge FETCH_HEAD`. This is what makes the push below a fast-forward.
 3. **On conflict:** `git merge --abort` and STOP — surface it. Same rule as Route 1's step 5; never force, never hand-resolve silently.
 4. Re-run step 1's pre-check: the merge brought in other sessions' commits, so clean-and-green has to hold against the merged tree, not the one you tested.
-5. Land: `~/.claude/tools/land <worktree>`. It refuses — non-zero, reason on stderr — if the directory is not a repo, is dirty, or is behind the branch it is pushing to, and it never passes a force flag. A refusal is a stop, not a prompt to retry harder.
-6. Delete the remote feature branch if Phase 5 pushed one: `git push origin --delete <feature>`.
-7. **Never remove your own worktree.** The launching session removes it from the main checkout, and the local branch goes with it. End state: origin's default branch carries the work, `git status` clean. Report the landing in the summary.
+5. Land: `~/.claude/tools/land <worktree>`. It refuses — non-zero, reason on stderr — if the directory is not a repo, is dirty, or is behind the branch it is pushing to, and it never passes a force flag. A refusal is a stop, not a prompt to retry harder. (A successful push already sweeps the repo — `land`'s own push runs `git-sweep.sh --repo <worktree> --quiet` for you.)
+6. Sync the primary: `~/.claude/tools/sync-primary <worktree>`. `land` never touches anything outside the worktree, on purpose, which otherwise leaves the primary checkout's local branch stale — `git -C <repo> log main` would show nothing of what step 5 just pushed. This is that fetch-and-fast-forward, refusing rather than clobbering a dirty or diverged primary.
+7. Delete the remote feature branch if Phase 5 pushed one: `git push origin --delete <feature>`.
+8. **Never remove your own worktree — the session physically sitting in it never removes it.** For an ordinary `/wrap-up` running where it stands, this is where Step C ends: the launching session removes the worktree later, from the primary checkout. Landing an `implement` pass is the exception, below — there this session is never physically inside the worktree it is retiring, so it retires it here, in the same call. End state: origin's default branch carries the work, the primary's local branch matches it, `git status` clean. Report the landing in the summary.
 
-**`~/.claude` always takes Route 2, and its step 5 is `~/.claude/tools/claude-land <worktree>` instead** — the same push, plus the beads-export commit and the primary-checkout fast-forward that only this repo needs. Two independent reasons put it here, and neither is the general one: the primary checkout denies `git commit` and any non-fast-forward `git merge` outright (docs/adr/0005), and its index is shared by every concurrent session, which is the shape that reverted 54 files (cc-lfzq). So `git -C ~/.claude checkout main` or `merge` is wrong here even from a session that could reach it.
+**A `~/.claude` worktree takes Route 2, and its step 5 is `~/.claude/tools/land <worktree>`, with no separate step 6** — `land` detects the `~/.claude` worktree and syncs the primary itself in the same call. Prefer it over checking out or merging in the primary: every session shares that checkout, so switching its branch moves the ground under all of them. Work committed in the primary itself is already on `main`; Phase 5's push lands it.
+
+**Landing an `implement` pass — Step C's teardown, when `wrap-up` was given an explicit `<worktree>` argument.** This is the only caller that hands wrap-up a worktree it is not standing in, and it is the one case where Step C removes it. Run this after the merge or PR above has landed:
+
+9. **Verify teardown is safe, then retire the worktree** — only when this session stands outside it. A dispatched worker landing its own worktree skips this step and goes to step 10; its dispatcher or `git-sweep` removes the worktree.
+    ```bash
+    git -C <worktree> status --short                                        # must be empty
+    git log <default>..<branch>                                             # must be empty — fully merged
+    pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=                       # must be empty — nothing is standing in it
+    ```
+    A live process in the worktree forbids teardown exactly as uncommitted work does — `pgrep -f` matches the command line, not the working directory, so when it is empty and you still suspect a hold, `lsof +D <worktree>` answers for certain. Quote the path and use `xargs -r`. A gitignored file the pass created is invisible to every check above, and `hooks/worktree-remove-locals-guard.sh` denies the removal when one exists — copy it to the primary checkout, then re-run. **Refuse, do not name-and-remove:** say which condition fired and which process holds it.
+    ```bash
+    git -C <repo> worktree remove <worktree> && git -C <repo> branch -d <branch>
+    ```
+    **Plain `worktree remove`, never `--force` first.** Git refuses a dirty or untracked tree itself, so the checks above and git's own refusal agree; a `--force` on a clean worktree adds nothing and is the one shape the auto-mode classifier denies as irreversible destruction. Reach for `--force` only when git's refusal names a submodule and every check above already passed.
+    No `push origin --delete` — the branch only ever existed locally; chained with `&&`, `remote ref does not exist` makes a clean teardown read as a failed one.
+10. **Close the tracked item.** `bd close <id> -r "<reason>"` (or `gh issue close <n> --comment "<reason>"` on a repo you own), `<id>` read off the worktree's branch (`<type>/<slug>-<short-title>`, `<slug>` the tracker id lowercased). Report the closed id in the summary. **A slice of an epic that ships as one PR closes here at its gate's `go`, once its commit is on the epic's branch** — not when the PR merges, because the epic's other slices do not wait for it; close the parent epic with its last slice. In a stealth repo the close is local and publishes nothing.
+11. **Prune the comp.** Only when step 10 closed a bead with `bd close` and that bead's `design` field (`bd show <id> --json`) cites a comp ref: run `dsys refs prune` in the repo. It drops every stored comp whose bead `bd` no longer reports open, and in an owned repo it force-pushes the `design-refs` branch. This force-push needs no ask: `design-refs` is dsys-owned comp storage, not project history; no other branch gets this. Report what it pruned. Skip the step for a GitHub-issue close, a bead that cites no comp, or a machine without `dsys` on PATH.
 
 **No legal route? Stop and surface it.** A worktree with no remote cannot fast-forward-push and cannot reach the primary — say so and hand the branch over. **Never open a PR on a repo you own**: `~/.claude/CLAUDE.md` §Git & GitHub forbids it, and a blocked landing is not an authorization to publish one. Landing is the only thing Step C does on an owned repo; when it cannot, the pass ends with the work committed and pushed on its branch.
 
-**Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never close an issue here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (On a beads repo in mirror mode, `#<n>` is the mirrored GitHub number — it's the `external_ref` field on the bead, `gh-<n>`. A bead with no external ref has no GitHub issue to close; list it in the summary instead.) (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
+**Repo I don't own (collaborative) — never merge; open or update a PR.** Merging is the reviewer's call. Never close an issue here — for any Phase 2 **Completed** match, add a `Closes #<n>` line per issue to the PR body so GitHub closes it automatically when the PR merges. (On a beads repo in mirror mode, `#<n>` is the mirrored GitHub number — it's the `external_ref` field on the bead, `gh-<n>`.) **Every Completed bead gets linked to the PR the moment it exists:** `~/.claude/tools/bead-pr link <id> <pr-number>` records the PR as local bead metadata and marks the bead `in_progress`; nothing reaches GitHub, so a stealth bead stays private. `bead-pr reconcile`, run by the SessionStart sync hook and by `git-sweep`, closes the bead once GitHub reports the PR merged, in whichever session comes next. Report each link in the summary. A bead left unlinked here stays open after its PR merges, with nothing to close it. (Reversed/obsoleted matches aren't auto-closeable this way — those stay report-only per Phase 2, left for the reviewer.)
 
 **PR body format.** Short. A 2-4 sentence summary, then a flat `## Changes` bullet list, one line per bullet — never a paragraph packed into a bullet, never a sub-clause explaining a bullet's own rationale at length. No `## Test plan` checklist: which commands passed is for us, not the reviewer, and CI already shows it. A genuine manual reviewer step (open this screen, confirm X) gets its own short `## How to verify` line — a step for *them* to do, not a log of what you already did. Deep investigation detail (a forensic timeline, "why this took 3 days to find") belongs in a linked doc, not the body — link it, don't inline it. Every paragraph and every bullet is one continuous line: GitHub renders a mid-paragraph newline as a real line break, not a soft wrap, so terminal-style wrapping shows up as choppy broken lines. Reference shape: `Forevr-Games/social-poker#1912`'s body after its rewrite.
-- **Interactive pass** → **offer** the PR (only on a confirmation in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines). If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
-- **Continuous pass authorized by a queued or swarmed `/implement`** → **create the PR autonomously.** Starting `/implement <selector>` or `/implement swarm <selector>` on a collaborative repo is the standing authorization to open a PR per landed item (this is the one place a continuous pass publishes — and only because the run's entry point authorized it). Same `gh pr create` call, reviewers/labels drawn from repo defaults and the summary; if a PR already exists, post the summary as a comment instead. Report the PR URL in the summary.
+**A PR with a UI change carries before-and-after screenshots in its body, under `## Screenshots`.** Use the images `implement` captured and showed, from the scratch directory they were saved in. Upload them with GitHub's uploader: `gh pr create … --attach './before.png#<alt text>' --attach './after.png#<alt text>'` (up to 50 files; `gh pr edit` and `gh pr comment` take `--attach` too), and reference each in the body as `![alt](./before.png)` — `gh` rewrites the reference to the uploaded asset (https://docs.github.com/en/github-cli/github-cli/attaching-files-with-github-cli). **Never commit a PR image or any other PR asset to any branch, under any circumstance.** Do this when the PR is created, never after the user asks where the pictures are. A PR with no UI change has no `## Screenshots`.
 
-  > ⚠️ This is the only autonomous-publish path in wrap-up, and it exists solely to satisfy the multi-item run's "PR on collaborative repos" contract. A single `/implement <issue>` does NOT get this — it leaves the branch pushed for a later interactive wrap-up. If you can't confirm the run authorized publishing, treat the pass as interactive and offer rather than create.
+**The PR's base is the default branch unless the branch fails without its parent.** Test that first: apply the branch's own commits to `origin/<default>` in a scratch worktree and run the typecheck and tests. A pass means base on the default branch. A branch stacked on an unmerged parent carries a copy of the parent's commits and needs a rebase and retarget when the parent merges or closes, so the confirmation states that cost beside the option, and states the cost of every other option too.
+**Offer** the PR (only on a confirmation in the current message — global "never publish on my behalf" rule). Propose reviewers and labels as pre-checked options in the same confirmation round; use only labels that already exist (`gh label list`), never create labels. On yes, create the PR (`gh pr create --title … --assignee @me --reviewer … --label … --body …`, body including the `Closes #<n>` lines), then `bead-pr link` each Completed bead to the new PR number. If a PR already exists, offer to post the summary as a comment (`gh pr comment <n> --body …`) rather than overwriting the description. On a no, hand the user the summary to paste.
+
+Landing an `implement` pass here still runs steps 9–10 above after the merge into the feature branch (or the PR, on the feature branch itself): retire the worktree, and close the tracked item only when it is an epic slice whose commit is on the epic's branch. Every other item ships when its PR merges, so it gets `bead-pr link` instead of `bd close`.
+
+**Reinstall what landed when nothing is running from it.** Once the work is on the default branch of an `owned` repo, reinstall a CLI binary or rebuild an extension unasked from the primary checkout, through the project's deploy route (the project skill's deploy step, or the task runner's deploy task). Restarting a running daemon or app waits for a yes, and production or a work environment always does. In an `auto` run each of those is skipped and added to `Needs you` with its exact command. What only a person can do afterwards, such as reloading a browser extension, goes in the landing report as one line.
+
+Once an `implement` pass has landed, by either route, end its dashboard: `~/.claude/skills/dashboard/dashboard end implement:<id>`. For a pass that never started one it exits 1 with one line, which is fine to ignore.
 
 ### Step D — Relay into the next body of work
 
@@ -300,14 +379,15 @@ Runs **last**, after the branch has landed and `git status` is clean. A relay cl
 this context; anything uncommitted at this point is gone, so Step C completing is the
 precondition, not a nicety.
 
-- **Interactive pass** — the user already answered this in Step A's single ask. `yes`
-  (or `go`) → invoke `relay` and hand it the chosen next work; it writes the marker and
-  you end the turn. `no relay`, or relay was unavailable → stop here as normal.
-- **Continuous pass** — invoke `relay auto`. A queued `/implement` relays between items
-  rather than looping inside one context, so this is how the next item gets a clean window.
-- **Outside herdr** (`HERDR_ENV` unset) — skip silently. There is no pane to clear.
+- **Called by `iterate`:** `iterate` step 6 owns the relay. Skip this step and return to `iterate`.
+- The user already answered this in Step A's single ask. `go` → invoke `relay`
+  and hand it the chosen next work; it writes the marker and you end the turn. `park`, `no relay`,
+  or relay was unavailable → stop here as normal.
+- **In an `auto` run** there is no ask to read: invoke `relay` §Auto, which relays or prints
+  the run's report. When relay is unavailable, continue the run in this context.
+- **Outside herdr and Wheel** (`HERDR_ENV` and `WHEEL_ENV` both unset) — skip silently. There is no pane to clear.
 
-Do not clear the pane, send keys, or call `herdr` yourself. `relay` writes a marker;
+Do not clear the pane, send keys, or call `herdr` or `wheel` yourself. `relay` writes a marker;
 the `Stop` hook does the rest after your turn ends. Doing it inline sends input into a
 session that is still busy and Claude Code drops it.
 

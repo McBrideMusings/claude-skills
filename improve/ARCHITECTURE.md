@@ -6,7 +6,8 @@ Surface architectural friction and propose **deepening opportunities** — refac
 
 Use these terms exactly in every suggestion. Consistent language is the point — don't drift into "component", "service", "API", or "boundary."
 
-These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms (see [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md)). If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
+These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongside the project's domain terms. If `docs/CONTEXT.md` doesn't have them yet, seed them on first run.
+*Knowledge base: search it for "CONTEXT.md term format". If you have none, skip this line and don't mention it.*
 
 - **Module** — anything with an interface and an implementation (function, class, package, slice). Scale-agnostic.
   _Avoid_: unit, component, service, layer, wrapper.
@@ -37,6 +38,8 @@ When reworking an existing change, the reference point is the shape the code *sh
 3. **Reshape around the final surface.** One clear flow beats a flow plus mode flags. Split only where a real boundary appears — separate state, separate layout, separate controls, separate domain commands.
 4. **Move shared rules to one owner.** Feature flags, permissions, route gating, URL state, command naming — these duplicate across pages and hide inside view components. One place each.
 5. **Verify the intended flow**, including the assumptions the deletions invalidated — navigation, permissions, persisted state.
+
+**Write the rework first, then run the tests.** The tests check finished work; they do not steer it. A refactor built by fixing failing tests one at a time bends each edit back toward what the old code did, and a behaviour change slips through as a quiet edit to test setup, so the suite ends green while certifying the bug. When a test fails after the rework, decide from the end state which side is wrong — the code or the test's expectation — before touching either.
 
 Bounds: don't invent a generic framework for one feature, keep the rework scoped to what makes the final shape coherent, and prefer names describing product intent over implementation history.
 
@@ -89,6 +92,15 @@ Then use the Agent tool with `subagent_type=Explore` to walk the codebase (in a 
 
 Apply the **deletion test** to anything you suspect is shallow.
 
+**Ask what standard architecture this code should have been.** For each subsystem you walk, name the standard architecture or off-the-shelf tool for that kind of problem — a library, a framework's own pattern, a maintained project that does the whole job — and compare. Verify each candidate is real and maintained (repo, maintainer, last release) before naming it.
+
+A partial fit is the important case. When a candidate covers most of the need — 75%, 85% — don't drop it for the gap. Decide what the gap is:
+
+- **A gap the code can fill around the tool** — an adapter, a plugin, a thin layer behind the tool's own extension points. The candidate is "adopt X and fill the gap with Y".
+- **A gap made by this codebase's own architecture** — features accreted without a plan, so the shape no longer matches how the tool expects to be used. Check for this one first; the candidate is the architecture change: restructure to the standard shape, then adopt the tool. Name the modules that move.
+
+Only when the gap is a real requirement the tool can't meet, and the code's shape isn't the cause, is custom code the right answer — and the card says which requirement.
+
 **Grounding rule — every candidate must cite evidence from this codebase.** A deepening you propose has to point at real modules, real friction you hit while exploring, real callers that bounce between small pieces — named files, named seams. A suggestion that could apply to *any* project in this language ("add a service layer", "introduce dependency injection", "split into smaller modules") with nothing anchoring it to code you actually read is slop — drop it, don't pad the card list with it. If you can't name the modules and the friction, you don't have a candidate yet.
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface when the friction is real enough to warrant revisiting. Mark clearly: *"contradicts ADR-0007 — but worth reopening because…"*. Don't list every theoretical refactor an ADR forbids.
@@ -98,7 +110,7 @@ Apply the **deletion test** to anything you suspect is shallow.
 Each candidate is one card (see [HTML-REPORT.md](HTML-REPORT.md)):
 
 - **Title** — names the deepening (e.g. "Collapse the Order intake pipeline").
-- **Recommendation strength** — a badge: `Strong` (happy/green), `Worth exploring` (caution/amber), `Speculative` (muted).
+- **Impact** — a `P0`–`P3` badge (scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags).
 - **Files** — monospaced list of the modules involved.
 - **Before / After diagram** — the centrepiece. Hand-authored inline SVG showing the shallowness and the deepening, side by side.
 - **Problem** — one sentence: what hurts.
@@ -114,7 +126,9 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 
 Side effects happen inline as decisions crystallize:
 
-- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term as a slate row per the `docs` skill's vocabulary rule. Format per [../docs/CONTEXT-FORMAT.md](../docs/CONTEXT-FORMAT.md).
+- **Naming a deepened module after a concept not in `docs/CONTEXT.md`?** Add the term as a slate row; the write to `docs/CONTEXT.md` waits for `go`.
 - **Sharpening a fuzzy term?** Same rule — a row, written on `go`.
-- **User rejects the candidate with a load-bearing reason?** Apply the `docs` skill's any-session ADR rule: *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones. See [../docs/ADR-FORMAT.md](../docs/ADR-FORMAT.md).
+- **User rejects the candidate with a load-bearing reason?** Offer an ADR (architecture decision record): *"Want me to record this as an ADR so future architecture reviews don't re-suggest it?"* Only offer when the reason would actually be needed by a future explorer — skip ephemeral reasons ("not worth it right now") and self-evident ones.
 - **Want to explore alternative interfaces for the deepened module?** See [INTERFACE-DESIGN.md](INTERFACE-DESIGN.md).
+
+*Knowledge base: search it for "CONTEXT.md term format and ADR format". If you have none, skip this line and don't mention it.*

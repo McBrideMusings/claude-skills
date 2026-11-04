@@ -4,70 +4,23 @@
 
 body { background: var(--bg); }
 
-/* Switch mode: one variant at a time, full size.
-   The stage is a column and the mounted variant stretches to fill it. Without this the
-   stage is 100vh but the variant is only as tall as its content, so the prototype's own
-   background stops partway down and the folio's page background shows below it — a
-   seam that reads as a rendering bug in every prototype whose content is short. */
-/* The safe area comes off the same way `.at-list-item` below already takes it. A plain
-   100vh is a full viewport of stage sitting *inside* a body the frame has already padded
-   by the insets, so on a device with any — a television's 60px of overscan, a phone's
-   notch — the stage is inset-tall taller than the room it has, and `#at-stage > *` below
-   stretches the design to match. A root that pins a footer to its own bottom edge then
-   puts that footer off the bottom of the screen. */
-/* max-height as well as min-height, because a floor alone never bounded anything. The
-   stage grew to its content, so an app shell that had opted into being bounded — root
-   `min-height: 0`, scrolling middle, fixed composer — had no definite parent height to
-   shrink against and pushed its own composer off the bottom of the frame. Capping the
-   stage is what makes the opt-in mean something.
-   A document root is unaffected: it keeps `min-height: auto`, so it grows past the cap
-   and the page scrolls, exactly as before. */
+/* One variant at a time, full size. The stage is a column and the mounted variant
+   stretches to fill it; without that the variant is only as tall as its content, so the
+   prototype's own background stops partway down and the page background shows below it —
+   a seam that reads as a rendering bug in every prototype whose content is short.
+
+   max-height as well as min-height: an app shell that opts into being bounded (root
+   `min-height: 0`, scrolling middle, fixed composer) needs a definite parent height to
+   shrink against. A document root is unaffected: it keeps `min-height: auto`, grows past
+   the cap and the page scrolls. */
 #at-stage {
-  min-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
-  max-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
+  min-height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
 }
+
 /* min-width: 0 because a flex item defaults to min-width: auto, so one over-wide child
-   made the prototype's whole root grow to match it. The root then WAS the wide thing,
-   every sibling inherited that width, and an overflow that should have been visible as
-   overflow just silently became a wider page. */
-/* shrink is 1, not 0: an app shell — a design with a scrolling middle between a fixed
-   header and a fixed composer — sets min-height: 0 on its root to opt into being bounded
-   by the stage, and with shrink 0 it would grow to its content anyway and push its own
-   footer off the bottom of a device frame. Anything that does not opt in keeps
-   min-height: auto, so a long page is still as tall as its content and scrolls. */
+   would make the prototype's whole root grow to match it. shrink is 1 so an app shell with
+   a scrolling middle between a fixed header and composer can be bounded by the stage. */
 #at-stage > * { flex: 1 1 auto; min-width: 0; }
-
-/* list mode: each variant isolated and stacked, one per screenful.
-   Never a grid of thumbnails — small side-by-side distorts spacing and scale. */
-.at-list-item {
-  min-height: calc(100vh - var(--at-safe-top, 0px) - var(--at-safe-bottom, 0px));
-  display: flex;
-  flex-direction: column;
-  border-bottom: 1px solid var(--line);
-}
-.at-list-item:last-child { border-bottom: 0; }
-
-.at-list-head {
-  position: sticky; top: 0; z-index: 10;
-  display: flex; align-items: baseline; gap: var(--s-3);
-  padding: var(--s-3) var(--s-4);
-  background: rgba(10, 10, 10, .82);
-  -webkit-backdrop-filter: blur(12px) saturate(1.4);
-  backdrop-filter: blur(12px) saturate(1.4);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) inset;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 13px; line-height: 1;
-}
-.at-list-head .at-list-n {
-  display: grid; place-items: center;
-  width: 20px; height: 20px; border-radius: 999px;
-  background: rgba(255, 255, 255, .14);
-  font-size: 11px; font-weight: 700;
-}
-.at-list-head .at-list-name { font-weight: 600; }
-.at-list-head .at-list-axis { color: rgba(255, 255, 255, .55); font-size: 12px; }
-
-.at-list-body { flex: 1; display: block; }

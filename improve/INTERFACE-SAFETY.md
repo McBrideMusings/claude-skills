@@ -45,6 +45,28 @@ Take the highest rung that works, not the easiest:
 
 "Add a comment warning about it" is not a rung. A comment is what you write when the seam won the argument.
 
+#### Rung 2 in practice
+
+Common shapes of "the bad state cannot be represented":
+
+- **A value with a rule gets its own type.** A 0-to-1 fraction, an id, a hash: a small type whose constructor checks the rule and fails loudly, so constructing it is the only way to get one. Plain numbers and strings are for values with no rule.
+- **Units live in the type.** `Seconds` and `Milliseconds`, `Pixels` and `Points` are distinct types, with conversion functions as the only bridge, so mixing them fails to compile. A variable name like `timeoutMs` does not stop anyone passing seconds.
+- **Parse once at the boundary.** Untrusted input becomes a domain type exactly once, where it arrives (file load, request, IPC). Everything downstream accepts only the domain type, so "forgot to validate" cannot be written.
+- **A refusal is a result, not a boolean.** An operation that can legitimately say no returns a type the caller has to unpack (`Result`, a sum type, a thrown checked error). A returned `false` can be ignored without a trace.
+- **Resources come in a bracket.** When a lifetime fits in one scope, expose only `withLock(fn)`, `with open(...)`, `defer`, RAII: acquire, run, release on every exit path. A bare `acquire()` / `release()` pair lets a caller leak on the early return.
+- **"Did it happen" reads a direct fact.** A counter that only goes up, or an identity. Array length, a timestamp or stack depth can repeat or saturate, so two different histories read the same.
+- **Closed sets are matched exhaustively.** A `switch` over an enum or union has no `default` that swallows new variants; adding a variant breaks the build at every place that has to handle it.
+
+#### No silent fallbacks
+
+The same defect in its quietest form: code that meets a condition it cannot handle and carries on with a made-up value.
+
+- `port = config.port ?? 8080` hides missing config. Required values are required: fail at startup, naming the key.
+- A value that is always present is not typed optional. The `?` invites a `?? ""` at every caller.
+- An "impossible" branch fails with an error saying it was reached. It never returns a default.
+- No empty `catch`, and no `catch` around an error that means a bug (indexing a structure you just built, parsing your own data). Let it crash; the crash is the bug report.
+- Every error names what went wrong and the values involved: `Unknown effect type "reverb2" in project "demo"`, not `invalid input`.
+
 ### 4. Delete the bypasses
 
 The local wrappers, the parallel helper names, the second way of doing it, the comment explaining the trap. One invariant, one owner. If two paths remain, the wrong one will get called.

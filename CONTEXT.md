@@ -14,28 +14,37 @@ The one verb for giving a brief to another executor and taking its result back �
 `dispatch <target>`. Bare `dispatch` with no target is bounced with the target list.
 _Avoid_: hand off, handoff, spawn, delegate, separate session
 
+**worker**:
+The executor a dispatch starts. The dispatcher is the session that handed it the brief.
+_Avoid_: delegate, delegated session
+
 **agent**:
 A dispatch target — the harness `Agent` tool: a subagent in this session, invisible, dies with
 the session.
 _Avoid_: delegate
 
-**split**:
-A dispatch target — a new pane in the current herdr workspace.
-
 **workspace**:
-A dispatch target — a new herdr workspace.
-_Avoid_: space
+A dispatch target — a new herdr space (herdr calls it a workspace) for the worker: a child space
+nested under the repo's space when the worker runs in a linked worktree of a repo herdr tracks,
+a standalone top-level space otherwise.
+
+**report-back** / **fire-and-forget**:
+The two modes of a dispatch, chosen by the dispatcher and named in its first status line.
+`report-back`: the dispatcher started the worker on its own initiative and keeps ownership of
+the result. `fire-and-forget`: the user asked for the dispatch, and the user (or a `SELF-LAND`
+worker) owns the result. See `dispatch/TARGETS.md`.
 
 **window**:
 A dispatch target — a Terminal.app window.
 
 **codex** / **reasonix**:
-Dispatch targets naming another vendor's coding agent. The surface (split/workspace/window) is
+Dispatch targets naming another vendor's coding agent. The surface (workspace/window) is
 resolved by the `dispatch transport` resolver, never asked.
 
 **inline**:
-Not a dispatch — an escape hatch: `implement <issue> inline` implements in whatever checkout the
-session sits in, this session, this checkout, no worktree.
+Not a dispatch — a reserved word: `implement <issue> inline` names running the item in this
+session, this checkout, explicitly. See `implement/SKILL.md` for what it will come to
+distinguish.
 
 **run**:
 Not a dispatch — this session executing a `Workflow` script; the script's agents are internal to
@@ -48,17 +57,21 @@ sideways.
 ### Process
 
 **implement**:
-The four-step process plan → fix → verify → land, independent of where it runs. Bare
-`implement <issue>` means `dispatch agent`: one `implementer` agent works the item in its own worktree. A place word follows: `implement 12 inline`,
-`implement 12 dispatch split`, `implement 12 relay`. Work happens in a worktree unless the user
-says otherwise; `inline` is that exception.
+The process plan → edit → verify → gate, run by this session directly, in the checkout it
+already stands in — no dispatched agent. Bare `implement <issue>` and `implement <issue>
+inline` behave the same today; `inline` is reserved for when a worker-launch mode exists to
+tell it apart from.
 
-**swarm**:
-An arity modifier on any process — several items at once.
-_Avoid_: fan out
+**iterate**:
+`implement <id> auto` passes over a focus, one at a time, run by this session in one kept
+worktree, each landed before the next starts. The sequential sibling of `swarm`: no worker panes,
+no swarm space.
 
-**queue**:
-An arity modifier on any process — one item after another.
+**focus**:
+The selector a run starts with — `epic:`, `label:`, bead ids, or free text — carried unchanged
+to every later hop and resolved again at each one. `implement <focus>`, `swarm <focus>`, `iterate <focus>` and
+`issues iron-out <focus>` resolve it through one table, `implement/SELECTORS.md`.
+_Avoid_: scope (the beads a focus resolves to at one moment)
 
 ### Verify
 
@@ -89,16 +102,23 @@ A verify method — randomized input.
 A verify method — the user operates it; what "Manual testing steps" hands them.
 
 **harness**:
-The Claude Code runtime, never a test rig; a project's test rig is its `verify-project`.
+The Claude Code runtime, never a test rig; a project's test rig is its project skill's `verify.md`.
 
 ### Dispositions
 
 **go**:
-Apply every stated pick and continue into proposed next work. The only accept word; `yes`,
-`approve`, `ok`, `confirm`, `send` are never accepts.
+Apply every stated pick and continue into proposed next work; on an option set, take every
+pick. The only accept word; `yes`,
+`approve`, `ok`, `confirm`, `send` are never accepts. At the gate, `go` means run wrap-up now —
+land the standing branch (or, for already-committed work, run wrap-up from that commit). `go`
+at the gate also means the owner has tested the change or chose not to; nothing asks again.
+A new request that arrives before every accepted pick has run pauses the rest; it never cancels
+them. The reply to that request names the paused picks in one line, the work board lists them,
+and they run once the new request is done.
 
 **park**:
-Apply every stated pick and end the turn. Slate-level only, never on a row.
+Apply every stated pick and end the turn. Slate-level only, never on a row, and never offered
+at the gate.
 
 **fix** / **post** / **skip** / **file** / **hold**:
 Row-level disposition verbs. `hold` leaves an issue open and blocked.

@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Perform a code review. Routes by what you're standing in: uncommitted changes review the working tree, a feature branch reviews against its base, an explicit branch/PR/path argument overrides, the default branch sweeps every PR awaiting your review. Blocked branches go to `unblock` first, without asking. Modes: `review dual`, `review repo`, `review workflow`, `noverify`. Choices are typed keywords in chat, never AskUserQuestion."
+description: "Perform a code review. Routes by what you're standing in: uncommitted changes review the working tree, a feature branch reviews against its base, an explicit branch/PR/path argument overrides, the default branch sweeps every PR awaiting your review. Blocked branches go to `mergeable` first, without asking. Modes: `review dual`, `review repo`, `session`, `noverify`. Choices are typed keywords in chat, never AskUserQuestion."
 ---
 
 # Review
@@ -10,17 +10,17 @@ Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined 
 
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs.
 
-**This skill evaluates a diff for defects** — bugs, vulnerabilities, quality issues, spec and architecture fit. When the branch isn't mergeable yet — conflicts, red checks, feedback nobody has answered — it calls [unblock](../unblock/SKILL.md) to get there first, then continues.
+**This skill evaluates a diff for defects** — bugs, vulnerabilities, quality issues, spec and architecture fit. When the branch isn't mergeable yet — conflicts, red checks, feedback nobody has answered — it calls [mergeable](../mergeable/SKILL.md) to get there first, then continues.
 
 | file | what it owns |
 | --- | --- |
 | [RULES.md](RULES.md) | RULE 0 (no selector), RULE 1 (effort never decides), RULE 2 (a gate does its job). **Load first.** |
-| [REVIEW-CORE.md](REVIEW-CORE.md) | the ten-axis dispatch, scoring, verification, report format |
-| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt` (repo mode only), `docs-drift` (repo mode only), `history`, `negative-space`, `security`, `slop`, `spec`, `standards`, `test-debt` (repo mode only). REVIEW-CORE dispatches to them; a lens agent gets exactly one. |
+| [REVIEW-CORE.md](REVIEW-CORE.md) | the per-axis dispatch, scoring, verification, report format |
+| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt`, `design`, `docs-drift`, `history`, `negative-space`, `security`, `slop`, `spec`, `standards`, `test-debt`. Each declares when it runs in frontmatter; REVIEW-CORE Phase 03d runs `tool/lens-gate` to decide, then dispatches; a lens agent gets exactly one. |
 | [POSTING.md](POSTING.md) | end-of-pass dispositions, the comment budget, the verdict |
 | [FALSE-POSITIVES.md](FALSE-POSITIVES.md) | what not to flag |
-| [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the `workflow` transport's mechanics |
-| [../unblock/SWEEP.md](../unblock/SWEEP.md) | fan-out when invoked on the default branch |
+| [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the workflow transport's mechanics, and when the session transport runs instead |
+| [../mergeable/SWEEP.md](../mergeable/SWEEP.md) | fan-out when invoked on the default branch |
 
 Load a file only once you've routed to it — that keeps context small.
 
@@ -28,9 +28,9 @@ Load a file only once you've routed to it — that keeps context small.
 
 - **`review`** (default) — Claude reviews on its own.
 - **`review dual`** — Claude reviews, *and* an independent cross-vendor target (`dispatch codex` or the resolved vendor) reviews the same diff; the two are reconciled into one source-tagged report. See **Dual flavor** below.
-- **`workflow`** — moves Phases 04–06c only (lens fan-out, best-practice verification, scoring, the reproduction gate, the ≥75 filter, fix authoring) into a workflow script, so only surviving findings enter this context. Routing, the report, and every question stay in the session. Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). RULE 0 holds under both transports. Outside repo mode it's an explicit opt-in — every narrower route (diff, branch, fixed-point, sweep) keeps the session transport unless this token is given.
+- **Transport** — every route runs Phases 04–06c (lens fan-out, best-practice verification, scoring, the reproduction gate, the ≥75 filter, fix authoring) as a workflow script, so only surviving findings enter this context. Routing, the report, and every question stay in the session. **`session`** forces those phases back into the session (`review session`, `review repo session`). A pass whose own tool list has no `Workflow` — typically inside a workflow agent such as wrap-up's quality stage, or inside a subagent — runs the session transport and says so in one line. Mechanics: [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md). RULE 0 holds under both transports.
 - **`noverify`** — turns off Phase 05b, which feeds each behavior-claiming finding's stated input to the running code in a throwaway git worktree and keeps only what reproduces. The gate is **on by default**, costs ≤8 minutes, and never touches the working tree. Use `noverify` when the toolchain is unavailable, and expect a noisier report. There is no permanent off switch, because "the model read it and was confident" is the thing it exists to distrust.
-- **`repo`** — reviews the **whole codebase on the current branch** instead of a diff. Every axis runs, gating off; context-heavy; always confirms before starting. Combinable with dual. **Defaults to the `workflow` transport** — repo mode is the context-heaviest route there is, so `review repo` alone runs Phases 04–06c as a workflow script. `workflow` is still valid there as an explicit no-op confirmation (`review repo workflow`); `session` forces the session transport back (`review repo session`). Mechanics: [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r, [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
+- **`repo`** — reviews the **whole codebase on the current branch** instead of a diff. `lens-gate --repo-mode` decides which lenses run; context-heavy; always confirms before starting. Combinable with dual. Under the workflow transport its slices run as a `pipeline()`. Mechanics: [REVIEW-CORE.md](REVIEW-CORE.md) Phase 01r, [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md).
 
 ## Phase 00 — Route by context
 
@@ -43,8 +43,9 @@ With no argument, four contexts, resolved in this order. Every one is decidable 
 ```
 git status --porcelain
 git branch --show-current
-gh repo view --json defaultBranchRef,owner --jq '[.defaultBranchRef.name,.owner.login]'
-gh api user --jq .login
+gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
+~/.claude/tools/repo-tier                        # owned | collaborative | unlisted
+gh api user --jq .login                          # for "is this PR mine", never for the repo
 gh pr view --json number,url,state,author,mergeable
 ```
 
@@ -52,14 +53,14 @@ gh pr view --json number,url,state,author,mergeable
 | --- | --- | --- |
 | 1 | working tree is dirty | **the uncommitted changes** — `git diff HEAD` |
 | 2 | on a non-default branch, clean tree | **the branch** — `<base>...HEAD` |
-| 3 | on the default branch, collaborative repo | **sweep** — every PR waiting on my review, [../unblock/SWEEP.md](../unblock/SWEEP.md) |
+| 3 | on the default branch, collaborative repo | **sweep** — every PR waiting on my review, [../mergeable/SWEEP.md](../mergeable/SWEEP.md) |
 | 4 | on the default branch, owned repo, clean tree | nothing to diff → offer `review repo` |
 
 **Uncommitted changes win over the branch, and that is deliberate.** If you have edits in the tree, those are what you are asking about; the committed branch is already behind you. Say in one clause which you took: *"reviewing 3 uncommitted files; the branch's 8 commits are not in this pass."*
 
 ### Ownership — needed for the offers, not the routing
 
-**Do I own the repo?** `owner.login == my login` → **owned repo**: I work alone here and never open PRs, so there is nothing to post to. Otherwise → **collaborative repo**.
+**Do I own the repo?** `repo-tier` printed `owned` → **owned repo**: I work alone here and never open PRs, so there is nothing to post to. `collaborative` or `unlisted` → **collaborative repo**.
 
 **Is this PR mine?** **When a PR exists, `author.login` decides it and nothing else does.** Being the assignee does not make it mine; neither does having pushed commits to the branch, nor a branch name, nor `git log` authorship. Those are all *normal* on a PR I'm reviewing or helping on, so treating any of them as an ownership signal manufactures ambiguity out of the ordinary case.
 
@@ -71,12 +72,12 @@ No PR at all → the branch name decides: mine if it starts with `pierce` (case-
 |---|---|---|
 | **uncommitted changes** | review → document → offer fix | review → document → offer fix |
 | **my branch / my PR** | review → document → offer fix | review → document → offer fix (no post — GitHub blocks self-verdicts) |
-| **teammate's PR** | n/a | review → document → offer per finding: fix small low/med issues on the branch, post the rest |
+| **teammate's PR** | n/a | review → document → approve unless a `P0`/`P1` survived; `P2`/`P3` ride in the Approve body as notes, and only docs that contradict the code get fixed on the branch |
 | **not mine, no PR** | review → document, no offer | review → document, no offer |
 
-## Phase 00.1 — Hand a blocked branch to `unblock`, then continue
+## Phase 00.1 — Hand a blocked branch to `mergeable`, then continue
 
-**Three things make a review void before it starts**, and all three are `unblock`'s to fix:
+**Three things make a review void before it starts**, and all three are `mergeable`'s to fix:
 
 - the checkout is not at the branch head,
 - the branch **conflicts** with its base,
@@ -84,7 +85,7 @@ No PR at all → the branch name decides: mine if it starts with `pierce` (case-
 
 A fourth, unanswered reviewer feedback, is not a review problem at all: it is work owed to a reviewer, and a self-review that ignores it produces a second report nobody asked for while a real one sits unread.
 
-**So: invoke [unblock](../unblock/SKILL.md) and let it finish. Do not offer to. Do not ask.**
+**So: invoke [mergeable](../mergeable/SKILL.md) and let it finish. Do not offer to. Do not ask.**
 
 This is RULE 2, and it is the reason this phase is four lines instead of the gate ladder it replaced. What that ladder did was print
 
@@ -94,20 +95,20 @@ This is RULE 2, and it is the reason this phase is four lines instead of the gat
 and wait — making the user approve the tool doing the thing the tool is for. That specific output is the failure. It does not come back.
 
 ```
-skip unblock entirely if:
+skip mergeable entirely if:
   target is the uncommitted working tree     (nothing is merging; nothing is red about a diff you haven't committed)
   target is not mine and has no PR           (not mine to fix)
   no GitHub remote                           (nothing to be blocked against)
 
 otherwise:
-  run ../unblock/SKILL.md against the target branch
+  run ../mergeable/SKILL.md against the target branch
   it runs its own gates, makes its own commits, takes its own single push confirm
   it returns a one-line state summary
   RE-PROBE the branch from scratch — the sha moved
   continue to Phase 00.5
 ```
 
-**Not my branch** → `unblock` runs in diagnose-only mode by its own rules: it reads the failing checks and hands the diagnosis back as evidence, fixes nothing, pushes nothing. Carry that diagnosis into the report; a finding that came from a failing test is the strongest kind to post back, because the log is the reproduction.
+**Not my branch** → `mergeable` runs in diagnose-only mode by its own rules: it reads the failing checks and hands the diagnosis back as evidence, fixes nothing, pushes nothing. Carry that diagnosis into the report; a finding that came from a failing test is the strongest kind to post back, because the log is the reproduction.
 
 **Distance behind the base is not a reason for anything, at any number.** A branch 200 commits behind `origin/main` that merges cleanly reviews exactly as well as one that is current: the diff under review is the branch's own changes against its merge base, and commits landing elsewhere on main do not alter it. Never count `HEAD..<base>`, never mention how far behind a branch is, and never merge main in as a precondition for reviewing.
 
@@ -124,7 +125,7 @@ feedback are both older than the marker's mtime, nothing has changed since you l
 nothing pushed and no new feedback since the last pass. `again` · `axes <names>` · `stop`
 ```
 
-**This one asks, and it is not a RULE 2 violation** — there is no job to do. Re-running produces a byte-identical report, so the only question is what the user wants *instead*, which is a genuine unknown. Run `unblock` first regardless: fixing a red test moves the branch's newest commit, which is an input to this check.
+**This one asks, and it is not a RULE 2 violation** — there is no job to do. Re-running produces a byte-identical report, so the only question is what the user wants *instead*, which is a genuine unknown. Run `mergeable` first regardless: fixing a red test moves the branch's newest commit, which is an input to this check.
 
 ## Phase 00.5 — Explain the PR before reviewing it
 
@@ -144,29 +145,40 @@ Two things go in the chat explanation:
 
 Continue into [REVIEW-CORE.md](REVIEW-CORE.md) against the routed target. Then [POSTING.md](POSTING.md) for the dispositions.
 
+### Bead labels the branch touched
+
+When the diff changes `.beads/issues.jsonl` and `~/.claude/tools/bead-labels path` finds a
+`.beads/labels.toml`, check the beads the branch wrote. Their ids are on the `+` lines of
+`git diff <base>...HEAD -- .beads/issues.jsonl`; run
+`bead-labels check --jsonl <(git show HEAD:.beads/issues.jsonl)` and keep the lines whose id is
+one of them. Each kept line is a finding — the bead id, the problem the tool printed, and the
+fix (`bd update <id> --set-labels …` from the file's vocabulary). Beads the branch did not touch
+are `issues organize`'s job, not this review's. The rules are [`../issues/labels.md`](../issues/labels.md).
+
 ## Dual flavor (`review dual`)
 
 When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor `dispatch codex`/`dispatch reasonix` target on the **same** diff, then reconcile.
 
-**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check`; if it fails (no target configured, not authenticated, Terminal automation not permitted), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
+**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check --job decide`, then `dispatch agent --job decide`. If the check fails (no list set, not authenticated, Terminal automation not permitted), or the picked agent's name is `claude` (the decide list names no other vendor, or none was picked), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
-**Dual is the one flavor whose escalation is automatic.** `dispatch` — invoke it for the ladder — defaults all delegation to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
+**Dual is the one flavor whose escalation is automatic.** `dispatch` — invoke it for the ladder — defaults all dispatching to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
 
-**Where the target runs is resolved, not chosen** — `split`/`workspace` inside herdr, else `window`. `dispatch exec` prints it; put that line in the status message so the user knows whether there is a tab to switch to.
+**Where the target runs is resolved, not chosen** — `workspace` inside herdr, else `window`. `dispatch exec` prints it; put that line in the status message so the user knows which space (child or standalone) or window to look at. Dual is **report-back**: the review needs the target's outfile, so this session waits for it, reads it, and reconciles it.
 
 ```bash
 D="$HOME/.claude/skills/dispatch/dispatch"
-"$D" check || { echo "Dispatch target unavailable — running solo review only"; }
-"$D" transport      # name the surface in the status line before you start it
+"$D" check --job decide || { echo "Dispatch target unavailable — running solo review only"; }
+"$D" agent --job decide          # a picked name of "claude" means no cross-vendor target: solo review only
+"$D" transport --job decide      # name the surface in the status line before you start it
 ```
 
 1. Write the review prompt to a temp file — review instructions + the **literal** diff command the core used (`gh pr diff`, the merge-safe diff, or `git diff HEAD`). Let the target run that command itself; don't paste a huge diff into the prompt.
-2. Run `"$D" exec "$prompt" "/tmp/<slug>-dispatch.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
+2. Run `"$D" exec --job decide "$prompt" "/tmp/<slug>-dispatch.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
 3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the **name of the model, harness, or vendor that found it** — `[claude]` for Claude's own findings, the **resolved target's name** for the target's, or `[both]` when both flagged it.
 
    **A source tag NEVER carries the name of a skill, a lens, an axis, or a process.** The tag answers "which reviewer said this," and the only valid answers are things a person could point at and name: a model (`[claude]`, `[codex]`, `[gpt-5]`), a harness or vendor (`[reasonix]`), or `[both]`. **`[review]` is wrong and is the specific mistake this rule exists to stop** — `review` is this skill's own name, it identifies no reviewer, and it has shipped to a real PR that way. Same ban on `[lens]`, `[bug-lens]`, `[self]`, `[internal]`, `[dual]`, and `[dispatch]`.
 
-   Get the target's name at runtime — `dispatch agent` prints the real tool (`codex`, `reasonix`, …) — and use that literal name in the tag (`[codex]`, never `[dispatch]`). "Both flagged it" is a strong signal; "only the target flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
+   Get the target's name at runtime — `dispatch agent --job decide` prints the picked agent as `<name>:<model> (<why>)` — and use the literal name before the colon in the tag (`[codex]`, never `[dispatch]`). "Both flagged it" is a strong signal; "only the target flagged it" is exactly the catch dual exists for — weight it, don't discount it for being single-source.
 
    **Before posting or writing any source-tagged report, scan the body for a tag that isn't a model/harness/vendor name or `both`.** One found means the tagging is wrong throughout, not in one spot — fix every tag, not the one you noticed.
 4. Fold the target's findings into the matching axis sections of the report and carry the source tag through to the file format. Dual is still **read-only** — it reviews, never edits.
@@ -180,14 +192,15 @@ Report two dimensions separately:
   CODE: correctness, types, nil-safety, concurrency, lifecycle, edge cases, error handling, dead code.
   ARCHITECTURE: fit, abstraction level, pattern consistency, structural scalability, ownership clarity —
     always design calls, never style nits.
-Output prioritized findings (Critical / Important / Minor), terse, no praise.
+Rate each finding P0–P3 by the scale below, terse, no praise.
+<paste REVIEW-CORE.md §Axis tags: the P-level table and the two paragraphs beneath it>
 PROMPT
-"$D" exec "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
+"$D" exec --job decide "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
 ```
 
 ## Sweep mode — `review` on the default branch
 
-Phase 00 context 3. Instead of reviewing `main` itself, review everything waiting on you: one worktree and one session per PR, per [../unblock/SWEEP.md](../unblock/SWEEP.md), which owns the fan-out mechanics, the herdr and Terminal transports, the sequential fallback, and the proof step.
+Phase 00 context 3. Instead of reviewing `main` itself, review everything waiting on you: one worktree and one session per PR, per [../mergeable/SWEEP.md](../mergeable/SWEEP.md), which owns the fan-out mechanics, the herdr and Terminal transports, the sequential fallback, and the proof step.
 
 Two things are review's to supply, and SWEEP.md reads them from here:
 
@@ -196,6 +209,6 @@ Two things are review's to supply, and SWEEP.md reads them from here:
   skill's own last phase is the disposition list and the proposed verdict, and naming an earlier step
   ("report findings") is what has made fanned-out reviews stop there instead of reaching it.
 
-**Sweep is a dispatch, not a review.** Each session runs the full skill — Phase 00.1's `unblock` call
+**Sweep is a dispatch, not a review.** Each session runs the full skill — Phase 00.1's `mergeable` call
 included, and Phase 07/POSTING.md's disposition list and verdict proposal too — inside its own worktree.
 This context's job ends at S8's proof step; don't also review the PRs here.
