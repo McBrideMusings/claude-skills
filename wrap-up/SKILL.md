@@ -31,6 +31,10 @@ When invoked by `implement`, this is doubly true: stopping mid-wrap-up strands t
 
 Bare `/wrap-up` targets the checkout the session is already standing in. `wrap-up <worktree>` — the form `implement` uses to land a pass — names a different one: every git operation in Phases 1–5 runs as `git -C <worktree> …` against that path instead, regardless of where this session itself is standing. Phase 5's commit and push and Phase 6 Step C's teardown follow the same target; Phase 0's marker does not, since it belongs to the session.
 
+## Already landed — the pass's commits are on the default branch
+
+When `wrap-up <worktree>` finds the branch's commits already on the default branch (`git log <default>..<branch>` is empty, or the worktree sits detached at the default branch), Phase 5 and Step C have nothing to commit, push or land. Run Phases 1–4 and Phase 6 Step A and Step B over the landed range (`<default>~<n>..<default>` for the pass's `n` commits), skip Phase 5 and Step C, and say "already landed at `<sha>`" in the summary. Landing by hand does not skip wrap-up; the pass still gets its review, docs check, tracker update and slate.
+
 ## Pass mode — interactive, except inside `auto`
 
 Wrap-up runs interactively when a human typed `go` at `implement`'s gate or invoked
@@ -374,6 +378,7 @@ Runs **last**, after the branch has landed and `git status` is clean. A relay cl
 this context; anything uncommitted at this point is gone, so Step C completing is the
 precondition, not a nicety.
 
+- **Called by `iterate`:** `iterate` step 6 owns the relay. Skip this step and return to `iterate`.
 - The user already answered this in Step A's single ask. `go` → invoke `relay`
   and hand it the chosen next work; it writes the marker and you end the turn. `park`, `no relay`,
   or relay was unavailable → stop here as normal.

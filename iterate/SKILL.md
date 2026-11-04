@@ -44,7 +44,7 @@ and `admin -w <worktree>`.
 3. **Check out** the bead's branch per §The worktree.
 4. **Work the pass** as `implement <id> auto` with `<worktree>` as its checkout: every edit,
    build, test and verify runs there. Move the board's stage as the pass moves.
-5. **Land** through `wrap-up <worktree>`. On a repo whose project skill `swarm.md` has a §Landing,
+5. **Land** through `wrap-up <worktree>`, including when the pass's commits are already on `<default>`: wrap-up then takes its §Already landed path. Never land by hand and skip it. On a repo whose project skill `swarm.md` has a §Landing,
    land the way it says. Step C's teardown keeps the worktree: in place of removing it, run
    `git -C <worktree> switch --detach <default>`, then `git -C <repo> branch -d <branch>`. A
    parked pass parks per [`../implement/AUTO.md`](../implement/AUTO.md) §Parking an item, then
