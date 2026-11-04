@@ -22,8 +22,12 @@ What `iterate` reuses rather than owns:
 
 ## The worktree
 
-Every pass runs in one linked worktree, `~/.worktrees/<repo>/iterate`, kept between passes, so
-installed dependencies and built packages carry from one bead to the next. The session itself
+Every pass runs in one linked worktree, `~/.worktrees/<repo>/iterate-<focus>`, kept between
+passes, so installed dependencies and built packages carry from one bead to the next. It is named
+for what it iterates over: `<focus>` is the focus as typed, lowercased, every run of characters
+outside `a-z0-9` made one `-` (`epic:oa-ne0` gives `iterate-epic-oa-ne0`; a bare `iterate` gives
+`iterate-ready`). Two iterate runs on different focuses keep two worktrees, and the primary
+checkout stays free for other work. The session itself
 stays in the primary checkout and reaches the worktree with absolute paths, `git -C <worktree>`
 and `admin -w <worktree>`.
 
