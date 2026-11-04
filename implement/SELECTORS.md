@@ -12,6 +12,7 @@ Selector forms (all match against **open** work only; dedupe by issue ID / by te
 | Selector | `beads` | `github` |
 |---|---|---|
 | `133 134 135` / `myproj-zb8 myproj-7b9` (bare IDs) | Exactly those issues, in the order given. | Same. |
+| a lone word that is not a selector form, such as `twjn` | Try it as an ID with the repo's prefix first: `bd show <prefix>-<word> --json` (the prefix is the one `bd list` prints). A bead that exists is that bead, or `epic:<id>` when it is an epic. Only when no bead has that ID is the word free text. | Same, with `#<word>` when it is a number. |
 | `#133-140` or `133-140` (range) | *No equivalent* — beads IDs are hashed, not sequential, so a numeric range is meaningless. Say so and ask for explicit IDs or a label. | Every integer in the inclusive range that is an **open** issue; skip numbers that are closed/missing and note them. |
 | `label:<name>` (quote if it has spaces) | `bd list -l "<name>" --status open --json` → ordered by priority, then created. | `gh issue list --label "<name>" --state open --json number,title` → ordered ascending by number. |
 | `epic:<id>` or `epic:<name>` | `bd list --parent <epic-id> --status open --json`; resolve a name through `bd list -t epic --json` first. `bd ready --parent <epic-id> --limit 0 --json` for the unblocked subset. | Sub-issues of that issue: the GraphQL `subIssues` field on `Issue` (see `../issues/github.md`). |
