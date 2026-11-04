@@ -49,9 +49,9 @@ id; the brief gives its shape. A parked pass parks as usual.
 
 ### Iterate passes
 
-A pass that [`iterate`](../iterate/SKILL.md) started runs in iterate's kept worktree and never
+A pass that [`iterate`](../iterate/SKILL.md) started runs in the primary checkout and never
 routes on its own: whatever `next-work` prints, the next hop is `iterate <focus>`, never `swarm`
-and never a bare `implement`. Its landing keeps the worktree (iterate §Each hop step 5).
+and never a bare `implement`.
 
 ## Every wait point, and what auto does instead
 
