@@ -61,5 +61,6 @@ and `admin -w <worktree>`.
 
 The run ends when `Used` reaches `Limit`, when `next-work --auto` prints a `none` or `iron-out`
 verdict, or on any condition in [`../implement/AUTO.md`](../implement/AUTO.md) §What ends the run
-early. Print the auto report, clear the work board, and leave the worktree in place, detached at
-`<default>`. Close with `iterate: <landed> landed, <parked> parked, focus <focus or ready>`.
+early. Print the auto report, clear the work board, and remove the worktree with
+`git -C <repo> worktree remove <worktree>` once `git -C <worktree> status --short` prints nothing
+(a dirty one stays and goes under `Needs you`). Close with `iterate: <landed> landed, <parked> parked, focus <focus or ready>`.
