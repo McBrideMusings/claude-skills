@@ -78,7 +78,6 @@ PROJECT_SKILLS = ("project",)
 COLD = {
     "~/.claude/domains-map":     re.compile(r"\.claude/domains-map"),
     "~/.claude/docs/README.md":  re.compile(r"\.claude/docs/README\.md"),
-    "~/Systems/":                re.compile(r"/Systems/"),
     "<repo>/docs/":              re.compile(r"/docs/(?!adr)"),
 }
 

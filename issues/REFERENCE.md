@@ -50,7 +50,7 @@ Ask one question: **which repo holds the file that closes this issue?**
 | The fix edits | Files in |
 | --- | --- |
 | Claude Code itself, its hooks, its skills, its agents, its commands, `~/.claude/CLAUDE.md`, `settings.json` | `bd -C ~/.claude` — **never an individual repo**, however you came to notice it |
-| A machine, a service, a deployment, a fleet host's config | `bd -C ~/Systems` |
+| A machine, a service, a deployment, a fleet host's config | not an issue: a page in the knowledge base, `~/Knowledge/fleet/<machine>/`, searched with qmd |
 | The product you are working on | that repo |
 
 A repo's own `CLAUDE.md` or `CLAUDE.local.md` may name further destinations — a project whose
