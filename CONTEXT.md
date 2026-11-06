@@ -107,8 +107,8 @@ The Claude Code runtime, never a test rig; a project's test rig is its project s
 ### Dispositions
 
 **go**:
-Apply every stated pick and stop; on an option set, take every pick. `go` never starts work
-that is not a row on the slate, and never relays. The only accept word; `yes`,
+Apply every stated pick, and run every action the user named in this conversation that has
+not run yet; on an option set, take every pick. `go` never relays. The only accept word; `yes`,
 `approve`, `ok`, `confirm`, `send` are never accepts. At the gate, `go` means run wrap-up now —
 land the standing branch (or, for already-committed work, run wrap-up from that commit). `go`
 at the gate also means the owner has tested the change or chose not to; nothing asks again.
