@@ -112,9 +112,10 @@ skipped — not before. Until it is cleared, the hook blocks the turn from endin
 an abandoned pass, so clear the marker before each wait and set it again as the first
 action after it:
 
-- **Waiting for the user.** Step A's ask ends the turn on purpose. `wrapup-mark clear`
-  immediately before sending the Step A slate, and `wrapup-mark set` again as the first
-  action of the Act pass once the user replies.
+- **Waiting for the user.** Step A's ask ends the turn on purpose. `wrapup-mark wait`
+  immediately before sending the Step A slate. The user's reply re-arms the marker by
+  itself (`hooks/wrapup-resume.sh` runs on every prompt), so nothing has to be remembered
+  after it.
 - **Waiting for the staged workflow.** Phases 1–4 run as a background `Workflow`, and the
   turn ends until its notification arrives. `wrapup-mark clear` immediately before ending
   that turn, and `wrapup-mark set` again as the first action on the notification.
@@ -282,7 +283,16 @@ Then exactly one sentence, no block-quote, no heading: the hatch §Ending step 4
 
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
-*Act pass* — only after every disposition is recorded, execute by group:
+*Slate ledger.* Before the slate is sent, record every row whose default is `[fix]` or `[file]`:
+`~/.claude/tools/wrapup-mark row <fix|file> "<row title>"` once per row, in the slate's order. The
+`Stop` hook blocks the turn from ending while a recorded row is pending. A row the user answers `skip`
+is marked done with the others when the Act pass starts, and a row the user redirects is recorded
+again under its new verb.
+
+*Act pass* — the first line it prints is `Applied: filed <ids>, fixed <n>, skipped <n>`, written after
+the work below runs and before anything else is said, so a pass that did not run shows in the
+transcript. After each row is applied, `~/.claude/tools/wrapup-mark done <n>`. Only after every
+disposition is recorded, execute by group:
 1. **Fix** — apply and verify each, then **commit and push**, so everything the user chose to fix is in the repo before the rest proceeds. Quality check proportional to each change. **A `fix` that cannot be applied — a denied edit, a failing check — halts the pass.** Report the blocker and stop; never land the rest around it.
 2. **File** — batch-file through `issues file`'s Step 5 ([`../issues/file.md`](../issues/file.md)), which reads the repo's label vocabulary before the first `bd create`; never a raw `bd create` from here. Capture the new IDs/URLs for Step B. **A repo with no `.beads/labels.toml`** files nothing until it has one: the slate carries one more row proposing the file ([`../issues/labels.md`](../issues/labels.md)), and on `go` that file is written before the items are filed. Declined, or in `auto`, the items go in Step B's summary as unfiled, title and body, waiting on the labeling session. No tracker resolved → halt and offer `bd init`; never write the items to a file instead.
 3. **Skip** — drop.
