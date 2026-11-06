@@ -10,6 +10,8 @@ Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined 
 
 The existing solution is a set of inherited assumptions, not the baseline. Starting from it, or from a mismatch inside it, yields refinement. So a redesign works from the goal: what the user needs, which constraints are real, several structurally different ways to meet it, and only then how the current system compares and what it costs to get there. Refinement is a valid outcome only when the incumbent beats the new candidates on the stated jobs.
 
+**Say what is being redesigned, and redesign only that.** A UI has two separate things: its **structure** (information architecture, UX flow, layout: which objects are on screen, where each sits, what happens on each tap, what is persistent and what is a mode) and its **visual language** (palette, type, art style, icons, chrome, materials, theme). "Redesign the screen", "rethink the UI", "the layout is wrong" mean **structure only**; the visual language is then a hard constraint every candidate keeps exactly. Visual language changes only when the user says "new look", "restyle" or "different art style". A comp that changes the look while claiming to change the structure is a failed comp, because the user cannot judge the structure through a new skin.
+
 **For a UI surface the candidates are pictures, never prose.** Words and ASCII boxes collapse every candidate into the same panels in a different order; a generated image does not. A UI redesign therefore runs three rungs in order: **wild comps** (far from the current UI), **fit comps and mockups** (the survivors, in the real UI's look), then **one settled design**. Skipping a rung, or showing wireframes in words instead of images, is a failed redesign.
 
 Tools it calls, none rebuilt here: [`../generate/SKILL.md`](../generate/SKILL.md) for every image (`generate/image-api`, gemini by default, `--edit <screenshot>` for edits), [`../spike/COMP.md`](../spike/COMP.md) for the comp procedure and [`../spike/MOCKUP.md`](../spike/MOCKUP.md) for HTML mockups screenshotted per state.
@@ -18,20 +20,21 @@ Tools it calls, none rebuilt here: [`../generate/SKILL.md`](../generate/SKILL.md
 
 Each step ends on a completion criterion. Do not start a step before the previous one is done.
 
-**0. Goal and target.** One sentence from the user stating what they want to achieve, and whether the target is a UI surface, process, feature, architecture or implementation. If the target is a bug, polish or a small tweak, say so in one line and stop. *Done when* the goal sentence and target are written down.
+**0. Goal and target.** One sentence from the user stating what they want to achieve, and whether the target is a UI surface, process, feature, architecture or implementation. For a UI surface also write the **axis**: `structure` (the default), `visual language`, or `both`, and say it back to the user in one line ("redesigning structure and flow; look stays as is"). If the target is a bug, polish or a small tweak, say so in one line and stop. *Done when* the goal sentence and target are written down.
 
 **1. Jobs.** List what the user wants to do, phrased as jobs (situation, motivation, outcome) covering needs, pains and desires. Do not mark them against the current system yet.
 *Knowledge base: search it for "user needs jobs". If you have none, skip this line and don't mention it.*
 *Done when* every job in scope is written down.
 
-**2. Assumption ledger.** Read the current thing only to extract what it assumes: its objects, vocabulary, ordering, ownership, storage and platform. Mark each assumption *hard* (physics, platform, external contract, stated by the user) or *inherited* (a past choice). For a UI surface the hard list always carries the surface's pixel size and aspect, input kinds (touch, mouse), the rule that a game screen never scrolls as a page, and every number the user said must stay visible. *Done when* every assumption is marked and each *hard* one names its source.
+**2. Assumption ledger.** Read the current thing only to extract what it assumes: its objects, vocabulary, ordering, ownership, storage and platform. Mark each assumption *hard* (physics, platform, external contract, stated by the user) or *inherited* (a past choice). For a UI surface the hard list always carries the surface's pixel size and aspect, input kinds (touch, mouse), the rule that a game screen never scrolls as a page, every number the user said must stay visible, **the visual language as built** (unless the axis includes it), and **every persistent element at its current position** (a resource bar, a back or close control, a bottom bar the user said is fine): other screens print them in the same place, so no candidate moves them. *Done when* every assumption is marked and each *hard* one names its source.
 
 **3. Wild comps (UI surface: always).** Generate at least six image comps of the surface, each from a different lens, none of them seeing the current UI.
 
 - **Lenses.** Draw six without replacement from this list with a shell random roll, never by choice: *analogy* (another domain solved this job), *inversion* (flip who acts or what is shown), *delete it* (do the job without the main component), *different substrate* (another medium, owner or time), *another genre* (how a different kind of game or app does it), *one thumb* (designed only for a thumb at the bottom of a phone), *extreme density*, *extreme emptiness*.
-- **Blind briefs.** One sub-agent per lens receives only the goal, the jobs and the *hard* constraints, never a screenshot, the code or the inherited list. It returns one concept sentence and one image prompt that names the regions, hierarchy, real copy and the aspect (portrait device size for a phone surface). Sub-agents that design run on opus with the line `Opus reason: (1) the brief is the hard part (the change's shape is unsettled and must be designed).`
-- **Render.** Run each prompt through `generate/image-api` into `/private/tmp/claude/<repo-slug>/spikes/<slug>/wild/<lens>.png`. Look at every PNG: a dropped region or misspelled label means regenerate it.
-- **Divergence check.** Any two comps that share the same objects and verbs and differ in layout only count as one: replace one with a new roll, or run `lateral random-stimulus` on the pair.
+- **Blind briefs.** One sub-agent per lens receives only the goal, the jobs and the *hard* constraints, never a screenshot, the code or the inherited list. The lens applies to the **structure**: what objects the screen holds, how they are grouped and ordered, where the controls are, what each gesture does, what is shown versus hidden. It returns one concept sentence and one **structure spec**: regions top to bottom, what each holds, the real copy and numbers, and the states shown. The spec names no colours, materials, art style, theme or metaphor used as a skin (no newspaper, wax seal, tabletop felt, cockpit); the brief says so, and says that persistent elements stay where the hard list puts them. Sub-agents that design run on opus with the line `Opus reason: (1) the brief is the hard part (the change's shape is unsettled and must be designed).`
+- **Style anchor.** The look comes from the product, never from the sub-agents. Screenshot a *different* screen of the same app (one that does not contain the surface under redesign, so its structure cannot leak) at the real viewport. Write one fixed **style line** from `dsys prompt` or from reading that screenshot (palette, type, chrome, icon and art style) and prepend it to every prompt unchanged.
+- **Render.** Run each structure spec through `generate/image-api --edit <style-anchor.png>` with the instruction: "Keep this game's exact visual style: <style line>. Replace the screen with this structure: <spec>. Do not restyle anything." Write to `/private/tmp/claude/<repo-slug>/spikes/<slug>/wild/<lens>.png`. Look at every PNG against the anchor: a changed palette, font, art style or chrome, a dropped region or a misspelled label means regenerate it.
+- **Divergence check.** Any two comps that share the same objects and verbs and differ in layout only count as one: replace one with a new roll, or run `lateral random-stimulus` on the pair. A comp that differs only in skin counts as none.
 - **Show them** as one contact sheet in a Wheel artifact (a project artifact, one image per comp, lens and concept sentence beside it), and stop. The user picks one to three to keep, or combines parts of two.
 
 *Done when* at least six comps pairwise differ in an object or verb, the contact sheet is shown and the user has picked.
@@ -42,7 +45,7 @@ Each row is (candidate needs | code does | `file:line` | shape of the change) or
 
 **5. Fit comps and mockups (UI surface: always).** For each survivor, bring it toward the real UI in two steps.
 
-- **Fit comp.** `generate/image-api --edit <current-screenshot.png>` with the instruction "restructure this screen as <survivor concept>; keep the palette, type, chrome and viewport", at the surface's aspect, two variants per survivor that differ on one named axis. The repo's `dsys prompt` block (see COMP.md) goes first when the repo has one.
+- **Fit comp.** `generate/image-api --edit <current-screenshot-of-the-surface.png>` with the instruction "restructure this screen as <survivor structure>; keep the palette, type, chrome, viewport and every persistent element where it is", at the surface's aspect, two variants per survivor that differ on one named structural axis. The repo's `dsys prompt` block (see COMP.md) goes first when the repo has one.
 - **Mockup.** For the survivors the user keeps after the fit comps, build an HTML mockup per [`../spike/MOCKUP.md`](../spike/MOCKUP.md) in the project's real CSS, and screenshot it at the real viewport in every state that matters (default, mid-interaction, empty, can't-afford, error), never one pretty state.
 - **Show them** in the same Wheel artifact, each survivor as one row: wild comp, fit comp, mockup states. The current screenshot sits first in the row for comparison.
 
@@ -63,6 +66,7 @@ A process, feature, architecture or implementation skips the image rungs. Step 3
 - Show a candidate the sub-agents generated after reading the current design.
 - Offer only repairs of the current shape.
 - Offer a UI candidate as words or ASCII boxes instead of an image.
+- Change the visual language when the axis is structure, or move a persistent element, to make a candidate look different.
 - Re-ask a decision a step already settled.
 
 ## Callers
