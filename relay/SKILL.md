@@ -200,6 +200,7 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
      `Start by:` is `iterate <focus>` ([`../iterate/SKILL.md`](../iterate/SKILL.md)).
    - `Next: implement <id>`: continue with steps 1 and 3 below; `Start by:` is
      `implement <id> auto`, the verdict's own command plus `auto`.
+   - `Next: iterate <focus>`: continue with steps 1 and 3; `Start by:` is `iterate <focus>`.
    - `Next: swarm <focus>`: continue with steps 1 and 3, but `Start by:` is `swarm <focus>`, the
      verdict's own command. The brief's run-state block is what the swarm reads its budget from
      ([`../swarm/SKILL.md`](../swarm/SKILL.md) §Run budget). In a linked worktree no swarm can
