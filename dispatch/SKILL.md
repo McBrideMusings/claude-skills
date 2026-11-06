@@ -5,7 +5,7 @@ description: "`dispatch <target>` — give a brief to another executor and take 
 
 # Dispatch
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 `dispatch <target>` is how a skill hands work to another executor and takes its result back. The

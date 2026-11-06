@@ -159,7 +159,7 @@ Two passes for a reason: children need their epic's real ID before they can refe
 
 This is the deliverable for a user who wanted the lay of the land and nothing else. Close on it, per `../CHAT-FORMAT.md` §Hatch (next work here is `issues iron-out` over the same scope):
 
-> Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`).
+> Type `go` to apply my picks and stop, or `next` to apply them and continue into <next work>, or answer per row (`1 fix, 3 skip`).
 
 **The roadmap is not iron-out's queue.** The roadmap is *every* issue by dependency wave — what to build next. Iron-out's queue is *only* the items waiting on a person, by unblock leverage — what to answer next.
 

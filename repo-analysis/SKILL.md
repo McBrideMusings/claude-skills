@@ -5,7 +5,7 @@ description: Compare a subsystem against reference repos to find smarter approac
 
 # Repo Analysis
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 Compare a focused subsystem in the user's repo against one or more reference repos. Surface implementation differences that are worth acting on. Filter out differences that are about scope, UX, or project intent.

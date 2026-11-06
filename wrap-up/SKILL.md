@@ -3,7 +3,7 @@ name: wrap-up
 description: "Close out a body of work: assess changes, update tracking and docs, run review + simplify, commit, push, resolve follow-ups, summarize, land the branch (merge on an owned repo, PR on a collaborative one), and relay the next work into a fresh context. Use when the user says 'wrap up', 'wrap this up', 'commit and push', 'land it' or 'ship it'. Runs in the current checkout, or in `wrap-up <worktree>` — how `implement` lands a pass, at the gate's `go`."
 ---
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 Work through each phase below. Skip any phase that doesn't apply to this project — never create files, tracking systems, or documentation that doesn't already exist.
@@ -128,7 +128,7 @@ The hook then guards only turns that run, never a turn that waits.
 **First, in this context and before the staged workflow: was everything asked for done?** Only
 this context has the request. List each outcome it named — in the user's words and in the
 brief or notes it pointed at — and beside each, whether this session saw it happen and where.
-An outcome not seen stops wrap-up: do it, then start wrap-up again. It is never filed as a
+Print that list in chat as the first output of this phase: one row per outcome, marked `seen` with where, or `not seen`. A phase that ran with no list printed has not run. An outcome not seen stops wrap-up: do it, then start wrap-up again. It is never filed as a
 follow-up, labelled `human`, or passed over by a relay, unless it needs something only the user
 can give, and then it is the one question the turn ends on.
 
@@ -270,14 +270,15 @@ The next work comes from [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the 
 
 > ⛔ **Do not restate the sections as a question.** A trailing block that repeats *"Follow-ups — … / Next work — … / Relay — …"* under headings the reader just read is the same content twice, and in a terminal the block-quote glyph makes it read as a pulled quote of the message it is part of. The lists already say what the choices are; the ask only has to say how to answer.
 
-Shape — the follow-up slate, then one closing sentence. There is no second question and no lettered options: `go` and `park` are the two answers, and the row numbers already use every number in the message.
+Shape — the follow-up slate, then one closing sentence. There is no second question and no lettered options: `go` and `next` are the two answers, and the row numbers already use every number in the message.
 
 - **Follow-ups** — the numbered candidate list, one row per item, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row. Each row ends with its default in brackets: `[fix]`, `[file]`, `[skip]`.
-- **Next work** — the `Next:` line `next-work` printed, last under the slate, per §Ending. No number, no letters.
+- **Open from this session** — one `[hold]` row for every ask this conversation put to the user that is still unanswered, and every thread it started and did not finish, worded the way the user would recognise it. They print before the `Next:` line.
+- **Next work** — the `Next:` line `next-work` printed, last under the slate, per §Ending. No number, no letters. Printed only when no `[hold]` row above is open from this session: the session's own unfinished work outranks the tracker's rank, so with any open the slate closes with the no-next-work sentence.
 
 Then exactly one sentence, no block-quote, no heading: the hatch §Ending step 4 selects from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch.
 
-`go` accepts every default and relays into the `Next:` command; a typed override such as `go iron-out label:client` relays into that command instead. `park` takes the same follow-up dispositions, then ends the turn — no next work, no relay. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition.
+`go` accepts every default and ends the turn: no next work, no relay. `next` takes the same follow-up dispositions, then relays into the `Next:` command; a typed override such as `next iron-out label:client` relays into that command instead. A per-row override can still add `no relay` as its own redirect word to decline relaying without changing any follow-up disposition.
 
 Parse the reply into per-item dispositions; **unmentioned items default to skip.** Re-ask only if genuinely unparseable — never fall back to a widget. Record every choice, including the relay verdict and the chosen next work, before acting.
 
@@ -382,8 +383,8 @@ this context; anything uncommitted at this point is gone, so Step C completing i
 precondition, not a nicety.
 
 - **Called by `iterate`:** `iterate` step 6 owns the relay. Skip this step and return to `iterate`.
-- The user already answered this in Step A's single ask. `go` → invoke `relay`
-  and hand it the chosen next work; it writes the marker and you end the turn. `park`, `no relay`,
+- The user already answered this in Step A's single ask. `next` → invoke `relay`
+  and hand it the chosen next work; it writes the marker and you end the turn. `go`, `no relay`,
   or relay was unavailable → stop here as normal.
 - **In an `auto` run** there is no ask to read: invoke `relay` §Auto, which relays or prints
   the run's report. When relay is unavailable, continue the run in this context.

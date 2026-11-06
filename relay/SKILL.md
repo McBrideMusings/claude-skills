@@ -5,7 +5,7 @@ description: "Hand the next body of work forward into a clean context in the SAM
 
 # Relay
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 A relay hands the next body of work **forward**: same pane, same repo, same seat, next body
@@ -63,23 +63,23 @@ next-work options: the tracker's answer is `next-work`'s verdict.
    or iron-out's own), it goes under the output as slate rows per
    [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row, and the `Next:` line comes last.
 4. **Close with the hatch** from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, byte-for-byte:
-   - next work pending: "Type `go` to apply my picks and continue into <the `Next:` command>,
-     or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`)."
+   - next work pending: "Type `go` to apply my picks and stop, or `next` to apply them and
+     continue into <the `Next:` command>, or answer per row (`1 fix, 3 skip`)."
    - no next work (verdict `none`, or `focus finished` in an auto run): "Type `go` to apply my
      picks as described, or answer per row (`1 fix, 3 skip, rest file`)." — `go` alone, no
-     `park`.
+     `next`.
 
-   `go` takes every pick and relays into the `Next:` command. `park` applies the same
-   dispositions and ends the turn with the pane intact. A typed override replaces the command
-   and keeps everything else: `go iron-out label:client` relays into
+   `go` takes every pick and ends the turn with the pane intact. `next` applies the same
+   dispositions and relays into the `Next:` command. A typed override replaces the command
+   and keeps everything else: `next iron-out label:client` relays into
    `issues iron-out label:client` and carries that selector as the new focus. `no relay` stays
    this skill's redirect word: apply the follow-up dispositions, end the turn, clear nothing.
 5. **Session limits change what `go` does, never the output.**
-   - Outside herdr and Wheel (Precondition 1 fails) there is no pane to clear: `go`
+   - Outside herdr and Wheel (Precondition 1 fails) there is no pane to clear: `next`
      continues in this context. The tool already replaces a `swarm` verdict with the top bead's
      `implement` pass.
    - In a linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`), print the
-     `Next:` line as information, with no `go` into it and no `park`; follow-ups stay available
+     `Next:` line as information, with no `next` into it; follow-ups stay available
      and close with the no-next-work sentence. A worktree is retired when its pass lands, so no
      new work starts in it.
 6. **Apply the follow-up dispositions** (Step 3), then write the marker (Step 4) for the
@@ -117,6 +117,8 @@ by hand can differ — a worktree and its main checkout share a directory name, 
 puts the marker where the hook never looks and the relay silently does nothing.
 
 Then `Write` to `<that path>/relay/next.md`, creating the `relay/` subdirectory first.
+
+**An attended marker is written only after the user typed the word `next` or `relay` in their last message.** `go` never writes one. The Stop hook reads the transcript and deletes a marker the user did not ask for, logging the refusal. An `auto` run has no such message, so its marker's first line is `Auto: yes`, and the hook skips the check for it.
 
 ### What goes in the prompt
 
@@ -218,7 +220,7 @@ Invoked by `wrap-up` Step D inside an `implement … auto` run
    only Preconditions #1 (`HERDR_ENV` or `WHEEL_ENV`) and §Ending's linked-worktree condition apply, and either
    one continues the run in this context rather than ending it. A remainder that needs the user
    ends the run with the report, not a declined relay.
-3. **Write the marker per Step 4, with the run-state block first in the brief**, copied as it
+3. **Write the marker per Step 4 with `Auto: yes` as its first line, then the run-state block in the brief**, copied as it
    stands ([`../implement/AUTO.md`](../implement/AUTO.md) §Run state), then a `Next:` line (`Next: <id>
    "<title>"` for an implement verdict, `Next: swarm <focus>` for a swarm verdict). Then the usual
    brief: task, where it lives, constraints not in the code, and the `Start by:` above, ending

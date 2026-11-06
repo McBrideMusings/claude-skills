@@ -5,7 +5,7 @@ description: "Rethink a UI, process or feature that isn't working, from how the 
 
 # Redesign
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 A hard-to-use interface usually misrepresents the system under it. The interface is a mix of ideas about how the system works, or the system doesn't work the way the interface says (a list that is really several lists, a queue that never fills ahead). So a redesign works forward from the system: what it does, what the user wants, how the two meet, and only then what it looks like. Starting at the surface repaints the mismatch.

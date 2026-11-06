@@ -1,6 +1,6 @@
 # Dispatch targets — the ladder
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 > **Not this file: handing work *forward*.** Everything below is `dispatch <target>` —

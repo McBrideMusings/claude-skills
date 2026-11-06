@@ -5,7 +5,7 @@ description: "Autonomous work on one tracked item at a time, done by this sessio
 
 # /implement — plan, edit, verify, gate
 
-Control words (`go`, `park`, `implement`, `verify` …) are defined in
+Control words (`go`, `next`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 One **pass** is one tracked item, worked end to end by this session, in the checkout it
@@ -27,6 +27,8 @@ or, when every item was dropped before the gate, each item and the check that dr
 and stop.
 
 **An argument that is not a bead id, `auto` or a count is a focus** — `implement the web browser feature`, `implement label:client`. Resolve it through [`SELECTORS.md`](SELECTORS.md), the one selector table, then run the bare-`implement` walk over the resolved set: the top ready bead in the focus is the pass.
+
+**A side decision never starts a pass inside an unfinished thread.** When the session's own request is not yet done and a choice made along the way leads to code work, offer `dispatch workspace` for that work in one row before starting it, with the original thread named as the one that stays open here. Starting the pass in this session is the pick only when the user answered that row `here`.
 
 **Landing happens only through `wrap-up`, never inside `implement` itself.** A pass ends at
 the gate with its branch standing. Typing `go` runs `wrap-up` in this checkout, which lands it

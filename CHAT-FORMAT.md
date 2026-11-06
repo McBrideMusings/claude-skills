@@ -35,7 +35,7 @@ Answer `1A`, or type `go` to take every pick.
 
 A row that confirms one outward action carries no lettered alternatives: the user skips it by answering `skip`, so a "hold it" option is not a choice and never appears. Lettered options belong to a question with several real courses.
 
-Definitions of `go`, `park`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
+Definitions of `go`, `next`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
 
 A slate is plain chat text, never wrapped in a `>` block quote: a body quoted under a row would nest, and a chat view draws each level as its own panel.
 
@@ -133,7 +133,9 @@ All three relays this session logged `agent never went idle; prompting without c
 
 **When it applies.** The end of every option set, slate, or findings list — anything waiting on the user closes with an escape hatch. So does every turn inside an unfinished process, status answers included: a PR still conflicting, checks still pending, a reviewer not yet re-requested, a review not yet posted, a feature not yet landed. That turn names the next step as a row and closes with the slate hatch, never with a phrase for the user to type ("say 'push it'"). The slate lists every remaining step already visible — the push, the reply, the re-request, the open review point's fix — as rows with picks, in execution order, so one `go` takes the whole set; never offer only the next step and hold the rest for a later turn. Only a finished task ends without one: the PR merged and approved, no conflicts, the review posted, the feature landed through `wrap-up`. `go` is the only accept word, whatever the shape of the ask; never `yes`, `post`, `approve`, `ok`, `confirm`, `send`, or a keyword lifted from the action itself.
 
-Definitions of `go`, `park`, and the row verbs: [`CONTEXT.md`](CONTEXT.md). This file owns their shape on the page; that one owns what each word means.
+**An earlier ask still open.** A hatch printed while an earlier ask in the conversation is unanswered names that ask in its own sentence and says whether `go` covers it ("Question 6 is still open; `go` here runs wrap-up only"). `go` answers the message it ends and never reaches back to an earlier ask.
+
+Definitions of `go`, `next`, and the row verbs: [`CONTEXT.md`](CONTEXT.md). This file owns their shape on the page; that one owns what each word means.
 
 **The four canonical sentences, byte-for-byte.** The two slate sentences end in a trailing parenthetical example, byte-for-byte up to and including its opening parenthesis and ending at `).` with nothing after it on the line — only the parenthetical's contents vary from site to site, naming two of that slate's own verbs, number-first (`1 run, 3 skip`, `1 fix, 3 skip, rest file`, `1 write, 2 skip`), never a generic placeholder and never trailing prose after the close paren. The option-set sentence varies only in its first backticked example, which names that set's own picks (`1A` for one question, `1A 2C` for two). The gate's sentence, below, carries no example at all — it is byte-for-byte in full, every time.
 
@@ -141,9 +143,9 @@ Slates and findings, no next work pending:
 
 > Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 
-Slates and findings, with next work pending (a slate that also proposes what to do next names `park` beside `go` — both apply the identical dispositions, skips included, then `go` starts the next work and relays while `park` ends the turn):
+Slates and findings, with next work pending (a slate that also prints a `Next:` command names `next` beside `go` — both apply the identical dispositions, skips included, then `next` starts that work and relays while `go` ends the turn; a user who types only `go` never starts new work):
 
-> Type `go` to apply my picks and continue into <next work>, or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`).
+> Type `go` to apply my picks and stop, or `next` to apply them and continue into <next work>, or answer per row (`1 fix, 3 skip`).
 
 Option sets (reply grammar is number-first — `1A 2C`, not `A1 C2`):
 
@@ -159,7 +161,7 @@ The gate (below):
 > 2. Add a dead-letter queue for jobs that exhaust retries `[file]`
 > 3. Migrate the queue schema — blocked on the retention-policy decision `[hold]`
 >
-> Type `go` to apply my picks and continue into the dead-letter-queue design, or `park` to apply them and stop, or answer per row (`1 fix, 2 skip, 3 hold`).
+> Type `go` to apply my picks and stop, or `next` to apply them and continue into the dead-letter-queue design, or answer per row (`1 fix, 2 skip, 3 hold`).
 
 ## Gate
 

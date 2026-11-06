@@ -107,8 +107,8 @@ The Claude Code runtime, never a test rig; a project's test rig is its project s
 ### Dispositions
 
 **go**:
-Apply every stated pick and continue into proposed next work; on an option set, take every
-pick. The only accept word; `yes`,
+Apply every stated pick and stop; on an option set, take every pick. `go` never starts work
+that is not a row on the slate, and never relays. The only accept word; `yes`,
 `approve`, `ok`, `confirm`, `send` are never accepts. At the gate, `go` means run wrap-up now —
 land the standing branch (or, for already-committed work, run wrap-up from that commit). `go`
 at the gate also means the owner has tested the change or chose not to; nothing asks again.
@@ -116,9 +116,12 @@ A new request that arrives before every accepted pick has run pauses the rest; i
 them. The reply to that request names the paused picks in one line, the work board lists them,
 and they run once the new request is done.
 
-**park**:
-Apply every stated pick and end the turn. Slate-level only, never on a row, and never offered
-at the gate.
+**next**:
+Typed by the user after a slate that prints a `Next:` command. Apply every stated pick as
+`go` does, then start that work and relay into it. A typed override
+(`next iron-out label:client`) replaces the command. Slate-level only, never on a row, never
+offered at the gate, and never inferred from `go`: the Stop hook relays only when the user's
+last message contains the word `next` or `relay`.
 
 **fix** / **post** / **skip** / **file** / **hold**:
 Row-level disposition verbs. `hold` leaves an issue open and blocked.
