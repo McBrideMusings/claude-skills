@@ -118,7 +118,7 @@ puts the marker where the hook never looks and the relay silently does nothing.
 
 Then `Write` to `<that path>/relay/next.md`, creating the `relay/` subdirectory first.
 
-**An attended marker is written only after the user typed the word `next` or `relay` in their last message, and the Stop hook accepts it only at the start of that message or after a comma or semicolon** (`relay`, `go next`, `1 fix, next`; not "ok lets relay" and not a message that opens with "[Request interrupted"). When the user asks for a relay in any other wording, say in one line before anything else that their next message must start with `relay` or `next`, and write the marker only after that message arrives; a marker written against any other message is refused and the relay silently does not start. `go` never writes one. The Stop hook reads the transcript and deletes a marker the user did not ask for, logging the refusal. An `auto` run has no such message, so its marker's first line is `Auto: yes`, and the hook skips the check for it.
+**An attended marker is written only after the user typed the word `relay` anywhere in their last message, or `next` at its start or after a comma or semicolon** (`ok lets relay and redo it`, `go next`, `1 fix, next`; `next` inside a sentence does not count). A "[Request interrupted" line the harness adds before a message the user typed is ignored. `go` never writes one. The Stop hook reads the transcript and deletes a marker the user did not ask for, logging the refusal. An `auto` run has no such message, so its marker's first line is `Auto: yes`, and the hook skips the check for it.
 
 ### What goes in the prompt
 
