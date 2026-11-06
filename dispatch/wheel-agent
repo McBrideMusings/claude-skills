@@ -44,7 +44,7 @@ READY_S=120          # how long the worker has to report its first state
 need() { command -v "$1" >/dev/null 2>&1 || { echo "wheel-agent: missing '$1'" >&2; exit 1; }; }
 
 # Panes split off for workers in the target space, oldest first, one per line.
-ledger() { printf '%s/wheel-agent-%s.panes' "${TMPDIR:-/tmp}" "$(printf '%s' "${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" | tr -c 'A-Za-z0-9._-' _)"; }
+ledger() { mkdir -p /private/tmp/claude/wheel-agent; printf '/private/tmp/claude/wheel-agent/%s.panes' "$(printf '%s' "${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" | tr -c 'A-Za-z0-9._-' _)"; }
 
 # Make or split a pane for the worker, start its terminal, and print its id. Serialised and
 # claimed inside the lock (the terminal starts before the lock is let go), so parallel launches
@@ -55,15 +55,23 @@ claim_pane() {
   local l; l="$(ledger)"; touch "$l"
   lockf -k -t 60 "$l.lock" /bin/bash -c '
     set -o pipefail
-    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"
+    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"; sess="$7"
+    sflag=""
+    if [ -n "$named" ] && [ -n "$sess" ]; then
+      # The worker space joins a session of its own, made when none has the name, so a window on
+      # another session never lists the workers.
+      sid="$(wheel session ls --json | jq -r --arg n "$sess" "[.[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
+      [ -n "$sid" ] || sid="$(wheel session new "$sess")" || exit 1
+      sflag="--session $sid"
+    fi
     if [ -n "$named" ]; then
       space="$(wheel status | jq -er --arg n "$named" "[.spaces[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
       if [ -z "$space" ]; then
         if [ "$show" = 1 ]; then
-          space="$(wheel space new "$home" --name "$named" --focus)" || exit 1
+          space="$(wheel space new "$home" --name "$named" $sflag --focus)" || exit 1
           echo "wheel-agent: opened space $space ($named) for $home on the person'"'"'s screen" >&2
         else
-          space="$(wheel space new "$home" --name "$named" --background)" || exit 1
+          space="$(wheel space new "$home" --name "$named" $sflag --background)" || exit 1
           echo "wheel-agent: opened background space $space ($named) for $home" >&2
         fi
       fi
@@ -85,7 +93,7 @@ claim_pane() {
     new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
-    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" \
+    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" "${WHEEL_AGENT_SESSION:-}" \
     || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
 }
 

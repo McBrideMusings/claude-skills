@@ -67,7 +67,7 @@ main_checkout() {
 }
 
 # Which multiplexer holds the workers: herdr (a child space per worker) or wheel (a pane per
-# worker in the lead's own space). Empty outside both.
+# worker in a space of the Swarm session). Empty outside both.
 surface() {
   if [ "${HERDR_ENV:-}" = "1" ]; then echo herdr
   elif [ "${WHEEL_ENV:-}" = "1" ]; then echo wheel
@@ -239,7 +239,7 @@ cmd_check() {
     where="workers open as child spaces of $ws"
   else
     "$HOME/.claude/tools/wheel-space" >/dev/null || die "inside Wheel but this pane's space cannot be resolved"
-    where="workers open as terminal panes in the lead's own Wheel space, stacked beside the lead; each pane closes when its worker is closed"
+    where="workers open as terminal panes in a background space of the Swarm session, so the lead's session never lists them; each pane closes when its worker is closed"
   fi
   local rts; rts="$(runtimes "$repo" | paste -sd' ' -)"
   echo "swarm: runtimes: ${rts:-none detected}" >&2
@@ -421,6 +421,11 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
   local rc=0
   (
     cd "$wt"
+    # Inside Wheel the workers share one space in a session of their own, so a window on the
+    # lead's session never lists them.
+    if [ "$surf" = wheel ]; then
+      export WHEEL_AGENT_SPACE="swarm $(basename "$repo")" WHEEL_AGENT_SPACE_DIR="$repo" WHEEL_AGENT_SESSION=Swarm
+    fi
     # An implement pass routinely outlasts dispatch's 40-minute ceiling.
     export CLAUDE_DISPATCH_SETTINGS="$gd/swarm-settings.json" HERDR_AGENT_TIMEOUT_MS=14400000 \
            WHEEL_AGENT_TIMEOUT_MS=14400000 WHEEL_AGENT_DIR="$gd/wheel-agent" DISPATCH_TRANSPORT="$surf" \
