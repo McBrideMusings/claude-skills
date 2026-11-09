@@ -44,7 +44,7 @@ uncovered and choose fix-now / file / skip per item.
 Inside an `implement … auto` run nothing halts for a reply
 ([`../implement/AUTO.md`](../implement/AUTO.md)). Phase 6 Step A picks its own dispositions,
 and any step that needs a person's yes after landing — a deploy, a restart, a publish — is
-skipped and put in the run's report as an offer question ("Redeploy to your Mac, your phone, or both?"), never run unasked and never worded as the user's chore. On a
+skipped and put in the run's report as an offer row ("Redeploy the Mac app"), never run unasked and never worded as the user's chore. On a
 repo that is not `owned`, Step C's PR offer does not run mid-run: the branch is pushed and
 parked with `needs a PR` (AUTO.md §Parking an item), and the run's report offers the PR as a
 slate row `go` accepts (AUTO.md §The report).
@@ -382,7 +382,7 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 
 Landing an `implement` pass here still runs steps 9–10 above after the merge into the feature branch (or the PR, on the feature branch itself): retire the worktree, and close the tracked item only when it is an epic slice whose commit is on the epic's branch. Every other item ships when its PR merges, so it gets `bead-pr link` instead of `bd close`.
 
-**After landing, offer to redeploy what runs on the user's own devices.** Choose the platforms from the diff: Mac sources mean the Mac, iOS sources mean the phone, shared sources mean both. Ask it in the closing slate as a question, such as "Redeploy to your Mac, your phone, or both?", with the project's deploy route (the project skill's deploy step, or the task runner's deploy task) as the action behind a yes. Nothing is deployed, restarted or reinstalled before the answer, and the wording never tells the user to do it. In an `auto` run the same question goes in the run's report as an offer row, not under `Needs you`. Production, a work environment or another host is offered the same way and never run unasked. A `Needs you` line is for facts only a person can supply. What only a person can do afterwards, such as reloading a browser extension, goes in the landing report as one line.
+**After landing, offer to redeploy what runs on the user's own devices.** Choose the platforms from the diff: Mac sources mean the Mac, iOS sources mean the phone, shared sources mean both. Ask it in the closing slate as one row naming only the platforms the diff touched (`Redeploy the Mac app [deploy]`), never a lettered menu and never with "neither" or "both" as options, with the project's deploy route (the project skill's deploy step, or the task runner's deploy task) as the action behind a yes. Nothing is deployed, restarted or reinstalled before the answer, and the wording never tells the user to do it. A server restart that ends sessions is never bundled into that row: it gets its own row only when something the person asked for does not work without it. In an `auto` run the same question goes in the run's report as an offer row, not under `Needs you`. Production, a work environment or another host is offered the same way and never run unasked. A `Needs you` line is for facts only a person can supply. What only a person can do afterwards, such as reloading a browser extension, goes in the landing report as one line.
 
 Once an `implement` pass has landed, by either route, end its dashboard: `~/.claude/skills/dashboard/dashboard end implement:<id>`. For a pass that never started one it exits 1 with one line, which is fine to ignore.
 

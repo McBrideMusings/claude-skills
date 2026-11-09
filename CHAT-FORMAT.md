@@ -4,7 +4,7 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 ## Option set
 
-**When it applies.** A decision point with two or more mutually exclusive courses of action — before significant work, and at every decision point inside it (an interview question, a skill's routing step).
+**When it applies.** A decision point with two or more mutually exclusive courses of action that a reasonable person would each pick — before significant work, and at every decision point inside it (an interview question, a skill's routing step). One sensible course is a slate row with its default and `go`, not an option set. An option never exists for completeness, to show what else could be done, or for an action the request never named; "neither", "not yet" and "hold" are not options.
 
 **The shape.** Numbered question, lettered options beneath it. Each option is a bolded line naming what physically happens — which file gets edited, what value gets written where, which process computes it, when — never a noun with no location. When the decision is about something the person will see or do (a screen, a flow, what is kept or deleted), the bolded line leads with that, and the location follows in the same line, so internals never stand in for the experience. Bullets beneath state the strongest case for that option; the last bullet is always the cost. The option you'd pick is marked ` — my pick` on its bolded line, not with a separate marker. Options under one question are mutually exclusive; when two could sensibly combine, write the combination as its own lettered option rather than leaving it for the reader to compose.
 
@@ -33,7 +33,7 @@ Answer `1A`, or type `go` to take every pick.
 
 **The shape.** One numbered row per item: a **bolded action naming what physically happens and where** — which file, which tracker, which branch — optionally followed by one to three lines of specifics, with the default `[verb]` bracket at the end of the row's first line. The bracket is the default, not a separate sentence. A row with no default is malformed: `go` would have nothing to mean.
 
-A row that confirms one outward action carries no lettered alternatives: the user skips it by answering `skip`, so a "hold it" option is not a choice and never appears. Lettered options belong to a question with several real courses.
+A row that confirms one outward action carries no lettered alternatives: the user skips it by answering `skip`, so a "hold it" option is not a choice and never appears. The same holds for a deploy, a restart or any step with side effects: it is its own row, never an option beside the step that was asked for. Lettered options belong to a question with several real courses.
 
 Definitions of `go`, `next`, and the row verbs (`fix`, `post`, `skip`, `file`, `hold`, …): [`CONTEXT.md`](CONTEXT.md).
 
