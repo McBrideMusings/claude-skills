@@ -540,6 +540,8 @@ cmd_close() {
   local id="${1:-}" how="${2:-}" repo wt ws p
   case "$how" in landed|parked) ;; *) die "usage: swarm close <bead-id> landed|parked" ;; esac
   repo="$(main_checkout)"; wt="$(worktree_path "$repo" "$id")"
+  # A parked bead is not being worked: release it so it reads open and unassigned again.
+  [ "$how" = parked ] && bd update "$id" --status open --assignee "" >/dev/null 2>&1 && echo "swarm: released $id (open, unassigned)" >&2
   case "$(surface)" in
     herdr)
       ws="$(herdr workspace list | jq -r --arg w "$wt" '[.result.workspaces[] | select(.cwd == $w) | .workspace_id][0] // empty')"

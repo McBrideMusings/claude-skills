@@ -250,8 +250,8 @@ away unread.
    script checks that each row says what drove it, not that what drove it was the real input path. Every status line about a landing says what ran — the
    product, the command, what it showed — and, when the check stopped short of running the
    product with its real inputs (data, assets, account), says `not run` in that same line, never
-   later. A parked bead has an `auto parked` note: `swarm log parked
-   <id> "<reason>"`. A report that says landed but fails either check is a failed worker.
+   later. A parked bead has an `auto parked` note and is back to `open`, unassigned
+   (`swarm close <id> parked` does that): `swarm log parked <id> "<reason>"`. A report that says landed but fails either check is a failed worker.
    `swarm log landed` and `swarm log ready` also run `gate-check` on the outfile and refuse a
    report with no `Run:` line or no `Look for:` line, writing a `rejected` event to the run log.
    On a refusal, send the report back to the worker (`SendMessage`, naming the missing lines)
@@ -314,7 +314,7 @@ first line when more than one is queued.
 | --- | --- |
 | `go` | Applies each `[fix]` follow-up in the worktree and commits it; `git -C <worktree> push -u origin HEAD:<branch name>`; opens the PR with `wrap-up` Step C's collaborative call (the repo's own PR rules: assignee, reviewers, an existing label); `bead-pr link <id> <pr#>`; files each `[file]` follow-up through `issues file`; `swarm log signed <id> <pr#>`; `swarm close <id> landed` |
 | changes | Edits the title, body, branch name or dispositions it was told to, and presents the same package again |
-| `park` | `swarm log declined <id> "<reason>"`; `swarm close <id> parked`, keeping the worktree and branch; adds an `auto parked: declined at sign-off` note to the bead and releases nothing |
+| `park` | `swarm log declined <id> "<reason>"`; `swarm close <id> parked`, keeping the worktree and branch; adds an `auto parked: declined at sign-off` note to the bead and sets it back to `open`, unassigned; the worktree and branch stay |
 
 A lead whose user has gone quiet keeps the queue; the packages wait in the log and are
 presented in order whenever the user next answers.

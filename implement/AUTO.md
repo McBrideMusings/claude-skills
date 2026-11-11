@@ -96,7 +96,9 @@ Parking leaves finished-or-partial work on a branch that never lands without the
    `<type>/<slug>-<short-title>` ([`../wrap-up/SKILL.md`](../wrap-up/SKILL.md) Phase 6 Step C).
    On the default branch, `git switch -c` it first. In a worktree, commit on the worktree's own
    branch.
-2. `bd update <id> --append-notes "auto parked: <branch> at <sha>. <reason>"`.
+2. `bd update <id> --status open --assignee "" --append-notes "auto parked: <branch> at <sha>. <reason>"`.
+   A parked bead is not being worked, so it goes back to `open` and unassigned; the readiness
+   gate (HANDOFF.md §1) still drops it from `bd ready` by its `auto parked` note.
 3. On the primary checkout, switch back to the default branch, add the row to the run-state
    block, and hand the next item to `relay` §Auto, which continues in this context when it
    cannot clear the pane. A worktree worker has only this one item, so it ends there.
