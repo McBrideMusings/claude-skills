@@ -5,7 +5,7 @@ description: "Hand the next body of work forward into a clean context in the SAM
 
 # Relay
 
-Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 A relay hands the next body of work **forward**: same pane, same repo, same seat, next body
@@ -63,23 +63,23 @@ next-work options: the tracker's answer is `next-work`'s verdict.
    or iron-out's own), it goes under the output as slate rows per
    [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row, and the `Next:` line comes last.
 4. **Close with the hatch** from [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Hatch, byte-for-byte:
-   - next work pending: "Type `go` to apply my picks and stop, or `next` to apply them and
-     continue into <the `Next:` command>, or answer per row (`1 fix, 3 skip`)."
+   - next work pending: "Type `go` to apply my picks and continue into <the `Next:` command>,
+     or `park` to apply them and stop, or answer per row (`1 fix, 3 skip`)."
    - no next work (verdict `none`, or `focus finished` in an auto run): "Type `go` to apply my
      picks as described, or answer per row (`1 fix, 3 skip, rest file`)." — `go` alone, no
-     `next`.
+     `park`.
 
-   `go` takes every pick and ends the turn with the pane intact. `next` applies the same
-   dispositions and relays into the `Next:` command. A typed override replaces the command
-   and keeps everything else: `next iron-out label:client` relays into
+   `go` takes every pick and relays into the `Next:` command. `park` applies the same
+   dispositions and ends the turn with the pane intact. A typed override replaces the command
+   and keeps everything else: `go iron-out label:client` relays into
    `issues iron-out label:client` and carries that selector as the new focus. `no relay` stays
    this skill's redirect word: apply the follow-up dispositions, end the turn, clear nothing.
 5. **Session limits change what `go` does, never the output.**
-   - Outside herdr and Wheel (Precondition 1 fails) there is no pane to clear: `next`
+   - Outside herdr and Wheel (Precondition 1 fails) there is no pane to clear: `go`
      continues in this context. The tool already replaces a `swarm` verdict with the top bead's
      `implement` pass.
    - In a linked worktree (`git rev-parse --git-dir` differs from `--git-common-dir`), print the
-     `Next:` line as information, with no `next` into it; follow-ups stay available
+     `Next:` line as information, with no `go` into it and no `park`; follow-ups stay available
      and close with the no-next-work sentence. A worktree is retired when its pass lands, so no
      new work starts in it.
 6. **Apply the follow-up dispositions** (Step 3), then write the marker (Step 4) for the

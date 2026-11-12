@@ -5,7 +5,7 @@ description: "Autonomous work on one tracked item at a time, done by this sessio
 
 # /implement — plan, edit, verify, gate
 
-Control words (`go`, `next`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 One **pass** is one tracked item, worked end to end by this session, in the checkout it

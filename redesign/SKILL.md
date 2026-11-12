@@ -5,7 +5,7 @@ description: "Solve a goal for a UI, process, feature, architecture or implement
 
 # Redesign
 
-Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 The existing solution is a set of inherited assumptions, not the baseline. Starting from it, or from a mismatch inside it, yields refinement. So a redesign works from the goal: what the user needs, which constraints are real, several structurally different ways to meet it, and only then how the current system compares and what it costs to get there. Refinement is a valid outcome only when the incumbent beats the new candidates on the stated jobs.

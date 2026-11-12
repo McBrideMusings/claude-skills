@@ -101,9 +101,9 @@ These bind every lens, not just `negative-space`. When more than one offers an a
 - **A list with picks but no accept-all** makes the user re-type a decision you already made. They read eight findings, agree with all eight, and then have to enumerate them back.
 - **A list with no picks at all** is the `CLAUDE.md` violation one level up — *"a list with no pick is a non-answer"*. Dispositions are recommendations, so every item carries yours.
 
-There is exactly one sanctioned second word, and it is not a synonym: **`next`** applies the identical dispositions and then continues into the proposed next work. It appears only on a slate that also proposes next work — `go` applies them and ends the turn, `next` continues. An audit slate that proposes none names `go` alone.
+There is exactly one sanctioned second word, and it is not a synonym: **`park`** applies the identical dispositions and then stops. It appears only on a slate that also proposes next work — `go` continues into that work, `park` ends the turn. An audit slate that proposes none names `go` alone.
 
-Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch. Definitions of `go`, `next`, and the other control words: [`../CONTEXT.md`](../CONTEXT.md).
+Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch. Definitions of `go`, `park`, and the other control words: [`../CONTEXT.md`](../CONTEXT.md).
 
 ## RULE — effort never kills a finding
 

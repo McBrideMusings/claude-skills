@@ -5,7 +5,7 @@ description: "Perform a code review. Routes by what you're standing in: uncommit
 
 # Review
 
-Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 Review code changes for bugs, **security vulnerabilities**, quality issues, CLAUDE.md compliance, **architecture fit**, **spec compliance**, **negative space** (unmet obligations the diff creates), and **best practices** checked against current external docs.

@@ -7,7 +7,7 @@ user_invocable: true
 
 # Cleanup
 
-Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 A mechanical cleanup tool (herdr's ⇧X panel, `git-delete-merged-branches`, a shell alias) can

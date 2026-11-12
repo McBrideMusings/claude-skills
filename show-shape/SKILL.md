@@ -5,7 +5,7 @@ description: "How to WRITE DOWN any answer that describes a shape — a plan, de
 
 # Show the shape — structured pseudocode instead of prose
 
-Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 How to *write down* anything whose subject is a **shape**: an implementation plan, a design proposal, a PRD's Implementation Decisions section, an `improve` proposed fix, an `explain` architecture-change note — or a plain chat answer that is about to describe logic, a call chain, a component tree, or a refactor in paragraphs. Write it so it reads as the shape of the code, not a description of it.

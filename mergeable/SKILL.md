@@ -5,7 +5,7 @@ description: "Get a blocked branch to mergeable, doing the work rather than offe
 
 # Mergeable
 
-Control words (`go`, `next`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
 **Something is standing between this branch and a merge. Remove it.**

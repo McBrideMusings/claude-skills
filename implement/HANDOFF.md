@@ -54,7 +54,7 @@ When an item clears, it does not invent vocabulary — it becomes one more row o
 3. Run cc-111 as an implement pass — AFK, nothing blocks it. My pick: run.
 ```
 
-`go` takes it with the rest of the slate. `3 skip` declines just that row. `go` applies every disposition, including this one, and stops; `next` continues into the pass. This is the machinery the user's own global instructions already define — a slate row accepted IS the ask, `go` is the only accept word, and `next` is the second word a slate that proposes next work names — so no third accept word is added here, and none should be added later. Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
+`go` takes it with the rest of the slate. `3 skip` declines just that row. `park` applies every disposition, including this one, and stops rather than continuing into the pass. This is the machinery the user's own global instructions already define — a slate row accepted IS the ask, `go` is the only accept word, and `park` is the second word a slate that proposes next work names — so no third accept word is added here, and none should be added later. Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row and §Hatch.
 
 When several items are ready at once, each still gets its own row — `implement` runs one item at a time, so there is no bundled "run all of these" word to reach for.
 
