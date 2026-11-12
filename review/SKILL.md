@@ -204,7 +204,7 @@ Phase 00 context 3. Instead of reviewing `main` itself, review everything waitin
 
 Two things are review's to supply, and SWEEP.md reads them from here:
 
-- **Selection** — open PRs where `author.login != my login` and my review is outstanding.
+- **Selection** — open, non-draft PRs where `author.login != my login` and my review is outstanding. A draft is never reviewed, whatever a brief says.
 - **The worker's prompt** — `Run the /review skill on PR <n>, checked out here.` Nothing appended — the
   skill's own last phase is the disposition list and the proposed verdict, and naming an earlier step
   ("report findings") is what has made fanned-out reviews stop there instead of reaching it.
