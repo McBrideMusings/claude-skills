@@ -51,6 +51,8 @@ Each pass is one cycle. Count passes; the number of passes with no kept change i
 4. **Decide at once.** Faster by more than the launch-to-launch spread and not visibly worse: **keep it as the working configuration** and move on. Not faster: revert, and write one line saying what the model got wrong. Visibly worse: revert the change, keep the direction.
 5. **Update the frame model** from the launch. Write the checkpoint (section 6). Go to 1.
 
+**The loop ends only when the target frame time holds on the target device, or when a decision only the user can make blocks the next pass.** A kept pass, a finished brief section, an offline device with another host available, or a long context is not an ending: at a context limit, hand the next pass to a fresh context with `relay` and keep the loop running; never run `wrap-up` to stop it. A brief's "when it's done, run `wrap-up`" means when the target holds.
+
 Budget: after three passes on one link with nothing kept, the model is wrong about that link. Re-measure the chain; do not refine the probe.
 
 "Working configuration" means the build and settings every later pass measures against. It is not a release. Promote the working configuration to a release only when the acceptance contract in section 5 passes; until then nothing is held back from the loop by that contract.
@@ -65,6 +67,7 @@ Workarounds that prove a cause (a pinned clock, a disabled subsystem, a capped r
 
 ## 3. Hosts and one run at a time
 
+- **Before the first command on the Deck, open the keep-awake watch pane** (`knowledge/fleet/steam-deck/ssh-keepawake.md`: a terminal pane running `ssh -t deck 'journalctl --user -u ssh-keepawake -f -n 20 --no-pager'`). One-shot `ssh deck` calls do not hold the Deck awake, and a Deck that suspends mid-launch loses the run and leaves its trial settings installed.
 - `ssh deck`: the target. 4 Zen 2 cores, 15 W socket, shared memory. Never build here: a compile beside a game makes it unplayable.
 - `ssh bazzite`: build host (RX 9070 XT) and a second target. Edits to its files go through a script run over ssh; a quote inside an ssh single-quoted command breaks the shell.
 - Copy builds with `scp bazzite:<file> deck:<file>` through the Mac and check a hash.
