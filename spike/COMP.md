@@ -8,14 +8,17 @@ component's behaviour, to [UI.md](UI.md).
 
 ## Steps
 
-1. **Take the project's look from `dsys prompt`.** Run it in the repo; it prints the palette, type,
-   radius, density, components and rules from `DESIGN.md`. Put that block first in the image prompt,
-   then the brief (what the screen is, what it holds, real copy). A repo with neither a `DESIGN.md` (owned) nor a `DESIGN.local.yaml` overlay (not owned; `dsys init` writes it) has no
-   look to hand over: say so, and use UI.md's restrained default.
+1. **Take the project's look from `DESIGN.md`.** Read it and write a look block: the palette as
+   resolved hex values (follow `{group.name}` references), the type families, weights and scale,
+   corner radii, spacing steps, the Overview's sentences and the Do's and Don'ts, with every token
+   and component name replaced by its value or plain words. Open the block by saying the values are
+   styling to apply, not text to draw, and ask for realistic content. Put it first in the image
+   prompt, then the brief (what the screen is, what it holds, real copy). A repo with no
+   `DESIGN.md` has no look to hand over: say so, and use UI.md's restrained default.
 2. **Generate into the spike directory** — `/private/tmp/claude/<repo-slug>/spikes/<slug>/`, one
    PNG per direction, named for the direction (`quiet.png`, `dense.png`). Backend choice, keys and the
    driver are in [`../generate/image.md`](../generate/image.md).
-   - **A new screen:** `generate/image-api --prompt "<dsys prompt block + brief>" --aspect <ratio> --out <png>`.
+   - **A new screen:** `generate/image-api --prompt "<look block + brief>" --aspect <ratio> --out <png>`.
    - **A change to an existing screen:** screenshot the running screen, then
      `generate/image-api --edit <screenshot.png> --prompt "<the change, and what must stay unchanged>" --out <png>`.
      The prompt is the instruction, not a description of the whole picture.

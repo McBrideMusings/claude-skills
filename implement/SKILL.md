@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs the project skill's `verify.md` over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and recorded — and reports what only a person can finish."
+description: "Autonomous work on one tracked item at a time, done by this session itself in the checkout it stands in: plan, edit, build green, verify, blind review, gate. `implement <epic>` reads the epic's children and blocking edges from beads and proposes the order to work them in, one at a time, then runs the repo's `project-verify` skill over the epic. Bare `implement` discovers one via `issues next`. `implement auto [n|all]` runs passes unattended — no gate wait, no follow-up ask, decisions made and recorded — and reports what only a person can finish."
 ---
 
 # /implement — plan, edit, verify, gate
@@ -67,7 +67,7 @@ by `bd epic close-eligible`.
 A pass takes **one slice child** — `myproj-25.1`. A `human` child is never worked as a pass
 from a parent run or a discovered list: it waits for a person. **pierce naming a `human` slice
 directly — `implement <id>`, or "do <id>" in chat — is that person taking it**: remove the
-label (`bd label remove <id> human`) and run the pass. Verification over the epic is this session's, via the project skill's `verify.md`, and
+label (`bd label remove <id> human`) and run the pass. Verification over the epic is this session's, via the repo's `project-verify` skill, and
 landing is `wrap-up`. Item → pass, and the readiness gate every item clears before it is
 ever offered: [`HANDOFF.md`](HANDOFF.md).
 
@@ -84,17 +84,17 @@ slate, one row per step, in plan order:
   a slice that fails the gate  -> what is missing, and who supplies it               [hold]
   every later slice            -> "<id>, after <ids>"                                 [hold]
   `human` slices               -> what pierce has to do or decide                     [hold]
-  after the last slice         -> "project verify.md over the epic, then the gate"     [hold]
+  after the last slice         -> "project-verify over the epic, then the gate"        [hold]
 go -> `implement <epic> auto`: work every [run] row here, one pass per context
 ```
 
 `go` on an epic plan is the ask for every ready slice: it runs `implement <epic> auto`
 ([`AUTO.md`](AUTO.md)), which works the slices one at a time in plan order. After the last slice,
-auto runs the project skill's `verify.md` over the epic here and stops at the gate.
+auto runs `project-verify` over the epic here and stops at the gate.
 
 - **One slice at a time.** Slices in the same wave could run in parallel, but `implement`
   still works them one after another.
-- **An epic with no open slice** still gets a plan: run the project skill's `verify.md` here, then the gate.
+- **An epic with no open slice** still gets a plan: run `project-verify` here, then the gate.
   Never answer "nothing remains" with no next step. Close the epic through `wrap-up` even when
   the tree is clean, never with a hand-run `bd close`.
 - **An epic with no children** is not ready for `implement`; offer `issues spec` to break it
@@ -130,7 +130,7 @@ those two are exempt, both session bookkeeping rather than work in progress:
 In the primary `~/.claude` checkout, a dirty file there belongs to another concurrent session
 sharing that index, not to this pass — not a halt.
 
-**Resolve the verification skill now.** `ls` the absolute path of `<repo>/.claude/skills/project/verify.md` and print it. Step 4 reads that file; a pass that verified with its own ad hoc check without reading it has not verified.
+**Resolve the verification skill now.** `ls` the absolute path of `<repo>/.claude/skills/project-verify/SKILL.md` and print it. Step 4 loads that skill; a pass that verified with its own ad hoc check without loading it has not verified.
 
 **No commit-count guard.** One commit on the default branch; as many as the work needs
 elsewhere, squashed by `wrap-up`.
@@ -150,8 +150,8 @@ elsewhere, squashed by `wrap-up`.
    each one writes, and the state-query field that shows what the feature displays
    (log lines are one per event, with an ISO 8601 timestamp, a category and raw values rather than displayed ones, and never a credential or a whole body); building those is
    part of this item, never a follow-up.
-   *Knowledge base: search it for "observability checklist". If you have none, skip this line and don't mention it.* In a repo with a `DESIGN.md`, save the `dsys check`
-   baseline now, before any edit ([`VERDICTS.md`](VERDICTS.md#design-system-checks)). A pass that
+   *Knowledge base: search it for "observability checklist". If you have none, skip this line and don't mention it.* A pass that touches anything a user sees, in a repo with a `project-design` skill, calls
+   `Skill(project-design)` now and plans against `DESIGN.md` ([`VERDICTS.md`](VERDICTS.md#design-checks)). A pass that
    builds a new UI surface in a repo with no `DESIGN.md` runs `redesign` step 4's roll first
    ([`../redesign/SKILL.md`](../redesign/SKILL.md)) and plans from the assigned direction. A host dependency — anything the code expects on the user's machine or network rather than in its build — is proposed in chat, named as one, before code relies on it; the code locates it through configuration and shows in the product whether it is present. Then start the pass's dashboard with `dashboard implement`
    ([`../dashboard/kinds/implement.md`](../dashboard/kinds/implement.md)) and push its stage at
@@ -162,33 +162,33 @@ elsewhere, squashed by `wrap-up`.
    returns findings tied to plan steps. Revise the plan once from its findings, recording any
    finding you decline and why, then edit. One cycle, not two.
 2. **Edit.** Make the change directly, in the checkout you stand in. In an owned repo, a
-   feature that needs a design token or component `DESIGN.md` lacks adds it to `DESIGN.md` in
-   the same commit, never a follow-up ([`DESIGN.md` checks](VERDICTS.md#design-system-checks)).
+   feature that needs a design token, component or layout rule `DESIGN.md` lacks adds it to
+   `DESIGN.md` in the same commit, never a follow-up ([design checks](VERDICTS.md#design-checks)).
 3. **Build green.** Run the build, test, lint or typecheck yourself, in the foreground,
    bounded — `<cmd> 2>&1 | tail -40` (add `| grep -E 'error|FAIL' | head -40` first when the
    runner is chatty). Explicit `timeout`, up to 600000; never background it. A Turnstile queue wait counts toward the timeout and is not a hang: a command that prints why it is queued is waiting. In a repo with a
-   `DESIGN.md`, `dsys check` and the dsys ESLint fragment are part of build-green: a `dsys
-   check` record the diff added, or an ESLint error, fails the step; a record in the step-1
-   baseline does not ([`VERDICTS.md`](VERDICTS.md#design-system-checks)).
-4. **Verify at the surface.** The project skill's `verify.md` owns what verification
-   means here — read `<repo>/.claude/skills/project/verify.md` as a file and follow it
-   (never `Skill(verify)`: that is the bundled skill, disabled for model invocation). For a
+   `project-design` skill, its `tools/lint.sh` is part of build-green: a failure the diff added
+   fails the step ([`VERDICTS.md`](VERDICTS.md#design-checks)).
+4. **Verify at the surface.** The repo's `project-verify` skill owns what verification
+   means here — call `Skill(project-verify)` and follow it (never `Skill(verify)`: that is the
+   bundled skill, disabled for model invocation). A diff that changed anything a user sees also
+   runs `project-design`'s `tools/shots.sh` for each touched surface and looks at every PNG. For a
    feature, the proof includes checklist §4: the state query shows the planned field with raw
    values, and the log file at the path the control surface reports holds the planned lines
    from this run. Write one
-   from the repo's `README.md`, `CLAUDE.md` and `admin.toml` when none exists, naming this
+   (per `project-skills`) from the repo's `README.md`, `CLAUDE.md` and `admin.toml` when none exists, naming this
    repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
    `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:
    [`VERDICTS.md`](VERDICTS.md).
-   **Then measure.** When the project skill has a `perf.md`, run every scenario its table names
+   **Then measure.** When the repo has a `project-perf` skill, call it and run every scenario its table names
    for this diff and print each table; a limit over, after its one rerun, fails this step like a
    failed check. A diff that adds work per redraw, keystroke, frame or request, or work that grows
-   with what a person accumulates, adds a measure to `perf.md` in the same change, and proves the
+   with what a person accumulates, adds a measure to `project-perf` in the same change, and proves the
    limit fails on the broken version by running the scenario against it once.
    **Every case step 1 listed is driven**, each by its own step in the check, and the gate names
    each case with what it showed; a case not driven is an unverified case, said so on its line,
    never a pass.
-   Every feature ships, unasked, with a way for a program to drive it and read its state back; a check only a human can perform means that surface is missing, so build it in this pass. Each project-skill section (verify, perf, logs, swarm) is extended as the feature lands, and the code support it names (a log shipper, a configurable port, a task-runner task) is written in the same change.
+   Every feature ships, unasked, with a way for a program to drive it and read its state back; a check only a human can perform means that surface is missing, so build it in this pass. Each project skill (`project-verify`, `project-perf`, `project-logs`, `project-swarm`, `project-design`) is extended as the feature lands, and the code support it names (a log shipper, a configurable port, a task-runner task) is written in the same change.
    **A diff that adds or changes a test** runs [`VERDICTS.md`](VERDICTS.md)'s keep check
    before the commit.
 5. **Blind review.** Once the build is green, spawn `code-reviewer` once — with step 1b's `plan-reviewer`, the

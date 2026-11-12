@@ -16,7 +16,7 @@ What `iterate` reuses rather than owns:
 | Resolving the focus (`epic:`, `label:`, a bead id, free text) | [`../implement/SELECTORS.md`](../implement/SELECTORS.md) |
 | Choosing the next bead | `next-work --auto` ([`../relay/SKILL.md`](../relay/SKILL.md) §Ending) |
 | The pass: readiness gate, plan, edit, build, verify, review, gate, parking | `implement <id> auto` ([`../implement/AUTO.md`](../implement/AUTO.md)) |
-| Landing and closing the bead | `wrap-up <worktree>`, with the project skill's `swarm.md` §Landing where it has one |
+| Landing and closing the bead | `wrap-up <worktree>`, with `project-swarm` §Landing where it has one |
 | The run-state block and the end report | [`../implement/AUTO.md`](../implement/AUTO.md) §Run state, §The report |
 | A fresh context for each bead | [`../relay/SKILL.md`](../relay/SKILL.md) §Auto |
 
@@ -31,8 +31,8 @@ checkout stays free for other work. The session itself
 stays in the primary checkout and reaches the worktree with absolute paths, `git -C <worktree>`
 and `admin -w <worktree>`.
 
-- **First pass:** `git -C <repo> worktree add -b <branch> <worktree> <default>`, then the project
-  skill's `swarm.md` first-build steps (submodules, install), once.
+- **First pass:** `git -C <repo> worktree add -b <branch> <worktree> <default>`, then
+  `project-swarm`'s first-build steps (submodules, install), once.
 - **Every later pass:** `git -C <worktree> status --short` must print nothing. Then
   `git -C <worktree> switch -c <branch> <default>`. A dirty worktree ends the run, reported under
   `Needs you` with the paths `status` printed.
@@ -48,7 +48,7 @@ and `admin -w <worktree>`.
 3. **Check out** the bead's branch per §The worktree.
 4. **Work the pass** as `implement <id> auto` with `<worktree>` as its checkout: every edit,
    build, test and verify runs there. Move the board's stage as the pass moves.
-5. **Land** through `wrap-up <worktree>`, including when the pass's commits are already on `<default>`: wrap-up then takes its §Already landed path. Never land by hand and skip it. On a repo whose project skill `swarm.md` has a §Landing,
+5. **Land** through `wrap-up <worktree>`, including when the pass's commits are already on `<default>`: wrap-up then takes its §Already landed path. Never land by hand and skip it. On a repo whose `project-swarm` skill has a §Landing,
    land the way it says. Step C's teardown keeps the worktree: in place of removing it, run
    `git -C <worktree> switch --detach <default>`, then `git -C <repo> branch -d <branch>`. A
    parked pass parks per [`../implement/AUTO.md`](../implement/AUTO.md) §Parking an item, then

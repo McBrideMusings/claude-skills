@@ -2,7 +2,7 @@
 # Tests for skills/review/tool/lens-gate: four fixture diffs (docs-only, auth, a one-line colour
 # fix, a new screen) each get the expected decision per lens, a failed or unsure Jev call
 # offers instead of skipping, repo mode lifts the diff gates, and a malformed lens fails loudly.
-# Jev and dsys are stubbed; nothing leaves the machine.
+# Jev is stubbed; nothing leaves the machine.
 #
 #   skills/review/tool/tests/lens-gate.test.sh
 set -uo pipefail
@@ -22,20 +22,15 @@ say() {
   else fail=$((fail+1)); printf 'FAIL  %s\n' "$2"; fi
 }
 
-# --- stubs: HOME (domains-map, no .env), dsys on PATH, Jev on a local port ---
+# --- stubs: HOME (domains-map, no .env), Jev on a local port ---
 export HOME="$WORK/home"
 mkdir -p "$HOME/.claude" "$WORK/bin"
 export TYPESAFE_API_KEY=stub
 export LENS_GATE_LOG="$WORK/lens-gate.log"
-cat > "$WORK/bin/dsys" <<'EOF'
-#!/usr/bin/env bash
-cat "$DSYS_STATUS"
-EOF
-chmod +x "$WORK/bin/dsys"
 export PATH="$WORK/bin:$PATH"
-export DSYS_STATUS="$WORK/dsys.json"
-owned() { printf '{"mode":"owned","designMd":true}\n' > "$DSYS_STATUS"; }
-not_owned() { printf '{"mode":"non-owned","designMd":false}\n' > "$DSYS_STATUS"; }
+# The design lens gates on a DESIGN.md at the repo root; it is left untracked so every branch sees it.
+owned() { : > "$R/DESIGN.md"; }
+not_owned() { rm -f "$R/DESIGN.md"; }
 
 RULES="$WORK/jev.json"
 SEC='security-relevant surface'
@@ -137,8 +132,8 @@ echo "--- records carry the evidence ---"
 jq -e '.[] | select(.lens == "security") | .jev.p == 0.95 and .jev.confidence == 0.9' "$WORK/auth.json" >/dev/null \
   && say ok "a fired judgment gate records Jev's probability and confidence" \
   || say f "security record lacks jev p/confidence: $(jq -c '.[] | select(.lens == "security")' "$WORK/auth.json")"
-jq -e '.[] | select(.lens == "design") | .reason | test("dsys")' "$WORK/colour.json" >/dev/null \
-  && say ok "a run record names why it ran" || say f "design reason does not name dsys"
+jq -e '.[] | select(.lens == "design") | .reason | test("DESIGN.md")' "$WORK/colour.json" >/dev/null \
+  && say ok "a run record names why it ran" || say f "design reason does not name DESIGN.md"
 jq -e 'all(.[]; has("lens") and has("decision") and has("reason"))' "$WORK/docs.json" >/dev/null \
   && say ok "every record has lens, decision and reason" || say f "a record lacks lens/decision/reason"
 grep -q 'lens=security decision=run' "$LENS_GATE_LOG" \
@@ -146,7 +141,7 @@ grep -q 'lens=security decision=run' "$LENS_GATE_LOG" \
 grep -q '"state": "diff stat:' "$RULES.log" \
   && say ok "the Jev state opens with the diff stat" || say f "Jev state does not carry the diff stat"
 
-echo "--- design gates as today: owned repo with DESIGN.md only ---"
+echo "--- design gates on a DESIGN.md at the root ---"
 g checkout -q colour; not_owned; jev_normal
 gate "$WORK/colour-no.json" --base main
 expect colour-non-owned "$WORK/colour-no.json" design skip
@@ -197,12 +192,12 @@ expect truncated "$WORK/big.json" security offer
 jq -e '.[] | select(.lens == "security") | .reason | test("cut at")' "$WORK/big.json" >/dev/null \
   && say ok "the offer names the truncation" || say f "truncated offer reason does not name the cut"
 
-echo "--- dsys that cannot answer skips design and says why ---"
-g checkout -q colour; rm -f "$DSYS_STATUS"
-gate "$WORK/nodsys.json" --base main
-expect dsys-down "$WORK/nodsys.json" design skip
-jq -e '.[] | select(.lens == "design") | .reason == "dsys status exited 1"' "$WORK/nodsys.json" >/dev/null \
-  && say ok "the skip names the dsys failure" || say f "design reason: $(jq -r '.[] | select(.lens == "design") | .reason' "$WORK/nodsys.json")"
+echo "--- no DESIGN.md skips design and says why ---"
+g checkout -q colour; not_owned
+gate "$WORK/nodesign.json" --base main
+expect no-design "$WORK/nodesign.json" design skip
+jq -e '.[] | select(.lens == "design") | .reason == "no DESIGN.md"' "$WORK/nodesign.json" >/dev/null \
+  && say ok "the skip names the missing file" || say f "design reason: $(jq -r '.[] | select(.lens == "design") | .reason' "$WORK/nodesign.json")"
 
 echo "--- repo mode lifts the diff gates ---"
 g checkout -q main; not_owned; jev_fail

@@ -1,32 +1,30 @@
 # Verification
 
-**The project skill's `verify.md` owns what verification means; do not re-derive its
+**The repo's `project-verify` skill owns what verification means; do not re-derive its
 method.** Driving a surface is never generic — a TUI needs a headless frame dump, an iOS app a
 simulator, a Worker a request against a dev server — so the recipe lives per repo, in
-`<repo>/.claude/skills/project/verify.md`, and this session reads it as a file and
+`<repo>/.claude/skills/project-verify/`, and this session calls `Skill(project-verify)` and
 follows it.
 
-**Where the recipe comes from, and why it's read as a file rather than invoked as a skill.**
-The bundled `verify` skill is `disable-model-invocation`, so no agent can load it:
-`Skill(verify)` returns `Skill verify cannot be used with Skill tool ... Ask the user to run
-/verify themselves`. So this session reads `project/verify.md` as a file and follows it,
-and writes one when the repo has none. Do not hand-roll the check, do not substitute a test
-run, and do not log a papercut about the bundled skill being unreachable — that is the tool
-working as designed.
+**Why it has its own name.** The bundled `verify` skill is `disable-model-invocation`, so no
+agent can load it: `Skill(verify)` returns `Skill verify cannot be used with Skill tool ... Ask
+the user to run /verify themselves`. Do not hand-roll the check, do not substitute a test run,
+and do not log a papercut about the bundled skill being unreachable — that is the tool working
+as designed.
 
-- If `<repo>/.claude/skills/project/verify.md` exists, that is the recipe running. Trust
+- If `<repo>/.claude/skills/project-verify/SKILL.md` exists, that is the recipe running. Trust
   it over anything generic.
-- If not, write it — from this repo's `README.md`, `CLAUDE.md` and `admin.toml`, naming *this*
-  repo's real surface and commands. A recipe that would read the same in any repo is the weak
-  check to avoid, not a bootstrap.
-- **Never name it `verify`.** That collides with the bundled skill, which is why the project
-  skill has its own name.
-- **Keep it out of git.** Add `.claude/skills/project` to `<repo>/.git/info/exclude` —
-  never `.gitignore`, which is committed. If you find it tracked, untrack it.
+- If not, write it per `project-skills` — from this repo's `README.md`, `CLAUDE.md` and
+  `admin.toml`, naming *this* repo's real surface and commands. A recipe that would read the
+  same in any repo is the weak check to avoid, not a bootstrap.
+- **Never name it `verify`.** That collides with the bundled skill.
+- **Tracked or not follows the repo** (`project-skills` §Create): committed where
+  `.claude/skills/` is tracked, listed in `<repo>/.git/info/exclude` where `.claude/` is not —
+  never `.gitignore`.
 
 **A surface the item names, and that is not listening, is `BLOCKED`, not `SKIP`.** Before
-reading `project/verify.md`, check every `host:port` and `http(s)://` URL named in the
-item body, its acceptance criteria, and that file. A closed one halts immediately rather than
+loading `project-verify`, check every `host:port` and `http(s)://` URL named in the
+item body, its acceptance criteria, and that skill. A closed one halts immediately rather than
 being discovered partway through. `SKIP` reads like a soft pass and nothing forces the
 environment up before the next attempt, so it is the wrong verdict here. `SKIP` remains only
 for behaviour that cannot be observed for some other reason — no fixture data, no device —
@@ -39,38 +37,23 @@ on a criterion you could not satisfy, whether the *data* is what is out of line 
 outside the numbering the item defines, a fixture predating the schema, a database filled from
 the constant this item is changing. If it is, name the row and the rule it violates and stop.
 
-## Design-system checks
+## Design checks
 
-A repo governed by `dsys` has a `DESIGN.md` (owned) or a `DESIGN.local.yaml` overlay
-(non-owned). Run `dsys status` first; its `mode`, `DESIGN.md`, `export` and `lint wired` lines
-say which of the checks below exist:
+A repo with a UI surface keeps its design in `<repo>/DESIGN.md` and the procedure in its
+`project-design` skill ([`../project-skills/design.md`](../project-skills/design.md)).
 
-- **Owned repo** (`mode: owned`, `DESIGN.md` present): build-green runs `dsys check --json`
-  and the repo's ESLint with the `eslint.dsys.config.mjs` fragment (`dsys status` reads
-  `lint wired: yes`). At step 1, before the first edit, save `dsys check --json` to
-  `/private/tmp/claude/<repo-slug>/dsys-baseline-<id>.json` (its exit code does not matter; the
-  array is on stdout). At build-green, a record the diff added fails the step; a record already
-  in that baseline does not. Match records on `kind`, `file` and `message` with every digit
-  run removed: `line` moves with edits, and a `theme-unused` message carries a token count
-  that changes when the diff adds a token to that group. A `design.md` lint error stops
-  `dsys check` before its other scans, so a baseline holding one is incomplete: when the diff
-  clears that error, records of kinds the baseline could not report do not fail the step; list
-  them as follow-ups. A repo
-  `bootstrap` just gave a `DESIGN.md` starts with `theme-unused` records for every group the
-  code has not moved onto tokens yet, and those are filed work, not this pass's failure. An
-  ESLint error fails the step; violations recorded by `npx eslint --suppress-all` do not
-  report. `dsys check` covers a design.md
-  lint error, a stale export, a missing implementations entry and colour-token checks; the
-  raw hex class `bg-[#ff0000]` passed it in a fixture run, while the fragment's `shadcn/no-arbitrary-values` rule
-  reported it. Fix the code, or add the missing token or component to
-  `DESIGN.md` in the same commit and run `dsys export` so the generated `@theme` file matches.
-- **Non-owned repo** (`mode: non-owned`): `DESIGN.local.yaml` is an overlay, `DESIGN.md` is
-  not edited, and `dsys check` and `dsys export` are skipped unless `dsys status` says they are
-  available. `lint wired: no` means the ESLint fragment is not installed; report that, never
-  install it.
-- **No `DESIGN.md`** (`DESIGN.md: absent`): none of this runs.
+- **Plan** (step 1): a pass that touches anything a user sees calls `Skill(project-design)` and
+  names, in the plan, the `## Components` entries it reuses and the `## Layout` rule that places
+  each new element. An element no entry covers is a `DESIGN.md` addition in the same commit.
+- **Build green** (step 3): `project-design/tools/lint.sh`. A failure the diff added fails the
+  step; one already failing on the base is listed as a follow-up, never fixed by editing an
+  unrelated surface. Run it on the base first only when it fails on the diff.
+- **Verify** (step 4): `project-design/tools/shots.sh <surface>` for each touched surface, and
+  every PNG it prints is looked at. A state never rendered is an unverified case.
+- **No `project-design` skill and no `DESIGN.md`**: none of this runs; a pass that builds a new
+  UI surface there runs `redesign` step 4's roll first (`SKILL.md` step 1).
 
-A `dsys check` or ESLint-fragment failure is a `FAIL`, not a `BLOCKED`: the diff violates the contract.
+A `lint.sh` failure is a `FAIL`, not a `BLOCKED`: the diff violates the design.
 
 ---
 

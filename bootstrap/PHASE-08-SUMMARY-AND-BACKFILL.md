@@ -20,14 +20,14 @@ Bootstrap result — <project name>
 | docs/CONTEXT.md        | non-standard at ./CONTEXT.md    | migrated + refs updated       |
 | docs/adr/              | non-standard at ./decisions/    | migrated (3 files renumbered) |
 | Issue tracker          | gh ok                           | no-op                         |
-| Design system          | missing                         | DESIGN.md from 3 stylesheets; export + lint wired |
+| Design                 | missing                         | DESIGN.md from 3 stylesheets; lint clean |
 ```
 
 Note deferred decisions:
 
 - *"No issue tracker — the scope ladder has nowhere to live. Run `bd init`."* Say this when Phase 05 ended with no backend; never write a roadmap instead.
-- Phase 07's follow-up rows — competing design sources, `theme-unused` groups and other
-  `dsys check` records — each as its own numbered row with the default that phase gives it.
+- Phase 07's follow-up rows — competing design sources, token groups the code does not use,
+  lint errors and dsys leftovers — each as its own numbered row with the default that phase gives it.
   Once the reply settles the slate, each `file` row is filed through `issues file` on the
   Phase 05 backend and each `fix` row is applied, the same way `go` applies every other row.
 

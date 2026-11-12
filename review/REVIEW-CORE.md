@@ -126,7 +126,7 @@ Carry all three into Phase 04. **Settled decisions go to every lens**, intent-ta
 
 ### Phase 03d — Gate the lenses
 
-**[`tool/lens-gate`](tool/lens-gate) decides which lenses run, and nothing else in this skill restates a gate.** Each lens file opens with frontmatter — `run: always | gated | offered` and, for the last two, a `when:` list whose entries must all hold (diff path globs, `dsys status --json` fields, repo mode, a domains-map label, or a Jev yes/no question with probability and confidence floors). The script evaluates every lens in [`axes/`](axes/) and every label lens once, on the scope Phase 01 chose. A label lens is a label's `review.md` in the knowledge base's `ref` directory (`~/Knowledge/ref/<label>/review.md`, private labels under `local/`); `lens-gate` reads those files directly. A reader with no knowledge base has no label lenses, and the gate runs the axis lenses alone with no message:
+**[`tool/lens-gate`](tool/lens-gate) decides which lenses run, and nothing else in this skill restates a gate.** Each lens file opens with frontmatter — `run: always | gated | offered` and, for the last two, a `when:` list whose entries must all hold (diff path globs, files present at the repo root, repo mode, a domains-map label, or a Jev yes/no question with probability and confidence floors). The script evaluates every lens in [`axes/`](axes/) and every label lens once, on the scope Phase 01 chose. A label lens is a label's `review.md` in the knowledge base's `ref` directory (`~/Knowledge/ref/<label>/review.md`, private labels under `local/`); `lens-gate` reads those files directly. A reader with no knowledge base has no label lenses, and the gate runs the axis lenses alone with no message:
 
 ```
 ~/.claude/skills/review/tool/lens-gate --json --base <base>      # branch or PR: <base>...HEAD
@@ -186,7 +186,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/spec.md`](axes/spec.md) — spec compliance (consumes the Phase 03 spec source + `IS_DRAFT`)
 - [`axes/negative-space.md`](axes/negative-space.md) — unmet obligations the diff itself creates
 - [`axes/slop.md`](axes/slop.md) — structure that adds no meaning (comment/helper/type/memo/effect slop, compatibility cruft, diff churn)
-- [`axes/design.md`](axes/design.md) — UI code against the repo's `DESIGN.md` Do's and Don'ts, Named Rules, tokens and `dsys check --json`
+- [`axes/design.md`](axes/design.md) — UI code against the repo's `DESIGN.md` Do's and Don'ts, Named Rules, tokens, Layout, Components and `project-design/tools/lint.sh`
 - [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs, and hand-written code a library, built-in or existing repo function already provides — emits *flags* verified in Phase 04b, not findings
 - [`axes/test-debt.md`](axes/test-debt.md) — churned files with no adjacent test, tests that assert shape instead of behavior, skipped tests
 - [`axes/dependency-debt.md`](axes/dependency-debt.md) — reads the same captured language-tool output as the label lenses, scoring unused packages and duplicate-purpose packages, plus undocumented env vars
@@ -392,7 +392,7 @@ One line naming **which lenses ran, which were gated off, which were offered, an
 Lenses: standards, bug, history, contracts, architecture, spec, negative-space · gated off: security (Jev no, p=0.02), best-practice (Jev no, p=0.00) · failed: none
 ```
 
-- **Gated off** — every `skip` record, with its `reason` (`design: dsys mode='non-owned'`).
+- **Gated off** — every `skip` record, with its `reason` (`design: no DESIGN.md`).
 - **Offered** — every `offer` record and what happened to it: run when accepted (it joins `Lenses`), `offered, declined`, or `offered, not run (unattended)`. Evidence this matters: across 367 findings in 2.5 months of use, `security` produced **one**, and no report says whether that is a clean record or a gate that never opened.
 - **Failed** — any lens whose sub-agent errored or returned nothing. Never fold a dead lens into silence.
 - **Slices (repo mode)** — append the slice names so a reader can see the partition the review actually covered.
@@ -621,7 +621,7 @@ Every issue is tagged `[<axis>(/<subtype>) · T<n> · <P-level>]` — axis (with
 - `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit. Default visual: file tree with `+`/`-` gutters.
 - `negative-space` — from the Negative-space lens (an unmet obligation the diff creates: un-updated caller, unhandled failure path, missing test/validation/observability, unflagged breaking change or migration). Always a design call — surface, never auto-fix; bounded to obligations the diff itself creates. Use **Fix (design call):** framing.
 - `slop` — from the Code slop lens (structure that adds no meaning: comment/helper/type/memo/effect slop, compatibility cruft, diff churn). Rated `P3` — slop doesn't make behavior wrong.
-- `design` — from the Design lens (UI code that breaks a written `DESIGN.md` rule, or a `dsys check --json` entry the diff introduced). The report entry **must quote the cited rule or name the `dsys check` kind**; a design finding with no cited rule is dropped. Never raised in a repo `dsys status --json` does not report as `owned`.
+- `design` — from the Design lens (UI code that breaks a written `DESIGN.md` rule, or a `project-design/tools/lint.sh` failure the diff introduced). The report entry **must quote the cited rule or name the lint rule**; a design finding with no cited rule is dropped. Never raised in a repo with no `DESIGN.md` at its root.
 - `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.
 - `<platform>` (e.g. `apple`) — from the conditional platform lens (Phase 04), when the diff's platform has a label `review.md`. Platform-idiom findings with a concrete cost (deprecation, correctness, accessibility, perf). Scored like any other axis; group under a `### <Platform>` section.
 - `<domain>` (e.g. `game`) — from the conditional domain lens (Phase 04), when a domain marker is in scope and that label has a `review.md`. Mode-specific findings (game-feel, readability, difficulty) with a concrete cost. Scored like any other axis; group under a `### <Domain>` section.

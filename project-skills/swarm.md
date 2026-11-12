@@ -1,6 +1,6 @@
-# The project skill's `swarm.md`
+# The `project-swarm` skill
 
-`<repo>/.claude/skills/project/swarm.md` tells swarm workers how this one project behaves when
+`<repo>/.claude/skills/project-swarm/` tells swarm workers how this one project behaves when
 several of them build and test it at once. It wins over the runtime rules in the `swarm` skill's per-runtime table and the knowledge base, which hold what is true of every project in that runtime.
 *Knowledge base: search it for "<runtime> swarm workers". If you have none, skip this line and don't mention it.*
 It grows when a new heavy process or shared resource lands.
@@ -9,15 +9,15 @@ It grows when a new heavy process or shared resource lands.
 
 | File | Read by | Holds |
 | --- | --- | --- |
-| `swarm.md` | every worker, before its first build or test | the rules below, in prose |
+| `SKILL.md` | every worker, before its first build or test | the rules below, in prose |
 | `swarm.env` | `swarm launch` | `KEY=VALUE` lines exported into each worker. `$MAIN` is the main checkout's path. `SWARM_MAX_WORKERS=<n>` caps the lead's slots |
 | `swarm-settings.json` | `swarm launch` | merged into each worker's `claude --settings`, for example a plugin to turn off |
 
 `swarm launch` reads `swarm.env` and `swarm-settings.json` from the main checkout, so a change
-there reaches the next worker without landing first. Commit them wherever the project skill is
+there reaches the next worker without landing first. Commit them wherever the project skills are
 tracked; they are part of the project.
 
-## What swarm.md answers
+## What project-swarm answers
 
 Write each as a section, with the exact commands. Leave a section out when the answer is "none".
 
@@ -49,5 +49,5 @@ check. A rule the project cannot follow is not support.
 
 ## Audit
 
-Run `swarm check` in the repo, then confirm every command `swarm.md` names still exists and
+Run `swarm check` in the repo, then confirm every command `project-swarm` names still exists and
 every per-worker resource still derives from `$SWARM_WORKER` in the code that binds it.

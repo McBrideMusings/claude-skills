@@ -175,7 +175,7 @@ If `admin.toml` uses `${VAR}`, run `admin env` and tell the user which vars to e
 ### Phase 4: Post-bootstrap files
 
 1. **`.gitignore`** — ensure `tmp/` and `*.local.*` are ignored. Use the glob; don't add literal `CLAUDE.local.md`. (Old generated `./admin` files should be removed, not gitignored.)
-2. **`.claude/skills/read-logs.md`** — create if missing using `references/read-logs-template.md`.
+2. **Project skills** — if `.claude/skills/project-verify/SKILL.md` is missing, run `project-skills`. Its `project-logs` covers the `tmp/<route>.log` files admin writes.
 3. **`CLAUDE.md` (committed)** — if the project has no root `CLAUDE.md`, invoke `/init` first.
 4. **`CLAUDE.local.md` (repo root)** — create/update with the dev-process section (Phase 5). Keep thin: admin-specific dev process and machine overrides only. Root, not `.claude/` — Claude Code only auto-loads a local file at the repo root.
 5. **Project `CLAUDE.md`** — note that `admin.toml` is the source of truth and commands run via `admin <cmd>` (the tool is installed on PATH; nothing about admin is committed, the manifest included).

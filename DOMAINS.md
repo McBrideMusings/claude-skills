@@ -94,11 +94,11 @@ knowledge base. `review` is the exception: `review/tool/lens-gate` reads each `r
 | `diagnose` | `<label>/diagnose.md`, `<label>/profiling.md` (perf) | Phase 04 (Instrument) |
 | `profiling` | `<label>/profiling.md` | after label detect |
 | writing a test | `<label>/testing.md` | choosing the seam and harness for a test |
-| project `verify.md` | `<label>/testing.md` | when a repo's own `.claude/skills/project/verify.md` drives the change |
+| `project-verify` | `<label>/testing.md` | when a repo's own `.claude/skills/project-verify/` drives the change |
 
 The built-in `verify`/`run` skills are compiled into the Claude Code binary and cannot read this
-store directly. A repo's own `project` skill (written by `project-skills`) can search the knowledge
-base, in its `verify.md`, for `<label> testing` to get stack-specific drive/harness knowledge.
+store directly. A repo's own `project-verify` skill (written by `project-skills`) can search the knowledge
+base for `<label> testing` to get stack-specific drive/harness knowledge.
 
 The store also feeds planning skills, not just engines. A `design.md` page holds design-time critique
 lenses (for `game`: MDA, and Burgun's toy/puzzle/contest/game); `grill-me`, `issues organize`, `issues iron-out`, and

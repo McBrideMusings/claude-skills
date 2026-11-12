@@ -12,8 +12,8 @@ reached by clicking, or a real component's response. That climbs to [UI.md](UI.m
 
 1. **Scope, recon, directions** — [UI.md](UI.md) Phases 01–03 apply unchanged: one piece of UI,
    the project's tokens, a named axis per variant, no two variants at the same axis position.
-2. **Load the project's real CSS.** Paste the `dsys export` declarations into the fragment's
-   `<style>` with `@theme` renamed `:root`, and pass the project's own stylesheet with
+2. **Load the project's real CSS.** Paste the project's tokens into the fragment's `<style>` as
+   [UI.md](UI.md) Phase 02 says, and pass the project's own stylesheet with
    `--extra-css <abs.css>` when it exists. A mockup inlines no palette, type or reset of its own.
 3. **Write the fragment** to `/private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.body.html`:
    one `<template data-variant="Name" data-state="State">` per cell. A variant is a direction

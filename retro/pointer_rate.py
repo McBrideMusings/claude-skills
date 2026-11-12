@@ -47,7 +47,7 @@ Measurement traps this script already avoids -- do not hand-roll around them:
      each rate's denominator mostly outside what the rate is about.
   6. A skill loads three ways: a Skill call (`"skill":"name"`, or `"plugin:name"`
      for a scoped one), a typed `/name`, and a Read of its SKILL.md -- `implement`
-     reads a project skill as a file. `--fires` counts all three with
+     reads a project skill's SKILL.md as a file. `--fires` counts all three with
      load-pattern.ere.
   7. A cold target counts only when a Read, Grep or Glob call names it, or a Bash command
      does. Matched against the whole transcript, it hits hook-injected text and tool output
@@ -72,7 +72,8 @@ MIN_FIRES = 20          # below this a warm rate is noise
 MIN_BYTES = 2000
 # Skills every project carries in its own .claude/skills/ (CLAUDE.md requires them), so
 # model_invoked_skills, which reads only the global catalog, never sees them.
-PROJECT_SKILLS = ("project",)
+PROJECT_SKILLS = ("project-verify", "project-perf", "project-logs", "project-swarm",
+                  "project-design", "project")  # "project": repos not yet migrated
 
 # Cold targets: what CLAUDE.md's Knowledge map points at.
 COLD = {

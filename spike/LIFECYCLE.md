@@ -8,7 +8,7 @@ The **answer** is the only thing worth keeping. Record it in the place that owns
 
 | The answer is | It goes in |
 | --- | --- |
-| A look: a token, a type step, a component rule | `DESIGN.md`, then `dsys export` |
+| A look: a token, a type step, a component rule, a layout rule | `DESIGN.md`, and the stack's token file where it has one |
 | A winning image comp or mockup screenshot | `dsys refs add` ([COMP.md](COMP.md)), cited by the tickets |
 | A decision with a reason | an ADR in `docs/adr/` |
 | Work to build | tickets ([below](#tickets-from-a-spike)) |
@@ -39,7 +39,7 @@ its behaviour in the ticket's acceptance criteria.
 ## A repo that still has `docs/spikes/`
 
 Such a directory holds prototypes this skill no longer writes or maintains. Remove them, and fold
-what they decided into `DESIGN.md` first (`dsys init --from-code` drafts it from the code; the
+what they decided into `DESIGN.md` first (written per `../project-skills/design.md`; the
 prototype's own notes supply the decisions the code does not show). Ideally purge the directory from
 git history too, so old builds and screenshots stop appearing in clones: `git filter-repo --path
 docs/spikes --invert-paths` rewrites every commit and needs a force-push, so ask the user before

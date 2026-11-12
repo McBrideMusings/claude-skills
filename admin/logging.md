@@ -181,6 +181,6 @@ Discovery files live at `/tmp/admin-project-tool/<pid>.json`; stale ones (dead P
 
 ---
 
-## read-logs.md template
+## Where sessions read these logs
 
-If `.claude/skills/read-logs.md` is missing in the project, copy the body from `references/read-logs-template.md` (in this skill directory) into the new file.
+The repo's `project-logs` skill (written by `project-skills`) names the `tmp/<route>.log` files and their `.log.1`–`.log.3` rotations for the dev runtime.

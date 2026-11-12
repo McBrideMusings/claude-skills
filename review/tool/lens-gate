@@ -12,7 +12,7 @@ knowledge base the gate evaluates the axes alone:
     run: always | gated | offered
     when:                        # every entry must hold; omitted for run: always
       - paths: ["**/*.css"]      # the diff touches a path matching any glob
-      - dsys: {mode: owned, designMd: true}   # fields of `dsys status --json`
+      - files: [DESIGN.md]       # every listed path exists, relative to the repo root
       - repo-mode: true          # the review is (true) or is not (false) a repo-mode review
       - labels: [web]            # a domains-map label resolved for the diff's paths
       - jev: {noul: "<question>", min_p: 0.6, min_confidence: 0.5, state: diff-stat+subjects}
@@ -92,8 +92,10 @@ def frontmatter(path):
         if not isinstance(entry, dict) or len(entry) != 1:
             raise GateError(f"{path}: each when: entry is one key, got {entry!r}")
         (kind, val), = entry.items()
-        if kind not in ("paths", "dsys", "repo-mode", "labels", "jev"):
+        if kind not in ("paths", "files", "repo-mode", "labels", "jev"):
             raise GateError(f"{path}: unknown when: entry {kind!r}")
+        if kind == "files" and not (isinstance(val, list) and val and all(isinstance(v, str) for v in val)):
+            raise GateError(f"{path}: files takes a non-empty list of paths")
         if kind == "jev":
             missing = {"noul", "min_p", "min_confidence", "state"} - set(val)
             if missing:
@@ -122,22 +124,8 @@ class Scope:
             self.range = [f"{base}...HEAD"]
             self.paths = git(self.repo, "diff", "--name-only", *self.range).splitlines()
         self.base = base
-        self._dsys = None
         self._labels = None
         self._state = {}
-
-    def dsys(self):
-        if self._dsys is None:
-            try:
-                out = subprocess.run(["dsys", "status", "--json"], cwd=self.repo,
-                                     capture_output=True, text=True)
-                self._dsys = (json.loads(out.stdout) if out.returncode == 0
-                              else {"_error": f"dsys status exited {out.returncode}"})
-            except FileNotFoundError:
-                self._dsys = {"_error": "dsys not installed"}
-            except json.JSONDecodeError:
-                self._dsys = {"_error": "dsys status printed no JSON"}
-        return self._dsys
 
     def labels(self):
         if self._labels is None:
@@ -255,14 +243,11 @@ def check(kind, val, scope):
             more = f" +{len(hits) - 3}" if len(hits) > 3 else ""
             return True, "touches " + ", ".join(hits[:3]) + more, {}
         return False, "diff touches no " + " ".join(val), {}
-    if kind == "dsys":
-        st = scope.dsys()
-        if "_error" in st:
-            return False, st["_error"], {}
-        bad = [f"{k}={st.get(k)!r}" for k, v in val.items() if st.get(k) != v]
-        if bad:
-            return False, "dsys " + ", ".join(bad), {}
-        return True, "dsys " + ", ".join(f"{k}={v}" for k, v in val.items()), {}
+    if kind == "files":
+        missing = [f for f in val if not (scope.repo / f).exists()]
+        if missing:
+            return False, "no " + ", ".join(missing), {}
+        return True, "has " + ", ".join(val), {}
     if kind == "labels":
         have = scope.labels() & set(val)
         if have:

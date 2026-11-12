@@ -103,7 +103,7 @@ tool generates the card, the widgets and the URL persistence. **Write no panel c
 
 ```html
 <style>
-  /* the host project's tokens: the `dsys export` declarations, with @theme renamed :root */
+  /* the host project's tokens: its token file (or DESIGN.md's front matter), as :root */
   :root { --brand: #2f6df6; --radius-card: 10px; }
 </style>
 

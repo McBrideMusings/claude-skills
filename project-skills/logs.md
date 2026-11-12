@@ -1,6 +1,6 @@
-# The project skill's `logs.md`
+# The `project-logs` skill
 
-`<repo>/.claude/skills/project/logs.md` lets a session answer "last night the container did
+`<repo>/.claude/skills/project-logs/` lets a session answer "last night the container did
 X", or "something weird just happened on my phone", by fetching the lines itself: no device in
 hand, no log pasted in. It is the project's production logging strategy, written down where
 the session that needs it will read it.
@@ -8,7 +8,7 @@ the session that needs it will read it.
 The standards it applies: what a line carries (one line per event, an ISO 8601 timestamp, a category, raw values, never a credential), the local file in the platform's log directory, and, for getting lines off the device and reading them back, one queryable store labelled by app and device.
 *Knowledge base: search it for "observability checklist" and "production logs". If you have none, skip this line and don't mention it.*
 
-## What logs.md answers
+## What project-logs answers
 
 One section per runtime the project really runs in — dev on this Mac, a Mac app on the
 user's machines, an iOS app on a phone, a server process, a Docker container, a CLI. For each:
@@ -32,6 +32,12 @@ user's machines, an iOS app on a phone, a server process, a Docker container, a 
 6. **From a line to a fix.** Which state query or verify drive reproduces what a line shows,
    and that the path from there is `diagnose`, then an `implement` pass, then shipping as the
    project ships.
+
+**A repo run through `admin`** writes each command's output to `tmp/<route>.log` (`admin dev ios` →
+`tmp/dev-ios.log`), with the previous runs at `.log.1`–`.log.3`. Its dev section names those
+files and how to read them: the top 80 lines for a build that never launched, the bottom 80 for
+a run that launched and misbehaved, `.log.1` when the current file is empty or unrelated, the whole
+file only when the targeted reads fall short.
 
 A container counts as shipped only when a Loki query for its label returns its lines: a collector
 running on the host is not proof, because its allowlist may omit the container.

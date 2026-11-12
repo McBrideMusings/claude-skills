@@ -38,12 +38,13 @@ precisely so nothing competes with the design being judged.
 
 Make it look native to the product without importing anything from it:
 
-- **Load the exported token file.** `dsys export` writes the project's Tailwind v4 `@theme` file
-  from `DESIGN.md`; paste its declarations into the fragment's `<style>` with the `@theme` at-rule
-  renamed `:root` (browsers ignore `@theme`, and everything inside it is a plain custom property).
-  The tool rejects any network request, so the file is inlined, not linked. Re-run `dsys export`
-  and re-paste rather than editing a token by hand. `dsys export` runs in owned repos only; a repo with no `DESIGN.md`, or one that is not owned, has
-  no export: use the restrained default in Phase 02.
+- **Load the project's tokens.** Paste the stack's token file into the fragment's `<style>`: its
+  CSS custom properties, or its Tailwind v4 `@theme` block with the at-rule renamed `:root`
+  (browsers ignore `@theme`, and everything inside it is a plain custom property). A stack with no
+  CSS token file (SwiftUI, GPUI, a game) gets `DESIGN.md`'s front-matter values written as `:root`
+  custom properties. The tool rejects any network request, so the tokens are inlined, not linked;
+  re-copy rather than editing a token by hand. A repo with no `DESIGN.md` and no token file: use
+  the restrained default in Phase 02.
 - **Tailwind projects** — the browser build is a CDN `<script>`, and the tool rejects any network
   request, because a prototype that only renders online isn't self-contained. Use the exported
   tokens as custom properties in plain classes, or copy the handful of utilities a variant actually
@@ -89,7 +90,7 @@ diverges from what is already there instead of repeating it, and build over the 
 
 Before designing anything, map the ground the variants stand on:
 
-- **Tokens** — colours, radii, spacing, fonts, easing/duration variables: the `dsys export` file, inlined as `:root`.
+- **Tokens** — colours, radii, spacing, fonts, easing/duration variables: the stack's token file, or `DESIGN.md`'s front matter, inlined as `:root`.
 - **Personality** — playful consumer app or crisp dashboard? This bounds how far the boldest variant
   may go.
 - **Context** — what the piece renders against: background, neighbours, sizes.

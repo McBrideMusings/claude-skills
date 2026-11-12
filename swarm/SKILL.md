@@ -51,14 +51,14 @@ names and every worker's brief points at:
 | Layer | Where | Holds |
 | --- | --- | --- |
 | Runtime | A per-runtime rule table inside the `swarm` script, picked by marker files (`Cargo.toml` → rust, `go.mod` → go, `pyproject.toml` → python, `package.json` → web, `Package.swift` or an Xcode project → apple) | the rule every worker in that runtime follows (one or two sentences each, printed in the launch preview and written into the worker brief with a knowledge base search line, "<runtime> swarm workers"), plus the defaults `swarm launch` sets — for rust, a `CARGO_TARGET_DIR` per worktree cloned from the main checkout's, and rust-analyzer off |
-| Project | `<repo>/.claude/skills/project/swarm.md` | this project's heavy commands, cheap check, shared caches, per-worker resources, queues, slot cap. Wins over the runtime layer |
+| Project | `<repo>/.claude/skills/project-swarm/SKILL.md` | this project's heavy commands, cheap check, shared caches, per-worker resources, queues, slot cap. Wins over the runtime layer |
 
 ## Project support
 
-Every project with a build or test step keeps a project skill, and its `swarm.md` is this
+Every project with a build or test step keeps project skills, and its `project-swarm` is this
 layer. `swarm check` exits 4 without one. Write it then, before any worker starts, with the
 [`project-skills`](../project-skills/SKILL.md) skill ([`swarm.md`](../project-skills/swarm.md)
-says what the section answers). Commit it on a branch and land it with the swarm's results;
+says what it answers). Commit it on a branch and land it with the swarm's results;
 `swarm launch` reads it from the main checkout, so workers see it before it lands.
 
 ## 1. Gate
@@ -72,7 +72,7 @@ continues as `implement <id> auto` for the top bead `next-work` ranked and says 
 
 It refuses outside herdr and Wheel, on a repo `repo-tier` calls `unlisted`, and when `bd` or
 the Claude login is broken. A refusal ends the run; report it. Exit 4 is the one exception:
-write the project skill's `swarm.md` (§ Project support) and check again. It prints the
+write the repo's `project-swarm` skill (§ Project support) and check again. It prints the
 runtimes it found, their pages, the environment and settings every worker gets, and the
 landing mode — put those in the first status line.
 
@@ -90,7 +90,7 @@ Where workers run depends on the multiplexer the lead is in (herdr wins when bot
 | herdr | a child space nested under the repo's space | opens the repo's space when none is open; `launch` refuses until it exists |
 | Wheel | a terminal pane in the background space `swarm <repo>` of the Wheel session `Swarm` (made when absent): the first worker fills the space, later ones stack under the newest, and a window on the lead's session never lists them. `swarm close` closes the pane | nothing; Wheel tracks no terminal agent's state, so `dispatch/wheel-agent` merges hooks into the worker's `--settings` that write `working`, `blocked` or `idle` to `<worktree git dir>/wheel-agent/state` |
 
-**Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in the project skill's `swarm.env` caps
+**Slots.** `<n>` defaults to 3. A `SWARM_MAX_WORKERS` in `project-swarm/swarm.env` caps
 it; say so when it lowers the user's number.
 
 **Quota.** `check` and every `launch` read the usage of the Claude profile a worker will run
@@ -214,8 +214,8 @@ SELF-LAND in self-land mode (sign-off mode sets `SWARM_SIGNOFF=1` in the worker'
 instead), writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
 worker is idle or done (under Wheel, until it is idle with its outfile written: a worker waiting
 on its own subagent reads idle too). The worker starts with `SWARM_WORKER=<bead-id>`, the runtime and project
-environment, and the merged `--settings`. Its brief tells it to read the project
-skill's `swarm.md` and the runtime pages before its first build, and to call builds and
+environment, and the merged `--settings`. Its brief tells it to load the
+`project-swarm` skill and read the runtime pages before its first build, and to call builds and
 tests by their usual name so Turnstile queues them. stdout is one line: bead, exit code, outfile, worktree.
 `--dry-run` prints the environment, settings and brief and creates nothing.
 
@@ -262,13 +262,13 @@ away unread.
    `in_progress`. A report missing any of the three is a failed worker. Leave its space or pane
    open until the user answers its package; skip steps 4 and 5 for it.
 3. Apply its `## Shared-file changes`, if the report has any. Workers never edit a file under
-   `.claude/` that is a symlink to the main checkout — the `project` skill and other untracked local
+   `.claude/` that is a symlink to the main checkout — the `project-*` skills and other untracked local
    skills — because every worker shares it. Make each change in the main checkout, where the
    path points, after checking it still fits what landed. Two workers' changes to one file are
    merged here, by hand, in landing order. `swarm log applied <id> "<path>"` for each.
-4. Measure what landed. When the repo's project skill has a `perf.md`, run each scenario it
+4. Measure what landed. When the repo has a `project-perf` skill, run each scenario it
    names for the landed diff (`git -C <repo> show --stat <sha>`), in the main checkout, and
-   print its table. A limit over, after `perf.md`'s one rerun, is a P1 bug filed with
+   print its table. A limit over, after `project-perf`'s one rerun, is a P1 bug filed with
    `issues file` naming `<sha>`, the bead and the table, in scope so the next pick takes it. A
    cost note the worker's report left unfixed (work per redraw, keystroke, frame or request; a
    retry or poll; work that grows with rows, spaces or accounts) is filed the same way at P2,

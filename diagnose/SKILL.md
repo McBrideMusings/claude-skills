@@ -5,7 +5,7 @@ description: "Disciplined diagnosis loop for hard bugs and performance regressio
 
 # Diagnose
 
-When the user says something happened — on their phone, last night, in a container — fetch the lines with the project skill's `logs.md` command; never ask them to paste a log or hand over the device.
+When the user says something happened — on their phone, last night, in a container — fetch the lines with the repo's `project-logs` skill (`Skill(project-logs)`) and its command; never ask them to paste a log or hand over the device.
 
 A discipline for hard bugs. Skip phases only when explicitly justified.
 

@@ -1,10 +1,8 @@
 # Design lens fixture
 
-A web-file-manager-shaped `DESIGN.md` and a UI diff that breaks it. `dsys` finds the repo root
-from git, so set up a scratch repo first: `git init`, `git remote add origin
-git@github.com:McBrideMusings/<name>.git` (an owned remote), and copy `DESIGN.md` into its root.
-`dsys status --json` there reads `mode: "owned"`, `designMd: true`. Then run the
-[`design` lens](../../axes/design.md) over `ui.diff`.
+A web-file-manager-shaped `DESIGN.md` and a UI diff that breaks it. Set up a scratch repo
+first: `git init` and copy `DESIGN.md` into its root, which is what the lens gates on
+(`files: [DESIGN.md]`). Then run the [`design` lens](../../axes/design.md) over `ui.diff`.
 
 The lens passes when it reports both of these, each quoting the rule:
 

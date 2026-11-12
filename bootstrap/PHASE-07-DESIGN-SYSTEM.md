@@ -1,100 +1,64 @@
-# Phase 07 — Design System
+# Phase 07 — Design
 
-A web app's design lives in one hand-edited file, `DESIGN.md`, which `dsys` exports to a
-Tailwind v4 `@theme` file and checks. This phase reconstructs `DESIGN.md` from the app's own
-CSS when it is missing, wires the export and the ESLint fragment, and turns everything still
-wrong into follow-up rows for the Phase 08 slate. Reference for every command:
-`<dsys checkout>/docs/README.md`.
-
-Run every `dsys` command from the repo root. dsys picks the app folder from the current
-directory, so running it from a subfolder changes which `components.json` it uses.
+A repo with a UI surface keeps every design decision in one hand-edited file, `DESIGN.md` at
+its root (Google's DESIGN.md format), and the procedure for working against it in its
+`project-design` skill. This phase writes `DESIGN.md` when it is missing, audits it when it is
+present, and turns what is still wrong into follow-up rows for the Phase 08 slate. How to write
+both: [`../project-skills/design.md`](../project-skills/design.md).
 
 ## Gate
 
 This gate is the only place that decides whether the phase runs; Phase 01 runs it too, to fill
 its row.
 
-1. **Web UI.** A `package.json` outside `node_modules/`, `docs/` and `.vitepress/` whose folder
-   holds a `components.json`, a `tailwind.config.*`, a `tailwindcss` dependency, or a
-   `.css`/`.scss` file under `src/`, `app/` or `styles/`. None → row `n/a — no web UI`, phase
-   ends. A docs site's theme CSS does not count.
-2. **dsys.** `command -v dsys` fails → row `dsys not installed`, phase ends.
-3. **State.** `dsys status --json`. Its `mode`, `designMd`, `export.freshness` and `lintWired`
-   fields pick the branch below.
+1. **UI surface.** Any of: a `package.json` outside `node_modules/`, `docs/` and `.vitepress/`
+   whose folder holds a `components.json`, a `tailwind.config.*`, a `tailwindcss` dependency,
+   or a `.css`/`.scss` file under `src/`, `app/` or `styles/`; SwiftUI or AppKit/UIKit views
+   (`import SwiftUI`, `NSView`, `UIView` under the source tree); a native UI crate (`gpui`,
+   `egui`, `iced`, `ratatui`) in `Cargo.toml`; a game engine project with a HUD or menus. None →
+   row `n/a — no UI surface`, phase ends. A docs site's theme CSS does not count.
+2. **Ownership.** `~/.claude/tools/repo-tier <repo>`. Anything but `owned` → write nothing:
+   `DESIGN.md` belongs to the repo's owners. Row `<tier>`, plus whether a `DESIGN.md` exists.
 
-## Non-owned repo (`mode: non-owned`)
+## Owned repo, no `DESIGN.md` — write it
 
-Write nothing: `DESIGN.md` belongs to the repo's owners, and `dsys export` and
-`dsys lint-config` refuse there. Row `non-owned`, plus whatever `status` reported.
-
-## Owned repo, no `DESIGN.md` — reconstruct
-
-1. `dsys init --from-code --json`. It writes `DESIGN.md` from the colours, fonts, radii and
-   spacing in the repo's CSS and `tailwind.config.*`, folding near-duplicate colours together.
-   Keep its JSON: `sources` (what it read), `competing` (spec files, hand-kept token files and
-   handoff or prototype folders it did **not** read), `unread` (Sass/Less it cannot parse) and
-   `appRoot` (the app folder it chose, `null` for the repo root).
-   - Exit 1 naming two or more `components.json` folders is a judgement call: ask which folder
-     is the app, as an options question, then rerun with `--app-root <folder>`.
-2. `dsys export` — writes `<appRoot>/src/design.generated.css`.
-3. **Wire the export.** In the stylesheet that imports Tailwind v4 (`@import "tailwindcss"` or
-   `@import "tailwindcss/theme.css"`), add an `@import` of the generated file on the line after
-   that import. Compute its path relative to that stylesheet: `./design.generated.css` from
-   `src/index.css`, `../src/design.generated.css` from `app/globals.css`. No such stylesheet
-   means the app is not on Tailwind v4 and nothing reads the export: write no import and carry
-   a follow-up row saying so.
-4. **ESLint fragment** — only when `components.json` names a ui folder and the app folder has
-   an `eslint.config.*`:
-   - `dsys lint-config` writes `<appRoot>/eslint.dsys.config.mjs`. When it names packages the
-     repo has not installed, run the `npm install --save-dev …` command it prints, in the app
-     folder.
-   - Import the fragment in that `eslint.config.*` and spread it into the exported array, then
-     confirm `dsys status --json` reads `"lintWired": true`.
-   - `npx eslint --suppress-all` in the app folder records the violations the code already
-     has, so the gate starts at zero.
-
-   No `components.json` ui folder or no ESLint config: skip the fragment and say which in the row.
-5. `dsys check --json`. A reconstruction normally leaves `theme-unused` errors: the tokens
-   carry the app's values, but the code still writes the raw values (`#1a1c1e`, not
-   `bg-primary`), so no group is read yet. That is the expected starting state, not a failure of
-   this phase. `implement` fails a pass only on records its diff adds
-   ([`../implement/VERDICTS.md`](../implement/VERDICTS.md) §Design-system checks), so these do
-   not block unrelated work.
+1. Write `DESIGN.md` per [`../project-skills/design.md`](../project-skills/design.md)
+   §Writing it: values from the code, Layout and Components from the running app, the Overview
+   drafted from screenshots.
+2. Point the stack's token file at the same values where the stack has one (CSS custom
+   properties or a Tailwind v4 `@theme` block, an asset catalog, a theme struct). Hand-written,
+   in the same commit; there is no generated file.
+3. `npx --yes @google/design.md@0.4.0 lint DESIGN.md`. An `error` finding is fixed now.
+4. When the repo has project skills but no `project-design`, write it per the same page.
 
 ## Owned repo, `DESIGN.md` present — audit
 
-Regenerate what dsys generates; report the rest.
-
-- `export.freshness` `missing` or `stale`, or an `export-stale`/`export-missing` record →
-  `dsys export` (the file is generated; rewriting it loses nothing), then wire it as in step 3
-  when no stylesheet imports it. `unknown` means `DESIGN.md` has a lint error; `check` reports
-  it, and it becomes a row.
-- A `lint-config-stale` record → `dsys lint-config`.
-- `lintWired: false` with a `components.json` ui folder and an `eslint.config.*` → step 4.
-- Rerun `dsys check --json`; the records left become follow-up rows.
+Run [`../project-skills/design.md`](../project-skills/design.md) §Audit and report what it
+finds. A `DESIGN.md` written for dsys (front matter with `appRoot:` or `implementations:`,
+an imported `design.generated.css`, an `eslint.dsys.config.mjs`) keeps its tokens and prose;
+the dsys-only keys, the generated file and the fragment become one follow-up row.
 
 ## Follow-up rows for Phase 08
 
 Each becomes a row on Phase 08's slate, never a file and never a fix made here. Rows use the
 slate's three words; `[file]` files the row through `issues file` on the Phase 05 backend.
 
-- **One row per `competing` path**, default `[skip]` (keep it as it is): the path and what it
-  holds (a spec, a token file, a prototype folder). `fix` merges its values into `DESIGN.md`
-  by hand now, then `dsys export`; `file` files "merge or retire <path>". Its values are not
-  in `DESIGN.md` until one of those happens. Deleting it is the user's call, never a default.
-- **One row per `theme-unused` group**, default `[file]`: "move the `<group>` group onto
-  tokens", naming a file that still writes one of that group's values (grep the app folder for
-  a value from the group in `DESIGN.md`; dsys does not report which file).
-- **One row per other `error` record**, default `[file]`, with its `kind`, `file` and message.
-- **`warning` records**, one row listing them, default `[skip]`: they leave `check` at exit 0.
-- **`unread` stylesheets**, one row, default `[file]`: their values are not in `DESIGN.md`.
-- **No Tailwind v4 entry stylesheet**, one row, default `[file]`: the export is unread until
-  the app moves to Tailwind v4.
+- **One row per competing design source** — a spec, a hand-kept token file, a handoff or
+  prototype folder whose values `DESIGN.md` does not hold — default `[skip]`. `fix` merges its
+  values into `DESIGN.md` now; `file` files "merge or retire <path>". Deleting it is the user's
+  call, never a default.
+- **One row per token group the code does not use yet** (the code writes raw values where
+  `DESIGN.md` has tokens), default `[file]`: "move the `<group>` group onto tokens", naming a
+  file that still writes one of its values.
+- **One row per lint `error`**, default `[file]`.
+- **dsys leftovers**, one row, default `[fix]`: remove the dsys-only front-matter keys, the
+  generated export and its import, and the ESLint fragment, after copying the tokens into the
+  stack's own token file.
 
 ## Row in the result table
 
 ```
-| Design system | missing | DESIGN.md from 3 stylesheets; export wired in src/index.css; lint wired; 4 theme-unused, 2 competing |
+| Design | missing | DESIGN.md from 3 stylesheets and the running app; tokens in src/theme.css; lint clean |
 ```
 
 Then proceed to [PHASE-08-SUMMARY-AND-BACKFILL.md](PHASE-08-SUMMARY-AND-BACKFILL.md).
