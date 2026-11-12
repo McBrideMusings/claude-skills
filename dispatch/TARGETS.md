@@ -213,7 +213,7 @@ fire-and-forget dispatch, the dispatcher for a report-back one. Never the worker
 Inside herdr that is `herdr worktree remove --workspace <id> --force` against the worker's
 space; the herdr server performs the deletion, so nothing loses its footing. A worktree
 that outlives its landing is collected anyway: `tools/git-sweep.sh`, run
-daily from `hooks/daily-git-sweep.sh`, collects branches proven merged (reachable from the
+detached after every `tools/land` push, collects branches proven merged (reachable from the
 default branch, or a `gh`-confirmed squash-merge) along with any worktree still holding them.
 A SELF-LAND dispatch lands from inside its own worktree and never merges in the primary
 checkout: `~/.claude/tools/land <worktree>`, for any owned repo including `~/.claude` itself.
