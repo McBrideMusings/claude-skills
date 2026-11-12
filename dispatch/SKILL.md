@@ -17,9 +17,9 @@ difference in the prompt the consuming skill writes.
 
 > ## Every vendor-target call runs through `dispatch exec`
 >
-> `"$HOME/.claude/skills/dispatch/dispatch" exec --job <job> [--headless] <prompt-file> <outfile>` is the only correct invocation — windowed (default) or `--headless`, both go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind the job's agent list so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
+> `"$HOME/.claude/skills/dispatch/dispatch" exec --job <job> [--report-back|--headless] <prompt-file> [<outfile>]` is the only correct invocation — handed off (default), `--report-back` or `--headless`, all go through the router. It is the *only* thing that (1) opens the **visible Terminal.app window** the user watches to validate the target's process live, (2) enables the in-sandbox network access the agent needs, (3) with `--report-back`, writes the `/tmp/<slug>-dispatch.md` output the skill reads back, and (4) hides the vendor behind the job's agent list so billing/profile selection stays correct. Calling a vendor binary directly runs it headless in the background with no window, silently defeating all four. (The resolver internals below are the *one* place a binary name legitimately appears — everywhere else, route through `dispatch`.)
 >
-> **Who reads the outfile depends on the mode.** In a **fire-and-forget** dispatch (the user asked for the `workspace` or `window` run) the caller never reads the outfile or watches the run. In a **report-back** dispatch the caller waits, reads the outfile and verifies the result (see [TARGETS.md](TARGETS.md) § Who feeds the result back). The check and the read-back below apply to report-back calls, such as `review dual`.
+> **The mode is the flag.** With no flag, `exec` starts the worker on the brief as written and returns: the worker is the user's, and there is no outfile. `--report-back` blocks until the worker finishes and puts its answer in `<outfile>` for the caller (see [TARGETS.md](TARGETS.md) § Who feeds the result back). The check and the read-back below apply to report-back calls, such as `review dual`.
 >
 > **Caller-side check:** trust a target's result only when the router-owned outfile (`/tmp/<slug>-dispatch.md`) exists at the path the router reported. Its absence means the router was bypassed or the run failed — don't proceed as if it succeeded.
 
@@ -72,14 +72,18 @@ dispatch check [<sel>]
       agent, with no <sel> — is authenticated. exit 0 = ready, nonzero + message.
     → this IS the health gate — run it first; halt the skill on nonzero.
 
-dispatch exec <sel> [--headless] [--name <name>] <prompt-file> <outfile>
-    → run the picked agent with the prompt in <prompt-file>; its answer lands in
-      <outfile>. Blocks until the agent finishes, then returns. There is no "review" verb —
-      a review is just an exec whose prompt asks for a review.
+dispatch exec <sel> [--name <name>] <prompt-file>
+    → start the picked agent on <prompt-file>, unchanged, in a visible surface, and return
+      once it has the brief. The worker is handed off: the user runs it from its pane, and
+      nothing here waits on it or reads it back.
+dispatch exec <sel> --report-back [--name <name>] <prompt-file> <outfile>
+    → run the picked agent with the prompt; its answer lands in <outfile>. Blocks until the
+      agent finishes, then returns. There is no "review" verb — a review is just an exec
+      whose prompt asks for a review.
     → the surface is resolved, not chosen: a live agent as a `workspace` when we're
-      inside herdr, else `window` (a one-shot in a visible Terminal.app window). Same
-      contract either way.
-    → --headless: skip both surfaces. Runs the agent as a plain subprocess, output straight
+      inside herdr or Wheel, else `window` (a Terminal.app window: the agent's TUI when
+      handed off, a one-shot with --report-back). Same contract either way.
+    → --headless: skip both surfaces; it implies --report-back, since there is no pane to hand over. Runs the agent as a plain subprocess, output straight
       to <outfile>. Use it where there's no GUI session and no herdr session to put
       anything in (cron, SSH, scheduled agents): the windowed default needs Terminal.app
       plus the one-time macOS Automation grant, which a headless run can't satisfy.
@@ -99,11 +103,11 @@ Review the diff produced by `<diff-cmd>` for correctness, security, regressions,
 architecture fit. Output prioritized findings and a MERGEABLE/BLOCK verdict.
 PROMPT
 out="/tmp/<slug>-dispatch.md"
-"$D" exec --job decide "$prompt" "$out"        # run this verb in the BACKGROUND (Bash run_in_background)
+"$D" exec --job decide --report-back "$prompt" "$out"   # run this verb in the BACKGROUND (Bash run_in_background)
 # when it returns, read "$out" for the findings
 ```
 
-Run `dispatch exec` with the Bash tool's **background** mode: the agent can take minutes, and backgrounding keeps the Claude session free — the harness notifies you when the script (and thus the agent) exits, at which point you read `<outfile>`.
+Run a `--report-back` exec with the Bash tool's **background** mode: the agent can take minutes, and backgrounding keeps the Claude session free — the harness notifies you when the script (and thus the agent) exits, at which point you read `<outfile>`.
 
 ---
 
@@ -148,7 +152,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 
 ## The two transports
 
-`dispatch exec` never spawns or watches a surface itself. It decides **which vendor command runs**, resolves **which surface** to run it in, and hands off. Both transports take the same contract — a prompt in a file, the answer in `<outfile>`, blocking until done — so no consuming skill branches on which one ran.
+`dispatch exec` never spawns or watches a surface itself. It decides **which vendor command runs**, resolves **which surface** to run it in, and hands off. Every transport takes the same two contracts — handed off (a prompt in a file, returning once the worker has it) and `--report-back` (the answer in `<outfile>`, blocking until done) — so no consuming skill branches on which one ran.
 
 ### Resolution — automatic, and stated
 

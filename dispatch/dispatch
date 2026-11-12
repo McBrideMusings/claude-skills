@@ -10,8 +10,13 @@
 #   dispatch transport <sel>             print the transport `exec` would use, and why
 #   dispatch check     [<sel>]           every job list names known agents, and the agent <sel>
 #                                          picks (every listed agent, with no <sel>) is authed (exit 0/1)
-#   dispatch exec <sel> [--headless] [--name <name>] <prompt-file> <outfile>
-#                                          run the agent with the prompt; output to <outfile>.
+#   dispatch exec <sel> [--name <name>] <prompt-file>
+#                                          start the agent on the prompt in a visible surface and
+#                                          return: the worker is handed off to the person, who runs
+#                                          it from there. The brief reaches it unchanged.
+#   dispatch exec <sel> --report-back|--headless [--name <name>] <prompt-file> <outfile>
+#                                          run the agent and block until it finishes; its answer
+#                                          lands in <outfile> for the caller to read.
 #                                          --name: what the work is, a few words ("profile-first spike").
 #                                          The herdr space (or tab) carries it as its label; without it
 #                                          the label is the directory's name.
@@ -19,7 +24,8 @@
 #                                          a herdr space when we're inside herdr, a pane split off this one
 #                                          inside Wheel, else a Terminal.app window.
 #                                          --headless: no surface — run as a plain subprocess (backend-only,
-#                                          for cron / SSH / no-GUI where AppleScript can't open a window).
+#                                          for cron / SSH / no-GUI where AppleScript can't open a window);
+#                                          it has no pane to hand over, so it always reports back.
 #
 # Transport is resolved, never asked: inside herdr (HERDR_ENV=1) with a vendor herdr can
 # start, the worker is a LIVE agent in its own herdr space you can take over; otherwise it is a
@@ -27,7 +33,7 @@
 # LIVE claude in a terminal pane split off this session's pane, in this session's space
 # (`wheel-agent`); with $WHEEL_AGENT_SPACE set it goes to that named space instead, from any
 # session on this Mac, inside Wheel or not. $DISPATCH_TRANSPORT=terminal|herdr|wheel forces one.
-# Either way the caller's contract is identical — prompt in a file, answer in <outfile>.
+# A handed-off worker belongs to the person; only --report-back hands its answer to the caller.
 #
 # <sel> is `--job mechanical|execute|decide`, or `--agent <name>[:<model>]` to name the
 # agent outright (swarm, which picks each lane's model itself).
@@ -369,19 +375,21 @@ auth_check() {
 }
 
 cmd_exec() {
-  local headless=0
+  local headless=0 report=0
   while [ $# -gt 0 ]; do
     case "$1" in
       --job|--agent) NARGS=0; parse_sel "$1" "${2:-}" || return 2; shift 2 ;;
-      --headless) headless=1; shift ;;
+      --headless) headless=1; report=1; shift ;;
+      --report-back) report=1; shift ;;
       --name) [ -n "${2:-}" ] || { echo "dispatch: --name needs a value" >&2; return 2; }
               export DISPATCH_NAME="$2"; shift 2 ;;
       *) break ;;
     esac
   done
   local promptfile="${1:-}" outfile="${2:-}"
-  if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
-    echo "usage: dispatch exec --job <job>|--agent <name>[:<model>] [--headless] [--name <name>] <prompt-file> <outfile>" >&2
+  if [ -z "$promptfile" ] || { [ "$report" -eq 1 ] && [ -z "$outfile" ]; } || { [ "$report" -eq 0 ] && [ -n "$outfile" ]; }; then
+    echo "usage: dispatch exec --job <job>|--agent <name>[:<model>] [--name <name>] <prompt-file>" >&2
+    echo "       dispatch exec --job <job>|--agent <name>[:<model>] --report-back|--headless [--name <name>] <prompt-file> <outfile>" >&2
     echo "  env: CLAUDE_DISPATCH_PERMISSION_MODE, CLAUDE_DISPATCH_REMOTE_CONTROL, CLAUDE_DISPATCH_SETTINGS, DISPATCH_TRANSPORT (terminal|herdr|wheel)" >&2
     return 2
   fi
@@ -408,7 +416,8 @@ cmd_exec() {
     local r; r="$(resolve_transport "$a")" || return 1
     transport="$(printf '%s' "$r" | cut -f1)"; reason="$(printf '%s' "$r" | cut -f2)"
   fi
-  echo "dispatch: $(label "$a" "$model") ($why) via $transport ($reason)"
+  local mode="handed off to you"; [ "$report" -eq 1 ] && mode="report-back to $outfile"
+  echo "dispatch: $(label "$a" "$model") ($why) via $transport ($reason), $mode"
 
   local rc=0
 
@@ -417,7 +426,11 @@ cmd_exec() {
     [ -n "$model" ] && wargs+=(--model "$model")
     [ -n "${CLAUDE_DISPATCH_REMOTE_CONTROL:-}" ] && wargs+=(--remote-control "$CLAUDE_DISPATCH_REMOTE_CONTROL")
     [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && wargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS")
-    "$(cd "$(dirname "$0")" && pwd -P)/wheel-agent" run "$promptfile" "$outfile" -- "${wargs[@]}" || rc=$?
+    if [ "$report" -eq 1 ]; then
+      "$(cd "$(dirname "$0")" && pwd -P)/wheel-agent" run "$promptfile" "$outfile" -- "${wargs[@]}" || rc=$?
+    else
+      "$(cd "$(dirname "$0")" && pwd -P)/wheel-agent" run --handoff "$promptfile" -- "${wargs[@]}" || rc=$?
+    fi
     return "$rc"
   fi
 
@@ -433,7 +446,29 @@ cmd_exec() {
               [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && iargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS") ;;
       codex)  [ -n "$model" ] && iargs=(--model "$model") ;;   # no sandbox flags: the whole point of this transport is that you're watching, so approve in the TUI
     esac
-    "$(cd "$(dirname "$0")" && pwd -P)/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
+    if [ "$report" -eq 1 ]; then
+      "$(cd "$(dirname "$0")" && pwd -P)/herdr-agent" run "$(herdr_kind "$a")" "$promptfile" "$outfile" -- "${iargs[@]}" || rc=$?
+    else
+      "$(cd "$(dirname "$0")" && pwd -P)/herdr-agent" run --handoff "$(herdr_kind "$a")" "$promptfile" -- "${iargs[@]}" || rc=$?
+    fi
+    return "$rc"
+  fi
+
+  local terminal; terminal="$(cd "$(dirname "$0")" && pwd -P)/terminal"
+  local payload; payload="$(mktemp -t dispatch-payload.XXXXXX)"
+
+  # Handed off: the vendor's interactive TUI in a Terminal.app window, started on the brief,
+  # left for the person to run. Nothing waits on it.
+  if [ "$report" -eq 0 ]; then
+    local tui
+    case "$a" in
+      claude) tui="claude --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${model:+ --model $(printf %q "$model")}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;;
+      codex)  tui="codex${model:+ --model $(printf %q "$model")}" ;;
+      *) echo "dispatch: '$a' has no interactive mode to hand off in a Terminal window; pass --report-back" >&2; rm -f "$payload"; return 1 ;;
+    esac
+    printf '%s "$(cat %q)"\n' "$tui" "$promptfile" > "$payload"
+    "$terminal" open-run "$payload" || rc=$?
+    [ "$rc" -eq 0 ] && echo "dispatch: $a started in a Terminal.app window, handed off to you"
     return "$rc"
   fi
 
@@ -447,8 +482,6 @@ cmd_exec() {
     claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${model:+ --model $(printf %q "$model")}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
   esac
 
-  local terminal; terminal="$(cd "$(dirname "$0")" && pwd -P)/terminal"
-  local payload; payload="$(mktemp -t dispatch-payload.XXXXXX)"
   printf 'cat %q | %s\n' "$promptfile" "$runner" > "$payload"
 
   if [ "$headless" -eq 1 ]; then
@@ -474,6 +507,6 @@ case "$verb" in
   transport) cmd_transport ;;
   check)     cmd_check ;;
   exec)      cmd_exec "$@" ;;
-  *) echo "usage: dispatch {config | agent <sel> | transport <sel> | check [<sel>] | exec <sel> [--headless] [--name <name>] <prompt-file> <outfile>}" >&2
+  *) echo "usage: dispatch {config | agent <sel> | transport <sel> | check [<sel>] | exec <sel> [--report-back|--headless] [--name <name>] <prompt-file> [<outfile>]}" >&2
      echo "  <sel>: --job mechanical|execute|decide, or --agent <name>[:<model>]" >&2; exit 2 ;;
 esac

@@ -52,15 +52,15 @@ permission prompt.
 **Applies to `workspace`, `window` and the vendor targets.** The dispatcher picks one of two
 modes and names it in its first status line, next to the target and the space:
 
-- **report-back** — the agent dispatched on its own initiative, for parallel work the user did not
-  ask for. The dispatcher keeps ownership: it waits for the worker to finish, reads `<outfile>`,
+- **report-back** (`dispatch exec --report-back`) — the agent dispatched on its own initiative, for
+  parallel work the user did not ask for. The dispatcher keeps ownership: it waits for the worker to finish, reads `<outfile>`,
   verifies or reviews the result, folds it into its own work, and tells the user. An implementing
   worker still ends at a commit; the dispatcher lands it and cleans up its worktree.
-- **fire-and-forget** — the user told it to dispatch (`dispatch workspace …`, "run this in a
-  separate session"). The dispatcher launches, says target, space and why in one line, and stops
-  managing the worker: it does not poll it, read its pane or `<outfile>`, verify, land, or remove
-  its worktree. A completion notification from the launch command is not a prompt to look. The
-  user, or the worker's `SELF-LAND` marker, owns the landing.
+- **fire-and-forget** (`dispatch exec` with no mode flag) — the user told it to dispatch (`dispatch
+  workspace …`, "run this in a separate session"). The dispatcher launches, says target, space and why in one line, and stops
+  managing the worker: `exec` returns once the worker has the brief, and the dispatcher does not
+  poll it, read its pane, verify, land, or remove its worktree. The brief is the user's opening
+  prompt to that agent. The user, or the worker's `SELF-LAND` marker, owns the landing.
 
 Who started it decides. When it is unclear, the mode is fire-and-forget. `agent` always returns
 its result to the dispatcher, because it runs inside the session. Never poll a worker with
@@ -129,7 +129,7 @@ For `workspace`, make the worktree with plain git, link its local files, and run
 ```
 git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
 ( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.admin/admin" populate )
-( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec --job execute --name "<what the work is>" <brief> <outfile> )
+( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec --job execute --name "<what the work is>" <brief> )
 ```
 
 **Always pass `--name`**: two to five words saying what the worker does ("profile-first spike",

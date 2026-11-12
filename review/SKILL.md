@@ -173,7 +173,7 @@ D="$HOME/.claude/skills/dispatch/dispatch"
 ```
 
 1. Write the review prompt to a temp file — review instructions + the **literal** diff command the core used (`gh pr diff`, the merge-safe diff, or `git diff HEAD`). Let the target run that command itself; don't paste a huge diff into the prompt.
-2. Run `"$D" exec --job decide "$prompt" "/tmp/<slug>-dispatch.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
+2. Run `"$D" exec --job decide --report-back "$prompt" "/tmp/<slug>-dispatch.md"` in the **background** (Bash run_in_background). The harness notifies you when it finishes; then read the file and extract the substance (ignore the vendor's chrome/cost footer).
 3. **Reconcile** into one set, deduped by file+line+claim. Tag each finding's **source** with the **name of the model, harness, or vendor that found it** — `[claude]` for Claude's own findings, the **resolved target's name** for the target's, or `[both]` when both flagged it.
 
    **A source tag NEVER carries the name of a skill, a lens, an axis, or a process.** The tag answers "which reviewer said this," and the only valid answers are things a person could point at and name: a model (`[claude]`, `[codex]`, `[gpt-5]`), a harness or vendor (`[reasonix]`), or `[both]`. **`[review]` is wrong and is the specific mistake this rule exists to stop** — `review` is this skill's own name, it identifies no reviewer, and it has shipped to a real PR that way. Same ban on `[lens]`, `[bug-lens]`, `[self]`, `[internal]`, `[dual]`, and `[dispatch]`.
@@ -195,7 +195,7 @@ Report two dimensions separately:
 Rate each finding P0–P3 by the scale below, terse, no praise.
 <paste REVIEW-CORE.md §Axis tags: the P-level table and the two paragraphs beneath it>
 PROMPT
-"$D" exec --job decide "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
+"$D" exec --job decide --report-back "$prompt" "/tmp/<slug>-dispatch.md"      # run this call in the background
 ```
 
 ## Sweep mode — `review` on the default branch

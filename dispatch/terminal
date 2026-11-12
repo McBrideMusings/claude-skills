@@ -13,6 +13,11 @@
 #         The window is left open at an idle login shell for you to read; close it
 #         yourself (Cmd-W). --headless: no window, run as a plain subprocess (cron/SSH).
 #
+#   HANDOFF — spawn a window running one command and return at once:
+#     terminal open-run <cmd-file>
+#         run the shell in <cmd-file> in a new visible Terminal.app window and return without
+#         waiting or reading anything back. For an interactive agent the person runs from there.
+#
 #   SESSION — open a persistent pane, send it commands over time, read it, close it:
 #     terminal open  <id>                       spawn a persistent window, register it as <id>
 #     terminal send  <id> <cmd-file> <outfile>  run <cmd-file> in that pane, wait, capture to <outfile>
@@ -103,6 +108,16 @@ CLOSER
 
   wait_for_sentinel "$outfile" || return 1
   echo "terminal: finished → $outfile (window left open — close it when done)"
+}
+
+# ---- handoff -------------------------------------------------------------
+
+cmd_open_run() {
+  local cmdfile="${1:-}"
+  [ -n "$cmdfile" ] || { echo "usage: terminal open-run <cmd-file>" >&2; return 2; }
+  [ -f "$cmdfile" ] || { echo "terminal: cmd file not found: $cmdfile" >&2; return 1; }
+  spawn_window "cd $(printf %q "$PWD") && bash $(printf %q "$cmdfile")"
+  echo "terminal: started in a new window, handed off"
 }
 
 # Spawn a NEW window running <shell-cmd>. Cold-start guard: if Terminal was NOT already
@@ -279,12 +294,13 @@ OSA
 
 case "${1:-}" in
   run)   shift; cmd_run   "$@" ;;
+  open-run) shift; cmd_open_run "$@" ;;
   open)  shift; cmd_open  "$@" ;;
   send)  shift; cmd_send  "$@" ;;
   read)  shift; cmd_read  "$@" ;;
   close) shift; cmd_close "$@" ;;
   *)
-    echo "usage: terminal {run [--headless] <cmd-file> <outfile> | open <id> | send <id> <cmd-file> <outfile> | read <id> [outfile] | close <id>}" >&2
+    echo "usage: terminal {run [--headless] <cmd-file> <outfile> | open-run <cmd-file> | open <id> | send <id> <cmd-file> <outfile> | read <id> [outfile] | close <id>}" >&2
     exit 2
     ;;
 esac

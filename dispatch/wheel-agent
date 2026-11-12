@@ -2,10 +2,15 @@
 # wheel-agent — run one dispatched task as a LIVE interactive claude in a Wheel terminal pane.
 #
 #   wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]
+#   wheel-agent run --handoff <prompt-file> [-- <claude-arg>...]
 #
-# The Wheel counterpart to `herdr-agent run`. Same caller contract — prompt in a file,
-# response in <outfile>, blocks until done — and the worker is the claude TUI in a pane you
-# can watch, type at, or take over.
+# --handoff starts the worker on the brief as written and returns once it reports in: the
+# person runs it from its pane, and nothing waits on it or reads an answer back.
+#
+# The Wheel counterpart to `herdr-agent run`, with the same two contracts: handed off, or
+# report-back (prompt in a file, response in <outfile>, blocks until done). Either way the
+# worker is the claude TUI in a pane you can watch, type at, or take over. The waiting and
+# outfile behavior described below applies to the report-back run only.
 #
 # Placement: by default the pane is split off inside the caller's own space, which
 # ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives panes no WHEEL_SPACE. The
@@ -115,11 +120,14 @@ merged_settings() {
 state() { cat "$dir/state" 2>/dev/null || true; }
 
 cmd_run() {
-  local promptfile="${1:-}" outfile="${2:-}"
-  if [ -z "$promptfile" ] || [ -z "$outfile" ]; then
-    echo "usage: wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]" >&2; return 2
+  local handoff=0
+  if [ "${1:-}" = "--handoff" ]; then handoff=1; shift; fi
+  local promptfile="${1:-}" outfile=""
+  if [ "$handoff" -eq 0 ]; then outfile="${2:-}"; fi
+  if [ -z "$promptfile" ] || { [ "$handoff" -eq 0 ] && [ -z "$outfile" ]; }; then
+    echo "usage: wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...] | run --handoff <prompt-file> [-- <claude-arg>...]" >&2; return 2
   fi
-  shift 2
+  if [ "$handoff" -eq 1 ]; then shift 1; else shift 2; fi
   [ "${1:-}" = "--" ] && shift || true
   [ -f "$promptfile" ] || { echo "wheel-agent: prompt file not found: $promptfile" >&2; return 1; }
   # A named space ($WHEEL_AGENT_SPACE) is made or found through the daemon, so any session on
@@ -134,7 +142,7 @@ cmd_run() {
   local dir="${WHEEL_AGENT_DIR:-}"
   [ -n "$dir" ] || dir="$(mktemp -d -t wheel-agent)"
   mkdir -p "$dir"; rm -f "$dir/state" "$dir/pane"
-  : > "$outfile"
+  [ "$handoff" -eq 1 ] || : > "$outfile"
 
   # Pull the caller's --settings out of the args; the merged file replaces it.
   local -a args=(); local given=""
@@ -156,14 +164,17 @@ cmd_run() {
   args+=(--session-id "$sid")
   printf '%s\n' "$sid" > "$dir/session"
 
-  # An interactive agent prints to a TUI, so there is nothing to tee. Tell it where to
-  # put the answer; the caller reads that file exactly as it reads `terminal run`'s.
+  # A handed-off worker gets the brief unchanged: it answers the person in its own pane.
+  # A report-back worker prints to a TUI, so there is nothing to tee; tell it where to put
+  # the answer, and the caller reads that file exactly as it reads `terminal run`'s.
+  if [ "$handoff" -eq 1 ]; then cat "$promptfile" > "$dir/prompt.md"; else
   { cat "$promptfile"; printf '%s\n' '
 ────────────────────────────────────────────────────────────
 HOW TO RETURN YOUR ANSWER — required, do this last:
 Write your complete response to the file below, as a whole file, in Markdown.
 Do not summarise it there; that file IS your answer and is the only part that is read.
 ' "  $outfile" '────────────────────────────────────────────────────────────'; } > "$dir/prompt.md"
+  fi
 
   local pane
   pane="$(claim_pane)" || { echo "wheel-agent: could not make and start a pane in space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" >&2; return 1; }
@@ -201,6 +212,10 @@ Do not summarise it there; that file IS your answer and is the only part that is
     echo "wheel-agent: the worker in pane $pane runs in $wcwd, not $workdir — leaving it open" >&2; return 4
   fi
   echo "wheel-agent: checked: pane $pane runs conversation $sid in $wcwd" >&2
+  if [ "$handoff" -eq 1 ]; then
+    echo "wheel-agent: claude handed off in pane $pane of space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}"
+    return 0
+  fi
 
   # Idle alone is not done: a worker waiting on its own background agent or job reports idle
   # and wakes when that finishes. Only an idle worker that has written its answer is done; one
@@ -235,5 +250,5 @@ Do not summarise it there; that file IS your answer and is the only part that is
 
 case "${1:-}" in
   run) shift; cmd_run "$@" ;;
-  *) echo "usage: wheel-agent run <prompt-file> <outfile> [-- <claude-arg>...]" >&2; exit 2 ;;
+  *) echo "usage: wheel-agent run [--handoff] <prompt-file> [<outfile>] [-- <claude-arg>...]" >&2; exit 2 ;;
 esac
