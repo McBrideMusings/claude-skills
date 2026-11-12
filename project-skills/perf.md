@@ -25,7 +25,8 @@ that runs (a library, a docs site) has a one-line `perf.md` saying so.
 4. **Write `perf.md`**: a table of scenario, command and which diffs need it; per scenario what
    the fixture holds, a table of measure, limit, today's value and any target with the bead that
    reaches it; and the rule that a loaded machine (load average over the core count) reruns once
-   before a failure counts.
+   before a failure counts. The "today" column is the baseline: a pass compares its run with it
+   and never runs the scenario on unchanged code to get a fresh one.
 
 ## Audit
 

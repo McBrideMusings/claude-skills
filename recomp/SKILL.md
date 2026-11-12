@@ -55,9 +55,11 @@ Budget: after three passes on one link with nothing kept, the model is wrong abo
 
 "Working configuration" means the build and settings every later pass measures against. It is not a release. Promote the working configuration to a release only when the acceptance contract in section 5 passes; until then nothing is held back from the loop by that contract.
 
-Observational work that is acceptable in a pass: one launch with instrumentation on, producing the numbers for the table. Observational work that is not: a second arm of the same probe, a sampled variant of the same probe, an overhead measurement of the probe, a census of a component smaller than the largest link. Each of those is a pass spent on no change.
+Observational work that is acceptable in a pass: one launch with instrumentation on, producing the numbers for the table. Observational work that is not: a repeat launch of an unchanged configuration, a second arm of the same probe, a sampled variant of the same probe, an overhead measurement of the probe, a census of a component smaller than the largest link. Each of those is a pass spent on no change.
 
-A measured gain is kept even when it is small and even when it was one launch, as long as a second launch of the previous configuration in the same session confirms the spread. "Within historical variation" is not a reason to drop a change; two launches each way is the test, and both run in the same pass.
+**Never re-launch an unchanged configuration.** The candidate's launch is compared with the last recorded launch of the working configuration: the checkpoint's frame-model table holds its numbers and its run folder. Nothing in that configuration changed, so its number did not either, and a fresh baseline launch is a pass spent on no change. The candidate launches first, every time.
+
+A measured gain is kept even when it is small and even when it was one launch. A gain inside the recorded launch-to-launch spread is settled by the next pass's launch on top of it, not by repeating the old configuration. Measure the working configuration again only when something under it changed: an OS, driver or firmware update, a different device, a setting the checkpoint does not record. Name that change when you do.
 
 Workarounds that prove a cause (a pinned clock, a disabled subsystem, a capped resolution) are legitimate test configurations and are recorded as such. They are not kept as the fix; the pass that follows attacks the cause they exposed.
 

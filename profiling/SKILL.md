@@ -34,7 +34,9 @@ Measure the current cost **before touching anything**, and write the number down
 is judged against this. No baseline → no way to prove an improvement, so this gate is mandatory. Use
 the matched label's profiler (e.g. Instruments Time Profiler, `perf`, `py-spy`, Chrome perf panel).
 
-Completion: the baseline number is stated in chat before Phase 03 begins.
+A baseline already recorded for the same build, workload, settings and machine **is** the baseline: quote it with its source (file, run, date) and measure nothing. Re-measure unchanged code only when something under it changed (OS, driver, hardware, a setting the record does not hold), and name that change. Re-running an unchanged baseline to "confirm" it, before or after a candidate, is not a step in this loop.
+
+Completion: the baseline number is stated in chat, measured or quoted with its source, before Phase 03 begins.
 
 Then show the loop with `dashboard profile` ([`../dashboard/kinds/profile.md`](../dashboard/kinds/profile.md)), the baseline as its first run; push each Phase 05 measurement to it.
 
@@ -54,7 +56,7 @@ changes make the re-measure uninterpretable. Resist fixing costs the profile did
 
 ## Phase 05 — Re-measure vs baseline
 
-Re-run the identical workload and compare to the Phase 02 number. Keep the change only if it moved
+Run the identical workload once with the change and compare to the Phase 02 number; never re-run the baseline beside it. Keep the change only if it moved
 the metric meaningfully. Stop when you hit the target or the next contributor isn't worth it — don't
 micro-optimize past the point that matters. Leave a repeatable measurement (a signpost, a benchmark,
 a noted command) so the win doesn't silently regress later.
