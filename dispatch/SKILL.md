@@ -156,7 +156,7 @@ Codex and Reasonix are **API-billed**; the `claude` vendor bills the signed-in C
 |---|---|
 | `--headless` | plain subprocess, no surface at all |
 | `HERDR_ENV=1` **and** the vendor is in herdr's `--kind` enum | **`workspace`** (a herdr space) |
-| `WHEEL_ENV=1` (and not herdr) **and** the vendor is `claude` | **`wheel`** (a pane in the caller's Wheel space) |
+| `WHEEL_ENV=1` with `WHEEL_PANE`, or `WHEEL_AGENT_SPACE` set from any session (and not herdr), **and** the vendor is `claude` | **`wheel`** (a pane in the caller's Wheel space, or in the space `WHEEL_AGENT_SPACE` names) |
 | anything else | **Terminal.app window** |
 | `DISPATCH_TRANSPORT=terminal\|herdr\|wheel` | forces one; forcing `herdr` or `wheel` where it can't run is an error, not a fallback |
 

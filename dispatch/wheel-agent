@@ -93,7 +93,7 @@ claim_pane() {
     new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
-    printf "%s\n" "$new"' _ "$l" "$WHEEL_PANE" "$WHEEL_SPACE" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" "${WHEEL_AGENT_SESSION:-}" \
+    printf "%s\n" "$new"' _ "$l" "${WHEEL_PANE:-}" "${WHEEL_SPACE:-}" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" "${WHEEL_AGENT_SESSION:-}" \
     || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
 }
 
@@ -122,9 +122,13 @@ cmd_run() {
   shift 2
   [ "${1:-}" = "--" ] && shift || true
   [ -f "$promptfile" ] || { echo "wheel-agent: prompt file not found: $promptfile" >&2; return 1; }
-  [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_PANE:-}" ] \
-    || { echo "wheel-agent: not running inside a Wheel pane (WHEEL_ENV, WHEEL_PANE)" >&2; return 1; }
-  WHEEL_SPACE="$("$HOME/.claude/tools/wheel-space")" || return 1
+  # A named space ($WHEEL_AGENT_SPACE) is made or found through the daemon, so any session on
+  # this Mac can open one; only splitting off the caller's own pane needs a Wheel caller.
+  if [ -z "${WHEEL_AGENT_SPACE:-}" ]; then
+    [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_PANE:-}" ] \
+      || { echo "wheel-agent: not running inside a Wheel pane (WHEEL_ENV, WHEEL_PANE), and no WHEEL_AGENT_SPACE names a space" >&2; return 1; }
+    WHEEL_SPACE="$("$HOME/.claude/tools/wheel-space")" || return 1
+  fi
   need wheel; need jq
 
   local dir="${WHEEL_AGENT_DIR:-}"

@@ -25,7 +25,8 @@
 # start, the worker is a LIVE agent in its own herdr space you can take over; otherwise it is a
 # one-shot piped into a Terminal.app window. Inside Wheel (WHEEL_ENV=1) a claude worker is a
 # LIVE claude in a terminal pane split off this session's pane, in this session's space
-# (`wheel-agent`). $DISPATCH_TRANSPORT=terminal|herdr|wheel forces one.
+# (`wheel-agent`); with $WHEEL_AGENT_SPACE set it goes to that named space instead, from any
+# session on this Mac, inside Wheel or not. $DISPATCH_TRANSPORT=terminal|herdr|wheel forces one.
 # Either way the caller's contract is identical — prompt in a file, answer in <outfile>.
 #
 # <sel> is `--job mechanical|execute|decide`, or `--agent <name>[:<model>]` to name the
@@ -244,6 +245,19 @@ space_kind() {
   fi
 }
 
+# Where wheel-agent would put a worker from here, or exit 1 when it can't: a space named by
+# $WHEEL_AGENT_SPACE works from any session; otherwise a pane splits off the caller's own Wheel
+# pane, which needs WHEEL_ENV=1 and WHEEL_PANE — the same test wheel-agent applies.
+wheel_placement() {
+  if [ -n "${WHEEL_AGENT_SPACE:-}" ]; then
+    printf 'a pane in space %s' "$WHEEL_AGENT_SPACE"
+  elif [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_PANE:-}" ]; then
+    printf 'a pane split off %s in space %s' "$WHEEL_PANE" "$("$HOME/.claude/tools/wheel-space" 2>/dev/null || echo '?')"
+  else
+    return 1
+  fi
+}
+
 # Which surface `exec` will run the worker in. Prints "<transport>\t<reason>".
 resolve_transport() {
   local a="$1" forced="${DISPATCH_TRANSPORT:-}" kind
@@ -261,25 +275,25 @@ resolve_transport() {
         fi
         printf 'herdr\tforced by DISPATCH_TRANSPORT; it gets %s\n' "$(space_kind)"; return 0 ;;
       wheel)
-        if [ "${WHEEL_ENV:-}" != "1" ]; then
-          echo "dispatch: DISPATCH_TRANSPORT=wheel but this session is not inside Wheel (WHEEL_ENV != 1)" >&2; return 1
-        fi
         if [ "$a" != claude ]; then
           echo "dispatch: DISPATCH_TRANSPORT=wheel runs only claude workers, not '$a'" >&2; return 1
         fi
-        printf 'wheel\tforced by DISPATCH_TRANSPORT; it gets a pane in space %s\n' "$("$HOME/.claude/tools/wheel-space" 2>/dev/null || echo '?')"; return 0 ;;
+        local placement
+        placement="$(wheel_placement)" || {
+          echo "dispatch: DISPATCH_TRANSPORT=wheel but no WHEEL_AGENT_SPACE names a space and this session is not in a Wheel pane (WHEEL_ENV, WHEEL_PANE)" >&2; return 1; }
+        printf 'wheel\tforced by DISPATCH_TRANSPORT; it gets %s\n' "$placement"; return 0 ;;
       *) echo "dispatch: unknown DISPATCH_TRANSPORT '$forced' (expected terminal|herdr|wheel)" >&2; return 1 ;;
     esac
   fi
 
   # wheel-agent learns a worker's state from Claude Code hooks, so it runs only claude.
-  if [ "${HERDR_ENV:-}" != "1" ] && [ "${WHEEL_ENV:-}" = "1" ]; then
+  if [ "${HERDR_ENV:-}" != "1" ] && wheel_placement >/dev/null; then
     if [ "$a" != claude ]; then
-      printf "terminal\tinside Wheel, but wheel-agent runs only claude, not '%s'\n" "$a"
+      printf "terminal\twheel-agent runs only claude, not '%s'\n" "$a"
     elif ! command -v wheel >/dev/null 2>&1; then
-      printf 'terminal\tinside Wheel, but the wheel CLI is not on PATH\n'
+      printf 'terminal\tWheel is reachable, but the wheel CLI is not on PATH\n'
     else
-      printf 'wheel\tinside Wheel; it gets a pane split off %s in space %s\n' "${WHEEL_PANE:-?}" "$("$HOME/.claude/tools/wheel-space" 2>/dev/null || echo '?')"
+      printf 'wheel\tit gets %s\n' "$(wheel_placement)"
     fi
   elif [ "${HERDR_ENV:-}" != "1" ]; then
     printf 'terminal\tnot inside herdr or Wheel\n'
