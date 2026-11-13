@@ -5,6 +5,8 @@ description: "`dispatch <target>` — give a brief to another executor and take 
 
 # Dispatch
 
+**Dispatch only when the user asked for another session, or a calling skill (`swarm`, `review dual`, `implement dispatch codex`) names this target. Work the user asked this session to do runs here, however large; size is never a reason to dispatch.**
+
 Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
