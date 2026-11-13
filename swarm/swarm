@@ -41,8 +41,8 @@
 # slot in the background.
 #
 # Worker environment, applied in this order (later wins):
-#   1. runtime defaults: rust → CARGO_TARGET_DIR=<worktree>/target (cloned from <main>/target),
-#      rust-analyzer plugin off
+#   1. runtime defaults: rust → rust-analyzer plugin off (each Cargo workspace's target/ is cloned
+#      into the worktree by clone-targets, and cargo builds into it by default)
 #   2. <main>/.claude/skills/project-swarm/swarm.env — KEY=VALUE lines, $MAIN is the main checkout.
 #      SWARM_MAX_WORKERS=<n> there caps the lead's slots.
 #   3. <main>/.claude/skills/project-swarm/swarm-settings.json — merged into the worker's --settings
@@ -96,7 +96,7 @@ runtimes() {
 # The rule every worker in a runtime follows, as one or two sentences.
 runtime_rule() {
   case "$1" in
-    rust) echo "Run cargo build, test, clippy and check by their usual name so Turnstile queues them; a queued command is waiting, not hung, and exit 125 means stop. Keep the CARGO_TARGET_DIR launch set per worktree, and give tests port 0 and a temp dir." ;;
+    rust) echo "Run cargo build, test, clippy and check by their usual name so Turnstile queues them; a queued command is waiting, not hung, and exit 125 means stop. Leave CARGO_TARGET_DIR unset so each Cargo workspace builds into its own cloned target/ in your worktree, and give tests port 0 and a temp dir." ;;
     go) echo "Run go build, test, vet and golangci-lint by their usual name so Turnstile queues them; a queued command is waiting, not hung, and exit 125 means stop. Leave GOCACHE shared, and give tests t.TempDir() and port 0." ;;
     python) echo "Use a virtual environment inside your own worktree, never the main checkout's .venv. Run pytest and type checkers by their usual name so Turnstile queues them (exit 125 means stop), and give tests tmp_path and port 0." ;;
     web) echo "Install into your own worktree's node_modules, and run installs, tsc, builds and test runs by their usual name (never from ./node_modules/.bin) so Turnstile queues them; exit 125 means stop. Give a dev server its own port derived from \$SWARM_WORKER and stop it before the pass ends." ;;
@@ -205,7 +205,6 @@ clone_target() { "$HOME/.claude/tools/clone-targets" "$1" "$2" >/dev/null; }
 # KEY=VALUE lines for a worker's environment.
 worker_env() {
   local repo="$1" id="$2" f
-  runtimes "$repo" | grep -qx rust && printf 'CARGO_TARGET_DIR=%s/target\n' "$(worktree_path "$repo" "$id")"
   f="$(project_skill "$repo")/swarm.env"
   [ -f "$f" ] && grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$f" | sed "s#\\\$MAIN#$repo#g"
   return 0

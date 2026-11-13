@@ -50,7 +50,7 @@ names and every worker's brief points at:
 
 | Layer | Where | Holds |
 | --- | --- | --- |
-| Runtime | A per-runtime rule table inside the `swarm` script, picked by marker files (`Cargo.toml` → rust, `go.mod` → go, `pyproject.toml` → python, `package.json` → web, `Package.swift` or an Xcode project → apple) | the rule every worker in that runtime follows (one or two sentences each, printed in the launch preview and written into the worker brief with a knowledge base search line, "<runtime> swarm workers"), plus the defaults `swarm launch` sets — for rust, a `CARGO_TARGET_DIR` per worktree cloned from the main checkout's, and rust-analyzer off |
+| Runtime | A per-runtime rule table inside the `swarm` script, picked by marker files (`Cargo.toml` → rust, `go.mod` → go, `pyproject.toml` → python, `package.json` → web, `Package.swift` or an Xcode project → apple) | the rule every worker in that runtime follows (one or two sentences each, printed in the launch preview and written into the worker brief with a knowledge base search line, "<runtime> swarm workers"), plus the defaults `swarm launch` sets — for rust, every Cargo workspace's `target/` cloned from the main checkout's into the worktree (`~/.claude/tools/clone-targets`), and rust-analyzer off |
 | Project | `<repo>/.claude/skills/project-swarm/SKILL.md` | this project's heavy commands, cheap check, shared caches, per-worker resources, queues, slot cap. Wins over the runtime layer |
 
 ## Project support
