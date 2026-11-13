@@ -132,6 +132,10 @@ sharing that index, not to this pass — not a halt.
 
 **Resolve the verification skill now.** `ls` the absolute path of `<repo>/.claude/skills/project-verify/SKILL.md` and print it. Step 4 loads that skill; a pass that verified with its own ad hoc check without loading it has not verified.
 
+**A UI change with no picked design spikes first.** When the item changes what a screen shows and
+neither the item nor the conversation holds a mockup the user picked, stop and run `Skill(spike)`
+with variants. The pass starts once the user names a variant, and the variant goes into the item.
+
 **No commit-count guard.** One commit on the default branch; as many as the work needs
 elsewhere, squashed by `wrap-up`.
 

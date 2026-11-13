@@ -12,6 +12,10 @@ reached by clicking, or a real component's response. That climbs to [UI.md](UI.m
 
 1. **Scope, recon, directions** — [UI.md](UI.md) Phases 01–03 apply unchanged: one piece of UI,
    the project's tokens, a named axis per variant, no two variants at the same axis position.
+   **Every value a mockup shows names its source.** Before writing a fragment for data the app
+   shows, list each field beside the event, API field or file it comes from, captured from a real
+   run. A field with no source is cut, or drawn as "not available". The list goes on the page
+   beside the screenshots.
 2. **Load the project's real CSS.** Paste the project's tokens into the fragment's `<style>` as
    [UI.md](UI.md) Phase 02 says, and pass the project's own stylesheet with
    `--extra-css <abs.css>` when it exists. A mockup inlines no palette, type or reset of its own.
