@@ -125,6 +125,10 @@ feedback are both older than the marker's mtime, nothing has changed since you l
 nothing pushed and no new feedback since the last pass. `again` · `axes <names>` · `stop`
 ```
 
+A pass that reviews only the new commits still ends in [POSTING.md](POSTING.md)'s verdict. On a
+teammate's PR, an approval from before the head commit is stale: GitHub and the PR inbox list the
+PR as needing review again, so propose Approve at the current head.
+
 **This one asks, and it is not a RULE 2 violation** — there is no job to do. Re-running produces a byte-identical report, so the only question is what the user wants *instead*, which is a genuine unknown. Run `mergeable` first regardless: fixing a red test moves the branch's newest commit, which is an input to this check.
 
 ## Phase 00.5 — Explain the PR before reviewing it
