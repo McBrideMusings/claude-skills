@@ -10,7 +10,7 @@ Axis tag: `gui` — matching the `gui` label. Applicability: a UI surface exists
 4. **Fidelity** — does the surface honour the layers beneath it: vocabulary, object consistency, breadboard completeness, error recovery, accessibility.
 5. **Grouping** — six audit questions, each answered explicitly; with no screenshot, say the pass is unrun.
 6. **Usability heuristics** — Nielsen's ten, each finding naming the heuristic it breaks.
-7. **States and copy** — empty, loading, error and success states on any operating surface.
+7. **States and copy** — empty, loading, error and success states on any operating surface, and every visible string run down [`clean-copy`](../../clean-copy/SKILL.md)'s ladder: each one that fails is a finding naming the string, the rewrite or `cut`, and its rung.
 8. **Launch readiness** — for a whole site or app: one-liner, one call to action per page, title, meta, favicon, no placeholder text.
 9. **Stated personality** — below.
 

@@ -186,6 +186,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/spec.md`](axes/spec.md) — spec compliance (consumes the Phase 03 spec source + `IS_DRAFT`)
 - [`axes/negative-space.md`](axes/negative-space.md) — unmet obligations the diff itself creates
 - [`axes/slop.md`](axes/slop.md) — structure that adds no meaning (comment/helper/type/memo/effect slop, compatibility cruft, diff churn)
+- [`axes/copy.md`](axes/copy.md) — each user-facing string the diff adds or changes, against [`../clean-copy/SKILL.md`](../clean-copy/SKILL.md)'s ladder
 - [`axes/design.md`](axes/design.md) — UI code against the repo's `DESIGN.md` Do's and Don'ts, Named Rules, tokens, Layout, Components and `project-design/tools/lint.sh`
 - [`axes/best-practice.md`](axes/best-practice.md) — dependency usage vs current official docs, and hand-written code a library, built-in or existing repo function already provides — emits *flags* verified in Phase 04b, not findings
 - [`axes/test-debt.md`](axes/test-debt.md) — churned files with no adjacent test, tests that assert shape instead of behavior, skipped tests

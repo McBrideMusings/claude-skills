@@ -35,6 +35,8 @@ a finding.
   them. "01 / 02 / 03" over three peers does not.
 - **Real content, real controls.** No lorem, no `foo`, no dead button. A control that goes nowhere in
   this round does not go in this round — every control in a prototype is live.
+- **Every string passes [`clean-copy`](../clean-copy/SKILL.md).** Walk each label, caption, hint,
+  lede, tag and button down its ladder; cut what fails, and list each cut with the rung it failed.
 - **Both themes got equal care**, on whatever themes. Mechanical inversion isn't care: check that
   nothing white sits on a light tint.
 
