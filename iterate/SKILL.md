@@ -32,7 +32,10 @@ stays in the primary checkout and reaches the worktree with absolute paths, `git
 and `admin -w <worktree>`.
 
 - **First pass:** `git -C <repo> worktree add -b <branch> <worktree> <default>`, then
-  `project-swarm`'s first-build steps (submodules, install), once.
+  `~/.claude/tools/clone-targets <repo> <worktree>` (every Cargo workspace's `target/`, cloned
+  copy-on-write from the main checkout, so the first build reuses its dependencies; never point
+  `CARGO_TARGET_DIR` at another checkout's target), then `project-swarm`'s first-build steps
+  (submodules, install), once.
 - **Every later pass:** `git -C <worktree> status --short` must print nothing. Then
   `git -C <worktree> switch -c <branch> <default>`. A dirty worktree ends the run, reported under
   `Needs you` with the paths `status` printed.

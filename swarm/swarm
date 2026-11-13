@@ -198,16 +198,9 @@ memory_gate() {
 # Where a worker's worktree lives.
 worktree_path() { printf '%s/.worktrees/%s/%s\n' "$HOME" "$(basename "$1")" "$2"; }
 
-# Give a rust worktree its own target/, cloned from the main checkout's so dependencies start
-# built. A target shared across worktrees hands one worker another's binaries and, when cargo's
-# fingerprints miss a source change between worktrees, another's build of a workspace crate.
-clone_target() {
-  local repo="$1" wt="$2"
-  [ -d "$repo/target" ] || return 0
-  if [ "$(uname)" = Darwin ]; then cp -c -R "$repo/target" "$wt/target"
-  else cp --reflink=auto -R "$repo/target" "$wt/target"; fi \
-    || echo "swarm: could not clone $repo/target into $wt — the worker's first build starts cold" >&2
-}
+# Give a rust worktree its own target/ for every Cargo workspace, cloned from the main checkout's
+# so dependencies start built (~/.claude/tools/clone-targets says why each stays its own).
+clone_target() { "$HOME/.claude/tools/clone-targets" "$1" "$2" >/dev/null; }
 
 # KEY=VALUE lines for a worker's environment.
 worker_env() {
