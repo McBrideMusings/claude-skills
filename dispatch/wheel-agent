@@ -233,8 +233,12 @@ Do not summarise it there; that file IS your answer and is the only part that is
     esac
     [ "$(date +%s)" -lt "$deadline" ] || { echo "wheel-agent: stopped waiting on pane $pane after $((TIMEOUT_MS / 60000))m" >&2; break; }
     # A closed pane takes the worker with it and no hook fires, so stop waiting on its state.
-    wheel pane ls --json 2>/dev/null | jq -e --arg p "$pane" 'any(.[]; .pane == $p)' >/dev/null \
-      || { echo "wheel-agent: pane $pane is gone — the worker ended with state '$s'" >&2; [ -s "$outfile" ] && return 0 || return 3; }
+    # Only a list that answered without the pane means it closed; a failed call is checked again.
+    local panes
+    if panes="$(wheel pane ls --json 2>/dev/null)"; then
+      jq -e --arg p "$pane" 'any(.[]; .pane == $p)' <<<"$panes" >/dev/null \
+        || { echo "wheel-agent: pane $pane is gone — the worker ended with state '$s'" >&2; [ -s "$outfile" ] && return 0 || return 3; }
+    fi
     sleep 3
   done
 
