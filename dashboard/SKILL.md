@@ -25,9 +25,9 @@ goes in the state, when to post, when to push, and when the artifact is deleted:
 | [`kinds/diagram.md`](kinds/diagram.md) | A structure reads better drawn: a flowchart, a call graph, a dependency graph. |
 | [`kinds/diagnose.md`](kinds/diagnose.md) | A `diagnose` loop has its first hypotheses. |
 
-A `swarm` run has no kind here: under Wheel every run shows in the one machine artifact `swarm`
-(`wheel pane kind <pane> web --artifact swarm --scope machine`), which reads the run from disk
-and needs no slot, state or push. See the `swarm` skill § 4.
+A `swarm` run has no kind here: under Wheel every run shows in the Wheelhouse plugin's `swarm` pane
+(`wheel pane kind <pane> plugin --plugin wheelhouse --plugin-pane swarm`), which needs no slot,
+state or push. See the `swarm` skill § 4.
 
 **Inside a Wheel pane** (`WHEEL_ENV=1`) the same verbs drive a Wheel artifact instead of a
 Canvas one: `post` shows the page in a pane split to the right of this agent's, `push` updates

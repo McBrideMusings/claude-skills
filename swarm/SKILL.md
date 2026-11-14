@@ -192,13 +192,12 @@ ones with no lane, landed ones kept. Each worker declares its own stage; the boa
 its lane.
 
 **Show the run** under Wheel before the first launch, unless a pane in the lead's space already
-shows it: the machine artifact `swarm` is the one page for every run. Opened in a space, it reads
-that space's repo's run (`swarm status`, the work-board declarations, each worker's Claude
-transcript) every 15 seconds, logs each worker's latest actions with times, and flags a worker
-whose transcript has not been written for 10 minutes as stuck, whatever its agent state says. There is nothing to post, push or end.
+shows it: the Wheelhouse plugin's `swarm` pane is the one page for every run. Opened in a space, it
+lists the agent panes of that space's project with each one's declared item, stage and note
+(`wheel work set`). There is nothing to post, push or end.
 
 ```bash
-p=$(wheel pane split "$WHEEL_PANE" right) && wheel pane kind "$p" web --artifact swarm --scope machine
+p=$(wheel pane split "$WHEEL_PANE" right) && wheel pane kind "$p" plugin --plugin wheelhouse --plugin-pane swarm
 ```
 
 One Bash call per slot, **each with `run_in_background: true` and `timeout: 7200000`** (the default background limit, 30 minutes, kills the wait while the worker keeps running):
