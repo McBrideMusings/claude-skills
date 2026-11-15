@@ -59,13 +59,13 @@ RA_PLUGIN="rust-analyzer-lsp@claude-plugins-official"
 die() { echo "swarm: $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "missing '$1'"; }
 
-# The main checkout of the repo holding $PWD, from any of its checkouts: the parent of the common
-# git dir.
+# The main checkout of the repo holding $PWD, from any of its checkouts: the first worktree git
+# lists, whatever the git dir is called or where it lives.
 repo_of() {
-  local common
-  common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || die "not in a git repo: $PWD"
-  [ "$(basename "$common")" = .git ] || die "$PWD has no main checkout (its git dir is $common)"
-  dirname "$common"
+  local top
+  top="$(git -C "$PWD" worktree list --porcelain 2>/dev/null | sed -n '1s/^worktree //p')"
+  [ -n "$top" ] || die "not in a git repo: $PWD"
+  printf '%s\n' "$top"
 }
 
 # The repo's main checkout, from $PWD. A swarm is led from the main checkout, never a worktree.
@@ -73,7 +73,7 @@ main_checkout() {
   local gitdir
   gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null)" || die "not in a git repo: $PWD"
   [ "$gitdir" = "$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir)" ] || die "run swarm from the repo's main checkout, not a linked worktree"
-  repo_of
+  git -C "$PWD" rev-parse --show-toplevel
 }
 
 # Which multiplexer holds the workers: herdr (a child space per worker) or wheel (a pane per
@@ -140,10 +140,15 @@ landing_mode() {
 }
 
 # <scratch>/swarm for the repo, where outfiles and the run log live.
-run_dir() { printf '%s/swarm' "$( cd "$1" && "$HOME/.claude/tools/repo-slug" --path )"; }
+run_dir() { local d; d="$(run_path "$1")" || exit 1; mkdir -p "$d" || exit 1; printf '%s' "$d"; }
+# The same directory, not created: what `log-path`, a read, names.
+run_path() {
+  local d; d="$( cd "$1" && "$HOME/.claude/tools/repo-slug" --path-name )" && [ -n "$d" ] || die "no scratch dir for $1"
+  printf '%s/swarm' "$d"
+}
 # The run log of the repo whose main checkout is $1: the one definition of its path, which
 # `swarm log-path` prints for readers such as Wheelhouse's swarm feed.
-run_log() { printf '%s/run.tsv' "$(run_dir "$1")"; }
+run_log() { local d; d="$(run_path "$1")" || exit 1; printf '%s/run.tsv' "$d"; }
 
 # Append "<utc time>\t<event>\t<bead-id>\t<detail>" to the run log.
 log_event() {
