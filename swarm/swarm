@@ -10,6 +10,8 @@
 #   swarm log <event> [<bead-id>] [<detail>]   append a lead event to the run log (run, lead, filed,
 #                                     landed, reopened, parked, failed, ready, signed, declined,
 #                                     applied, end)
+#   swarm log-path                    the run log's path for the repo holding $PWD, from any of
+#                                     its checkouts
 #   swarm status                      the run log, the launched beads still in flight, and the
 #                                     sign-off inbox
 #
@@ -57,13 +59,21 @@ RA_PLUGIN="rust-analyzer-lsp@claude-plugins-official"
 die() { echo "swarm: $*" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || die "missing '$1'"; }
 
+# The main checkout of the repo holding $PWD, from any of its checkouts: the parent of the common
+# git dir.
+repo_of() {
+  local common
+  common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || die "not in a git repo: $PWD"
+  [ "$(basename "$common")" = .git ] || die "$PWD has no main checkout (its git dir is $common)"
+  dirname "$common"
+}
+
 # The repo's main checkout, from $PWD. A swarm is led from the main checkout, never a worktree.
 main_checkout() {
-  local gitdir common
+  local gitdir
   gitdir="$(git -C "$PWD" rev-parse --absolute-git-dir 2>/dev/null)" || die "not in a git repo: $PWD"
-  common="$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir)"
-  [ "$gitdir" = "$common" ] || die "run swarm from the repo's main checkout, not a linked worktree"
-  git -C "$PWD" rev-parse --show-toplevel
+  [ "$gitdir" = "$(git -C "$PWD" rev-parse --path-format=absolute --git-common-dir)" ] || die "run swarm from the repo's main checkout, not a linked worktree"
+  repo_of
 }
 
 # Which multiplexer holds the workers: herdr (a child space per worker) or wheel (a pane per
@@ -131,11 +141,14 @@ landing_mode() {
 
 # <scratch>/swarm for the repo, where outfiles and the run log live.
 run_dir() { printf '%s/swarm' "$( cd "$1" && "$HOME/.claude/tools/repo-slug" --path )"; }
+# The run log of the repo whose main checkout is $1: the one definition of its path, which
+# `swarm log-path` prints for readers such as Wheelhouse's swarm feed.
+run_log() { printf '%s/run.tsv' "$(run_dir "$1")"; }
 
 # Append "<utc time>\t<event>\t<bead-id>\t<detail>" to the run log.
 log_event() {
-  local dir; dir="$(run_dir "$1")"; mkdir -p "$dir"
-  printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$2" "${3:-}" "${4:-}" >> "$dir/run.tsv"
+  local f; f="$(run_log "$1")"; mkdir -p "$(dirname "$f")"
+  printf '%s\t%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$2" "${3:-}" "${4:-}" >> "$f"
 }
 
 # The Claude config dir a worker's `claude` will run under, resolved the way its launch does:
@@ -505,11 +518,16 @@ cmd_log() {
   log_event "$repo" "$1" "${2:-}" "$detail"
 }
 
+cmd_log_path() {
+  local repo f; repo="$(repo_of)" || exit 1; f="$(run_log "$repo")" || exit 1
+  printf '%s\n' "$f"
+}
+
 # The run log, then one line per bead launched in the latest run with no `finished` or lead
 # verdict after it: a landed, parked, failed or reopened bead is out of flight even when its
 # launch wait was cut short before it could log `finished`.
 cmd_status() {
-  local repo f; repo="$(main_checkout)"; f="$(run_dir "$repo")/run.tsv"
+  local repo f; repo="$(main_checkout)"; f="$(run_log "$repo")"
   [ -f "$f" ] || { echo "swarm: no run log at $f" >&2; exit 1; }
   local start; start="$(awk -F'\t' '$2 == "run" { n = NR } END { print n + 0 }' "$f")"
   awk -F'\t' -v s="$start" 'NR >= s' "$f"
@@ -569,5 +587,6 @@ case "${1:-}" in
   quota)  shift; cmd_quota ;;
   log)    shift; cmd_log "$@" ;;
   status) shift; cmd_status ;;
-  *) echo "usage: swarm check | close <bead-id> landed|parked | launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | quota | log <event> [<bead-id>] [<detail>] | status" >&2; exit 2 ;;
+  log-path) shift; cmd_log_path ;;
+  *) echo "usage: swarm check | close <bead-id> landed|parked | launch <bead-id> <haiku|sonnet|opus> [--opus-reason \"<text>\"] [--dry-run] | quota | log <event> [<bead-id>] [<detail>] | log-path | status" >&2; exit 2 ;;
 esac
