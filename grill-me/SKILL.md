@@ -97,6 +97,14 @@ A third lens, distinct from the two reframers above and not subject to their "ne
 
 **Grill mode only, run once, after the plan's structure has settled.** Invoke `lateral driver-seat` and follow its workflow. The plan under interview is the human's own document, so [DRIVER-SEAT.md](DRIVER-SEAT.md)'s contract puts this pass in shape B: no edit — emit the changes as a numbered slate, one row per change (what moves, where, why, in the plan's own vocabulary), closing with: "Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)." The slate is the interview's next message, waiting on the human like every other question in this pass. Apply only the accepted rows, once the reply arrives, then continue the interview from there.
 
+### Probes pass
+
+A fourth lens that interrogates the plan itself rather than one premise in it, also outside the "never both in one session" rule.
+
+**Grill mode: run once, before the first question.** Invoke `lateral probes` over the plan as written and the code it touches. Each probe that finds something becomes one question in the queue, in probe order, asked one per message like every other question, with options and a pick; a probe that found nothing is never asked. **Shape mode: run once, when the first shape exists** — a vague idea has nothing to probe. Backfill mode skips it: the code there is the record, not a plan.
+
+The probes are where the interview's questions come from, not a report: never print the five findings as a list, and never answer one on the human's behalf.
+
 ## Domain design lenses
 
 If the effort lives in a domain that has a **design axis**, optionally read it and interrogate with its lenses. Detect the domain via [`../_detect.md`](../_detect.md); search the knowledge base for "<domain> design" (today: `game`, `ui`) and pull in what it returns. For a game that's MDA (do the mechanics produce the intended experience?) and Burgun's toy/puzzle/contest/game ("where's the ambiguous decision?"); for `ui` it's the motion/frequency/fluid-interaction/typography lenses. Apply them exactly like everything else here — name the structure, surface

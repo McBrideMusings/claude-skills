@@ -27,6 +27,7 @@ This skill diagnoses the symptom, picks exactly one technique, and runs it inlin
 | A decision is being made too fast / everyone agrees | `six-hats` |
 | Everything feels timid, safe, cautious | `worst-idea` |
 | The plan is settled but nothing says how an agent drives or reads the system | `driver-seat` |
+| A plan or design exists and nobody has attacked its premise or its weakest joint | `probes` |
 
 ## RULE 0 — stay narrow, and stand down when you were fired at nothing
 
@@ -49,23 +50,24 @@ If the target itself is unclear, the chosen technique's own Step 1 will ask for 
 ```
 lateral/
   SKILL.md          <- this router; the only file loaded by default
-  techniques/       <- the nine technique workflows, one file each
+  techniques/       <- the ten technique workflows, one file each
   references/       <- stimulus pools, domain pool, question bank, Po templates, hats guide
   examples/         <- one real worked session per technique
 ```
 
 ## Other skills invoke this with a technique already named
 
-Three hosts use these techniques, plus a fourth for `driver-seat` alone. Each has already diagnosed by the time it calls, so each invokes `lateral <technique>` and RULE 0's step 1 runs that one without re-deciding. None of them copies the content:
+Four hosts use these techniques, plus a fifth for `driver-seat` alone. Each has already diagnosed by the time it calls, so each invokes `lateral <technique>` and RULE 0's step 1 runs that one without re-deciding. None of them copies the content:
 
 | Host | Techniques it reads | Where |
 |---|---|---|
-| `improve` | the five generators — provocation, random-stimulus, analogy, scamper, worst-idea — plus `driver-seat` | [`../improve/LATERAL-LENS.md`](../improve/LATERAL-LENS.md) maps aspect → technique, forwarded to every survey aspect; `agent-ergonomics` maps to `driver-seat` |
-| `grill-me` | the two reframers — inversion, concept-fan — plus `driver-seat` as a third, distinct lens | its "Assumption-breaking lenses" section and its "Driver-seat pass" subsection |
-| `spike` | scamper, random-stimulus | UI.md Phase 03, when the variant set collapses onto one axis |
+| `improve` | the five generators — provocation, random-stimulus, analogy, scamper, worst-idea — plus `driver-seat` and `probes` | [`../improve/LATERAL-LENS.md`](../improve/LATERAL-LENS.md) maps aspect → technique, forwarded to every survey aspect; `agent-ergonomics` maps to `driver-seat`, `architecture` to `probes` |
+| `grill-me` | the two reframers — inversion, concept-fan — plus `driver-seat` and `probes` as distinct lenses | its "Assumption-breaking lenses" section and its "Driver-seat pass" and "Probes pass" subsections |
+| `spike` | scamper, random-stimulus, `probes` (probe 4 only) | UI.md Phase 03, when the variant set collapses onto one axis; COMPARE.md Phase 03, for the fixture's breaking case |
+| `redesign` | `probes` | step 4, over every survivor and the incumbent |
 | `issues spec` | `driver-seat` | Phase 03, over the spec just before approval |
 
-`six-hats` has no host: it converges a decision, and every host above diverges. It stays here.
+`six-hats` has no host: it converges a decision, and every host above diverges or attacks. It stays here.
 
 **Any change to a technique file changes those hosts too.** Keep the workflows self-contained — a host reads one `techniques/*.md` and nothing else from this skill unless that file names it.
 
@@ -78,4 +80,4 @@ Three hosts use these techniques, plus a fourth for `driver-seat` alone. Each ha
 
 ## Provenance
 
-Imported from [danium/lateral-thinking](https://github.com/danium/lateral-thinking) (MIT — see `LICENSE`), restructured from nine top-level skills into this one router plus sub-files. Technique, reference, and example content is unmodified apart from repointed relative links.
+Imported from [danium/lateral-thinking](https://github.com/danium/lateral-thinking) (MIT — see `LICENSE`), restructured from nine top-level skills into this one router plus sub-files. Technique, reference, and example content is unmodified apart from repointed relative links. `driver-seat` and `probes` are local additions, not from that repo.

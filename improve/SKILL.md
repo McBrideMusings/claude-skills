@@ -49,7 +49,7 @@ Improve finds things that work today and could be better. If something is wrong 
 
 ## The lateral lens — every aspect runs one divergence technique
 
-An opportunity has no failing input to follow, so an aspect walk goes predictable: the same five findings any competent agent returns for any repo in this language. Each aspect therefore runs exactly one lateral technique against its surface before writing findings — `provocation` for `architecture`, `worst-idea` for `interface-safety`, `analogy` for `product`, and so on.
+An opportunity has no failing input to follow, so an aspect walk goes predictable: the same five findings any competent agent returns for any repo in this language. Each aspect therefore runs exactly one lateral technique against its surface before writing findings — `probes` for `architecture`, `worst-idea` for `interface-safety`, `analogy` for `product`, and so on.
 
 Mapping, rules, and why `review` has no equivalent: [LATERAL-LENS.md](LATERAL-LENS.md). It generates candidates and changes nothing about what survives — grounding and the Phase 05 citation gate are unchanged.
 

@@ -76,7 +76,9 @@ sizes — realistic ones. A fixture tuned to one approach's strengths makes the 
 the real data is available and safe to copy, dump a slice of it into the prototype directory.
 
 Include the **hard cases** deliberately: the concurrent write, the duplicate, the out-of-order event,
-the 10,000-row page. Those are what separate the approaches; the happy path never does.
+the 10,000-row page. Those are what separate the approaches; the happy path never does. Write the
+first one with probe 4 of `lateral probes` (`../lateral/techniques/probes.md`): the single test that
+breaks each approach on day one, as an input and the assertion it fails. Run only that probe here.
 
 ### Phase 04 — Implement each approach for real
 

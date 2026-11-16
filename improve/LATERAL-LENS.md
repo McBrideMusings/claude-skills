@@ -16,7 +16,7 @@ Invoke `lateral <technique>` with the technique named in the table below, and ru
 
 | Aspect | Technique | The question it forces |
 |---|---|---|
-| `architecture` | `provocation` | Which structural constraint is treated as fixed? Suspend it and see what the code would look like. |
+| `architecture` | `probes` | Strip the module to its hard constraints and rebuild it; name the architect's first rewrite, the test that breaks it, and the abstraction that deletes it. |
 | `interface-safety` | `worst-idea` | Design the most dangerous version of this interface, then find which of its footguns the real one already has. |
 | `agent-ergonomics` | `driver-seat` | Sit in the driver's seat: which level of the tower has no handle? |
 | `security` | `worst-idea` | Same move, aimed at trust: the maximally exploitable design, then the overlap with today's. |

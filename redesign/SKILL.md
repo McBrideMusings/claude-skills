@@ -41,7 +41,7 @@ Each step ends on a completion criterion. Do not start a step before the previou
 
 **4. Incumbent and reality check.** Screenshot the current screen at the real viewport and add it as one more candidate. Mark every candidate's jobs *native*, *by workaround* or *cannot*, with the same rubric. Then check each survivor against the code as built.
 *Knowledge base: search it for "system as built check". If you have none, skip this line and don't mention it.*
-Each row is (candidate needs | code does | `file:line` | shape of the change) or `Unknown`. Cost is stated, never a reason to drop a candidate. *Done when* every candidate has job marks and as-built rows.
+Each row is (candidate needs | code does | `file:line` | shape of the change) or `Unknown`. Cost is stated, never a reason to drop a candidate. Then run `lateral probes` over each candidate, the incumbent included: its probe 3 rewrite and probe 4 breaking test go in that candidate's row, and a probe 5 abstraction that makes the problem disappear joins as one more candidate with its own marks. Probe 2 is the step 2 ledger already; reuse it. *Done when* every candidate has job marks, as-built rows and its probe 3 and 4 findings.
 
 **5. Fit comps and mockups (UI surface: always).** For each survivor, bring it toward the real UI in two steps.
 
@@ -51,7 +51,7 @@ Each row is (candidate needs | code does | `file:line` | shape of the change) or
 
 *Done when* every survivor has fit comps and per-state mockups and the user has seen them.
 
-**6. Decision.** Present the survivors, incumbent included, as an option set per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md), each with its job marks, its images and its change shape, then wait. A candidate that is a guard (retry, cache, refresh button) is labelled as one. *Done when* the user has picked.
+**6. Decision.** Present the survivors, incumbent included, as an option set per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md), each with its job marks, its images, its change shape and its day-one breaking test, then wait. A candidate that is a guard (retry, cache, refresh button) is labelled as one. *Done when* the user has picked.
 
 **7. Settle.** For the chosen design: the flow (places, affordances, content and the moves between states) with the final mockup states as the spec, the winner's comp stored per [`../spike/COMP.md`](../spike/COMP.md) § Storing the winner, and the hand-off to `implement`. An existing surface with a `DESIGN.md` is held to that design system from step 5 on. *Done when* the user has seen the flow and agreed.
 *Knowledge base: search it for "interaction flow". If you have none, skip this line and don't mention it.*
