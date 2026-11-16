@@ -27,6 +27,8 @@ These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongsi
 - **Deletion test.** Imagine deleting the module. If complexity vanishes, it was a pass-through. If complexity reappears across N callers, it was earning its keep.
 - **The interface is the test surface.** Callers and tests cross the same seam. If you want to test *past* the interface, the module is probably the wrong shape.
 - **One adapter = hypothetical seam. Two adapters = real seam.** Don't introduce a seam unless something actually varies across it.
+- **Internal seams stay internal.** A deep module may keep seams inside its implementation for its own tests. Never expose one through the interface just because a test uses it.
+- **Replace tests, don't layer them.** Once tests cross the deepened module's interface, delete the unit tests on the shallow modules it absorbed; they pin the old shape and fail on every internal refactor. A test that must change when the implementation changes is testing past the interface.
 - **Zero callers means delete, not improve.** Before preserving any compatibility path — a mode flag, a prop, a wrapper, a route alias, a fallback branch — grep for real callers. None means it goes; a compat path with no caller is not a constraint, it's residue. Making it tidier is work spent on code that should not exist. This is the checkable form of the design-from-the-end-state move below.
 
 ## Designing from the intended end state
@@ -73,6 +75,19 @@ Good interfaces make testing natural — use this as a lens while exploring to r
 
 3. **Small surface area.** Fewer methods = fewer tests needed. Fewer params = simpler test setup.
 
+## Dependency categories
+
+Classify every candidate's dependencies before proposing the deepening. The category decides where the seam goes and how tests cross it; a module with dependencies in several categories treats each by its own row.
+
+| Category | What it is | Deepening | Tests |
+|---|---|---|---|
+| **In-process** | Pure computation, in-memory state, no I/O | Always deepenable: merge the modules, no adapter | Call the new interface directly |
+| **Local-substitutable** | A dependency with a local stand-in (PGLite for Postgres, an in-memory filesystem) | Deepenable when the stand-in exists; the seam stays internal, no port at the interface | Run against the stand-in |
+| **Remote but owned** | Your own service across a network | Define a port at the seam; the logic stays in one deep module, the transport is an injected adapter | An in-memory adapter; production uses the HTTP, gRPC or queue adapter |
+| **True external** | A third-party service you don't control (Stripe, Twilio) | The module takes it as an injected port | A mock adapter |
+
+Only the last two put a port on the interface, and each such port has two adapters — production and test — so it is a real seam by the rule above.
+
 ## Rejected framings
 
 - **Depth as ratio of implementation-lines to interface-lines** (Ousterhout): rewards padding the implementation. Depth-as-leverage is used instead.
@@ -112,6 +127,7 @@ Each candidate is one card (see [HTML-REPORT.md](HTML-REPORT.md)):
 - **Title** — names the deepening (e.g. "Collapse the Order intake pipeline").
 - **Impact** — a `P0`–`P3` badge (scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags).
 - **Files** — monospaced list of the modules involved.
+- **Dependency category** — each dependency of the deepened module and its category from §Dependency categories, which sets the seam and the test strategy.
 - **Before / After diagram** — the centrepiece. Hand-authored inline SVG showing the shallowness and the deepening, side by side.
 - **Problem** — one sentence: what hurts.
 - **Solution** — one sentence: what changes.
@@ -122,7 +138,7 @@ Each candidate is one card (see [HTML-REPORT.md](HTML-REPORT.md)):
 
 ## Grilling loop (interactive follow-up)
 
-Once the user picks a candidate, drop into a grilling conversation. Walk the design tree — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
+Once the user picks a candidate, drop into a grilling conversation. Walk the design tree — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive. Tests survive at the deepened interface only: name the new interface tests, and the shallow-module tests they replace and delete.
 
 Side effects happen inline as decisions crystallize:
 

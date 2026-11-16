@@ -11,7 +11,7 @@ Uses the vocabulary in [SKILL.md](SKILL.md) — **module**, **interface**, **sea
 Before spawning sub-agents, write a user-facing explanation:
 
 - The constraints any new interface must satisfy
-- The dependencies it relies on and what category they fall into (pure value, owned state, infrastructure, cross-context)
+- The dependencies it relies on and what category they fall into (in-process, local-substitutable, remote but owned, true external — [ARCHITECTURE.md](ARCHITECTURE.md) §Dependency categories)
 - A rough illustrative code sketch to ground the constraints — not a proposal, just a way to make them concrete
 
 Show this to the user, then immediately proceed to Step 2. The user reads and thinks while the sub-agents work in parallel.
