@@ -125,6 +125,9 @@ for and does not need. Write the prompt a competent stranger could act on cold:
 
 1. **The task** — one or two sentences, concrete. Not a feature name.
 2. **Where it lives** — repo, the specific files or subsystem, `file.ts:265` style.
+   When the brief points at another session's work, give its transcript path
+   (`~/.claude/projects/<slug>/<conversation>.jsonl`) and its scratch folder, and say to
+   read them before any search.
 3. **The constraints that are not in the code** — decisions made and alternatives
    ruled out, and *why*. This is the only part that is genuinely unrecoverable.
 4. **First action** — the exact first thing to do, specific enough to start without
