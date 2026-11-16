@@ -2,7 +2,7 @@
 
 When the user wants to explore alternative interfaces for a chosen deepening candidate, use the parallel sub-agent pattern. Based on "Design It Twice" (Ousterhout) — your first idea is unlikely to be the best.
 
-Uses the vocabulary in [SKILL.md](SKILL.md) — **module**, **interface**, **seam**, **adapter**, **leverage**.
+Uses the vocabulary in [ARCHITECTURE.md](ARCHITECTURE.md) — **module**, **interface**, **seam**, **adapter**, **leverage**.
 
 ## Process
 
@@ -20,7 +20,7 @@ Show this to the user, then immediately proceed to Step 2. The user reads and th
 
 Spawn 3+ sub-agents in parallel via the Agent tool. Each produces a **radically different** interface for the deepened module.
 
-Prompt each with an independent technical brief: file paths, coupling details, what sits behind the seam, dependency strategy. Give each a different design constraint:
+Prompt each with an independent technical brief: file paths, coupling details, what sits behind the seam, each dependency's category from [ARCHITECTURE.md](ARCHITECTURE.md) §Dependency categories. Give each a different design constraint:
 
 - **Agent 1**: "Minimise the interface — 1–3 entry points max. Maximise leverage per entry point."
 - **Agent 2**: "Maximise flexibility — support many use cases and extension."
@@ -34,7 +34,7 @@ Each sub-agent outputs:
 1. Interface — types, methods, params, invariants, ordering, error modes
 2. Usage example showing how callers use it
 3. What the implementation hides behind the seam
-4. Dependency strategy and adapters
+4. Dependency strategy and adapters, per each dependency's category
 5. Trade-offs — where leverage is high, where it's thin
 
 ### Phase 03 — Present and Compare

@@ -13,13 +13,13 @@ These terms live in `docs/CONTEXT.md` under an "Architecture" subsection alongsi
   _Avoid_: unit, component, service, layer, wrapper.
 - **Interface** — everything a caller must know to use the module correctly: type signature, invariants, ordering, error modes, required config, perf characteristics.
   _Avoid_: API, signature (those refer only to the type-level surface).
-- **Implementation** — what's inside a module.
+- **Implementation** — what's inside a module. Distinct from **adapter**: a Postgres repository is a small adapter with a large implementation, an in-memory fake a large adapter with a small one. Say "adapter" when the seam is the topic, "implementation" otherwise.
 - **Depth** — leverage at the interface. A module is **deep** when a large amount of behaviour sits behind a small interface. **Shallow** when the interface is nearly as complex as the implementation.
-- **Seam** _(Michael Feathers)_ — a place where you can alter behaviour without editing in that place. The *location* at which a module's interface lives.
+- **Seam** _(Michael Feathers)_ — a place where you can alter behaviour without editing in that place. The *location* at which a module's interface lives. Where the seam goes is its own decision, separate from what goes behind it.
   _Avoid_: boundary (overloaded with DDD's bounded context).
 - **Adapter** — a concrete thing satisfying an interface at a seam. Describes *role* (what slot it fills), not substance.
-- **Leverage** — what callers get from depth. More capability per unit of interface they have to learn.
-- **Locality** — what maintainers get from depth. Change, bugs, knowledge concentrate at one place instead of spreading across callers.
+- **Leverage** — what callers get from depth. More capability per unit of interface they have to learn; one implementation pays back across N callers and M tests.
+- **Locality** — what maintainers get from depth. Change, bugs, knowledge and verification concentrate at one place instead of spreading across callers.
 
 ## Principles
 
@@ -75,6 +75,8 @@ Good interfaces make testing natural — use this as a lens while exploring to r
 
 3. **Small surface area.** Fewer methods = fewer tests needed. Fewer params = simpler test setup.
 
+For any interface you sketch, ask: can it have fewer methods, simpler parameters, more complexity hidden inside?
+
 ## Dependency categories
 
 Classify every candidate's dependencies before proposing the deepening. The category decides where the seam goes and how tests cross it; a module with dependencies in several categories treats each by its own row.
@@ -94,6 +96,8 @@ Only the last two put a port on the interface, and each such port has two adapte
 - **"Interface" as the TypeScript `interface` keyword or a class's public methods**: too narrow — interface here includes every fact a caller must know.
 
 ## The explore pass
+
+**Scope before you scan.** Deepening pays off by making future changes easier, so weight the code that changes. When the user named an area, take it and skip this. Otherwise read the history (`git log --since=6.months --name-only --format= | sort | uniq -c | sort -rn | head -30`) and walk the hot spots — the files and directories that keep appearing — first; widen only when changes are scattered with no hot spot.
 
 Read `docs/CONTEXT.md` (domain glossary + architecture vocabulary) and any ADRs in the area you're touching (`docs/adr/`).
 
