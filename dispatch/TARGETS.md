@@ -175,8 +175,10 @@ move it. Put this in the prompt verbatim, whatever the work is, and add the mode
 > Your work ends at a commit on this branch. You do not push, merge, rebase, open a PR,
 > close or comment on any tracker item, or remove this worktree. A linked worktree shares
 > the primary checkout's object store, so the caller already has every commit you make. Your
-> last message is your report, in chat: files changed, unchanged, follow-up needed, and the
-> manual testing steps with the exact commands you ran. Then stop and stay open.
+> last message is your report, in chat: files changed, unchanged, follow-up needed, the
+> manual testing steps with the exact commands you ran, and one closing row offering what
+> lands and deploys the work (`wrap-up`, then the restart or deploy the diff needs) with the
+> `go` hatch. Then stop and stay open.
 
 **The mode line, one of these two, follows the contract:**
 
