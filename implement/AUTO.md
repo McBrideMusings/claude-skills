@@ -213,7 +213,7 @@ One report ends every auto run, whichever skill ends it: `implement`, `relay` §
 **Needs you**, below).
 
 The run ends when `Used` reaches `Limit`, when no item on the list clears the gate or can be
-decided, or on a halt above. It always prints this report from the run-state block. One line
+decided, or on a halt above. A standing goal — a `bd memories` entry or a brief line saying to work until a measured target is met — keeps the run open past an empty list: file the next bead toward it from the measurements and work it; the run ends only when the target is measured met or every path needs the user. It always prints this report from the run-state block. One line
 per item: id, title, and the one thing the user does next. A section with nothing in it prints
 `none`.
 

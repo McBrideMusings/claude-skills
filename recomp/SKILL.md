@@ -24,12 +24,12 @@ Before the first change and after every measured run, write the frame as a chain
 
 Add links the project has (shader compilation, decompression workers, audio). Mark each link **serial** or **overlapped** with its neighbour from a timeline trace keyed by submission id, not from totals. The sum of overlapped links is not the frame; the longest serial path is. When the sum of the serial links is well under the frame, there is an unmeasured wait: find it before anything else.
 
-The largest serial link is the target of the next change. Nothing else is.
+Every pass's change is one of three kinds: it gets the game compiling and booting, it removes a rendering artifact, or it cuts time from the locked unit. The locked unit is the CPU or the GPU, whichever needs more time per frame on its own (replay plus guest CPU per frame against GPU busy per frame). A pass on the other unit, or on overlapping the two, does not move the frame while the locked unit is over budget.
 
 Two patterns that have cost weeks when missed:
 
 - **A shared-TDP device starves the GPU.** CPU watts and GPU watts come from one budget. A Deck at 15 W with the CPU taking 9 W leaves the GPU 2 W and a 200–1150 MHz clock. If the GPU runs at a fraction of its clock while busy, cutting guest CPU work raises GPU throughput. Pin the GPU clock as the *test configuration* to see the CPU-side frame; the fix is the CPU work.
-- **A serial chain is not a throughput limit.** Replay 38 ms, GPU 35 ms busy, frame 87 ms means neither unit is saturated and the chain is serial. Overlapping the next frame's replay with this frame's GPU work is the change; shaving either link alone is not.
+- **Overlap is not the fix while one unit alone is over budget.** Replay 29 ms, GPU 32 ms, frame 47 ms against a 33.3 ms target: the GPU alone nearly fills the budget, so overlap at best reaches the GPU's own time. Cut the GPU's ms. Overlap becomes the change only once each unit fits the budget alone.
 
 ### Filling the table, in this order
 
@@ -39,13 +39,13 @@ Two patterns that have cost weeks when missed:
 4. **Waits:** each readback or capture wait with the value it waited on, start and end, on the thread that blocked.
 5. **What a program is:** `RX_VK_DUMP=<present>` with `RX_VK_DUMP_PROGS=<keys>` writes what each pass rendered.
 6. **How a shader compiled:** `RADV_DEBUG=shaders,nocache` and `private/tools/aco_stats.py` (instructions, registers, spills).
-7. **Is it pixel-bound?** Change the resolution setting and compare per-pass times: passes that do not shrink are geometry or compute bound. This is a test configuration, never a kept fix.
+7. **Is it pixel-bound?** Change the resolution setting and compare per-pass times: passes that do not shrink are geometry or compute bound. This is a test configuration, never a kept fix. Rendering any pass above the target panel's resolution is waste, not a quality setting: capping it at the panel is a kept fix.
 
 ## 2. The loop
 
 Each pass is one cycle. Count passes; the number of passes with no kept change is the health of the project.
 
-1. **Read the frame model.** Name the largest serial link and its measured ms.
+1. **Read the frame model.** Name the locked unit and its measured ms.
 2. **Name one change** that shortens that link, with the predicted ms it removes. A change is code, a build flag, or a configuration. If the link's cause is unknown, the change is one diagnostic launch that must end in a named change; it is not allowed to end in "needs more data".
 3. **Build and launch once** on the device at the standard scene with the standard settings. Record native frame median and p99, generated frames separately, the build hash, and the model's links from the same launch.
 4. **Decide at once.** Faster by more than the launch-to-launch spread and not visibly worse: **keep it as the working configuration** and move on. Not faster: revert, and write one line saying what the model got wrong. Visibly worse: revert the change, keep the direction.
@@ -74,8 +74,9 @@ Workarounds that prove a cause (a pinned clock, a disabled subsystem, a capped r
 
 1. Stop the game and wait until `pgrep -f '^./bin/hookshot'` on the Deck is empty, plus a few seconds. A second launch shows Steam's "Game already running".
 2. Change one variable (an env var in the Deck's `test-env.sh`, one setting, one build).
-3. Run, read the last steady-state report, record the number and its source.
-4. Stop the game and restore temporary experiment settings (`test-env.sh`, `hookshot_options.ini`, `steamosctl` CPU boost / scheduler / GPU level). A kept change becomes the working configuration: retain its exact build and settings, update the handoff and the harness baseline checks, and keep the previous build for comparison. Do not let cleanup silently reinstall the previous build. Never leave a game running at the end of a turn.
+3. A diagnostic that passed on the build host is not run again on the target; the target gets the acceptance launch only. Before any launch on the Deck, say in chat what it plays (the input script) and whether diagnostics slow it.
+4. Run, read the last steady-state report, record the number and its source.
+5. Stop the game and restore temporary experiment settings (`test-env.sh`, `hookshot_options.ini`, `steamosctl` CPU boost / scheduler / GPU level). A kept change becomes the working configuration: retain its exact build and settings, update the handoff and the harness baseline checks, and keep the previous build for comparison. Do not let cleanup silently reinstall the previous build. Never leave a game running at the end of a turn.
 
 Do not pipe a script that ends in a stop into `head`: the pipe closes and the script dies before the stop.
 
