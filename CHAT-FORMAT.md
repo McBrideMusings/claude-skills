@@ -10,12 +10,13 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **The carrier.** An option set is written in chat. When the options are visual or structural — UI states, layouts, diagrams, renders — each option is also rendered under its letter (`1A`, `1B`) in one Wheel artifact shown in a pane beside the chat (`wheel artifact new`). The lettered options with their argument and cost stay in chat, which names the pane, never the artifact's path. A short decision whose options read fine as text stays in chat.
 
-An option set is plain chat text, never wrapped in a `>` block quote: a quote inside an option would nest, and a chat view draws each level as its own panel.
+An option set is plain chat text, never wrapped in a `>` block quote: a quote inside an option would nest, and a chat view draws each level as its own panel. A blank line follows the question line and ends each option: markdown joins adjacent lines into one paragraph, so `**1. …**` directly above `**1A. …**` renders both on one line.
 
 **Worked example:**
 
 ```markdown
 **1. Where does the retry count live?**
+
 **1A. Add a `retry_count` column to `jobs` in `queue.db`, incremented in the worker's catch block** — *my pick*
 - Survives a process restart — the count is durable, not in-memory
 - Cost: one migration, plus a backfill for in-flight rows
