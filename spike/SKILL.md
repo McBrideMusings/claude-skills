@@ -68,7 +68,7 @@ The shape is the *mechanism*; the domain is the *mode of software*. Resolve per 
 | `<description>` + a count | Same, capped at 5 variants (UI) or 3 implementations (compare) |
 | `riff <name>` | Same slug, diverge *around* the named variant, rebuilt in place |
 
-`riff` names what to build, never a filename. A follow-up on a prototype already on disk is a new version of the same slug. Picking a winner needs no verb — say it in chat.
+`riff` names what to build, never a filename. A follow-up on a prototype already on disk is a new version of the same slug. Picking a winner needs no verb — say it in chat. When the user names a winner after playing variants live, say back which variant was on their screen, by its on-screen label with a still of it, and wait for a yes before it leaves the spike: their word for it may be another variant's name.
 
 ## Not this skill
 
