@@ -10,6 +10,8 @@ The deliverable is the game running at the target frame time on the target devic
 
 Read first: the project's `AGENTS.md` and `docs/current-state.md` (the handoff), then the knowledge base page `fleet/steam-deck/recomp-profiling.md` (`~/.claude/tools/qmd get qmd://knowledge/fleet/steam-deck/recomp-profiling.md`), which lists the tools by device and the commands that work.
 
+This skill is global and loads only by hand; a project that ports games carries a `.claude/skills/recomp/SKILL.md` of its own that loads this file, so its sessions pick the procedure up by themselves. Reverse engineering the guest binary, a system library or a driver entry point goes through the REA MCP server and the `reverse-engineer-anything` skill.
+
 ## 1. The frame model: one table that every decision reads
 
 Before the first change and after every measured run, write the frame as a chain of links with a measured time per link at the current settings. The chain for a replay-style port (guest CPU builds a command stream, a replay thread translates it, the GPU executes it, the guest reads something back) is:
@@ -46,7 +48,7 @@ Two patterns that have cost weeks when missed:
 Each pass is one cycle. Count passes; the number of passes with no kept change is the health of the project.
 
 1. **Read the frame model.** Name the locked unit and its measured ms.
-2. **Name one change** that shortens that link, with the predicted ms it removes. A change is code, a build flag, or a configuration. If the link's cause is unknown, the change is one diagnostic launch that must end in a named change; it is not allowed to end in "needs more data".
+2. **Name one change** that shortens that link, with the predicted ms it removes. Predict it from counters already measured: what the change removes at best (the misses it turns into hits times the measured cost of one, the wait it ends). A function's share of a profile is not a prediction; a change whose best case is under the launch-to-launch spread is not a pass. A change is code, a build flag, or a configuration. If the link's cause is unknown, the change is one diagnostic launch that must end in a named change; it is not allowed to end in "needs more data".
 3. **Build and launch once** on the device at the standard scene with the standard settings. Record native frame median and p99, generated frames separately, the build hash, and the model's links from the same launch.
 4. **Decide at once.** Faster by more than the launch-to-launch spread and not visibly worse: **keep it as the working configuration** and move on. Not faster: revert, and write one line saying what the model got wrong. Visibly worse: revert the change, keep the direction.
 5. **Update the frame model** from the launch. Write the checkpoint (section 6). Go to 1.
