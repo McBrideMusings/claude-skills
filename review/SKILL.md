@@ -116,6 +116,10 @@ otherwise:
 
 Review owns this because it is about review's own output, not the branch's state: **a second `review` on an unchanged branch must not produce a second identical report.**
 
+Before reading the marker, run `git -C <worktree> fetch <remote>`, then
+`gh pr view <n> --json headRefOid,reviews`. Print both, and compare the PR's head and newest
+review against the marker, not the local checkout.
+
 Check this branch's marker — `/private/tmp/claude/reviews/.last-<branch-slug>`, an empty file
 [REVIEW-CORE.md](REVIEW-CORE.md) Phase 07 touches at the end of every pass (the report itself is
 never written to disk — see Phase 07). If the newest branch commit **and** the newest reviewer
