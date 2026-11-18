@@ -26,6 +26,7 @@ Run the loop. Confirm:
 - [ ] The loop produces **the failure the user described** — not a different one nearby. Wrong bug = wrong fix.
 - [ ] Reproducible across runs (or at a high enough rate for non-deterministic bugs).
 - [ ] Exact symptom captured (error message, wrong output, slow timing).
+- [ ] A repro, or code that shows the cause, means the bug still exists. An earlier PR that deferred the fix until "reports continue" or "evidence arrives" is settled by it; never offer a report count or more measurement as a reason to wait.
 
 **Minimise.** Shrink the repro to the smallest scenario that still reproduces — cut inputs, callers, and config one at a time until everything remaining is load-bearing. This narrows the hypothesis space before Phase 03 and gives Phase 05 a correct seam to test against.
 
