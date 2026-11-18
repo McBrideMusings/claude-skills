@@ -111,6 +111,10 @@ out="/tmp/<slug>-dispatch.md"
 
 Run a `--report-back` exec with the Bash tool's **background** mode: the agent can take minutes, and backgrounding keeps the Claude session free — the harness notifies you when the script (and thus the agent) exits, at which point you read `<outfile>`.
 
+### The brief carries the person's words
+
+When a brief relays the person's direction, quote each point verbatim, then the instruction you derive from it beneath it. A paraphrase alone drops whatever you misread, and the worker cannot see the original.
+
 ---
 
 ## Selecting the vendor
