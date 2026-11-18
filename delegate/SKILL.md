@@ -81,8 +81,11 @@ status page, § 5). A check that only writes a log or a page has not reported.
 
 **A step with no new output for 5 minutes gets an explicit verdict**, copied from `alive`:
 `alive and using CPU`, `alive and idle`, or `dead`. `alive and idle` and `dead` are said first in
-the report with what to do next: a worker idle on a permission prompt is shown to the person with
-its pane; a dead one is relaunched or reported as failed, never waited on.
+the report with what to do next: a worker blocked on something this session cannot resolve (a
+permission prompt, a question only the person can answer) is brought in front of the person — in
+Wheel, `wheel pane pop <pane>` floats it over the grid, and once it moves again
+`wheel pane background <pane>` puts it back; elsewhere, the report names its pane. A dead one is
+relaunched or reported as failed, never waited on.
 
 A worker that `alive` has no process for (codex or reasonix in a herdr space) is judged by its
 pane and its outfile; say that the CPU fact is missing and why.
