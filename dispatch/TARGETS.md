@@ -10,22 +10,21 @@ Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined 
 > The one seam: when relay's next work needs a different checkout, relay calls `dispatch`,
 > because a pane's cwd is fixed for its lifetime.
 
-Every skill that hands work to another agent picks from the **same four targets**, in the
-same order. This file is the single owner of that order. `review dual`,
+Every skill that hands work to another session picks from the **same three targets**. This file is the single owner of that order. `review dual`,
 `implement dispatch codex`, and `issues organize` link here rather than each inventing a menu.
 The thing that runs the work is a **worker**; the session that hands it the brief is the
 **dispatcher**.
 
-| | **`agent`** | **`workspace`** | **`window`** | **vendor (`codex` / `reasonix`)** |
-|---|---|---|---|---|
-| What runs | an `Agent` tool call in this session | a live interactive `claude` in its own herdr space | a one-shot piped into the vendor's non-interactive mode | a live interactive `codex`/`reasonix` in a herdr space, or a one-shot in Terminal.app when herdr can't host it |
-| Costs a window | no | no — a space in the sidebar | yes, a real desktop window | no (herdr) / yes (Terminal.app) |
-| Watchable | no | yes, live | yes, output tees to the window | yes, either surface |
-| You can type at it | no | **yes** — switch to the space and take it over | no | yes on herdr, no on Terminal.app |
-| Survives this session dying | no | **yes** | the window survives; the run does not | yes on herdr, no on Terminal.app |
-| Cross-vendor | no — Claude only | no — Claude only | yes, any vendor `dispatch` resolves | yes, that vendor |
-| Stopped by | `TaskStop` on its task id — a `completed` status is not a reason to skip it; the row then reads `killed` rather than leaving `ListAgents` | `herdr workspace close` | close the window | `herdr workspace close` on herdr; close the window on Terminal.app |
-| Reached by | the `Agent` tool | `dispatch exec` → `herdr-agent` (`herdr worktree open --workspace`, or `herdr workspace create`) | `dispatch exec` → `terminal run` | `dispatch exec` → `herdr-agent` or `terminal run` |
+| | **`workspace`** | **`window`** | **vendor (`codex` / `reasonix`)** |
+|---|---|---|---|
+| What runs | a live interactive `claude` in its own herdr space | a one-shot piped into the vendor's non-interactive mode | a live interactive `codex`/`reasonix` in a herdr space, or a one-shot in Terminal.app when herdr can't host it |
+| Costs a window | no — a space in the sidebar | yes, a real desktop window | no (herdr) / yes (Terminal.app) |
+| Watchable | yes, live | yes, output tees to the window | yes, either surface |
+| You can type at it | **yes** — switch to the space and take it over | no | yes on herdr, no on Terminal.app |
+| Survives this session dying | **yes** | the window survives; the run does not | yes on herdr, no on Terminal.app |
+| Cross-vendor | no — Claude only | yes, any vendor `dispatch` resolves | yes, that vendor |
+| Stopped by | `herdr workspace close` | close the window | `herdr workspace close` on herdr; close the window on Terminal.app |
+| Reached by | `dispatch exec` → `herdr-agent` (`herdr worktree open --workspace`, or `herdr workspace create`) | `dispatch exec` → `terminal run` | `dispatch exec` → `herdr-agent` or `terminal run` |
 
 A herdr-hosted worker always gets a **space** (herdr's name is workspace) of its own, never a
 tab of the caller's, and `herdr-agent` never runs `herdr pane split`, which would squeeze the
@@ -62,8 +61,7 @@ modes and names it in its first status line, next to the target and the space:
   poll it, read its pane, verify, land, or remove its worktree. The brief is the user's opening
   prompt to that agent. The user, or the worker's `SELF-LAND` marker, owns the landing.
 
-Who started it decides. When it is unclear, the mode is fire-and-forget. `agent` always returns
-its result to the dispatcher, because it runs inside the session. Never poll a worker with
+Who started it decides. When it is unclear, the mode is fire-and-forget. Never poll a worker with
 `ScheduleWakeup`: the launch command's own completion notification is the wake-up.
 
 The mode goes into the worker's brief, because it sets the worker's ending (see "Where the work
@@ -76,30 +74,17 @@ A brief for another session travels in the `herdr agent prompt` / `wheel pane st
 
 ## The order
 
-**1. Default to `agent`, always.** It is built into the harness: no window to
-open, no process to supervise, no automation grant, no second auth. It is the cheapest
-and the tightest plan-follower, and it is the one that behaves best inside a Claude Code
-pass. Take this unless a reason below actually applies to the work in hand.
+**1. The person names the place.** A dispatch goes to the space, pane, window or vendor the
+person names, and nowhere else. When they named none, ask which, as one question with the
+options, before launching. Dispatch never means an in-session subagent: the `Agent` tool is
+a subagent, not a dispatch, and never answers "dispatch".
 
-**2. Escalate to `workspace`, `window`, or a vendor target only for one of these
-three reasons** — and say which one in the status line, so a run that escalated for no
-reason is visible:
+**2. A skill that dispatches on its own names its reason.** `review dual` goes cross-vendor
+because a second opinion from the same model is not one; say the reason in the status line.
 
-- **Cross-vendor** — a non-Claude model has to do the work. This is the whole point of
-  `review dual`: a second opinion from the same model is not a second opinion.
-- **The user has to watch it or take it over** — a long unattended run they want to
-  follow live, or one they expect to interrupt and steer.
-- **It has to outlive this session** — the work continues after this Claude session ends,
-  is compacted away, or is killed.
-
-**Hitting a genuine open question is never itself a reason to escalate.** A blocked
-decision only the user can make gets asked with `AskUserQuestion` in the calling session,
-in the pane the user is already reading — never by spawning a `workspace` whose
-only job is to relay the question. That trades one pane the user is watching for two, and
-leaves the answer sitting in a space they have to go find. A report-back dispatcher never
-spawns such a space. Dispatch a worker only once the three reasons above independently call
-for one; a question that would block an in-session `agent` blocks a worker exactly the same
-way, so escalating does not remove the block.
+**Hitting a genuine open question is never itself a reason to dispatch.** A blocked decision
+only the user can make gets asked in the calling session, in the pane the user is already
+reading — never by spawning a `workspace` whose only job is to relay the question.
 
 **3. Once `workspace`, `window`, or a vendor target is warranted, the surface is
 resolved, never asked:**
@@ -260,7 +245,7 @@ fallback to something else.
 
 Name the target and the mode (report-back or fire-and-forget) in the first status line, and the target in the final report. The failure this prevents
 is not picking wrong; it is a run that quietly *became* a different one, leaving the user
-looking for a space that was only ever an in-session agent.
+looking for a space that was never made.
 
 ## Related
 

@@ -34,7 +34,7 @@ Load a file only once you've routed to it — that keeps context small.
 
 ## Phase 00 — Route by context
 
-**Run this pass from inside the checkout being reviewed.** A subagent this skill dispatches (`dispatch agent`) is permission-scoped to the session's working directory, so reviewing repo B from a session sitting in repo A gives every reader agent a directory it cannot read — and the failure looks like an empty diff or a thin review, not like a permission error. There is no argument that lifts the scope: `review <path>` pointed across repos hits the same wall. Change directory first, or run the pass in a session already there.
+**Run this pass from inside the checkout being reviewed.** A subagent this skill starts (the `Agent` tool) is permission-scoped to the session's working directory, so reviewing repo B from a session sitting in repo A gives every reader agent a directory it cannot read — and the failure looks like an empty diff or a thin review, not like a permission error. There is no argument that lifts the scope: `review <path>` pointed across repos hits the same wall. Change directory first, or run the pass in a session already there.
 
 **An explicit argument wins over everything below.** `review <branch>`, `review <PR#>`, `review <path>`, `review repo` — take it and skip the rest of this phase.
 
@@ -169,7 +169,7 @@ When `dual` is in the arguments, after the review core produces Claude's own fin
 
 **Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check --job decide`, then `dispatch agent --job decide`. If the check fails (no list set, not authenticated, Terminal automation not permitted), or the picked agent's name is `claude` (the decide list names no other vendor, or none was picked), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
-**Dual is the one flavor whose escalation is automatic.** `dispatch` — invoke it for the ladder — defaults all dispatching to an in-session Claude agent; dual is exempt because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
+**Dual is the one flavor whose escalation is automatic.** Its readers are subagents (the `Agent` tool); dual dispatches because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
 
 **Where the target runs is resolved, not chosen** — `workspace` inside herdr, else `window`. `dispatch exec` prints it; put that line in the status message so the user knows which space (child or standalone) or window to look at. Dual is **report-back**: the review needs the target's outfile, so this session waits for it, reads it, and reconciles it.
 

@@ -11,17 +11,12 @@ typed-answer sense is reserved.
 
 **dispatch**:
 The one verb for giving a brief to another executor and taking its result back —
-`dispatch <target>`. Bare `dispatch` with no target is bounced with the target list.
+`dispatch <target>`: the place the person names. Bare `dispatch` with no place named is asked, with the target list. An in-session subagent (the `Agent` tool) is never a dispatch.
 _Avoid_: hand off, handoff, spawn, delegate, separate session
 
 **worker**:
 The executor a dispatch starts. The dispatcher is the session that handed it the brief.
 _Avoid_: delegate, delegated session
-
-**agent**:
-A dispatch target — the harness `Agent` tool: a subagent in this session, invisible, dies with
-the session.
-_Avoid_: delegate
 
 **workspace**:
 A dispatch target — a new herdr space (herdr calls it a workspace) for the worker: a child space

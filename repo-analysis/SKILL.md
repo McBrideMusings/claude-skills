@@ -77,7 +77,7 @@ If a reference repo has no analog, say so. "They don't implement this at all" is
 
 **Cross-language comparisons are fine.** Implementation patterns transfer across languages. A retry strategy in Go can be ported to Python; a state machine in Rust can be ported to TypeScript. Don't dismiss a reference because the language differs.
 
-### Phase 04 — Read user's implementation, then dispatch agent per reference
+### Phase 04 — Read user's implementation, then one subagent per reference
 
 **04a — Parent reads the user's implementation.** This stays in parent context because it's load-bearing for the final report and you'll be answering follow-up questions about it. Take notes with file:line citations.
 
