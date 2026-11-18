@@ -34,6 +34,8 @@ Run the loop. Confirm:
 
 Generate **3–5 ranked hypotheses** before testing any. Single-hypothesis generation anchors on the first plausible idea.
 
+When the diagnosis covers two or more issues, compare their mechanisms before proposing fixes; issues that share a cause get one fix, one branch and one PR.
+
 Each must be **falsifiable** — state the prediction:
 
 > "If <X> is the cause, then <changing Y> will make the bug disappear / <changing Z> will make it worse."
