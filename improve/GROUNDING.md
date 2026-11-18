@@ -12,7 +12,7 @@ These are the rules a scoring sub-agent applies to decide whether an opportunity
 - **Mis-attributed evidence.** The cited path doesn't contain what the finding claims — wrong file, wrong symbol, a module that doesn't exist. The finding may gesture at a real pattern; a wrong citation makes it un-actionable and it re-surfaces mis-aimed next run.
 - **A defect wearing an opportunity's clothes.** See the boundary rule above.
 - **Already decided.** The finding contradicts an ADR in `docs/adr/` and offers no argument for reopening it. An ADR that a finding argues against *on the merits, naming what changed since* is not this — that scores normally and carries the ADR callout.
-- **Already true.** The improvement is already implemented in the code the finding cites. Read before scoring.
+- **Already true.** The improvement is already implemented in the code the finding cites, or by a hook, tool or skill the session already runs. Before keeping a finding that proposes a hook or a guard, list `~/.claude/hooks/` and the hooks in `~/.claude/settings.json` and the repo's `.claude/settings.json`.
 - **Inapplicable aspect.** The lens ran somewhere its applicability condition is false and produced findings anyway (a UI critique on a repo with no UI surface, a profiling finding with no launchable entry point). The correct return there was `not applicable — <reason>`.
 - **Restating a rule as a finding.** "The project should follow its CLAUDE.md" with no line quoted and no drift shown.
 
