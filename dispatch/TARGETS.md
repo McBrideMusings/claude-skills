@@ -175,10 +175,8 @@ move it. Put this in the prompt verbatim, whatever the work is, and add the mode
 
 This is the same contract an `implement` pass holds when it commits, written here for a
 worker that is a whole session instead of an in-session step. It exists because the prompt is exactly the wrong place to
-decide landing: a brief written before the work knows nothing about what the work found. A
-worker that carried `push the branch, open the PR` and `retire yourself` did both, with four
-unanswered product questions pasted into the PR body, and the person who owed those answers
-first learned of the PR from `gh pr list`. Landing and verification belong to whoever owns the
+decide landing: a brief written before the work knows nothing about what the work found.
+Landing and verification belong to whoever owns the
 result: the user, or the `SELF-LAND` worker, for a dispatch; the caller, for a delegation.
 
 **The `SELF-LAND` marker is for an `owned` repo only.** Run `~/.claude/tools/repo-tier <repo>`

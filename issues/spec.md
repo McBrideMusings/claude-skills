@@ -157,7 +157,7 @@ Beads only. A caller that has already decided where the tickets go (`issues iron
 - **Target epic id** → Phase 06 reuses that epic as the run epic: no lookup, no create, body untouched. Every slice gets `--parent <that id>` in Phase 07, a one-slice slate included.
 - **Labels** → every slice, and the run epic when Phase 06 creates one, is created with them, each taken from `.beads/labels.toml`.
 - **Item being resolved, no epic or labels** → Phases 06 and 07 run as written, and every bead they create, run epic included, gets `--deps discovered-from:<id>`.
-- **No offers** → the post-publish dispatch offer in Phase 07 is skipped. The caller ends through [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work offer.
+- **No offers** → the post-publish implement offer in Phase 07 is skipped. The caller ends through [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the only next-work offer.
 
 ### Phase 06 — Run epic (spec's durable home)
 
@@ -263,7 +263,7 @@ for s in $SLICE_IDS; do bd dep add "$V" "$s" -t blocks; done
 
 Do NOT close or modify any parent issue.
 
-**Post-publish dispatch offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend; skip it too when the caller supplied the destination, per § Caller-supplied destination).** A freshly filed slice is dispatchable by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only slices without `human` are candidates. Read the unblocked front off `bd ready --limit 0 --json` rather than asking, and add one slate row per ready slice to this report naming it against the filed set, e.g. `4 of 7 filed are AFK-ready — run implement <id> for each; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
+**Post-publish implement offer (beads only — GitHub has no labels or dependency edges, so skip this on that backend; skip it too when the caller supplied the destination, per § Caller-supplied destination).** A freshly filed slice is ready to implement by construction: published in dependency order with its blockers wired as real `bd dep add` edges above, so nothing in the first wave is blocked. Only slices without `human` are candidates. Read the unblocked front off `bd ready --limit 0 --json` rather than asking, and add one slate row per ready slice to this report naming it against the filed set, e.g. `4 of 7 filed are AFK-ready — run implement <id> for each; 3 are HITL`, using HANDOFF.md §3's shape (no new accept word — `go` takes it with the rest of the report). Zero AFK slices filed: no row.
 
 ## Principles for writing good agent briefs
 

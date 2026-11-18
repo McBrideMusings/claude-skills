@@ -1,7 +1,6 @@
 # Transport: Terminal.app — drive a visible window on the macOS desktop
 
-> Not a standalone skill. This is one of `dispatch`'s two transports, folded in on
-> 2026-08-20. Spawn a window the user can watch, run commands in it, read output back
+> Not a standalone skill. This is one of `dispatch`'s two transports. Spawn a window the user can watch, run commands in it, read output back
 > (via AppleScript). ONE-SHOT is the transport `dispatch` falls back to outside herdr;
 > SESSION keeps a persistent pane over time. Reached through `dispatch exec`, or
 > directly via `$HOME/.claude/skills/dispatch/terminal` for a window the user should watch.
