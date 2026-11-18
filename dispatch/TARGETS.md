@@ -74,6 +74,8 @@ A worker's "passed" closes nothing until the caller reads what its check actuall
 
 A brief for another session travels in the `herdr agent prompt` / `wheel pane start --message` text itself, or a file under `/private/tmp/claude/<repo-slug>/` — never a file in a checkout the worker was not asked to change.
 
+**The brief carries the person's words.** When a brief relays the person's direction, quote each point verbatim, then the instruction you derive from it beneath it. A paraphrase alone drops whatever you misread, and the worker cannot see the original.
+
 ## The order
 
 **1. The person names the place.** A dispatch goes to the space, pane, window or vendor the

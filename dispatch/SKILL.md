@@ -31,7 +31,8 @@ who owns the result once the worker starts: the person (dispatch) or this sessio
    main checkout ([TARGETS.md](TARGETS.md) § Where the work happens).
 3. **Brief.** Write what the worker needs to start without this conversation: the goal in the
    person's words, what this session already found (files, lines, values, commands run), what is
-   ruled out, and where it stops. A worker that writes code gets the commit contract and the
+   ruled out, and where it stops. The person's direction goes in verbatim, each point above the
+   instruction derived from it ([TARGETS.md](TARGETS.md) § Dispatch or delegate). A worker that writes code gets the commit contract and the
    `Mode: dispatched` line from TARGETS.md verbatim. Never write `/<skill>` into a brief; write
    "call `Skill(<name>)` first, then …".
 4. **Launch.** `"$HOME/.claude/skills/dispatch/dispatch" exec --job <job> --name "<what the work
