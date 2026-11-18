@@ -1,6 +1,6 @@
 ---
 name: repo-analysis
-description: Compare a subsystem against reference repos to find smarter approaches, likely bugs, and features worth porting. Also 'harvest their X' and 'mine their skills'. Use whenever the user points at another project as a reference for their own code.
+description: Compare a subsystem against reference repos to find smarter approaches, likely bugs, and features worth porting. Also 'harvest their X', 'mine their skills', and 'analyze this repo <url>'. Use whenever the user hands over another project's URL or path to analyze, look at or learn from, with or without naming a subsystem of their own.
 ---
 
 # Repo Analysis
@@ -12,7 +12,7 @@ Compare a focused subsystem in the user's repo against one or more reference rep
 
 **Three modes, one spine.** The default is **code mode** — the workflow below, comparing a code subsystem to a reference and porting implementation techniques. When the reference is a **skills repo** (a repo of `SKILL.md` files following Anthropic's skill structure, little or no code) the unit of harvest is a whole skill, not a technique — run **skills mode** ([skills-mode.md](skills-mode.md)). When the capability doesn't exist in the user's repo at all — nothing on our side to compare — run **harvest mode** ([harvest-mode.md](harvest-mode.md)): understand the reference, translate it onto the user's architecture, leave a committed analysis doc + issue slate.
 
-**Mode detection is contextual, never verb-based** — "harvest" legitimately triggers two different modes, so dispatch on the payload and the analog, not the word: reference payload is SKILL.md-structured skills → skills mode; payload is code and the user's repo HAS an implementation of the thing → code mode; payload is code and the user's repo has NO implementation of it → harvest mode. If you can't tell whether an ours-side analog exists, check the user's repo before asking. Everything after scope — acquire, sub-agent-per-reference, report, terminal action — is shared; the non-default modes only swap the scope rule, the mapping, the buckets, and the terminal action.
+**Mode detection is contextual, never verb-based** — "harvest" legitimately triggers two different modes, so dispatch on the payload and the analog, not the word: reference payload is SKILL.md-structured skills → skills mode; payload is code and the user's repo HAS an implementation of the thing → code mode; payload is code and the user's repo has NO implementation of it → harvest mode. A reference that ships skills, commands or agent prompts beside its code is both: run skills mode over every one of those files, and code mode or harvest mode over its code. A bare "analyze this repo" with no subsystem named covers the whole reference: every skill, command, hook and prompt file, plus the code behind them. If you can't tell whether an ours-side analog exists, check the user's repo before asking. Everything after scope — acquire, sub-agent-per-reference, report, terminal action — is shared; the non-default modes only swap the scope rule, the mapping, the buckets, and the terminal action.
 
 **Interview convention (all modes).** Every question to the user — scope clarification and the closing grill-me — is plain chat, one question per message, recommending an answer each time; never the `AskUserQuestion` tool / structured-question schema.
 
@@ -32,7 +32,7 @@ This applies symmetrically. A reference repo with a desktop GUI doesn't mean the
 
 Cross-repo analysis is useless without a focused subsystem. Before fetching or reading anything:
 
-1. **Identify the subsystem in the user's repo** by file path, module, or feature. If the user says "compare our auth flow", find the actual files first. Don't proceed until you can name them. If the search turns up nothing — the user's repo has no implementation of the thing — comparison is impossible; switch to harvest mode.
+1. **Identify the subsystem in the user's repo** by file path, module, or feature. If the user says "compare our auth flow", find the actual files first. Don't proceed until you can name them. If the search turns up nothing — the user's repo has no implementation of the thing — comparison is impossible; switch to harvest mode. A bare "analyze this repo <url>" names no subsystem: skip this step, and the scope is the whole reference (see Mode detection).
 2. **Identify the reference repo(s)** by url or local path. Multiple references are fine.
 3. **Identify the intent**: feature mining, bug hunting, or "find what's smarter generally". Mixed is fine — note it.
 
@@ -53,12 +53,23 @@ For each reference:
   git clone --depth 1 <url> /private/tmp/claude/<repo-slug>/repo-analysis/<name>
   ```
 - If it's a local path, use it directly. Don't copy.
-- For repos larger than ~500MB where only one subsystem matters, sparse-checkout:
+- For repos larger than ~500MB where only one subsystem matters, sparse-checkout (never on a bare "analyze this repo": Phase 02b needs the whole tree):
 
   ```bash
   git clone --depth 1 --filter=blob:none --sparse <url> /private/tmp/claude/<repo-slug>/repo-analysis/<name>
   git -C /private/tmp/claude/<repo-slug>/repo-analysis/<name> sparse-checkout set <subdir>
   ```
+
+### Phase 02b — Inventory every agent-facing file (all modes, do not skip)
+
+A README that says "it is one prompt" is a claim to check, not a reason to stop reading. Before mapping anything, list every file in the reference that instructs an agent or wires one up:
+
+```bash
+R=/private/tmp/claude/<repo-slug>/repo-analysis/<name>
+find "$R" -path "$R/.git" -prune -o -type f \( -name 'SKILL.md' -o -name 'AGENTS.md' -o -name 'CLAUDE.md' -o -name '*.mdc' -o -path '*/commands/*' -o -path '*/agents/*' -o -path '*/rules/*' -o -path '*/hooks/*' -o -name 'plugin.json' -o -name '*hooks*.json' \) -print
+```
+
+Collapse copies of one file shipped for several hosts (`.cursor/rules/x.mdc`, `.windsurf/rules/x.md` holding the same ruleset) into one row, after checking that they match. Then read every distinct file in full, splitting the list across subagents when it is long. The report opens with an **Inventory** table: one row per distinct file, with its path, its line count, what it does in one line, and `read` or `not read: <reason>`. A file left unread is named there, never silently dropped.
 
 ### Phase 03 — Map subsystems
 
