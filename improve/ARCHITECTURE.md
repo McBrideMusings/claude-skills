@@ -124,19 +124,13 @@ Only when the gap is a real requirement the tool can't meet, and the code's shap
 
 **ADR conflicts**: if a candidate contradicts an existing ADR, only surface when the friction is real enough to warrant revisiting. Mark clearly: *"contradicts ADR-0007 — but worth reopening because…"*. Don't list every theoretical refactor an ADR forbids.
 
-## Card fields (for the report)
+## Finding fields (for the report)
 
-Each candidate is one card (see [HTML-REPORT.md](HTML-REPORT.md)):
+Each candidate carries the fields in [REPORT.md](REPORT.md), plus:
 
-- **Title** — names the deepening (e.g. "Collapse the Order intake pipeline").
-- **Impact** — a `P0`–`P3` badge (scale in [`../review/REVIEW-CORE.md`](../review/REVIEW-CORE.md) §Axis tags).
-- **Files** — monospaced list of the modules involved.
 - **Dependency category** — each dependency of the deepened module and its category from §Dependency categories, which sets the seam and the test strategy.
-- **Before / After diagram** — the centrepiece. Hand-authored inline SVG showing the shallowness and the deepening, side by side.
-- **Problem** — one sentence: what hurts.
-- **Solution** — one sentence: what changes.
-- **Wins** — bullets in glossary terms (locality / leverage), ≤6 words each.
-- **ADR callout** (if applicable) — one line in a `.callout--warn` box.
+
+Title names the deepening ("Collapse the Order intake pipeline"); Wins use glossary terms (locality, leverage).
 
 **Use `docs/CONTEXT.md` vocabulary for the domain** (e.g. "the Order intake module", not "the FooBarHandler" or "the Order service") **and the architecture terms above** consistently.
 

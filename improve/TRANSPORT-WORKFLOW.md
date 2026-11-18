@@ -12,7 +12,7 @@ An override for **Phases 04 → 05 → 06 → 06b only** — the aspect fan-out,
 | **02 confirm** | **session, always** | it is a question, and a workflow can take no input |
 | 03 brief assembly | session | it is string building, and `args` has to be real JSON |
 | **04, 05, 06, 06b** | **the workflow** | the fan-out — this is the whole point |
-| 07 report, screenshot | session | it writes files and opens them |
+| 07 report | session | it writes the report where the session shows results |
 | **08 ticketing** | **session, always** | it publishes to a tracker outside this machine, and its confirm is a question |
 
 ## When the token is given but the transport doesn't pay

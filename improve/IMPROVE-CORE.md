@@ -145,14 +145,9 @@ The ranking input is leverage and dependency order — what a change unblocks, w
 
 ## Phase 07 — Report
 
-1. **Write the HTML report** per [HTML-REPORT.md](HTML-REPORT.md) — one `<section>` per aspect, one card per surviving finding, the Top recommendation section, and the coverage line. Title it "Improvement survey — {repo name}".
-
-   The report goes under `reports/` in the directory `~/.claude/tools/repo-slug --path` prints, built with `skills/improve/tool/report`. `mkdir -p` as its own call; `open <path>` on macOS; emit the path on its own line with no trailing punctuation.
-2. **Screenshot it and look at it** before handing it over. A path is not verification.
-3. **Summarize inline** — per aspect: finding count and the top finding's title, so the user can react without opening the file. Name any aspect that returned not-applicable and any sub-agent that died. A missing aspect reads as a clean bill of health for that aspect.
-4. **Do not ask what to work on.** The report is a reading surface, not a menu; the next step is Phase 08 for every route. The only thing to ask here is whether any card is wrong, and the answer changes the ticket, not the plan.
-
-`/private/tmp/claude/<repo-slug>/` is age-pruned with the rest of the account-wide tmp policy; don't keep the report unless asked.
+1. **Write the report** with the content [REPORT.md](REPORT.md) lists, titled "Improvement survey — {repo name}", where the session shows results. Its look is yours to choose.
+2. **Summarize inline** — per aspect: finding count and the top finding's title, so the user can react without opening the file. Name any aspect that returned not-applicable and any sub-agent that died. A missing aspect reads as a clean bill of health for that aspect.
+3. **Do not ask what to work on.** The report is a reading surface, not a menu; the next step is Phase 08 for every route. The only thing to ask here is whether any finding is wrong, and the answer changes the ticket, not the plan.
 
 ## Phase 08 — Ticket the survivors
 
