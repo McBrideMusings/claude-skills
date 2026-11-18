@@ -12,10 +12,10 @@
 # worker is the claude TUI in a pane you can watch, type at, or take over. The waiting and
 # outfile behavior described below applies to the report-back run only.
 #
-# Placement: by default the pane is split off inside the caller's own space, which
-# ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives panes no WHEEL_SPACE. The
-# first worker splits the caller's pane ($WHEEL_PANE) to the right; each later one splits the
-# newest live worker pane downward, so workers stack in one column.
+# Placement: by default the pane is split off the caller's pane ($WHEEL_PANE) inside the caller's
+# own space, which ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives panes no
+# WHEEL_SPACE, and backgrounded: it runs and is shown nowhere until the person brings it forward
+# (`wheel pane background <pane>` toggles it into the grid).
 #
 # The worker's claude starts in $WHEEL_AGENT_WORKDIR (else $WHEEL_AGENT_SPACE_DIR, else the
 # caller's folder) with its own --session-id, and once it reports in, its process's working
@@ -95,7 +95,10 @@ claim_pane() {
     done
     # In a space of its own the first worker fills it, so the second goes beside it.
     [ -n "$named" ] && [ "$(printf "%s\n" "$live" | grep -c .)" -eq 1 ] && dir=right
-    new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
+    # In the calling space the worker runs backgrounded (running, shown nowhere), split off the
+    # calling pane; the person brings it forward with `wheel pane background <pane>`.
+    if [ -n "$named" ]; then new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
+    else new="$(wheel pane split "$lead" --background)" || exit 1; fi
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
     printf "%s\n" "$new"' _ "$l" "${WHEEL_PANE:-}" "${WHEEL_SPACE:-}" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" "${WHEEL_AGENT_SESSION:-}" \
@@ -196,7 +199,7 @@ Do not summarise it there; that file IS your answer and is the only part that is
 
   i=0
   while [ -z "$(state)" ]; do
-    i=$((i + 2)); [ "$i" -lt "$READY_S" ] || { echo "wheel-agent: claude in pane $pane reported no state in ${READY_S}s — leaving it open" >&2; return 1; }
+    i=$((i + 2)); [ "$i" -lt "$READY_S" ] || { echo "wheel-agent: claude in pane $pane reported no state in ${READY_S}s — leaving it open; it may be waiting on a dialog: show it with \`wheel pane background $pane\`" >&2; return 1; }
     sleep 2
   done
 
