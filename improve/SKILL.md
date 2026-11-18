@@ -96,7 +96,7 @@ Every routed owner carries a **"Findings-only invocation"** section stating its 
 
 ## Routing
 
-- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; routed aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no survey report. IMPROVE-CORE.md is not involved — **except its Phase 08**, which this route still runs: score the findings yourself against [GROUNDING.md](GROUNDING.md), then take the survivors to tickets. The grilling loop is what sharpens a finding into a ticket body worth handing to `implement`; it is not a licence to build the thing.
+- **One aspect named** (`improve security`, "improve the tests") → load the **owner** in-session and run its audit interactively: native aspects read their own file here; routed aspects invoke the owning skill via the Skill tool, which keeps its own follow-up flow with the user. No sub-agents, no survey report. IMPROVE-CORE.md is not involved — **except its label lenses (Phase 03) and its Phase 08**, which this route still runs: score the findings yourself against [GROUNDING.md](GROUNDING.md), then take the survivors to tickets. The grilling loop is what sharpens a finding into a ticket body worth handing to `implement`; it is not a licence to build the thing.
 - **Several aspects named** (`improve gui tests`) → survey over exactly those, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 - **Nothing named** (bare `improve`) → survey over every applicable aspect, via [IMPROVE-CORE.md](IMPROVE-CORE.md).
 

@@ -66,7 +66,9 @@ Shape and canonical wording: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate ro
 
 ## Phase 03 — Assemble the briefs
 
-One brief per confirmed aspect: the content of its [`aspects/`](aspects/) file, **the Phase 01 repo map**, and **every directive below forwarded verbatim**. The aspect files do not restate these; the dispatch forwards them so findings arrive at Phase 05 already in the target shape.
+One brief per confirmed aspect: the content of its [`aspects/`](aspects/) file, **the Phase 01 repo map**, **the label lenses**, and **every directive below forwarded verbatim**. The aspect files do not restate these; the dispatch forwards them so findings arrive at Phase 05 already in the target shape.
+
+**The label lenses.** Run `~/.claude/skills/review/tool/lens-gate --json --repo-mode` once and keep every record whose `file` is under the knowledge base's `ref/` directory and whose `decision` is `run`: those are the repo's label `review.md` pages, chosen by the same gate `review` uses. Forward their paths into the `architecture`, `interface-safety`, `security` and `performance` briefs, with the sibling `profiling.md` of each matched label (same directory, when it exists) added to the `performance` brief. Each brief reads them before its own walk, and a finding a label page produced names that page as its **lens**. A single-aspect run reads the same pages before loading the owner.
 
 **The finding shape.** Forward verbatim:
 
