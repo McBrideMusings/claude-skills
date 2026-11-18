@@ -199,13 +199,12 @@ elsewhere, squashed by `wrap-up`.
    only subagents this process spawns as a matter of course, and this step is what clears a session that
    otherwise carries a standing instruction not to call the `Agent` tool unasked. It gets the
    diff and the repo's standards,
-   never this session's own reasoning about why the diff is correct. Fix every
-   `blocking`/`major` finding it returns, and every finding about cost (work per redraw,
-   keystroke, frame or request; a retry or poll; work that grows with rows, spaces or accounts)
-   whatever its grade,
-   then re-verify whatever the fix touched — one cycle, not two. `minor` findings, and anything
-   still open after that cycle, go to `wrap-up`'s follow-up step rather than a second review
-   round.
+   never this session's own reasoning about why the diff is correct, and no grading scale of
+   this session's own: the reviewer scores by [`../review/FALSE-POSITIVES.md`](../review/FALSE-POSITIVES.md)
+   and returns only findings that clear it. Fix every finding it returns, then re-verify whatever
+   the fix touched — one cycle, not two. An `architecture` finding, and anything still open after
+   that cycle, goes to `wrap-up`'s follow-up step rather than a second review round. A finding
+   this session judges not worth fixing is dropped, never carried as a follow-up.
 6. **Commit**, per the branch rule above.
 
 ## Bash command rules

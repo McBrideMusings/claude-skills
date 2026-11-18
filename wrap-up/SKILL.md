@@ -10,7 +10,7 @@ Work through each phase below. Skip any phase that doesn't apply to this project
 
 **A clean tree on the default branch is not a reason to skip `wrap-up`.** With nothing to commit or land, Phase 5 and Step C do nothing, but Phase 2 still closes finished issues and epics and Phase 6 still prints the `next-work` output, takes the follow-up slate, and relays. An epic whose children all closed in earlier sessions ends here, not in a hand-run `bd close`.
 
-**A small change is not a reason to skip the follow-up round or the next-steps line.** Size only shortens Phase 4: a change of a few lines may take an inline read instead of the staged review. Phase 6 Step A still runs in full — the slate (even with every row `[skip]`, or one row saying nothing surfaced) and the next-work line from `next-work` are printed and answered before the turn ends.
+**A small change is not a reason to skip the follow-up round or the next-steps line.** Size only shortens Phase 4: a change of a few lines may take an inline read instead of the staged review. Phase 6 Step A still runs in full — the slate (or one row saying nothing surfaced) and the next-work line from `next-work` are printed and answered before the turn ends.
 
 ---
 
@@ -273,7 +273,7 @@ The next work comes from [`../relay/SKILL.md`](../relay/SKILL.md) §Ending, the 
 
 Shape — the follow-up slate, then one closing sentence. There is no second question and no lettered options: `go` and `park` are the two answers, and the row numbers already use every number in the message.
 
-- **Follow-ups** — the numbered candidate list, one row per item, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row. Each row ends with its default in brackets: `[fix]`, `[file]`, `[skip]`.
+- **Follow-ups** — the numbered candidate list, one row per item, per [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Slate row. Each row ends with its default in brackets: `[fix]` or `[file]`. A candidate whose default would be `[skip]` is dropped before the slate and never printed ([`../review/FALSE-POSITIVES.md`](../review/FALSE-POSITIVES.md): a finding you would advise skipping has already scored below the bar).
 - **Open from this session** — one `[hold]` row for every ask this conversation put to the user that is still unanswered, and every thread it started and did not finish, worded the way the user would recognise it. They print before the `Next:` line.
 - **Next work** — the `Next:` line `next-work` printed, last under the slate, per §Ending. No number, no letters. Printed only when no `[hold]` row above is open from this session: the session's own unfinished work outranks the tracker's rank, so with any open the slate closes with the no-next-work sentence.
 
