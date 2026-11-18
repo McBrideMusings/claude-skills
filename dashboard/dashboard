@@ -47,7 +47,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose"]
+KINDS = ["status", "implement", "profile", "spike", "monitor", "chart", "diagram", "diagnose", "delegate"]
 MERMAID_KINDS = {"diagram", "diagnose"}
 MERMAID_SRC = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"
 MERMAID_SRI = "sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I"
@@ -195,6 +195,27 @@ def probe_monitor(state: dict, slot: str, record: bool) -> dict:
     return {"readings": readings, "history": history}
 
 
+DISPATCH = Path.home() / ".claude/skills/dispatch/dispatch"
+
+
+def probe_delegate(state: dict) -> dict:
+    """`dispatch alive <outfile> --json`: the worker's process tree, CPU, output age, verdict."""
+    out = state.get("outfile")
+    if not out:
+        return {"error": "state has no outfile"}
+    try:
+        r = subprocess.run([str(DISPATCH), "alive", str(out), "--json"],
+                           capture_output=True, text=True, timeout=PROBE_TIMEOUT)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return {"error": f"dispatch alive: {e}"}
+    if r.returncode != 0:
+        return {"error": (r.stderr.strip().splitlines() or [f"exit {r.returncode}"])[0]}
+    try:
+        return json.loads(r.stdout)
+    except json.JSONDecodeError as e:
+        return {"error": f"dispatch alive printed no JSON: {e}"}
+
+
 def build_data(slot: str, record: bool = True) -> dict:
     state = load_state(slot)
     kind = state["kind"]
@@ -202,6 +223,8 @@ def build_data(slot: str, record: bool = True) -> dict:
         state["live"] = probe_implement(state)
     elif kind == "monitor":
         state["live"] = probe_monitor(state, slot, record)
+    elif kind == "delegate":
+        state["live"] = probe_delegate(state)
     state["updated"] = now()
     return state
 

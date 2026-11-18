@@ -11,15 +11,15 @@ Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined 
 A relay hands the next body of work **forward**: same pane, same repo, same seat, next body
 of work, nothing running concurrently. This context dies so the next one starts clean.
 
-That is a different axis from `dispatch <target>`, which hands work **sideways** — another
+That is a different axis from `dispatch <target>` and `delegate <target>`, which hand work **sideways** — another
 agent or process, picked off the target ladder, running while you keep your seat.
-The two share no mechanism. Relay never touches the target ladder; dispatch never
-touches `/clear` or the Stop hook.
+Relay shares no mechanism with them. Relay never touches the target ladder; they never
+touch `/clear` or the Stop hook.
 
 **One seam:** when the next body of work needs a different checkout, relay cannot
 carry it — a pane's cwd is fixed for its lifetime. When the user asked for a relay, say so in
 one line and ask whether to `dispatch` it instead; never dispatch in place of a relay they
-named. When relay chose itself, call `dispatch` rather than reimplementing it, then relay this
+named. When relay chose itself, call `delegate` rather than reimplementing it, then relay this
 pane to the orchestration/watch role.
 
 ## Preconditions — check these before writing the marker

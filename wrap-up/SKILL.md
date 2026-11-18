@@ -353,7 +353,7 @@ No remote? Do the local `checkout main` + `merge --no-ff` + `branch -d` and skip
 
 **Landing an `implement` pass — Step C's teardown, when `wrap-up` was given an explicit `<worktree>` argument.** This is the only caller that hands wrap-up a worktree it is not standing in, and it is the one case where Step C removes it. Run this after the merge or PR above has landed:
 
-9. **Verify teardown is safe, then retire the worktree** — only when this session stands outside it. A dispatched worker landing its own worktree skips this step and goes to step 10; its dispatcher or `git-sweep` removes the worktree.
+9. **Verify teardown is safe, then retire the worktree** — only when this session stands outside it. A worker landing its own worktree skips this step and goes to step 10; the session that delegated it, or `git-sweep`, removes the worktree.
     ```bash
     git -C <worktree> status --short                                        # must be empty
     git log <default>..<branch>                                             # must be empty — fully merged

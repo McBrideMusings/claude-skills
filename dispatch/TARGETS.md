@@ -1,19 +1,20 @@
-# Dispatch targets — the ladder
+# Targets — where a dispatched or delegated worker goes
 
-Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined in
+Control words (`go`, `park`, `dispatch`, `delegate`, `implement`, `verify` …) are defined in
 [`../CONTEXT.md`](../CONTEXT.md).
 
-> **Not this file: handing work *forward*.** Everything below is `dispatch <target>` —
-> another agent or process runs the work while you keep your seat. Handing the *next* body
+> **Not this file: handing work *forward*.** Everything below is `dispatch <target>` or
+> `delegate <target>` — another agent or process runs the work while you keep your seat. Handing the *next* body
 > of work forward into a clean context in the **same** pane, so this session ends and the
 > next one begins where it left off, is `relay`. It shares no mechanism with this ladder.
-> The one seam: when relay's next work needs a different checkout, relay calls `dispatch`,
+> The one seam: when relay's next work needs a different checkout, relay calls `delegate`,
 > because a pane's cwd is fixed for its lifetime.
 
-Every skill that hands work to another session picks from the **same three targets**. This file is the single owner of that order. `review dual`,
-`implement dispatch codex`, and `issues organize` link here rather than each inventing a menu.
-The thing that runs the work is a **worker**; the session that hands it the brief is the
-**dispatcher**.
+Every skill that hands work to another session, through `dispatch` or `delegate`, picks from the
+**same three targets**. This file is the single owner of that order. `review dual`,
+`implement dispatch codex`, `swarm` and `issues organize` link here rather than each inventing a
+menu. The thing that runs the work is a **worker**; the session that hands it the brief is the
+**caller**.
 
 | | **`workspace`** | **`window`** | **vendor (`codex` / `reasonix`)** |
 |---|---|---|---|
@@ -46,29 +47,30 @@ space it opened is renamed to the name (`herdr workspace rename`). Its stderr na
 (and whether it is a child) and the pane, and prints again each time the agent stops on a
 permission prompt.
 
-## Who feeds the result back — the dispatcher's call, stated at launch
+## Dispatch or delegate — who owns the result, stated at launch
 
-**Applies to `workspace`, `window` and the vendor targets.** The dispatcher picks one of two
-modes and names it in its first status line, next to the target and the space:
+**Applies to `workspace`, `window` and the vendor targets.** The caller picks one and names it in
+its first status line, next to the target and the space:
 
-- **report-back** (`dispatch exec --report-back`) — the agent dispatched on its own initiative, for
-  parallel work the user did not ask for. The dispatcher keeps ownership: it waits for the worker to finish, reads `<outfile>`,
-  verifies or reviews the result, folds it into its own work, and tells the user. An implementing
-  worker still ends at a commit; the dispatcher lands it and cleans up its worktree.
-- **fire-and-forget** (`dispatch exec` with no mode flag) — the user told it to dispatch (`dispatch
-  workspace …`, "run this in a separate session"). The dispatcher launches, says target, space and why in one line, and stops
-  managing the worker: `exec` returns once the worker has the brief, and the dispatcher does not
-  poll it, read its pane, verify, land, or remove its worktree. The brief is the user's opening
-  prompt to that agent. The user, or the worker's `SELF-LAND` marker, owns the landing.
+- **`dispatch`** (`dispatch exec` with no mode flag) — the person owns the worker. The caller
+  launches, says target, space and why in one line, and stops managing it: `exec` returns once the
+  worker has the brief, and the caller does not poll it, read its pane, verify, land, or remove its
+  worktree. The person, or the worker's `SELF-LAND` marker, owns the landing.
+  See [SKILL.md](SKILL.md).
+- **`delegate`** (`dispatch exec --report-back`) — the caller owns the result. It watches the
+  worker as [`../delegate/SKILL.md`](../delegate/SKILL.md) says, reads `<outfile>`, verifies the
+  result, folds it into its own work or lands it, and tells the person. An implementing worker
+  still ends at a commit; the caller lands it and cleans up its worktree.
 
-Who started it decides. When it is unclear, the mode is fire-and-forget. Never poll a worker with
-`ScheduleWakeup`: the launch command's own completion notification is the wake-up.
+The person's words decide: "dispatch this", "run it in a separate session" is `dispatch`; a skill
+that starts workers it then waits on (`swarm`, `review dual`, a `mergeable` sweep) is `delegate`.
+When it is unclear, ask which.
 
 The mode goes into the worker's brief, because it sets the worker's ending (see "Where the work
-happens" below): a fire-and-forget worker closes with the line the person reading its pane needs;
-a report-back worker ends at a commit and writes its report to `<outfile>` for the dispatcher.
+happens" below): a dispatched worker closes with the line the person reading its pane needs; a
+delegated worker ends at a commit and writes its report to `<outfile>` for the caller.
 
-A worker's "passed" closes nothing until the dispatcher reads what its check actually drove and compares it, case by case, to the request's quoted words.
+A worker's "passed" closes nothing until the caller reads what its check actually drove and compares it, case by case, to the request's quoted words.
 
 A brief for another session travels in the `herdr agent prompt` / `wheel pane start --message` text itself, or a file under `/private/tmp/claude/<repo-slug>/` — never a file in a checkout the worker was not asked to change.
 
@@ -167,9 +169,9 @@ move it. Put this in the prompt verbatim, whatever the work is, and add the mode
 
 **The mode line, one of these two, follows the contract:**
 
-> Mode: fire-and-forget. Your report is for the person reading this pane.
+> Mode: dispatched. Your report is for the person reading this pane.
 
-> Mode: report-back. Also write your report, the same text, to `<outfile>`; the dispatcher reads it.
+> Mode: delegated. Also write your report, the same text, to `<outfile>`; the session that delegated reads it.
 
 This is the same contract an `implement` pass holds when it commits, written here for a
 worker that is a whole session instead of an in-session step. It exists because the prompt is exactly the wrong place to
@@ -177,8 +179,7 @@ decide landing: a brief written before the work knows nothing about what the wor
 worker that carried `push the branch, open the PR` and `retire yourself` did both, with four
 unanswered product questions pasted into the PR body, and the person who owed those answers
 first learned of the PR from `gh pr list`. Landing and verification belong to whoever owns the
-result: the user, or the `SELF-LAND` worker, for a fire-and-forget dispatch; the dispatcher, for
-a report-back one.
+result: the user, or the `SELF-LAND` worker, for a dispatch; the caller, for a delegation.
 
 **The `SELF-LAND` marker is for an `owned` repo only.** Run `~/.claude/tools/repo-tier <repo>`
 before touching it. When it prints `collaborative` or `unlisted`, never create the marker and
@@ -196,7 +197,7 @@ before reaching its first line, so the PreToolUse, PostToolUse and Stop guards a
 skipped for the rest of that session — non-blocking failures, so nothing stops.
 
 **The worktree and the branch are removed by whoever owns the result: the user for a
-fire-and-forget dispatch, the dispatcher for a report-back one. Never the worker.**
+dispatch, the caller for a delegation. Never the worker.**
 Inside herdr that is `herdr worktree remove --workspace <id> --force` against the worker's
 space; the herdr server performs the deletion, so nothing loses its footing. A worktree
 that outlives its landing is collected anyway: `tools/git-sweep.sh`, run
@@ -208,8 +209,8 @@ It fast-forward-pushes and refuses rather than forces; the full route is `wrap-u
 Route 2.
 
 **A SELF-LAND worker's report ends with a closing line, after the manual testing steps**, so
-the person reading from the bottom of the pane knows nothing is left. A report-back worker has
-no such line: it ends at a commit and its report in `<outfile>` is what the dispatcher reads. When the landing
+the person reading from the bottom of the pane knows nothing is left. A delegated worker has
+no such line: it ends at a commit and its report in `<outfile>` is what the caller reads. When the landing
 succeeded and the report has no follow-up: `Done — landed on main (<sha>). Nothing left to
 do; you can close this session.` When the landing did not happen, or follow-up is needed,
 the last line says that instead, and names the one thing the user must do.
@@ -243,13 +244,14 @@ fallback to something else.
 
 ## Say which one ran
 
-Name the target and the mode (report-back or fire-and-forget) in the first status line, and the target in the final report. The failure this prevents
+Name the target and the mode (dispatch or delegate) in the first status line, and the target in the final report. The failure this prevents
 is not picking wrong; it is a run that quietly *became* a different one, leaving the user
 looking for a space that was never made.
 
 ## Related
 
-- The resolver, the vendors, and the auth gate → [SKILL.md](SKILL.md)
+- The resolver, the vendors, the auth gate and `alive` → [LAUNCH.md](LAUNCH.md)
+- Dispatching → [SKILL.md](SKILL.md); delegating → [../delegate/SKILL.md](../delegate/SKILL.md)
 - The herdr live-agent transport → `herdr-agent` in this directory
 - The Terminal.app transport → [TRANSPORT-TERMINAL.md](TRANSPORT-TERMINAL.md)
 - Implementation passes, which do not use this ladder at all today — `implement` runs the session's own plan → edit → verify → gate steps directly, no dispatch → [../implement/SKILL.md](../implement/SKILL.md)

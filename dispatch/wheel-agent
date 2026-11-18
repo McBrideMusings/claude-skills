@@ -163,8 +163,16 @@ cmd_run() {
   local want="${WHEEL_AGENT_WORKDIR:-${WHEEL_AGENT_SPACE_DIR:-$PWD}}"
   workdir="$(cd "$want" && pwd -P)" \
     || { echo "wheel-agent: no such folder: $want" >&2; return 1; }
-  sid="$(uuidgen | tr 'A-Z' 'a-z')"
-  args+=(--session-id "$sid")
+  # A caller that named the conversation (dispatch does, for every claude worker) keeps its id.
+  sid=""
+  local i
+  for ((i = 0; i < ${#args[@]}; i++)); do
+    [ "${args[i]}" = "--session-id" ] && sid="${args[i+1]:-}"
+  done
+  if [ -z "$sid" ]; then
+    sid="$(uuidgen | tr 'A-Z' 'a-z')"
+    args+=(--session-id "$sid")
+  fi
   printf '%s\n' "$sid" > "$dir/session"
 
   # A handed-off worker gets the brief unchanged: it answers the person in its own pane.
