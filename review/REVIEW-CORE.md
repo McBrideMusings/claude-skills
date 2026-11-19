@@ -57,7 +57,7 @@ Reached only via explicit `review repo` or an accepted offer above. The target i
 
 - **Slice first. One pass over a whole codebase is not the default and never was tractable.** Before Phase 04, partition the scope into **coherent subsystem slices** — by feature area or bounded context, following the repo's own structure (top-level packages/apps, then domain folders), not by file count or alphabet. Name each slice for what it *is* (`league-domain`, `gems-store`, `migrations-infra`).
 
-  **Order the printed slice list by churn against size, not partition order.** For each slice: `git log --stat --since="6 months ago" -- <slice-path>` for churn (count files touched × commits, or just commits touching the slice — keep the heuristic simple, this is an ordering, not a scoring model) and total line count across the slice's files for size. Sort slices with both high churn and large size first; a large file nobody touches or a small file touched constantly is usually fine, so neither alone floats a slice up. Print the ordered list before Phase 04 starts. **This changes the order only — every slice still gets the full Phase 04→06 lens set; there is no sampling and nothing is skipped.** It will sometimes be wrong (a large, frequently-touched slice can be a feature under active construction, not debt) — that's an acceptable cost for an ordering and would not be for a filter.
+  **Order the printed slice list by main flow, then churn against size, not partition order.** For each slice: `git log --stat --since="6 months ago" -- <slice-path>` for churn (count files touched × commits, or just commits touching the slice — keep the heuristic simple, this is an ordering, not a scoring model) and total line count across the slice's files for size. Slices on a main flow come first, ahead of churn: the paths that take input from users, move money, check auth, write data, run background jobs, or hold state several processes share — the places a mistake costs most. Within each group, sort slices with both high churn and large size first; a large file nobody touches or a small file touched constantly is usually fine, so neither alone floats a slice up. Print the ordered list before Phase 04 starts. **This changes the order only — every slice still gets the full Phase 04→06 lens set; there is no sampling and nothing is skipped.** It will sometimes be wrong (a large, frequently-touched slice can be a feature under active construction, not debt) — that's an acceptable cost for an ordering and would not be for a filter.
 
   Run the full Phase 04→06 lens set **once per slice, in the printed order**. Findings from every slice merge into one report.
 
@@ -180,6 +180,7 @@ Scored lenses — each its own file in `axes/`:
 - [`axes/standards.md`](axes/standards.md) — CLAUDE.md compliance
 - [`axes/bug.md`](axes/bug.md) — bug scan
 - [`axes/security.md`](axes/security.md) — security vulnerabilities
+- [`axes/scale.md`](axes/scale.md) — code correct for one user and wrong for many, judged against the load the repo expects
 - [`axes/history.md`](axes/history.md) — historical context (reads `git blame`)
 - [`axes/contracts.md`](axes/contracts.md) — code comments & contracts
 - [`axes/architecture.md`](axes/architecture.md) — architecture fit
@@ -221,7 +222,7 @@ Run it after Phase 05 scoring and before the Phase 06 filter. It never touches t
 
 **Qualifies** — `bug`, `spec/wrong-impl`, `security`, and correctness `standards` findings whose **Bites** line names a constructible input and whose claim is behavioral: a wrong value, a crash, a missed branch, a leaked value.
 
-**Cannot be executed, and this is not a defect of the finding:** `architecture`, `design`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `spec/missing-partial`, `test-debt`, `dependency-debt`, `docs-drift`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, a deprecated-API citation, a missing test, an unused package, and a stale doc are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
+**Cannot be executed, and this is not a defect of the finding:** `architecture`, `design`, `contracts`, `slop`, `negative-space`, `history`, `best-practice`, `scale`, `spec/missing-partial`, `test-debt`, `dependency-debt`, `docs-drift`, and every platform/domain idiom finding. Nothing runs, because nothing about them is a behavior claim — a layer violation, a stale comment, an un-updated caller, a deprecated-API citation, a missing test, an unused package, and a stale doc are all true or false by reading, and a passing test suite is not evidence against any of them. They get the verdict `not-executable` and pass to Phase 06 on the reading scale, unchanged. **Never score one of them down for failing to reproduce — they were never eligible to.**
 
 #### The scratch worktree — never the user's tree
 
@@ -396,6 +397,7 @@ Lenses: standards, bug, history, contracts, architecture, spec, negative-space �
 - **Gated off** — every `skip` record, with its `reason` (`design: no DESIGN.md`).
 - **Offered** — every `offer` record and what happened to it: run when accepted (it joins `Lenses`), `offered, declined`, or `offered, not run (unattended)`. Evidence this matters: across 367 findings in 2.5 months of use, `security` produced **one**, and no report says whether that is a clean record or a gate that never opened.
 - **Failed** — any lens whose sub-agent errored or returned nothing. Never fold a dead lens into silence.
+- **Not checked** — its own line, `Not checked: <what>`, whenever something the review needed went unread or unrun: a caller outside the diff it did not open, a test it could not run, a config it could not reach. Omit the line only when there is nothing to name.
 - **Slices (repo mode)** — append the slice names so a reader can see the partition the review actually covered.
 - **Execution gate** — a mandatory second line whenever Phase 05b ran or was skipped. Name what was run and against what, so a reader can tell "reproduced against the real module" from "no constructible input" from "skipped". A report with no gate line is a report where nobody knows whether anything was executed.
 
@@ -621,6 +623,7 @@ Every issue is tagged `[<axis>(/<subtype>) · T<n> · <P-level>]` — axis (with
 - `contracts` — from the Code comments and contracts agent
 - `architecture` — from the Architecture fit agent (layer/boundary violation, wrong abstraction level, pattern inconsistency, structural scalability, ownership ambiguity). Always a design call — surface even at medium confidence; never dismiss as a style nit. Default visual: file tree with `+`/`-` gutters.
 - `negative-space` — from the Negative-space lens (an unmet obligation the diff creates: un-updated caller, unhandled failure path, missing test/validation/observability, unflagged breaking change or migration). Always a design call — surface, never auto-fix; bounded to obligations the diff itself creates. Use **Fix (design call):** framing.
+- `scale` — from the Scale lens (code correct for one user and wrong at the repo's expected load: check-then-write race, work every process repeats, unbounded growth, per-item query, quadratic scan, per-process state that must be shared). The report entry names the assumed load and where it was read.
 - `slop` — from the Code slop lens (structure that adds no meaning: comment/helper/type/memo/effect slop, compatibility cruft, diff churn). Rated `P3` — slop doesn't make behavior wrong.
 - `design` — from the Design lens (UI code that breaks a written `DESIGN.md` rule, or a `project-design/tools/lint.sh` failure the diff introduced). The report entry **must quote the cited rule or name the lint rule**; a design finding with no cited rule is dropped. Never raised in a repo with no `DESIGN.md` at its root.
 - `best-practice` — from the Best-practices-vs-live-docs lens (diff uses an external dependency against current official-doc guidance, with a concrete cost). Verified against live docs in Phase 04b; the report entry **must carry a source URL + confidence**. Never a style rewrite.

@@ -16,7 +16,7 @@ Review code changes for bugs, **security vulnerabilities**, quality issues, CLAU
 | --- | --- |
 | [RULES.md](RULES.md) | RULE 0 (no selector), RULE 1 (effort never decides), RULE 2 (a gate does its job). **Load first.** |
 | [REVIEW-CORE.md](REVIEW-CORE.md) | the per-axis dispatch, scoring, verification, report format |
-| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt`, `design`, `docs-drift`, `history`, `negative-space`, `security`, `slop`, `spec`, `standards`, `test-debt`. Each declares when it runs in frontmatter; REVIEW-CORE Phase 03d runs `tool/lens-gate` to decide, then dispatches; a lens agent gets exactly one. |
+| [axes/](axes/) | one file per axis — `architecture`, `best-practice`, `bug`, `contracts`, `dependency-debt`, `design`, `docs-drift`, `history`, `negative-space`, `scale`, `security`, `slop`, `spec`, `standards`, `test-debt`. Each declares when it runs in frontmatter; REVIEW-CORE Phase 03d runs `tool/lens-gate` to decide, then dispatches; a lens agent gets exactly one. |
 | [POSTING.md](POSTING.md) | end-of-pass dispositions, the comment budget, the verdict |
 | [FALSE-POSITIVES.md](FALSE-POSITIVES.md) | what not to flag |
 | [TRANSPORT-WORKFLOW.md](TRANSPORT-WORKFLOW.md) | the workflow transport's mechanics, and when the session transport runs instead |

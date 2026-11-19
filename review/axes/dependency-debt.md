@@ -20,8 +20,10 @@ evidence captured in Phase 01r, plus one direct check no label lens performs (un
 **What becomes a finding:**
 
 - **An unused package** — a dependency `knip`/`depcheck`/`cargo udeps`/`cargo machete` reported as
-  unused, after this lens's own corroboration check (cross-tool agreement where more than one tool
-  covers the ecosystem). Cite the tool and the exact package it named. **Go's entry in this category
+  unused, after this lens's own corroboration check: cross-tool agreement where more than one tool
+  covers the ecosystem, then a grep of the whole tree for the name — tests, fixtures, config, scripts,
+  and string or dynamic references (`importlib.import_module`, `require(name)`, `getattr`, a plugin or
+  registry key). A hit the tool could not see drops the finding. Cite the tool and the exact package it named. **Go's entry in this category
   is `go mod tidy -diff`** (`go mod why <module>` for corroboration on any module the diff flags) — run
   it against `go.mod`/`go.sum` and read the diff it prints. A require-block *move* — a module that
   moves from an `// indirect`-annotated block into the direct `require` block (or the reverse) with the

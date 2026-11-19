@@ -123,6 +123,7 @@ for fx in docs auth colour screen; do
     screen) sec=skip bp=run  design=run  react=run  ;;
   esac
   expect "$fx" "$WORK/$fx.json" security "$sec"
+  expect "$fx" "$WORK/$fx.json" scale skip
   expect "$fx" "$WORK/$fx.json" best-practice "$bp"
   expect "$fx" "$WORK/$fx.json" design "$design"
   expect "$fx" "$WORK/$fx.json" react "$react"
@@ -168,7 +169,7 @@ echo "--- a lens that fails a deterministic entry never costs a Jev call ---"
 g checkout -q docs; owned; jev_normal; : > "$RULES.log"
 gate "$WORK/calls.json" --base main
 n=$(wc -l < "$RULES.log" | tr -d ' ')
-[ "$n" = 2 ] && say ok "two Jev calls for two judgment gates" || say f "expected 2 Jev calls, saw $n"
+[ "$n" = 3 ] && say ok "three Jev calls for three judgment gates" || say f "expected 3 Jev calls, saw $n"
 
 echo "--- uncommitted: an untracked new file reaches the Jev state ---"
 g checkout -q main; owned; jev_normal
