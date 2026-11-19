@@ -66,7 +66,7 @@ A README that says "it is one prompt" is a claim to check, not a reason to stop 
 
 ```bash
 R=/private/tmp/claude/<repo-slug>/repo-analysis/<name>
-find "$R" -path "$R/.git" -prune -o -type f \( -name 'SKILL.md' -o -name 'AGENTS.md' -o -name 'CLAUDE.md' -o -name '*.mdc' -o -path '*/commands/*' -o -path '*/agents/*' -o -path '*/rules/*' -o -path '*/hooks/*' -o -name 'plugin.json' -o -name '*hooks*.json' \) -print
+find "$R" -path "$R/.git" -prune -o -type f \( -name 'SKILL.md' -o -name 'AGENTS.md' -o -name 'CLAUDE.md' -o -name '*.mdc' -o -path '*/commands/*' -o -path '*/agents/*' -o -path '*/rules/*' -o -path '*/hooks/*' -o -name 'plugin.json' -o -name '*hooks*.json' -o -name '.cursorrules' -o -name 'GEMINI.md' -o -name 'copilot-instructions.md' -o -path '*/.github/instructions/*' \) -print
 ```
 
 Collapse copies of one file shipped for several hosts (`.cursor/rules/x.mdc`, `.windsurf/rules/x.md` holding the same ruleset) into one row, after checking that they match. Then read every distinct file in full, splitting the list across subagents when it is long. The report opens with an **Inventory** table: one row per distinct file, with its path, its line count, what it does in one line, and `read` or `not read: <reason>`. A file left unread is named there, never silently dropped.
