@@ -19,8 +19,9 @@ transports are [`../dispatch/LAUNCH.md`](../dispatch/LAUNCH.md).
 
 ## 1. Plan before launch
 
-- **Place and checkout** from TARGETS.md: the place the person named, asked when none; a worktree
-  when the worker writes code.
+- **Place and checkout** from TARGETS.md: the place the person named; with none, the project the
+  work's files live in (TARGETS.md § The order), asked only when the files span repos or none are
+  known; a worktree when the worker writes code.
 - **Stages.** Name the worker's planned stages before it starts, in the order it will run them
   (`plan, edit, build, verify, review, gate` for an `implement` pass; `read diff, review, write
   findings` for a review). Every report places the worker on this list.

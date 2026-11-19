@@ -22,8 +22,8 @@ The mechanic is the same in all three modes. Only the starting state differs.
 ## Rules
 
 - **One question per message, in plain chat prose.** No batching. If a topic needs more, that's more turns. Never use the `AskUserQuestion` tool / structured-question schema — this is a back-and-forth conversation, not a form. The chip-picker UI batches options, collapses nuance, and kills the follow-up rhythm this skill depends on.
-- **Multiple choice when possible.** Easier to answer than open-ended. Offer the choices as written-out options in the message body, never as `AskUserQuestion` options. **Format them exactly as [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set specifies.** `CLAUDE.md` names "an interview question" as a covered decision point, so this skill is inside that rule, not beside it. An interview asks question after question, so the number is what keeps two questions' answers apart: never restart the options at `1.` per question, and never letter a question.
-- **Recommend an answer, every time — no exceptions.** Never lay out options and stop; that's a bare question with no pick, which is a non-answer. Mark the pick on its own option line — `**1. <what happens> — my pick.**` — rather than appending a preference after the list.
+- **Multiple choice when possible.** Easier to answer than open-ended. Offer the choices as written-out options in the message body, never as `AskUserQuestion` options. **Format them exactly as [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md) §Option set specifies**, `Checked:` line included, with a value read from the system that turn. When the repo's `CLAUDE.md` asks for a `Core fact:` line, add it. `CLAUDE.md` names "an interview question" as a covered decision point, so this skill is inside that rule, not beside it. Number the questions across the whole interview (`3 of 8`) and letter each one's options (`3A`, `3B`): never restart the numbering per question.
+- **Recommend an answer, every time — no exceptions.** Never lay out options and stop; that's a bare question with no pick, which is a non-answer. Mark the pick on its own option line, as §Option set shows, rather than appending a preference after the list.
 - **Give the best argument for the pick, and the best argument for each alternative.** Not just "option 1 because X" — also the strongest case for 2 and 3, the reason a reasonable person would choose them instead, so the user is weighing real tradeoffs rather than a recommendation with strawmen attached.
 - **Codebase over questions.** If the answer is in the repo, go read it.
 - **2–3 approaches at real branch points.** When a decision actually has alternatives, lay them out with tradeoffs and your pick.
@@ -31,6 +31,16 @@ The mechanic is the same in all three modes. Only the starting state differs.
 - **Stress-test with concrete scenarios.** When a domain relationship is in play, invent a specific edge-case scenario and push for a precise answer about the boundary — *"if a Shipment is cancelled after its Invoice is generated, does the Invoice still exist?"* Vague agreement collapses fast against a concrete case; that collapse is the point.
 - **Locate before you ask.** Before any question about where something should live or when it should run, name the concrete places in the actual system — file paths in the repo, the named table in the named database file, the specific process at the specific moment ("the daemon, at the point it generates a schedule"). Then write each option as what physically happens: which file gets edited, what value gets written where, which process computes it, when. An option phrased as a bare noun with no location ("the score attaches to the item", "it lives on the model", "column vs. context") is unanswerable and reads as evasion — the human cannot picture it, so they cannot judge it. If you can't write the options in located form, you haven't read enough code to ask yet. Go read it. When the product wraps an upstream system (an agent gateway, a framework, a vendor API), that includes the upstream: grep its handling of the same input or feature and state what already exists before writing the first option, so no option builds what the upstream already does.
 - **Never answer your own questions.** This is a live interview — every question waits for *the human*. Recommend an answer (mark one option "— my pick"), but never supply their decision yourself, never roll forward on an answer you imagined they'd give, and never fire the next question as if the last were settled when it wasn't. If the human goes quiet, stop and wait. An agent that answers its own questions has quietly turned the interview into a monologue and defeated the whole point — this is the single failure that breaks a grilling.
+
+## The design page
+
+At the first question, start one page for the interview: a markdown file at `/private/tmp/claude/<repo-slug>/plans/<topic>.md` (path from `~/.claude/tools/repo-slug --path`). When your context gives a rule for where an interview's page goes, follow it instead. Rewrite the page every turn, before the chat message, and name it in that message:
+
+1. **Open now** — the current question in one line.
+2. **Current** — one line per answer: its id, the option picked, and what it means physically (file, key, value). When a later answer changes an earlier one, the line shows the current answer only. The heading becomes **Settled** once the human confirms the list at the end.
+3. **Facts checked** — values read from the system that the questions rest on.
+
+The question itself, with its options, stays in chat.
 
 ## Anti-patterns
 
@@ -123,7 +133,11 @@ For the full seven-layer treatment (conceptual model, strategy, breadboarding), 
 
 ## Terminal state
 
-Shared understanding is the goal, not an artifact. Stop when there are no unresolved branches.
+Stop when there are no unresolved branches, then end in one message:
+
+1. Every Current answer, listed in chat, one line each as on the page.
+2. In Grill and Shape modes, a **Slice list** on the page: a table with columns #, Repo, Slice, Needs, Core fact (`n/a` where the repo asks for none). Backfill mode ends with its glossary/ADR slate instead ([BACKFILL.md](BACKFILL.md) § Terminal state).
+3. One row: confirm the answers, file the slices as beads through `issues spec`, then run `wrap-up` on any glossary or ADR edit the interview made. `go` confirms (Current becomes Settled on the page) and runs it. An interview with nothing to build says "no slices" and its row only confirms.
 
 ## A question that lands badly
 
@@ -140,11 +154,6 @@ On a refusal, do not exit and do not re-ask it reworded:
 Once this skill is loaded, every later message reads as an answer to the current question, including the ones that are orders. A message naming what to build starts that build (`CLAUDE.md`, *"Told to build means build"*). A question that serves the build is still building; a question that stands in for it is not. The test is whether the turn moved toward the thing.
 
 **Whenever the interview resolves into a stated plan or decision — written down or said in chat — load [`show-shape`](../show-shape/SKILL.md) via the Skill tool first.** A resolved interview is the single most common way a plan reaches the user here, and the format is not optional because the answer arrived as conversation rather than as a file. This is also `implement`'s ambiguity path: a Phase 0.5 objectivity failure routes into this skill (`../implement/SKILL.md:133`), so an autonomous pass that hits a judgment call gets the format through this door.
-
-If a written record is useful at the end, offer it — don't assume:
-
-- Short-lived implementation plan → `/private/tmp/claude/<repo-slug>/plans/`
-- Durable product spec → invoke `/issues spec`, which synthesizes the spec as its Phase 03. (`/issues spec` owns spec generation; don't write the spec by hand here.)
 
 Glossary entries and ADRs are captured *as slate rows* during the session — no end-of-session sweep needed, but the write to `docs/CONTEXT.md` or `docs/adr/` waits for `go`.
 

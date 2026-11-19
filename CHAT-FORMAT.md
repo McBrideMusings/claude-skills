@@ -6,7 +6,7 @@ The shapes a chat reply takes when it puts a choice, a slate of dispositions, a 
 
 **When it applies.** A decision point with two or more mutually exclusive courses of action that a reasonable person would each pick — before significant work, and at every decision point inside it (an interview question, a skill's routing step). One sensible course is a slate row with its default and `go`, not an option set. An option never exists for completeness, to show what else could be done, or for an action the request never named; "neither", "not yet" and "hold" are not options.
 
-**The shape.** Numbered question, lettered options beneath it. Each option is a bolded line naming what physically happens — which file gets edited, what value gets written where, which process computes it, when — never a noun with no location. When the decision is about something the person will see or do (a screen, a flow, what is kept or deleted), the bolded line leads with that, and the location follows in the same line, so internals never stand in for the experience. Bullets beneath state the strongest case for that option; the last bullet is always the cost. The option you'd pick is marked ` — my pick` on its bolded line, not with a separate marker. Options under one question are mutually exclusive; when two could sensibly combine, write the combination as its own lettered option rather than leaving it for the reader to compose.
+**The shape.** Numbered question, lettered options beneath it. Each option is a bolded line naming what physically happens — which file gets edited, what value gets written where, which process computes it, when — never a noun with no location. When the decision is about something the person will see or do (a screen, a flow, what is kept or deleted), the bolded line leads with that, and the location follows in the same line, so internals never stand in for the experience. Bullets beneath state the strongest case for that option, then the cost, then `Checked:` — the command run or page read this turn that showed the cost, or "nothing claimed". The option you'd pick is marked ` — my pick` on its bolded line, not with a separate marker. Options under one question are mutually exclusive; when two could sensibly combine, write the combination as its own lettered option rather than leaving it for the reader to compose.
 
 **The carrier.** An option set is written in chat. When the options are visual or structural — UI states, layouts, diagrams, renders — each option is also rendered under its letter (`1A`, `1B`) in one Wheel artifact shown in a pane beside the chat (`wheel artifact new`). The lettered options with their argument and cost stay in chat, which names the pane, never the artifact's path. A short decision whose options read fine as text stays in chat.
 
@@ -20,10 +20,12 @@ An option set is plain chat text, never wrapped in a `>` block quote: a quote in
 **1A. Add a `retry_count` column to `jobs` in `queue.db`, incremented in the worker's catch block** — *my pick*
 - Survives a process restart — the count is durable, not in-memory
 - Cost: one migration, plus a backfill for in-flight rows
+- Checked: `sqlite3 queue.db 'select count(*) from jobs where state="running"'` → 214 in-flight rows
 
 **1B. Track it in a `Map<jobId, count>` inside the worker process**
 - No schema change, ships in one file
 - Cost: resets to zero on every worker restart, so a flaky deploy silently un-caps retries
+- Checked: nothing claimed
 
 Answer `1A`, or type `go` to take every pick.
 ```

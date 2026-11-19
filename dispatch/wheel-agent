@@ -12,9 +12,12 @@
 # worker is the claude TUI in a pane you can watch, type at, or take over. The waiting and
 # outfile behavior described below applies to the report-back run only.
 #
-# Placement: by default the pane is split to the right of the caller's pane ($WHEEL_PANE) inside
-# the caller's own space, which ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives
-# panes no WHEEL_SPACE; later workers stack under the newest. Every worker shows in the grid.
+# Placement: the worker goes to its project's space, the project being the main checkout of the
+# repo this runs in (resolve_place; `wheel-agent place` prints the answer). When that is the
+# caller's own space, the pane is split to the right of the caller's pane ($WHEEL_PANE), the space
+# found by ~/.claude/tools/wheel-space since Wheel gives panes no WHEEL_SPACE; later workers stack
+# under the newest. Otherwise it goes to the space whose cwd is that checkout, made when none is,
+# exactly as a named $WHEEL_AGENT_SPACE below; two such spaces exit 5. Every worker shows in the grid.
 #
 # The worker's claude starts in $WHEEL_AGENT_WORKDIR (else $WHEEL_AGENT_SPACE_DIR, else the
 # caller's folder) with its own --session-id, and once it reports in, its process's working
@@ -93,6 +96,58 @@ claim_pane() {
     || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
 }
 
+# The main checkout of the repo holding $1: a linked worktree resolves to its main checkout, and a
+# submodule's (whose common git dir sits in the parent's .git/modules) to its core.worktree.
+# A folder outside any repo is its own project.
+project_checkout() {
+  local d common wt
+  d="$(cd "$1" && pwd -P)" || return 1
+  common="$(git -C "$d" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || { printf '%s\n' "$d"; return 0; }
+  wt="$(git --git-dir="$common" config core.worktree 2>/dev/null || true)"
+  if [ -n "$wt" ]; then (cd "$common" && cd "$wt" && pwd -P)
+  else (cd "$common/.." && pwd -P); fi
+}
+
+# With no $WHEEL_AGENT_SPACE, the worker goes to its project's space: the caller's own when its
+# folder is the project's main checkout, else the one space whose cwd is, else a new one made
+# for it. Sets WHEEL_AGENT_SPACE, WHEEL_AGENT_SPACE_DIR and WHEEL_AGENT_WORKDIR for a space other
+# than the caller's. Exit 5, naming them, when two or more other spaces share that cwd.
+resolve_place() {
+  [ -z "${WHEEL_AGENT_SPACE:-}" ] || return 0
+  # Only a Wheel caller picks a space itself; any other session names one in $WHEEL_AGENT_SPACE.
+  [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_PANE:-}" ] || return 0
+  local here checkout spaces caller="" n name
+  here="${WHEEL_AGENT_WORKDIR:-$PWD}"
+  checkout="$(project_checkout "$here")" || return 1
+  spaces="$(wheel status | jq -c --arg c "$checkout" '[.spaces[] | select(.cwd == $c) | {id, name}]')" || return 1
+  caller="$("$HOME/.claude/tools/wheel-space" 2>/dev/null || true)"
+  if [ -n "$caller" ] && jq -e --arg s "$caller" 'any(.[]; .id == $s)' <<<"$spaces" >/dev/null; then
+    return 0
+  fi
+  n="$(jq length <<<"$spaces")"
+  if [ "$n" -gt 1 ]; then
+    echo "wheel-agent: spaces $(jq -r 'map("\(.name) (\(.id))") | join(", ")' <<<"$spaces") all have cwd $checkout — name one in WHEEL_AGENT_SPACE" >&2
+    return 5
+  elif [ "$n" -eq 1 ]; then
+    name="$(jq -r '.[0].name' <<<"$spaces")"
+  else
+    name="$(basename "$checkout")"
+    # A space by that name with another cwd exists: claim_pane finds spaces by name, so take another.
+    if wheel status | jq -e --arg n "$name" 'any(.spaces[]; .name == $n)' >/dev/null; then
+      name="$(basename "$(dirname "$checkout")")-$name"
+    fi
+  fi
+  export WHEEL_AGENT_SPACE="$name" WHEEL_AGENT_SPACE_DIR="$checkout" WHEEL_AGENT_WORKDIR="$here"
+}
+
+cmd_place() {
+  need wheel; need jq
+  local rc=0; resolve_place || rc=$?
+  [ "$rc" -eq 0 ] || return "$rc"
+  if [ -n "${WHEEL_AGENT_SPACE:-}" ]; then printf 'space %s (%s)\n' "$WHEEL_AGENT_SPACE" "$WHEEL_AGENT_SPACE_DIR"
+  else printf 'caller\n'; fi
+}
+
 # The worker's --settings: the caller's (a file or inline JSON, if any) plus the state hooks.
 merged_settings() {
   local given="$1" state="$2" base
@@ -121,6 +176,9 @@ cmd_run() {
   if [ "$handoff" -eq 1 ]; then shift 1; else shift 2; fi
   [ "${1:-}" = "--" ] && shift || true
   [ -f "$promptfile" ] || { echo "wheel-agent: prompt file not found: $promptfile" >&2; return 1; }
+  need wheel; need jq
+  local prc=0; resolve_place || prc=$?
+  [ "$prc" -eq 0 ] || return "$prc"
   # A named space ($WHEEL_AGENT_SPACE) is made or found through the daemon, so any session on
   # this Mac can open one; only splitting off the caller's own pane needs a Wheel caller.
   if [ -z "${WHEEL_AGENT_SPACE:-}" ]; then
@@ -128,7 +186,6 @@ cmd_run() {
       || { echo "wheel-agent: not running inside a Wheel pane (WHEEL_ENV, WHEEL_PANE), and no WHEEL_AGENT_SPACE names a space" >&2; return 1; }
     WHEEL_SPACE="$("$HOME/.claude/tools/wheel-space")" || return 1
   fi
-  need wheel; need jq
 
   local dir="${WHEEL_AGENT_DIR:-}"
   [ -n "$dir" ] || dir="$(mktemp -d -t wheel-agent)"
@@ -253,5 +310,6 @@ Do not summarise it there; that file IS your answer and is the only part that is
 
 case "${1:-}" in
   run) shift; cmd_run "$@" ;;
-  *) echo "usage: wheel-agent run [--handoff] <prompt-file> [<outfile>] [-- <claude-arg>...]" >&2; exit 2 ;;
+  place) shift; cmd_place ;;
+  *) echo "usage: wheel-agent run [--handoff] <prompt-file> [<outfile>] [-- <claude-arg>...] | place" >&2; exit 2 ;;
 esac

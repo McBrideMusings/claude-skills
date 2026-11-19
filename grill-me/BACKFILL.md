@@ -54,4 +54,4 @@ If the recon flags something that looks deliberate but might be accidental (one 
 
 ## Terminal state
 
-`docs/CONTEXT.md` reflects the language actually in use across the codebase. `docs/adr/` reflects load-bearing decisions visible in the code (or explicitly confirmed by the user). Same artifacts as the other modes; reached by walking backward through existing reality instead of forward through a design.
+`docs/CONTEXT.md` reflects the language actually in use across the codebase. `docs/adr/` reflects load-bearing decisions visible in the code (or explicitly confirmed by the user). Same artifacts as the other modes; reached by walking backward through existing reality instead of forward through a design. The last message lists every Current answer, as [SKILL.md](SKILL.md) § Terminal state says, and ends with the glossary/ADR slate as its row.

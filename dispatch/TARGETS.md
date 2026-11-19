@@ -79,8 +79,17 @@ A brief for another session travels in the `herdr agent prompt` / `wheel pane st
 ## The order
 
 **1. The person names the place.** A dispatch goes to the space, pane, window or vendor the
-person names, and nowhere else. When they named none, ask which, as one question with the
-options, before launching. Dispatch never means an in-session subagent: the `Agent` tool is
+person names, and nowhere else.
+
+**When they named none, the project the work changes is the place.** The project is the repo
+holding the files the work changes, worked out from those files (`git -C <file's dir> rev-parse
+--show-toplevel` for each), never from the directory the request was typed in. When every file
+resolves to one repo, the worker goes there with no question: in a plain terminal, a
+Terminal.app window opened in that repo's worktree; when your context gives a host's rule for
+placing a worker in a project, follow it instead. When the files span repos, or none are known
+yet, ask which, as one question with the options, before launching.
+
+Dispatch never means an in-session subagent: the `Agent` tool is
 a subagent, not a dispatch, and never answers "dispatch".
 
 **2. A skill that dispatches on its own names its reason.** `review dual` goes cross-vendor

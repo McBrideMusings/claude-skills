@@ -42,6 +42,8 @@ Push too little down and the top bloats; push too much and you hide material the
 
 Where the ladder decides _how far down_ a piece sits, **co-location** decides _what sits beside it_ once there: keep a concept's definition, rules, and caveats under one heading rather than scattered, so reading one part brings its neighbours with it.
 
+A skill is written for a plain terminal. Where a host changes how a step runs (a page in a pane, a worker in a space), the skill states the plain-terminal behavior and one line pointing at the host's own rule: "when your context gives a rule for X, follow it instead". The host's guidance file (`~/.claude/docs/wheel-agent.md` for Wheel) holds the commands.
+
 ## When to split
 
 **Granularity** is how finely you divide skills, and the first two cuts each spend one of the two loads, so split only when the cut earns it. Four cuts:

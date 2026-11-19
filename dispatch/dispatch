@@ -259,13 +259,20 @@ space_kind() {
 }
 
 # Where wheel-agent would put a worker from here, or exit 1 when it can't: a space named by
-# $WHEEL_AGENT_SPACE works from any session; otherwise a pane splits off the caller's own Wheel
-# pane, which needs WHEEL_ENV=1 and WHEEL_PANE — the same test wheel-agent applies.
+# $WHEEL_AGENT_SPACE works from any session; from a Wheel pane (WHEEL_ENV=1 and WHEEL_PANE) the
+# worker goes to its project's space (`wheel-agent place`) — the same test wheel-agent applies.
 wheel_placement() {
+  local place
   if [ -n "${WHEEL_AGENT_SPACE:-}" ]; then
     printf 'a pane in space %s' "$WHEEL_AGENT_SPACE"
   elif [ "${WHEEL_ENV:-}" = "1" ] && [ -n "${WHEEL_PANE:-}" ]; then
-    printf 'a pane split off %s in space %s' "$WHEEL_PANE" "$("$HOME/.claude/tools/wheel-space" 2>/dev/null || echo '?')"
+    # wheel-agent's own stderr (two spaces sharing the folder, exit 5) reaches the caller.
+    place="$("$(cd "$(dirname "$0")" && pwd -P)/wheel-agent" place)" || return
+    if [ "$place" = caller ]; then
+      printf 'a pane split off %s in space %s' "$WHEEL_PANE" "$("$HOME/.claude/tools/wheel-space" 2>/dev/null || echo '?')"
+    else
+      printf 'a pane in %s' "$place"
+    fi
   else
     return 1
   fi
@@ -299,14 +306,20 @@ resolve_transport() {
     esac
   fi
 
+  # Two Wheel spaces sharing the project's folder (exit 5) stop the dispatch: the caller asks which.
+  local placement="" prc=1
+  if [ "${HERDR_ENV:-}" != "1" ]; then
+    prc=0; placement="$(wheel_placement)" || prc=$?
+    [ "$prc" -ne 5 ] || return 5
+  fi
   # wheel-agent learns a worker's state from Claude Code hooks, so it runs only claude.
-  if [ "${HERDR_ENV:-}" != "1" ] && wheel_placement >/dev/null; then
+  if [ "$prc" -eq 0 ]; then
     if [ "$a" != claude ]; then
       printf "terminal\twheel-agent runs only claude, not '%s'\n" "$a"
     elif ! command -v wheel >/dev/null 2>&1; then
       printf 'terminal\tWheel is reachable, but the wheel CLI is not on PATH\n'
     else
-      printf 'wheel\tit gets %s\n' "$(wheel_placement)"
+      printf 'wheel\tit gets %s\n' "$placement"
     fi
   elif [ "${HERDR_ENV:-}" != "1" ]; then
     printf 'terminal\tnot inside herdr or Wheel\n'

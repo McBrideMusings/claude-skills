@@ -1,6 +1,6 @@
 ---
 name: dispatch
-description: "`dispatch <target>` — hand work to another session and step away: this session writes the brief from what it already knows, starts the worker where the person names (`workspace`: a herdr space or a Wheel space or pane; `window`: a Terminal.app window; a vendor: `codex`, `reasonix`), says where it went in one line, and is done. No watching, no reading back, no landing — the worker is the person's. With no place named, ask which. When this session must watch the worker and report on it, that is `delegate`, not this. Never an in-session subagent (the Agent tool). Load for 'dispatch this', 'open a new space and tell it to…', 'spin up a session for each of these', and when wiring or debugging the launcher both skills share."
+description: "`dispatch <target>` — hand work to another session and step away: this session writes the brief from what it already knows, starts the worker where the person names (`workspace`: a herdr space or a Wheel space or pane; `window`: a Terminal.app window; a vendor: `codex`, `reasonix`), says where it went in one line, and is done. No watching, no reading back, no landing — the worker is the person's. With no place named, it goes to the project whose files the work changes, and asks which only when those files span repos or none are known. When this session must watch the worker and report on it, that is `delegate`, not this. Never an in-session subagent (the Agent tool). Load for 'dispatch this', 'open a new space and tell it to…', 'spin up a session for each of these', and when wiring or debugging the launcher both skills share."
 ---
 
 # Dispatch
@@ -25,7 +25,8 @@ who owns the result once the worker starts: the person (dispatch) or this sessio
 ## Steps
 
 1. **Place.** The worker goes to the space, pane, window or vendor the person named. With none
-   named, ask which, as one question with the options, before launching
+   named, it goes to the project whose files the work changes, with no question; ask which,
+   as one question with the options, only when those files span repos or none are known yet
    ([TARGETS.md](TARGETS.md) § The order).
 2. **Checkout.** A worker that writes code gets its own worktree; one that only reads runs on the
    main checkout ([TARGETS.md](TARGETS.md) § Where the work happens).
