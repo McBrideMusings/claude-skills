@@ -149,6 +149,17 @@ Two things go in the chat explanation:
 
 **This is chat-only — it never enters the PR, and no file is written.** It's the user's orientation, not review output: it does not go in the review report, the verdict body, or any posted comment, and it never lands on disk — a teammate's PR has no branch-scoped summary file to write here. `skip summary` from the user drops this phase entirely.
 
+## Phase 00.6 — Render the visual diff
+
+**When the target changes what a screen looks like or how it moves — styles, drawing code, layout, copy on screen, an animation, a timing — render it before the lenses run.** Reading drawing code is not reviewing it.
+
+1. Run the base and the head side by side with the repo's own `project-verify` or `run` skill: the base in a detached worktree of the merge base under `/private/tmp/claude-review-verify/<slug>/base`, the head in the target's checkout.
+2. Capture every state the diff touches, one image per state per side, same viewport and crop. Anything that moves also gets a clip of each side at real speed. Save them under `/private/tmp/claude/<repo-slug>/review-<target>/` as `before-<state>.png`, `after-<state>.png`, `before-<state>.mov`, `after-<state>.mov`.
+3. The report lists every path under a `## Visual diff` heading, before the issues. A state that could not be rendered is named there with why, never left out.
+4. A visual change the PR body shows no before-and-after for is a `standards` finding. Its fix is a slate row that posts the captured images to the PR as a comment (`gh pr comment --attach`), and only on `go`.
+
+The base worktree is removed with Phase 05b's scratch dir. **In a Wheel pane**, `~/.claude/docs/wheel-agent.md` puts the same captures in an artifact and keeps a dev server on the head running beside it.
+
 ## The review itself
 
 Continue into [REVIEW-CORE.md](REVIEW-CORE.md) against the routed target. Then [POSTING.md](POSTING.md) for the dispositions.
