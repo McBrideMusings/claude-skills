@@ -181,8 +181,8 @@ elsewhere, squashed by `wrap-up`.
    values, and the log file at the path the control surface reports holds the planned lines
    from this run. Write one
    (per `project-skills`) from the repo's `README.md`, `CLAUDE.md` and `admin.toml` when none exists, naming this
-   repo's real surface and commands; keep it out of git via `<repo>/.git/info/exclude`, never
-   `.gitignore`. `BLOCKED` conditions and proving a touched test discriminates:
+   repo's real surface and commands; whether it is committed follows `project-skills` §Create.
+   `BLOCKED` conditions and proving a touched test discriminates:
    [`VERDICTS.md`](VERDICTS.md).
    **Then measure.** When the repo has a `project-perf` skill, call it and run every scenario its table names
    for this diff and print each table; a limit over, after its one rerun, fails this step like a

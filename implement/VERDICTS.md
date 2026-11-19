@@ -18,9 +18,7 @@ as designed.
   `admin.toml`, naming *this* repo's real surface and commands. A recipe that would read the
   same in any repo is the weak check to avoid, not a bootstrap.
 - **Never name it `verify`.** That collides with the bundled skill.
-- **Tracked or not follows the repo** (`project-skills` §Create): committed where
-  `.claude/skills/` is tracked, listed in `<repo>/.git/info/exclude` where `.claude/` is not —
-  never `.gitignore`.
+- **Whether it is committed** follows `project-skills` §Create.
 
 **A surface the item names, and that is not listening, is `BLOCKED`, not `SKIP`.** Before
 loading `project-verify`, check every `host:port` and `http(s)://` URL named in the

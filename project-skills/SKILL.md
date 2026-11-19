@@ -78,9 +78,12 @@ combined `project/` directory, or the older `verify-project/`, `swarm-worker/` a
    `swarm check` for `project-swarm`, and `tools/shots.sh` plus `tools/lint.sh` for
    `project-design`. A skill never executed is a draft.
 
-Whether the skills are tracked follows the repo: if `.claude/skills/` is tracked there, commit
-them; if `.claude/` is excluded, add each `.claude/skills/project-*` path to
-`.git/info/exclude`, never `.gitignore`. `DESIGN.md` sits at the root and is always tracked.
+A project skill you write stays out of git: add `.claude/skills/project-*` to
+`<repo>/.git/info/exclude` (never `.gitignore`) once per clone. Commit one only when the person
+names it, with `git add -f <path>`; git tracks it from then on. A skill someone else committed is
+already tracked: edit and commit it like any file. A committed file never names an uncommitted
+one: before writing a path into a tracked skill, `git ls-files --error-unmatch <path>` must pass.
+An uncommitted skill may name anything. `DESIGN.md` sits at the root and is always tracked.
 
 ### Frontmatter templates
 
