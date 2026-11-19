@@ -376,8 +376,8 @@ the format already requires. Zero findings and thorough prose about zero finding
 tradeoff the user asked for.
 
 **Collapses the report body only, not the pass.** [POSTING.md](POSTING.md) still runs after a
-clean report — on a teammate's PR, propose Approve with the one-liner as its body and wait for
-`go`. Stopping at the one-liner with no verdict proposed is a phase skipped.
+clean report — on a teammate's PR, print the verdict row with the one-liner as the Approve body and
+wait for the person to type their verdict. Stopping at the one-liner with no verdict row is a phase skipped.
 
 ### Any code reference, in any report, is backtick-quoted
 

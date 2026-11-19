@@ -172,9 +172,14 @@ name if they disagree.
 
 ## The verdict — `P0` and `P1` block
 
-For the findings going back to the author, propose one consolidated review verdict. On a PR you
+For the findings going back to the author, print one consolidated review verdict. On a PR you
 didn't author GitHub records that verdict as your review decision (Request changes even gates the
-merge), so the post offer **always proposes a verdict**, never a bare comment. (Self-authored PRs
+merge), so the post offer **always carries a verdict row**, never a bare comment.
+
+**The verdict is always the person's — never approve on your own.** Not on a clean pass, not on an
+art-only change, not when every lens agrees. The verdict row says which verdict the findings support
+and carries **no bracketed default**, so `go` never covers it; nothing is submitted until the person
+types `approve` or `request changes` for this PR. (Self-authored PRs
 can't get a verdict — GitHub blocks self-approve and self-request-changes — which is why this
 lives only on the teammate-PR path.)
 
@@ -210,10 +215,8 @@ never how confident the scorer was:
 - **Approve** with an empty notes list — nothing survived (and on a draft, no expected-gap entries
   either), **or** every survivor has just been fixed on the branch.
 
-**A PR that changes what a screen looks like or how it moves gets no proposed verdict.** The
-rules above decide the code's verdict; the art's is the person's, after they have played it
-([SKILL.md](SKILL.md) Phase 00.6). Print the verdict row with no bracketed default, so `go` skips
-it, and post nothing to the PR until the person types `approve` or `request changes`.
+**A PR that changes what a screen looks like or how it moves** also holds its comments until the
+person has played it and typed the verdict ([SKILL.md](SKILL.md) Phase 00.6).
 
 ### Local work first, then the body, then the post — two confirms, in that order
 
@@ -225,24 +228,24 @@ user's `go` authorises only the first:
 2. **Then draft the outgoing text against what actually happened**, not against what the report
    said before the fixes existed. A finding fixed in step 1 is described in the past tense and no
    longer asks anything of the author; a finding left alone keeps its original wording.
-3. **Show that text and wait for a second explicit `go`** before `gh pr review` touches the PR.
-   The verdict changes the PR's merge state, so it is held to the explicit-`go`-in-this-message
-   gate on its own — the `go` that authorised the fix does not carry forward to the post.
+3. **Show that text and wait for the person to type their verdict** before `gh pr review` touches
+   the PR. The verdict changes the PR's merge state and is theirs alone — no `go`, the one that
+   authorised the fix included, ever submits it.
 
 When a disposition set implies **no** local work — everything is `post` or `skip` — step 1 is
-empty and the first `go` goes straight to showing the body for confirmation. Say so rather than
+empty and the report goes straight to showing the body and the verdict row. Say so rather than
 appearing to skip a step.
 
 ### Propose, then confirm — never auto-submit
 
-Close with `go` and nothing else — never `yes`, `approve`, or `post` (RULES.md). State the recommended verdict, then the exact body that will be posted — the report scoped to the
+The other rows close with `go` (RULES.md); the verdict row closes with the person typing `approve` or `request changes`. State the verdict the findings support, then the exact body that will be posted — the report scoped to the
 handed-back findings (summary line plus axis-grouped findings, minus any being fixed on the
 branch, with a one-line note of what was pushed instead), quoted in chat as a Markdown blockquote,
 never written to a file — and that the user can pick a different verdict or decline. A verdict review — Request changes especially — changes the PR's merge state,
-so it is held to the same **explicit-`go`-in-this-message** gate as any send. Prior or implied
-consent does not count.
+so only the person's typed verdict for this PR, in this message, submits it. Prior or implied
+consent does not count, and neither does `go`.
 
-On an explicit `go` in that message, submit one consolidated review:
+When the person types `approve` or `request changes` for this PR, submit one consolidated review:
 
 ```
 gh pr review <number> --request-changes --body "$(cat <<'EOF'

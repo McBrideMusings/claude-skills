@@ -65,6 +65,10 @@ marked, or a genuine "your call" case), that item is excluded from what `go` cov
 still be typed individually; say so in the same message as the list (`go covers 1–2; 3 has no
 clear recommendation — type its disposition separately`).
 
+**A PR verdict never carries a default, so `go` never approves or requests changes.** The person
+types `approve` or `request changes` themselves, on every PR, however clean the pass
+([POSTING.md](POSTING.md) § The verdict).
+
 **Self-check before every question.** If you are about to open a selector, stop — that is this
 rule firing. Rewrite the question as chat text and send that instead.
 
