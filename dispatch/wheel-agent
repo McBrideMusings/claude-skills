@@ -14,10 +14,10 @@
 #
 # Placement: the worker goes to its project's space, the project being the main checkout of the
 # repo this runs in (resolve_place; `wheel-agent place` prints the answer). When that is the
-# caller's own space, the pane is split to the right of the caller's pane ($WHEEL_PANE), the space
-# found by ~/.claude/tools/wheel-space since Wheel gives panes no WHEEL_SPACE; later workers stack
-# under the newest. Otherwise it goes to the space whose cwd is that checkout, made when none is,
-# exactly as a named $WHEEL_AGENT_SPACE below; two such spaces exit 5. Every worker shows in the grid.
+# caller's own space, the pane is split off the caller's pane ($WHEEL_PANE) backgrounded, the space
+# found by ~/.claude/tools/wheel-space since Wheel gives panes no WHEEL_SPACE, so the caller's grid is left as it is.
+# Otherwise it goes to the space whose cwd is that checkout, made when none is,
+# exactly as a named $WHEEL_AGENT_SPACE below; two such spaces exit 5. A worker in another space shows in its grid.
 #
 # The worker's claude starts in $WHEEL_AGENT_WORKDIR (else $WHEEL_AGENT_SPACE_DIR, else the
 # caller's folder) with its own --session-id, and once it reports in, its process's working
@@ -89,7 +89,12 @@ claim_pane() {
     done
     # In a space of its own the first worker fills it, so the second goes beside it.
     [ -n "$named" ] && [ "$(printf "%s\n" "$live" | grep -c .)" -eq 1 ] && dir=right
-    new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
+    # In the caller'"'"'s own space the worker runs backgrounded, so the caller'"'"'s grid stays as it is.
+    if [ -z "$named" ]; then
+      new="$(wheel pane split "$lead" --background)" || exit 1
+    else
+      new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
+    fi
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
     printf "%s\n" "$new"' _ "$l" "${WHEEL_PANE:-}" "${WHEEL_SPACE:-}" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" \

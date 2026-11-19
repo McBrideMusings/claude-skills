@@ -26,7 +26,7 @@ place() { (cd "$1" && PATH="$T/bin:$PATH" HOME="$T/home" WHEEL_ENV=1 WHEEL_PANE=
 spaces() { printf '{"spaces":[%s]}' "$1" > "$T/status.json"; }
 
 spaces "{\"id\":\"s1\",\"name\":\"app\",\"cwd\":\"$T/app\"}"; echo s1 > "$T/caller"
-[ "$(place "$T/wt")" = caller ] && ok "caller's space is the project's: split beside the caller" || bad "caller case: $(place "$T/wt")"
+[ "$(place "$T/wt")" = caller ] && ok "caller's space is the project's: backgrounded pane off the caller" || bad "caller case: $(place "$T/wt")"
 
 echo s9 > "$T/caller"
 [ "$(place "$T/wt")" = "space app ($T/app)" ] && ok "a worktree goes to the space of its main checkout" || bad "match: $(place "$T/wt")"
