@@ -12,13 +12,14 @@ Reach past it only for the reasons in the model table below.
 
 | Order | Backend | Provider | Env var / local | Health check |
 | --- | --- | --- | --- | --- |
-| 1 | comfy | local ComfyUI (Tower, RTX 3090) | local instance + GPU | `${COMFYUI_URL}/system_stats` returns, GPU present |
+| 1 | comfy | local ComfyUI (Tower, RTX 3090) | local instance + GPU | `generate/comfy-gate` (`backends.toml` → `[providers.comfy]`) exits 0 |
 
 No cloud video backend is configured. If comfy is down, report **dormant** — never fabricate a clip.
 
 ## Credential gate
 
-- comfy: health-check the ComfyUI instance and confirm a working GPU before use. On Tower ComfyUI
+- comfy: gate it with `generate/comfy-gate "$COMFYUI_URL"` (`backends.toml` → `[providers.comfy]`),
+  the project `.env` value below. On Tower ComfyUI
   runs in Docker, reachable over HTTP at `${COMFYUI_URL}` (Tailscale IP:8188 from the project
   `.env` — never `localhost`, never hardcoded).
 - The comfy MCP `enqueue_workflow` / `generate_video` tools **false-fail** with "ComfyUI is not

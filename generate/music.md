@@ -10,7 +10,7 @@ Adapted from majidmanzarpour/threejs-game-skills.
 
 | Order | Backend | Provider | Env var / local | Health check |
 | --- | --- | --- | --- | --- |
-| 1 | comfy | local ComfyUI | local instance + GPU | comfy `generate_audio` reachable, GPU up |
+| 1 | comfy | local ComfyUI | local instance + GPU | `generate/comfy-gate` (`backends.toml` → `[providers.comfy]`) exits 0 |
 | 2 | elevenlabs | ElevenLabs (cloud) | `ELEVENLABS_API_KEY` | key present in env or `--api-key` |
 
 comfy is the free/local first choice; elevenlabs is the cloud fallback.
@@ -18,8 +18,7 @@ comfy is the free/local first choice; elevenlabs is the cloud fallback.
 ## Credential gate
 
 - Never store keys in skill files or client-side game code; never paste a key value into a report.
-- comfy: health-check the local ComfyUI instance and confirm a working GPU first — the user's GPU is
-  currently down, so comfy is unreachable today.
+- comfy: gate it with `generate/comfy-gate` (`backends.toml` → `[providers.comfy]`) and paste its output.
 - elevenlabs: read from env or `--api-key`; **probe before declaring unavailable** and paste the
   literal output (`ELEVENLABS_API_KEY=SET|MISSING`). Profile-only keys can be absent from process env.
   Add a `--validate` call to `GET /user` to confirm the key works; a valid key can still be

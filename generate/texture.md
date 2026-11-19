@@ -12,7 +12,7 @@ Adapted from majidmanzarpour/threejs-game-skills.
 
 | Order | Backend | Provider | Env var / local | Health check |
 | --- | --- | --- | --- | --- |
-| 1 | comfy | local ComfyUI on Tower (RTX 3090) | local instance + GPU | `GET <tower>:8188/system_stats` answers |
+| 1 | comfy | local ComfyUI on Tower (RTX 3090) | local instance + GPU | `generate/comfy-gate` (`backends.toml` → `[providers.comfy]`) exits 0 |
 | 2 | gemini | Google Gemini (cloud) | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | key present in env or `--api-key` |
 
 comfy is live and benched (2026-07-22, see the unraid `local-genai` project, scorecard
@@ -22,7 +22,7 @@ decomposition, so a gemini result still needs the map extraction step below.
 ## Credential gate
 
 - Never store keys in skill files or client-side game code; never paste a key value into a report.
-- comfy: health-check ComfyUI first. The comfy MCP `enqueue_workflow` / `generate_image` tools
+- comfy: gate it with `generate/comfy-gate` first. The comfy MCP `enqueue_workflow` / `generate_image` tools
   false-fail with "ComfyUI is not running" against this externally-managed Docker instance —
   POST the workflow straight to `http://<tower>:8188/prompt` (`{"prompt": <wf>}`).
 - gemini: read from env or `--api-key`; **probe before declaring unavailable** and paste the literal

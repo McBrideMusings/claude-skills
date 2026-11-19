@@ -13,7 +13,7 @@ Adapted from majidmanzarpour/threejs-game-skills.
 | --- | --- | --- | --- | --- | --- |
 | 1 | gemini | Google Gemini (cloud), `gemini-3.1-flash-image` | `GEMINI_API_KEY` / `GOOGLE_API_KEY` | key present in env | yes |
 | 2 | openai | OpenAI (cloud), `gpt-image-2` | `OPENAI_API_KEY` | key present in env | yes |
-| 3 | comfy | local ComfyUI | local instance + GPU | comfy `generate_image` reachable, GPU up | no (no img2img workflow in `comfy-image/`) |
+| 3 | comfy | local ComfyUI | local instance + GPU | `generate/comfy-gate` exits 0 | no (no img2img workflow in `comfy-image/`) |
 
 gemini is the default, including for UI comps. `--backend openai|gemini|comfy` (or "on openai" in the
 request) selects one backend for that request; a named backend that fails its gate reports dormant and
@@ -59,14 +59,13 @@ never run a text-only generation and pass it off as an edit.
 ## Credential gate
 
 - Never store keys in skill files or client-side game code; never paste a key value into a report.
-- comfy: health-check the local ComfyUI instance and confirm a working GPU before use. On Tower
+- comfy: gate it with `generate/comfy-gate` (`backends.toml` → `[providers.comfy]`). On Tower
   (RTX 3090) ComfyUI runs in Docker, reachable over HTTP. The comfy MCP `enqueue_workflow` /
   `generate_image` tools false-fail with "ComfyUI is not running" against this externally-managed
   instance (their managed-process gate doesn't apply) — `health_check` / `get_queue` still work. Work
   around by POSTing the workflow straight to `http://<tower>:8188/prompt` (`{"prompt": <wf>}`).
-- comfy probe: `curl -s -m 5 -o /dev/null -w "%{http_code}" http://<tower>:8188/system_stats` — `200`
-  means up; any other code, a non-zero curl exit (6 = host not found, 28 = timeout) or an empty result
-  means report comfy **dormant**.
+- comfy probe: paste `generate/comfy-gate`'s output; exit 0 means up, exit 2 means report comfy
+  **dormant** with its reason.
 - gemini / openai: read from env; **probe before declaring unavailable** and paste the literal
   output (`GEMINI_API_KEY=SET|MISSING`, `OPENAI_API_KEY=SET|MISSING`). Profile-only keys can be absent
   from process env; `~/.claude/.env` holds both.

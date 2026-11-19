@@ -23,8 +23,14 @@ conventions, and output contract.
 Read the preference list for the type from `generate/backends.toml`. Walk it **in order** and use the
 first backend that passes its health check:
 
-- `comfy` (local, free) — passes only if the comfy ComfyUI plugin is reachable **and** a working local
-  GPU is present. Drive it via the comfy plugin's `generate_image` / `generate_audio` MCP tools.
+- `comfy` (local, free) — run `generate/comfy-gate` (`backends.toml` → `[providers.comfy]`, the one
+  health check for every type) and **paste its output**; exit 0 passes, exit 2 is dormant. It gates
+  `$COMFYUI_URL` (exported from `~/.claude/.env`); a project that sets its own `COMFYUI_URL` in its
+  `.env` passes that value as the argument (`generate/comfy-gate <url>`). Its line
+  says when a ~90 s cold start is coming; repeat that line before submitting. When it fails with
+  `GPU held by <tenant>`, the report names that tenant and the backend the walk fell through to
+  (`comfy: GPU held by wow → gemini`). Drive comfy via the comfy plugin's `generate_image` /
+  `generate_audio` MCP tools.
 - `gemini` / `openai` / `tripo` / `elevenlabs` (cloud, paid) — pass only if the env key
   (`generate/backends.toml` → `[providers.*]`) is present. Probe with the axis file's credential
   check and **paste the probe output**; never assume a key from memory.

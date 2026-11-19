@@ -1,8 +1,8 @@
 # generate engine — backend preference per asset-type.
 #
 # The `generate` engine walks each list in order, health-gates every candidate
-# (is its key present? is the local comfy ComfyUI instance reachable with a
-# working GPU?), and uses the FIRST that passes — falling through to the next,
+# (is its key present? does `generate/comfy-gate` pass for the local ComfyUI?),
+# and uses the FIRST that passes — falling through to the next,
 # or reporting "no working backend" if none do. It never fabricates output.
 #
 # Edit an order to change which backend generate prefers for that asset kind.
@@ -33,7 +33,10 @@ backends = ["elevenlabs"]
 
 [providers.comfy]
 kind = "local"
-health = "comfy ComfyUI plugin reachable AND a working local GPU"
+# One definition for every asset type. Run it, paste its last line, exit 0 = pass.
+# Behind llama-broker it reads only /api/tenants and /running, so it never starts the
+# container; a higher-priority tenant with wantsGPU=true fails it ("GPU held by <tenant>").
+health = "generate/comfy-gate"
 driver = "comfy plugin generate_image / generate_audio MCP tools"
 
 [providers.gemini]

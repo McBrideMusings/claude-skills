@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+"""Health gate for the generate engine's comfy backend.
+
+  comfy-gate [URL]          URL defaults to $COMFYUI_URL
+
+A URL whose path is /comfyui or /upstream/<model id> is served by llama-broker, which starts the
+container on the first request through it, so the gate reads only the broker's own /api/tenants and
+/running. Any other URL is a plain ComfyUI and gets GET <url>/system_stats. A broker that does not
+answer, or has no tenant for the model, is checked as a plain ComfyUI: no job fails because the
+broker is absent. Only that fallback can make the broker start the container. The broker-path rule matches brokerOf() in local-genai studio/server/comfy.ts.
+
+Prints one line per check, the last starting "comfy: up" or "comfy: dormant".
+Exit 0 = up, exit 2 = dormant (the engine falls through to the next backend).
+"""
+import json, os, sys, urllib.error, urllib.parse, urllib.request
+
+TIMEOUT = 5
+
+
+def get_json(url):
+    with urllib.request.urlopen(url, timeout=TIMEOUT) as res:
+        return json.loads(res.read())
+
+
+def broker_of(url):
+    """(origin, model id) for a llama-broker URL, None for a plain ComfyUI."""
+    u = urllib.parse.urlsplit(url)
+    path = u.path.rstrip("/")
+    origin = f"{u.scheme}://{u.netloc}"
+    if path == "/comfyui":
+        return origin, "comfyui_auto"
+    parts = path.split("/")
+    if len(parts) == 3 and parts[1] == "upstream" and parts[2]:
+        return origin, parts[2]
+    return None
+
+
+def broker_gate(origin, model):
+    """(exit code, line) from the broker's state, or None when the broker cannot say."""
+    try:
+        tenants = get_json(f"{origin}/api/tenants")["tenants"]
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        print(f"llama-broker {origin} did not answer /api/tenants ({e}); checking as a plain ComfyUI")
+        return None
+    ours = next((t for t in tenants if model in (t.get("models") or [])), None)
+    if ours is None:
+        print(f"llama-broker {origin} has no tenant for {model}; checking as a plain ComfyUI")
+        return None
+    prio = ours.get("priority", 0)
+    for t in tenants:
+        if t.get("wantsGPU") and t.get("priority", 0) > prio:
+            return 2, (f"comfy: dormant — GPU held by {t.get('name')} "
+                       f"(priority {t.get('priority')} > {ours.get('name')} {prio})")
+    try:
+        running = {r.get("model") for r in get_json(f"{origin}/running")["running"]}
+    except (OSError, ValueError, KeyError, TypeError) as e:
+        return 0, f"comfy: up — llama-broker {origin}, tenant {ours.get('name')} free; /running failed ({e})"
+    if model in running:
+        return 0, f"comfy: up — llama-broker {origin}, {model} loaded"
+    return 0, f"comfy: up — llama-broker {origin}, {model} stopped; the first request starts it (~90 s cold start)"
+
+
+def plain_gate(url):
+    try:
+        stats = get_json(f"{url.rstrip('/')}/system_stats")
+    except (OSError, ValueError) as e:
+        return 2, f"comfy: dormant — ComfyUI {url} did not answer /system_stats ({e})"
+    gpus = [d for d in stats.get("devices") or [] if d.get("type") != "cpu"]
+    if not gpus:
+        return 2, f"comfy: dormant — ComfyUI {url} reports no GPU"
+    return 0, f"comfy: up — ComfyUI {url}, {gpus[0].get('name')}"
+
+
+def main(argv):
+    url = argv[1] if len(argv) > 1 else os.environ.get("COMFYUI_URL", "")
+    if not url:
+        print("comfy: dormant — COMFYUI_URL is not set")
+        return 2
+    broker = broker_of(url)
+    verdict = broker_gate(*broker) if broker else None
+    code, line = verdict or plain_gate(url)
+    print(line)
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
