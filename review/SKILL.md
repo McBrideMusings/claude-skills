@@ -149,16 +149,18 @@ Two things go in the chat explanation:
 
 **This is chat-only — it never enters the PR, and no file is written.** It's the user's orientation, not review output: it does not go in the review report, the verdict body, or any posted comment, and it never lands on disk — a teammate's PR has no branch-scoped summary file to write here. `skip summary` from the user drops this phase entirely.
 
-## Phase 00.6 — Render the visual diff
+## Phase 00.6 — A visual change: render it, hand it to the person, wait for their look
 
-**When the target changes what a screen looks like or how it moves — styles, drawing code, layout, copy on screen, an animation, a timing — render it before the lenses run.** Reading drawing code is not reviewing it.
+**When the target changes what a screen looks like or how it moves — styles, drawing code, layout, copy on screen, an animation, a timing — the person judges it, not the review.** Reading drawing code is not reviewing it, and a screenshot pass is not the person's look. The review's job is to put the change in front of them in a state they can play, then stay out of the verdict until they have.
 
-1. Run the base and the head side by side with the repo's own `project-verify` or `run` skill: the base in a detached worktree of the merge base under `/private/tmp/claude-review-verify/<slug>/base`, the head in the target's checkout.
-2. Capture every state the diff touches, one image per state per side, same viewport and crop. Anything that moves also gets a clip of each side at real speed. Save them under `/private/tmp/claude/<repo-slug>/review-<target>/` as `before-<state>.png`, `after-<state>.png`, `before-<state>.mov`, `after-<state>.mov`.
-3. The report lists every path under a `## Visual diff` heading, before the issues. A state that could not be rendered is named there with why, never left out.
-4. A visual change the PR body shows no before-and-after for is a `standards` finding. Its fix is a slate row that posts the captured images to the PR as a comment (`gh pr comment --attach`), and only on `go`.
+1. **Run both sides.** Start the base and the head with the repo's own `project-verify` or `run` skill: the base in a detached worktree of the merge base under `/private/tmp/claude-review-verify/<slug>/base`, the head in the target's checkout, each on its own port.
+2. **Prove each is playable before naming it.** Load each URL and confirm the page reached its ready state with no console errors — in a terminal, a headless load that checks the same ready condition the verify skill uses; in a Wheel browser pane, `wheel pane where <pane> --on mac` returns the page you sent it to and `wheel pane console <pane>` shows no error. A URL that 404s, a pane still on its old page, or a page that never reached ready is not handed over: fix it, then check again.
+3. **Capture every state the diff touches**, one image per state per side, same viewport and crop, and a real-speed clip of each side for anything that moves. Save them under `/private/tmp/claude/<repo-slug>/review-<target>/` as `before-<state>.png`, `after-<state>.png`, `before-<state>.mp4`, `after-<state>.mp4`.
+4. **The report opens with `## Try it`** — both URLs, each checked by step 2, and every capture path under `## Visual diff`. A state that could not be rendered is named there with why, never left out.
+5. **The verdict waits on the person's look.** On a visual change the verdict row carries no default, so `go` never covers it: `Verdict: waits on your look — type approve or request changes after you've tried it`. Nothing is posted to the PR — no verdict, no comment — until the person has typed their own verdict. The code findings still get their own rows with defaults.
+6. A visual change the PR body shows no before-and-after for is a `standards` finding. Its fix posts the captured images to the PR as a comment (`gh pr comment --attach`); that row also waits behind step 5.
 
-The base worktree is removed with Phase 05b's scratch dir. **In a Wheel pane**, `~/.claude/docs/wheel-agent.md` puts the same captures in an artifact and keeps a dev server on the head running beside it.
+The base worktree is removed with Phase 05b's scratch dir; the two servers stay up until the person has given the verdict. **In a Wheel pane**, `~/.claude/docs/wheel-agent.md` puts the captures in an artifact and runs both servers in backgrounded terminal panes, each with a browser pane on it.
 
 ## The review itself
 

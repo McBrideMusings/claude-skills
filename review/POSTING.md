@@ -210,6 +210,11 @@ never how confident the scorer was:
 - **Approve** with an empty notes list — nothing survived (and on a draft, no expected-gap entries
   either), **or** every survivor has just been fixed on the branch.
 
+**A PR that changes what a screen looks like or how it moves gets no proposed verdict.** The
+rules above decide the code's verdict; the art's is the person's, after they have played it
+([SKILL.md](SKILL.md) Phase 00.6). Print the verdict row with no bracketed default, so `go` skips
+it, and post nothing to the PR until the person types `approve` or `request changes`.
+
 ### Local work first, then the body, then the post — two confirms, in that order
 
 `go` (or any disposition naming a fix) is not a single action. It runs in three steps, and the
