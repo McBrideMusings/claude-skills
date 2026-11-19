@@ -12,7 +12,7 @@ Control words (`go`, `park`, `dispatch`, `implement`, `verify` …) are defined 
 
 Four things block a branch: the local checkout isn't at the branch head (checked every run), the branch **conflicts** with its base, its **checks are red**, or it carries **reviewer feedback nobody has answered**. Each fires only if actually true.
 
-**Brief the worker with:** the repo root, the branch, the PR (if any), and whether the branch is mine — the diagnosis-and-repair procedure itself now lives in [`agents/mergeable-worker.md`](../../agents/mergeable-worker.md) (the `~/.claude` repo), sourced from [`WORKER-PROMPT.md`](WORKER-PROMPT.md) here.
+**Start the worker through [`delegate`](../delegate/SKILL.md)**, never as an in-session Agent subagent, which dies when this session restarts. **Brief the worker with:** the repo root, the branch, the PR (if any), and whether the branch is mine — the diagnosis-and-repair procedure itself now lives in [`agents/mergeable-worker.md`](../../agents/mergeable-worker.md) (the `~/.claude` repo), sourced from [`WORKER-PROMPT.md`](WORKER-PROMPT.md) here.
 
 **Pushing the fix** to the user's own PR branch needs no `go` once nothing is red; a reply or re-request still waits for `go`. Re-read the PR's state right before the push and before writing the slate; a merged or closed PR gets no push and no reply — report its merge commit and offer the unmerged commits as a new PR.
 
