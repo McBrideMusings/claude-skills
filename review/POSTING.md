@@ -178,8 +178,9 @@ merge), so the post offer **always carries a verdict row**, never a bare comment
 
 **The verdict is always the person's — never approve on your own.** Not on a clean pass, not on an
 art-only change, not when every lens agrees. The verdict row says which verdict the findings support
-and carries **no bracketed default**, so `go` never covers it; nothing is submitted until the person
-types `approve` or `request changes` for this PR. (Self-authored PRs
+and carries **no bracketed default** until the person names a verdict in their own words; nothing
+is submitted before that. Once they have named it, submit it at once ([RULES.md](RULES.md),
+RULE 0). (Self-authored PRs
 can't get a verdict — GitHub blocks self-approve and self-request-changes — which is why this
 lives only on the teammate-PR path.)
 

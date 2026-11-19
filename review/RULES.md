@@ -65,9 +65,12 @@ marked, or a genuine "your call" case), that item is excluded from what `go` cov
 still be typed individually; say so in the same message as the list (`go covers 1–2; 3 has no
 clear recommendation — type its disposition separately`).
 
-**A PR verdict never carries a default, so `go` never approves or requests changes.** The person
-types `approve` or `request changes` themselves, on every PR, however clean the pass
-([POSTING.md](POSTING.md) § The verdict).
+**A PR verdict never carries a default the person has not named.** Until the person says
+`approve` or `request changes` in their own words, the verdict row has no default and `go` does
+not cover it, however clean the pass ([POSTING.md](POSTING.md) § The verdict). Once they have
+named it, in any phrasing ("submit this as changes requested"), it is their decision: post it
+that turn, and give any factual point you disagree with after posting, never as a reason to ask
+again. A later `go` carries out a verdict they already named.
 
 **Self-check before every question.** If you are about to open a selector, stop — that is this
 rule firing. Rewrite the question as chat text and send that instead.
