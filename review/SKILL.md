@@ -167,11 +167,11 @@ are `issues organize`'s job, not this review's. The rules are [`../issues/labels
 
 When `dual` is in the arguments, after the review core produces Claude's own findings, get an independent second opinion from the cross-vendor `dispatch codex`/`dispatch reasonix` target on the **same** diff, then reconcile.
 
-**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/SKILL.md](../dispatch/SKILL.md) for the resolver and its transports. **Gate first:** run `dispatch check --job decide`, then `dispatch agent --job decide`. If the check fails (no list set, not authenticated, Terminal automation not permitted), or the picked agent's name is `claude` (the decide list names no other vendor, or none was picked), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
+**Always go through the `dispatch` router — never call a vendor binary directly.** Read [../dispatch/LAUNCH.md](../dispatch/LAUNCH.md) for the resolver and its transports. **Gate first:** run `dispatch check --job decide`, then `dispatch agent --job decide`. If the check fails (no list set, not authenticated, Terminal automation not permitted), or the picked agent's name is `claude` (the decide list names no other vendor, or none was picked), say so and **fall back to a plain solo review** — a single-model review is still useful; just tell the user the second opinion was skipped and why.
 
-**Dual is the one flavor whose escalation is automatic.** Its readers are subagents (the `Agent` tool); dual dispatches because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
+**Dual is the one flavor whose escalation is automatic.** Its readers are subagents (the `Agent` tool); dual delegates because a second opinion from the same model is not a second opinion. **Cross-vendor is the reason, and it is the only one** — never reach for the router here for anything else, and never substitute an `Agent` call, which would silently make dual a solo review wearing two tags.
 
-**Where the target runs is resolved, not chosen** — `workspace` inside herdr, else `window`. `dispatch exec` prints it; put that line in the status message so the user knows which space (child or standalone) or window to look at. Dual is **report-back**: the review needs the target's outfile, so this session waits for it, reads it, and reconciles it.
+**Where the target runs is resolved, not chosen** — `workspace` inside herdr, else `window`. `dispatch exec` prints it; put that line in the status message so the user knows which space (child or standalone) or window to look at. Dual is a **delegation** ([../delegate/SKILL.md](../delegate/SKILL.md)): the review needs the target's outfile, so this session waits for it, reads it, and reconciles it. It is waited on, not watched, while this session runs its own review (delegate § 3), and is watched from the moment it outruns its expected time.
 
 ```bash
 D="$HOME/.claude/skills/dispatch/dispatch"
@@ -217,6 +217,6 @@ Two things are review's to supply, and SWEEP.md reads them from here:
   skill's own last phase is the disposition list and the proposed verdict, and naming an earlier step
   ("report findings") is what has made fanned-out reviews stop there instead of reaching it.
 
-**Sweep is a dispatch, not a review.** Each session runs the full skill — Phase 00.1's `mergeable` call
+**Sweep is a delegation, not a review.** Each session runs the full skill — Phase 00.1's `mergeable` call
 included, and Phase 07/POSTING.md's disposition list and verdict proposal too — inside its own worktree.
 This context's job ends at S8's proof step; don't also review the PRs here.

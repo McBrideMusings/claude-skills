@@ -22,8 +22,9 @@ What `swarm` reuses rather than owns:
 | The worker's whole pass, its landing and its parking | `implement <id> auto` |
 | The herdr space or Wheel pane, the outfile, the wait | `dispatch exec`, via the `swarm launch` script |
 
-A swarm is **report-back** ([`../dispatch/TARGETS.md`](../dispatch/TARGETS.md) § Who feeds the
-result back): the lead waits for each worker, reads its outfile and verifies what it claims.
+A swarm is a **delegation** ([`../delegate/SKILL.md`](../delegate/SKILL.md)): the lead watches
+each worker, reads its outfile and verifies what it claims. A worker's proof of life is
+`dispatch alive <dir>/<bead-id>.md`, where `<dir>` is the folder holding the file `swarm log-path` prints.
 
 `swarm feedback [<n>]` is the one focus this table does not resolve: the scope starts empty and
 the user fills it while workers run (§ Feedback session).
@@ -158,7 +159,7 @@ report the command and its output. Only a successful read that lists nothing end
 
 Drop every bead whose notes carry `auto parked`, and every bead the run log shows `failed` or
 `reopened` this run. A bead `launch` has claimed reads `in_progress`, so `bd ready` already leaves it out. Print the frozen queue in the first status
-line: mode (report-back), `<n>`, the focus, and the first `<n>` beads with titles. That line is
+line: mode (delegate), `<n>`, the focus, and the first `<n>` beads with titles. That line is
 the user's chance to redirect a focus that resolved wrong.
 
 **Splitting a bead mid-run** follows [`../issues/spec.md`](../issues/spec.md) Phase 04's vertical
@@ -218,7 +219,7 @@ environment, and the merged `--settings`. Its brief tells it to load the
 tests by their usual name so Turnstile queues them. stdout is one line: bead, exit code, outfile, worktree.
 `--dry-run` prints the environment, settings and brief and creates nothing.
 
-The harness notifies you when a launch exits. Never poll with `ScheduleWakeup`. A worker stuck
+The harness notifies you when a launch exits. Between exits, check each running worker as `delegate` § 4 says, one table row per worker; never poll with `ScheduleWakeup`. A worker stuck
 on a permission prompt shows as blocked in herdr's sidebar, or as `blocked (pane <id>)` in
 `swarm status` under Wheel, and in its launch log; if the user asks how the run is going, name
 blocked workers and their panes.

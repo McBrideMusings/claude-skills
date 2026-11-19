@@ -7,46 +7,49 @@ typed-answer sense is reserved.
 
 ## Language
 
-### Dispatch
+### Dispatch and delegate
 
 **dispatch**:
-The one verb for giving a brief to another executor and taking its result back —
-`dispatch <target>`: the place the person names. Bare `dispatch` with no place named is asked, with the target list. An in-session subagent (the `Agent` tool) is never a dispatch.
-_Avoid_: hand off, handoff, spawn, delegate, separate session
+Hand work to another session and step away — `dispatch <target>`: this session writes the brief
+from what it knows, starts the worker in the place the person names, and is done; the person owns
+the worker and its result. Bare `dispatch` with no place named is asked, with the target list. An
+in-session subagent (the `Agent` tool) is never a dispatch. See `dispatch/SKILL.md`.
+_Avoid_: hand off, handoff, spawn, fork, separate session
+
+**delegate**:
+Hand work to a child worker this session keeps managing — `delegate <target>`: it starts the
+worker through the same launcher with `--report-back`, watches it, reports its stage, time, time
+left and proof of life to the person at every check, then reads, verifies and lands or uses the
+result. See `delegate/SKILL.md`.
+_Avoid_: report-back mode, supervised dispatch, subagent
 
 **worker**:
-The executor a dispatch starts. The dispatcher is the session that handed it the brief.
-_Avoid_: delegate, delegated session
+The executor a dispatch or a delegation starts. The caller is the session that handed it the brief.
+_Avoid_: delegated session, child session
 
 **workspace**:
-A dispatch target — a new herdr space (herdr calls it a workspace) for the worker: a child space
-nested under the repo's space when the worker runs in a linked worktree of a repo herdr tracks,
-a standalone top-level space otherwise.
-
-**report-back** / **fire-and-forget**:
-The two modes of a dispatch, chosen by the dispatcher and named in its first status line.
-`report-back`: the dispatcher started the worker on its own initiative and keeps ownership of
-the result. `fire-and-forget`: the user asked for the dispatch, and the user (or a `SELF-LAND`
-worker) owns the result. See `dispatch/TARGETS.md`.
+A target — a new herdr space (herdr calls it a workspace) for the worker: a child space nested
+under the repo's space when the worker runs in a linked worktree of a repo herdr tracks, a
+standalone top-level space otherwise.
 
 **window**:
-A dispatch target — a Terminal.app window.
+A target — a Terminal.app window.
 
 **codex** / **reasonix**:
-Dispatch targets naming another vendor's coding agent. The surface (workspace/window) is
+Targets naming another vendor's coding agent. The surface (workspace/window) is
 resolved by the `dispatch transport` resolver, never asked.
 
 **inline**:
-Not a dispatch — a reserved word: `implement <issue> inline` names running the item in this
+Neither a dispatch nor a delegation — a reserved word: `implement <issue> inline` names running the item in this
 session, this checkout, explicitly. See `implement/SKILL.md` for what it will come to
 distinguish.
 
 **run**:
-Not a dispatch — this session executing a `Workflow` script; the script's agents are internal to
+Neither a dispatch nor a delegation — this session executing a `Workflow` script; the script's agents are internal to
 it. Not the default for `implement`.
 
 **relay**:
-Not a dispatch — clear this pane and continue in it with a distilled brief. Forward, not
+Neither a dispatch nor a delegation — clear this pane and continue in it with a distilled brief. Forward, not
 sideways.
 
 ### Process

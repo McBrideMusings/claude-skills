@@ -16,7 +16,9 @@
 #                                          it from there. The brief reaches it unchanged.
 #   dispatch exec <sel> --report-back|--headless [--name <name>] <prompt-file> <outfile>
 #                                          run the agent and block until it finishes; its answer
-#                                          lands in <outfile> for the caller to read.
+#                                          lands in <outfile> for the caller to read. Writes
+#                                          <outfile>.worker.json: which process and which file
+#                                          prove the worker is alive (read by `alive`).
 #                                          --name: what the work is, a few words ("profile-first spike").
 #                                          The herdr space (or tab) carries it as its label; without it
 #                                          the label is the directory's name.
@@ -26,6 +28,11 @@
 #                                          --headless: no surface — run as a plain subprocess (backend-only,
 #                                          for cron / SSH / no-GUI where AppleScript can't open a window);
 #                                          it has no pane to hand over, so it always reports back.
+#   dispatch alive <outfile> [--json]     proof of life for a --report-back worker: its process
+#                                          tree's CPU, how long it has run, when it last wrote its
+#                                          transcript or output, the last tool call it made, and a
+#                                          verdict (working, alive and using CPU, alive and idle,
+#                                          dead, finished, unknown)
 #
 # Transport is resolved, never asked: inside herdr (HERDR_ENV=1) with a vendor herdr can
 # start, the worker is a LIVE agent in its own herdr space you can take over; otherwise it is a
@@ -419,10 +426,19 @@ cmd_exec() {
   local mode="handed off to you"; [ "$report" -eq 1 ] && mode="report-back to $outfile"
   echo "dispatch: $(label "$a" "$model") ($why) via $transport ($reason), $mode"
 
+  # A claude worker gets its conversation id on its command line, so `alive` finds its process
+  # (the only one whose arguments carry the id) and its transcript (<id>.jsonl) with no guess.
+  local sid="" sidarg=""
+  if [ "$a" = claude ]; then sid="$(uuidgen | tr 'A-Z' 'a-z')"; sidarg=" --session-id $sid"; fi
+  if [ "$report" -eq 1 ]; then
+    write_worker_record "$outfile" "$a" "$transport" "$sid"
+    [ -n "$sid" ] && echo "dispatch: worker conversation $sid; proof of life: dispatch alive $(printf %q "$outfile")"
+  fi
+
   local rc=0
 
   if [ "$transport" = "wheel" ]; then
-    local -a wargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
+    local -a wargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}" --session-id "$sid")
     [ -n "$model" ] && wargs+=(--model "$model")
     [ -n "${CLAUDE_DISPATCH_REMOTE_CONTROL:-}" ] && wargs+=(--remote-control "$CLAUDE_DISPATCH_REMOTE_CONTROL")
     [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && wargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS")
@@ -440,7 +456,7 @@ cmd_exec() {
     # -p/exec flags here; `herdr-agent` tells it to write <outfile> itself.
     local -a iargs=()
     case "$a" in
-      claude) iargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}")
+      claude) iargs=(--permission-mode "${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}" --session-id "$sid")
               [ -n "$model" ] && iargs+=(--model "$model")
               [ -n "${CLAUDE_DISPATCH_REMOTE_CONTROL:-}" ] && iargs+=(--remote-control "$CLAUDE_DISPATCH_REMOTE_CONTROL")
               [ -n "${CLAUDE_DISPATCH_SETTINGS:-}" ] && iargs+=(--settings "$CLAUDE_DISPATCH_SETTINGS") ;;
@@ -462,7 +478,7 @@ cmd_exec() {
   if [ "$report" -eq 0 ]; then
     local tui
     case "$a" in
-      claude) tui="claude --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${model:+ --model $(printf %q "$model")}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;;
+      claude) tui="claude --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}$sidarg${model:+ --model $(printf %q "$model")}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;;
       codex)  tui="codex${model:+ --model $(printf %q "$model")}" ;;
       *) echo "dispatch: '$a' has no interactive mode to hand off in a Terminal window; pass --report-back" >&2; rm -f "$payload"; return 1 ;;
     esac
@@ -479,7 +495,7 @@ cmd_exec() {
   case "$a" in
     codex)    runner="codex exec -s workspace-write -c sandbox_workspace_write.network_access=true${model:+ --model $(printf %q "$model")}" ;;   # non-interactive; prompt on stdin; network on so gh/git can reach api.github.com, file-sandbox stays on
     reasonix) runner="reasonix run${model:+ -model $(printf %q "$model")}" ;; # non-interactive; prompt on stdin
-    claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}${model:+ --model $(printf %q "$model")}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
+    claude)   runner="claude -p --permission-mode ${CLAUDE_DISPATCH_PERMISSION_MODE:-auto}$sidarg${model:+ --model $(printf %q "$model")}${CLAUDE_DISPATCH_SETTINGS:+ --settings $(printf %q "$CLAUDE_DISPATCH_SETTINGS")}" ;; # print mode; prompt on stdin; the auto-mode classifier approves or refuses each call
   esac
 
   printf 'cat %q | %s\n' "$promptfile" "$runner" > "$payload"
@@ -497,6 +513,118 @@ cmd_exec() {
   return "$rc"
 }
 
+# ---- proof of life -----------------------------------------------------------------------
+
+# <outfile>.worker.json: what `alive` needs to find the worker after `exec` has returned or
+# while it blocks. A claude worker is found by its --session-id and proves life through its
+# transcript; any other agent has no unique process handle, so only <outfile> is watched,
+# which a Terminal.app one-shot tees live and a herdr TUI writes once at the end.
+write_worker_record() {
+  local outfile="$1" agent="$2" transport="$3" sid="$4"
+  jq -n --arg agent "$agent" --arg transport "$transport" --arg sid "$sid" --arg out "$outfile" \
+        --arg cwd "$PWD" --argjson started "$(date +%s)" --arg pane "${WHEEL_PANE:-}" \
+    '{agent: $agent, transport: $transport, outfile: $out, cwd: $cwd, started: $started}
+     + (if $sid != "" then {session: $sid, match: ("--session-id " + $sid)} else {} end)' \
+    > "$outfile.worker.json"
+}
+
+# The transcript of conversation <sid>, under whichever profile the worker's shell routed to.
+transcript_for() {
+  local sid="$1" d f
+  for d in "${CLAUDE_CONFIG_DIR:-}" "$HOME"/.claude*; do
+    [ -n "$d" ] && [ -d "$d/projects" ] || continue
+    f="$(find "$d/projects" -maxdepth 2 -name "$sid.jsonl" -print -quit 2>/dev/null)"
+    [ -n "$f" ] && { printf '%s\n' "$f"; return 0; }
+  done
+  return 1
+}
+
+STALE_S=300   # no new output for this long earns an explicit liveness verdict
+
+cmd_alive() {
+  local outfile="${1:-}" json=0
+  [ "${2:-}" = "--json" ] && json=1
+  [ -n "$outfile" ] || { echo "usage: dispatch alive <outfile> [--json]" >&2; return 2; }
+  local rec="$outfile.worker.json"
+  [ -f "$rec" ] || { echo "dispatch: no worker record at $rec — was it started with dispatch exec --report-back?" >&2; return 1; }
+  local agent transport match sid started now
+  agent="$(jq -r .agent "$rec")"; transport="$(jq -r .transport "$rec")"
+  match="$(jq -r '.match // empty' "$rec")"; sid="$(jq -r '.session // empty' "$rec")"
+  started="$(jq -r .started "$rec")"; now="$(date +%s)"
+
+  # The worker's process tree: every process whose arguments carry the match, and all their
+  # descendants, with the tree's summed %CPU (ps's recent average) and summed CPU time.
+  local roots="" tree="" cpu_pct="" cpu_s=""
+  if [ -n "$match" ]; then
+    roots="$(pgrep -f -- "$match" | tr '\n' ' ')"
+    if [ -n "${roots// /}" ]; then
+      read -r tree cpu_pct cpu_s < <(ps -Ao pid=,ppid=,%cpu=,time= | awk -v roots="$roots" '
+        function secs(t,  n, p, s) { n = split(t, p, "[-:]"); s = 0
+          if (n == 4) s = p[1]*86400 + p[2]*3600 + p[3]*60 + p[4]
+          else if (n == 3) s = p[1]*3600 + p[2]*60 + p[3]
+          else s = p[1]*60 + p[2]
+          return s }
+        { pid[NR] = $1; ppid[$1] = $2; pc[$1] = $3; ct[$1] = secs($4) }
+        END {
+          split(roots, r, " "); for (i in r) if (r[i] != "") keep[r[i]] = 1
+          do { added = 0
+               for (i = 1; i <= NR; i++) { p = pid[i]; if (!(p in keep) && (ppid[p] in keep)) { keep[p] = 1; added = 1 } }
+          } while (added)
+          n = 0; list = ""; tp = 0; ts = 0
+          for (p in keep) if (p in pc) { list = list (n ? "," : "") p; n++; tp += pc[p]; ts += ct[p] }
+          printf "%s %.1f %d\n", (list == "" ? "-" : list), tp, ts }')
+      [ "$tree" = "-" ] && tree=""
+    fi
+  fi
+
+  # The file whose last write proves the worker is still producing: the claude transcript,
+  # else <outfile>.
+  local output="" age="" last=""
+  if [ -n "$sid" ]; then output="$(transcript_for "$sid" || true)"; fi
+  [ -n "$output" ] || output="$outfile"
+  if [ -e "$output" ]; then age=$(( now - $(stat -f %m "$output") )); [ "$age" -ge 0 ] || age=0; fi
+  if [ -n "$sid" ] && [ "$output" != "$outfile" ]; then
+    # What it is doing now: the last tool call in the transcript.
+    last="$(tail -n 200 "$output" | jq -r 'select(.type == "assistant") | .message.content[]?
+            | select(.type == "tool_use") | "\(.name): \((.input.description // .input.command // .input.file_path // .input.pattern // .input.prompt // "") | tostring | gsub("\n"; " ") | .[0:160])"' 2>/dev/null | tail -1)"
+  fi
+  local written=false; [ -s "$outfile" ] && written=true
+
+  local verdict
+  if [ -z "$match" ]; then
+    if [ -n "$age" ] && [ "$age" -lt "$STALE_S" ]; then verdict="working"; else verdict="unknown"; fi
+  elif [ -z "$tree" ]; then
+    if [ "$written" = true ]; then verdict="finished"; else verdict="dead"; fi
+  elif [ -n "$age" ] && [ "$age" -lt "$STALE_S" ]; then verdict="working"
+  elif awk -v c="$cpu_pct" 'BEGIN { exit !(c >= 1) }'; then verdict="alive and using CPU"
+  else verdict="alive and idle"; fi
+
+  if [ "$json" -eq 1 ]; then
+    jq -n --arg agent "$agent" --arg transport "$transport" --arg pids "$tree" --arg cpu "$cpu_pct" \
+          --arg cpus "$cpu_s" --argjson elapsed "$(( now - started ))" --arg output "$output" \
+          --arg age "$age" --arg last "$last" --argjson written "$written" --arg verdict "$verdict" \
+          --argjson stale "$STALE_S" '
+      {agent: $agent, transport: $transport,
+       pids: ($pids | split(",") | map(select(. != "") | tonumber)),
+       cpuPct: (if $cpu == "" then null else ($cpu | tonumber) end),
+       cpuSeconds: (if $cpus == "" then null else ($cpus | tonumber) end),
+       elapsedSeconds: $elapsed, output: $output,
+       outputAgeSeconds: (if $age == "" then null else ($age | tonumber) end),
+       lastAction: (if $last == "" then null else $last end),
+       answerWritten: $written, verdict: $verdict, staleAfterSeconds: $stale}'
+    return 0
+  fi
+  local dur; dur() { local s="$1"; if [ "$s" -ge 3600 ]; then printf '%dh%02dm' $((s/3600)) $((s%3600/60)); elif [ "$s" -ge 60 ]; then printf '%dm%02ds' $((s/60)) $((s%60)); else printf '%ds' "$s"; fi; }
+  local procs="no process handle"
+  if [ -n "$match" ]; then
+    if [ -n "$tree" ]; then procs="pids $tree · cpu ${cpu_pct}% now, $(dur "$cpu_s") total"; else procs="no process left"; fi
+  fi
+  printf '%s via %s · %s · running %s · last output %s (%s)%s · %s\n' \
+    "$agent" "$transport" "$procs" "$(dur $(( now - started )))" \
+    "$([ -n "$age" ] && echo "$(dur "$age") ago" || echo "none yet")" "$output" \
+    "$([ -n "$last" ] && printf ' · last call %s' "$last")" "$verdict"
+}
+
 command -v jq >/dev/null 2>&1 || { echo "dispatch: jq is not on PATH — it reads the job lists from the settings files (brew install jq)" >&2; exit 1; }
 verb="${1:-}"; [ $# -gt 0 ] && shift
 parse_sel "$@" || exit 2
@@ -507,6 +635,7 @@ case "$verb" in
   transport) cmd_transport ;;
   check)     cmd_check ;;
   exec)      cmd_exec "$@" ;;
-  *) echo "usage: dispatch {config | agent <sel> | transport <sel> | check [<sel>] | exec <sel> [--report-back|--headless] [--name <name>] <prompt-file> [<outfile>]}" >&2
+  alive)     cmd_alive "$@" ;;
+  *) echo "usage: dispatch {config | agent <sel> | transport <sel> | check [<sel>] | exec <sel> [--report-back|--headless] [--name <name>] <prompt-file> [<outfile>] | alive <outfile> [--json]}" >&2
      echo "  <sel>: --job mechanical|execute|decide, or --agent <name>[:<model>]" >&2; exit 2 ;;
 esac

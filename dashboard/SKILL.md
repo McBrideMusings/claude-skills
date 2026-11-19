@@ -24,6 +24,7 @@ goes in the state, when to post, when to push, and when the artifact is deleted:
 | [`kinds/chart.md`](kinds/chart.md) | Numbers read better as a line or bar chart, on their own or inside another job. |
 | [`kinds/diagram.md`](kinds/diagram.md) | A structure reads better drawn: a flowchart, a call graph, a dependency graph. |
 | [`kinds/diagnose.md`](kinds/diagnose.md) | A `diagnose` loop has its first hypotheses. |
+| [`kinds/delegate.md`](kinds/delegate.md) | A `delegate` hands work to a worker it watches: the worker's stage, step, time, ETA and proof of life. |
 
 A `swarm` run has no kind here: under Wheel every run shows in the Wheelhouse plugin's `swarm` pane
 (`wheel pane kind <pane> plugin --plugin wheelhouse --plugin-pane swarm`), which needs no slot,

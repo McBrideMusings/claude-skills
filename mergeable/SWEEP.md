@@ -136,14 +136,14 @@ git -C <root> worktree add --track -b <branch> <path> origin/<branch>   # only i
 tries to create a second one for a branch git already has checked out. That fails, and the
 failure looks like a broken branch rather than a truncated read.
 
-Then check the checkout is clean before dispatching into it:
+Then check the checkout is clean before delegating into it:
 
 ```
 git -C <path> status --porcelain
 ```
 
 Anything printed means someone — or a session in another pane — has work in progress there. Do
-not dispatch on top of it: report the path in chat and leave that branch out.
+not delegate on top of it: report the path in chat and leave that branch out.
 
 **Link the repo's local-only skills in, or the session inside will not have them.** This is the
 step that decides whether the worker gets the project's `resolve-failing-tests` knowledge or
@@ -202,7 +202,7 @@ name. `agent start` waits up to 30s each — run them in batches of three or fou
 Prompts are one line; a newline followed by `#` trips a path hook.
 
 **2. Terminal.app windows** — not in herdr. Take the ladder from
-`dispatch` — invoke it for the ladder — rather than re-deriving the invocation here. Say
+`delegate` — invoke it for the ladder and the watching — rather than re-deriving the invocation here. Say
 in one line that the sweep is running in Terminal windows and that they are not tracked the way
 herdr panes are.
 
@@ -237,13 +237,13 @@ names one intermediate step reads as the whole job. That is not hypothetical: a 
 "report findings in this pane" stopped there and never reached the disposition list, the proposed
 verdict, or the approve step, on every PR this fan-out touched.
 
-**The repo's own tail, copied verbatim.** A repo that needs something appended to every dispatched
+**The repo's own tail, copied verbatim.** A repo that needs something appended to every delegated
 prompt — a check command with a known lock, a "never deploy" line, a migration prohibition —
 documents that tail in its `CLAUDE.local.md` under a heading the sweep can find. Copy it exactly;
 retyping it from memory each run is how a rule goes missing. A repo with no documented tail gets
 none, and that is fine.
 
-## S7 — Report the dispatch
+## S7 — Report the delegation
 
 A table of branch → where it is running → what it is doing, then how to watch:
 
@@ -269,11 +269,11 @@ gh pr list --state open --limit 50 --json number,headRefName,author,mergeable,re
 ```
 
 Anything still listed either failed or is waiting on the user in its pane — read that agent to
-find out which. **Report that, not the dispatch.**
+find out which. **Report that, not the launch.**
 
 The default branch moves while a sweep runs, so a PR that was clean at S2 can be conflicting by
 the end. That is a new sweep, not a failure of this one; say so rather than quietly
-re-dispatching.
+re-delegating.
 
 ## Teardown is not automatic
 

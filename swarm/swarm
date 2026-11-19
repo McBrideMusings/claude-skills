@@ -385,7 +385,7 @@ project's shared build settings; do not override them.
 Model: $model.${reason:+
 Opus reason: $reason}
 
-Mode: report-back. Also write your report, the same text, to \`$outfile\`; the swarm lead reads
+Mode: delegated. Also write your report, the same text, to \`$outfile\`; the swarm lead reads
 it. $outcome"
   [ "$resume" -eq 1 ] && brief="$brief
 

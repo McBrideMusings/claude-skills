@@ -1,6 +1,6 @@
 ---
 name: papercut
-description: "Log a small friction the moment you notice it — a retried tool call, flaky command, misleading error — with `tools/papercut -m \"<model-id>\" \"doing X -> Y got in the way\"` (`--repo \"$HOME/.claude\"` for harness faults); delete it the turn it is fixed or filed. Modes: /papercut <message>, /papercut review (mine the session), bare /papercut (triage the log). Writes to <repo>/.claude/papercuts.md; distinct from bugs and follow-ups."
+description: "Log a small friction the moment you notice it — a retried tool call, flaky command, misleading error — with `tools/papercut -m \"<model-id>\" \"doing X -> Y got in the way\"` (`--repo \"$HOME/.claude\"` for harness faults); delete it the turn it is fixed or filed. Modes: /papercut <message>, /papercut review (mine the session), /papercut hacks (log every `hack:` comment in the repo), bare /papercut (triage the log). Writes to <repo>/.claude/papercuts.md; distinct from bugs and follow-ups."
 ---
 
 Papercuts are small frictions logged **in the moment** — a tool call that missed and needed a retry, a confusing or undocumented setup step, a flaky command, a stale cache, a misleading error, a non-obvious gotcha. One or two sentences: *what you were doing → what got in the way* (a guess at the cause/fix is a bonus). None are blocking; logged together they show where a repo needs sanding down.
@@ -70,6 +70,24 @@ Work the log, don't just print it:
 4. For each cluster, state the concrete objective difference / cause and, where there is one, the fix (a helper task, an allowlist entry, a doc line, a lint step). Do not rank by ROI and do not judge severity subjectively — lay out what each is and what fixing it costs, and let the user decide.
 5. Offer — do not auto-do — to promote any cluster into real tracked work: a tracked issue / follow-up (via `issues file`) for genuine bugs, or an `admin` task / doc note for setup friction. Ask in plain chat; never use `AskUserQuestion`.
 6. When the user takes that offer, **delete every entry you filed, in the same turn you file it** — see the deletion rule above. The issue is the entry's new home; leaving it in both places creates a duplicate that drifts. Report each deletion next to the issue URL that replaced it.
+
+## Mode D — scan for `hack:` comments (`/papercut hacks`)
+
+A `hack: <the limit>, <when to upgrade>` comment marks code that knowingly stops short of a known ceiling (the `CLAUDE.md` rule that writes them logs each one as it lands). This mode finds the ones already in the repo, so a deliberate limit cannot quietly become permanent.
+
+1. Grep tracked and untracked files, skipping what `.gitignore` ignores:
+   ```
+   git grep --no-index --exclude-standard -inE '(#|//|/[*]|--) ?hack:'
+   ```
+   The comment prefix keeps prose that only mentions the convention out of the list. Skip a hit that is not a deliberate limit (a note about a "hack" in another sense).
+2. For each hit, read the limit and the upgrade trigger from the comment. A comment that names no upgrade trigger is tagged `no-trigger`: nothing will ever tell anyone to revisit it.
+3. Read the log (`"$HOME/.claude/tools/papercut" --path`, as Mode C says) and skip any hit whose `file:line` is already in it. When `--path` exits 4 there is no log yet, so nothing is skipped.
+4. Log each remaining hit through the writer, one entry per comment:
+   ```
+   "$HOME/.claude/tools/papercut" -m "<session-model>" "hack at <file>:<line> -> <the limit>; upgrade when <trigger>"
+   ```
+   with `upgrade: none (no-trigger)` in place of the trigger when there is none.
+5. Report `<N> hack comments, <M> newly logged, <K> with no trigger`, then offer, per Mode C step 5, to file each as a bead through `issues file`. A filed one is deleted from the log in the same turn, per the deletion rule above.
 
 ## Proactive logging (agents, in the moment)
 
