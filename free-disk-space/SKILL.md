@@ -13,7 +13,7 @@ Audit the disk, clear what's regenerable, and confirm before touching anything t
 - **Delete with `trash`, never `rm -rf`.** Everything accumulates in the Trash and stays recoverable; ask the user to empty it once at the end.
 - **Prefer a tool's own cleanup command** over deleting its directories: `cargo clean`, and every command `clear-build-caches` runs. A cache that tool doesn't cover yet gets a step in it, not a one-off command here.
 - **Measure with `df -h /System/Volumes/Data`**, not plain `df /` — APFS counts the read-only system volume separately and plain `df /` reports the wrong number.
-- **Never clear GUI app data.** `~/Library/Caches/<App>` and `~/Library/Application Support/<App>` hold logins, cookies, and history. Report their sizes and stop. Only touch one when the user names that app and accepts losing its state.
+- **Never clear GUI app data.** `~/Library/Caches/<App>` and `~/Library/Application Support/<App>` hold logins, cookies, and history. Report their sizes, unless the answered list (step 4) covers them, and stop. Only touch one when the user names that app and accepts losing its state.
 - **Never write a drive name or `/Volumes/…` path into this file or any committed file.** Discover mounted drives at run time with `ls /Volumes` and use what's actually there.
 - **A big folder is not a delete candidate until you have looked inside it.** `du` gives a number, not an identity. Open the top entries and name what they are before the folder appears in any list you show the user.
 
@@ -35,13 +35,19 @@ A cache that regenerates isn't worth deleting on its own — find what regenerat
 
 `df -h /System/Volumes/Data; ls /Volumes`. Note free space and whether an external drive is mounted.
 
-### 2. Clear the safe tier first
+### 2. Retire merged worktrees first
+
+Merged worktrees are usually the largest pile and the safest one, so they go before anything else. `~/.claude/tools/git-sweep-all` owns the judgment: it runs `git-sweep.sh` over every repo that owns a worktree under `~/.worktrees`, and removes only what is merged (squash-merged PRs included), clean, and not held by a live process.
+
+Run `~/.claude/tools/git-sweep-all --dry-run --force`, size each `would remove worktree` path with `du -sh`, show the user the list and its total, and take one yes for the batch. On a yes, run `~/.claude/tools/git-sweep-all --force`. Then list the worktrees it kept that are over 1 GB, each with the reason its `kept … —` line gave; those are the user's to decide, never yours.
+
+### 3. Clear the safe tier
 
 The safe tier is the caches a tool rebuilds on demand, and `~/.claude/tools/clear-build-caches` owns all of it — its `--help` names each cache it clears.
 
-Run `~/.claude/tools/clear-build-caches --dry-run` before surveying anything else, show the user its table and the free-space line, and take one yes for the whole tier. On a yes, run it without the flag and report its before/after line; on a no, go on to the survey. A `skip: daemon not running` row means Docker's build cache is still there — say so rather than counting it as cleared. Exit status 1 means a row says `FAILED:`; quote that row.
+Run `~/.claude/tools/clear-build-caches --dry-run`, show the user its table and the free-space line, and take one yes for the whole tier. Leave out of the table, and say you left out, any row whose path the answered list (below) marks `keep`. On a yes, run it without the flag and report its before/after line; on a no, go on to the survey. A `skip: daemon not running` row means Docker's build cache is still there — say so rather than counting it as cleared. Exit status 1 means a row says `FAILED:`; quote that row.
 
-### 3. Survey what's left
+### 4. Survey what's left
 
 Targeted `du -sh … | sort -hr` — not a full scan of `~`. The usual big ones:
 
@@ -55,11 +61,12 @@ Done when every category above has a number next to it or an explicit "nothing h
 
 Everything the survey finds — app data, media, model weights, toolchains — is outside the safe tier: summarize sizes and ask, or propose offload in step 5.
 
-### 4. Audit git worktrees
+**The answered list stops a folder the user already ruled on from coming back every run.** It lives at `~/.local/state/free-disk-space/answered.tsv`, one line per path: `path<TAB>answer<TAB>size when answered<TAB>date`, where the answer is `keep` or a short note in the user's words. Read it before showing any survey result. A path on it, or under a path on it, stays out of what you show the user, with two exceptions:
 
-For each worktree: is it dirty, and does it hold commits that aren't pushed anywhere? List the clean-and-merged ones with their sizes and take one yes for the batch — same shape as step 2's tier confirm — before removing anything. On a yes: `git worktree remove` and `git branch -d` per worktree. In a repo with submodules the plain remove refuses (`fatal: working trees containing submodules cannot be moved or removed`) and takes `branch -d` down with it — `git worktree remove --force` gets past that, and the dirty/ahead check above is what makes forcing safe here. A repo that is itself a submodule keeps its git dir under the parent's `.git/modules/<name>`, so the parent of `--git-common-dir` is not the repo and the remove fails with `is not a working tree`: run `git --git-dir=<common-dir> worktree remove` and `branch -d` instead. Never `branch -D` — the safe delete refusing is the signal that work would be lost. Keep and report anything dirty or ahead.
+- **Nothing else turned up.** Steps 2 and 3 freed nothing, and the survey has no other candidate. Then name the answered folders with their sizes as the last places left.
+- **It grew.** Its size is now more than twice the size recorded beside it. Show it with both sizes and say it grew.
 
-**Clean and merged is not the whole test — ask what is standing in the directory too.** `pgrep -f "<worktree>" | xargs -r ps -o pid=,comm=` must come back empty before the remove; `lsof +D <worktree>` answers for certain when you still suspect a hold. A process can still hold a path after removal even when git's dirty/merged checks pass — check `pgrep`/`lsof` before removing. Keep and report a held worktree, naming the pid, exactly as for a dirty one. Never `pgrep -fl` — one npm-exec match is ~10,000 characters of inherited environment.
+Whenever the user says to leave a folder alone, or turns down an offer for one, add or update its line before the run ends.
 
 ### 5. Offload keepers
 
@@ -67,6 +74,6 @@ For large files worth keeping, with a drive mounted: `rsync -a` to the drive (ad
 
 ### 6. Wrap up
 
-Report what was freed immediately, what's sitting in the Trash, and what was left alone and why. Ask the user to empty the Trash, then re-run `df -h /System/Volumes/Data` and show the before/after.
+Report what was freed immediately, what's sitting in the Trash, and what was left alone and why. Write this run's answers to the answered list. Ask the user to empty the Trash, then re-run `df -h /System/Volumes/Data` and show the before/after.
 
 Re-measure the folders and report the new sizes in chat.
