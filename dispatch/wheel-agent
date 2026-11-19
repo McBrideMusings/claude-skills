@@ -12,10 +12,9 @@
 # worker is the claude TUI in a pane you can watch, type at, or take over. The waiting and
 # outfile behavior described below applies to the report-back run only.
 #
-# Placement: by default the pane is split off the caller's pane ($WHEEL_PANE) inside the caller's
-# own space, which ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives panes no
-# WHEEL_SPACE, and backgrounded: it runs and is shown nowhere until the person brings it forward
-# (`wheel pane background <pane>` toggles it into the grid).
+# Placement: by default the pane is split to the right of the caller's pane ($WHEEL_PANE) inside
+# the caller's own space, which ~/.claude/tools/wheel-space asks the daemon for, since Wheel gives
+# panes no WHEEL_SPACE; later workers stack under the newest. Every worker shows in the grid.
 #
 # The worker's claude starts in $WHEEL_AGENT_WORKDIR (else $WHEEL_AGENT_SPACE_DIR, else the
 # caller's folder) with its own --session-id, and once it reports in, its process's working
@@ -23,14 +22,14 @@
 # WHEEL_AGENT_WORKDIR to the worker's worktree, since its space is rooted at the main checkout.
 #
 # With $WHEEL_AGENT_SPACE set (a space name), workers go to that space instead, made with
-# `wheel space new $WHEEL_AGENT_SPACE_DIR --background` when it is not open: it runs with no
-# window and leaves the caller's screen alone. The first worker takes its empty pane, the second
+# `wheel space new $WHEEL_AGENT_SPACE_DIR` when it is not open: a tab in the Mac window the person
+# clicked last, which leaves the caller's screen alone. The first worker takes its empty pane, the second
 # splits it to the right, later ones stack under the newest. The Mac app closes the space once
 # its last pane closes, so the next worker after that makes it again.
 #
 # With $WHEEL_AGENT_SHOW=1 as well, the space is one the person works in (they talk to the agent
-# there): it is made with `--focus` instead of `--background`, so it opens as a tab in the Mac
-# window they clicked last and becomes the space on their screen. Swarm workers never set it.
+# there): it is made with `--focus`, so it becomes the space on their screen. Swarm workers
+# never set it.
 #
 # The pane is a terminal running your shell, so `claude` goes through the shell's profile
 # router and gets every flag herdr would pass it (--permission-mode, --model, --settings).
@@ -54,30 +53,22 @@ ledger() { mkdir -p /private/tmp/claude/wheel-agent; printf '/private/tmp/claude
 # Make or split a pane for the worker, start its terminal, and print its id. Serialised and
 # claimed inside the lock (the terminal starts before the lock is let go), so parallel launches
 # never take the same pane, each stacks under the previous worker, and only one of them makes the
-# background space. A pane start that fails because the Mac app closed the emptied background
-# space in the meantime tries once more, which makes the space again.
+# worker space. A pane start that fails because the Mac app closed the emptied worker space in
+# the meantime tries once more, which makes the space again.
 claim_pane() {
   local l; l="$(ledger)"; touch "$l"
   lockf -k -t 60 "$l.lock" /bin/bash -c '
     set -o pipefail
-    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"; sess="$7"
-    sflag=""
-    if [ -n "$named" ] && [ -n "$sess" ]; then
-      # The worker space joins a session of its own, made when none has the name, so a window on
-      # another session never lists the workers.
-      sid="$(wheel session ls --json | jq -r --arg n "$sess" "[.[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
-      [ -n "$sid" ] || sid="$(wheel session new "$sess")" || exit 1
-      sflag="--session $sid"
-    fi
+    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"
     if [ -n "$named" ]; then
       space="$(wheel status | jq -er --arg n "$named" "[.spaces[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
       if [ -z "$space" ]; then
         if [ "$show" = 1 ]; then
-          space="$(wheel space new "$home" --name "$named" $sflag --focus)" || exit 1
+          space="$(wheel space new "$home" --name "$named" --focus)" || exit 1
           echo "wheel-agent: opened space $space ($named) for $home on the person'"'"'s screen" >&2
         else
-          space="$(wheel space new "$home" --name "$named" $sflag --background)" || exit 1
-          echo "wheel-agent: opened background space $space ($named) for $home" >&2
+          space="$(wheel space new "$home" --name "$named")" || exit 1
+          echo "wheel-agent: opened space $space ($named) for $home as a tab" >&2
         fi
       fi
       panes="$(wheel pane ls --json | jq -c --arg s "$space" "[.[] | select(.space == \$s)]")"
@@ -95,13 +86,10 @@ claim_pane() {
     done
     # In a space of its own the first worker fills it, so the second goes beside it.
     [ -n "$named" ] && [ "$(printf "%s\n" "$live" | grep -c .)" -eq 1 ] && dir=right
-    # In the calling space the worker runs backgrounded (running, shown nowhere), split off the
-    # calling pane; the person brings it forward with `wheel pane background <pane>`.
-    if [ -n "$named" ]; then new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
-    else new="$(wheel pane split "$lead" --background)" || exit 1; fi
+    new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
-    printf "%s\n" "$new"' _ "$l" "${WHEEL_PANE:-}" "${WHEEL_SPACE:-}" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" "${WHEEL_AGENT_SESSION:-}" \
+    printf "%s\n" "$new"' _ "$l" "${WHEEL_PANE:-}" "${WHEEL_SPACE:-}" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" \
     || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
 }
 
