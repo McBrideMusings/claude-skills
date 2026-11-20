@@ -72,7 +72,7 @@ No PR at all → the branch name decides: mine if it starts with `pierce` (case-
 |---|---|---|
 | **uncommitted changes** | review → document → offer fix | review → document → offer fix |
 | **my branch / my PR** | review → document → offer fix | review → document → offer fix (no post — GitHub blocks self-verdicts) |
-| **teammate's PR** | n/a | review → document → a verdict row with no default, which the person types; `P2`/`P3` ride in the Approve body as notes, and only docs that contradict the code get fixed on the branch |
+| **teammate's PR** | n/a | review → document → a verdict row in its own message, its pick the verdict the findings support, which `go` submits; `P2`/`P3` ride in the Approve body as notes, and only docs that contradict the code get fixed on the branch |
 | **not mine, no PR** | review → document, no offer | review → document, no offer |
 
 ## Phase 00.1 — Hand a blocked branch to `mergeable`, then continue
@@ -157,7 +157,7 @@ Two things go in the chat explanation:
 2. **Prove each is playable before naming it.** Load each URL and confirm the page reached its ready state with no console errors — in a terminal, a headless load that checks the same ready condition the verify skill uses; in a Wheel browser pane, `wheel pane where <pane> --on mac` returns the page you sent it to and `wheel pane console <pane>` shows no error. A URL that 404s, a pane still on its old page, or a page that never reached ready is not handed over: fix it, then check again.
 3. **Capture every state the diff touches**, one image per state per side, same viewport and crop, and a real-speed clip of each side for anything that moves. Save them under `/private/tmp/claude/<repo-slug>/review-<target>/` as `before-<state>.png`, `after-<state>.png`, `before-<state>.mp4`, `after-<state>.mp4`.
 4. **The report opens with `## Try it`** — both URLs, each checked by step 2, and every capture path under `## Visual diff`. A state that could not be rendered is named there with why, never left out.
-5. **Nothing goes to the PR before the person's look.** The verdict is always theirs ([POSTING.md](POSTING.md) § The verdict); on a visual change its row reads `Verdict: yours, after you've tried it — type approve or request changes`, and no comment posts before they type it.
+5. **Nothing goes to the PR before the person's look.** The verdict is always theirs ([POSTING.md](POSTING.md) § The verdict); on a visual change its row, alone in its message, reads `Verdict: <the supported one>, after you've tried it — go, or name the other`, and no comment posts before they answer it.
 6. A visual change the PR body shows no before-and-after for is a `standards` finding. Its fix posts the captured images to the PR as a comment (`gh pr comment --attach`); that row also waits behind step 5.
 
 The base worktree is removed with Phase 05b's scratch dir; the two servers stay up until the person has given the verdict. **In a Wheel pane**, `~/.claude/docs/wheel-agent.md` puts the captures in an artifact and runs both servers in backgrounded terminal panes, each with a browser pane on it.

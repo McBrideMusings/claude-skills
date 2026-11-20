@@ -65,9 +65,10 @@ marked, or a genuine "your call" case), that item is excluded from what `go` cov
 still be typed individually; say so in the same message as the list (`go covers 1–2; 3 has no
 clear recommendation — type its disposition separately`).
 
-**A PR verdict never carries a default the person has not named.** Until the person says
-`approve` or `request changes` in their own words, the verdict row has no default and `go` does
-not cover it, however clean the pass ([POSTING.md](POSTING.md) § The verdict). Once they have
+**A PR verdict row carries the verdict the findings support as its pick** — Approve when no
+`P0`/`P1` survives, else Request changes — and goes in a message whose only row it is. A `go`
+answering that message submits that verdict; a `go` answering a message with other rows never
+does ([POSTING.md](POSTING.md) § The verdict). Once they have
 named it, in any phrasing ("submit this as changes requested"), it is their decision: post it
 that turn, and give any factual point you disagree with after posting, never as a reason to ask
 again. A later `go` carries out a verdict they already named.
