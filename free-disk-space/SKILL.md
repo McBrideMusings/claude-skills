@@ -41,7 +41,7 @@ Merged worktrees are usually the largest pile and the safest one, so they go bef
 
 Run `~/.claude/tools/git-sweep-all --dry-run --force`, size each `would remove worktree` path with `du -sh`, show the user the list and its total, and take one yes for the batch. On a yes, run `~/.claude/tools/git-sweep-all --force`. Then list the worktrees it kept that are over 1 GB, each with the reason its `kept … —` line gave; those are the user's to decide, never yours.
 
-The sweep's output names only what it removes or keeps by a veto, so never call this step done from that output alone. Run `du -sh ~/.worktrees`, size every worktree in it, and list each one over 1 GB that the sweep never named, with its branch, last commit date and `target/` size. A clean worktree's build output is the user's to clear with `cargo clean`; offer it.
+The sweep's output names only what it removes or keeps by a veto, so never call this step done from that output alone. Run `du -sh ~/.worktrees`, then delete every gitignored build folder (`node_modules`, `target`, `.build`, `DerivedData*`, `dist`, `.next`, at any depth; `git check-ignore` confirms each) in every kept worktree, as part of the same yes. Re-measure `~/.worktrees` and report it.
 
 ### 3. Clear the safe tier
 
@@ -63,7 +63,7 @@ Done when every category above has a number next to it or an explicit "nothing h
 
 Everything the survey finds — app data, media, model weights, toolchains — is outside the safe tier: summarize sizes and ask, or propose offload in step 5.
 
-**The answered list stops a folder the user already ruled on from coming back every run.** It lives at `~/.local/state/free-disk-space/answered.tsv`, one line per path: `path<TAB>answer<TAB>size when answered<TAB>date`, where the answer is `keep` or a short note in the user's words. Read it before showing any survey result. A path on it, or under a path on it, stays out of what you show the user, with two exceptions:
+**The answered list stops a folder the user already ruled on from coming back every run.** It lives at `~/.local/state/free-disk-space/answered.tsv`, one line per path: `path<TAB>answer<TAB>size when answered<TAB>date`, where the answer is `keep` or a short note in the user's words. Read it before showing any survey result. A path on it, or under a path on it, stays out of what you show the user, and so does a folder elsewhere holding the thing its note names (the same game or app's files in a project folder), with two exceptions:
 
 - **Nothing else turned up.** Steps 2 and 3 freed nothing, and the survey has no other candidate. Then name the answered folders with their sizes as the last places left.
 - **It grew.** Its size is now more than twice the size recorded beside it. Show it with both sizes and say it grew.
