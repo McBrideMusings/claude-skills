@@ -35,6 +35,8 @@ Two patterns that have cost weeks when missed:
 
 ### Filling the table, in this order
 
+Measure in gameplay, in a scene the player controls. A title screen, menu or cutscene is not the scene even when it is the only one reachable without input: drive the input (a virtual pad through `/dev/uinput`) to get there.
+
 1. **GPU or not GPU?** Pass timing (`RX_VK_PASS_TIMING=1`) at the automatic clock and with the GPU clock pinned (`steamosctl set-gpu-performance-level manual; steamosctl set-manual-gpu-clock 1600`). If GPU time falls and FPS does not, the limit is elsewhere. One `gpu_busy_percent` reading is not evidence.
 2. **Power:** `gpu_metrics` gives socket, CPU and GPU watts and the GPU clock.
 3. **CPU:** per-thread running, ready-for-a-core and sleeping shares and kernel waits (`private/tools/sampler.py` in the OoT project), plus `RX_VK_FRAME_PHASE_LOG` with `RX_VK_FRAME_LOG` for per-frame replay phases. Frame generation alternates real and generated rows.
