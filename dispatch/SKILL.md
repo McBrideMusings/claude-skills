@@ -39,7 +39,9 @@ who owns the result once the worker starts: the person (dispatch) or this sessio
 4. **Launch.** `"$HOME/.claude/skills/dispatch/dispatch" exec --job <job> --name "<what the work
    is>" <brief>` from the checkout the worker works in, with no mode flag
    ([LAUNCH.md](LAUNCH.md) for the resolver, vendors and transports). It returns once the worker
-   has the brief.
+   has the brief. The host you run in may say otherwise: Wheel's or herdr's guidance, or a
+   repo's `CLAUDE.local.md`, can name a different place or launch command for the worker than
+   `exec` picks. Follow that guidance over this step.
 5. **Say where it went, then stop.** One line: target, the space or pane `exec` printed, and
    what the worker does. Nothing follows it about this worker unless the person asks.
 
