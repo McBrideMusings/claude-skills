@@ -48,6 +48,7 @@ Quote the Phase 02 number here; if none was recorded, return to Phase 02.
 - Confirm it's real and repeatable across runs before optimizing — profilers lie under noise (other
   apps, debug builds, cold caches). Follow the label's ground rules (release build, on-device, etc.).
 - Inspect the actual code path the profile names before proposing any change.
+- For a build's time, memory or size: before ranking any dependency change, grep each heavy crate's uses in the source, read the build scripts and vendored manifests that pull it in, and name which crate turns on each feature (`cargo tree -e features -i <crate>`); a manifest or `du` alone never ranks a change.
 
 ## Phase 04 — Change one thing
 
