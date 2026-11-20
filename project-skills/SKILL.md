@@ -1,6 +1,6 @@
 ---
 name: project-skills
-description: "Generate or audit a repo's own project skills — `<repo>/.claude/skills/project-verify/` (prove the real app works), `project-perf/` (what it may cost), `project-logs/` (where dev and production logs live and how to fetch them by device and time), `project-swarm/` (how swarm workers build and test it side by side) and, for a repo with a UI surface, `project-design/` (how to design an element, screen or layout here against the repo's root `DESIGN.md`). Load when a repo has no `project-verify` skill, when a commit is refused for lacking one, or when auditing them for drift."
+description: "Generate or audit a repo's own project skills — `<repo>/.claude/skills/project-verify/` (prove the real app works), `project-perf/` (what it may cost), `project-logs/` (where dev and production logs live and how to fetch them by device and time), `project-swarm/` (how swarm workers build and test it side by side), `project-deploy/` (how each part ships, what its deploy scripts refuse, how to confirm and debug a deploy) and, for a repo with a UI surface, `project-design/` (how to design an element, screen or layout here against the repo's root `DESIGN.md`). Load when a repo has no `project-verify` skill, when a commit is refused for lacking one, or when auditing them for drift."
 ---
 
 # Generate or audit a repo's project skills
@@ -29,6 +29,8 @@ the transcript. This skill writes and audits all of them the same way.
     │   ├── SKILL.md          # heavy commands, cheap check, shared caches, per-worker resources
     │   ├── swarm.env         # KEY=VALUE lines `swarm launch` exports into each worker (optional)
     │   └── swarm-settings.json   # merged into each worker's --settings (optional)
+    ├── project-deploy/
+    │   └── SKILL.md          # per part: command, what it refuses, confirm, tail, rollback; gotchas; debugging
     └── project-design/       # UI repos only
         ├── SKILL.md          # how to design here; the design itself is DESIGN.md
         └── tools/            # shots.sh (every state rendered), lint.sh (DESIGN.md + project rules)
@@ -64,6 +66,7 @@ combined `project/` directory, or the older `verify-project/`, `swarm-worker/` a
    | `project-perf` | [`perf.md`](perf.md) | What it may cost while it runs, as scenarios with limits |
    | `project-logs` | [`logs.md`](logs.md) | Where every log of every runtime lives, and how to read one without the user passing it in |
    | `project-swarm` | [`swarm.md`](swarm.md) | How several workers build and test it at once |
+   | `project-deploy` | [`deploy.md`](deploy.md) | How each part ships, what its scripts refuse, how to prove what went live and debug a deploy |
    | `project-design` | [`design.md`](design.md) | How to design an element, screen or layout here, against `DESIGN.md` |
 
 3. **Write each `SKILL.md`'s frontmatter** from the templates below. The description is what
@@ -75,7 +78,8 @@ combined `project/` directory, or the older `verify-project/`, `swarm-worker/` a
 5. **Prove it.** Run each skill once: one verify drive end to end, every `project-perf`
    scenario (once on the current code and once on the broken version its limit is set
    against), one `project-logs` fetch that returns real lines from each runtime it names,
-   `swarm check` for `project-swarm`, and `tools/shots.sh` plus `tools/lint.sh` for
+   `swarm check` for `project-swarm`, each `project-deploy` guard against the case it refuses
+   (no real upload) plus each confirm command, and `tools/shots.sh` plus `tools/lint.sh` for
    `project-design`. A skill never executed is a draft.
 
 A project skill you write stays out of git: add `.claude/skills/project-*` to
@@ -117,6 +121,13 @@ description: "<Project>: how swarm workers build and test it side by side — he
 
 ```markdown
 ---
+name: project-deploy
+description: "<Project>: how each part ships (<parts>) — the deploy script, what it refuses, how to confirm what went live, the log tail, rollback, the gotchas and how to debug a deploy. Read before deploying, releasing or publishing anything, and when a change is not live."
+---
+```
+
+```markdown
+---
 name: project-design
 description: "<Project>: how to design or change any element, screen, layout or flow in its <stack> UI — read DESIGN.md, follow its components and layout, render every state, lint. Read before building or changing anything a user sees."
 ---
@@ -130,8 +141,8 @@ A repo with the combined `<repo>/.claude/skills/project/` directory:
    `verify.md` → `project-verify/SKILL.md`, `features/` and `triggers.txt` →
    `project-verify/`, `perf.md` → `project-perf/SKILL.md`, `logs.md` →
    `project-logs/SKILL.md`, `swarm.md`, `swarm.env`, `swarm-settings.json` → `project-swarm/`.
-   A section beyond those four (wheel's `deploy.md`) goes to the skill that calls it, or
-   becomes its own `project-<name>` skill when the user asks for it by name.
+   `deploy.md` → `project-deploy/SKILL.md`. Any other section goes to the skill that calls
+   it, or becomes its own `project-<name>` skill when the user asks for it by name.
 2. Move each script in `tools/` to the skill that calls it (`grep -l tools/<script>`). A script
    two skills call stays in the first one's `tools/` and the other reaches it by path.
 3. Give each `SKILL.md` its frontmatter from the templates, and rewrite every path inside the
