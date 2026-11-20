@@ -41,6 +41,8 @@ Merged worktrees are usually the largest pile and the safest one, so they go bef
 
 Run `~/.claude/tools/git-sweep-all --dry-run --force`, size each `would remove worktree` path with `du -sh`, show the user the list and its total, and take one yes for the batch. On a yes, run `~/.claude/tools/git-sweep-all --force`. Then list the worktrees it kept that are over 1 GB, each with the reason its `kept … —` line gave; those are the user's to decide, never yours.
 
+The sweep's output names only what it removes or keeps by a veto, so never call this step done from that output alone. Run `du -sh ~/.worktrees`, size every worktree in it, and list each one over 1 GB that the sweep never named, with its branch, last commit date and `target/` size. A clean worktree's build output is the user's to clear with `cargo clean`; offer it.
+
 ### 3. Clear the safe tier
 
 The safe tier is the caches a tool rebuilds on demand, and `~/.claude/tools/clear-build-caches` owns all of it — its `--help` names each cache it clears.
