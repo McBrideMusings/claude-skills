@@ -23,7 +23,9 @@ component's behaviour, to [UI.md](UI.md).
      `generate/image-api --edit <screenshot.png> --prompt "<the change, and what must stay unchanged>" --out <png>`.
      The prompt is the instruction, not a description of the whole picture.
 3. **Look at each PNG.** Generators re-render the whole image, so check the copy and the layout
-   against the brief; a misspelled label or a dropped region is invisible until you read the image.
+   against the brief and against the user's own words: a state they named (full, hidden, floating)
+   is drawn as the plain word says, with no platform convention added; a misspelled label or a
+   dropped region is invisible until you read the image.
 4. **Directions diverge on one named axis** ([CONTRACT.md](CONTRACT.md) rule 11). Several comps of the
    same idea are one comp.
 5. **Show them** per [CONTRACT.md](CONTRACT.md) rule 10 — the PNG paths, one per direction — then stop: the choice is the user's.
