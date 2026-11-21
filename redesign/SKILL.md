@@ -60,7 +60,19 @@ Each row is (candidate needs | code does | `file:line` | shape of the change) or
 
 A process, feature, architecture or implementation skips the image rungs. Step 3 becomes at least three blind candidates from three rolled lenses written as structured shapes (objects, relations, states, verbs) that pairwise differ in at least one object or relation; steps 4 and 6 run as written; step 5 becomes `spike` on the question of whether the shape holds; step 7 lays out the steps, handoffs or module boundaries.
 
+## A visual mark (logo, icon, key art, illustration)
+
+The candidates are images and the user judges them on look, so every visual axis varies at once, and a shell roll forces it. A round whose tiles look like one family has failed, however different the concepts are.
+
+1. **Read first.** Before the first roll, read four to six outside sources on the subject's visual history and how others have drawn it (essays, books, reference pages; a `web-fetch` agent reads URLs), and write the takeaways in one paragraph. They produce a list of at least eight concepts, none of them the subject's literal stock icon.
+2. **Roll four axes per tile, independently, with `shuf`:** *concept* (from the reading), *palette* (at least eight, spread across hue families, one of them monochrome and one high-contrast), *medium* (at least ten: paper cut, gouache, chrome, clay, lithograph, neon, ink, pixel, stained glass, isometric vector, woodcut, holographic), *composition* (centred symbol, wordmark, monogram, pattern, enclosed badge, cropped detail, diagram). One value per tile, no value used twice in a round. Never by choice, and never seed a list with a style the user liked in another round: a liked style enters only the round where the user asked for variants of it, and then only the axes they did not ask to keep are rolled.
+3. **The shared prompt carries no look.** What every tile shares is the goal and the hard constraints (reads on the dark and the light background, text or none). A palette, medium, outline rule or "flat vector" written into that shared prompt makes the set one design; each tile's prompt names its own rolled concept, palette, medium and composition.
+4. **Divergence check on the rendered sheet.** Look at the contact sheet and write each tile's four values beside it. Any pair that shares a palette family, a medium or a composition is replaced with new rolls; the sheet ships only when every pair differs on at least three of the four axes. A tile that breaks a hard constraint (white fill that vanishes on the light background, text that vanishes on the dark) is regenerated before the user sees it.
+5. **Existing marks are candidates.** Show the existing marks first. Generate only after the user names what is wrong with them. A rating ("ok", "fine") is not a pick: only a named tile is, and anything else gets another round with new rolls for all four axes.
+
 ## What this never does
+
+- Put one palette, medium or outline treatment in the prompt shared by every tile of a visual round.
 
 - Decide for the user. Steps 3 to 6 surface decisions; the user makes them.
 - Show a candidate the sub-agents generated after reading the current design.
