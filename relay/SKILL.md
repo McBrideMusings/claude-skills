@@ -116,7 +116,7 @@ still running?" wrongly. Run `ListAgents`, `TaskStop` every subagent in it that 
 by hand can differ — a worktree and its main checkout share a directory name, so guessing
 puts the marker where the hook never looks and the relay silently does nothing.
 
-Then `Write` to `<that path>/relay/next.md`, creating the `relay/` subdirectory first.
+Then `Write` to `<that path>/relay/next-<pane>.md`, creating the `relay/` subdirectory first, where `<pane>` is this pane's `$WHEEL_PANE`, else `$HERDR_PANE_ID` (`echo "${WHEEL_PANE:-${HERDR_PANE_ID:-shared}}"`). Every pane in one checkout shares the slug, so the pane in the name is what keeps another pane's Stop hook from taking this relay.
 
 ### What goes in the prompt
 
