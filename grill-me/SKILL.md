@@ -137,7 +137,7 @@ Stop when there are no unresolved branches, then end in one message:
 
 1. Every Current answer, listed in chat, one line each as on the page.
 2. In Grill and Shape modes, a **Slice list** on the page: a table with columns #, Repo, Slice, Needs, Core fact (`n/a` where the repo asks for none). Backfill mode ends with its glossary/ADR slate instead ([BACKFILL.md](BACKFILL.md) § Terminal state).
-3. One row: confirm the answers, file the slices as beads through `issues spec`, then run `wrap-up` on any glossary or ADR edit the interview made. `go` confirms (Current becomes Settled on the page) and runs it. An interview with nothing to build says "no slices" and its row only confirms.
+3. One row: confirm the answers, file the slices as beads through `issues spec`, then run `wrap-up` on any glossary or ADR edit the interview made. When the interview started from a tracked item (an issue or bead the work already belongs to), the slices go into that item's build brief instead and the row offers the build, never a new ticket. `go` confirms (Current becomes Settled on the page) and runs it. An interview with nothing to build says "no slices" and its row only confirms.
 
 ## A question that lands badly
 
