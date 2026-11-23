@@ -14,8 +14,10 @@
 #
 # Placement: the worker goes to its project's space, the project being the main checkout of the
 # repo this runs in (resolve_place; `wheel-agent place` prints the answer). When that is the
-# caller's own space, the pane is split off the caller's pane ($WHEEL_PANE) backgrounded, the space
-# found by ~/.claude/tools/wheel-space since Wheel gives panes no WHEEL_SPACE, so the caller's grid is left as it is.
+# caller's own space, the pane is split off the caller's pane ($WHEEL_PANE), the space found by
+# ~/.claude/tools/wheel-space since Wheel gives panes no WHEEL_SPACE: a --handoff worker is the
+# person's to watch, so it goes in the grid; a report-back worker is managed by the caller, so it
+# runs backgrounded and leaves the caller's grid as it is.
 # Otherwise it goes to the space whose cwd is that checkout, made when none is,
 # exactly as a named $WHEEL_AGENT_SPACE below; two such spaces exit 5. A worker in another space shows in its grid.
 #
@@ -59,10 +61,11 @@ ledger() { mkdir -p /private/tmp/claude/wheel-agent; printf '/private/tmp/claude
 # worker space. A pane start that fails because the Mac app closed the emptied worker space in
 # the meantime tries once more, which makes the space again.
 claim_pane() {
+  local handoff="${1:-0}"
   local l; l="$(ledger)"; touch "$l"
   lockf -k -t 60 "$l.lock" /bin/bash -c '
     set -o pipefail
-    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"
+    l="$1"; lead="$2"; space="$3"; named="$4"; home="$5"; show="$6"; handoff="$7"
     if [ -n "$named" ]; then
       space="$(wheel status | jq -er --arg n "$named" "[.spaces[] | select(.name == \$n) | .id][0] // \"\"")" || exit 1
       if [ -z "$space" ]; then
@@ -89,16 +92,17 @@ claim_pane() {
     done
     # In a space of its own the first worker fills it, so the second goes beside it.
     [ -n "$named" ] && [ "$(printf "%s\n" "$live" | grep -c .)" -eq 1 ] && dir=right
-    # In the caller'"'"'s own space the worker runs backgrounded, so the caller'"'"'s grid stays as it is.
-    if [ -z "$named" ]; then
+    # In the caller'"'"'s own space a report-back worker runs backgrounded, so the caller'"'"'s grid
+    # stays as it is; a hand-off worker is the person'"'"'s to watch, so it joins the grid.
+    if [ -z "$named" ] && [ "$handoff" != 1 ]; then
       new="$(wheel pane split "$lead" --background)" || exit 1
     else
       new="$(wheel pane split "${from:-$lead}" "$dir")" || exit 1
     fi
     wheel pane start "$new" terminal >/dev/null || exit 1
     printf "%s\n" "$new" >> "$l"
-    printf "%s\n" "$new"' _ "$l" "${WHEEL_PANE:-}" "${WHEEL_SPACE:-}" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" \
-    || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane; }
+    printf "%s\n" "$new"' _ "$l" "${WHEEL_PANE:-}" "${WHEEL_SPACE:-}" "${WHEEL_AGENT_SPACE:-}" "${WHEEL_AGENT_SPACE_DIR:-$PWD}" "${WHEEL_AGENT_SHOW:-}" "$handoff" \
+    || { [ -n "${WHEEL_AGENT_SPACE:-}" ] && [ -z "${retried:-}" ] && retried=1 claim_pane "$handoff"; }
 }
 
 # The main checkout of the repo holding $1: a linked worktree resolves to its main checkout, and a
@@ -238,7 +242,7 @@ Do not summarise it there; that file IS your answer and is the only part that is
   fi
 
   local pane
-  pane="$(claim_pane)" || { echo "wheel-agent: could not make and start a pane in space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" >&2; return 1; }
+  pane="$(claim_pane "$handoff")" || { echo "wheel-agent: could not make and start a pane in space ${WHEEL_AGENT_SPACE:-$WHEEL_SPACE}" >&2; return 1; }
   printf '%s\n' "$pane" > "$dir/pane"
 
   # Wait for the shell to draw its prompt before typing at it.
