@@ -101,28 +101,6 @@ this file describes.
 
 ADRs (frontmatter `applies-to`) and vocab terms (`_applies-to_` marker in `docs/CONTEXT.md`) can declare the paths they scope, so a source path maps back to the decisions and terms that govern it (an `applies-to` list of globs in the ADR frontmatter; an `_applies-to_: <globs>` line under the term). The lookup is the shared script `~/.claude/tools/docs-refs.py` — no index, scans `docs/adr/*.md` and every `CONTEXT.md` live.
 
-If the project has an `admin.toml`, offer to wire the two shell convenience commands (agents can call the script directly regardless):
-
-```toml
-[commands.docs-refs]
-desc = "ADRs + terms governing a source path"
-steps = ["docs-refs"]
-group = 2
-
-[actions.docs-refs]
-kind = "shell-passthrough"
-run = "python3 ~/.claude/tools/docs-refs.py"
-
-[commands.docs-validate]
-desc = "Flag applies-to globs matching no tracked files"
-steps = ["docs-validate"]
-group = 2
-
-[actions.docs-validate]
-kind = "shell"
-run = "python3 ~/.claude/tools/docs-refs.py --validate"
-```
-
-Then `admin check`. `admin docs-refs src/checkout/` lists governing refs; `admin docs-refs` dumps the full map; `admin docs-validate` exits non-zero when any `applies-to` glob points at a deleted/moved path. Don't add `applies-to`/`_applies-to_` proactively — it's opt-in per ADR or term when one is genuinely path-scoped.
+Call the script directly from the project root: `python3 ~/.claude/tools/docs-refs.py src/checkout/` lists governing refs; omit the path to dump the full map; add `--validate` to fail when a glob points at a deleted or moved path. Don't add `applies-to`/`_applies-to_` proactively — it's opt-in per ADR or term when one is genuinely path-scoped.
 
 Then proceed to [PHASE-07-DESIGN-SYSTEM.md](PHASE-07-DESIGN-SYSTEM.md).

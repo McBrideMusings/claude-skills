@@ -11,10 +11,10 @@ work, ask whether something already installed does it.
 Checks worth running every time:
 
 - **Is there a binary for this?** `which <name>`, `ls ~/go/bin ~/.local/bin`, the project's
-  `admin.toml`. A skill that reimplements an installed CLI by hand is a real and repeated
+  `package.json`. A skill that reimplements an installed CLI by hand is a real and repeated
   failure — one skill in this account narrated doing by hand exactly what `~/go/bin/meat`
   does mechanically.
-- **Is there an `admin` task?** If the project has `admin.toml`, hand-rolled build/test/deploy
+- **Is there a package or plain script?** Read `package.json` and the script directory; duplicate build/test/deploy
   invocations are the finding.
 - **Does the harness already report this?** `claude plugin details <name>` prints per-plugin
   token cost; several rounds of custom probing have been spent rediscovering it.

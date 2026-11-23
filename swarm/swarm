@@ -214,7 +214,7 @@ memory_gate() {
 }
 
 # Where a worker's worktree lives.
-worktree_path() { printf '%s/.worktrees/%s/%s\n' "$HOME" "$(basename "$1")" "$2"; }
+worktree_path() { printf '%s/%s/swarm-%s\n' "${WORKTREE_ROOT:-$HOME/.worktrees}" "$(basename "$1")" "$2"; }
 
 # Give a rust worktree its own target/ for every Cargo workspace, cloned from the main checkout's
 # so dependencies start built (~/.claude/tools/clone-targets says why each stays its own).
@@ -421,13 +421,11 @@ machine). Its uncommitted changes and any commits on $branch are still in this w
     # and a worker cut from there lacks every bead landed since.
     local start="$base"
     git -C "$repo" fetch -q origin "$base" >&2 && start="origin/$base"
-    git -C "$repo" worktree add -q -b "$branch" "$wt" "$start" >&2 || {
+    wt=$("$HOME/.claude/tools/worktree-new" "$repo" "$branch" "$start") || {
       bd -C "$repo" update "$id" --status open --assignee "" >/dev/null 2>&1
       die "could not create $wt — released the claim on $id"; }
-    # Bring the primary's gitignored local files in, check out submodules, and allow the .envrc.
-    ( cd "$wt" && "$HOME/.admin/admin" populate ) >&2 || true
+    # The helper links local files and allows .envrc; projects own any further setup.
     git -C "$wt" submodule update --init --recursive >&2 || true
-    [ -e "$wt/.envrc" ] && direnv allow "$wt" >&2 || true
     runtimes "$repo" | grep -qx rust && clone_target "$repo" "$wt"
   fi
   local gd; gd="$(git -C "$wt" rev-parse --absolute-git-dir)"

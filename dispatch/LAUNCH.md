@@ -81,7 +81,7 @@ dispatch exec <sel> --report-back [--name <name>] <prompt-file> <outfile>
 dispatch alive <outfile> [--json]
     → proof of life for a --report-back worker, read from <outfile>.worker.json:
       "claude via wheel · pids 9121,9127 · cpu 24.8% now, 3m10s total · running 11m44s ·
-      last output 40s ago (<transcript>) · last call Bash: admin test web · working".
+      last output 40s ago (<transcript>) · last call Bash: bun run test:web · working".
     → the process tree is every process whose arguments carry the worker's --session-id,
       with all their descendants; CPU is ps's recent %CPU summed over the tree, plus the
       tree's total CPU time. The output file is the worker's transcript (<id>.jsonl under

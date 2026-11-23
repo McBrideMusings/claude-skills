@@ -15,7 +15,7 @@ as designed.
 - If `<repo>/.claude/skills/project-verify/SKILL.md` exists, that is the recipe running. Trust
   it over anything generic.
 - If not, write it per `project-skills` — from this repo's `README.md`, `CLAUDE.md` and
-  `admin.toml`, naming *this* repo's real surface and commands. A recipe that would read the
+  `package.json`, naming *this* repo's real surface and commands. A recipe that would read the
   same in any repo is the weak check to avoid, not a bootstrap.
 - **Never name it `verify`.** That collides with the bundled skill.
 - **Whether it is committed** follows `project-skills` §Create.

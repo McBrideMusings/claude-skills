@@ -180,7 +180,7 @@ elsewhere, squashed by `wrap-up`.
    feature, the proof includes checklist §4: the state query shows the planned field with raw
    values, and the log file at the path the control surface reports holds the planned lines
    from this run. Write one
-   (per `project-skills`) from the repo's `README.md`, `CLAUDE.md` and `admin.toml` when none exists, naming this
+   (per `project-skills`) from the repo's `README.md`, `CLAUDE.md` and `package.json` when none exists, naming this
    repo's real surface and commands; whether it is committed follows `project-skills` §Create.
    `BLOCKED` conditions and proving a touched test discriminates:
    [`VERDICTS.md`](VERDICTS.md).
@@ -270,10 +270,8 @@ item's own model says should not exist. Verify treats doubt as `FAIL`.
 Once verification and review clear, show the gate: [`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
 §Gate. When the pass changed `DESIGN.md`, the gate carries its diff ([`../CHAT-FORMAT.md`](../CHAT-FORMAT.md)
 §Gate). The commands in **Run:**/**Look for:** are the ones already run in step 4 above — never
-re-derived, never re-run just to fill the gate. When a recheck command runs inside a worktree
-and the project has `admin.toml`, print it as `admin -w <worktree> <task>` when this session
-stands outside the worktree, unprefixed when standing inside it — never tell the owner to `cd`
-first.
+re-derived, never re-run just to fill the gate. Write commands for the checkout tested: `bun run --cwd <worktree> <script>` for package scripts,
+or the plain script's absolute path with its required working directory stated.
 
 In `auto`, stop after the gate's **Look for:** block; the closing sentence below and its wait
 belong to an attended pass.

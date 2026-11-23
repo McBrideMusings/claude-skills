@@ -27,7 +27,7 @@ over `~/.claude/projects/**/*.jsonl` answers it in 90 seconds"* is one.
 
 | Shape | Looks like |
 | --- | --- |
-| **A read command** | A script or `admin` task that answers the question on demand. Cheapest and most reusable; prefer it. |
+| **A read command** | A plain or package script that answers the question on demand. Cheapest and most reusable; prefer it. |
 | **A tee** | Logs the agent cannot see, written somewhere it can — a dev server's output, a build log, a device console. |
 | **A state dump** | The running app printing what it currently believes, so a program can read it back rather than a human describing it. |
 | **Read-only credentials** | A third-party service the agent must observe but never mutate. Route through `~/.claude/.env`; never a web console. |

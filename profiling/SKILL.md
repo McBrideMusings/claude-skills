@@ -64,7 +64,7 @@ a noted command) so the win doesn't silently regress later.
 
 ## Findings-only invocation
 
-When another skill (e.g. `improve`'s survey) invokes this for audit: run **Phases 01–03 only** and return the dominant-cost findings — Phases 04–05 belong to an interactive session; change no code. Infer the metric and workload from the project type (game → the frame budget, 16.6 ms at 60 fps; web → load/interaction; CLI → startup) and **name both in the findings** so the premise can be rejected. Launch only through an existing entry point (an `./admin` task or package script). If no launchable entry point or profiler exists, return "not measurable — <reason>" instead of guessing hot paths from code. No file writes, no commits, no questions.
+When another skill (e.g. `improve`'s survey) invokes this for audit: run **Phases 01–03 only** and return the dominant-cost findings — Phases 04–05 belong to an interactive session; change no code. Infer the metric and workload from the project type (game → the frame budget, 16.6 ms at 60 fps; web → load/interaction; CLI → startup) and **name both in the findings** so the premise can be rejected. Launch only through an existing entry point (a plain script or package script). If no launchable entry point or profiler exists, return "not measurable — <reason>" instead of guessing hot paths from code. No file writes, no commits, no questions.
 
 ## When no label matches
 

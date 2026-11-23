@@ -9,7 +9,7 @@ Inspect what already exists, then route to the right downstream phase.
 - Universal files: `docs/index.md`, `docs/file-map.md`
 - Other `docs/*.md` (loose markdown — feeds Phase 04 categorization)
 - `package.json` `docs:dev` script + `vitepress` devDep
-- `admin.toml` `[commands.docs]`
+- `package.json` `scripts.docs:dev`
 - `CLAUDE.md` `## Documentation` section
 - Legacy planning docs at repo root: `PHASE_*.md`, `FUTURE_FEATURES.md`, `PROJECT_PLAN.md`, `tasks/`
 

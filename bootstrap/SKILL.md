@@ -23,7 +23,7 @@ the Phase 05 issue-backend choice, Phase 03's task-runner and license choices, e
 does not name. Without this line the two rules are simply in conflict, and whichever one gets
 obeyed is invisible to the user.
 
-**Any confirmation you do surface is a plain-chat question** — never the `AskUserQuestion` tool / structured-question schema. Answered inline in free-form ("skip admin", "yes but leave the glossary"), which the chip-picker UI can't carry.
+**Any confirmation you do surface is a plain-chat question** — never the `AskUserQuestion` tool / structured-question schema. Answered inline in free-form ("skip task setup", "yes but leave the glossary"), which the chip-picker UI can't carry.
 
 **Don't commit — and don't ask about committing.** Bootstrap prepares the ground and stops; the user (or `/wrap-up`) commits. Do NOT end with "commit to main?" or any variant — that is exactly the dumb question this rule kills. Just do the work, then report per [PHASE-08-SUMMARY-AND-BACKFILL.md](PHASE-08-SUMMARY-AND-BACKFILL.md). The user commits when they choose. (Destructive migrations may shuffle git history — leave the moves staged for the user to review.)
 
@@ -35,7 +35,7 @@ Run in order. Phase 01 builds the audit table; later phases skip cleanly on the 
 |---|---|
 | [PHASE-01-STATE-DETECTION.md](PHASE-01-STATE-DETECTION.md) | Probe non-standard locations, build the audit table |
 | [PHASE-02-CLAUDE-FILES.md](PHASE-02-CLAUDE-FILES.md) | `CLAUDE.md` (root) + `CLAUDE.local.md` (root) |
-| [PHASE-03-TASK-RUNNER-AND-LICENSE.md](PHASE-03-TASK-RUNNER-AND-LICENSE.md) | One task runner (Makefile, justfile, npm scripts or `admin.toml`); a license on an owned repo |
+| [PHASE-03-TASK-RUNNER-AND-LICENSE.md](PHASE-03-TASK-RUNNER-AND-LICENSE.md) | One task runner (Makefile, justfile, package scripts or plain scripts); a license on an owned repo |
 | [PHASE-04-VITEPRESS-DOCS.md](PHASE-04-VITEPRESS-DOCS.md) | `docs/` + VitePress (runs the docs-site flow) |
 | [PHASE-05-ISSUE-TRACKER.md](PHASE-05-ISSUE-TRACKER.md) | Resolve the issue backend (beads / GitHub / local), offer `bd init` or a GitHub→beads migration, record the answer |
 | [PHASE-06-DOCS-ARTIFACTS.md](PHASE-06-DOCS-ARTIFACTS.md) | `docs/CONTEXT.md`, `docs/adr/`. No PRD, no roadmap — the phase says why |

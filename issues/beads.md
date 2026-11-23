@@ -41,7 +41,7 @@ Add them under `permissions` once:
 ```
 
 **Every `bd` verb runs unprompted, destructive ones included.** There is no `ask` gate on
-`bd delete`, `prune`, `purge`, `flatten`, or `admin reset`. Those five were gated until
+`bd delete`, `prune`, `purge`, `flatten`, or `bd admin reset`. Those five were gated until
 2026-08-21; Pierce removed them, and the reason is worth carrying: beads writes land in a repo,
 git is the undo, and a prompt on every `bd delete` breaks unattended `implement`
 a swarm runs for no safety that git doesn't already provide. Don't reinstate them, and

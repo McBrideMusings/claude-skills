@@ -128,7 +128,7 @@ Path: `~/.worktrees/<repo-name>/<branch with / replaced by ->`.
 ```
 git -C <root> fetch origin --prune
 git -C <root> worktree list --porcelain | grep -Fx "worktree <path>"
-git -C <root> worktree add --track -b <branch> <path> origin/<branch>   # only if that grep found nothing
+~/.claude/tools/worktree-new <root> <branch> origin/<branch>   # only if that grep found nothing; use its printed path
 ```
 
 **Match the path exactly, do not eyeball the list.** A busy repo has dozens of worktrees;

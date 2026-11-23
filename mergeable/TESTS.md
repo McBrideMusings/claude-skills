@@ -74,7 +74,7 @@ git log --oneline <base>..HEAD -- <test file> <impl files it exercises>
 Then reproduce the same test at the base — a scratch worktree, never by switching this one:
 
 ```
-git worktree add /private/tmp/claude/<repo-slug>/mergeable-base <base>
+~/.claude/tools/worktree-new <repo> mergeable-base/<unique-slug> <base>
 ```
 
 Fails at the base too → **pre-existing**. Say so plainly and do not silently absorb it into this

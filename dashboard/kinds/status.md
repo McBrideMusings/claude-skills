@@ -22,7 +22,7 @@ Completion: every vision-bearing doc read, every extracted goal traceable to a q
 
 ### Phase 02 — Assess Code
 
-Rate each goal from code inspection, never from self-reported progress — a README status line, a tracker comment, or a plan checkbox is a claim to verify, not evidence. For each goal find: real implementation vs. stubs, tests that exist and pass, and whether it works end-to-end. Where the project ships a runnable artifact, run it (route via the `run` skill or `admin` tasks) and rate the shipped behavior, not the repo's.
+Rate each goal from code inspection, never from self-reported progress — a README status line, a tracker comment, or a plan checkbox is a claim to verify, not evidence. For each goal find: real implementation vs. stubs, tests that exist and pass, and whether it works end-to-end. Where the project ships a runnable artifact, run it (route via the `run` skill or package scripts) and rate the shipped behavior, not the repo's.
 
 Statuses: **WORKING** / **PARTIAL** / **STUB** / **MISSING** / **EXCEEDED** (shipped beyond the promise). Qualify where honesty needs it ("WORKING (component level)", "PARTIAL — hard-gated on X"). Every status carries one line of evidence: the test suite, the LOC/reality of the module, the live probe result, the absent file.
 

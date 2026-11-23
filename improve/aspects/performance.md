@@ -1,6 +1,6 @@
 # Aspect brief: `performance` (routed to `profiling`)
 
-Axis tag: `performance`. Applicability: the app is launchable through an **existing** entry point — an `./admin` task or a package script. Check this before anything else; if there is none, return `not measurable — no launchable entry point` and stop.
+Axis tag: `performance`. Applicability: the app is launchable through an **existing** entry point — a plain script or a package script. Check this before anything else; if there is none, return `not measurable — no launchable entry point` and stop.
 
 **Read:** `../../profiling/SKILL.md`, its **Findings-only invocation** contract and **Phases 01–03 only** (pick the metric and workload → baseline → isolate the dominant cost). Phases 04–05 are the interactive fix loop and change code; you run neither.
 

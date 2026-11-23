@@ -1,6 +1,6 @@
 # Docs site — VitePress
 
-Walking a project from "no docs" to "VitePress docs site wired into admin + CLAUDE.md", or
+Walking a project from "no docs" to "VitePress docs site wired into package scripts + CLAUDE.md", or
 auditing/migrating an existing one. The flow is **phased**: detect state, branch to one of
 Bootstrap / Audit / Migrate, then verify and commit.
 
@@ -27,7 +27,7 @@ docs/
 
 Don't read VitePress `node_modules/` or theme internals. Read its config and your markdown only. Build errors referencing VitePress internals are almost always a markdown gotcha or `.mts` rename.
 
-Files this flow reads / writes: `package.json`, `admin.toml`, `CLAUDE.md`, `.gitignore`, anything under `docs/`, this directory.
+Files this flow reads / writes: `package.json`, `CLAUDE.md`, `.gitignore`, anything under `docs/`, this directory.
 
 ## Phases
 

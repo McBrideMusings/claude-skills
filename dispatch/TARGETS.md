@@ -121,12 +121,11 @@ one-file edit dispatched onto `main` is the same hazard as a twenty-file one: th
 usually still working in that checkout, and an agent committing underneath them is a
 collision they did not agree to.
 
-For `workspace`, make the worktree with plain git, link its local files, and run
+For `workspace`, make the worktree and link its local files with `~/.claude/tools/worktree-new`, and run
 `dispatch exec` from inside it:
 
 ```
-git -C <repo> worktree add -b <branch> ~/.worktrees/<repo-name>/<slug> <default-branch>
-( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.admin/admin" populate )
+~/.claude/tools/worktree-new <repo> <branch> <default-branch>
 ( cd ~/.worktrees/<repo-name>/<slug> && "$HOME/.claude/skills/dispatch/dispatch" exec --job execute --name "<what the work is>" <brief> )
 ```
 
@@ -141,7 +140,7 @@ space's first tab. **Never open the space yourself before `dispatch exec`**, whe
 adds a tab for the agent, and leaves the first tab as an empty shell. For the same reason, never
 `herdr workspace create --cwd <worktree-path>`; the name goes through `--name`, never a
 `--label` of your own.
-Worktrees go under `~/.worktrees/<repo>/<branch>`, the `[worktrees] directory` in
+Worktrees go under `~/.worktrees/<repo>/<branch-with-slashes-replaced-by-dashes>`, the `[worktrees] directory` in
 `~/.config/herdr/config.toml`.
 
 `herdr worktree create --workspace <repo-workspace-id> --branch <name>` is only for a
@@ -158,12 +157,12 @@ removed with the worktree, so the copy lasts exactly as long as the dispatch. A 
 reads the brief from the git dir after the copy, never from the tmp path.
 
 **Check that `CLAUDE.local.md` reached the new worktree before starting the agent.** It's
-untracked, so git never carries it. In a repo with `admin.toml`, the admin tool's populate step
-usually already has: the base archetype (`~/.admin/archetypes/base/archetype.toml`) symlinks
-`CLAUDE.local.md` and `.claude/CLAUDE.local.md` back to the main checkout. Run `ls -la` on the
-worktree's copy; a symlink to the main checkout means there is nothing to do, and a `cp` onto it
-writes the file through the link onto itself. Only when the file is missing, copy it, and any
-directory it points at (a local doc cache under `.claude/reference/`), from the main checkout.
+untracked, so git never carries it. `~/.claude/tools/worktree-new` links `CLAUDE.local.md`,
+`.claude/CLAUDE.local.md`, local settings and untracked `.claude/skills/*` to the primary.
+Use the path printed by the helper. Read linked local guidance for project-specific secrets,
+signing files and local reference caches that need separate setup; the helper copies only
+`.envrc`, not arbitrary environment files. Never copy onto a link to the same source.
+
 
 **The dispatch decides where the work happens, and where it stops.** What the work *is* —
 a feature, a bug, a log read — belongs to the prompt. Where it ends does not: every worker

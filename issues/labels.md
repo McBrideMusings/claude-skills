@@ -112,7 +112,7 @@ user before it is written. A rename runs `bd label rename <old> <new>` across th
 the same pass, then `bead-labels check` to confirm nothing still carries the old name.
 
 **A label whose name collides with a word the repo already spends on something else gets a
-different name.** `admin` in a repo whose task runner is `admin` reads as the task runner;
+different name.** `build` in a repo with a build command reads as that command;
 call the label `ops`. The reader cannot tell, and the reader is who the label is for.
 
 ## GitHub

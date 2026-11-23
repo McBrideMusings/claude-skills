@@ -347,7 +347,7 @@ Commit every source change in the tree. Then stop.
 
 - Wrap is the only stage that normally commits; you are the other one, because you exist to rescue work a halt would otherwise strand, e.g. \`git -C ${a.worktree} commit -m "..."\`.
 - Stage the files the pass actually changed. Never \`git add -A\`.
-- Do not commit gitignored local files linked into the worktree — \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\`, anything under \`.claude/skills/\`.
+- Do not commit gitignored local files linked into the worktree — \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\`, anything under \`.claude/skills/\`.
 - Write a commit message that says plainly this work halted at ${stage} and names the outcome above, so nobody reading the log mistakes it for finished work. Conventional Commits, and no mention of Claude, AI, or any assistant.
 - If the tree is already clean and the work is committed, do nothing and say so.
 - **You run no \`git push\` at all**, to any branch, and no \`gh pr create\`. The commit is already visible to the orchestrator — a linked worktree shares the primary checkout's object store — so there is nothing a push would accomplish.
@@ -451,7 +451,7 @@ ${JSON.stringify(item, null, 2)}
 
 Find every file that must change and settle the approach. For each file give an \`anchors\` list — the function, type or symbol names the edit will target — so the next stage can open the file and go straight to the right place instead of re-reading it whole.
 
-Also report the project's real build and test commands. Prefer an \`admin\` task when the repo has an \`admin.toml\`; otherwise the raw command.
+Also report the project's real build and test commands. Prefer an existing package script or plain script.
 
 **Also check whether \`~/.claude/skills\` is behind.** Run \`git -C ${SKILLS} fetch --quiet\`, then \`git -C ${SKILLS} rev-list --count HEAD..origin/main\`. Report the count as \`skills_behind\`. If it is non-zero, also report the command that brings the checkout up to date as \`skills_update_command\` — \`git -C ${SKILLS} merge --ff-only origin/main\` unless you find the repo actually wants something else (a detached HEAD that needs re-pointing at a branch first, for instance).
 
@@ -767,7 +767,7 @@ Prove this item's behaviour works at the surface a person would actually use, an
 
 **That path is in the primary checkout, not the worktree you are editing.** \`verify-project\` is git-excluded, so a fresh worktree carries it only if a link hook put it there — its absence from the worktree is no evidence about the repo. Read it at the absolute path above and nowhere else.
 
-**If that file does not exist, write it first, then follow it.** Do not fall back to a generic recipe, and do not fail this stage for its absence — a repo without one is a repo that has not been bootstrapped yet, which is a thing you can fix in place. Work out how this repo's surface is actually driven: read its \`README.md\`, its \`CLAUDE.md\`, its \`admin.toml\` if it has one, and how its own entry points are invoked. Then write \`${REPO_ROOT}/.claude/skills/verify-project/SKILL.md\` naming *this* repo's real surface and real commands — what to launch, how to reach the behaviour, what a pass looks like in the output. A recipe that would read the same in any repo is not one, and it is exactly the weak verdict this step exists to prevent. Keep it out of git: append \`.claude/skills/verify-project\` to \`${REPO_ROOT}/.git/info/exclude\`, never \`.gitignore\`, which is committed. **Never name it \`verify\`** — that collides with the bundled skill and the collision is why the project skill has its own name. Say in \`evidence\` that you wrote it and what surface it names.
+**If that file does not exist, write it first, then follow it.** Do not fall back to a generic recipe, and do not fail this stage for its absence — a repo without one is a repo that has not been bootstrapped yet, which is a thing you can fix in place. Work out how this repo's surface is actually driven: read its \`README.md\`, its \`CLAUDE.md\`, its \`package.json\` and scripts if present, and how its own entry points are invoked. Then write \`${REPO_ROOT}/.claude/skills/verify-project/SKILL.md\` naming *this* repo's real surface and real commands — what to launch, how to reach the behaviour, what a pass looks like in the output. A recipe that would read the same in any repo is not one, and it is exactly the weak verdict this step exists to prevent. Keep it out of git: append \`.claude/skills/verify-project\` to \`${REPO_ROOT}/.git/info/exclude\`, never \`.gitignore\`, which is committed. **Never name it \`verify\`** — that collides with the bundled skill and the collision is why the project skill has its own name. Say in \`evidence\` that you wrote it and what surface it names.
 
 **Treat doubt as \`FAIL\`.** There is no partial pass, and a \`FAIL\` is a real answer this stage exists to produce — not something to soften into a note so the pass can continue.
 
@@ -1046,7 +1046,7 @@ ${DIFF_HOWTO}
 
 1. \`~/.claude/tools/repo-snapshot ${dir || '.'}\` once — not several separate git calls.
 2. Run the project's formatter **on the files listed above and no others**. Never a repo-wide format or \`lint --fix\`: it rewrites files no sibling worker touched, so every other branch in the round conflicts on whitespace alone, and the conflict surfaces at landing long after you are gone. If the only formatter available is repo-wide, skip formatting and say so in \`summary\`.
-3. \`git -C ${a.worktree || dir} add\` **the listed paths, explicitly**. Never \`git add -A\` and never \`git add .\`. \`admin.toml\`, \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\` and everything under \`.claude/skills/\` are gitignored local files linked into this worktree so the pass could build at all — they are not yours to track, and the bulk adds are how they reach a diff.
+3. \`git -C ${a.worktree || dir} add\` **the listed paths, explicitly**. Never \`git add -A\` and never \`git add .\`. \`.env*\`, \`CLAUDE.local.md\`, \`.mcp.json\` and everything under \`.claude/skills/\` are gitignored local files linked into this worktree so the pass could build at all — they are not yours to track, and the bulk adds are how they reach a diff.
 4. Commit. Conventional Commits subject unless this repo's own \`CLAUDE.md\` says otherwise, referencing \`${item.id}\`.${homeClaudeException} No mention of Claude, an AI, or an assistant anywhere in the message. **You are the one stage that commits: \`git -C ${a.worktree || dir} commit -m "..."\`.**
 5. Read back what you actually produced: \`git -C ${a.worktree || dir} rev-parse HEAD\` and \`git -C ${a.worktree || dir} status --short\`. Return the sha in \`commit\`, the branch in \`branch\`, \`committed: true\`, and a clean \`status\` is what \`committed\` asserts — if the tree is still dirty, say which paths in \`summary\`.
 6. Stop. Return \`pushed: false\` and \`landed: false\`; both are correct and neither is a failure.

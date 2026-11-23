@@ -176,7 +176,7 @@ The gate (below):
 - **Files changed** — the header names where the work sits: `**Files changed** in <worktree> (<branch>, <sha>)`, or `(<sha>)` alone for work committed in place. Then every file touched, one line each.
 - **DESIGN.md diff** — only when the pass changed `DESIGN.md`: the output of `git diff <base>...HEAD -- DESIGN.md` in a fenced `diff` block, directly under **Files changed**. A pass that left `DESIGN.md` alone omits this line.
 - **Unchanged** — only files a reader would have expected touched and weren't, with the reason. "Nothing" is a real answer.
-- **Run:** the exact commands, the ones the agent ran, one per line — written for the directory this session stands in: `admin -w <worktree-or-bead-id> <task>` when the project has `admin.toml` and this session sits outside the worktree named above, plain `admin <task>` when it sits inside it.
+- **Run:** the exact commands, the ones the agent ran, one per line — written for the checkout tested: `bun run --cwd <worktree> <script>` for package scripts, or an absolute script path with its required working directory stated.
 - **Look for:** what a pass looks like — the output the agent saw.
 
 Then the gate's own hatch sentence from §Hatch above, byte-for-byte — see the worked example's closing line. `go` always means "run wrap-up now" — landing the branch, whatever that takes on this repo (merge, PR, `land`). The gate offers no second word: an owner who wants to hold the branch simply doesn't answer.

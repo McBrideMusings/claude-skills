@@ -13,15 +13,14 @@
 5. **Wire `package.json`:** `"docs:dev": "vitepress dev docs --port 5193"` (or main app port + 20).
 
    Don't add `docs:build` / `docs:preview` unless project deploys docs. Heuristic: workflows mention Pages / Netlify / Vercel / `vitepress build`, or `gh-pages` / `docs-deploy` script in package.json.
-6. **Wire `admin.toml`** if present. See the `[commands.docs]` shape below. The change takes effect immediately — the `admin` tool interprets `admin.toml` at runtime, so there's nothing to regenerate. Validate with `admin check`.
-7. **Update `CLAUDE.md`** Documentation section (template below).
-8. **Append to `.gitignore`** if missing:
+6. **Update `CLAUDE.md`** Documentation section (template below).
+7. **Append to `.gitignore`** if missing:
 
    ```
    docs/.vitepress/cache
    docs/.vitepress/dist
    ```
-9. Proceed to [PHASE-05-VERIFY.md](PHASE-05-VERIFY.md).
+8. Proceed to [PHASE-05-VERIFY.md](PHASE-05-VERIFY.md).
 
 ## Opt-in heuristics (any one is sufficient)
 
@@ -41,7 +40,7 @@ Drop table rows for files that don't exist.
 ```md
 ## Documentation
 
-This project has a VitePress docs site under `docs/`. Run `admin docs` (or `npm run docs:dev`) to read it on `http://localhost:5193`.
+This project has a VitePress docs site under `docs/`. Run `bun run docs:dev` to read it on `http://localhost:5193`.
 
 Keep these in sync as you work:
 
@@ -53,28 +52,6 @@ Keep these in sync as you work:
 
 Don't write new top-level planning / phase / feature docs in `docs/` — file an issue on the repo's tracker instead (invoke `issues`). Nothing in `docs/` is forward-looking; the tracker owns everything not yet built.
 ```
-
-## `[commands.docs]` shape for admin.toml
-
-```toml
-[commands.docs]
-desc     = "serve VitePress docs site with hot reload on http://localhost:5193"
-steps    = ["docs-dev"]
-group    = 2
-priority = 50
-
-[actions.docs-dev]
-kind = "npm"
-run  = "docs:dev"
-```
-
-**A `[commands.*]` table takes no `kind` or `run`.** It names its `steps`; the `kind`/`run` pair lives on the `[actions.*]` table each step names. `admin check` rejects a command carrying them inline.
-
-**Use `kind = "npm"`** — `run` is the `package.json` script name, and the runner picks bun when a `bun.lockb` or `bun.lock` sits beside `package.json`, npm otherwise. Don't use `kind = "shell"` with `"npm run docs:dev"` — that skips the lockfile check.
-
-Single command, no sub-targets. No `docs build` / `docs preview` — noise for local viewing. `group = 2, priority = 50` is the canonical `docs` slot (`admin/bootstrap.md` § The standard layout).
-
-If project deploys docs (rare), use separate `[commands.docs-build]` / `[commands.docs-deploy]` rather than sub-targets.
 
 ## ESM gotcha (always use `.mts`)
 

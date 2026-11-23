@@ -209,7 +209,7 @@ One Bash call per slot, **each with `run_in_background: true` and `timeout: 7200
 
 It checks the quota, claims the bead (`bd update --claim`, which sets it `in_progress` so no
 other picker offers it; [`../implement/AUTO.md`](../implement/AUTO.md) § Swarm workers lets the
-worker's gate accept that), creates `~/.worktrees/<repo>/<bead-id>` on branch `swarm/<bead-id>`, marks it
+worker's gate accept that), creates `~/.worktrees/<repo>/swarm-<bead-id>` (through `tools/worktree-new`) on branch `swarm/<bead-id>`, marks it
 SELF-LAND in self-land mode (sign-off mode sets `SWARM_SIGNOFF=1` in the worker's environment
 instead), writes the brief to the worktree's git dir, and blocks on `dispatch exec` until the
 worker is idle or done (under Wheel, until it is idle with its outfile written: a worker waiting

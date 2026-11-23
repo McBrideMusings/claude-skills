@@ -45,14 +45,14 @@ goes through: the check reads the disk, not git.
 
 Never ask which mode. `test -f <repo>/.claude/skills/project-verify/SKILL.md` decides: missing →
 **Create**, present → **Audit**. In a linked worktree, the primary checkout's copy counts
-(`admin populate` links `.claude/skills/*` into worktrees). A repo still holding the old
+(`~/.claude/tools/worktree-new` links `.claude/skills/*` into worktrees). A repo still holding the old
 combined `project/` directory, or the older `verify-project/`, `swarm-worker/` and
 `read-logs.md`, gets **Migrate** first.
 
 ## Create
 
 0. **A repo with a build or test step and no task runner gets one proposed as an option set**, per `../bootstrap/PHASE-03-TASK-RUNNER-AND-LICENSE.md` §Task runner.
-1. **Read the repo, not the user.** Its README, CLAUDE.md, `admin.toml`, build files, test
+1. **Read the repo, not the user.** Its README, CLAUDE.md, `package.json`, build files, test
    setup, Dockerfiles and deploy scripts answer almost everything. Ask only what the code
    cannot say — usually which devices or hosts the thing runs on in production.
 2. **Write each skill** from its page here, in this order. A skill whose answer is "none" still
@@ -73,7 +73,7 @@ combined `project/` directory, or the older `verify-project/`, `swarm-worker/` a
    makes the skill load, so it names this repo's surface, runtimes and stack, not the generic
    words.
 4. **Write the code support a skill names** in the same change: a log file the app does not
-   write yet, a push to Loki an app lacks, a configurable port, an `admin` task, a lint rule
+   write yet, a push to Loki an app lacks, a configurable port, a package script, a lint rule
    `DESIGN.md` says is enforced. A skill the project cannot follow is not support.
 5. **Prove it.** Run each skill once: one verify drive end to end, every `project-perf`
    scenario (once on the current code and once on the broken version its limit is set

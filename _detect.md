@@ -101,7 +101,7 @@ example. A page there would fire in most repos and say only what was already ass
 
 ## Vocabulary
 
-`admin, api, app-store, apple, audio, backend, cli, cloudflare, container, desktop, docs-site,
+`api, app-store, apple, audio, backend, cli, cloudflare, container, desktop, docs-site,
 game, go, gui, mobile, node, python, react, rust, threejs, tui, tvos, web`
 
 Plus private labels, which are not listed here.
@@ -141,7 +141,6 @@ audio file all produced wrong labels.
 | `gin` / `axum` / `express` / `fastapi` in the manifest | `backend` |
 | `import AVFoundation` / `AVAudioEngine` in `*.swift`; `howler` / `tone` / `wavesurfer.js` npm dep; `cpal` / `rodio` in `Cargo.toml` | `audio` |
 | `Dockerfile` / `docker-compose.y*ml` | `container` |
-| `admin.toml` | `admin` |
 | `.beads/` present / absent | `tracker:beads` / `tracker:github` |
 
 Exclude from every content search: lockfiles, `go.sum`, `vendor/`, `node_modules/`, `Pods/`,

@@ -11,5 +11,5 @@
    - Contributor doc → `docs/development/<name>.md`
    - Phase/feature/task doc → migrate to issues on the repo's tracker (invoke `issues`); don't keep in repo
 3. **Show migration table before moving.** Don't auto-delete originals — present the proposed moves, closed with: *"Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`)."* Default when nobody can answer: move nothing.
-4. **Wire admin / CLAUDE.md / .gitignore** per [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) (steps 6–8).
+4. **Wire package scripts / CLAUDE.md / .gitignore** per [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) (steps 6–8).
 5. Proceed to [PHASE-05-VERIFY.md](PHASE-05-VERIFY.md).

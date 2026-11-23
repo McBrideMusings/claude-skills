@@ -41,15 +41,15 @@ Change: add a `blocked-by` edge from 14 to 9 in the tracker (currently only a pr
 - **Agent-ergonomic:** nothing here is machine-checkable; "fast enough" has no programmatic handle at all.
 - **Agent-accretive:** the next ticket's criteria don't build on this one's threshold — each ticket restates its own vague performance bar from scratch.
 
-Change: replace prose thresholds with a checkable command and number where one exists (`admin bench dashboard` under 400ms) across every ticket in this epic, and note in the epic body that later tickets should extend the same fixture rather than write a new one.
+Change: replace prose thresholds with a checkable command and number where one exists (`bun run bench dashboard` under 400ms) across every ticket in this epic, and note in the epic body that later tickets should extend the same fixture rather than write a new one.
 
 ### Level: Verification step
 
 - **Agent-intuitive:** the "Run/Look for" pair the acceptance flow already requires (per CLAUDE.md) is present on every ticket. No gap.
 - **Agent-ergonomic:** already programmatic by construction — no gap.
-- **Agent-accretive:** verification commands are copy-pasted per ticket rather than calling a shared `admin verify <slice>` task — 40 near-identical blocks, no shared surface.
+- **Agent-accretive:** verification commands are copy-pasted per ticket rather than calling a shared `bun run verify <slice>` task — 40 near-identical blocks, no shared surface.
 
-Change: extract the shared verification shape into one `admin.toml` task with a slice argument; point every ticket's verification step at it instead of repeating the block.
+Change: extract the shared verification shape into one `package.json` task with a slice argument; point every ticket's verification step at it instead of repeating the block.
 
 ## Driver-seat changes
 
@@ -57,8 +57,8 @@ The backlog is your document, so nothing above got edited yet — here's the sla
 
 1. **Rename PRD section headers to match tracker epic titles** ("Payments overhaul" → "Billing rework"), in `docs/PRD.md`, because the intuitive gap means an agent reading the PRD for context and the tracker for status has to infer they're the same epic.
 2. **Add a `blocked-by` edge from ticket 14 to ticket 9, and name the shared fixture in ticket 14's body**, in the tracker, because the prose "pattern from ticket 9" reference has no programmatic path back to what 9 actually built.
-3. **Replace vague acceptance thresholds ("fast enough") with `admin bench dashboard` and a number (400ms) across the epic**, in each ticket's acceptance criteria, because an unmeasurable criterion can't be run and read back by an agent.
-4. **Add an `admin.toml` `verify <slice>` task and point all 40 tickets' verification steps at it**, in `admin.toml` plus every ticket body, because 40 copy-pasted blocks have no shared, accretive surface for the next epic's tickets to call.
+3. **Replace vague acceptance thresholds ("fast enough") with `bun run bench dashboard` and a number (400ms) across the epic**, in each ticket's acceptance criteria, because an unmeasurable criterion can't be run and read back by an agent.
+4. **Add a `package.json` `verify <slice>` task and point all 40 tickets' verification steps at it**, in `package.json` plus every ticket body, because 40 copy-pasted blocks have no shared, accretive surface for the next epic's tickets to call.
 
 Type `go` to apply my picks as described, or answer per row (`1 fix, 3 skip, rest file`).
 

@@ -16,7 +16,6 @@ root=$(git rev-parse --show-toplevel) && cd "$root" && {
   echo "claude-md=$(git ls-files CLAUDE.md | head -1)"
   echo "docs=$([ -d docs ] && [ -d docs/.vitepress ] && echo yes)"
   echo "domain=$(cat .claude/domain 2>/dev/null | tr '\n' ' ')"
-  echo "admin=$([ -f admin.toml ] && echo yes)"
   echo "scripts=$(jq -r '.scripts|keys|join(",")' package.json 2>/dev/null)"
   echo "--- tree"; git ls-files | head -400
   echo "--- langs"; git ls-files | sed 's/.*\.//' | sort | uniq -c | sort -rn | head -12
@@ -32,7 +31,7 @@ root=$(git rev-parse --show-toplevel) && cd "$root" && {
 | `observability` | never in a survey — only when named: `improve observability` |
 | `claude-md` | `claude-md=` non-empty |
 | `gui` | a UI surface in the tree — components, stylesheets, a page, or a TUI |
-| `performance` | `admin=yes` or `scripts=` names a start/dev/run entry |
+| `performance` | `scripts=` names a start/dev/run entry |
 | `docs` | `docs=yes` |
 | `game` | per [`../_detect.md`](../_detect.md) — an explicit label in the invocation wins, then the `domain=` marker, and only then classification. **Do not read `.claude/domain` directly**: `improve game` on an unmarked repo is an explicit argument and must run, and a marker-less repo gets classified once and persisted rather than silently skipped. |
 

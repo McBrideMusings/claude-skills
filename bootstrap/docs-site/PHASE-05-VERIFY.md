@@ -18,9 +18,9 @@ Boot the dev server briefly to confirm the wiring works.
 
 2. **If project deploys docs**, also run `npm run docs:build` and confirm it exits clean.
 
-3. **If `admin.toml` is wired**, run `admin docs` briefly and confirm VitePress + HMR boot.
+3. Run `bun run docs:dev` briefly in a dev-server pane and confirm VitePress + HMR boot.
+   Read output from that pane; use a log file only when the project's script explicitly writes one.
 
-   `admin docs` writes its terminal output to `tmp/docs.log` (per admin's universal per-command logging — `tmp/<cmd>.log`, and `tmp/<cmd>-<sub>.log` for sub-targets). If the dev server hangs or errors silently, read that file directly rather than re-invoking.
 
 Failures here usually point at one of the gotchas in [PHASE-02-BOOTSTRAP.md](PHASE-02-BOOTSTRAP.md) — `.mts` rename, `{{ }}` template syntax, missing `layout: home`.
 

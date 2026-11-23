@@ -20,7 +20,7 @@ yesterday, leaves nothing on disk and nothing in the state query to say what it 
 ## What to do
 
 1. **List the features** — from the control surface (scripting dictionary, CLI commands,
-   routes, admin tasks) and the user-facing docs, one line each.
+   routes, package scripts) and the user-facing docs, one line each.
 2. **For each feature, list its boundaries** — every place data or control enters or
    leaves it — with `file:line` for where each one is handled.
 3. **Check each boundary against standard item 1** — is there a log call, does it reach a

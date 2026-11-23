@@ -30,7 +30,7 @@ From `analyze.py`, reconstruct the read/search sequence per session and look for
   strongest finding available: the first session learned the location and nothing wrote it
   down. Count the sessions.
 - **A hunt for something the environment already answers** — the agent grepped for a command
-  that `admin.toml` or `--help` names. The fix is a pointer at the lookup, not a cache of it.
+  that `package.json` or `--help` names. The fix is a pointer at the lookup, not a cache of it.
 
 ## Rank by hunts repeated across sessions, not by length
 

@@ -33,11 +33,10 @@ user's machines, an iOS app on a phone, a server process, a Docker container, a 
    and that the path from there is `diagnose`, then an `implement` pass, then shipping as the
    project ships.
 
-**A repo run through `admin`** writes each command's output to `tmp/<route>.log` (`admin dev ios` →
-`tmp/dev-ios.log`), with the previous runs at `.log.1`–`.log.3`. Its dev section names those
-files and how to read them: the top 80 lines for a build that never launched, the bottom 80 for
-a run that launched and misbehaved, `.log.1` when the current file is empty or unrelated, the whole
-file only when the targeted reads fall short.
+For dev processes, name the package or plain script and the pane-output read command.
+Name a log path and retention only when the process or script actually writes that file;
+package scripts do not provide automatic log files or rotation. Read the beginning for a
+build that never launched and the end for a running process that misbehaved.
 
 A container counts as shipped only when a Loki query for its label returns its lines: a collector
 running on the host is not proof, because its allowlist may omit the container.

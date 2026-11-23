@@ -35,7 +35,7 @@ Write each as a section, with the exact commands. Leave a section out when the a
    databases, simulators, a local daemon, a GPU device. For each, how a worker gets its own,
    derived from `$SWARM_WORKER` (the bead id), and how it removes it before its pass ends.
 5. **Queues and project tools.** Anything the project built to support parallel work — a job
-   queue, a build server, a `--jobs` flag, an `admin` task that runs the suite in swarm mode —
+   queue, a build server, a `--jobs` flag, a package script that runs the suite in swarm mode —
    and when to use it.
 6. **Slot cap.** When the machine can run fewer workers than the lead's default of 3 (a test
    suite that takes all memory, one GPU), set `SWARM_MAX_WORKERS` in `swarm.env` and say why here.
@@ -44,7 +44,7 @@ Write each as a section, with the exact commands. Leave a section out when the a
 
 When an answer above needs code that does not exist yet — a test that binds a fixed port, a
 build script with no way to set its output directory, a suite with no cheap subset — write that
-code too: a port read from the environment, a `--target-dir` flag, an `admin` task for the cheap
+code too: a port read from the environment, a `--target-dir` flag, a package script for the cheap
 check. A rule the project cannot follow is not support.
 
 ## Audit

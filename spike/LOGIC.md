@@ -66,7 +66,7 @@ The whole frame fits one screen.
 
 One command, straight off the prototype path, using a runtime the project already has — `bun
 /private/tmp/claude/<repo-slug>/spikes/scheduler/v1/run.ts`, `python /private/tmp/claude/<repo-slug>/spikes/scheduler/v1/run.py`. Don't
-register it in `admin.toml`, `package.json`, a `Makefile`, or any other real file: the prototype is
+register it in `package.json`, a `Makefile`, or any other real file: the prototype is
 about to be deleted, and a stale task entry outlives it. Hand the user the full command; they don't
 need to remember it, they need to paste it once.
 

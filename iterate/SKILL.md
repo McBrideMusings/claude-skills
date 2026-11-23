@@ -29,9 +29,9 @@ outside `a-z0-9` made one `-` (`epic:oa-ne0` gives `iterate-epic-oa-ne0`; a bare
 `iterate-ready`). Two iterate runs on different focuses keep two worktrees, and the primary
 checkout stays free for other work. The session itself
 stays in the primary checkout and reaches the worktree with absolute paths, `git -C <worktree>`
-and `admin -w <worktree>`.
+and `bun run --cwd <worktree> <script>`.
 
-- **First pass:** `git -C <repo> worktree add -b <branch> <worktree> <default>`, then
+- **First pass:** `~/.claude/tools/worktree-new <repo> <branch> <default>` (use the printed path as `<worktree>`), then
   `~/.claude/tools/clone-targets <repo> <worktree>` (every Cargo workspace's `target/`, cloned
   copy-on-write from the main checkout, so the first build reuses its dependencies; never point
   `CARGO_TARGET_DIR` at another checkout's target), then `project-swarm`'s first-build steps

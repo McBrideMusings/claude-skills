@@ -17,8 +17,8 @@ The common structure: the tower exists, but some rung has nothing to stand on, o
 ## When to run this
 
 - Proactively, on a plan, spec, or system whose structure is settled but has never been asked whether an agent can drive it — the planning-time counterpart of "build the agentic control surface as you go."
-- After a survey turns up features or workflows with no CLI, API, admin task, or fixture behind them.
-- When a name for the same concept has visibly diverged across code, docs, `admin.toml`, and the tracker.
+- After a survey turns up features or workflows with no CLI, API, package script, or fixture behind them.
+- When a name for the same concept has visibly diverged across code, docs, `package.json`, and the tracker.
 
 ## Process
 
@@ -28,15 +28,15 @@ Name the system's actual levels top to bottom — not a generic template, the re
 
 ### 2. Mark every level with no programmatic handle
 
-For each level, ask: can an agent drive this and read the resulting state back — CLI, API, admin task, or fixture — without a human eyeballing a screen or running it by hand and reporting back? Mark the ones that fail.
+For each level, ask: can an agent drive this and read the resulting state back — CLI, API, package script, or fixture — without a human eyeballing a screen or running it by hand and reporting back? Mark the ones that fail.
 
 ### 3. Check name identity across surfaces
 
-For each level, check the name used in code, `docs/`, `admin.toml`, CLI/API entry points, and CLAUDE.md. Flag any level where two of these surfaces use different names for the same concept.
+For each level, check the name used in code, `docs/`, `package.json`, CLI/API entry points, and CLAUDE.md. Flag any level where two of these surfaces use different names for the same concept.
 
 ### 4. Name the surface the fix adds
 
-For every flagged level, name the concrete surface that would close the gap — a CLI subcommand, an `admin.toml` task, a fixture, a renamed doc section — and which surfaces it would make consistent. A finding that cannot name this surface is not a finding yet.
+For every flagged level, name the concrete surface that would close the gap — a CLI subcommand, a package script, a fixture, a renamed doc section — and which surfaces it would make consistent. A finding that cannot name this surface is not a finding yet.
 
 ## Rules
 
@@ -46,4 +46,4 @@ For every flagged level, name the concrete surface that would close the gap — 
 
 ## Findings-only invocation
 
-When called from `improve`'s survey mode: read-only, no writes, no questions. For each level of the tower examined, return the level name, whether it has a programmatic handle, whether its name matches across code/docs/`admin.toml`/CLI/CLAUDE.md, and the concrete surface a fix would add. Mark a level `Unknown` rather than guessing when the surfaces can't all be checked.
+When called from `improve`'s survey mode: read-only, no writes, no questions. For each level of the tower examined, return the level name, whether it has a programmatic handle, whether its name matches across code/docs/`package.json`/CLI/CLAUDE.md, and the concrete surface a fix would add. Mark a level `Unknown` rather than guessing when the surfaces can't all be checked.

@@ -130,7 +130,7 @@ One table per section, with columns **Rule**, **Held elsewhere** (Phase 4's answ
 | **Compress** | Right rule, three times the words it needs. Cut the worked examples and the rant |
 | **→ hook** | Guard-shaped: a check on a command string, a path, an argument. Deterministic |
 | **→ doc / skill** | Domain knowledge that only matters for one kind of task. Replace with one routing line |
-| **→ the environment** | `admin.toml`, `package.json`, a config file, the directory layout or `--help` already answers it. The document is a **cache** of a lookup, so delete it and let the agent look |
+| **→ the environment** | `package.json`, a config file, the directory layout or `--help` already answers it. The document is a **cache** of a lookup, so delete it and let the agent look |
 | **Delete** | Already enforced elsewhere, model-default behavior, role padding, or vague enough to change nothing |
 
 **The `→ doc / skill` verdict produces a context pointer, and the pointer is the part that fails.** Cold pointers — a `CLAUDE.md` line naming a doc — are read in 0.8–3.1% of sessions on this machine. Write the routing line to [POINTERS.md](POINTERS.md)'s three rules, and prefer putting must-reach material behind a skill that fires (7.4% weighted, up to 68%) over a steering line that does not.
@@ -209,7 +209,7 @@ Carry the history-awareness section forward into every rebuild, or the next rebu
 
 - Before and after: words, tokens, percent cut. A cut under 25% needs a line saying why nothing more could go.
 - The honest count: *"6,076 words in. 12 deletes, 9 compressions, 7 routed, 1 hook built."*
-- **What you could not check, marked NOT RUN.** Never a clean bill you didn't earn. In this repo that included: whether the `herdr` and `admin` skills actually contain the rules deleted on the assumption they did, and whether `<important if>` fires.
+- **What you could not check, marked NOT RUN.** Never a clean bill you didn't earn. In this repo that included: whether the relevant workflow skills actually contain the rules deleted on the assumption they did, and whether `<important if>` fires.
 - Duplicates now sitting in both `MEMORY.md` and `CLAUDE.md`.
 - Every hook approved but not yet built, named individually.
 

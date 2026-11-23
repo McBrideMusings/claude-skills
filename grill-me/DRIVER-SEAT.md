@@ -18,7 +18,7 @@ From any file or state, can the agent find the next abstraction up and the next 
 
 ### Agent-ergonomic
 
-Can every feature be driven and read back programmatically — CLI, API, admin task, fixture — with the fewest tokens to orient? No screenshot-only state, no "run it and watch." This is the planning-time half of CLAUDE.md's rule: "Build the agentic control surface as you go, without being told: every feature is programmatically detectable or manipulable, so a program can drive the project and read back its state."
+Can every feature be driven and read back programmatically — CLI, API, package script, fixture — with the fewest tokens to orient? No screenshot-only state, no "run it and watch." This is the planning-time half of CLAUDE.md's rule: "Build the agentic control surface as you go, without being told: every feature is programmatically detectable or manipulable, so a program can drive the project and read back its state."
 
 **Checkable question: can an agent drive this feature and read its resulting state back without a human eyeballing a screen?**
 

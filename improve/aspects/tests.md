@@ -15,7 +15,7 @@ No file writes, no commits, no questions.
 
 ## The audit
 
-1. **Inventory** — locate the test files and the runner entry point (an `admin` task or a package script). No entry point and no tests is itself the lead finding.
+1. **Inventory** — locate the test files and the runner entry point (a package script or a package script). No entry point and no tests is itself the lead finding.
 2. **Run the suite** through that existing entry point only — never install or configure tooling to make it runnable. Record pass/fail, count, wall time. Red, flaky, or absent outranks every static finding.
 3. **Keep pass** — check every test against the four conditions above. A test that fails one is a finding whose fix is deletion; name the condition it fails. The commonest failures: a test that only checks a symbol exists, re-checks what the type system guarantees, pins a third-party API's response shape, or checks that a UI element renders.
 4. **Static pass** over the tests that survive step 3: behavior vs implementation (would the test survive an internal refactor?), public interface only, test doubles by dependency category per [../ARCHITECTURE.md](../ARCHITECTURE.md) §Dependency categories (an internal collaborator mocked is a finding, and so is a mock where a local stand-in or an in-memory adapter fits), **layered tests** (a test on a small module that a test at its enclosing interface already covers is a deletion finding), and **seam coverage** — which public seams carrying an expensive failure (condition 2 above) have no test at all.

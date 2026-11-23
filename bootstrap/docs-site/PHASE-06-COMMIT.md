@@ -8,13 +8,12 @@ Commit everything the docs-site flow touched together so the history is one cohe
 - `package.json` (added `docs:dev` script, devDep)
 - `CLAUDE.md` (Documentation section)
 - `.gitignore` (cache/dist entries)
-- `admin.toml` (if wired)
 
 ## Commit
 
 One-sentence message describing what was done. Examples:
 
-- *"Bootstrap VitePress docs site at /docs with universal layout (file-map) and admin wiring."*
+- *"Bootstrap VitePress docs site at /docs with universal layout (file-map) and package scripts."*
 - *"Audit /docs and apply mechanical fixes (config.mts rename, .gitignore entries, missing CLAUDE.md section)."*
 - *"Migrate plain-markdown /docs to VitePress, categorizing loose docs into architecture/guide/development."*
 

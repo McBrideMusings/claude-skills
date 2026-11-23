@@ -226,14 +226,14 @@ Run it after Phase 05 scoring and before the Phase 06 filter. It never touches t
 
 #### The scratch worktree — never the user's tree
 
-Resolve the repo root once, absolutely, in its own call (`git -C <abs-path-inside-repo> rev-parse --show-toplevel`), and build every path from it. Never `cd` — `admin` has no `--cwd` flag, so when a command must run from the worktree, scope it: `( cd <worktree> && admin test )`.
+Resolve the repo root once, absolutely, in its own call (`git -C <abs-path-inside-repo> rev-parse --show-toplevel`), and build every path from it. Run package scripts with `bun run --cwd <worktree> <script>`; give plain scripts their documented working directory.
 
 ```
 git -C <root> rev-parse HEAD
-git -C <root> worktree add --detach /private/tmp/claude-review-verify/<slug>/wt <head-sha>
+~/.claude/tools/worktree-new <root> review-verify/<unique-slug> <head-sha>
 ```
 
-`<slug>` is the PR number or branch name; `<head-sha>` is the literal sha printed by the first command — do not nest it in `$(...)`.
+Use the printed worktree path throughout verification. `<unique-slug>` includes the PR number and a unique suffix; `<head-sha>` is the literal sha printed by the first command — do not nest it in `$(...)`.
 
 **Uncommitted-changes mode needs the working tree materialized**, because `HEAD` does not contain what is under review:
 
@@ -267,7 +267,7 @@ Never `git stash`, never `git checkout` in `<root>`, never write inside the repo
 *Knowledge base: search it for "keeping and writing tests". If you have none, skip this line and don't mention it.*
 4. **A finding whose claimed input you cannot construct is `not-executable`.** Do not invent an input that makes the claim true; that manufactures the confirmation the gate exists to prevent.
 
-**Run the project's suite too when one exists and covers the cited file** — it catches the case where the repro passes but the finding broke something adjacent. Discover the command in this order, stopping at the first hit: `admin.toml` with a `[commands.test]` block → `admin test`; `package.json` with `scripts.test` → the runner matching the lockfile actually present (`bun.lock`/`bun.lockb` → `bun run test`, `pnpm-lock.yaml` → `pnpm test`, `yarn.lock` → `yarn test`, `package-lock.json` → `npm test`); `Cargo.toml` → `cargo test --offline`; `pyproject.toml`/`pytest.ini`/a `tests/` dir → `python3 -m pytest -q`; `Package.swift` → `swift test`; `go.mod` → `go test ./...`. Never install anything — if `node_modules` is missing in the worktree, symlink the root's rather than running a package manager, and never run a package manager with a scratch dir as cwd.
+**Run the project's suite too when one exists and covers the cited file** — it catches the case where the repro passes but the finding broke something adjacent. Discover the command in this order, stopping at the first hit: `package.json` with `scripts.test` → the runner matching the lockfile actually present (`bun.lock`/`bun.lockb` → `bun run test`, `pnpm-lock.yaml` → `pnpm test`, `yarn.lock` → `yarn test`, `package-lock.json` → `npm test`); `Cargo.toml` → `cargo test --offline`; `pyproject.toml`/`pytest.ini`/a `tests/` dir → `python3 -m pytest -q`; `Package.swift` → `swift test`; `go.mod` → `go test ./...`. Never install anything — if `node_modules` is missing in the worktree, symlink the root's rather than running a package manager, and never run a package manager with a scratch dir as cwd.
 
 **Baseline first, always.** Run the discovered command once against the unmodified worktree. Green means the gate can discriminate. **Red means it cannot** — "the fix made it pass" and "the fix made it fail" both mean nothing against an already-failing suite, so fall back to targeted reproduction alone and say so in the coverage line. Do not try to repair the user's suite. A baseline slower than 120s is over budget: skip the suite, keep the repro.
 

@@ -67,10 +67,10 @@ wrangler d1 execute <DB> --remote --command "SELECT ... FROM hands WHERE id = ..
 value — and by `UPDATE`, `DROP`, `INSERT`, `ALTER`, `PRAGMA`, and `ATTACH`. A pattern that
 must parse SQL out of a shell-quoted argument is not a safety mechanism.
 
-**Rule 3 fits.** A wrapper — living in `admin.toml` alongside the project's other tasks —
+**Rule 3 fits.** A wrapper — living in a plain script alongside the project's other commands —
 that accepts a query, refuses anything whose first keyword is not `SELECT`/`EXPLAIN`, and
 always passes `--remote` in read mode. Then exactly one allowlist entry:
-`Bash(admin db query:*)`. Writes keep prompting because writes never route through it.
+`Bash(bun run db:query:*)`. Writes keep prompting because writes never route through it.
 
 The gain is not only fewer prompts: the safe path becomes the *convenient* path, which is
 what actually changes behaviour.
