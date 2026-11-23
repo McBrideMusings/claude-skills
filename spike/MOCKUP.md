@@ -69,24 +69,19 @@ reached by clicking, or a real component's response. That climbs to [UI.md](UI.m
 
 ## Showing the page under Wheel
 
-When `WHEEL_ENV=1`, show the built page itself, not only its screenshots. The `mockup` built-in
-(Settings › Artifacts, or `wheel artifact builtin install mockup`) draws a variant and state
-picker around it. The built-in reads a file named `mockup.html`, so copy the build under that name
-and post it; the post lives in the project's `.wheel/artifacts/<slug>` and replaces a hand-made
-artifact per spike:
+When `WHEEL_ENV=1`, post the screenshots as a markdown post, one variant after another: a
+heading per variant, a line on its case and its cost, and its PNGs at the size `spike shot`
+wrote them. The post's lightbox opens each one full size, so every variant is readable on a
+phone or in a narrow pane; never set variants in side-by-side columns. The post has no Pick or
+Send control: the person answers in chat.
 
 ```bash
-cp /private/tmp/claude/<repo-slug>/spikes/<slug>/<slug>.html /private/tmp/claude/<repo-slug>/spikes/<slug>/mockup.html
-wheel artifact new <slug> --renderer mockup --reply-to "$WHEEL_PANE" --expires 3d \
-  /private/tmp/claude/<repo-slug>/spikes/<slug>/mockup.html
+wheel artifact new <slug> --renderer markdown --expires 3d index.md <variant>-<state>.png …
 wheel pane split "$WHEEL_PANE" right
 wheel pane kind <new-pane> web --artifact <slug>
 ```
 
-The page's Send writes the pick, a note and a summary to the post's state and types the answer
-into the pane named by `--reply-to`. To read it without waiting for the typed reply, run
-`wheel artifact state <pane> submitted --wait`; its JSON holds `answers.pick`, the chosen
-variant.
+Run `wheel artifact new` from the spike directory, which holds `index.md` and the PNGs.
 Without `WHEEL_ENV`, chat names the absolute path of the built page and of each screenshot.
 
 ## Recording motion
