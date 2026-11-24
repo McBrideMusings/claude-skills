@@ -47,7 +47,7 @@ Each row is (candidate needs | code does | `file:line` | shape of the change) or
 
 - **Fit comp.** `generate/image-api --edit <current-screenshot-of-the-surface.png>` with the instruction "restructure this screen as <survivor structure>; keep the palette, type, chrome, viewport and every persistent element where it is", at the surface's aspect, two variants per survivor that differ on one named structural axis. The look block from the repo's `DESIGN.md` (see COMP.md) goes first when the repo has one.
 - **Mockup.** For the survivors the user keeps after the fit comps, build an HTML mockup per [`../spike/MOCKUP.md`](../spike/MOCKUP.md) in the project's real CSS, and screenshot it at the real viewport in every state that matters (default, mid-interaction, empty, can't-afford, error), never one pretty state.
-- **Show them** in the same Wheel artifact, each survivor as one row: wild comp, fit comp, mockup states. The current screenshot sits first in the row for comparison.
+- **Show them** in the same Wheel artifact, each survivor as one row: wild comp, fit comp, mockup states. The current screenshot sits first in the row for comparison. Name each variant with a word (bands, overlay), never a letter, so it cannot collide with the lettered options in chat; when a reply's letter could mean either, ask which.
 
 *Done when* every survivor has fit comps and per-state mockups and the user has seen them.
 
