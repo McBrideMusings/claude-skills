@@ -202,6 +202,22 @@ if [ "$CHROME_OK" = 1 ] && command -v img2webp >/dev/null 2>&1 && command -v ffm
   "$ART" video sm --dir "$WORK/sm" --size 320x200 --fps 25 --duration 400 >/dev/null 2>"$WORK/sm2.err"
   grep -q 'clock-countdown.webp — 11 frame(s), 400 ms' "$WORK/sm2.err" \
     && say ok "--duration overrides data-video-duration" || say f "--duration did not override: $(head -2 "$WORK/sm2.err")"
+  # --url records a live page at real speed: wall-clock frame times, no virtual clock
+  cat > "$WORK/live.html" <<'EOF2'
+<body style="margin:0"><div id="b" style="width:100px;height:100px;background:#c00"></div>
+<script>setTimeout(function(){document.getElementById('b').style.background='#00c'},300)</script></body>
+EOF2
+  "$ART" video --url "file://$WORK/live.html" --out "$WORK/livevid/clip" --size 320x200 --fps 10 --duration 800 --strip 4 >"$WORK/live.out" 2>"$WORK/live.err"
+  [ "$(cat "$WORK/live.out")" = "$WORK/livevid/clip.webp
+$WORK/livevid/clip-strip.png" ] && [ -s "$WORK/livevid/clip.webp" ] && [ -s "$WORK/livevid/clip-strip.png" ] \
+    && say ok "--url writes <out>.webp and <out>-strip.png" || say f "--url output: $(head -3 "$WORK/live.out") $(head -2 "$WORK/live.err")"
+  [ "$(pngdim "$WORK/livevid/clip-strip.png" | cut -d' ' -f1)" = "1280" ] \
+    && say ok "--url strip holds 4 whole 320px frames side by side" || say f "live strip width: $(pngdim "$WORK/livevid/clip-strip.png")"
+  [ "$(tile "$WORK/livevid/clip-strip.png" 0 10 10 4 4 avg | awk 'NF{print ($1>150 && $3<60)}')" = "1" ] \
+    && [ "$(tile "$WORK/livevid/clip-strip.png" 3 10 10 4 4 avg | awk 'NF{print ($3>150 && $1<60)}')" = "1" ] \
+    && say ok "--url frames show the page change from red to blue as it runs" || say f "live strip colours"
+  "$ART" video --url "file://$WORK/live.html" --size 320x200 >/dev/null 2>&1
+  [ $? -ne 0 ] && say ok "--url without --duration is rejected" || say f "--url accepted no --duration"
 else
   say ok "Chrome, img2webp or ffmpeg absent — video render checks skipped"
 fi

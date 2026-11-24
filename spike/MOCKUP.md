@@ -131,6 +131,30 @@ Flags:
 | `--strip N` | Frames in the frame-strip PNG, evenly spaced from first to last (default 6) |
 | `--quality Q` | Lossy WebP quality 0–100 (default 80) |
 
+## Recording a live app
+
+`spike video --url <page> --duration MS` records any page a browser can open, such as a dev
+server, instead of a spike file. It has no virtual clock: Chrome runs the page at real speed,
+the tool captures a frame every `1/fps` second, and each frame keeps the wall-clock time it
+was captured at, so the WebP plays at the pace the page ran. A page that loads, then animates
+on its own, is the case; input (a click, a hover) cannot be sent.
+
+```bash
+"$HOME/.claude/skills/spike/tool/spike" video --url 'http://127.0.0.1:5181/splash.html?mock=1' \
+  --duration 6000 --size 390x844 --scale 2 --fps 15 --out /private/tmp/claude/<repo-slug>/splash
+```
+
+It prints `<out>.webp` and `<out>-strip.png`; with no `--out` the pair goes in the scratch spike
+directory, named from the URL. The strip holds `--strip N` whole frames (default 6), evenly
+spaced from the first to the last: look at it to check the clip, since `webpmux -get frame`
+returns partial delta rectangles and `anim_dump` is not installed. `--wait MS` lets the page
+settle after load before the recording starts. `--theme`, `--reduced`, `--size`, `--scale`,
+`--hold` and `--quality` work as above. Frame times jitter by the cost of one screenshot, so
+a recording of a live page is not byte-identical between runs.
+
+A preview clip's file size is not the shipped cost. Report what the shipped feature downloads
+(its payload per view), not the clip's size.
+
 `spike video` needs `img2webp` and `ffmpeg` (`brew install webp ffmpeg`) and names the missing
 one. Open the WebP wherever it animates and the strip wherever only stills show; look at both
 ([CRITIQUE.md](CRITIQUE.md)). Motion that needs a click or a hover to start is a prototype

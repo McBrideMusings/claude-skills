@@ -23,7 +23,7 @@ Explainers are a separate kind of document with their own tool, `explainer`.
               [--subtitle <s>] [--lang en] [--extra-css <abs.css>]
   spike shot  <slug> (--platform phone|tablet|desktop | --size WxH) [--partial]
               [--dir <abs-dir>] [--scale N] [--theme light|dark|both] [--cell id,id] [--query q]
-  spike video  <slug> [--dir <abs-dir>] [--size WxH] [--scale N] [--theme light|dark|both]
+  spike video  (<slug> | --url <page> --duration ms [--out <abs-base>] [--wait ms]) [--dir <abs-dir>] [--size WxH] [--scale N] [--theme light|dark|both]
               [--cell id,id] [--query q] [--reduced] [--fps N] [--duration ms] [--hold ms]
               [--strip N] [--quality Q]
   spike tui   --out <abs-dir> --title <t> [--force] [--force-gomod]
@@ -834,8 +834,17 @@ def video_durations(times, hold):
 
 
 def cmd_video(args):
-    if not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", args.slug):
+    if args.url:
+        if args.slug or args.cell or args.query:
+            die("--url records one live page: it takes no slug, --cell or --query")
+        if args.dir and args.out:
+            die("--out already names the files; drop --dir")
+    elif not args.slug:
+        die("name a spike slug, or pass --url <page> to record a live page")
+    elif not re.match(r"^[a-z0-9]+(-[a-z0-9]+)*$", args.slug):
         die("slug %r must be kebab-case: lowercase letters, digits and single hyphens" % args.slug)
+    if not args.url and (args.out or args.wait):
+        die("--out and --wait apply to --url recordings only")
     m = re.match(r"^(\d{2,5})\s*[x×]\s*(\d{2,5})$", args.size.strip())
     if not m:
         die("--size must be WxH in CSS pixels, e.g. 390x844 (got %r)" % args.size)
@@ -854,6 +863,8 @@ def cmd_video(args):
         die("--strip must be at least 2 frames (got %s)" % args.strip)
 
     img2webp, ffmpeg = require_tool("img2webp"), require_tool("ffmpeg")
+    if args.url:
+        return video_live(args, img2webp, ffmpeg, width, min_height)
     out_dir = spike_dir(args.slug, args.dir)
     page = os.path.join(out_dir, args.slug + ".html")
     source = read(page)
@@ -945,6 +956,11 @@ def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme
         except SystemExit:
             pass
 
+    return video_encode(img2webp, ffmpeg, args, paths, times, base)
+
+
+def video_encode(img2webp, ffmpeg, args, paths, times, base):
+    """Encode captured PNGs into <base>.webp and <base>-strip.png; return both paths."""
     # Animated WebP: lossy, looping forever, gaps between timestamps, a hold on the last frame.
     durations = video_durations(times, args.hold)
     cmd = [img2webp, "-loop", "0", "-lossy", "-q", str(args.quality), "-m", "4"]
@@ -975,6 +991,80 @@ def video_one(cdp, img2webp, ffmpeg, frames, args, page, suffix, selector, theme
         os.path.basename(webp), len(paths), int(times[-1]),
         ", ".join(str(int(round(times[i]))) for i in picks)))
     return [webp, strip]
+
+
+
+def video_live(args, img2webp, ffmpeg, width, min_height):
+    """Record a live page (a dev server, any URL) at real speed: each frame carries the
+    wall-clock time it was captured at, so the WebP plays at the pace the page ran."""
+    if args.duration is None:
+        die("--url needs --duration MS: a live page has no declared length")
+    if not re.match(r"^https?://|^file://", args.url):
+        die("--url must start with http://, https:// or file:// (got %r)" % args.url)
+    if args.wait < 0:
+        die("--wait must be 0 or more ms")
+    stem = kebab(re.sub(r"^[a-z]+://", "", args.url))[:60] or "live"
+    if args.out:
+        base_root = require_abs(args.out, "--out")
+        os.makedirs(os.path.dirname(base_root), exist_ok=True)
+    else:
+        out_dir = spike_dir(stem, args.dir)
+        os.makedirs(out_dir, exist_ok=True)
+        base_root = os.path.join(out_dir, stem)
+    themes = ["light", "dark"] if args.theme == "both" else [args.theme]
+    chrome = find_chrome()
+    written = []
+    with tempfile.TemporaryDirectory() as profile, tempfile.TemporaryDirectory() as frames:
+        proc, ws_url = launch_chrome(chrome, profile)
+        try:
+            cdp = Cdp(ws_url)
+            for theme in themes:
+                base = base_root + ("-dark" if theme == "dark" else "") \
+                    + ("-reduced" if args.reduced else "")
+                target = cdp.call("Target.createTarget", {"url": "about:blank"})["targetId"]
+                session = cdp.call("Target.attachToTarget",
+                                   {"targetId": target, "flatten": True})["sessionId"]
+                try:
+                    send = lambda method, params=None: cdp.call(method, params, session)
+                    send("Page.enable")
+                    send("Emulation.setEmulatedMedia", {"features": [
+                        {"name": "prefers-color-scheme", "value": theme},
+                        {"name": "prefers-reduced-motion",
+                         "value": "reduce" if args.reduced else "no-preference"}]})
+                    send("Emulation.setDeviceMetricsOverride", {
+                        "width": width, "height": min_height,
+                        "deviceScaleFactor": float(args.scale), "mobile": False})
+                    send("Page.navigate", {"url": args.url})
+                    cdp.wait_event("Page.loadEventFired", session)
+                    if args.wait:
+                        time.sleep(args.wait / 1000.0)
+                    shot_dir = tempfile.mkdtemp(dir=frames)
+                    paths, times = [], []
+                    step, t0 = 1.0 / args.fps, time.monotonic()
+                    while True:
+                        started = time.monotonic()
+                        t = (started - t0) * 1000.0
+                        if t > args.duration and paths:
+                            break
+                        data = send("Page.captureScreenshot", {"format": "png"})["data"]
+                        path = os.path.join(shot_dir, "f%04d.png" % len(paths))
+                        with open(path, "wb") as f:
+                            f.write(base64.b64decode(data))
+                        paths.append(path)
+                        times.append(t)
+                        spare = step - (time.monotonic() - started)
+                        if spare > 0:
+                            time.sleep(spare)
+                finally:
+                    try:
+                        cdp.call("Target.closeTarget", {"targetId": target})
+                    except SystemExit:
+                        pass
+                written += video_encode(img2webp, ffmpeg, args, paths, times, base)
+        finally:
+            stop_chrome(proc)
+    for path in written:
+        print(path)
 
 
 def cmd_kinds(_args):
@@ -1120,7 +1210,16 @@ def main():
 
     f = sub.add_parser("video", help="animated WebP and frame-strip PNG of each cell's CSS "
                                     "animation, sampled at exact timestamps")
-    f.add_argument("slug", help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html")
+    f.add_argument("slug", nargs="?",
+                   help="the spike slug; reads <scratch>/spikes/<slug>/<slug>.html "
+                        "(omit with --url)")
+    f.add_argument("--url", help="record this live page (a dev server, any http(s) or file URL) "
+                   "at real speed instead of a spike; needs --duration")
+    f.add_argument("--out", metavar="ABS-BASE",
+                   help="with --url: absolute path without extension; writes <base>.webp and "
+                        "<base>-strip.png (default: the scratch spike directory)")
+    f.add_argument("--wait", type=int, default=0, metavar="MS",
+                   help="with --url: settle this long after the page loads before recording")
     f.add_argument("--dir", help="absolute spike directory, instead of the repo's scratch root")
     f.add_argument("--size", default="1280x900", metavar="WxH",
                    help="window width x minimum height in CSS pixels (default 1280x900)")

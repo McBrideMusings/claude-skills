@@ -44,7 +44,7 @@ result the way [CONTRACT.md](CONTRACT.md) rule 10 says.
 
 Climb when the lower rung cannot answer: a sketch or greybox that cannot settle the look goes to a comp or a mockup; a
 mockup that cannot show a state reached by clicking, a transition that needs input or a real component's behaviour goes to a prototype.
-Motion that starts on its own, a CSS animation or a script on a timer, stays at the mockup rung: `spike video` renders it as an animated WebP.
+Motion that starts on its own, a CSS animation or a script on a timer, stays at the mockup rung: `spike video` renders it as an animated WebP. A page already running on a dev server is recorded with `spike video --url <page> --duration MS` ([MOCKUP.md](MOCKUP.md) § Recording a live app).
 Genuinely different takes on density, motion, personality or interaction model skip the sketch —
 a sketch filters on the wrong information — and go straight to a comp set, a mockup or the prototype.
 
