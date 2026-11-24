@@ -150,6 +150,10 @@ never a reason to skip the case. A pass that still cannot drive every case does 
 does not close the bead: it parks (§Parking an item) with the reason `undriven: <case numbers,
 and what each one needs>`.
 
+A driver never opens anything in the person's apps or browser and never takes focus or shows a
+window over their work. A case that only that would prove is reported as not driven by this rule,
+and does not park the item.
+
 Every report carries a section headed exactly `## Cases`, a table with one row per case in the
 item's numbered **Cases** list, in its order:
 
