@@ -41,7 +41,7 @@ Merged worktrees are usually the largest pile and the safest one, so they go bef
 
 Run `~/.claude/tools/git-sweep-all --dry-run --force`, size each `would remove worktree` path with `du -sh`, show the user the list and its total, and take one yes for the batch. On a yes, run `~/.claude/tools/git-sweep-all --force`. Then list the worktrees it kept that are over 1 GB, each with the reason its `kept … —` line gave; those are the user's to decide, never yours.
 
-The sweep's output names only what it removes or keeps by a veto, so never call this step done from that output alone. Run `du -sh ~/.worktrees`, then delete every gitignored build folder (`node_modules`, `target`, `.build`, `DerivedData*`, `dist`, `.next`, at any depth; `git check-ignore` confirms each) in every kept worktree, as part of the same yes. Re-measure `~/.worktrees` and report it.
+The sweep's output names only what it removes or keeps by a veto, so never call this step done from that output alone. Run `du -sh ~/.worktrees`, then delete every gitignored build folder (`node_modules`, `target`, `.build`, `DerivedData*`, `dist`, `.next`, at any depth; `git check-ignore` confirms each) in every kept worktree that each repo's `git worktree list` names, wherever it lives (`/private/tmp` included), as part of the same yes. Re-measure `~/.worktrees` and report it.
 
 ### 3. Clear the safe tier
 
