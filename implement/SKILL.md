@@ -153,7 +153,9 @@ elsewhere, squashed by `wrap-up`.
    something that runs, the plan also names each boundary the feature crosses, the log line
    each one writes, and the state-query field that shows what the feature displays
    (log lines are one per event, with an ISO 8601 timestamp, a category and raw values rather than displayed ones, and never a credential or a whole body); building those is
-   part of this item, never a follow-up.
+   part of this item, never a follow-up. A defect found during the pass that causes the same
+   harm the item fixes is part of this item too: fix it before the gate, never file it as a
+   follow-up and land around it.
    *Knowledge base: search it for "observability checklist". If you have none, skip this line and don't mention it.* A pass that touches anything a user sees, in a repo with a `project-design` skill, calls
    `Skill(project-design)` now and plans against `DESIGN.md` ([`VERDICTS.md`](VERDICTS.md#design-checks)). A pass that
    builds a new UI surface in a repo with no `DESIGN.md` runs `redesign` step 4's roll first
